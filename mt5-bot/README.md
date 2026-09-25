@@ -17,7 +17,17 @@ Botten handler helt automatisk, når den er lagt på en graf i MT5. Du skal kun 
 
 **Anbefalet marked: EURUSD på H1.** Guld (XAUUSD) svinger så meget, at selv 0,01 lot risikerer mere end 1 % af 200 USD. Botten springer derfor selv de handler over.
 
-## 1. Installation (5 minutter)
+## Hurtigste vej: ét script
+
+Luk MT5, læg `TrendPullbackEA.mq5` og `install-and-backtest.ps1` i samme mappe, og kør i PowerShell:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\install-and-backtest.ps1
+```
+
+Scriptet finder din Vantage MT5, installerer og compiler botten, kører en 3-års backtest på EURUSD H1 med 200 USD og åbner rapporten. Hvis dit symbol hedder noget andet, fx `EURUSD+`, så tilføj `-Symbol "EURUSD+"`.
+
+## 1. Installation manuelt (5 minutter)
 
 1. Hent `TrendPullbackEA.mq5`.
 2. I MT5: **Filer → Åbn datamappe** → gå til `MQL5\Experts` → læg filen der.
