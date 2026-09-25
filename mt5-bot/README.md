@@ -1,7 +1,8 @@
 # NasDipEA – anbefalet bot (NAS100, dagscandles)
 
 Efter test af 150+ strategiopsætninger på EURUSD (ingen holdt uden for udvælgelsesperioden)
-og veldokumenterede dagsstrategier på 7 markeder er dette den eneste, der holdt:
+og veldokumenterede dagsstrategier på 7 markeder var det kun på NAS100, at strategierne holdt stabilt.
+IBS-varianten er valgt, fordi den har flest handler (mest statistik) og lavest drawdown blandt dem:
 
 **"Køb dykket" på NAS100 (IBS mean reversion)**
 | Regel | |
