@@ -1,0 +1,17 @@
+NasDipEA - "koeb dykket" paa NAS100 (dagscandles)
+==================================================
+
+1. Luk MetaTrader 5 helt.
+2. Dobbeltklik paa START.bat.
+3. Skriv hvad NAS100 hedder hos Vantage (fx NAS100, NAS100.r eller USTEC)
+   - eller tryk bare Enter.
+4. Scriptet finder din Vantage MT5, installerer botten, compiler den og
+   koerer en 10-aars backtest med 200 USD. Rapporten aabner af sig selv.
+5. Send tallene (nettoprofit, profit factor, drawdown, antal handler,
+   win rate) til Claude.
+
+Botten handler IKKE, foer du selv traekker den ind paa en NAS100 D1-graf og
+slaar Algo Trading til. Start paa en demokonto.
+
+Hvis Windows advarer om filen: hoejreklik START.bat > Egenskaber > "Fjern blokering".
+Mere info: README.md

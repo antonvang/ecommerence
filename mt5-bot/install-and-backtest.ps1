@@ -1,4 +1,4 @@
-# Installerer en EA i MetaTrader 5, compiler den og kører en backtest.
+﻿# Installerer en EA i MetaTrader 5, compiler den og kører en backtest.
 #
 # Brug (PowerShell, i mappen med denne fil og .mq5-filen):
 #   1. Luk MetaTrader 5 helt
