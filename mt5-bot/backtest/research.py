@@ -7,7 +7,8 @@ med fast procent-risiko pr. handel. Data deles i en udvælgelsesperiode
 Konservativt: signal ved lukket candle, indgang ved næste åbning, rammes SL og
 TP i samme candle tæller det som SL, og omkostningen trækkes ved indgang.
 
-Brug: python research.py eurusd_h1.csv
+Brug: python research.py eurusd_h1.csv [server_utc_offset]
+      (offset kun for MT5-eksport, fx 3 for Vantage om sommeren; Dukascopy er UTC = 0)
 """
 import sys
 
@@ -168,8 +169,10 @@ FUNCS = {"trend_pullback (nuværende)": s_trend_pullback, "donchian_breakout": s
          "ema_cross_h4": s_ema_cross_h4}
 
 
-def main(path):
+def main(path, utc_offset=0):
     df = pd.read_csv(path, parse_dates=["time"], index_col="time")
+    # MT5-data er i serverens tid (Vantage typisk UTC+2/+3); strategierne regner i UTC
+    df.index = df.index - pd.Timedelta(hours=utc_offset)
     print(f"Data: {df.index[0]:%Y-%m-%d} til {df.index[-1]:%Y-%m-%d}, {len(df)} H1-candles, "
           f"omkostning {COST_PIPS} pips/handel. Udvælgelse < {SPLIT} <= kontrol.\n")
     rows = []
@@ -191,4 +194,4 @@ def main(path):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1])
+    main(sys.argv[1], float(sys.argv[2]) if len(sys.argv) > 2 else 0)
