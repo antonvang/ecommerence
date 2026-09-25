@@ -1,3 +1,17 @@
+# Test på Vantage NAS100 5-minutters data (sep. 2023 – sep. 2026)
+
+| Strategi | Handler | Win % | PF | Afkast/år (1x) | Kommentar |
+|---|---|---|---|---|---|
+| ICT London-sweep | 623 | 26 | 1,12 | +2,2 % | Plus 2023–25, nul i 2026. PF 1,06–1,10 ved højere spread. Ikke statistisk sikker. |
+| ICT sweep + FVG | 245 | 46 | 0,93 | −1,0 % | Taber |
+| ICT silver bullet | 712 | 36 | 0,98 | −1,2 % | Taber |
+| Kontrol: breakout | 733 | 42 | 1,00 | −0,7 % | Nul |
+| NasDayEA (intradag-momentum) | 744 | 51 | 1,00 | −0,1 % | Nul på Vantage-data |
+
+Konklusion: ingen daytrading-regel har en klar fordel efter omkostninger. NasDipEA (flere dage) er stadig anbefalingen.
+
+---
+
 # NasDayEA – daytrading (NAS100, H1)
 
 Én handel hver handelsdag, ingen positioner natten over.
