@@ -1,17 +1,31 @@
-NasDipEA - "koeb dykket" paa NAS100 (Connors RSI2, dagscandles)
-==================================================
+To bots til Vantage MetaTrader 5 (NAS100)
+=========================================
 
-1. Luk MetaTrader 5 helt.
-2. Dobbeltklik paa START.bat.
-3. Skriv hvad NAS100 hedder hos Vantage (fx NAS100, NAS100.r eller USTEC)
-   - eller tryk bare Enter.
-4. Scriptet finder din Vantage MT5, installerer botten, compiler den og
-   koerer en 10-aars backtest med 200 USD. Rapporten aabner af sig selv.
-5. Send tallene (nettoprofit, profit factor, drawdown, antal handler,
-   win rate) til Claude.
+A) NasDayEA  - DAYTRADING (dit valg)
+   1 handel hver dag i sidste handelstime (15-16 New York = 22-23 servertid).
+   Koeber hvis NAS100 er steget siden i gaar, saelger hvis faldet.
+   Lukker ALT kl. 22:55 servertid. Ingen positioner natten over.
+   Test 2019-2023: ca. 50 % vindere, profit factor ca. 1,08, tabsaar forekommer.
+   -> Dobbeltklik START_DAYTRADE.bat
 
-Botten handler IKKE, foer du selv traekker den ind paa en NAS100 D1-graf og
-slaar Algo Trading til. Start paa en demokonto.
+B) NasDipEA  - holder 2-5 dage (reserve, bedst dokumenteret)
+   Ca. 10 handler om aaret, 72 % vindere, profit factor 1,85, i plus 12 af 15 aar.
+   -> Dobbeltklik START.bat
 
-Hvis Windows advarer om filen: hoejreklik START.bat > Egenskaber > "Fjern blokering".
-Mere info: README.md
+Saadan goer du:
+ 1. Luk MetaTrader 5 helt.
+ 2. Dobbeltklik paa START-filen for den bot, du vil proeve.
+ 3. Skriv hvad NAS100 hedder hos Vantage (fx NAS100, NAS100.r, USTEC) eller tryk Enter.
+ 4. Botten installeres, compiles og backtestes. Rapporten aabner af sig selv.
+ 5. Send tallene (nettoprofit, profit factor, drawdown, handler, win rate) til Claude.
+
+GEARING (InpExposure):
+ 1.0 = handler for det kontoen er vaerd (standard).
+ 5.0 = et fald paa 1 % koster 5 % af kontoen.
+ 10.0 = et fald paa 1 % koster 10 %. En daarlig uge kan toemme kontoen.
+ Start paa en DEMOKONTO, og skru foerst op, naar du har set den koere.
+
+Botterne handler IKKE foer du traekker dem ind paa en NAS100-graf (H1 for NasDayEA,
+D1 for NasDipEA) og slaar Algo Trading til.
+
+Hvis Windows advarer: hoejreklik filen > Egenskaber > "Fjern blokering".

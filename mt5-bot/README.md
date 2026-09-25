@@ -1,3 +1,24 @@
+# NasDayEA – daytrading (NAS100, H1)
+
+Én handel hver handelsdag, ingen positioner natten over.
+| Regel | |
+|---|---|
+| Kl. 15:00 New York (22:00 server) | Er NAS100 steget siden gårsdagens luk, købes der. Er det faldet, sælges der short. |
+| Kl. 15:55 New York (22:55 server) | Alt lukkes |
+| Nødstop | 1 % fra indgang |
+| Størrelse | `InpExposure` × kontoen (1.0 = ingen gearing, maks. 10) |
+
+Bygger på "Market intraday momentum" (Gao, Han, Li & Zhou, Journal of Financial Economics 2018).
+
+**Test (Dukascopy H1, med spread):** NAS100 2019–2021 og US500 2019–2023 gav profit factor ca. 1,08,
+ca. 50 % vindere og ca. 2,5 % om året ved 1x. Største fald var ca. 18 %, og der var tabsår (2019, 2021 på US500).
+Det er et svagt og usikkert plus, og det er dårligere dokumenteret end NasDipEA. Start på demo.
+Gearing forstærker både gevinst og tab: ved 10x ville det største fald i testen have tømt kontoen.
+
+Installation: dobbeltklik `START_DAYTRADE.bat` (eller kør `install-and-backtest.ps1 -Expert NasDayEA -Symbol NAS100 -Period H1 -Years 5`).
+
+---
+
 # NasDipEA – anbefalet bot (NAS100, dagscandles)
 
 Efter test af 150+ strategiopsætninger på EURUSD (ingen holdt uden for udvælgelsesperioden)
