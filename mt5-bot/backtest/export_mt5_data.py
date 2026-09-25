@@ -2,6 +2,7 @@
 
 Kræver: pip install MetaTrader5 pandas, og MT5 installeret og logget ind.
 Brug:   python export_mt5_data.py --symbol EURUSD --years 7 --out eurusd_h1.csv
+        python export_mt5_data.py --symbol NAS100 --tf M5 --years 3 --out nas100_m5.csv
 """
 import argparse
 from datetime import datetime, timedelta
@@ -15,6 +16,7 @@ def main():
     ap.add_argument("--symbol", default="EURUSD")
     ap.add_argument("--years", type=int, default=7)
     ap.add_argument("--out", default="eurusd_h1.csv")
+    ap.add_argument("--tf", default="H1", choices=["M1", "M5", "M15", "H1", "D1"])
     a = ap.parse_args()
 
     if not mt5.initialize():
@@ -24,9 +26,9 @@ def main():
             raise SystemExit(f"Symbolet {a.symbol} findes ikke. Prøv fx EURUSD+ eller EURUSD.a")
         end = datetime.now()
         start = end - timedelta(days=365 * a.years)
-        rates = mt5.copy_rates_range(a.symbol, mt5.TIMEFRAME_H1, start, end)
+        rates = mt5.copy_rates_range(a.symbol, getattr(mt5, f"TIMEFRAME_{a.tf}"), start, end)
         if rates is None or len(rates) == 0:
-            raise SystemExit(f"Ingen data: {mt5.last_error()}. Åbn en {a.symbol} H1-graf og scroll tilbage, så MT5 henter historik.")
+            raise SystemExit(f"Ingen data: {mt5.last_error()}. Åbn en {a.symbol} {a.tf}-graf og scroll tilbage, så MT5 henter historik.")
         info = mt5.symbol_info(a.symbol)
     finally:
         mt5.shutdown()
