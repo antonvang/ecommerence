@@ -47,6 +47,7 @@ def backtest(df, sig):
     d, sl_d, tp_d = sig.dir.values, sig.sl.values, sig.tp.values
     ex = sig["exit"].values if "exit" in sig else np.zeros(len(df), bool)
     trail = sig["trail"].values if "trail" in sig else np.zeros(len(df))
+    rev = bool(sig.attrs.get("reverse_exit", False))  # luk (og vend) ved modsat signal
     max_bars = sig["max_bars"].values if "max_bars" in sig else np.full(len(df), 10**9)
     cost = COST_PIPS * PIP
     trades = []
@@ -64,13 +65,14 @@ def backtest(df, sig):
                 px = min(o[i], stop) if direction == 1 else max(o[i], stop)
             elif hit_tp:
                 px = target
-            elif ex[i] or (i - t0) >= mb:
+            elif ex[i] or (i - t0) >= mb or (rev and d[i] == -direction):
                 px = o[i + 1]
             if px is not None:
                 r = ((px - entry) * direction - cost) / risk
                 trades.append((df.index[t0], df.index[i], direction, r, risk / PIP))
                 pos = None
-                continue
+                if not (rev and d[i] == -direction):
+                    continue
             if tr > 0:  # trailing stop, opdateres efter candlen er lukket
                 stop = max(stop, c[i] - tr) if direction == 1 else min(stop, c[i] + tr)
                 pos = (direction, entry, stop, target, risk, t0, mb, tr)

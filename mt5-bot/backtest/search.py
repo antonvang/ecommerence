@@ -45,11 +45,9 @@ def ema_cross_tf(df, tf="4h", fast=10, slow=30, sl=1.5, exit_mode="cross", trail
     a = atr(x, 14)
     d = cross.reindex(df.index).fillna(0).astype(int)
     sl_d = to_h1(a, df) * sl
-    side_h1 = to_h1(side, df)
     out = pd.DataFrame({"dir": d, "sl": sl_d, "tp": sl_d * (2 if exit_mode == "fixed" else 100)})
     if exit_mode == "cross":
-        pos_side = d.replace(0, np.nan).ffill()
-        out["exit"] = (side_h1 != pos_side) & pos_side.notna()
+        out.attrs["reverse_exit"] = True
     if trail:
         out["trail"] = to_h1(a, df) * trail
     return out
