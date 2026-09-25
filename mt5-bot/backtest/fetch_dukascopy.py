@@ -1,10 +1,12 @@
 """Henter EURUSD H1-candles (bid og ask) fra Dukascopy og gemmer som CSV.
 
 Brug: python fetch_dukascopy.py --from 2020-01 --to 2026-08 --out eurusd_h1.csv
-Output-kolonner: time,open,high,low,close (bid) samt spread (gennemsnit af åbning/lukning, i pris).
+Output-kolonner: time,open,high,low,close (bid). Med --with-ask også spread (i pris).
+Filer caches i --cache, så en afbrudt download fortsætter hvor den slap.
 """
 import argparse
 import lzma
+import os
 import struct
 import subprocess
 import time
@@ -16,15 +18,22 @@ URL = "https://datafeed.dukascopy.com/datafeed/{sym}/{y}/{m:02d}/{side}_candles_
 POINT = 1e-5
 
 
-def fetch(url, tries=8):
+def fetch(url, cache_dir, tries=12):
+    """Henter med cache på disk, så en afbrudt download kan genoptages."""
+    cache = os.path.join(cache_dir, url.split("/datafeed/")[1].replace("/", "_"))
+    if os.path.exists(cache):
+        with open(cache, "rb") as f:
+            return f.read()
+    code = b""
     for attempt in range(tries):
         r = subprocess.run(["curl", "-sS", "-w", "\n%{http_code}", url], capture_output=True)
         body, _, code = r.stdout.rpartition(b"\n")
-        if code == b"200":
+        if code in (b"200", b"404"):
+            body = body if code == b"200" else b""
+            with open(cache, "wb") as f:
+                f.write(body)
             return body
-        if code == b"404":
-            return b""
-        time.sleep(3 * (attempt + 1))
+        time.sleep(min(10 * (attempt + 1), 60))  # Dukascopy begrænser antal kald (429)
     raise RuntimeError(f"Kunne ikke hente {url} (sidste status {code!r})")
 
 
@@ -52,31 +61,37 @@ def main():
     ap.add_argument("--from", dest="start", default="2020-01")
     ap.add_argument("--to", dest="end", default="2026-08")
     ap.add_argument("--out", default="eurusd_h1.csv")
+    ap.add_argument("--cache", default="dukascopy_cache")
+    ap.add_argument("--with-ask", action="store_true", help="hent også ask for rigtig spread (dobbelt så mange kald)")
     a = ap.parse_args()
     start = tuple(int(x) for x in a.start.split("-"))
     end = tuple(int(x) for x in a.end.split("-"))
 
+    os.makedirs(a.cache, exist_ok=True)
+    sides_to_get = ("BID", "ASK") if a.with_ask else ("BID",)
     frames = []
     for y, m in months(start, end):
         month_start = datetime(y, m, 1, tzinfo=timezone.utc)
         sides = {}
-        for side in ("BID", "ASK"):
+        for side in sides_to_get:
             # Dukascopy nummererer måneder fra 0
-            raw = fetch(URL.format(sym=a.symbol, y=y, m=m - 1, side=side))
+            raw = fetch(URL.format(sym=a.symbol, y=y, m=m - 1, side=side), a.cache)
             sides[side] = pd.DataFrame(parse(raw, month_start),
                                        columns=["time", "open", "high", "low", "close"]).set_index("time")
-            time.sleep(1.0)
-        bid, ask = sides["BID"], sides["ASK"]
+            time.sleep(2.0)
+        bid = sides["BID"]
         if bid.empty:
             print(f"{y}-{m:02d}: ingen data")
             continue
         # fjern weekend-candles uden handel (flade candles)
         bid = bid[(bid.high > bid.low)]
         df = bid.copy()
-        spread = ((ask.open - bid.open) + (ask.close - bid.close)) / 2
-        df["spread"] = spread.reindex(df.index)
+        if a.with_ask:
+            ask = sides["ASK"]
+            spread = ((ask.open - bid.open) + (ask.close - bid.close)) / 2
+            df["spread"] = spread.reindex(df.index)
         frames.append(df)
-        print(f"{y}-{m:02d}: {len(df)} candles, median spread {df.spread.median() / 1e-4:.2f} pips", flush=True)
+        print(f"{y}-{m:02d}: {len(df)} candles", flush=True)
 
     out = pd.concat(frames)
     out.index = out.index.tz_localize(None)
