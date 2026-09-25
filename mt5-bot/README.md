@@ -1,4 +1,49 @@
-# TrendPullbackEA – automatisk bot til MetaTrader 5 (Vantage)
+# NasDipEA – anbefalet bot (NAS100, dagscandles)
+
+Efter test af 150+ strategiopsætninger på EURUSD (ingen holdt uden for udvælgelsesperioden)
+og veldokumenterede dagsstrategier på 7 markeder er dette den eneste, der holdt:
+
+**"Køb dykket" på NAS100 (IBS mean reversion)**
+| Regel | |
+|---|---|
+| Køb | Dagen lukker over SMA200 (optrend) **og** tæt på dagens bund (IBS < 0,2) |
+| Sælg | En dag lukker over den foregående dags high |
+| Nødstop | 3 × ATR(14) under købskursen |
+| Størrelse | Kursværdi = kontoen (1x). Med 200 USD købes for ca. 200 USD NAS100. |
+| Kun køb | Ingen short. Maks. én position. |
+
+Parametrene er den offentliggjorte standard (IBS < 0,2, SMA200) og er **ikke tunet** på data.
+
+## Resultat (Dukascopy-data 2012–2026, med spread og finansiering)
+| | NasDipEA | Køb og behold NAS100 |
+|---|---|---|
+| Afkast pr. år | ca. **8 %** | ca. 18 % |
+| Største fald | **15 %** | 36 % |
+| Handler pr. år | ca. 25 (76 % vindere) | – |
+| Tabsår | 3 af 15 | – |
+| Tid i markedet | 29 % | 100 % |
+| 2026 til og med august | +8,9 % | |
+
+200 USD fra 2013 ville være blevet til ca. 600 USD. Det er historik og ingen garanti.
+
+## Installation, compile og backtest i ét script
+Luk MT5, og kør i mappen `mt5-bot`:
+```powershell
+powershell -ExecutionPolicy Bypass -File .\install-and-backtest.ps1 -Expert NasDipEA -Symbol NAS100 -Period D1 -Years 10
+```
+Hvis Vantage kalder symbolet noget andet (fx `NAS100.r` eller `USTEC`), så brug det navn i `-Symbol`.
+
+## Kør den
+1. Åbn en **NAS100 D1**-graf, og træk `NasDipEA` ind på den.
+2. Slå **Algo Trading** til. Botten handler én gang om dagen, når en ny dagscandle starter.
+3. Kør den på en **demokonto** i 2–4 uger først, og sammenlign med backtesten.
+
+---
+
+# Ældre: TrendPullbackEA (anbefales ikke)
+
+Testen viste, at denne strategi taber penge (PF ca. 0,6–0,9). Den er kun beholdt til sammenligning.
+
 
 Botten handler helt automatisk, når den er lagt på en graf i MT5. Du skal kun installere den én gang.
 
