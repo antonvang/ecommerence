@@ -1,4 +1,4 @@
-NasDipEA - "koeb dykket" paa NAS100 (dagscandles)
+NasDipEA - "koeb dykket" paa NAS100 (Connors RSI2, dagscandles)
 ==================================================
 
 1. Luk MetaTrader 5 helt.

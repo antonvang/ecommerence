@@ -1,11 +1,15 @@
 ﻿//+------------------------------------------------------------------+
 //|                                                    NasDipEA.mq5  |
-//|  "Køb dykket" på NAS100 (IBS mean reversion) med trendfilter.    |
+//|  "Køb dykket" på aktieindeks (NAS100/US500) med trendfilter.     |
 //|                                                                  |
 //|  Regler (vurderes ved hver lukket dagscandle, D1):               |
+//|  Standard: Connors RSI(2) - testet robust på 4 indeks            |
+//|   - Køb når: luk > SMA200 OG RSI(2) < 10                         |
+//|   - Sælg når: luk > SMA5                                         |
+//|  Alternativ: IBS (virkede kun på NAS100 i testen)                |
 //|   - Køb når: luk > SMA200 OG IBS < 0.2                           |
-//|       IBS = (luk - low) / (high - low) = lukkede tæt på bunden   |
 //|   - Sælg når: en dag lukker over den foregående dags high        |
+//|  Fælles:                                                         |
 //|   - Nødstop: 3 x ATR(14) under indgang                           |
 //|   - Kun køb (long), maks. én position                            |
 //|   - Størrelse: kursværdi = konto x InpExposure (1.0 = ingen      |
@@ -13,13 +17,23 @@
 //+------------------------------------------------------------------+
 #property copyright "antonvang"
 #property version   "1.00"
-#property description "NAS100 IBS-dip-køb med SMA200-trendfilter"
+#property description "Dip-køb på aktieindeks (RSI2 eller IBS) med SMA200-trendfilter"
 
 #include <Trade\Trade.mqh>
 
+enum ENUM_DIP_MODE
+  {
+   DIP_RSI2 = 0, // Connors RSI(2) (anbefalet)
+   DIP_IBS  = 1  // IBS
+  };
+
 input group "Strategi"
+input ENUM_DIP_MODE InpMode  = DIP_RSI2; // Indgangsregel
 input int    InpSMAPeriod   = 200;  // Trendfilter: SMA-periode (D1)
-input double InpIBSLevel    = 0.2;  // Køb når IBS er under dette
+input int    InpRSIPeriod   = 2;    // RSI-periode (RSI2-mode)
+input double InpRSILevel    = 10.0; // Køb når RSI er under dette (RSI2-mode)
+input int    InpExitSMA     = 5;    // Sælg når luk > SMA af denne periode (RSI2-mode)
+input double InpIBSLevel    = 0.2;  // Køb når IBS er under dette (IBS-mode)
 input int    InpATRPeriod   = 14;   // ATR-periode til nødstop
 input double InpStopATR     = 3.0;  // Nødstop = ATR x dette
 
@@ -35,6 +49,8 @@ input ulong InpMagic = 20260926; // Magic number
 CTrade   trade;
 int      hSMA = INVALID_HANDLE;
 int      hATR = INVALID_HANDLE;
+int      hRSI = INVALID_HANDLE;
+int      hExit = INVALID_HANDLE;
 datetime g_lastBar = 0;
 int      g_dayKey = -1;
 double   g_dayStartEquity = 0.0;
@@ -49,7 +65,9 @@ int OnInit()
      }
    hSMA = iMA(_Symbol, PERIOD_D1, InpSMAPeriod, 0, MODE_SMA, PRICE_CLOSE);
    hATR = iATR(_Symbol, PERIOD_D1, InpATRPeriod);
-   if(hSMA == INVALID_HANDLE || hATR == INVALID_HANDLE)
+   hRSI = iRSI(_Symbol, PERIOD_D1, InpRSIPeriod, PRICE_CLOSE);
+   hExit = iMA(_Symbol, PERIOD_D1, InpExitSMA, 0, MODE_SMA, PRICE_CLOSE);
+   if(hSMA == INVALID_HANDLE || hATR == INVALID_HANDLE || hRSI == INVALID_HANDLE || hExit == INVALID_HANDLE)
      {
       Print("Kunne ikke oprette indikatorer");
       return INIT_FAILED;
@@ -65,6 +83,8 @@ void OnDeinit(const int reason)
   {
    IndicatorRelease(hSMA);
    IndicatorRelease(hATR);
+   IndicatorRelease(hRSI);
+   IndicatorRelease(hExit);
    Comment("");
   }
 
@@ -82,8 +102,9 @@ void OnTick()
    double l1 = iLow(_Symbol, PERIOD_D1, 1);
    double c1 = iClose(_Symbol, PERIOD_D1, 1);
    double h2 = iHigh(_Symbol, PERIOD_D1, 2);
-   double sma[], atr[];
+   double sma[], atr[], rsi[], exitSma[];
    if(CopyBuffer(hSMA, 0, 1, 1, sma) < 1 || CopyBuffer(hATR, 0, 1, 1, atr) < 1 ||
+      CopyBuffer(hRSI, 0, 1, 1, rsi) < 1 || CopyBuffer(hExit, 0, 1, 1, exitSma) < 1 ||
       h1 <= 0.0 || h2 <= 0.0)
       return;  // data ikke klar endnu; prøv igen næste tick
    g_lastBar = barTime;
@@ -91,25 +112,22 @@ void OnTick()
    ulong ticket = OurPosition();
    if(ticket != 0)
      {
-      //--- exit: gårsdagens luk over forrige dags high
-      if(c1 > h2)
-        {
-         if(!trade.PositionClose(ticket))
-            PrintFormat("Lukning fejlede: %u %s", trade.ResultRetcode(), trade.ResultRetcodeDescription());
-        }
-      ShowStatus(c1 > h2 ? "Exit-signal: lukker" : "Position åben, venter på exit");
+      //--- exit: RSI2-mode: luk > SMA5.  IBS-mode: luk over forrige dags high
+      bool exitSignal = (InpMode == DIP_RSI2) ? (c1 > exitSma[0]) : (c1 > h2);
+      if(exitSignal && !trade.PositionClose(ticket))
+         PrintFormat("Lukning fejlede: %u %s", trade.ResultRetcode(), trade.ResultRetcodeDescription());
+      ShowStatus(exitSignal ? "Exit-signal: lukker" : "Position åben, venter på exit");
       return;
      }
 
    double range = h1 - l1;
-   if(range <= 0.0)
-      return;
-   double ibs = (c1 - l1) / range;
-   bool entry = c1 > sma[0] && ibs < InpIBSLevel;
+   double ibs = (range > 0.0) ? (c1 - l1) / range : 0.5;
+   bool dip = (InpMode == DIP_RSI2) ? (rsi[0] < InpRSILevel) : (ibs < InpIBSLevel);
+   bool entry = c1 > sma[0] && dip;
    if(!entry)
      {
-      ShowStatus(StringFormat("Venter. Luk %s SMA%d, IBS %.2f", c1 > sma[0] ? "over" : "under",
-                              InpSMAPeriod, ibs));
+      ShowStatus(StringFormat("Venter. Luk %s SMA%d, RSI(%d) %.1f, IBS %.2f", c1 > sma[0] ? "over" : "under",
+                              InpSMAPeriod, InpRSIPeriod, rsi[0], ibs));
       return;
      }
    if(InpMaxSpreadPoints > 0 && SymbolInfoInteger(_Symbol, SYMBOL_SPREAD) > InpMaxSpreadPoints)

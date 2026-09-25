@@ -1,31 +1,34 @@
 # NasDipEA – anbefalet bot (NAS100, dagscandles)
 
 Efter test af 150+ strategiopsætninger på EURUSD (ingen holdt uden for udvælgelsesperioden)
-og veldokumenterede dagsstrategier på 7 markeder var det kun på NAS100, at strategierne holdt stabilt.
-IBS-varianten er valgt, fordi den har flest handler (mest statistik) og lavest drawdown blandt dem:
+og veldokumenterede dagsstrategier på 7 markeder er "køb dykket i en optrend" på aktieindeks det eneste,
+der holdt stabilt.
 
-**"Køb dykket" på NAS100 (IBS mean reversion)**
+**Standard: Connors RSI(2)**, som tjente penge på alle 4 testede indeks (NAS100, US500, Dow, DAX)
 | Regel | |
 |---|---|
-| Køb | Dagen lukker over SMA200 (optrend) **og** tæt på dagens bund (IBS < 0,2) |
-| Sælg | En dag lukker over den foregående dags high |
+| Køb | Dagen lukker over SMA200 (optrend) **og** RSI(2) < 10 (kort, skarpt dyk) |
+| Sælg | Dagen lukker over SMA5 |
 | Nødstop | 3 × ATR(14) under købskursen |
 | Størrelse | Kursværdi = kontoen (1x). Med 200 USD købes for ca. 200 USD NAS100. |
 | Kun køb | Ingen short. Maks. én position. |
 
-Parametrene er den offentliggjorte standard (IBS < 0,2, SMA200) og er **ikke tunet** på data.
+Parametrene er Connors & Alvarez' offentliggjorte standard fra 2008 og er **ikke tunet** på data.
+IBS-varianten kan vælges med `InpMode`, men den virkede kun på NAS100 og ikke på US500, Dow eller DAX.
 
-## Resultat (Dukascopy-data 2012–2026, med spread og finansiering)
-| | NasDipEA | Køb og behold NAS100 |
+## Resultat (Dukascopy-data 2012–aug. 2026, med spread og finansiering)
+| | RSI(2) på NAS100 | Køb og behold NAS100 |
 |---|---|---|
-| Afkast pr. år | ca. **8 %** | ca. 18 % |
-| Største fald | **15 %** | 36 % |
-| Handler pr. år | ca. 25 (76 % vindere) | – |
-| Tabsår | 3 af 15 | – |
-| Tid i markedet | 29 % | 100 % |
-| 2026 til og med august | +8,9 % | |
+| Profit factor | **1,85** (US500: 1,85) | – |
+| Afkast pr. år (1x) | ca. **4,7 %** | ca. 18 % |
+| Største fald | ca. 19 % | 36 % |
+| Handler pr. år | ca. 10 (72 % vindere, holdes ca. 4 dage) | – |
+| Tabsår | 3 af 15 (2016, 2018, knap 2012) | – |
+| Tid i markedet | 11 % | 100 % |
+| 2026 til og med august | +7,3 % | |
+| Med dobbelt spread og 9 % rente | PF 1,73 | |
 
-200 USD fra 2013 ville være blevet til ca. 600 USD. Det er historik og ingen garanti.
+200 USD fra 2013 ville være blevet til ca. 375 USD. Det er historik og ingen garanti.
 
 ## Installation, compile og backtest i ét script
 Luk MT5, og kør i mappen `mt5-bot`:
