@@ -42,24 +42,26 @@ def atr(df, n):
 # ---------------------------------------------------------------- motor
 def backtest(df, sig):
     """sig: DataFrame med kolonnerne dir (1/-1/0), sl, tp (afstande i pris),
-    og valgfrit exit (bool: luk ved næste åbning), max_bars (int)."""
+    og valgfrit exit (bool: luk ved næste åbning), max_bars (int), trail (afstand i pris)."""
     o, h, l, c = df.open.values, df.high.values, df.low.values, df.close.values
     d, sl_d, tp_d = sig.dir.values, sig.sl.values, sig.tp.values
     ex = sig["exit"].values if "exit" in sig else np.zeros(len(df), bool)
+    trail = sig["trail"].values if "trail" in sig else np.zeros(len(df))
     max_bars = sig["max_bars"].values if "max_bars" in sig else np.full(len(df), 10**9)
     cost = COST_PIPS * PIP
     trades = []
     pos = None
     for i in range(len(df) - 1):
         if pos is not None:
-            direction, entry, stop, target, risk, t0, mb = pos
+            direction, entry, stop, target, risk, t0, mb, tr = pos
             if direction == 1:
                 hit_sl, hit_tp = l[i] <= stop, h[i] >= target
             else:
                 hit_sl, hit_tp = h[i] >= stop, l[i] <= target
             px = None
             if hit_sl:
-                px = stop
+                # kurshul forbi stoppet (fx over weekenden) fyldes til åbningskursen
+                px = min(o[i], stop) if direction == 1 else max(o[i], stop)
             elif hit_tp:
                 px = target
             elif ex[i] or (i - t0) >= mb:
@@ -69,10 +71,13 @@ def backtest(df, sig):
                 trades.append((df.index[t0], df.index[i], direction, r, risk / PIP))
                 pos = None
                 continue
+            if tr > 0:  # trailing stop, opdateres efter candlen er lukket
+                stop = max(stop, c[i] - tr) if direction == 1 else min(stop, c[i] + tr)
+                pos = (direction, entry, stop, target, risk, t0, mb, tr)
         if pos is None and d[i] != 0 and sl_d[i] > 0:
             entry = o[i + 1]
             pos = (d[i], entry, entry - d[i] * sl_d[i], entry + d[i] * tp_d[i], sl_d[i], i + 1,
-                   max_bars[i])
+                   max_bars[i], trail[i])
     return pd.DataFrame(trades, columns=["open", "close", "dir", "r", "sl_pips"])
 
 
