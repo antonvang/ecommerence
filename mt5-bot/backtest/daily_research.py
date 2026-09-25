@@ -73,6 +73,7 @@ def buy_and_hold(df):
     return e, pd.Series(False, index=df.index), 1
 
 
+NO_STOP = {"buy_and_hold", "trend_sma200"}
 STRATS = {"connors_rsi2": connors_rsi2, "ibs_meanrev": ibs_meanrev, "double_seven": double_seven,
           "trend_sma200": trend_sma200, "buy_and_hold": buy_and_hold}
 
@@ -100,8 +101,14 @@ def backtest(df, entry, exit_, side, spread, stop_atr=3.0, max_days=None):
                 continue
         if pos is None and en[i] and not np.isnan(a[i]):
             px_in = o[i + 1]
-            risk = stop_atr * a[i]
-            pos = (i + 1, px_in, px_in - side * risk, risk)
+            risk = (stop_atr or 3.0) * a[i]  # R-enhed; uden stop bruges 3 ATR kun som målestok
+            stop = px_in - side * risk if stop_atr else (-np.inf if side == 1 else np.inf)
+            pos = (i + 1, px_in, stop, risk)
+    if pos is not None:  # luk åben position ved sidste luk, så den tæller med
+        t0, px_in, stop, risk = pos
+        nights = (df.index[-1] - df.index[t0]).days
+        pnl = (c[-1] - px_in) * side - spread - px_in * FIN_RATE / 365 * nights
+        trades.append((df.index[t0], df.index[-1], pnl / risk, pnl / px_in * 100, nights))
     return pd.DataFrame(trades, columns=["open", "close", "r", "pct", "nights"])
 
 
@@ -112,11 +119,14 @@ def summarize(t, years):
     eq = (1 + t.r / 100).cumprod()  # 1 % risiko pr. handel
     dd = (1 - eq / eq.cummax()).max() * 100
     yr = t.groupby(t.open.dt.year).r.sum()
+    eq1x = (1 + t.pct / 100).cumprod()  # hele kontoen i kursværdi, ingen gearing
+    dd1x = (1 - eq1x / eq1x.cummax()).max() * 100
     return dict(n=len(t), per_year=round(len(t) / years, 1), win=round((t.r > 0).mean() * 100),
                 pf=round(w / lo, 2) if lo else np.inf, avg_r=round(t.r.mean(), 3),
                 cagr_1pct=round((eq.iloc[-1] ** (1 / years) - 1) * 100, 1), max_dd=round(dd, 1),
                 losing_years=int((yr < 0).sum()), years_tested=len(yr),
-                days_in_mkt=round(t.nights.sum() / (years * 365) * 100))
+                days_in_mkt=round(t.nights.sum() / (years * 365) * 100),
+                cagr_1x=round((eq1x.iloc[-1] ** (1 / years) - 1) * 100, 1), max_dd_1x=round(dd1x, 1))
 
 
 def main(folder):
@@ -126,10 +136,16 @@ def main(folder):
             continue
         sym = f[:-7]
         df = pd.read_csv(os.path.join(folder, f), parse_dates=["time"], index_col="time")
+        extra = os.path.join(folder, f"{sym}_h1_recent.csv")
+        if os.path.exists(extra):  # indeværende år findes kun som timedata: byg dagscandles
+            h = pd.read_csv(extra, parse_dates=["time"], index_col="time")
+            d = h.resample("1D").agg({"open": "first", "high": "max", "low": "min", "close": "last"}).dropna()
+            df = pd.concat([df, d[d.index > df.index[-1]]])
         years = (df.index[-1] - df.index[200]).days / 365.25
         for name, fn in STRATS.items():
             entry, exit_, side = fn(df)
-            t = backtest(df, entry, exit_, side, COSTS.get(sym, 0))
+            t = backtest(df, entry, exit_, side, COSTS.get(sym, 0),
+                         stop_atr=None if name in NO_STOP else 3.0)
             rows.append(dict(symbol=sym, strategy=name, **summarize(t, years),
                              period=f"{df.index[200]:%Y}-{df.index[-1]:%Y}"))
     res = pd.DataFrame(rows)
