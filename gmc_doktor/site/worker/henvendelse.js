@@ -34,6 +34,8 @@ async function tjek(req, url, ctx) {
   if (limited(req.headers.get("cf-connecting-ip") || "?")) return json({ok: false, error: "Du har tjekket mange butikker på kort tid. Prøv igen om 10 minutter."}, 429);
   let r;
   try { r = await run(host); } catch (e) { return json({ok: false, error: "Tjekket gik galt. Prøv igen om lidt."}, 502); }
+  // the page shows what is wrong; how to fix it is what customers pay for, so it never leaves the server
+  r.fund = (r.fund || []).map(({ret, ...f}) => f);
   if (r.error === "robots") return json({ok: false, error: "Butikken beder robotter om ikke at læse forsiden. Skriv jeres mail nedenfor, så kigger vi selv."});
   if (r.error) return json({ok: false, error: `Vi kunne ikke åbne ${host}. Tjek adressen, eller skriv jeres mail nedenfor, så kigger vi selv.`});
   ctx.waitUntil(caches.default.put(key, new Response(JSON.stringify(r), {headers: {"content-type": "application/json", "cache-control": "max-age=21600"}})));
