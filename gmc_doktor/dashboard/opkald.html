@@ -1,0 +1,1808 @@
+<title>GMC-Doktor opkald</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400..700&family=Geist+Mono:wght@400..600&display=swap">
+<style>
+/* Layout: the app shell from the Analytics dashboard in the "Ai MERCOR" chat - collapsible sidebar (a drawer on phones),
+   sticky header with page title and theme switch, KPI tiles, a chart card and table cards. The call flow keeps one store per screen. */
+:root{
+  --bg:#fafafa;--surface:#ffffff;--sunken:#f4f4f5;--line:#e4e4e7;--hover:#f4f4f5;
+  --ink:#18181b;--ink2:#3f3f46;--muted:#71717a;
+  --accent:#4f46e5;--accent-ink:#ffffff;--accent-fg:#4338ca;--accent-soft:#eef2ff;--accent-line:#c7d2fe;
+  --s1:#4f46e5;--s2:#0d9488;--grid:#e4e4e7;
+  --good:#047857;--good-soft:#ecfdf5;--warn:#b45309;--warn-soft:#fffbeb;--bad:#be123c;--bad-soft:#fff1f2;
+  --shadow:0 1px 2px rgba(24,24,27,.06);--lift:0 12px 32px -8px rgba(24,24,27,.24);--bar:rgba(255,255,255,.84);--scrim:rgba(9,9,11,.5);
+  --toast:#18181b;--toast-ink:#fafafa;--toast-link:#a5b4fc;
+  --sans:"Geist",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  --mono:"Geist Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+  --ease:cubic-bezier(.32,.72,0,1);color-scheme:light}
+/* Dark: the viewer's theme, unless the page's own switch (data-mode) says otherwise */
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]):not([data-mode="light"]){
+  --bg:#09090b;--surface:#18181b;--sunken:#111113;--line:#27272a;--hover:#27272a;
+  --ink:#fafafa;--ink2:#d4d4d8;--muted:#a1a1aa;
+  --accent:#4f46e5;--accent-ink:#ffffff;--accent-fg:#a5b4fc;--accent-soft:rgba(99,102,241,.15);--accent-line:rgba(129,140,248,.45);
+  --s1:#6366f1;--s2:#0d9488;--grid:#27272a;
+  --good:#34d399;--good-soft:rgba(16,185,129,.14);--warn:#fbbf24;--warn-soft:rgba(245,158,11,.14);--bad:#fb7185;--bad-soft:rgba(244,63,94,.14);
+  --shadow:0 1px 2px rgba(0,0,0,.4);--lift:0 12px 32px -8px rgba(0,0,0,.75);--bar:rgba(24,24,27,.84);--scrim:rgba(0,0,0,.6);
+  --toast:#fafafa;--toast-ink:#18181b;--toast-link:#4338ca;color-scheme:dark}}
+:root[data-theme="dark"]:not([data-mode="light"]),:root[data-mode="dark"]{
+  --bg:#09090b;--surface:#18181b;--sunken:#111113;--line:#27272a;--hover:#27272a;
+  --ink:#fafafa;--ink2:#d4d4d8;--muted:#a1a1aa;
+  --accent:#4f46e5;--accent-ink:#ffffff;--accent-fg:#a5b4fc;--accent-soft:rgba(99,102,241,.15);--accent-line:rgba(129,140,248,.45);
+  --s1:#6366f1;--s2:#0d9488;--grid:#27272a;
+  --good:#34d399;--good-soft:rgba(16,185,129,.14);--warn:#fbbf24;--warn-soft:rgba(245,158,11,.14);--bad:#fb7185;--bad-soft:rgba(244,63,94,.14);
+  --shadow:0 1px 2px rgba(0,0,0,.4);--lift:0 12px 32px -8px rgba(0,0,0,.75);--bar:rgba(24,24,27,.84);--scrim:rgba(0,0,0,.6);
+  --toast:#fafafa;--toast-ink:#18181b;--toast-link:#4338ca;color-scheme:dark}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 var(--sans);-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%}
+button,input,textarea,select{font:inherit;color:inherit;letter-spacing:inherit}
+button,a,summary,label{touch-action:manipulation}
+a{color:var(--accent-fg);text-decoration:none}
+a:hover{text-decoration:underline}
+svg{flex:none}
+[hidden]{display:none!important}
+.btn svg,.link svg{width:18px;height:18px}
+.muted{color:var(--muted)}
+.small{font-size:13.5px}
+.mono{font-family:var(--mono)}
+p{margin:6px 0}
+
+/* shell */
+.shell{display:flex;min-height:100vh}
+.col{flex:1;min-width:0;display:flex;flex-direction:column}
+.side{display:none}
+.brand{display:flex;align-items:center;gap:10px;height:64px;padding:0 16px;border-bottom:1px solid var(--line);font-weight:600;font-size:15px;min-width:0}
+.brand .mark{width:32px;height:32px;border-radius:8px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-size:14px;font-weight:700;flex:none}
+.brand .bn{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.navlist{list-style:none;margin:0;padding:12px;display:grid;gap:2px}
+.navbtn{display:flex;align-items:center;gap:12px;width:100%;min-height:40px;padding:8px 12px;border:0;border-radius:8px;background:none;color:var(--muted);font-size:14px;font-weight:500;cursor:pointer;text-align:left;position:relative;transition:background-color .15s,color .15s}
+.navbtn:hover{background:var(--hover);color:var(--ink)}
+.navbtn[aria-current="page"]{background:var(--accent-soft);color:var(--accent-fg)}
+.navbtn svg{width:20px;height:20px}
+.navbtn .lbl{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.badge{min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:var(--accent);color:var(--accent-ink);font-size:12px;font-weight:600;display:inline-grid;place-items:center;font-variant-numeric:tabular-nums}
+.side-foot{margin-top:auto;padding:12px;border-top:1px solid var(--line)}
+@media (min-width:1024px){
+  .side{display:flex;flex-direction:column;position:sticky;top:env(safe-area-inset-top,0px);height:100vh;width:248px;flex:none;background:var(--surface);border-right:1px solid var(--line);transition:width .2s var(--ease)}
+  .shell.rail .side{width:72px}
+  .shell.rail .brand{justify-content:center;padding:0}
+  .shell.rail .brand .bn,.shell.rail .side .lbl{display:none}
+  .shell.rail .side .navbtn{justify-content:center;padding:8px}
+  .shell.rail .side .badge{position:absolute;top:2px;right:4px;min-width:16px;height:16px;font-size:10px;padding:0 4px}
+  .menu-btn{display:none!important}
+}
+.drawer{position:fixed;inset:0;z-index:40;pointer-events:none}
+.drawer .scrim{position:absolute;inset:0;background:var(--scrim);opacity:0;transition:opacity .2s}
+.drawer aside{position:absolute;top:0;bottom:0;left:0;width:288px;max-width:86%;background:var(--surface);box-shadow:var(--lift);transform:translateX(-102%);transition:transform .25s var(--ease);display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.drawer.open{pointer-events:auto}
+.drawer.open .scrim{opacity:1}
+.drawer.open aside{transform:none}
+@media (min-width:1024px){.drawer{display:none}}
+.iconbtn{width:40px;height:40px;display:inline-grid;place-items:center;border:0;border-radius:8px;background:none;color:var(--muted);cursor:pointer;flex:none}
+.iconbtn:hover{background:var(--hover);color:var(--ink)}
+.iconbtn svg{width:20px;height:20px}
+
+/* header */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;display:flex;align-items:center;gap:10px;min-height:64px;padding:8px 16px;background:var(--bar);-webkit-backdrop-filter:blur(12px) saturate(150%);backdrop-filter:blur(12px) saturate(150%);border-bottom:1px solid var(--line)}
+.heading{flex:1;min-width:0}
+.heading h1{margin:0;font-size:18px;font-weight:600;line-height:1.25;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.heading p{margin:0;font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.theme{display:inline-flex;gap:2px;padding:3px;border:1px solid var(--line);border-radius:10px;background:var(--surface);flex:none}
+.theme button{width:30px;height:28px;border:0;border-radius:7px;background:none;color:var(--muted);display:grid;place-items:center;cursor:pointer}
+.theme button:hover{color:var(--ink)}
+.theme button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.theme svg{width:15px;height:15px}
+@media (max-width:359px){.theme{display:none}}
+.wrap{width:100%;max-width:1160px;margin:0 auto;padding-inline:16px;padding-block:16px 140px;display:flex;flex-direction:column;gap:16px}
+.wrap.narrow{max-width:760px}
+#view{display:flex;flex-direction:column;gap:16px;min-width:0}
+#banners{display:flex;flex-direction:column;gap:8px}
+#banners:empty{display:none}
+@media (min-width:640px){.top{padding-inline:24px}.wrap{padding-inline:24px;padding-block:24px 140px}}
+
+/* notices */
+.banner{display:flex;gap:10px;align-items:flex-start;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-size:14px}
+.banner::before{content:"";flex:none;width:8px;height:8px;border-radius:50%;margin-top:7px;background:var(--accent)}
+.banner.warn{background:var(--warn-soft);border-color:transparent}.banner.warn::before{background:var(--warn)}
+.banner.bad{background:var(--bad-soft);border-color:transparent}.banner.bad::before{background:var(--bad)}
+.banner.good{background:var(--good-soft);border-color:transparent}.banner.good::before{background:var(--good)}
+.banner .link{padding:0 0 0 4px;font-size:14px}
+
+/* cards */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px;box-shadow:var(--shadow);min-width:0}
+.card h2{margin:0 0 4px;font-size:16px;font-weight:600;letter-spacing:-.01em;text-wrap:balance}
+.card h3{margin:0 0 8px;font-size:15px;font-weight:600}
+.sec{display:flex;align-items:center;gap:8px;margin:8px 2px -4px;font-size:15px;font-weight:600}
+.sec .badge{background:var(--sunken);color:var(--ink2)}
+.kh{display:flex;align-items:center;justify-content:space-between;gap:10px}
+
+/* overview */
+.kpis{display:grid;gap:16px;grid-template-columns:repeat(2,minmax(0,1fr))}
+@media (min-width:1100px){.kpis{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.kpi{padding:16px 18px}
+.kpi .kl{font-size:13px;font-weight:500;color:var(--muted)}
+.ico{width:32px;height:32px;border-radius:8px;background:var(--accent-soft);color:var(--accent-fg);display:grid;place-items:center;flex:none}
+.ico svg{width:16px;height:16px}
+.kpi .kv{margin-top:10px;font-size:26px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.1}
+.kpi .kv small{font-size:14px;font-weight:500;color:var(--muted);margin-left:2px;letter-spacing:0}
+.kpi .kd{margin-top:6px;font-size:12.5px;color:var(--muted)}
+.kpi .up{color:var(--good);font-weight:600}
+.meter{height:4px;border-radius:2px;background:var(--sunken);margin-top:12px;overflow:hidden}
+.meter i{display:block;height:100%;background:var(--accent);border-radius:2px;transition:width .5s var(--ease)}
+@media (max-width:420px){.kpis{gap:10px}.kpi{padding:14px}.kpi .kv{font-size:22px}.ico{width:28px;height:28px}}
+.duo{display:grid;gap:16px}
+@media (min-width:1024px){.duo{grid-template-columns:minmax(0,2fr) minmax(0,1fr)}}
+.stack{display:flex;flex-direction:column;gap:16px;min-width:0}
+.chart-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px 16px;flex-wrap:wrap}
+.total{font-size:13.5px;color:var(--muted)}
+.total b{color:var(--ink);font-size:15px;font-variant-numeric:tabular-nums}
+.keys{display:flex;gap:6px 16px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);margin-top:12px}
+.key{display:inline-flex;align-items:center;gap:6px}
+.key i{width:10px;height:10px;border-radius:3px;display:inline-block}
+.key i.goal{width:16px;height:0;border-top:2px dashed var(--muted);border-radius:0}
+.chart{position:relative;margin-top:6px;min-height:220px;max-width:100%}
+.chart svg{display:block}
+.chart text{fill:var(--muted);font:11.5px var(--sans)}
+.chart text.today{fill:var(--ink);font-weight:600}
+.chart text.empty{fill:var(--muted);font-size:13px}
+.chart .gl{stroke:var(--grid);stroke-width:1}
+.chart .base{stroke:var(--muted);stroke-width:1}
+.chart .goal{stroke:var(--muted);stroke-width:1.5;stroke-dasharray:4 4;fill:none}
+.chart .b1{fill:var(--s1)}
+.chart .b2{fill:var(--s2)}
+.chart .hov{fill:var(--sunken)}
+.tip{position:absolute;top:0;left:0;pointer-events:none;background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:var(--lift);padding:8px 10px;font-size:12.5px;white-space:nowrap;z-index:2}
+.tip b{display:block;margin-bottom:2px}
+.tip span{display:flex;align-items:center;gap:6px}
+.tip i{width:8px;height:8px;border-radius:2px;display:inline-block}
+.next .shopname{font-size:20px;font-weight:600;letter-spacing:-.01em;margin:10px 0 0;word-break:break-word}
+.next .phone-s{font-family:var(--mono);font-size:15px;color:var(--ink2);margin:2px 0 0}
+.checklist{list-style:none;margin:12px 0 0;padding:0}
+.checklist li{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+.checklist li:first-child{border-top:0;padding-top:4px}
+.checklist .tick{width:24px;height:24px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;flex:none;font-size:13px;font-weight:700;color:var(--good)}
+.checklist li.ok .tick{background:var(--good-soft);border-color:transparent}
+.checklist .txt{flex:1;min-width:0}
+.checklist li.ok b{color:var(--muted)}
+.checklist small{display:block;color:var(--muted);font-size:12.5px;word-break:break-word}
+.checklist .btn{flex:none}
+.plan{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:10px}
+.plan li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 12px;align-items:start}
+.plan .dot{width:10px;height:10px;border-radius:50%;margin-top:6px;border:2px solid var(--line);background:var(--surface)}
+.plan .now .dot{border-color:var(--accent);background:var(--accent)}
+.plan .done .dot{border-color:var(--accent);background:var(--accent-soft)}
+.plan b{font-weight:600}
+.plan small{display:block;color:var(--muted);font-size:12.5px}
+.tbl-wrap{overflow-x:auto;margin:14px -20px -20px;border-top:1px solid var(--line)}
+table.tbl{width:100%;border-collapse:collapse;font-size:14px}
+.tbl th{text-align:left;font-size:11.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;padding:10px 20px;background:var(--sunken);white-space:nowrap}
+.tbl td{padding:12px 20px;border-top:1px solid var(--line);vertical-align:middle}
+.tbl tbody tr:first-child td{border-top:0}
+.tbl .num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.tbl .sub{display:block;font-size:12.5px;color:var(--muted);font-family:var(--mono)}
+.rowlink{background:none;border:0;padding:0;font-weight:500;color:var(--ink);cursor:pointer;text-align:left;word-break:break-word}
+.rowlink:hover{color:var(--accent-fg);text-decoration:underline}
+
+/* pills: state in form as well as in words */
+.pill{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600;background:var(--sunken);color:var(--ink2);white-space:nowrap}
+.st-ja,.st-rettet,.r-ja,.pill.g{background:var(--good-soft);color:var(--good)}
+.st-nej,.st-forkert,.st-opgivet,.r-nej,.r-forkert,.pill.b{background:var(--bad-soft);color:var(--bad)}
+.st-ring_senere,.st-intet_svar,.r-ring_senere,.r-intet_svar,.pill.w,.prac-flag{background:var(--warn-soft);color:var(--warn)}
+.r-bestilt,.pill.a{background:var(--accent-soft);color:var(--accent-fg)}
+.qcount{font-size:12.5px;color:var(--muted)}
+
+/* the call: one store, what to say, big answer buttons */
+.call{border-radius:14px}
+.call,#view{scroll-margin-top:80px}
+.meta{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.shop{font-size:24px;font-weight:600;letter-spacing:-.02em;line-height:1.2;margin:10px 0 0;word-break:break-word}
+.card .shop.sm,.shop.sm{font-size:17px;margin:0}
+.steps-nav{display:flex;gap:6px;margin:14px 0 2px}
+.steps-nav span{flex:1;font-size:11px;font-weight:600;color:var(--muted);text-align:center}
+.steps-nav span::before{content:"";display:block;height:4px;border-radius:2px;background:var(--sunken);margin-bottom:5px;transition:background-color .3s var(--ease)}
+.steps-nav span.done::before{background:var(--accent-line)}
+.steps-nav span.now{color:var(--accent-fg)}
+.steps-nav span.now::before{background:var(--accent)}
+.info{margin:14px 0 0;padding:12px 14px;border-radius:10px;background:var(--sunken)}
+.info .facts{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}
+.info .fact{font-size:12px;font-weight:500;padding:2px 9px;border-radius:999px;background:var(--surface);border:1px solid var(--line)}
+.info p{margin:4px 0 0;font-size:14px}
+.info .om{color:var(--muted);font-size:13.5px}
+.phone{display:flex;flex-direction:column;align-items:center;gap:12px;margin:14px 0 4px;padding:18px 16px;border-radius:12px;border:1px dashed var(--line)}
+.phone .num{font-family:var(--mono);font-size:30px;font-weight:600;letter-spacing:.02em;font-variant-numeric:tabular-nums;user-select:all;-webkit-user-select:all;line-height:1.2}
+.phone .row{justify-content:center;margin:0}
+.tel{font-size:14px;color:var(--muted);margin:6px 0 0;font-family:var(--mono)}
+.note,.hint-set{background:var(--warn-soft);border-radius:10px;padding:10px 14px;margin:12px 0 0;font-size:14px}
+.thread{margin-top:4px}
+.who{font-size:11.5px;font-weight:600;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin:18px 2px 8px}
+.say{background:var(--accent-soft);border:1px solid var(--accent-line);color:var(--ink);border-radius:12px;padding:14px 16px;font-size:19px;line-height:1.45;font-weight:500;letter-spacing:-.01em}
+.say b{font-weight:700;color:var(--accent-fg)}
+.say.sm{font-size:16px}
+mark{background:var(--warn-soft);color:var(--warn);border-radius:4px;padding:0 4px;font-weight:700}
+.replies{display:grid;gap:8px}
+.reply{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;text-align:left;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:13px 14px;font-size:16px;font-weight:500;line-height:1.35;cursor:pointer;transition:transform .1s ease-out,border-color .15s,background-color .15s}
+.reply::after{content:"→";color:var(--muted);flex:none}
+.reply:hover{border-color:var(--accent-line);background:var(--hover)}
+.reply:active{transform:scale(.985)}
+.reply.pos{border-color:var(--accent-line);box-shadow:inset 0 0 0 1px var(--accent-line)}
+.reply.pos::after{color:var(--accent-fg)}
+.reply.neg{color:var(--bad)}
+.reply.d{font-style:italic}
+.reply:disabled{opacity:.4}
+.sys{text-align:center;font-size:13.5px;color:var(--muted);margin:14px 12px}
+/* practice: what the pretend customer says, and the answer that fits */
+.cust{display:flex;gap:10px;align-items:flex-start;margin:12px 0 0}
+.cust .av{width:30px;height:30px;border-radius:50%;background:var(--warn-soft);color:var(--warn);display:grid;place-items:center;flex:none;font-size:13px;font-weight:700}
+.cust .bub{background:var(--sunken);border:1px solid var(--line);border-radius:4px 12px 12px 12px;padding:9px 14px;font-size:16px;min-width:0}
+.cust .bub small{display:block;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.hint{outline:2px dashed var(--warn);outline-offset:2px}
+/* lists */
+.list{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin:10px 0}
+.rowbtn{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;min-height:50px;padding:11px 14px;border:0;background:transparent;text-align:left;font-size:15.5px;font-weight:500;cursor:pointer;transition:background-color .15s}
+.rowbtn+.rowbtn{border-top:1px solid var(--line)}
+.rowbtn::after{content:"→";color:var(--muted);flex:none}
+.rowbtn:hover,.rowbtn:active{background:var(--hover)}
+.rowbtn.primary{color:var(--accent-fg);font-weight:600}
+.rowbtn.primary::after{color:var(--accent-fg)}
+.rowbtn.neg{color:var(--bad)}
+.rowbtn small{display:block;font-size:12.5px;color:var(--muted);margin-top:2px;font-weight:400}
+.rowbtn:disabled{opacity:.4}
+.list .rowbtn.hint{outline-offset:-3px}
+details{margin:10px 0;border:1px solid var(--line);border-radius:10px;background:var(--surface);overflow:hidden}
+summary{list-style:none;cursor:pointer;padding:12px 14px;font-size:14.5px;font-weight:500;display:flex;justify-content:space-between;align-items:center;gap:10px}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";font-size:18px;line-height:1;color:var(--muted);transition:transform .25s var(--ease)}
+details[open]>summary::after{transform:rotate(45deg)}
+details>:not(summary){margin-left:14px;margin-right:14px}
+details>.list{margin:0 0 12px}
+details>.tbl-wrap{margin:0;border-top:1px solid var(--line)}
+.fundlist{list-style:none;margin:0 0 12px;padding:0}
+.fundlist li{padding:10px 0;border-top:1px solid var(--line);font-size:14px}
+.tag{display:inline-block;font-size:11.5px;font-weight:600;padding:1px 8px;border-radius:999px;margin-right:6px}
+.tag.bad{background:var(--bad-soft);color:var(--bad)}
+.tag.warn{background:var(--warn-soft);color:var(--warn)}
+/* buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:40px;padding:0 14px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:14px;font-weight:500;cursor:pointer;text-decoration:none;text-align:center;transition:background-color .15s,border-color .15s,transform .1s ease-out,filter .15s}
+.btn:hover{background:var(--hover);text-decoration:none}
+.btn:active{transform:scale(.98)}
+.btn.big{min-height:48px;font-size:15px;font-weight:600}
+.btn.wide{display:flex;width:100%;margin-top:12px}
+.btn.primary,.btn.pos.strong{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover,.btn.pos.strong:hover{filter:brightness(1.1)}
+.btn.pos{background:var(--accent-soft);border-color:var(--accent-line);color:var(--accent-fg)}
+.btn.neg{background:var(--bad-soft);border-color:transparent;color:var(--bad)}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.link{background:none;border:0;color:var(--accent-fg);font-size:14.5px;font-weight:500;padding:10px 4px;cursor:pointer}
+.link:hover{text-decoration:underline}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.nav{display:flex;justify-content:space-between;gap:10px;margin-top:10px;flex-wrap:wrap}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:var(--surface);color:var(--ink2);border-radius:999px;padding:0 12px;font-size:13.5px;font-weight:500;cursor:pointer;min-height:34px;transition:border-color .15s,background-color .15s}
+.chip:hover{border-color:var(--accent-line)}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+/* forms */
+label{display:block;margin:14px 0 0;font-size:13px;font-weight:500;color:var(--ink2)}
+input:not([type=checkbox]):not([type=radio]),textarea{display:block;width:100%;min-height:44px;margin-top:6px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font-size:16px;font-weight:400;outline:none;transition:border-color .15s,box-shadow .15s}
+input:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+input.ok{border-color:var(--good)}
+input.bad{border-color:var(--bad)}
+textarea{min-height:220px;resize:vertical;font-size:14px;line-height:1.5}
+input[readonly],textarea[readonly]{background:var(--sunken);color:var(--muted)}
+label.check{display:flex;gap:12px;align-items:center;color:var(--ink);font-size:15px;font-weight:400}
+label.check input{width:20px;height:20px;accent-color:var(--accent);flex:none;margin:0}
+.hint-t{display:block;font-weight:400;font-size:12.5px;color:var(--muted);margin-top:2px}
+.seg2{display:grid;grid-template-columns:1fr 1fr;gap:3px;padding:3px;border-radius:10px;background:var(--sunken);border:1px solid var(--line);margin:8px 0}
+.seg2 button{min-height:40px;border:0;border-radius:8px;background:transparent;font-size:14px;font-weight:600;color:var(--muted);cursor:pointer;padding:4px 8px;transition:background-color .2s var(--ease),color .2s}
+.seg2 button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.err{color:var(--bad);font-weight:600;font-size:14px}
+.okmsg{color:var(--good);font-weight:600}
+.watch{color:var(--accent-fg);font-weight:600}
+.draft{border:1px solid var(--accent-line);border-radius:12px;padding:12px 14px;margin:12px 0}
+.draft-text{white-space:pre-wrap;word-break:break-word;font:inherit;font-size:14px;line-height:1.5;max-height:340px;overflow:auto;margin:10px 0;padding:10px 12px;background:var(--sunken);border-radius:8px}
+.draft-text:empty{display:none}
+.watch::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:currentColor;margin-right:6px;vertical-align:1px;animation:pulse 1.4s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.25}}
+@media (prefers-reduced-motion:reduce){.watch::before{animation:none}}
+.foot{font-size:12.5px;color:var(--muted);text-align:center;margin:10px 8px 0}
+.hvlist{list-style:none;margin:6px 0 0;padding:0;display:grid}
+.hv{display:flex;flex-wrap:wrap;gap:10px 16px;justify-content:space-between;align-items:center;padding:14px 0;border-top:1px solid var(--line)}
+.hv:first-child{border-top:0}
+.hv-main{display:grid;gap:2px;min-width:0;flex:1 1 260px}
+.hv-main b{font-size:15.5px;word-break:break-all}
+.hv-main small{color:var(--muted);font-size:13px;overflow-wrap:anywhere}
+.hv.done .hv-main b{color:var(--muted)}
+.replyin{background:var(--good-soft);border-radius:10px;padding:8px 12px;margin:8px 0 0;font-size:14px}
+.replyin b{color:var(--good)}
+.ask{background:var(--accent-soft);border-radius:10px;padding:10px 14px;margin:10px 0;font-size:14px}
+.searchbar{position:relative}
+.searchbar svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--muted)}
+.searchbar input:not([type=checkbox]){padding-left:38px;margin-top:0}
+#alle-head{display:flex;flex-direction:column;gap:10px}
+/* calendar */
+.cal{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;box-shadow:var(--shadow)}
+.ev{display:flex;align-items:center;gap:12px;padding:12px 16px}
+.ev+.ev,.ev-open+.ev{border-top:1px solid var(--line)}
+.ev-time{width:46px;flex:none;font:600 14px var(--mono);font-variant-numeric:tabular-nums}
+.ev-body{flex:1;min-width:0;border-left:3px solid var(--accent);padding-left:10px}
+.ev-retry .ev-body{border-color:var(--line)}
+.ev-mail .ev-body,.ev-fu .ev-body{border-color:var(--warn)}
+.ev-body b{display:block;font-weight:600;word-break:break-word}
+.ev .btn{min-height:36px;padding:0 12px;font-size:13.5px;flex:none}
+.ev-open{padding:0 16px 16px}
+/* done + mail */
+.done-head{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;padding:8px 0 4px}
+.check-big{width:52px;height:52px;border-radius:50%;background:var(--good-soft);color:var(--good);display:grid;place-items:center;font-size:26px;font-weight:700;animation:pop .45s var(--ease) both}
+.mail{margin-top:14px}
+.mail ol{list-style:none;padding:0;margin:10px 0;counter-reset:s}
+.mail li{counter-increment:s;position:relative;padding-left:36px;margin:14px 0;font-size:15px}
+.mail li::before{content:counter(s);position:absolute;left:0;top:0;width:24px;height:24px;border-radius:50%;background:var(--accent-soft);color:var(--accent-fg);display:grid;place-items:center;font-size:12.5px;font-weight:700}
+.steps{list-style:none;padding:0;margin:12px 0;display:flex;flex-wrap:wrap;gap:6px}
+.steps li{font-size:12.5px;font-weight:600;padding:3px 10px;border-radius:999px;background:var(--sunken);color:var(--muted)}
+.steps li.done{background:var(--good-soft);color:var(--good)}
+/* stores table */
+.tablist{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;box-shadow:var(--shadow)}
+.thead{display:none}
+.li+.li{border-top:1px solid var(--line)}
+.lihead{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;align-items:center;width:100%;padding:12px 16px;background:none;border:0;text-align:left;cursor:pointer;min-height:56px;font-size:14px}
+.lihead:hover{background:var(--hover)}
+.liname{display:block;font-weight:500;word-break:break-word}
+.lihead .sub{display:block;font-size:12.5px;color:var(--muted)}
+.c-n,.c-t{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.c-t{text-align:right}
+@media (min-width:720px){
+  .thead{display:grid;grid-template-columns:minmax(0,1fr) 150px 90px 150px;gap:12px;padding:10px 20px;background:var(--sunken);font-size:11.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--line)}
+  .lihead{grid-template-columns:minmax(0,1fr) 150px 90px 150px;padding:12px 20px}
+  .c-n,.c-t{font-size:14px;color:var(--ink2);text-align:left}
+  .m-only{display:none}
+}
+.lidetail{padding:4px 20px 16px;border-top:1px dashed var(--line);background:var(--sunken)}
+.lidetail input:not([type=checkbox]){background:var(--surface)}
+.help ol{margin:8px 0;padding-left:22px}
+.help li{margin:6px 0}
+.legend{display:grid;gap:8px;margin:6px 0 10px}
+.legend .reply{pointer-events:none}
+.toast{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);width:min(560px,calc(100% - 32px));display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;padding:12px 16px;border-radius:12px;background:var(--toast);color:var(--toast-ink);box-shadow:var(--lift);z-index:50;animation:toast-in .35s var(--ease) both}
+.toast[hidden]{display:none}
+.toast .msg{flex:1 1 200px;font-weight:500;font-size:14px}
+.toast .link{color:var(--toast-link);font-weight:600;padding:6px 2px}
+body.busy [data-act]:not([data-act="tab"]):not([data-act="copy"]):not([data-act="menu"]):not([data-act="theme"]){pointer-events:none;opacity:.7}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@keyframes in-fwd{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:none}}
+@keyframes in-back{from{opacity:0;transform:translateX(-24px)}to{opacity:1;transform:none}}
+@keyframes in-up{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes pop{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:none}}
+@keyframes toast-in{from{opacity:0;transform:translate(-50%,12px) scale(.97)}to{opacity:1;transform:translate(-50%,0) scale(1)}}
+@keyframes fade{from{opacity:.4}to{opacity:1}}
+.a-fwd{animation:in-fwd .35s var(--ease) both}.a-back{animation:in-back .35s var(--ease) both}.a-up{animation:in-up .35s var(--ease) both}
+@media (prefers-reduced-motion:reduce){.a-fwd,.a-back,.a-up,.check-big{animation:fade .2s ease both}.toast{animation:none}.drawer aside,.drawer .scrim,.side{transition:none}.btn:active,.reply:active{transform:none}}
+@media (prefers-reduced-transparency:reduce){.top{-webkit-backdrop-filter:none;backdrop-filter:none;background:var(--surface)}}
+@media (prefers-contrast:more){.reply,.card,.list,.cal,.tablist{border-color:var(--ink)}}
+</style>
+
+<div class="shell" id="shell">
+  <aside class="side" aria-label="Menu">
+    <div class="brand" id="brand"></div>
+    <nav><ul class="navlist" id="nav"></ul></nav>
+    <div class="side-foot"><button class="navbtn" data-act="rail" id="railbtn" aria-label="Skjul menuen"></button></div>
+  </aside>
+  <div class="col">
+    <header class="top">
+      <button class="iconbtn menu-btn" data-act="menu" aria-label="Åbn menuen" aria-controls="drawer" aria-expanded="false" id="menubtn"></button>
+      <div class="heading"><h1 id="title">Overblik</h1><p id="subtitle"></p></div>
+      <div class="theme" role="group" aria-label="Lys eller mørk" id="theme"></div>
+    </header>
+    <div class="wrap" id="wrap">
+      <div id="banners"></div>
+      <div id="alle-head" hidden>
+        <div class="searchbar" id="searchbar"><input id="q" type="search" placeholder="Søg efter butik" autocomplete="off" aria-label="Søg efter butik"></div>
+        <div class="chips" id="filters"></div>
+      </div>
+      <main id="view"><div class="card muted">Forbinder …</div></main>
+    </div>
+  </div>
+</div>
+<div class="drawer" id="drawer" aria-hidden="true">
+  <div class="scrim" data-act="closemenu"></div>
+  <aside aria-label="Menu">
+    <div class="brand" id="brand2"></div>
+    <nav><ul class="navlist" id="nav2"></ul></nav>
+  </aside>
+</div>
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+<script>
+(() => {
+'use strict';
+document.documentElement.lang = 'da';
+
+// ---------- test plan (FASE 15, del J): it starts the day of the first real call, so the dates never go stale ----------
+const GOAL = {forsoeg: 100, samtaler: 30, betalt: 1, stop: 50};
+const CALL_DAYS = 5; // calling days; then one follow-up day; then the decision
+const DAY_GOAL = 20; // 100 calls over the five calling days
+const STALE_DAYS = 3; // store findings older than this should be re-checked before calling
+const PRIS = {rettelse: 995, audit: 495};
+const PRODUKT = {rettelse: 'Rettelse af Google Shopping-fejl', audit: 'Trin-for-trin-vejledning til Google Shopping'};
+const CONCRETE = new Set(['S05', 'D07', 'M02', 'D04', 'S03', 'S01', 'D08', 'D09', 'P05']);
+const DIAL = new Set(['intet_svar', 'forkert', 'nej', 'ring_senere', 'ja', 'bestilt']);
+const TALK = new Set(['nej', 'ja', 'bestilt']);
+const CALLABLE = new Set(['ny', 'intet_svar', 'ring_senere']);
+const STATUS = {ny: 'Ikke ringet', intet_svar: 'Intet svar', ring_senere: 'Ring senere', nej: 'Nej tak', ja: 'Ja til rapport', forkert: 'Forkert nummer', opgivet: 'Droppet (3× intet svar)', rettet: 'Har selv rettet fejlene'};
+const LOGL = {intet_svar: 'intet svar', forkert: 'forkert nummer', nej: 'nej tak', ring_senere: 'ring senere', ja: 'ja til rapport', bestilt: 'bestilt'};
+const TRIN_LABEL = {bestilt: 'Bestilt', adgang: 'Adgang givet', leveret: 'Leveret', faktura: 'Faktura sendt', betalt: 'Betalt'};
+const NEJ_GRUNDE = ['Har bureau', 'Bruger ikke Google', 'For dyrt', 'Ikke interesseret'];
+const FILTERS = [['alle', 'Alle'], ['ny', 'Ikke ringet'], ['ring_senere', 'Ring senere'], ['intet_svar', 'Intet svar'], ['ja', 'Ja'], ['nej', 'Nej'], ['andet', 'Andet']];
+const PAGES = [['overblik', 'Overblik', 'home'], ['ring', 'Ring nu', 'phone'], ['ovelse', 'Øvelse', 'play'], ['folg', 'Kalender', 'cal'],
+  ['kunder', 'Kunder', 'users'], ['alle', 'Butikker', 'store'], ['indst', 'Indstillinger', 'sliders']];
+const TITLES = Object.fromEntries(PAGES.map(([k, t]) => [k, t]));
+const RES = {intet_svar: 'Intet svar', forkert: 'Forkert nummer', nej: 'Nej tak', ring_senere: 'Ring senere', ja: 'Ja til rapport', bestilt: 'Bestilt'};
+const ICONS = {
+  home: '<path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/>',
+  phone: '<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/>',
+  play: '<circle cx="12" cy="12" r="9"/><path d="m10 8.5 5.5 3.5-5.5 3.5z"/>',
+  cal: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  users: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14.5a6.5 6.5 0 0 1 3.5 5.5"/>',
+  store: '<path d="M4 9h16l-1.5-5h-13zM5 9v11h14V9M9 20v-6h6v6"/>',
+  sliders: '<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>',
+  menu: '<path d="M4 6h16M4 12h16M4 18h16"/>', close: '<path d="M6 6l12 12M18 6 6 18"/>',
+  left: '<path d="m15 6-6 6 6 6"/>', right: '<path d="m9 6 6 6-6 6"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  moon: '<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>',
+  monitor: '<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>',
+  chat: '<path d="M4 5h16v11H9l-5 4z"/>', check: '<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>',
+  coin: '<circle cx="12" cy="12" r="9"/><path d="M14.5 9.5c-.5-1-1.5-1.5-2.5-1.5-1.5 0-2.5.8-2.5 2s1 1.7 2.5 2 2.5.8 2.5 2-1 2-2.5 2c-1 0-2-.5-2.5-1.5M12 6.5V8M12 16v1.5"/>',
+  search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>'};
+const ic = k => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[k] || ''}</svg>`;
+const THEMES = [['system', 'Følg enheden', 'monitor'], ['light', 'Lyst', 'sun'], ['dark', 'Mørkt', 'moon']];
+
+// ---------- practice: a store that does not exist, and customers who say different things ----------
+const PRAC_STORE = {butik: 'eksempel-butik.dk', telefon: '12 34 56 78', tel: '', email_side: 'info@eksempel-butik.dk', cvr: '', n_vigtige: 3, status: 'ny', log: [],
+  aabning: 'Fx står der ingen returpolitik på siden. Uden den kan Google afvise varerne.',
+  info: {navn: 'Eksempel Butik', varer: 84, by: '8000 Aarhus C', saelger: 'Kaffe, te og kopper', om: 'En øvebutik. Den findes ikke, og der ringes ikke til nogen.'},
+  fund: [{id: 'P01', s: 'fejl', t: 'Intet direkte link til returpolitik', hvad: 'Intet link fundet på forsiden.', ret: 'Link til returpolitikken i bunden af siden.'},
+    {id: 'C04', s: 'fejl', t: 'Der står ingen mailadresse på kontaktsiden', hvad: 'Ingen mailadresse fundet.', ret: 'Skriv mailadressen på kontaktsiden.'},
+    {id: 'D02', s: 'tjek', t: 'Nogle varer står til 0 kr.', hvad: 'To varer har prisen 0 kr.', ret: 'Ret prisen, eller skjul varerne.'}]};
+const PICKUP = ['Nogen tager telefonen: "Eksempel Butik, det er Mette."', '[data-act="go"][data-k="intro"]'];
+// lines[step] = [what the customer says, the button that fits]; end = how the call should end
+const PERSONAS = {
+  ja: {navn: 'Venlig kunde', sub: 'Vil gerne have rapporten', end: 'ja', lines: {start: PICKUP,
+    intro: ['"Ja, det er mig. Hvad drejer det sig om?"', '[data-act="go"][data-k="hook"]'],
+    hook: ['"Okay, det lyder interessant."', '[data-act="go"][data-k="ask"]'],
+    ask: ['"Ja, send den bare."', '[data-act="go"][data-k="askmail"]'],
+    askmail: ['"Det er info@eksempel-butik.dk. Og ja, du må gerne følge op."', '[data-act="fill"]']}},
+  travl: {navn: 'Travl kunde', sub: 'Har ikke tid lige nu', end: 'later', lines: {start: PICKUP,
+    intro: ['"Jeg står med en kunde. Kan du ringe senere?"', '[data-act="go"][data-k="later"]'],
+    later: ['"Ring i morgen formiddag."', '[data-act="later"][data-k="tomorrow"]']}},
+  pris: {navn: 'Skeptisk kunde', sub: 'Spørger om prisen, og om du er fra Google', end: 'ja', lines: {start: PICKUP,
+    intro: ['"Ja, det er mig."', '[data-act="go"][data-k="hook"]'],
+    hook: ['"Hvad koster det?"', '[data-act="go"][data-k="price"]'],
+    price: ['"Hmm. Er I fra Google?"', '[data-act="go"][data-k="google"]'],
+    google: ['"Nå, okay. Så må du gerne sende den."', '[data-act="go"][data-k="ask"]'],
+    ask: ['"Ja, send den."', '[data-act="go"][data-k="askmail"]'],
+    askmail: ['"Send den til info@eksempel-butik.dk."', '[data-act="fill"]']}},
+  bestil: {navn: 'Klar kunde', sub: 'Vil have, at I retter fejlene', end: 'bestilt', lines: {start: PICKUP,
+    intro: ['"Ja, det er mig."', '[data-act="go"][data-k="hook"]'],
+    hook: ['"Det har vi faktisk haft problemer med."', '[data-act="go"][data-k="ask"]'],
+    ask: ['"Kan I ikke bare rette det for os?"', '[data-act="go"][data-k="order"]'],
+    order: ['"Skriv til info@eksempel-butik.dk."', '[data-act="fill"]']}},
+  nej: {navn: 'Afvisende kunde', sub: 'Siger nej tak', end: 'nej', lines: {start: PICKUP,
+    intro: ['"Ja?"', '[data-act="go"][data-k="hook"]'],
+    hook: ['"Nej tak. Det klarer vores bureau."', '[data-act="go"][data-k="bye_no"]'],
+    bye_no: ['Kunden lægger på.', '[data-act="nejg"][data-v="Har bureau"]']}},
+  ingen: {navn: 'Ingen svarer', sub: 'Øv dig i at gå videre', end: 'intet_svar', lines: {
+    start: ['Det ringer og ringer. Ingen tager den.', '[data-act="o"][data-k="intet_svar"]']}}};
+const END_LABEL = {ja: 'ja til rapporten', later: 'ring senere', bestilt: 'en bestilling', nej: 'nej tak', intet_svar: 'intet svar', forkert: 'forkert nummer'};
+const MAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+// ---------- helpers ----------
+const $ = (s, r = document) => r.querySelector(s);
+const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+const nowIso = () => new Date().toISOString();
+const valid = d => d instanceof Date && !isNaN(d);
+const fmtDT = iso => { const d = new Date(iso); return iso && valid(d) ? d.toLocaleString('da-DK', {weekday: 'short', day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit'}) : ''; };
+const fmtLong = iso => { const d = new Date(iso); return iso && valid(d) ? d.toLocaleDateString('da-DK', {weekday: 'long', day: 'numeric', month: 'long'}) : ''; };
+const fmtD = d => d.toLocaleDateString('da-DK', {day: '2-digit', month: '2-digit', year: 'numeric'});
+const kr = n => (Math.round(n * 100) / 100).toLocaleString('da-DK', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' kr.';
+const sameDay = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+const isWeekday = d => d.getDay() >= 1 && d.getDay() <= 5;
+function nextWeekdayAt(from, h) { const d = new Date(from); d.setDate(d.getDate() + 1); while (!isWeekday(d)) d.setDate(d.getDate() + 1); d.setHours(h, 0, 0, 0); return d; }
+function callSlot(t) { const d = new Date(t); if (!isWeekday(d) || d.getHours() >= 16) return nextWeekdayAt(d, 10); if (d.getHours() < 10) d.setHours(10, 0, 0, 0); return d; }
+const firstName = n => (n || '').trim().split(/\s+/)[0] || '';
+const stOf = s => s.status || 'ny';
+const tries = s => (s.log || []).filter(e => e.r === 'intet_svar').length;
+const lastCall = s => { const l = s.log || []; return l.length ? l[l.length - 1].t : null; };
+const trinFor = p => p === 'audit' ? ['bestilt', 'leveret', 'faktura', 'betalt'] : ['bestilt', 'adgang', 'leveret', 'faktura', 'betalt'];
+const lsGet = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) { /* storage blocked: feature just won't persist */ } };
+const loadBank = () => { try { return JSON.parse(lsGet('gmcd-bank') || '{}') || {}; } catch (e) { return {}; } };
+
+// ---------- state ----------
+let db = null, canWrite = null, conn = 'connecting', loaded = false, settings = {};
+// Read-only inbox: replies from customers, read through the viewer's Gmail in Composio. Kept in this page only, never saved.
+let mcp = null, samp = null; // samp: Claude writes the mails (sample capability); null = the standard mail is used
+const drafts = new Map(); // `${kind}:${id}` -> {busy, text, subject, body, err, ctl}
+const inbox = {busy: false, at: null, err: '', byMail: {}};
+const stores = new Map();
+const startTab = lsGet('gmcd-tab');
+const ui = {tab: TITLES[startTab] && startTab !== 'ovelse' ? startTab : 'overblik', current: null, forced: null, step: 'start', hist: [], form: {}, formRev: 0, err: '', skipped: new Set(), done: null, anim: '', openMail: null,
+  open: null, q: '', filter: 'alle', saving: false, undo: null, openD: new Set(), helpHidden: lsGet('gmcd-help') === '1',
+  prac: null, stash: null, menu: false, rail: lsGet('gmcd-rail') === '1', theme: lsGet('gmcd-theme') || 'system'};
+
+function cfg() {
+  const s = settings || {}, moms = !!s.momsreg;
+  return {navn: s.navn || '[dit navn]', firma: s.firma || '[firmanavn]', cvr: s.cvr || '', adresse: s.adresse || '', voksen: s.voksen || '',
+    kmail: MAIL_RE.test((s.kontaktmail || '').trim()) ? s.kontaktmail.trim() : '', tlf: s.tlf || '', web: (s.hjemmeside || '').replace(/^https?:\/\//, '').replace(/\/$/, ''), gmail: s.google_mail || '[Google-mail]', moms, ok: !!(s.navn && s.firma),
+    tale: n => moms ? `${n} kroner plus moms` : `${n} kroner`,
+    pr: n => moms ? `${n} kr. + moms.` : `${n} kr.`};
+}
+
+// ---------- numbers ----------
+function metrics() {
+  const today = new Date();
+  const m = {forsoeg: 0, idag: 0, samtaler: 0, ja: 0, ordrer: 0, betalt: 0, betaltKr: 0};
+  for (const s of stores.values()) {
+    let talked = false;
+    for (const e of s.log || []) {
+      if (!DIAL.has(e.r)) continue;
+      m.forsoeg++;
+      if (sameDay(new Date(e.t), today)) m.idag++;
+      if (TALK.has(e.r)) talked = true;
+    }
+    if (talked) m.samtaler++;
+    if (s.kontakt) m.ja++;
+    if (s.ordre) { m.ordrer++; if (s.ordre.trin === 'betalt') { m.betalt++; m.betaltKr += s.ordre.pris || 0; } }
+  }
+  return m;
+}
+
+// ---------- call queue ----------
+function queue() {
+  const now = new Date(), arr = [];
+  for (const [id, s] of stores) {
+    if (ui.skipped.has(id)) continue;
+    const x = stOf(s), due = !s.ring_igen || new Date(s.ring_igen) <= now;
+    if (x === 'ring_senere' && due) arr.push([0, +new Date(s.ring_igen || 0), id]);
+    else if (x === 'ny') arr.push([1, -(s.prio || 0), id]);
+    else if (x === 'intet_svar' && due) arr.push([2, tries(s) * 1000 - (s.prio || 0), id]);
+  }
+  arr.sort((a, b) => a[0] - b[0] || a[1] - b[1] || (a[2] < b[2] ? -1 : a[2] > b[2] ? 1 : 0));
+  return arr.map(a => a[2]);
+}
+function currentId() {
+  if (ui.forced && stores.has(ui.forced)) return ui.forced;
+  if (ui.current && stores.has(ui.current) && CALLABLE.has(stOf(stores.get(ui.current))) && !ui.skipped.has(ui.current)) return ui.current;
+  ui.current = queue()[0] || null;
+  return ui.current;
+}
+function nextCb() {
+  let best = null;
+  for (const s of stores.values()) {
+    if (!['ring_senere', 'intet_svar'].includes(stOf(s)) || !s.ring_igen) continue;
+    if (!best || new Date(s.ring_igen) < new Date(best.t)) best = {butik: s.butik, t: s.ring_igen};
+  }
+  return best;
+}
+
+// ---------- texts: mails, invoice ----------
+// the address only goes in mails once there is a CVR: before that it is the adult's own address
+const sig = c => ['Venlig hilsen', c.navn, [c.firma, c.cvr ? `CVR ${c.cvr}` : ''].filter(Boolean).join(' · '), c.cvr ? c.adresse : '', c.kmail, c.tlf ? `Tlf. ${c.tlf}` : '', c.web].filter(Boolean).join('\n');
+const STOP = 'Vil I ikke have flere mails fra os, så svar "stop", så sletter vi jeres oplysninger.';
+function split(s) {
+  const f = s.fund || [];
+  const top = f.filter(x => x.s === 'fejl' || CONCRETE.has(x.id)).slice(0, 6);
+  return {top, rest: f.filter(x => !top.includes(x))};
+}
+function buildMail(s, kind) {
+  const c = cfg(), k = s.kontakt || {}, fn = firstName(k.navn), hej = fn ? `Hej ${fn},` : 'Hej,';
+  const {top, rest} = split(s);
+  const access = `Klik på tandhjulet (Indstillinger) → "Personer og adgang" → "Tilføj person". Skriv ${c.gmail}, og vælg standardadgang.`;
+  if (kind === 'opfoelg') return {subject: `Opfølgning: Google Shopping-tjek af ${s.butik}`, body: [hej,
+    `Jeg følger lige op på rapporten om ${s.butik}, som jeg sendte ${fmtLong(s.mail_sendt) || 'for nylig'}.`,
+    `Har I haft tid til at kigge på den? Vi retter stadig det hele for jer for ${c.pr(PRIS.rettelse)} I betaler først, når det er rettet.`,
+    'Svar bare på denne mail, hvis I vil have hjælp eller har spørgsmål.', sig(c), STOP].join('\n\n')};
+  if (kind === 'ordre' && s.ordre && s.ordre.produkt === 'audit') return {subject: `Bestilling: Vejledning til Google Shopping for ${s.butik}`, body: [hej,
+    `Tak for jeres bestilling af en trin-for-trin-vejledning til ${s.butik} for ${c.pr(PRIS.audit)}`,
+    'I får vejledningen på mail inden for 2 hverdage. Fakturaen kommer sammen med vejledningen.',
+    `Vil I have, at vi også kigger på fejlene inde i jeres Merchant Center, kan I give os adgang (det er frivilligt): ${access}`, sig(c)].join('\n\n')};
+  if (kind === 'ordre') return {subject: `Bestilling: Vi retter Google Shopping-fejlene på ${s.butik}`, body: [hej,
+    `Tak for jeres bestilling. Vi retter fejlene på ${s.butik} for ${c.pr(PRIS.rettelse)} I betaler først, når det er rettet.`,
+    'Sådan giver I os adgang (uden adgangskoder):',
+    `1. Google Merchant Center: ${access}\n2. Shopify: Gå til Indstillinger → "Brugere" → "Tilføj bruger". Skriv ${c.gmail}, og giv adgang til "Produkter" og "Onlinebutik".`,
+    'Svar på denne mail, når det er gjort. Så retter vi fejlene inden for 2 hverdage og sender jer en oversigt over alt, vi har ændret. Derefter hjælper vi jer med at bede Google om en ny gennemgang, og så sender vi fakturaen.',
+    top.length ? 'Det her kigger vi på:\n' + top.map((x, i) => `${i + 1}. ${x.t}`).join('\n') : '', sig(c)].filter(Boolean).join('\n\n')};
+  const today = k.t && sameDay(new Date(k.t), new Date()) ? ' i dag' : '';
+  return {subject: `Jeres gratis Google Shopping-tjek af ${s.butik}`, body: [hej,
+    `Tak for snakken${today}. Som aftalt får I her resultatet af vores gratis tjek af ${s.butik}.`,
+    'Vi har gennemgået jeres offentlige sider for ting, der kan give problemer i Google Merchant Center. Det her fandt vi:',
+    top.map((x, i) => `${i + 1}. ${x.t}\n   Det fandt vi: ${x.hvad}\n   Sådan retter I det: ${x.ret}`).join('\n\n'),
+    rest.length ? 'Andre ting, I med fordel kan kigge på:\n' + rest.map(x => `- ${x.t}`).join('\n') : '',
+    `Vil I have hjælp?\n- Vi retter det hele for jer for ${c.pr(PRIS.rettelse)} I betaler først, når det er rettet. I giver os kun adgang via Googles og Shopifys egne invitationer, aldrig med adgangskoder.\n- Vil I hellere selv rette det, kan I få en præcis trin-for-trin-vejledning for ${c.pr(PRIS.audit)}`,
+    `Svar bare på denne mail${c.tlf ? `, eller ring på ${c.tlf}` : ''}.`,
+    'Tjekket bygger kun på jeres offentlige sider. Google kan have andre grunde til en afvisning, som kun kan ses inde i jeres Merchant Center.',
+    sig(c), STOP].filter(Boolean).join('\n\n')};
+}
+// ---------- Claude writes the mail: a personal version of the standard mail, with the same facts and prices (the page checks them) ----------
+const mailCore = (m, c) => m.body.replace(sig(c), '').replace(STOP, '').trim();
+const mustKeep = (m, c, s) => [...new Set([...(m.body.match(/\d[\d.]* kr\./g) || []), s.butik, ...(MAIL_RE.test(c.gmail) && m.body.includes(c.gmail) ? [c.gmail] : [])])];
+function mailFor(id, s, kind) {
+  const m = buildMail(s, kind), d = drafts.get(`${kind}:${id}`);
+  if (!d || d.busy || !d.body) return m;
+  return {subject: d.subject || m.subject, body: [d.body, sig(cfg()), m.body.includes(STOP) ? STOP : ''].filter(Boolean).join('\n\n'), claude: true};
+}
+function draftPrompt(s, kind) {
+  const c = cfg(), m = buildMail(s, kind), k = s.kontakt || {}, fn = firstName(k.navn);
+  const what = kind === 'opfoelg' ? 'en venlig opfølgning på rapporten, de fik for nogle dage siden' : kind === 'ordre' ? 'en bekræftelse af deres bestilling' : 'resultatet af vores gratis tjek af deres webshop';
+  return `Du skriver en mail på dansk fra den lille danske virksomhed ${c.firma} til webshoppen ${s.butik}. Mailen er ${what}. Butikken har selv sagt ja i telefonen til at få den.
+
+Herunder står standardmailen. Den har alle fakta. Skriv den om, så den lyder personlig og naturlig, som fra en ung og høflig person, der lige har haft en god snak med dem.
+
+Regler:
+- Brug kun fakta fra standardmailen og noterne. Find ikke på nye fejl, tal, løfter eller garantier.
+- Behold alle fejl, der er fundet, og hvordan de rettes. Sproget må gerne blive kortere og klarere.
+- Behold disse ord og tal præcis, som de står: ${mustKeep(m, c, s).join(' · ')}
+- Står der trin om at give adgang, så behold dem ordret.
+- Skriv "I" og "jer" til butikken. Start med "${fn ? `Hej ${fn},` : 'Hej,'}"
+- Ingen markdown, ingen fed skrift, ingen emojis.
+- Skriv ikke hilsen eller navn til sidst. Det sætter vi selv på.
+- Skriv intet om ${c.firma}s eget CVR-nummer. Fund om butikkens CVR-nummer skal blive stående.
+
+Kontaktperson: ${k.navn || 'ukendt'}
+Noter fra samtalen: ${(s.note || '').slice(0, 600) || 'ingen'}
+
+Standardmail:
+Emne: ${m.subject}
+
+${mailCore(m, c)}
+
+Svar i præcis dette format og intet andet:
+Emne: <emnelinjen>
+
+<mailens tekst>`;
+}
+function parseDraft(text) {
+  const t = String(text || '').replace(/\r/g, '').trim(), mm = t.match(/^Emne:\s*(.+)\n+([\s\S]*)$/);
+  const body = (mm ? mm[2] : t).split(/\n\s*(?:Med venlig hilsen|Venlig hilsen|Mvh\.?|Bedste hilsner|De bedste hilsner|Kærlig hilsen)\b/i)[0].trim();
+  return {subject: mm ? mm[1].trim() : '', body};
+}
+function paintDraft(key) {
+  const el = document.querySelector(`[data-draft="${CSS.escape(key)}"]`), d = drafts.get(key);
+  if (el && d) el.textContent = d.text;
+}
+async function writeDraft(id, kind, sNow, fresh) {
+  const key = `${kind}:${id}`, s = sNow || stores.get(id);
+  if (!samp || !s || !s.kontakt || isSent(s, kind) || (drafts.get(key) || {}).busy) return;
+  const ctl = new AbortController(), d = {busy: true, text: '', subject: '', body: '', err: '', ctl};
+  drafts.set(key, d);
+  render();
+  try {
+    const r = await samp(draftPrompt(s, kind), {signal: ctl.signal, cache: fresh ? false : true, onText: ({text}) => { d.text = text; paintDraft(key); }});
+    const got = parseDraft(r.text), miss = mustKeep(buildMail(s, kind), cfg(), s).filter(x => !got.body.includes(x));
+    if (!got.body || miss.length) d.err = `Claude glemte ${miss.length ? `noget vigtigt (${miss.join(' og ')})` : 'selve teksten'}. Standardmailen bruges, eller tryk "Lad Claude skrive mailen" igen.`;
+    else { d.subject = got.subject; d.body = got.body; }
+  } catch (e) {
+    const code = e && e.code;
+    if (['not_granted', 'sampling_disabled', 'not_declared', 'capability_disabled', 'capability_removed'].includes(code)) { samp = null; drafts.delete(key); }
+    else d.err = code === 'cancelled' ? '' : code === 'rate_limited' ? 'Claude har travlt lige nu. Standardmailen virker, eller prøv igen om lidt.' : 'Claude kunne ikke skrive mailen. Standardmailen virker stadig.';
+  } finally { d.busy = false; d.ctl = null; d.text = ''; render(); }
+}
+function draftBox(id, kind) {
+  if (!samp) return '';
+  const key = `${kind}:${id}`, d = drafts.get(key), a = `data-id="${esc(id)}" data-k="${kind}"`;
+  if (d && d.busy) return `<div class="draft"><p class="watch" style="margin:0">Claude skriver mailen …</p><pre class="draft-text" data-draft="${esc(key)}">${esc(d.text)}</pre><button class="btn" data-act="draftstop" ${a}>Stop</button></div>`;
+  if (d && d.body) return `<div class="draft"><p class="small" style="margin:0"><b>Claude har skrevet mailen</b> ud fra samtalen. Priser og fund er tjekket. Læs den i Gmail, før du sender.</p>
+    <pre class="draft-text">${esc((d.subject ? `Emne: ${d.subject}\n\n` : '') + d.body)}</pre>
+    <div class="row"><button class="btn" data-act="draft" data-fresh="1" ${a}>Skriv igen</button><button class="btn" data-act="draftoff" ${a}>Brug standardmailen</button></div></div>`;
+  return `<div class="draft">${d && d.err ? `<p class="small" style="margin:0 0 8px;color:var(--bad)">${esc(d.err)}</p>` : ''}<button class="btn primary wide" data-act="draft" data-fresh="${d ? '1' : ''}" ${a}>✨ Lad Claude skrive mailen</button></div>`;
+}
+const draftKey = () => [...drafts].map(([k, d]) => [k, d.busy, d.err, d.subject, d.body]);
+function invoiceText(s) {
+  const c = cfg(), o = s.ordre || {}, k = s.kontakt || {}, bank = loadBank();
+  const dato = o.faktura_dato ? new Date(o.faktura_dato) : new Date();
+  const frist = new Date(dato); frist.setDate(frist.getDate() + 8);
+  const p = o.pris || 0;
+  const L = [`FAKTURA nr. ${o.fakturanr}`, '', `Fakturadato: ${fmtD(dato)}`, `Betales senest: ${fmtD(frist)}`, '',
+    'Fra:', c.cvr ? c.firma : `${c.firma} v/ ${c.voksen || c.navn}`, c.adresse || '[adresse]', c.cvr ? `CVR ${c.cvr}` : null, '',
+    'Til:', s.butik + (s.cvr ? ` · CVR ${s.cvr}` : ''), k.navn ? `Att.: ${k.navn}` : null, '',
+    `Ydelse: ${PRODUKT[o.produkt] || 'Ydelse'} for ${s.butik}`];
+  if (c.moms) L.push(`Beløb ekskl. moms: ${kr(p)}`, `Moms 25 %: ${kr(p * 0.25)}`, `I alt: ${kr(p * 1.25)}`);
+  else L.push(`I alt: ${kr(p)}`, 'Der er ikke moms på beløbet, fordi virksomheden ikke er momsregistreret.');
+  L.push('', 'Betaling via bankoverførsel:', bank.reg && bank.konto ? `Reg.nr. ${bank.reg} · Kontonr. ${bank.konto}` : 'Reg.nr. [udfyld] · Kontonr. [udfyld]',
+    `Skriv "Faktura ${o.fakturanr}" som tekst på overførslen.`, '', 'Tak for samarbejdet!', c.firma);
+  return L.filter(x => x !== null).join('\n');
+}
+function nextInvoiceNo() {
+  const y = new Date().getFullYear();
+  let max = 0;
+  for (const s of stores.values()) {
+    const m = s.ordre && typeof s.ordre.fakturanr === 'string' && s.ordre.fakturanr.match(/^(\d{4})-(\d+)$/);
+    if (m && +m[1] === y) max = Math.max(max, +m[2]);
+  }
+  return `${y}-${String(max + 1).padStart(3, '0')}`;
+}
+const firmMail = () => { const a = (settings.google_mail || '').trim(); return MAIL_RE.test(a) ? a : ''; };
+// authuser opens the compose window in the company's Google account, never in whatever account the browser has first
+// every mail to and from one customer, in the company's Gmail
+const gmailSearch = mail => `https://mail.google.com/mail/${firmMail() ? `?authuser=${encodeURIComponent(firmMail())}` : ''}#search/${encodeURIComponent(`from:${mail} OR to:${mail}`)}`;
+const svarBtn = mail => mail ? `<a class="btn" target="_blank" rel="noopener" href="${esc(gmailSearch(mail))}">Se svar i Gmail</a>` : '';
+// ---------- inbox (read-only): customer replies from the company's Gmail, through Composio ----------
+function firstJson(t) { // Composio answers with JSON, sometimes followed by plain text
+  const i = t.indexOf('{');
+  if (i < 0) return null;
+  let d = 0, q = false, e = false;
+  for (let j = i; j < t.length; j++) {
+    const c = t[j];
+    if (q) { if (e) e = false; else if (c === '\\') e = true; else if (c === '"') q = false; continue; }
+    if (c === '"') q = true; else if (c === '{') d++; else if (c === '}' && --d === 0) { try { return JSON.parse(t.slice(i, j + 1)); } catch (x) { return null; } }
+  }
+  return null;
+}
+function readComposio(res) {
+  let p = res && res.payload !== undefined ? res.payload : res;
+  if (typeof p === 'string') p = firstJson(p) || {};
+  const out = {ok: null, error: '', messages: null};
+  const walk = (o, depth) => {
+    if (!o || typeof o !== 'object' || depth > 8) return;
+    if (Array.isArray(o)) { o.forEach(x => walk(x, depth + 1)); return; }
+    if (o.successful === false) out.ok = false; else if (o.successful === true && out.ok === null) out.ok = true;
+    if (typeof o.error === 'string' && o.error.trim() && !out.error) out.error = o.error.trim();
+    if (Array.isArray(o.messages) && !out.messages) out.messages = o.messages;
+    for (const k of Object.keys(o)) if (k !== 'messages') walk(o[k], depth + 1);
+  };
+  walk(p, 0);
+  if (out.error) out.ok = false;
+  return out;
+}
+const msgTime = m => { const v = m.messageTimestamp || m.internalDate; if (!v) return null; const d = /^\d{10,}$/.test(String(v)) ? new Date(+v) : new Date(v); return valid(d) ? d : null; };
+async function gmailFetch(query, max, thought) {
+  const res = await mcp.callTool('Composio', 'COMPOSIO_MULTI_EXECUTE_TOOL', {tools: [{tool_slug: 'GMAIL_FETCH_EMAILS', arguments: {query, max_results: max, verbose: false, include_payload: false}}],
+    sync_response_to_workbench: false, thought, current_step: 'READING_MAIL'}, {cache: false});
+  const r = readComposio(res);
+  if (r.ok === false) throw {code: 'tool_error', message: r.error};
+  return r.messages || [];
+}
+function mailErr(e) {
+  const c = e && e.code, msg = String((e && e.message) || '');
+  return c === 'server_not_connected' || c === 'selection_required' ? 'Composio er ikke forbundet. Tilføj Composio under claude.ai → Indstillinger → Connectors.'
+    : c === 'needs_reauth' ? 'Log ind i Composio igen under claude.ai → Indstillinger → Connectors.'
+    : c === 'not_in_manifest' || c === 'not_granted' ? 'Dashboardet fik ikke lov til at læse mails. Tryk igen, og vælg Tillad.'
+    : /connect|connection|auth/i.test(msg) ? 'Firmaets Gmail er ikke forbundet til Composio endnu. Skriv "forbind Gmail" til Claude.'
+    : 'Kunne ikke læse Gmail lige nu. Prøv igen om lidt.';
+}
+async function checkInbox() {
+  if (!mcp || inbox.busy) return;
+  const mails = [...new Set([...stores.values()].filter(s => s.kontakt && MAIL_RE.test(s.kontakt.mail || '')).map(s => s.kontakt.mail.trim().toLowerCase()))];
+  if (!mails.length) { inbox.err = 'Ingen kunder har fået en mail endnu.'; inbox.at = null; return render(); }
+  inbox.busy = true; inbox.err = ''; render();
+  try {
+    const query = `{${mails.slice(0, 40).map(m => 'from:' + m).join(' ')}} newer_than:60d`;
+    const by = {};
+    for (const m of await gmailFetch(query, 50, 'Read customer replies for the call dashboard')) {
+      const from = String(m.sender || m.from || '').toLowerCase(), t = msgTime(m), who = mails.find(x => from.includes(x));
+      if (!who) continue;
+      const cur = by[who];
+      if (!cur || (t && (!cur.t || t > cur.t))) by[who] = {t, subject: String(m.subject || '(intet emne)'), n: (cur ? cur.n : 0) + 1};
+      else cur.n++;
+    }
+    inbox.byMail = by; inbox.at = new Date();
+  } catch (e) { inbox.err = mailErr(e); } finally { inbox.busy = false; render(); }
+}
+// ---------- requests from the website: the sign-up form sends "Gratis tjek: <shop>" to info@, which lands in the company's Gmail (read-only) ----------
+const henv = {busy: false, at: null, err: '', list: [], retried: false};
+let henvDone = {};
+function parseHenv(m) {
+  const pv = String((m.preview && m.preview.body) || m.messageText || ''), sub = String(m.subject || (m.preview && m.preview.subject) || '');
+  const get = re => { const x = pv.match(re); return x ? x[1].trim() : ''; };
+  // the website form sends from formular@webshopdoktoren.dk with the customer's mail in the text; older requests came straight from the customer
+  const from = String(m.sender || m.from || ''), fromMail = ((from.match(/<([^>]+)>/) || [])[1] || from).trim().toLowerCase(), viaForm = fromMail.endsWith('@webshopdoktoren.dk');
+  const mail = (get(/Mail:\s*([^\s@]+@[^\s@]+\.[^\s@]+)/i) || (viaForm ? '' : fromMail)).toLowerCase();
+  const shop = (get(/Webshop:\s*(\S+)/i) || (sub.match(/Gratis tjek:\s*(\S+)/i) || [])[1] || '').replace(/^https?:\/\//i, '').replace(/\/+$/, '').toLowerCase();
+  let navn = get(/Navn:\s*(.*?)\s*Telefon:/i);
+  if (!navn || navn === '-') { const dn = from.replace(/<[^>]*>/, '').replace(/"/g, '').trim(); navn = dn && !dn.includes('@') && !viaForm ? dn : ''; }
+  const tlf = get(/Telefon:\s*(\+?\d[\d \-]{5,}\d)/i);
+  return {id: String(m.messageId || m.threadId || ''), t: msgTime(m), shop, navn, tlf, mail};
+}
+async function checkHenv() {
+  if (!mcp || henv.busy) return;
+  henv.busy = true; render();
+  try {
+    const msgs = await gmailFetch('subject:"Gratis tjek" -in:sent newer_than:120d', 30, 'Read sign-ups from the website for the call dashboard');
+    const own = firmMail().toLowerCase();
+    henv.list = msgs.map(parseHenv).filter(x => /^[\w-]+$/.test(x.id) && MAIL_RE.test(x.mail) && x.mail !== own && x.shop).sort((a, b) => (b.t || 0) - (a.t || 0));
+    henv.at = new Date(); henv.err = ''; henv.retried = false;
+  } catch (e) {
+    // the first call can fail while the viewer is still answering the permission dialog: try once more by itself before showing an error
+    if (!henv.retried) { henv.retried = true; henv.err = ''; setTimeout(checkHenv, 15000); } else henv.err = mailErr(e);
+  } finally { henv.busy = false; render(); }
+}
+const bare = d => String(d || '').replace(/^www\./, '');
+const henvStore = h => { for (const [id, st] of stores) if (bare(id) === bare(h.shop) || bare(st.butik) === bare(h.shop)) return [id, st]; return null; };
+const henvIsDone = h => { const x = henvStore(h); return !!((henvDone[h.id] && henvDone[h.id].klaret) || (x && (x[1].mail_sendt || x[1].ordre))); };
+// the confirmation the customer gets right away: opened ready-made in the company's Gmail, the caller presses Send
+function confirmMail(h) {
+  const fn = firstName(h.navn), due = henvDue(h);
+  return {subject: `Vi har fået jeres henvendelse: ${h.shop}`, body: [fn ? `Hej ${fn},` : 'Hej,',
+    `Tak for jeres henvendelse om et gratis tjek af ${h.shop}.`,
+    `Vi går i gang og sender rapporten til denne mail senest ${due ? `${dayName(due, true).toLowerCase()} den ${due.getDate()}/${due.getMonth() + 1}` : 'om 2 hverdage'}.`,
+    'Har I spørgsmål imens, så svar bare på denne mail.', sig(cfg())].join('\n\n')};
+}
+const henvDue = h => h.t ? nextWeekday(nextWeekday(h.t)) : null;
+const henvOpen = () => henv.list.filter(h => !henvIsDone(h));
+const henvKey = () => JSON.stringify([!!mcp, henv.busy, henv.at && henv.at.getTime(), henv.err, henv.list.map(h => h.id), henvDone, settings]);
+async function markConfirmed(id) {
+  const h = henv.list.find(x => x.id === id);
+  if (!db || !h) return;
+  try { await db.doc('henv/' + id).set({...(henvDone[id] || {}), bekraeftet: nowIso(), shop: h.shop}); } catch (e) { /* the mail itself still opened */ }
+}
+async function setHenvDone(id, on) {
+  if (!db) return;
+  const h = henv.list.find(x => x.id === id);
+  try {
+    const rest = {...(henvDone[id] || {})}; delete rest.klaret;
+    if (on) await db.doc('henv/' + id).set({...rest, klaret: nowIso(), shop: h ? h.shop : ''});
+    else if (rest.bekraeftet) await db.doc('henv/' + id).set(rest); else await db.doc('henv/' + id).delete();
+    toast(on ? `${h ? h.shop : 'Henvendelsen'} er markeret som klaret` : 'Markeret som ny igen');
+  } catch (e) { toast(errMsg(e)); }
+}
+function henvHtml() {
+  if (!mcp) return '';
+  const open = henvOpen().length, now = dayStart(new Date());
+  const items = henv.list.slice(0, 12).map(h => {
+    const done = henvIsDone(h), st = henvStore(h), due = henvDue(h), late = !done && due && due < now, conf = henvDone[h.id] && henvDone[h.id].bekraeftet, cm = confirmMail(h);
+    const ask = `Lav en gratis rapport til en henvendelse fra hjemmesiden: webshop ${h.shop}, ${h.navn || 'intet navn'}, ${h.mail}${h.tlf ? `, tlf. ${h.tlf}` : ''}. Læg butikken i dashboardet, så jeg kan sende rapporten.`;
+    return `<li class="hv${done ? ' done' : ''}"><div class="hv-main"><div><b>${esc(h.shop)}</b> <span class="pill ${done ? '' : late ? 'w' : 'a'}">${done ? 'Klaret' : late ? 'Over fristen' : 'Ny'}</span></div>
+      <small>${esc([h.navn, h.mail, h.tlf].filter(Boolean).join(' · '))}</small>
+      <small>Kom ${esc(fmtDT(h.t ? h.t.toISOString() : ''))}${!done && due ? ` · svar senest ${esc(dayName(due).toLowerCase())} ${due.getDate()}/${due.getMonth() + 1}` : ''}${st ? ' · står i listen' : ''}</small>
+      ${conf ? `<small class="okmsg">Bekræftelse åbnet ${esc(fmtDT(conf))}</small>` : ''}</div>
+      <div class="row">${!done ? `<a class="btn${conf ? '' : ' primary'}" target="_blank" rel="noopener" data-act="hvconfirm" data-id="${esc(h.id)}" href="${esc(gmailUrl(h.mail, cm.subject, cm.body))}">${conf ? 'Send bekræftelse igen' : 'Send bekræftelse'}</a>` : ''}${h.tlf ? `<a class="btn" href="tel:${esc(h.tlf.replace(/[^\d+]/g, ''))}">${ic('phone')}Ring</a>` : ''}${svarBtn(h.mail)}
+        ${st ? `<button class="btn" data-act="openstore" data-id="${esc(st[0])}">Åbn butikken</button>` : `<button class="btn" data-act="copy" data-text="${esc(ask)}">Kopiér til Claude</button>`}
+        <button class="btn" data-act="hvdone" data-id="${esc(h.id)}" data-k="${done ? '0' : '1'}">${done ? 'Gør ny igen' : 'Klaret'}</button></div></li>`;
+  }).join('');
+  return `<section class="card" aria-label="Henvendelser fra hjemmesiden"><div class="kh"><div><h2>Henvendelser fra hjemmesiden</h2>
+      <p class="muted small">${henv.err ? esc(henv.err) : henv.busy && !henv.at ? 'Henter fra firmaets Gmail …' : henv.list.length ? `${open ? `${open} venter på svar` : 'Alle er besvaret'} · tjekket ${esc(henv.at ? hhmm(henv.at.toISOString()) : '')}` : 'Ingen endnu. Når nogen skriver deres webshop på webshopdoktoren.dk, kommer de her.'}</p></div>
+      <button class="btn" data-act="henv"${henv.busy ? ' disabled' : ''}>${henv.busy ? 'Henter …' : 'Opdater'}</button></div>
+    ${items ? `<ul class="hvlist">${items}</ul><p class="foot" style="text-align:left">1. Tryk "Send bekræftelse", og tryk Send i Gmail. 2. Tryk "Kopiér til Claude", og sæt teksten ind i chatten med Claude. Så tjekker Claude butikken og lægger den i listen. 3. Send rapporten som altid inden for 2 hverdage.</p>` : ''}</section>`;
+}
+// ---------- sent-watch: after "Åbn mailen i Gmail" the dashboard looks in Gmail's Sent folder and ticks the mail off by itself (read-only, it never sends) ----------
+const sentWatch = new Map(); // `${kind}:${id}` -> {id, kind, mail, subject, since}
+let sentTimer = 0, sentBusy = false, sentErr = '';
+const SENT_WATCH_MS = 30 * 60e3;
+const isSent = (s, kind) => !!(kind === 'opfoelg' ? s.opfoelg_sendt : kind === 'ordre' ? s.ordre && s.ordre.mail_sendt : s.mail_sendt);
+function watchSent(id, kind) {
+  const s = stores.get(id), mail = String((s && s.kontakt && s.kontakt.mail) || '').trim().toLowerCase();
+  if (!mcp || !MAIL_RE.test(mail) || isSent(s, kind)) return;
+  sentWatch.set(`${kind}:${id}`, {id, kind, mail, subject: mailFor(id, s, kind).subject, since: Date.now()});
+  sentErr = '';
+  if (!sentTimer) sentTimer = setInterval(pollSent, 20000);
+  render();
+}
+async function pollSent() {
+  if (!mcp || sentBusy) return;
+  for (const [key, w] of sentWatch) { const s = stores.get(w.id); if (!s || isSent(s, w.kind) || Date.now() - w.since > SENT_WATCH_MS) sentWatch.delete(key); }
+  if (!sentWatch.size) { clearInterval(sentTimer); sentTimer = 0; return render(); }
+  sentBusy = true;
+  try {
+    const mails = [...new Set([...sentWatch.values()].map(w => w.mail))], norm = x => String(x || '').trim().toLowerCase();
+    const msgs = await gmailFetch(`in:sent {${mails.map(m => 'to:' + m).join(' ')}} newer_than:1d`, 20, 'Notice mails sent from the call dashboard');
+    sentErr = '';
+    for (const m of msgs) {
+      const to = norm(m.to), t = msgTime(m);
+      const cands = [...sentWatch.values()].filter(w => to.includes(w.mail) && (!t || t.getTime() >= w.since - 120e3));
+      if (!cands.length) continue;
+      const w = cands.find(c => norm(c.subject) === norm(m.subject)) || cands.sort((a, b) => b.since - a.since)[0];
+      sentWatch.delete(`${w.kind}:${w.id}`);
+      const s = stores.get(w.id);
+      if (s && !isSent(s, w.kind)) await markSent(w.id, w.kind, t ? t.toISOString() : nowIso(), `${s.butik}: mailen er sendt ✓ Dashboardet så den i Gmail.`);
+    }
+  } catch (e) { sentErr = mailErr(e); } finally { sentBusy = false; render(); }
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && sentWatch.size) pollSent(); });
+const inboxKey = () => JSON.stringify([!!mcp, inbox.busy, inbox.at && inbox.at.getTime(), inbox.err, inbox.byMail, [...sentWatch.keys()], sentErr, !!samp, draftKey()]);
+function inboxBar() {
+  if (!mcp) return '';
+  const n = Object.keys(inbox.byMail).length;
+  return `<div class="row" style="margin:0 2px 8px"><button class="btn" data-act="inbox"${inbox.busy ? ' disabled' : ''}>${inbox.busy ? 'Henter svar …' : 'Tjek for svar'}</button>
+    <span class="muted small">${inbox.err ? esc(inbox.err) : inbox.at ? `${n ? `${n} ${n === 1 ? 'kunde har' : 'kunder har'} svaret` : 'Ingen svar endnu'} · tjekket ${esc(hhmm(inbox.at.toISOString()))}` : 'Henter kundernes svar fra firmaets Gmail'}</span></div>`;
+}
+function replyNote(mail) {
+  const r = mail && inbox.byMail[String(mail).trim().toLowerCase()];
+  return r ? `<p class="replyin"><b>Har svaret</b>${r.t ? ` ${esc(fmtDT(r.t.toISOString()))}` : ''}: “${esc(r.subject)}”${r.n > 1 ? ` (+${r.n - 1} mere)` : ''}</p>` : '';
+}
+const gmailUrl = (to, su, body) => `https://mail.google.com/mail/?${firmMail() ? `authuser=${encodeURIComponent(firmMail())}&` : ''}view=cm&fs=1&to=${encodeURIComponent(to || '')}&su=${encodeURIComponent(su)}&body=${encodeURIComponent(body)}`;
+
+// ---------- rendering ----------
+function patch(el, key, build) {
+  if (!el || el._key === key) return;
+  const a = document.activeElement;
+  if (a && el.contains(a) && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) && !a.readOnly) return; // don't wipe what is being typed
+  el._key = key;
+  el.innerHTML = build();
+}
+const det = (id, summary, body) => `<details data-d="${esc(id)}"${ui.openD.has(id) ? ' open' : ''}><summary>${summary}</summary>${body}</details>`;
+
+function render() {
+  const p = TITLES[ui.tab] ? ui.tab : 'overblik';
+  $('#title').textContent = TITLES[p];
+  $('#subtitle').textContent = subtitle(p);
+  renderNav(); renderBanners();
+  $('#alle-head').hidden = p !== 'alle';
+  $('#wrap').classList.toggle('narrow', ['ring', 'ovelse', 'indst'].includes(p));
+  const v = $('#view');
+  if (p === 'ovelse') return viewOvelse(v); // practice needs no database
+  if (conn === 'missing') return patch(v, 'missing', () => '<div class="card"><h2>Kan ikke forbinde</h2><p>Dashboardet virker kun, når det er åbnet på claude.ai, og du er logget ind.</p></div>');
+  if (!loaded) return patch(v, 'loading', () => '<div class="card muted">Henter butikker …</div>');
+  ({overblik: viewOverblik, ring: viewRing, folg: viewFolg, kunder: viewKunder, alle: viewAlle, indst: viewIndst}[p])(v);
+}
+
+const dayStart = d => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
+const nextWeekday = d => { const x = dayStart(d); do x.setDate(x.getDate() + 1); while (!isWeekday(x)); return x; };
+function firstCall() {
+  let f = null;
+  for (const s of stores.values()) for (const e of s.log || []) { const d = new Date(e.t); if (DIAL.has(e.r) && valid(d) && (!f || d < f)) f = d; }
+  return f;
+}
+function testPlan() { // 5 calling days from the first real call (or from the next possible calling day), a follow-up day, then the decision
+  const f = firstCall(), now = new Date();
+  let first = f ? dayStart(f) : (isWeekday(now) && now.getHours() < 16 ? dayStart(now) : nextWeekday(now));
+  if (!isWeekday(first)) first = nextWeekday(first);
+  let end = first;
+  for (let i = 1; i < CALL_DAYS; i++) end = nextWeekday(end);
+  const fu = nextWeekday(end);
+  return {started: !!f, from: f ? dayStart(f) : first, first, end, fu, dec: nextWeekday(fu)};
+}
+const dmy = d => `${d.getDate()}/${d.getMonth() + 1}`;
+function daysLeft() { return Math.round((testPlan().dec - dayStart(new Date())) / 864e5); }
+let tjek = null; // meta/tjek: when Claude last re-checked the stores
+const tjekDate = () => { const d = tjek && new Date(tjek.tjekket); return d && valid(d) ? d : null; };
+function whenLeft() { const d = daysLeft(); return d > 1 ? `om ${d} dage` : d === 1 ? 'i morgen' : d === 0 ? 'i dag' : 'overstået'; }
+function subtitle(p) {
+  const m = loaded ? metrics() : null;
+  if (p === 'ring') return m ? `I dag: ${m.idag} af ${DAY_GOAL} opkald · ${queue().length} i køen` : 'Henter butikker …';
+  if (p === 'ovelse') return ui.prac && ui.prac.stage === 'call' ? `Øvelse med ${PERSONAS[ui.prac.persona].navn.toLowerCase()} · intet bliver gemt` : 'Der ringes ikke til nogen, og intet bliver gemt';
+  if (p === 'folg') { const n = loaded ? folgCount() : 0; return n ? `${n} ting at gøre nu` : 'Aftalte opkald, mails og opfølgning'; }
+  if (p === 'kunder') return 'Bestillinger, adgang, levering og faktura';
+  if (p === 'alle') return loaded ? `${stores.size} butikker på listen` : '';
+  if (p === 'indst') return 'Dit navn, firmaet og firmaets Gmail';
+  const d = new Date().toLocaleDateString('da-DK', {weekday: 'long', day: 'numeric', month: 'long'});
+  const P = testPlan();
+  return `${d.charAt(0).toUpperCase() + d.slice(1)} · ${P.started ? `beslutning ${dayName(P.dec, true).toLowerCase()} ${dmy(P.dec)} (${whenLeft()})` : 'testen starter, når du ringer første gang'}`;
+}
+function renderBanners() {
+  const m = metrics(), c = cfg(), now = new Date(), h = now.getHours(), B = [];
+  if (conn === 'error') B.push(['bad', 'Forbindelsen til databasen stoppede. Genindlæs siden.']);
+  if (canWrite === false) B.push(['warn', 'Du kan se listen, men ikke gemme. Bed ejeren om adgang som Bidragyder.']);
+  const success = m.betalt >= GOAL.betalt && m.forsoeg >= GOAL.forsoeg && m.samtaler >= GOAL.samtaler;
+  if (m.samtaler >= GOAL.stop && m.ja === 0) B.push(['bad', 'Stop-reglen er nået: 50 samtaler uden et eneste ja til rapporten. Testen stopper her, som aftalt. Skriv til Claude.']);
+  else if (success) B.push(['good', 'Succes-kriteriet er nået: en betaling, 100 opkald og 30 samtaler. Skriv til Claude.']);
+  else if (m.betalt >= GOAL.betalt) B.push(['good', `Første betaling er kommet! Testen tæller, når du også har ${GOAL.forsoeg} opkald og ${GOAL.samtaler} samtaler.`]);
+  if (testPlan().started && daysLeft() <= 0 && !success) B.push(['warn', 'Det er beslutningsdag. Skriv til Claude, så gør vi resultatet op.']);
+  if (loaded && !c.ok && ui.tab !== 'indst' && !(ui.tab === 'overblik' && m.forsoeg === 0)) B.push(['warn', 'Skriv dit navn og firmanavnet under Indstillinger, så teksterne passer.', 'indst']);
+  if (loaded && ['ring', 'overblik'].includes(ui.tab) && (!isWeekday(now) || h < 9 || h >= 17)) B.push(['info', 'Det er uden for åbningstid. Ring på hverdage mellem kl. 10 og 16. Du kan øve dig i mellemtiden.', 'ovelse']);
+  const td = tjekDate();
+  if (loaded && td && (Date.now() - td) / 864e5 > STALE_DAYS && ['ring', 'overblik'].includes(ui.tab)) B.push(['warn', `Butikkerne blev sidst tjekket ${fmtLong(td.toISOString())}. Skriv "tjek butikkerne" til Claude, før du ringer, så det, du siger, stadig passer.`]);
+  const ho = henvOpen().length;
+  if (ho && ui.tab !== 'overblik') B.push(['info', `${ho} ${ho === 1 ? 'ny henvendelse' : 'nye henvendelser'} fra hjemmesiden venter på svar.`, 'overblik']);
+  const GO = {indst: 'Åbn indstillinger', ovelse: 'Øv en samtale', overblik: 'Se henvendelser'};
+  patch($('#banners'), JSON.stringify(B), () => B.map(([t, msg, go]) => `<div class="banner ${t}"><span>${esc(msg)}${go ? `<button class="link" data-act="tab" data-k="${go}">${GO[go]}</button>` : ''}</span></div>`).join(''));
+}
+function folgCount() { // things to do now: mails to send, agreed calls that are due, follow-ups that are ready
+  const g = agenda().find(x => x.due);
+  return g ? g.items.filter(i => i.kind !== 'retry').length : 0;
+}
+function renderNav() {
+  const f = loaded ? folgCount() : 0, k = [...stores.values()].filter(s => s.ordre && s.ordre.trin !== 'betalt').length;
+  const N = {overblik: henvOpen().length, folg: f, kunder: k}, firma = (settings && settings.firma) || 'GMC-Doktor';
+  const items = PAGES.map(([id, l, i]) => `<li><button class="navbtn" data-act="tab" data-k="${id}"${ui.tab === id ? ' aria-current="page"' : ''} title="${esc(l)}">${ic(i)}<span class="lbl">${esc(l)}</span>${N[id] ? `<span class="badge" aria-label="${N[id]} at gøre">${N[id]}</span>` : ''}</button></li>`).join('');
+  const brand = `<span class="mark" aria-hidden="true">${esc(firma.trim().charAt(0).toUpperCase() || 'G')}</span><span class="bn">${esc(firma)}</span>`;
+  const key = JSON.stringify([ui.tab, f, k, firma, N.overblik]);
+  patch($('#nav'), key, () => items);
+  patch($('#nav2'), key, () => items);
+  patch($('#brand'), firma, () => brand);
+  patch($('#brand2'), firma, () => brand + `<button class="iconbtn" data-act="closemenu" aria-label="Luk menuen">${ic('close')}</button>`);
+  $('#shell').classList.toggle('rail', ui.rail);
+  patch($('#railbtn'), String(ui.rail), () => `${ic(ui.rail ? 'right' : 'left')}<span class="lbl">Skjul menuen</span>`);
+  $('#railbtn').setAttribute('aria-label', ui.rail ? 'Vis menuen' : 'Skjul menuen');
+  const dr = $('#drawer');
+  dr.classList.toggle('open', ui.menu); dr.setAttribute('aria-hidden', String(!ui.menu)); dr.inert = !ui.menu;
+  $('#menubtn').setAttribute('aria-expanded', String(ui.menu));
+  patch($('#menubtn'), 'm', () => ic('menu'));
+  patch($('#theme'), ui.theme, () => THEMES.map(([k, l, i]) => `<button data-act="theme" data-k="${k}" aria-pressed="${ui.theme === k}" aria-label="${l}" title="${l}">${ic(i)}</button>`).join(''));
+}
+function applyTheme() { const r = document.documentElement; if (ui.theme === 'system') r.removeAttribute('data-mode'); else r.setAttribute('data-mode', ui.theme); }
+function go(k) { // switch page; practice keeps its own call state so a real call in progress is not lost
+  ui.menu = false;
+  if (!TITLES[k]) k = 'overblik';
+  if (k === ui.tab) { render(); return; }
+  if (ui.tab === 'ovelse' && ui.stash) { Object.assign(ui, ui.stash); ui.stash = null; ui.formRev++; }
+  if (k === 'ovelse') { ui.stash = {current: ui.current, forced: ui.forced, step: ui.step, hist: ui.hist, form: ui.form, err: ui.err}; ui.step = 'start'; ui.hist = []; ui.form = {}; ui.err = ''; ui.prac = {stage: 'pick'}; }
+  ui.tab = k; ui.done = null;
+  lsSet('gmcd-tab', k);
+  render(); window.scrollTo(0, 0);
+}
+
+// ----- Overblik -----
+const pct = (a, b) => b ? `${Math.round(a / b * 100)} %` : '–';
+function kpi(label, icon, val, goal, delta) {
+  return `<section class="card kpi" aria-label="${esc(label)}"><div class="kh"><span class="kl">${esc(label)}</span><span class="ico">${ic(icon)}</span></div>
+    <div class="kv">${val}${goal ? `<small>/ ${goal}</small>` : ''}</div><div class="kd">${delta}</div>
+    ${goal ? `<div class="meter" role="progressbar" aria-valuemin="0" aria-valuemax="${goal}" aria-valuenow="${val}"><i style="width:${Math.min(100, Math.round(val / goal * 100))}%"></i></div>` : ''}</section>`;
+}
+function dayStats() {
+  const P = testPlan(), days = [], d = new Date(P.from), called = new Set();
+  for (const s of stores.values()) for (const e of s.log || []) if (DIAL.has(e.r)) called.add(dayStart(new Date(e.t)).getTime());
+  while (d <= P.dec) { if (isWeekday(d) || called.has(d.getTime())) days.push({d: new Date(d), calls: 0, talks: 0}); d.setDate(d.getDate() + 1); }
+  for (const s of stores.values()) for (const e of s.log || []) {
+    if (!DIAL.has(e.r)) continue;
+    const x = days.find(o => sameDay(o.d, new Date(e.t)));
+    if (x) { x.calls++; if (TALK.has(e.r)) x.talks++; }
+  }
+  return days;
+}
+function recentCalls(n) {
+  const out = [];
+  for (const [id, s] of stores) for (const e of s.log || []) if (DIAL.has(e.r)) out.push({id, s, e});
+  return out.sort((a, b) => new Date(b.e.t) - new Date(a.e.t)).slice(0, n);
+}
+const dayName = (d, long) => { const t = d.toLocaleDateString('da-DK', {weekday: long ? 'long' : 'short'}).replace('.', ''); return t.charAt(0).toUpperCase() + t.slice(1); };
+function planHtml() {
+  const t = new Date(); t.setHours(0, 0, 0, 0);
+  const P = testPlan();
+  const rows = [[P.first, P.end, 'Ring til butikkerne', `${CALL_DAYS} hverdage kl. 10–16`], [P.fu, null, 'Følg op', 'Opfølgningsmails og aftalte opkald'],
+    [P.dec, null, 'Beslutning', '1 betaling, 100 opkald og 30 samtaler?']];
+  const td = tjekDate();
+  return `${P.started ? '' : '<p class="muted small" style="margin:0">Datoerne regnes ud fra den dag, du ringer første gang. Her er de, hvis du starter næste gang, du kan ringe.</p>'}<ul class="plan">${rows.map(([a, b, what, sub]) => {
+    const end = new Date(b || a), state = t > end ? 'done' : t >= a ? 'now' : '';
+    const when = b ? `${dayName(a)} ${a.getDate()}/${a.getMonth() + 1} – ${dayName(b).toLowerCase()} ${b.getDate()}/${b.getMonth() + 1}` : `${dayName(a)} ${a.getDate()}/${a.getMonth() + 1}`;
+    return `<li class="${state}"><span class="dot" aria-hidden="true"></span><span><b>${esc(what)}</b>${state === 'now' ? ' <span class="pill a">Nu</span>' : ''}<small>${esc(when)} · ${esc(sub)}</small></span></li>`;
+  }).join('')}</ul>${td ? `<p class="foot" style="text-align:left;margin:12px 0 0">Butikkerne blev sidst tjekket ${esc(fmtDT(td.toISOString()))}.</p>` : ''}`;
+}
+function viewOverblik(v) {
+  const m = metrics(), days = dayStats(), recent = recentCalls(8), id = currentId(), s = id ? stores.get(id) : null, q = queue().length;
+  const key = JSON.stringify(['ov', m, days.map(x => [x.calls, x.talks]), recent.map(r => [r.id, r.e.t, r.e.r]), id, q, settings, pracCount(), [...ui.openD], new Date().toDateString(), new Date().getHours(), henvKey()]);
+  patch(v, key, () => {
+    const label = s ? (stOf(s) === 'ring_senere' ? 'Aftalt opkald' : stOf(s) === 'intet_svar' ? `Forsøg ${tries(s) + 1} af 3` : 'Ny butik') : '';
+    const table = `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Dag</th><th class="num">Opkald</th><th class="num">Samtaler</th></tr></thead>
+      <tbody>${days.map(x => `<tr><td>${dayName(x.d)} ${x.d.getDate()}/${x.d.getMonth() + 1}</td><td class="num">${x.calls}</td><td class="num">${x.talks}</td></tr>`).join('')}</tbody></table></div>`;
+    return `${m.forsoeg === 0 ? readyHtml() : ''}<div class="kpis">
+      ${kpi('Opkald', 'phone', m.forsoeg, GOAL.forsoeg, m.idag ? `<span class="up">+${m.idag}</span> i dag` : 'Ingen i dag endnu')}
+      ${kpi('Samtaler', 'chat', m.samtaler, GOAL.samtaler, m.forsoeg ? `${pct(m.samtaler, m.forsoeg)} af opkaldene` : 'Når nogen tager telefonen')}
+      ${kpi('Sagde ja', 'check', m.ja, 0, m.samtaler ? `${pct(m.ja, m.samtaler)} af samtalerne` : 'Ja til den gratis rapport')}
+      ${kpi('Betalt', 'coin', m.betalt, GOAL.betalt, m.betaltKr ? `${esc(kr(m.betaltKr))} i alt` : 'Målet er én betaling')}
+    </div>
+    ${henvHtml()}
+    <div class="duo">
+      <section class="card" aria-label="Opkald pr. dag">
+        <div class="chart-head"><div><h2>Opkald pr. dag</h2><p class="muted small">Mål: ${DAY_GOAL} opkald pr. hverdag</p></div><div class="total"><b>${m.forsoeg}</b> opkald i alt</div></div>
+        <div class="keys"><span class="key"><i style="background:var(--s1)"></i>Opkald</span><span class="key"><i style="background:var(--s2)"></i>Samtaler</span><span class="key"><i class="goal"></i>Mål pr. dag</span></div>
+        <div class="chart" id="chart"></div>
+        ${det('chart-table', 'Vis tallene som tabel', table)}
+      </section>
+      <div class="stack">
+        <section class="card next"><div class="kh"><h2>Næste opkald</h2>${s ? `<span class="pill">${esc(label)}</span>` : ''}</div>
+          ${s ? `<p class="shopname">${esc(s.butik)}</p><p class="phone-s">${esc(s.telefon || '')}</p>${s.info && s.info.saelger ? `<p class="muted small">Sælger: ${esc(s.info.saelger)}</p>` : ''}
+            <button class="btn big primary wide" data-act="tab" data-k="ring">${ic('phone')}Ring nu</button>
+            <button class="btn wide" data-act="tab" data-k="ovelse">Øv en samtale først</button>
+            <p class="foot">${q} ${q === 1 ? 'butik' : 'butikker'} i køen</p>`
+          : `<p class="muted">Der er ingen at ringe til lige nu.</p>${nextCb() ? `<p class="small">Næste aftale: <b>${esc(nextCb().butik)}</b> ${esc(fmtDT(nextCb().t))}</p>` : ''}`}
+        </section>
+        <section class="card"><h2>Plan for testen</h2>${planHtml()}</section>
+      </div>
+    </div>
+    <section class="card" aria-label="Seneste opkald"><div class="kh"><div><h2>Seneste opkald</h2><p class="muted small">${m.forsoeg ? `${Math.min(8, m.forsoeg)} af ${m.forsoeg} opkald` : 'Når du ringer, kommer opkaldene her'}</p></div>
+        <button class="btn" data-act="tab" data-k="alle">Alle butikker</button></div>
+      ${recent.length ? `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Butik</th><th>Resultat</th><th class="num">Tidspunkt</th></tr></thead><tbody>
+        ${recent.map(r => `<tr><td><button class="rowlink" data-act="openstore" data-id="${esc(r.id)}">${esc(r.s.butik || r.id)}</button><span class="sub">${esc(r.s.telefon || '')}</span></td>
+          <td><span class="pill r-${esc(r.e.r)}">${esc(RES[r.e.r] || r.e.r)}</span></td><td class="num">${esc(fmtDT(r.e.t))}</td></tr>`).join('')}
+      </tbody></table></div>` : ''}
+    </section>`;
+  });
+  drawChart(days);
+}
+const topRounded = (x, y, w, h, r) => { r = Math.min(r, w / 2, h); const f = n => n.toFixed(1); return `M${f(x)},${f(y + h)}V${f(y + r)}Q${f(x)},${f(y)} ${f(x + r)},${f(y)}H${f(x + w - r)}Q${f(x + w)},${f(y)} ${f(x + w)},${f(y + r)}V${f(y + h)}Z`; };
+function drawChart(days) {
+  const el = $('#chart');
+  if (!el) return;
+  const W = Math.max(160, Math.round(el.clientWidth || 600)), H = 220;
+  const key = JSON.stringify([W, days.map(d => [d.d.getDate(), d.calls, d.talks]), new Date().toDateString()]);
+  if (el._k === key) return;
+  el._k = key;
+  const L = 32, R = 6, T = 10, B = 28, pw = W - L - R, ph = H - T - B;
+  const maxV = Math.max(DAY_GOAL, ...days.map(d => d.calls));
+  const stepV = [5, 10, 20, 25, 50, 100].find(x => maxV / x <= 4) || 100, topV = Math.ceil(maxV / stepV) * stepV;
+  const y = v => T + ph - v / topV * ph, n = days.length, band = pw / n, bw = Math.max(5, Math.min(22, band * .3)), gap = 2, today = new Date();
+  let g = '';
+  for (let val = stepV; val <= topV; val += stepV) g += `<line class="gl" x1="${L}" x2="${W - R}" y1="${y(val)}" y2="${y(val)}"/>`;
+  for (let val = 0; val <= topV; val += stepV) g += `<text x="${L - 8}" y="${y(val) + 4}" text-anchor="end">${val}</text>`;
+  days.forEach((d, i) => g += `<rect class="hov" data-i="${i}" x="${(L + band * i + 2).toFixed(1)}" y="${T}" width="${(band - 4).toFixed(1)}" height="${ph}" rx="6" opacity="0"/>`);
+  days.forEach((d, i) => {
+    const cx = L + band * i + band / 2;
+    if (d.calls) g += `<path class="b1" d="${topRounded(cx - bw - gap / 2, y(d.calls), bw, y(0) - y(d.calls), 4)}"/>`;
+    if (d.talks) g += `<path class="b2" d="${topRounded(cx + gap / 2, y(d.talks), bw, y(0) - y(d.talks), 4)}"/>`;
+    g += `<text x="${cx.toFixed(1)}" y="${H - 8}" text-anchor="middle"${sameDay(d.d, today) ? ' class="today"' : ''}>${band < 46 ? d.d.getDate() : `${esc(dayName(d.d))} ${d.d.getDate()}`}</text>`; // narrow screens: date only
+  });
+  g += `<line class="base" x1="${L}" x2="${W - R}" y1="${y(0)}" y2="${y(0)}"/><line class="goal" x1="${L}" x2="${W - R}" y1="${y(DAY_GOAL)}" y2="${y(DAY_GOAL)}"/>`;
+  if (!days.some(d => d.calls)) g += `<text class="empty" x="${L + pw / 2}" y="${y(DAY_GOAL / 2)}" text-anchor="middle">Søjlerne kommer, når du ringer</text>`;
+  el.innerHTML = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Opkald og samtaler pr. dag. Tallene står også i tabellen under grafen.">${g}</svg><div class="tip" hidden></div>`;
+  const tip = el.querySelector('.tip'), hov = [...el.querySelectorAll('.hov')];
+  const show = ev => {
+    const r = el.getBoundingClientRect(), x = ev.clientX - r.left, i = Math.floor((x - L) / band);
+    if (i < 0 || i >= n) return hide();
+    hov.forEach((h, j) => h.setAttribute('opacity', j === i ? '1' : '0'));
+    const d = days[i];
+    tip.innerHTML = `<b>${esc(dayName(d.d, true))} ${d.d.getDate()}/${d.d.getMonth() + 1}</b><span><i style="background:var(--s1)"></i>Opkald: ${d.calls}</span><span><i style="background:var(--s2)"></i>Samtaler: ${d.talks}</span>`;
+    tip.hidden = false;
+    const cx = L + band * i + band / 2, tw = tip.offsetWidth;
+    tip.style.transform = `translate(${Math.round(Math.min(Math.max(4, cx - tw / 2), W - tw - 4))}px, ${Math.round(Math.max(0, Math.min(y(d.calls), y(DAY_GOAL)) - tip.offsetHeight - 8))}px)`;
+  };
+  const hide = () => { tip.hidden = true; hov.forEach(h => h.setAttribute('opacity', '0')); };
+  el.onpointermove = show; el.onpointerdown = show; el.onpointerleave = hide;
+}
+
+function readyHtml() { // shown on Overblik until the first real call is saved
+  const s = settings || {}, set = !!(s.navn && s.firma && firmMail()), n = pracCount(), now = new Date();
+  const callNow = isWeekday(now) && now.getHours() >= 10 && now.getHours() < 16;
+  const nextSlot = isWeekday(now) && now.getHours() < 10 ? 'i dag kl. 10' : `${dayName(nextWeekday(now), true).toLowerCase()} ${dmy(nextWeekday(now))} kl. 10`;
+  const AUTO = ['Gemmer hvert opkald, så snart du trykker på det, kunden svarer.', 'Vælger den næste butik. Aftalte opkald kommer først, derefter de butikker, der passer bedst.',
+    'Venter 2 timer, før en butik med "intet svar" kommer igen, og dropper den efter 3 forsøg.', 'Sætter aftalte opkald i Kalenderen med dag og klokkeslæt.',
+    'Skriver mailen med rapporten færdig, med det vi fandt hos netop den butik.', 'Minder dig om opfølgning 2 dage efter, hvis kunden sagde ja til det.',
+    'Laver fakturaen med nummer, når en kunde skal betale.', 'Tæller dine opkald og viser, om du når målet. Datoerne for testen regner den selv ud.'];
+  const YOU = ['Ringer op og siger det, der står i den lilla boks.', 'Trykker på det, kunden svarer.', 'Trykker Send i Gmail og derefter "Jeg har sendt mailen".',
+    'Skriver til Claude, når en kunde har bestilt eller givet adgang.'];
+  const auto = det('auto', 'Hvad klarer dashboardet selv?', `<p class="small" style="margin:0 0 4px"><b>Dashboardet klarer selv:</b></p><ul class="small" style="margin:0 0 10px;padding-left:20px">${AUTO.map(x => `<li>${esc(x)}</li>`).join('')}</ul>
+    <p class="small" style="margin:0 0 4px"><b>Du gør selv:</b></p><ul class="small" style="margin:0 0 14px;padding-left:20px">${YOU.map(x => `<li>${esc(x)}</li>`).join('')}</ul>`);
+  const item = (done, title, sub, btn) => `<li class="${done ? 'ok' : ''}"><span class="tick" aria-hidden="true">${done ? '✓' : ''}</span><span class="txt"><b>${title}</b><small>${sub}</small></span>${btn}</li>`;
+  return `<section class="card" aria-label="Klar til at ringe"><h2>Klar til at ringe</h2><p class="muted small" style="margin:0">Tre ting, så er du klar til det første opkald.</p>
+    <ol class="checklist">
+      ${item(set, 'Udfyld Indstillinger', set ? `${esc(s.navn)} fra ${esc(s.firma)} · ${esc(firmMail())}` : 'Dit fornavn, firmanavnet og firmaets Gmail', set ? '' : '<button class="btn primary" data-act="tab" data-k="indst">Udfyld</button>')}
+      ${item(n >= 3, 'Øv en samtale 3 gange', n >= 3 ? `Du har øvet ${n} gange på denne enhed` : `${n} af 3 øvelser`, `<button class="btn${n >= 3 || !set ? '' : ' primary'}" data-act="tab" data-k="ovelse">${n >= 3 ? 'Øv igen' : 'Øv nu'}</button>`)}
+      ${item(false, 'Ring til den første butik', callNow ? 'Det er tid nu. Tryk på Ring nu, og følg den lilla boks.' : `Næste gang du kan ringe: ${nextSlot}`, callNow ? '<button class="btn primary" data-act="tab" data-k="ring">Ring nu</button>' : '')}
+    </ol>${auto}</section>`;
+}
+
+// ----- Øvelse -----
+function pracCount() { return Number(lsGet('gmcd-prac')) || 0; }
+function pickHtml() {
+  const n = pracCount();
+  return `<section class="card"><h2>Øv en samtale</h2>
+    <p class="muted">Du ringer til en butik, der ikke findes. Kunden siger noget, og du trykker på det svar, der passer. Det svar, der passer, har en stiplet kant. Der ringes ikke til nogen, og intet bliver gemt.</p>
+    ${n ? `<p class="small">Du har øvet ${n} ${n === 1 ? 'gang' : 'gange'} på denne enhed.</p>` : ''}
+    <button class="btn big primary wide" data-act="pracstart" data-k="random">${ic('play')}Start med en tilfældig kunde</button></section>
+    <section class="card"><h3>Eller vælg en kunde</h3><div class="list">${Object.entries(PERSONAS).map(([k, p]) => `<button class="rowbtn" data-act="pracstart" data-k="${k}"><span>${esc(p.navn)}<small>${esc(p.sub)}</small></span></button>`).join('')}</div></section>`;
+}
+function pracDoneHtml(p) {
+  const R = p.res, per = PERSONAS[p.persona], hit = R.kind === per.end, mm = Math.floor(p.secs / 60), ss = String(p.secs % 60).padStart(2, '0');
+  const what = {intet_svar: 'Ingen svarede. I en rigtig samtale kommer butikken igen i køen om 2 timer. Efter 3 forsøg bliver den droppet.',
+    forkert: 'Forkert nummer. Butikken bliver taget ud af køen.',
+    nej: `Nej tak${R.grund ? ` (${R.grund})` : ''}. Det er helt normalt. De fleste siger nej, og så går du videre til den næste.`,
+    later: `Ring senere. Opkaldet ville komme i Kalenderen ${fmtDT(R.when)}.`,
+    ja: `Ja til rapporten. Bagefter sender du mailen til ${R.mail} fra firmaets Gmail.`,
+    bestilt: `En bestilling! Bagefter sender du bekræftelsen til ${R.mail}, og butikken kommer under Kunder.`}[R.kind] || '';
+  return `<article class="card call a-up"><div class="done-head"><div class="check-big" aria-hidden="true">✓</div><h2>Øvelsen er færdig</h2>
+      <p class="muted small">${esc(per.navn)} · ${mm}:${ss} min.</p></div>
+    <p class="ask">${esc(what)}</p>
+    <p>${hit ? '<span class="pill g">Rigtigt</span> Du endte samtalen, som kunden ville.' : `<span class="pill w">Prøv igen</span> Kunden ville egentlig ende med ${esc(END_LABEL[per.end])}.`}</p>
+    <p class="muted small">I en rigtig samtale bliver det gemt af sig selv. Her blev intet gemt.</p>
+    <div class="grid2"><button class="btn big primary" data-act="pracstart" data-k="${esc(p.persona)}">Øv igen</button><button class="btn big" data-act="pracstart" data-k="random">Ny kunde</button></div>
+    <button class="btn wide" data-act="tab" data-k="ring">${ic('phone')}Ring til en rigtig butik</button>
+    <div class="nav" style="justify-content:center"><button class="link" data-act="pracpick">Vælg selv en kunde</button></div></article>`;
+}
+function viewOvelse(v) {
+  const p = ui.prac || (ui.prac = {stage: 'pick'});
+  if (p.stage === 'pick') return patch(v, 'pick' + pracCount(), pickHtml);
+  if (p.stage === 'done') return patch(v, JSON.stringify(['pdone', p]), () => pracDoneHtml(p));
+  const key = JSON.stringify(['prac', p.persona, p.t0, ui.step, ui.formRev, settings]);
+  patch(v, key, () => cardHtml('ovelse', PRAC_STORE, 0, p));
+  const line = PERSONAS[p.persona].lines[ui.step];
+  if (line && line[1]) v.querySelectorAll(line[1]).forEach(el => { el.classList.add('hint'); const d = el.closest('details'); if (d && !d.open) d.open = true; });
+}
+function pracStart(k) {
+  const keys = Object.keys(PERSONAS), last = ui.prac && ui.prac.persona;
+  if (!PERSONAS[k]) { const pool = keys.filter(x => x !== last); k = pool[Math.floor(Math.random() * pool.length)]; }
+  ui.prac = {stage: 'call', persona: k, t0: Date.now()};
+  ui.step = 'start'; ui.hist = []; ui.form = {}; ui.err = ''; ui.anim = 'up'; ui.formRev++;
+  render(); toCard();
+}
+function pracEnd(res) {
+  ui.prac = {...ui.prac, stage: 'done', res, secs: Math.max(1, Math.round((Date.now() - ui.prac.t0) / 1000))};
+  lsSet('gmcd-prac', String(pracCount() + 1));
+  ui.step = 'start'; ui.hist = []; ui.form = {}; ui.err = '';
+  render(); toCard();
+}
+
+// ----- Ring nu -----
+function helpHtml() {
+  return `<section class="card help"><h3>Sådan gør du</h3>
+    <div class="legend"><div class="say sm">Den lilla boks: det, du siger</div><div class="reply">Knapperne: det, de svarer. Tryk på den, der passer.</div></div>
+    <ol><li>Kopiér nummeret, og ring op.</li><li>Sig det, der står i den lilla boks.</li><li>Tryk på det, de svarer.</li></ol>
+    <p class="muted small">Alt bliver gemt af sig selv. Send kun mail til dem, der siger ja.</p>
+    <button class="link" data-act="hidehelp">Skjul</button></section>`;
+}
+const FORM_STEPS = new Set(['askmail', 'order', 'later', 'later_gk']);
+function viewRing(v) {
+  if (ui.done && stores.has(ui.done)) {
+    const s = stores.get(ui.done);
+    return patch(v, JSON.stringify(['done', ui.done, s, settings, [...ui.openD], inboxKey()]), () => doneHtml(ui.done, s));
+  }
+  ui.done = null;
+  const help = ui.helpHidden ? '' : helpHtml();
+  const id = currentId();
+  if (!id) return patch(v, JSON.stringify(['empty', stores.size, ui.skipped.size, nextCb(), help.length]), () => help + emptyHtml());
+  const s = stores.get(id), q = queue().length, form = FORM_STEPS.has(ui.step);
+  const key = JSON.stringify(['flow', id, ui.step, ui.formRev, form ? null : s, form ? 0 : q, settings, canWrite, help.length, ui.forced]);
+  patch(v, key, () => (ui.step === 'start' ? help : '') + cardHtml(id, s, q));
+}
+function emptyHtml() {
+  if (!stores.size) return '<div class="card"><h2>Listen er tom</h2><p>Claude er ved at finde butikker. Kig igen om lidt.</p></div>';
+  const n = nextCb();
+  return `<div class="card"><h2>Ikke flere at ringe til lige nu</h2>
+    ${n ? `<p>Næste opkald: <b>${esc(n.butik)}</b> ${esc(fmtDT(n.t))}.</p>` : '<p>Du har ringet til alle på listen. Claude finder flere butikker.</p>'}
+    ${ui.skipped.size ? `<button class="btn" data-act="unskip">Vis de ${ui.skipped.size} oversprungne igen</button>` : ''}</div>`;
+}
+
+// The call as a conversation: a box with exactly what to say, then big buttons with what they may answer.
+const MORE = [['Vi bruger ikke Google Shopping', 'nogs'], ['Vi har et bureau eller en webudvikler', 'agency'], ['Kan I love, at Google godkender os?', 'guarantee'],
+  ['Er I fra Google?', 'google'], ['Hvordan har I fundet os?', 'howfound'], ['Hvem er du?', 'who'], ['Ring igen senere', 'later'],
+  ['De lagde på', 'hungup'], ['Det er et forkert nummer', '=forkert']];
+const PHASE = {start: 0, intro: 1, who: 1, gatekeeper: 1, hook: 2, ask: 2, explain: 2, price: 2, nogs: 2, agency: 2, guarantee: 2, google: 2, howfound: 2};
+const PHASES = ['Ring op', 'Hils', 'Fortæl', 'Afslut'];
+function step(st, s, c) {
+  const B = x => String(x).startsWith('[') ? `<mark>${esc(String(x).slice(1, -1))}</mark>` : `<b>${esc(x)}</b>`;
+  const n = s.n_vigtige || (s.fund || []).length;
+  const ok = {t: 'Okay / de lytter', go: 'ask', k: 'pos', d: true};
+  const no = {t: 'Nej tak', go: 'bye_no', k: 'neg'};
+  const minor = c.voksen && firstName(c.voksen) !== firstName(c.navn);
+  switch (st) {
+    case 'intro': return {say: `Hej, det er ${B(c.navn)} fra ${B(c.firma)}. Er det dig, der står for jeres webshop?`, more: true, opts: [
+      {t: 'Ja, det er mig', go: 'hook', k: 'pos'}, {t: 'Nej, det er en anden', go: 'gatekeeper'}, {t: 'Hvem er du?', go: 'who'}, {t: 'Jeg har ikke tid nu', go: 'later'}]};
+    case 'who': return {say: (minor ? `Jeg hedder ${B(c.navn)}, og jeg er ung iværksætter. Jeg ringer fra ${B(c.firma)}, som ${esc(c.voksen)} ejer.` : `Jeg hedder ${B(c.navn)} og ringer fra ${B(c.firma)}.`)
+      + ' Vi har lavet et gratis tjek af jeres webshop. Har du to minutter?', more: true, opts: [{t: 'Ja', go: 'hook', k: 'pos'}, {t: 'Ikke lige nu', go: 'later'}, no]};
+    case 'gatekeeper': return {say: 'Okay. Hvem står for webshoppen, og hvornår kan jeg fange dem?', more: true, opts: [
+      {t: 'De siger et navn eller et tidspunkt', go: 'later_gk', k: 'pos', d: true}, {t: 'Send en mail', go: 'askmail'}, no]};
+    case 'hook': return {say: `Vi har lavet et gratis tjek af jeres webshop og fundet ${n} ting, der kan give problemer i Google Shopping. ${esc(s.aabning || '')}`, more: true, fund: true, opts: [
+      ok, {t: 'Hvad betyder det?', go: 'explain'}, {t: 'Hvad koster det?', go: 'price'}, no]};
+    case 'ask': return {say: 'Må jeg sende jer rapporten på mail? Den er gratis, og vores pris står også i den.', more: true, fund: true, opts: [
+      {t: 'Ja', go: 'askmail', k: 'pos'}, {t: 'Hvad koster det?', go: 'price'}, {t: 'Kan I ikke bare rette det?', go: 'order', p: 'rettelse', k: 'pos'}, no]};
+    case 'explain': return {say: 'Google tjekker webshops, før varerne må vises i Google Shopping. Mangler der fx firmaoplysninger eller en returpolitik, kan Google afvise varerne. Rapporten viser, hvad I skal rette.', more: true, opts: [ok, no]};
+    case 'price': return {say: `Rapporten er gratis. Skal vi rette det for jer, koster det ${esc(c.tale(PRIS.rettelse))}, og I betaler først, når det er rettet. Vil I selv rette det, får I en vejledning for ${esc(c.tale(PRIS.audit))}.`, more: true, opts: [
+      {t: 'Send rapporten', go: 'askmail', k: 'pos'}, {t: 'Ret det for os', go: 'order', p: 'rettelse', k: 'pos'}, {t: 'Vi vil have vejledningen', go: 'order', p: 'audit', k: 'pos'}, no]};
+    case 'nogs': return {say: 'Det er der mange, der ikke gør endnu. Man kan komme gratis med i Google Shopping, men Google skal godkende butikken først. Rapporten viser, om I er klar.', more: true, opts: [ok, no]};
+    case 'agency': return {say: 'Fint. Så kan I give rapporten videre til dem. Den er gratis.', more: true, opts: [ok, no]};
+    case 'guarantee': return {say: 'Nej, det er altid Google, der bestemmer. Men vi retter de kendte fejl og hjælper jer med at bede Google om at kigge igen.', more: true, opts: [ok, no]};
+    case 'google': return {say: 'Nej, vi er en lille dansk virksomhed og har ikke noget med Google at gøre. Vi hjælper webshops med at blive klar til Google Shopping.', more: true, opts: [ok, no]};
+    case 'howfound': return {say: 'Vi har tjekket danske webshops’ offentlige sider for ting, der kan give problemer i Google Shopping.', more: true, opts: [ok, no]};
+    case 'hungup': return {sys: 'Det sker. Hvad vil du gøre?', list: [{t: 'Ringe igen senere', go: 'later'}, {t: 'Det var et nej', go: 'no_reason', k: 'neg'}]};
+    case 'bye_no': return {say: 'Helt i orden. Tak for din tid, og hav en god dag!', after: 'Læg på. Hvorfor sagde de nej? Tryk på en grund, så er opkaldet gemt.', reasons: true};
+    case 'no_reason': return {sys: 'Hvorfor var det et nej? Tryk på en grund, så er opkaldet gemt.', reasons: true};
+    case 'later': return {say: 'Helt i orden. Hvornår passer det bedre?', form: 'later'};
+    case 'later_gk': return {sys: 'Skriv navnet, de siger, og tryk på tidspunktet.', form: 'later'};
+    case 'askmail': return {say: 'Super! Hvilken mail skal den sendes til?', form: 'mail'};
+    case 'order': return {say: ui.form.produkt === 'audit'
+      ? `Fedt! I får vejledningen for ${esc(c.tale(PRIS.audit))}. Hvilken mail skal bestillingen sendes til?`
+      : `Fedt! Vi retter det hele for ${esc(c.tale(PRIS.rettelse))}, og I betaler først, når det er rettet. Hvilken mail skal bestillingen sendes til?`, form: 'order'};
+    default: return {sys: 'Ring nummeret op, og vent, til nogen tager den.', list: [
+      {t: 'Nogen tog den', go: 'intro', k: 'primary'},
+      {t: 'Ingen svarer / telefonsvarer', go: '=intet_svar', sub: 'Læg ikke en besked. Du ringer igen senere.'},
+      {t: 'Nummeret virker ikke', go: '=forkert'}]};
+  }
+}
+function target(o) { const end = o.go.startsWith('='); return `data-act="${end ? 'o' : 'go'}" data-k="${esc(end ? o.go.slice(1) : o.go)}"${o.p ? ` data-p="${o.p}"` : ''}`; }
+const replyBtn = (o, dis) => `<button class="reply ${o.k || ''}${o.d ? ' d' : ''}" ${target(o)}${o.go.startsWith('=') ? dis : ''}>${esc(o.t)}</button>`;
+const rowBtn = (o, dis) => `<button class="rowbtn ${o.k || ''}" ${target(o)}${o.go.startsWith('=') ? dis : ''}><span>${esc(o.t)}${o.sub ? `<small>${esc(o.sub)}</small>` : ''}</span></button>`;
+const meSays = (t, sm) => `<div class="who">Sig</div><div class="say${sm ? ' sm' : ''}">${t}</div>`;
+function infoHtml(s, full) {
+  const i = s.info || {};
+  const named = i.navn && i.navn.toLowerCase().replace(/[^a-z0-9æøå]/g, '') !== (s.butik || '').split('.')[0].replace(/[^a-z0-9æøå]/g, '');
+  const facts = [named ? i.navn : '', i.varer ? `${i.varer >= 250 ? '250+' : i.varer} varer` : '', i.by || '', s.cvr ? `CVR ${s.cvr}` : ''].filter(Boolean);
+  if (!facts.length && !i.saelger && !i.om) return '';
+  return `<div class="info">${facts.length ? `<div class="facts">${facts.map(x => `<span class="fact">${esc(x)}</span>`).join('')}</div>` : ''}${i.saelger ? `<p><b>Sælger:</b> ${esc(i.saelger)}</p>` : ''}${full && i.om ? `<p class="om">${esc(i.om)}</p>` : ''}</div>`;
+}
+function phaseHtml() {
+  const p = ui.step in PHASE ? PHASE[ui.step] : 3;
+  return `<div class="steps-nav" aria-label="Hvor du er i samtalen">${PHASES.map((t, i) => `<span class="${i < p ? 'done' : i === p ? 'now' : ''}">${t}</span>`).join('')}</div>`;
+}
+function cardHtml(id, s, q, prac) { // prac: the practice run (pretend store, nothing is saved)
+  const c = cfg(), x = stOf(s), dis = canWrite === false && !prac ? ' disabled' : '', st = step(ui.step, s, c), first = ui.step === 'start';
+  const anim = ui.anim; ui.anim = '';
+  const label = x === 'ring_senere' ? `Ring tilbage · aftalt ${fmtDT(s.ring_igen)}` : x === 'intet_svar' ? `Forsøg ${tries(s) + 1} af 3` : CALLABLE.has(x) ? 'Ny butik' : STATUS[x];
+  let h = `<article class="card call${anim === 'up' ? ' a-up' : ''}">
+    <div class="meta">${prac ? `<span class="pill prac-flag">Øvelse</span><span class="qcount">${esc(PERSONAS[prac.persona].navn)}</span>` : `<span class="pill">${esc(label)}</span><span class="qcount">${q} i køen</span>`}</div>
+    <h2 class="shop">${esc(s.butik || id)}</h2>${phaseHtml()}`;
+  h += first && prac ? `<div class="phone"><span class="num">${esc(s.telefon)}</span><p class="muted small" style="margin:0">Lad, som om du ringer op. Der ringes ikke til nogen.</p></div>`
+    : first ? `<div class="phone"><span class="num">${esc(s.telefon || '')}</span>
+      <div class="row"><button class="btn primary" data-act="copy" data-text="${esc(s.tel || '')}">Kopiér nummer</button><a class="btn" href="tel:${esc(s.tel || '')}" target="_blank" rel="noopener">Ring op</a></div>
+      <a class="small" href="https://${esc(s.butik || id)}" target="_blank" rel="noopener">Åbn butikken ↗</a></div>`
+    : `<p class="tel">Tlf. ${esc(s.telefon || '')}</p>`;
+  h += infoHtml(s, first);
+  if (!c.ok) h += `<p class="hint-set">Skriv dit navn og firmanavn under <button class="link" data-act="tab" data-k="indst" style="padding:0">Indstillinger</button>, så står de i teksten.</p>`;
+  if (s.note) h += `<p class="note"><b>Note:</b> ${esc(s.note)}</p>`;
+  h += `<div class="thread${anim === 'fwd' || anim === 'back' ? ' a-' + anim : ''}">`;
+  if (st.sys) h += `<p class="sys">${esc(st.sys)}</p>`;
+  if (st.say) h += meSays(st.say);
+  if (prac) {
+    const line = PERSONAS[prac.persona].lines[ui.step];
+    h += line ? `<div class="cust"><span class="av" aria-hidden="true">K</span><div class="bub"><small>Kunden</small>${esc(line[0])}</div></div>`
+      : '<p class="sys">Her har kunden ikke noget fast svar. Vælg selv det, der passer bedst.</p>';
+  }
+  if (st.after) h += `<p class="sys">${esc(st.after)}</p>`;
+  if (st.form === 'mail' || st.form === 'order') h += mailFormHtml(s, st.form === 'order', dis);
+  else if (st.form === 'later') h += laterFormHtml(ui.step === 'later_gk', dis);
+  else if (st.reasons) h += `<div class="list">${NEJ_GRUNDE.concat('Ved ikke').map(g => `<button class="rowbtn" data-act="nejg" data-v="${esc(g)}"${dis}><span>${esc(g)}</span></button>`).join('')}</div>`;
+  else if (st.list) h += `<div class="list">${st.list.map(o => rowBtn(o, dis)).join('')}</div>`;
+  else if (st.opts) h += `<div class="who">De svarer</div><div class="replies">${st.opts.map(o => replyBtn(o, dis)).join('')}</div>`;
+  if (st.more) h += det('more', 'De siger noget andet …', `<div class="list">${MORE.map(([t, g]) => rowBtn({t, go: g}, dis)).join('')}</div>`);
+  if (st.fund) h += fundHtml(s, 'fund-' + id, 'Hvis de spørger, hvad vi ellers fandt');
+  h += `</div><div class="nav">${first ? (prac ? '<button class="link" data-act="pracpick">Vælg en anden kunde</button>' : '<button class="link" data-act="skip">Spring over</button>') : '<button class="link" data-act="back">‹ Tilbage</button><button class="link" data-act="restart">Start forfra</button>'}</div></article>`;
+  return h;
+}
+function fundHtml(s, key, title) {
+  const f = s.fund || [];
+  if (!f.length) return '';
+  return det(key, `${esc(title || 'Alle fund')} (${f.length})`, `<ul class="fundlist">${f.map(x => `<li><span class="tag ${x.s === 'fejl' ? 'bad' : 'warn'}">${x.s === 'fejl' ? 'Fejl' : 'Bør tjekkes'}</span><b>${esc(x.t)}</b><br><span class="muted small">${esc(x.hvad)}</span></li>`).join('')}</ul>`);
+}
+function mailFormHtml(s, order, dis) {
+  const f = ui.form, p = f.produkt === 'audit' ? 'audit' : 'rettelse';
+  return `${order ? `<p class="sys">Hvad vil de have?</p><div class="seg2" role="group" aria-label="Hvad vil de have?">
+      <button data-act="set" data-f="produkt" data-v="rettelse" aria-pressed="${p === 'rettelse'}">Vi retter det · ${PRIS.rettelse} kr.</button>
+      <button data-act="set" data-f="produkt" data-v="audit" aria-pressed="${p === 'audit'}">Vejledning · ${PRIS.audit} kr.</button></div>` : ''}
+    <label>Deres mail<input type="email" inputmode="email" autocomplete="off" id="f-mail" data-f="mail" class="${f.mail && MAIL_RE.test(f.mail.trim()) ? 'ok' : ''}" value="${esc(f.mail || '')}" placeholder="navn@butik.dk"></label>
+    ${s.email_side && !f.mail ? `<div class="chips"><button class="chip" data-act="fill" data-f="mail" data-v="${esc(s.email_side)}">Tryk, hvis de siger ${esc(s.email_side)}</button></div>` : ''}
+    <p class="sys">Sig mailen tilbage, så du er sikker på, at den er rigtig.</p>
+    ${meSays('Hvad er dit navn?', true)}
+    <label>Deres navn (valgfrit)<input type="text" autocomplete="off" id="f-navn" data-f="navn" value="${esc(f.navn || '')}" placeholder="fx Mette"></label>
+    ${meSays('Må jeg følge op på mail om et par dage?', true)}
+    <div class="seg2" role="group" aria-label="Deres svar"><button data-act="set" data-f="opf" data-v="1" aria-pressed="${f.opf === true}">Ja</button><button data-act="set" data-f="opf" data-v="0" aria-pressed="${f.opf === false}">Nej</button></div>
+    ${meSays(order ? 'Tak! Du får en mail i dag med næste skridt. Hav en god dag!' : 'Tak! Du får mailen i dag. Hav en god dag!', true)}
+    ${ui.err ? `<p class="err" role="alert">${esc(ui.err)}</p>` : ''}
+    <button class="btn big pos strong wide" data-act="saveja"${dis}>${order ? 'Gem bestillingen' : 'Gem og lav mailen'}</button>
+    <p class="foot">Gem kun, hvis de har sagt ja til at få mailen. Tidspunktet bliver gemt som bevis på deres ja.</p>`;
+}
+function laterFormHtml(gk, dis) {
+  const f = ui.form;
+  return `<label>${gk ? 'Navn på den, du skal spørge efter' : 'Hvem skal du spørge efter? (valgfrit)'}<input type="text" autocomplete="off" id="f-note" data-f="note" value="${esc(f.note || '')}" placeholder="fx Mette, ejeren"></label>
+    ${meSays('Tak, så ringer jeg igen. Hav en god dag!', true)}
+    <p class="sys">Tryk på tidspunktet, så er det gemt.</p>
+    <div class="list"><button class="rowbtn" data-act="later" data-k="60"${dis}><span>Om 1 time</span></button><button class="rowbtn" data-act="later" data-k="120"${dis}><span>Om 2 timer</span></button><button class="rowbtn" data-act="later" data-k="tomorrow"${dis}><span>I morgen kl. 10</span></button></div>
+    ${det('custom-time', 'Et andet tidspunkt', `<label>Dag og tid<input type="datetime-local" id="f-when" data-f="when" value="${esc(f.when || '')}"></label><button class="btn pos wide" data-act="later" data-k="custom"${dis}>Gem tidspunkt</button><div style="height:14px"></div>`)}
+    ${ui.err ? `<p class="err" role="alert">${esc(ui.err)}</p>` : ''}`;
+}
+function doneHtml(id, s) {
+  const kind = s.ordre ? 'ordre' : 'rapport';
+  return `<article class="card call"><div class="done-head"><div class="check-big" aria-hidden="true">✓</div>
+    <h2>${s.ordre ? 'Bestillingen er gemt' : 'Deres ja er gemt'}</h2>
+    <p class="muted small">${esc(s.butik)} ${s.ordre ? 'har bestilt.' : 'vil gerne have rapporten.'} Send mailen nu, mens de husker samtalen.</p></div>
+    ${mailPanel(id, s, kind)}
+    <button class="btn big primary wide" data-act="next">Næste butik</button></article>`;
+}
+function mailPanel(id, s, kind) {
+  const m = mailFor(id, s, kind), k = s.kontakt || {};
+  const sent = kind === 'opfoelg' ? s.opfoelg_sendt : kind === 'ordre' ? s.ordre && s.ordre.mail_sendt : s.mail_sendt;
+  const title = kind === 'opfoelg' ? 'Opfølgningsmail' : kind === 'ordre' ? 'Bekræftelse af bestillingen' : 'Mail med den gratis rapport';
+  if (sent) return `<section class="mail"><h3>${title}</h3><p class="okmsg small">Sendt ${esc(fmtDT(sent))} ✓</p><div class="row">${svarBtn(k.mail)}</div></section>`;
+  const fm = firmMail();
+  return `<section class="mail"><h3>${title}</h3>
+    <p class="muted small">Til ${esc(k.mail || '–')}${k.t ? ` · sagde ja ${esc(fmtDT(k.t))}` : ''}${fm ? ` · fra ${esc(fm)}` : ''}</p>
+    ${fm ? '' : `<p class="ask">Skriv firmaets Gmail under Indstillinger. Så åbner knappen altid firmaets mail og aldrig din private.<button class="link" data-act="tab" data-k="indst">Åbn indstillinger</button></p>`}
+    ${draftBox(id, kind)}
+    <ol>
+      <li>Åbn mailen. ${m.claude ? 'Det er Claudes udgave.' : 'Den er skrevet færdig.'}<a class="btn primary wide" target="_blank" rel="noopener" data-act="gmailopen" data-id="${esc(id)}" data-k="${kind}" href="${esc(gmailUrl(k.mail, m.subject, m.body))}">Åbn mailen i Gmail</a></li>
+      <li>${fm ? `Tjek, at der står <b>${esc(fm)}</b> som afsender, og at modtageren er rigtig.` : 'Tjek, at mailen sendes fra firmaets mail, og at modtageren er rigtig.'} Tryk så på <b>Send</b> i Gmail.</li>
+      ${mcp ? `<li>${sentWatch.has(`${kind}:${id}`) ? '<span class="watch">Holder øje med Gmail …</span> Når du har trykket Send, sætter dashboardet selv flueben her. Det tager op til et minut.' : 'Kom tilbage hertil. Dashboardet ser selv i Gmail, at mailen er sendt.'}
+        ${sentErr ? `<span class="small" style="display:block;color:var(--bad)">${esc(sentErr)}</span>` : ''}<button class="btn wide" data-act="sent" data-id="${esc(id)}" data-k="${kind}">Jeg har sendt mailen</button></li>`
+        : `<li>Kom tilbage hertil, og tryk her:<button class="btn pos wide" data-act="sent" data-id="${esc(id)}" data-k="${kind}">Jeg har sendt mailen</button></li>`}
+    </ol>
+    ${det(`copy-${kind}-${id}`, 'Virker Gmail ikke? Kopiér mailen', `<label>Emne<input type="text" readonly value="${esc(m.subject)}"></label>
+      <label>Tekst<textarea readonly rows="10">${esc(m.body)}</textarea></label>
+      <div class="row" style="margin-bottom:14px"><button class="btn" data-act="copy" data-text="${esc(k.mail || '')}">Kopiér modtager</button><button class="btn" data-act="copy" data-text="${esc(m.subject)}">Kopiér emne</button><button class="btn primary" data-act="copy" data-text="${esc(m.body)}">Kopiér tekst</button></div>`)}
+  </section>`;
+}
+
+// ----- Kalender: everything that has a time, like a calendar list (calls, retries, mails, follow-ups) -----
+function agenda() {
+  const now = new Date(), items = [];
+  for (const [id, s] of stores) {
+    const x = stOf(s);
+    if (s.kontakt && !s.mail_sendt) items.push({t: s.kontakt.t || nowIso(), kind: 'mail', id, s});
+    if (x === 'ring_senere' && s.ring_igen) items.push({t: s.ring_igen, kind: 'call', id, s});
+    if (x === 'intet_svar' && s.ring_igen) items.push({t: s.ring_igen, kind: 'retry', id, s});
+    if (x === 'ja' && s.kontakt && s.kontakt.opfoelgning && s.mail_sendt && !s.opfoelg_sendt && !s.ordre) {
+      const r = new Date(s.mail_sendt); r.setDate(r.getDate() + 2); r.setHours(10, 0, 0, 0);
+      items.push({t: r.toISOString(), kind: 'fu', id, s});
+    }
+  }
+  items.sort((a, b) => (a.kind === 'mail' ? 0 : new Date(a.t)) - (b.kind === 'mail' ? 0 : new Date(b.t))); // unsent mails first
+  const groups = new Map();
+  for (const it of items) {
+    const d = new Date(it.t), due = it.kind === 'mail' || d <= now;
+    const key = due ? 'nu' : d.toDateString();
+    if (!groups.has(key)) groups.set(key, {due, day: d, items: []});
+    groups.get(key).items.push(it);
+  }
+  return [...groups.values()].sort((a, b) => (b.due - a.due) || a.day - b.day);
+}
+function dayLabel(d) {
+  const t = new Date(), tm = new Date(); tm.setDate(t.getDate() + 1);
+  const long = d.toLocaleDateString('da-DK', {weekday: 'long', day: 'numeric', month: 'long'});
+  return sameDay(d, t) ? `I dag · ${long}` : sameDay(d, tm) ? `I morgen · ${long}` : long.charAt(0).toUpperCase() + long.slice(1);
+}
+const hhmm = iso => new Date(iso).toLocaleTimeString('da-DK', {hour: '2-digit', minute: '2-digit'});
+function evHtml(it, due) {
+  const s = it.s, open = ui.openMail === `${it.kind}:${it.id}`;
+  const what = {call: `Ring til ${s.butik}`, retry: `Nyt forsøg: ${s.butik}`, mail: `Send mail til ${s.butik}`, fu: `Send opfølgningsmail til ${s.butik}`}[it.kind];
+  const sub = it.kind === 'call' ? (s.note ? `Aftalt · ${s.note}` : 'Aftalt opkald')
+    : it.kind === 'retry' ? `Intet svar sidst · forsøg ${tries(s) + 1} af 3`
+    : it.kind === 'mail' ? `${s.kontakt.navn ? s.kontakt.navn + ' · ' : ''}sagde ja ${fmtDT(s.kontakt.t)}`
+    : `Rapporten blev sendt ${fmtDT(s.mail_sendt)}`;
+  const btn = it.kind === 'call' || it.kind === 'retry'
+    ? `<button class="btn" data-act="callnow" data-id="${esc(it.id)}">Ring nu</button>`
+    : `<button class="btn${due ? ' primary' : ''}" data-act="openmail" data-k="${it.kind}:${esc(it.id)}">${open ? 'Luk' : 'Vis mail'}</button>`;
+  const time = !due ? hhmm(it.t) : it.kind === 'mail' ? 'Nu' : it.kind === 'fu' ? 'Klar' : sameDay(new Date(it.t), new Date()) ? hhmm(it.t) : 'Nu';
+  return `<div class="ev ev-${it.kind}"><div class="ev-time">${time}</div>
+      <div class="ev-body"><b>${esc(what)}</b><div class="muted small">${esc(sub)}</div></div>${btn}</div>
+    ${open ? `<div class="ev-open">${mailPanel(it.id, s, it.kind === 'fu' ? 'opfoelg' : s.ordre ? 'ordre' : 'rapport')}</div>` : ''}`;
+}
+function viewFolg(v) {
+  const groups = agenda(), now = new Date();
+  const venter = [...stores.entries()].filter(([, s]) => s.kontakt && s.mail_sendt && !s.ordre && stOf(s) === 'ja')
+    .sort((a, b) => new Date(a[1].mail_sendt) - new Date(b[1].mail_sendt));
+  const key = JSON.stringify(['kal', groups.map(g => [g.due, g.day.toDateString(), g.items.map(i => [i.kind, i.id, i.t, i.s.note])]), venter.map(([id, s]) => [id, s.opfoelg_sendt]),
+    ui.openMail, ui.openMail ? stores.get(ui.openMail.split(':')[1]) : null, settings, Math.floor(now.getTime() / 6e4), [...ui.openD], inboxKey()]);
+  patch(v, key, () => {
+    let h = '';
+    if (!groups.length) h += '<div class="card"><h2>Ingen aftaler endnu</h2><p class="muted">Når nogen siger "ring senere", eller når en mail skal sendes, kommer det her med dag og klokkeslæt.</p></div>';
+    for (const g of groups) {
+      h += `<h2 class="sec">${g.due ? 'Nu' : esc(dayLabel(g.day))}${g.due ? `<span class="badge">${g.items.length}</span>` : ''}</h2>
+        <div class="cal">${g.items.map(it => evHtml(it, g.due)).join('')}</div>`;
+    }
+    if (venter.length) {
+      h += `<h2 class="sec">Har fået rapporten</h2><p class="muted small" style="margin:0 4px 8px">Tryk her, når de svarer på mailen.</p>${inboxBar()}`;
+      h += venter.map(([id, s]) => `<article class="card"><h3 class="shop sm">${esc(s.butik)}</h3>
+        <p class="muted small">Rapport sendt ${esc(fmtDT(s.mail_sendt))} til ${esc(s.kontakt.mail)}${s.opfoelg_sendt ? ` · opfølgning sendt ${esc(fmtDT(s.opfoelg_sendt))}` : ''}</p>
+        ${replyNote(s.kontakt.mail)}<div class="row">${svarBtn(s.kontakt.mail)}</div>
+        <div class="row"><button class="btn pos" data-act="bestilt" data-id="${esc(id)}" data-k="rettelse">Bestilt: rettelse (${PRIS.rettelse} kr.)</button>
+        <button class="btn pos" data-act="bestilt" data-id="${esc(id)}" data-k="audit">Bestilt: vejledning (${PRIS.audit} kr.)</button>
+        <button class="btn neg" data-act="nejtak" data-id="${esc(id)}">Sagde nej</button></div></article>`).join('');
+    }
+    return h;
+  });
+}
+
+// ----- Kunder -----
+function viewKunder(v) {
+  const list = [...stores.entries()].filter(([, s]) => s.ordre)
+    .sort((a, b) => (a[1].ordre.trin === 'betalt') - (b[1].ordre.trin === 'betalt') || new Date(a[1].ordre.t_bestilt) - new Date(b[1].ordre.t_bestilt));
+  const bank = loadBank();
+  patch(v, JSON.stringify(['kunder', list, settings, bank, [...ui.openD], inboxKey()]), () => list.length ? inboxBar() + list.map(([id, s]) => orderCard(id, s)).join('')
+    : '<div class="card"><h2>Ingen bestillinger endnu</h2><p class="muted">Når nogen bestiller i telefonen eller svarer ja på mailen, kommer de her. Så viser dashboardet næste skridt.</p></div>');
+}
+function orderCard(id, s) {
+  const o = s.ordre, c = cfg(), steps = trinFor(o.produkt), i = steps.indexOf(o.trin), next = steps[i + 1];
+  const NEXT = {adgang: 'Kunden har givet adgang', leveret: o.produkt === 'audit' ? 'Vejledningen er sendt' : 'Fejlene er rettet', faktura: 'Fakturaen er sendt', betalt: 'Kunden har betalt'};
+  let todo = '';
+  if (!o.mail_sendt) todo += mailPanel(id, s, 'ordre');
+  if (o.trin === 'bestilt' && o.produkt === 'audit') todo += `<p class="ask">Skriv til Claude: "${esc(s.butik)} har bestilt vejledningen". Så laver Claude vejledningen, som du sender.</p>`;
+  if (o.trin === 'adgang') todo += `<p class="ask">Skriv til Claude: "${esc(s.butik)} har givet adgang". Så laver Claude en trin-for-trin-plan til rettelsen.</p>`;
+  if (o.trin === 'leveret' || o.trin === 'faktura') {
+    todo += !o.fakturanr ? `<button class="btn primary wide" data-act="faktura" data-id="${esc(id)}">Lav faktura</button>`
+      : `<section class="mail"><h3>Faktura ${esc(o.fakturanr)}</h3><p class="muted small">Fakturaen udstedes af ${esc(c.cvr ? c.firma : `${c.firma} v/ ${c.voksen || c.navn}`)}.${c.voksen ? ` Vis den til ${esc(c.voksen)}, før den sendes.` : ''}</p>
+         <textarea readonly rows="12">${esc(invoiceText(s))}</textarea>
+         <div class="row"><button class="btn primary" data-act="copy" data-text="${esc(invoiceText(s))}">Kopiér faktura</button></div></section>`;
+  }
+  return `<article class="card"><div class="meta"><span class="pill">${esc(PRODUKT[o.produkt] || '')} · ${o.pris} kr.</span></div>
+    <h2 class="shop sm" style="margin-top:8px">${esc(s.butik)}</h2>
+    <p class="muted small">${esc((s.kontakt && s.kontakt.navn) || '')} ${esc((s.kontakt && s.kontakt.mail) || '')}</p>
+    ${replyNote(s.kontakt && s.kontakt.mail)}<div class="row" style="margin-top:4px">${svarBtn(s.kontakt && s.kontakt.mail)}</div>
+    <ol class="steps">${steps.map((t, j) => `<li class="${j <= i ? 'done' : ''}">${TRIN_LABEL[t]}</li>`).join('')}</ol>
+    ${todo}
+    ${next ? `<button class="btn big pos wide" data-act="trin" data-id="${esc(id)}" data-k="${next}">${NEXT[next]}</button>` : `<p class="okmsg">Betalt ${esc(fmtDT(o.t_betalt))} ✓</p>`}</article>`;
+}
+
+// ----- Alle -----
+function viewAlle(v) {
+  const q = ui.q.trim().toLowerCase();
+  const F = {alle: () => true, andet: s => ['forkert', 'opgivet', 'rettet'].includes(stOf(s))};
+  const ok = s => (F[ui.filter] || (x => stOf(x) === ui.filter))(s);
+  const list = [...stores.entries()].filter(([id, s]) => ok(s) && (!q || id.toLowerCase().includes(q)))
+    .sort((a, b) => (b[1].prio || 0) - (a[1].prio || 0) || (a[0] < b[0] ? -1 : 1));
+  patch($('#filters'), ui.filter, () => FILTERS.map(([k, l]) => `<button class="chip" data-act="filter" data-k="${k}" aria-pressed="${ui.filter === k}">${l}</button>`).join(''));
+  const key = JSON.stringify(['alle', ui.filter, q, ui.open, list.map(([id, s]) => [id, s.status, (s.log || []).length, s.note, s.ring_igen]), ui.open ? stores.get(ui.open) : null, [...ui.openD]]);
+  patch(v, key, () => `<p class="muted small" style="margin:0 2px">${list.length} ${list.length === 1 ? 'butik' : 'butikker'}</p>` + (list.length
+    ? `<div class="tablist"><div class="thead"><span>Butik</span><span>Status</span><span>Opkald</span><span>Sidst ringet</span></div>${list.map(([id, s]) => rowHtml(id, s)).join('')}</div>`
+    : '<div class="card"><p class="muted" style="margin:0">Ingen butikker matcher søgningen.</p></div>'));
+}
+function rowHtml(id, s) {
+  const open = ui.open === id, lc = lastCall(s), x = stOf(s);
+  const n = (s.log || []).length;
+  return `<div class="li" id="row-${esc(id)}"><button class="lihead" data-act="open" data-id="${esc(id)}" aria-expanded="${open}">
+      <span><span class="liname">${esc(s.butik || id)}</span><span class="sub mono">${esc(s.telefon || '')}</span></span>
+      <span><span class="pill st-${esc(x)}">${esc(STATUS[x] || x)}</span></span>
+      <span class="c-n">${n}<span class="m-only"> opkald</span></span><span class="c-t">${lc ? esc(fmtDT(lc)) : '–'}</span></button>
+    ${open ? `<div class="lidetail">
+      <p><b>${esc(s.telefon)}</b> · <a href="https://${esc(s.butik)}" target="_blank" rel="noopener">Åbn butikken ↗</a></p>
+      ${s.kontakt ? `<p class="small">Kontakt: ${esc(s.kontakt.navn || '')} ${esc(s.kontakt.mail || '')} · ja ${esc(fmtDT(s.kontakt.t))}${s.kontakt.opfoelgning ? ' · må følge op' : ''}</p><div class="row">${svarBtn(s.kontakt.mail)}</div>` : ''}
+      ${(s.log || []).length ? `<p class="small">Historik: ${s.log.map(e => `${esc(fmtDT(e.t))} ${esc(LOGL[e.r] || e.r)}`).join(' · ')}</p>` : ''}
+      ${s.grund ? `<p class="small">Grund: ${esc(s.grund)}</p>` : ''}
+      <label>Note<input type="text" id="note-${esc(id)}" data-note="${esc(id)}" value="${esc(s.note || '')}" autocomplete="off"></label>
+      <div class="row"><button class="btn" data-act="savenote" data-id="${esc(id)}">Gem note</button>
+        <button class="btn primary" data-act="callnow" data-id="${esc(id)}">Ring til denne nu</button>
+        ${x !== 'ny' ? `<button class="link" data-act="reset" data-id="${esc(id)}">Nulstil butikken</button>` : ''}</div>
+      ${fundHtml(s, 'afund-' + id)}</div>` : ''}</div>`;
+}
+
+// ----- Indstillinger -----
+function field(k, label, val, hint, type, im) {
+  return `<label>${esc(label)}${hint ? `<span class="hint-t">${esc(hint)}</span>` : ''}<input type="${type}" id="s-${k}" data-s="${k}" aria-label="${esc(label)}" value="${esc(val || '')}"${im ? ` inputmode="${im}"` : ''} autocomplete="off"></label>`;
+}
+function viewIndst(v) {
+  const s = settings || {}, b = loadBank();
+  patch(v, 'indst' + JSON.stringify([s, b]), () => `<article class="card">
+    <p class="muted small" style="margin-top:0">Udfyld de fire felter her, før du ringer. Resten kan vente, til den første faktura skal laves.</p>
+    ${field('navn', 'Dit fornavn', s.navn, 'Bruges, når du præsenterer dig', 'text')}
+    ${field('firma', 'Firmanavn', s.firma, 'Den voksnes virksomhed, som kunderne handler med', 'text')}
+    ${field('voksen', 'Den voksnes navn (valgfrit)', s.voksen, 'Kun hvis en voksen står for fakturaen', 'text')}
+    ${field('google_mail', 'Firmaets Gmail', s.google_mail, 'Ikke din private mail. Mails sendes fra den, og kunderne giver adgang til den.', 'email')}
+    ${field('kontaktmail', 'Mail til kunderne', s.kontaktmail, 'Står nederst i alle mails, fx info@webshopdoktoren.dk. Svar til den lander i firmaets Gmail.', 'email')}
+    <details style="margin-top:18px"${s.cvr ? ' open' : ''}><summary>Til fakturaer (kan vente)</summary>
+    ${field('cvr', 'CVR-nummer', s.cvr, 'Har I ikke CVR endnu? Lad feltet stå tomt. Så står fakturaen som "firmanavn v/ ejerens navn".', 'text', 'numeric')}
+    ${field('adresse', 'Adresse', s.adresse, 'Til fakturaen og hjemmesiden. Kommer ikke med i mails, før I har CVR.', 'text')}
+    ${field('tlf', 'Telefon til kunderne (valgfrit)', s.tlf, 'Vises nederst i mails', 'tel')}
+    ${field('hjemmeside', 'Hjemmeside (valgfrit)', s.hjemmeside, 'Skriv den, når hjemmesiden er online, fx webshopdoktoren.dk. Så kommer den med nederst i mails.', 'text')}
+    <label class="check" style="margin-top:18px"><input type="checkbox" id="s-momsreg" data-s="momsreg"${s.momsreg ? ' checked' : ''}> Virksomheden er momsregistreret (så lægges der moms oven i priserne)</label>
+    <h3 style="margin-top:22px">Bankoplysninger til fakturaen</h3>
+    <p class="muted small">Gemmes kun i denne browser. Claude kan ikke se dem.</p>
+    ${field('reg', 'Reg.nr.', b.reg, '', 'text', 'numeric')}
+    ${field('konto', 'Kontonr.', b.konto, '', 'text', 'numeric')}
+    <div style="height:14px"></div></details>
+    <div class="grid2"><button class="btn big primary" data-act="savesettings">Gem</button><button class="btn big" data-act="tab" data-k="overblik">Tilbage</button></div></article>`);
+}
+
+// ---------- writes ----------
+function busy(on) { ui.saving = on; document.body.classList.toggle('busy', on); }
+async function withRetry(fn) {
+  try { return await fn(); }
+  catch (e) {
+    if (e && e.code === 'unavailable') { await new Promise(r => setTimeout(r, 400 + Math.random() * 800)); return fn(); }
+    throw e;
+  }
+}
+function errMsg(e) {
+  const c = e && e.code;
+  if (c === 'invalid_argument') { if (canWrite !== true) canWrite = false; return 'Kunne ikke gemme. Har du kun adgang til at se siden?'; }
+  if (c === 'quota_exceeded') return 'Databasen er fuld. Skriv til Claude.';
+  if (c === 'revoked') return 'Adgangen er ændret. Genindlæs siden.';
+  if (c === 'resource_exhausted') return 'For mange gem på kort tid. Vent et øjeblik, og prøv igen.';
+  return 'Kunne ikke gemme. Tjek internettet, og prøv igen.';
+}
+async function write(id, fields) {
+  if (!db || ui.saving) return false;
+  busy(true);
+  try {
+    await withRetry(() => db.collection('stores').doc(id).update(fields));
+    stores.set(id, {...(stores.get(id) || {}), ...fields}); // show it at once; the live snapshot confirms it
+    try { if (navigator.vibrate) navigator.vibrate(10); } catch (e) { /* no haptics here */ }
+    return true;
+  } catch (e) { toast(errMsg(e)); return false; }
+  finally { busy(false); render(); }
+}
+function restoreValue(prev, cur) {
+  if (prev && typeof prev === 'object' && !Array.isArray(prev) && cur && typeof cur === 'object' && !Array.isArray(cur)) {
+    const out = {...prev};
+    for (const k of Object.keys(cur)) if (!(k in prev)) out[k] = null;
+    return out;
+  }
+  return prev === undefined ? null : prev;
+}
+async function act(id, fields, msg, opts = {}) {
+  const before = stores.get(id) || {}, prev = {};
+  for (const k of Object.keys(fields)) prev[k] = restoreValue(before[k], fields[k]);
+  const ok = await write(id, fields);
+  if (ok && msg) toast(msg, {...opts, undo: {id, prev, ring: !!opts.ring}});
+  return ok;
+}
+function resetCall() { ui.current = null; ui.forced = null; ui.step = 'start'; ui.hist = []; ui.form = {}; ui.err = ''; ui.anim = 'up'; }
+function toCard() { requestAnimationFrame(() => { const el = document.querySelector('.card.call') || $('#view'); if (el) el.scrollIntoView({block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'}); }); }
+
+async function outcome(kind, grund) {
+  if (ui.tab === 'ovelse') return pracEnd({kind, grund}); // practice: nothing is saved
+  const id = currentId();
+  if (!id) return;
+  const s = stores.get(id) || {}, f = {log: [...(s.log || []), {t: nowIso(), r: kind}]};
+  if (kind === 'nej' && grund) f.grund = grund;
+  if (kind === 'intet_svar') {
+    if (tries(s) + 1 >= 3) { f.status = 'opgivet'; f.ring_igen = null; }
+    else { f.status = 'intet_svar'; f.ring_igen = callSlot(new Date(Date.now() + 2 * 3600e3)).toISOString(); }
+  } else { f.status = kind; f.ring_igen = null; }
+  const label = kind === 'intet_svar' ? (f.status === 'opgivet' ? 'intet svar 3 gange, droppet' : `intet svar, ringer igen ${fmtDT(f.ring_igen)}`) : kind === 'nej' ? 'nej tak' : 'forkert nummer';
+  const ok = await act(id, f, `${s.butik}: ${label}. Næste butik er klar.`, {ring: true});
+  if (ok) { resetCall(); render(); toCard(); }
+}
+async function saveJa() {
+  const prac = ui.tab === 'ovelse', id = prac ? 'ovelse' : currentId();
+  if (!id) return;
+  const s = stores.get(id) || {}, mail = (ui.form.mail || '').trim(), best = ui.step === 'order';
+  if (!MAIL_RE.test(mail)) { ui.err = 'Skriv en rigtig mailadresse.'; ui.formRev++; return render(); }
+  if (prac) return pracEnd({kind: best ? 'bestilt' : 'ja', mail});
+  const t = nowIso(), f = {status: 'ja', ring_igen: null, log: [...(s.log || []), {t, r: best ? 'bestilt' : 'ja'}],
+    kontakt: {mail, navn: (ui.form.navn || '').trim(), opfoelgning: !!ui.form.opf, rapport: true, t, ringer: settings.navn || ''}};
+  if (best) { const p = ui.form.produkt === 'audit' ? 'audit' : 'rettelse'; f.ordre = {produkt: p, pris: PRIS[p], trin: 'bestilt', t_bestilt: t, mail_sendt: null, fakturanr: null}; }
+  const ok = await act(id, f, best ? `${s.butik} har bestilt!` : `${s.butik} sagde ja!`, {ring: true});
+  if (ok) { resetCall(); ui.done = id; render(); toCard(); writeDraft(id, best ? 'ordre' : 'rapport', {...s, ...f}); }
+}
+async function saveLater(k) {
+  const prac = ui.tab === 'ovelse', id = prac ? 'ovelse' : currentId();
+  if (!id) return;
+  const s = stores.get(id) || {};
+  let when;
+  if (k === 'tomorrow') when = nextWeekdayAt(new Date(), 10);
+  else if (k === 'custom') {
+    if (!ui.form.when) { ui.err = 'Vælg et tidspunkt, eller tryk på en af knapperne.'; ui.formRev++; return render(); }
+    when = new Date(ui.form.when);
+  } else when = new Date(Date.now() + Number(k) * 60e3);
+  if (!valid(when)) { ui.err = 'Tidspunktet kunne ikke læses.'; ui.formRev++; return render(); }
+  if (prac) return pracEnd({kind: 'later', when: when.toISOString()});
+  const note = (ui.form.note || '').trim();
+  const f = {status: 'ring_senere', ring_igen: when.toISOString(), log: [...(s.log || []), {t: nowIso(), r: 'ring_senere'}]};
+  if (note) f.note = s.note ? `${s.note} · ${note}` : note;
+  const ok = await act(id, f, `${s.butik}: ring igen ${fmtDT(f.ring_igen)}. Det står i Kalender.`, {ring: true});
+  if (ok) { resetCall(); render(); toCard(); }
+}
+async function markSent(id, kind, t = nowIso(), msg) {
+  const s = stores.get(id);
+  if (!s) return;
+  sentWatch.delete(`${kind}:${id}`);
+  const f = kind === 'opfoelg' ? {opfoelg_sendt: t} : kind === 'ordre' ? {ordre: {...s.ordre, mail_sendt: t}, mail_sendt: s.mail_sendt || t} : {mail_sendt: t};
+  await act(id, f, msg || `${s.butik}: mailen er markeret som sendt`);
+}
+async function undo() {
+  const u = ui.undo;
+  if (!u) return;
+  hideToast();
+  const ok = await write(u.id, u.prev);
+  if (!ok) return;
+  if (u.ring) { if (ui.tab !== 'ring') go('ring'); resetCall(); ui.done = null; ui.forced = u.id; ui.current = u.id; }
+  render();
+  if (u.ring) toCard();
+  toast('Fortrudt');
+}
+async function saveSettings() {
+  const get = k => (($(`[data-s="${k}"]`) || {}).value || '').trim();
+  lsSet('gmcd-bank', JSON.stringify({reg: get('reg').replace(/\D/g, ''), konto: get('konto').replace(/\D/g, '')}));
+  const data = {navn: get('navn'), firma: get('firma'), cvr: get('cvr').replace(/\D/g, ''), adresse: get('adresse'), voksen: get('voksen'),
+    tlf: get('tlf'), hjemmeside: get('hjemmeside'), google_mail: get('google_mail'), kontaktmail: get('kontaktmail'), momsreg: !!($('[data-s="momsreg"]') || {}).checked, opdateret: nowIso()};
+  if (data.google_mail && !MAIL_RE.test(data.google_mail)) { toast('Firmaets Gmail ser forkert ud. Ret den, og tryk Gem igen.'); return; }
+  if (data.kontaktmail && !MAIL_RE.test(data.kontaktmail)) { toast('Mail til kunderne ser forkert ud. Ret den, og tryk Gem igen.'); return; }
+  if (!db || ui.saving) return;
+  busy(true);
+  try { await withRetry(() => db.doc('settings/main').set(data)); settings = data; ui.tab = 'overblik'; lsSet('gmcd-tab', 'overblik'); toast('Indstillingerne er gemt ✓'); }
+  catch (e) { toast(errMsg(e)); }
+  finally { busy(false); render(); window.scrollTo(0, 0); }
+}
+
+// ---------- copy + toast ----------
+async function copyText(txt) {
+  try { if (navigator.clipboard && window.isSecureContext) { await navigator.clipboard.writeText(txt); return true; } } catch (e) { /* fall back below */ }
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = txt; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.top = '0'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, txt.length);
+    const ok = document.execCommand('copy'); ta.remove(); return ok;
+  } catch (e) { return false; }
+}
+async function copyBtn(b) {
+  const ok = await copyText(b.dataset.text || ''), old = b.textContent;
+  b.textContent = ok ? 'Kopieret ✓' : 'Markér teksten, og kopiér selv';
+  setTimeout(() => { b.textContent = old; }, 1600);
+}
+let toastTimer = null;
+function hideToast() { $('#toast').hidden = true; ui.undo = null; }
+function toast(msg, o = {}) {
+  const t = $('#toast');
+  t.innerHTML = `<span class="msg">${esc(msg)}</span>${o.undo ? '<button class="link" data-act="undo">Fortryd</button>' : ''}`;
+  t.hidden = false;
+  ui.undo = o.undo || null;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(hideToast, o.ms || 7000);
+}
+
+// ---------- events ----------
+document.addEventListener('touchstart', () => {}, {passive: true}); // lets :active press feedback show on iOS
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-act]');
+  if (!b || b.disabled) return;
+  const a = b.dataset.act, id = b.dataset.id, k = b.dataset.k;
+  const ae = document.activeElement; // values are already in ui.form or the DOM; blurring lets the view re-render
+  if (a !== 'copy' && ae && ae !== b && /^(INPUT|TEXTAREA)$/.test(ae.tagName) && !ae.readOnly) ae.blur();
+  if (a === 'tab') { go(k); return; }
+  if (a === 'menu') { ui.menu = true; render(); requestAnimationFrame(() => { const f = document.querySelector('#nav2 [aria-current]') || document.querySelector('#nav2 button'); if (f) f.focus(); }); return; }
+  if (a === 'closemenu') { ui.menu = false; render(); $('#menubtn').focus(); return; }
+  if (a === 'rail') { ui.rail = !ui.rail; lsSet('gmcd-rail', ui.rail ? '1' : '0'); render(); return; }
+  if (a === 'theme') { ui.theme = k; lsSet('gmcd-theme', k); applyTheme(); render(); return; }
+  if (a === 'pracstart') { pracStart(k); return; }
+  if (a === 'inbox') { checkInbox(); return; }
+  if (a === 'henv') { checkHenv(); return; }
+  if (a === 'hvdone') { setHenvDone(id, k === '1'); return; }
+  if (a === 'hvconfirm') { markConfirmed(id); return; }
+  if (a === 'gmailopen') { watchSent(id, k); return; }
+  if (a === 'draft') { writeDraft(id, k, null, b.dataset.fresh === '1'); return; }
+  if (a === 'draftstop') { const d = drafts.get(`${k}:${id}`); if (d && d.ctl) d.ctl.abort(); return; }
+  if (a === 'draftoff') { drafts.delete(`${k}:${id}`); render(); return; }
+  if (a === 'pracpick') { ui.prac = {stage: 'pick'}; ui.step = 'start'; ui.hist = []; ui.form = {}; ui.err = ''; render(); window.scrollTo(0, 0); return; }
+  if (a === 'openstore') { ui.open = id; ui.filter = 'alle'; ui.q = ''; $('#q').value = ''; go('alle'); requestAnimationFrame(() => { const r = document.getElementById('row-' + id); if (r) r.scrollIntoView({block: 'center'}); }); return; }
+  if (a === 'copy') { copyBtn(b); return; }
+  if (a === 'filter') { ui.filter = k; ui.open = null; render(); return; }
+  if (a === 'open') { ui.open = ui.open === id ? null : id; render(); return; }
+  if (ui.saving) return;
+  switch (a) {
+    case 'o': outcome(k); break;
+    case 'go': if (b.dataset.p) ui.form.produkt = b.dataset.p; ui.hist.push(ui.step); ui.step = k; ui.err = ''; ui.anim = 'fwd'; ui.formRev++; render(); toCard(); break;
+    case 'back': ui.step = ui.hist.pop() || 'start'; ui.err = ''; ui.anim = 'back'; ui.formRev++; render(); toCard(); break;
+    case 'restart': ui.step = 'start'; ui.hist = []; ui.form = {}; ui.err = ''; ui.anim = 'back'; ui.formRev++; render(); toCard(); break;
+    case 'set': { const v = b.dataset.v; ui.form[b.dataset.f] = v === '1' ? true : v === '0' ? false : v; ui.formRev++; render(); break; }
+    case 'nejg': outcome('nej', b.dataset.v === 'Ved ikke' ? '' : b.dataset.v); break;
+    case 'fill': ui.form[b.dataset.f] = b.dataset.v; ui.formRev++; render(); break;
+    case 'saveja': saveJa(); break;
+    case 'later': saveLater(k); break;
+    case 'skip': { const cur = currentId(); if (cur) ui.skipped.add(cur); resetCall(); render(); toCard(); toast('Sprunget over. Butikken kommer igen, når du genindlæser siden.'); break; }
+    case 'unskip': ui.skipped.clear(); render(); break;
+    case 'next': ui.done = null; ui.anim = 'up'; render(); toCard(); break;
+    case 'sent': markSent(id, k); break;
+    case 'openmail': { ui.openMail = ui.openMail === k ? null : k; render();
+      const sid = k.slice(k.indexOf(':') + 1), s = stores.get(sid);
+      if (ui.openMail && s) { const mk = k.startsWith('fu:') ? 'opfoelg' : s.ordre ? 'ordre' : 'rapport'; if (!drafts.has(`${mk}:${sid}`)) writeDraft(sid, mk); }
+      break; }
+    case 'undo': undo(); break;
+    case 'callnow': go('ring'); resetCall(); ui.forced = id; ui.current = id; ui.done = null; render(); toCard(); break;
+    case 'bestilt': { const s = stores.get(id); if (!s) break; const p = k === 'audit' ? 'audit' : 'rettelse';
+      act(id, {ordre: {produkt: p, pris: PRIS[p], trin: 'bestilt', t_bestilt: nowIso(), mail_sendt: null, fakturanr: null}}, `${s.butik} har bestilt! Se fanen Kunder.`).then(ok => { if (ok) { ui.tab = 'kunder'; render(); } }); break; }
+    case 'nejtak': { const s = stores.get(id); if (s) act(id, {status: 'nej', grund: 'Nej efter rapporten'}, `${s.butik}: nej tak`); break; }
+    case 'trin': { const s = stores.get(id); if (s && s.ordre) act(id, {ordre: {...s.ordre, trin: k, ['t_' + k]: nowIso()}}, `${s.butik}: ${TRIN_LABEL[k].toLowerCase()}`); break; }
+    case 'faktura': { const s = stores.get(id); if (s && s.ordre) act(id, {ordre: {...s.ordre, fakturanr: nextInvoiceNo(), faktura_dato: nowIso()}}, 'Fakturaen er lavet'); break; }
+    case 'savenote': { const el = document.querySelector(`[data-note="${CSS.escape(id)}"]`); if (el) act(id, {note: el.value.trim()}, 'Noten er gemt'); break; }
+    case 'reset': { const s = stores.get(id); if (s) act(id, {status: 'ny', ring_igen: null, kontakt: null, ordre: null, mail_sendt: null, opfoelg_sendt: null}, `${s.butik} er nulstillet`); break; }
+    case 'hidehelp': lsSet('gmcd-help', '1'); ui.helpHidden = true; render(); break;
+    case 'savesettings': saveSettings(); break;
+  }
+});
+document.addEventListener('input', e => {
+  const el = e.target;
+  if (el.dataset && el.dataset.f) {
+    ui.form[el.dataset.f] = el.type === 'checkbox' ? el.checked : el.value;
+    if (el.dataset.f === 'mail') { const good = MAIL_RE.test(el.value.trim()); el.classList.toggle('ok', good); if (good) el.classList.remove('bad'); }
+  } else if (el.id === 'q') { ui.q = el.value; ui.open = null; render(); }
+});
+document.addEventListener('change', e => {
+  const el = e.target;
+  if (el.dataset && el.dataset.f && (el.type === 'checkbox' || el.type === 'radio')) ui.form[el.dataset.f] = el.type === 'checkbox' ? el.checked : el.value;
+  if (el.dataset && el.dataset.f === 'mail') el.classList.toggle('bad', !!el.value.trim() && !MAIL_RE.test(el.value.trim())); // validate inline, when they leave the field
+});
+document.addEventListener('toggle', e => {
+  const d = e.target;
+  if (d && d.dataset && d.dataset.d) { if (d.open) ui.openD.add(d.dataset.d); else ui.openD.delete(d.dataset.d); }
+}, true);
+addEventListener('keydown', e => { if (e.key === 'Escape' && ui.menu) { ui.menu = false; render(); $('#menubtn').focus(); } });
+let resizeRaf = 0;
+addEventListener('resize', () => { cancelAnimationFrame(resizeRaf); resizeRaf = requestAnimationFrame(() => { if (ui.tab === 'overblik' && loaded) drawChart(dayStats()); if (ui.menu && innerWidth >= 1024) { ui.menu = false; render(); } }); });
+
+// ---------- boot ----------
+async function boot() {
+  applyTheme();
+  $('#searchbar').insertAdjacentHTML('afterbegin', ic('search'));
+  render();
+  const C = window.claude;
+  if (!C || typeof C.use !== 'function') { conn = 'missing'; return render(); }
+  try { db = await C.use('db'); } catch (e) { db = null; }
+  if (!db) { conn = 'missing'; return render(); }
+  conn = 'ok';
+  C.use('mcp').then(m => { mcp = m || null; render(); if (mcp) { checkHenv(); setInterval(() => { if (document.visibilityState === 'visible') checkHenv(); }, 10 * 60e3); } }).catch(() => {});
+  C.use('sample').then(f => { samp = f || null; render(); }).catch(() => {});
+  C.use('user').then(u => u ? u.can('data.write') : null).then(v => { if (v === true || v === false) { canWrite = v; render(); } }).catch(() => {});
+  db.collection('stores').limit(1000).onSnapshot(snap => {
+    stores.clear();
+    for (const d of snap.docs) stores.set(d.id, d.data());
+    loaded = true;
+    render();
+  }, () => { conn = 'error'; render(); });
+  db.doc('settings/main').onSnapshot(snap => { settings = snap.exists ? snap.data() : {}; render(); }, () => {});
+  db.collection('henv').onSnapshot(snap => { henvDone = {}; for (const d of snap.docs) henvDone[d.id] = d.data(); render(); }, () => {});
+  db.doc('meta/tjek').onSnapshot(snap => { tjek = snap.exists ? snap.data() : null; render(); }, () => {});
+  setInterval(render, 60000);
+}
+boot();
+})();
+</script>

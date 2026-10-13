@@ -1,0 +1,6 @@
+# Lead data and reports about third-party stores stay local (contact data = business/personal data; GDPR minimisation)
+data/
+reports/
+__pycache__/
+# Built website (has the owner's name and address); rebuild with tools/build_site.py
+site/upload/
