@@ -9,13 +9,14 @@ Design rule: a 'fejl' (error) must be something we actually observed. Anything w
 because these findings are quoted to store owners on the phone."""
 import html
 import json
+from collections import Counter
 import re
 import urllib.parse
 from datetime import datetime, timezone
 
 from .fetch import Fetcher
 
-VERSION = "0.3.0"
+VERSION = "0.4.0"
 G = "https://support.google.com/merchants/answer/"
 REF = {"misrep": G + "6150127?hl=da", "gtin": G + "160161?hl=da", "price": G + "6324371?hl=da",
        "availability": G + "6324448?hl=da", "title": G + "6324415?hl=da", "image": G + "6324350?hl=da"}
@@ -56,6 +57,12 @@ META_TAG = re.compile(r"<meta\b[^>]*>", re.I)
 DEMO_PRODUCT = re.compile(r"(lorem ipsum|this is a demo|dette er en demo|example product|eksempel på produkt)", re.I)
 GENERIC_TITLE = re.compile(r"\s*(home|forside|hjem|my store|min butik|welcome|velkommen|shop|webshop)?\s*", re.I)
 HTTP_IMG = re.compile(r"""<img\b[^>]*\ssrc=["']http://[^"']+""", re.I)
+PRICE_TITLE = re.compile(r"\d+\s?(?:kr\.?|,-)(?![\wæøå])", re.I)
+GIFT = re.compile(r"(gavekort|gift ?card)", re.I)
+UNDER = re.compile(r"(under construction|under opbygning|åbner snart|opening soon|website coming soon|webshoppen åbner)", re.I)
+HTML_LANG = re.compile(r"""<html\b[^>]*\slang=["']?([A-Za-z-]+)""", re.I)
+DA_WORDS = {"og", "til", "med", "på", "er", "det", "vi", "af", "din", "dine", "jeres", "kurv", "levering", "fragt", "køb", "varer", "ikke", "eller"}
+EN_WORDS = {"the", "and", "with", "your", "you", "our", "shipping", "cart", "buy", "products", "not", "or"}
 
 
 def noindex(h):
@@ -315,7 +322,8 @@ def run(domain, max_products_pages=3):
                         f"{len(zero)} varer med pris 0, fx '{zero[0][:60]}'" if zero else f"{len(products)} varer tjekket.",
                         "Varer med pris 0 afvises og kan ligne vildledning.", "Sæt en rigtig pris, eller fjern varen fra Google-kanalen.", REF["price"]))
         bad_titles = [p["title"] for p in products if len(p.get("title", "")) > 150
-                      or (p.get("title", "").isupper() and len(p.get("title", "")) > 8) or SALES_WORDS.search(p.get("title", ""))]
+                      or (p.get("title", "").isupper() and len(p.get("title", "")) > 8) or SALES_WORDS.search(p.get("title", ""))
+                      or (PRICE_TITLE.search(p.get("title", "")) and not GIFT.search(p.get("title", "")))]
         C.append(_check("D04", A2, "middel", "Produkttitler uden salgsord eller VERSALER", "advarsel" if bad_titles else "ok",
                         f"{len(bad_titles)} titler, fx '{bad_titles[0][:70]}'" if bad_titles else "Ingen problematiske titler fundet.",
                         "Google afviser titler med salgsbudskaber (fx 'gratis fragt', 'tilbud') og bruger titlen til at matche søgninger.",
@@ -371,6 +379,13 @@ def run(domain, max_products_pages=3):
             C.append(_check("D11", A2, "høj", "Ingen demo-varer eller fyldtekst", "fejl", f"{len(demo_p)} varer med demo- eller fyldtekst, fx '{demo_p[0][:60]}'",
                             "Varer med 'lorem ipsum' eller demo-tekst ligner en ufærdig butik og bliver afvist, hvis de kommer med i Google-feedet.",
                             "Slet demo-varerne, eller skriv rigtige titler og beskrivelser.", REF["misrep"]))
+        same = Counter(re.sub(r"\s+", " ", p.get("title", "")).strip().lower() for p in products if p.get("title"))
+        dups = [(t, c) for t, c in same.most_common() if c > 1]
+        if len(dups) >= 3:
+            first = next(p["title"] for p in products if re.sub(r"\s+", " ", p.get("title", "")).strip().lower() == dups[0][0])
+            C.append(_check("D13", A2, "lav", "Hver vare har sin egen titel", "advarsel", f"{len(dups)} titler bruges af flere varer, fx '{first[:60]}' ({dups[0][1]} varer)",
+                            "Når flere varer har præcis samme titel, kan Google og kunderne ikke se forskel på dem i søgeresultaterne.",
+                            "Skriv det, der adskiller varerne, i titlen (fx farve, størrelse eller model).", REF["title"]))
         sold = [p["title"] for p in products if p.get("variants") and not any(v.get("available") for v in p["variants"])]
         if len(products) >= 10 and len(sold) >= len(products) / 2:
             C.append(_check("D12", A2, "lav", "De fleste varer kan købes", "advarsel", f"{len(sold)} af {len(products)} varer er udsolgt, fx '{sold[0][:60]}'",
@@ -390,6 +405,12 @@ def run(domain, max_products_pages=3):
                             f"{share:.0%} af {len(js_vars)} varianter på {len(pp)} stikprøvevarer mangler stregkode.",
                             "Mærkevarer uden GTIN får ofte begrænset synlighed eller afvises. Egne produkter uden GTIN skal markeres korrekt (identifier_exists).",
                             "Udfyld stregkode/GTIN for mærkevarer. Ved egne produkter: brug mærke + varenummer (MPN), eller marker 'ingen GTIN' i feed-appen.", REF["gtin"]))
+            noid = [v for v in js_vars if not str(v.get("barcode") or "").strip() and not str(v.get("sku") or "").strip()]
+            if len(noid) > len(js_vars) / 2:
+                C.append(_check("D14", A2, "lav", "Varer har stregkode eller varenummer", "advarsel",
+                                f"{len(noid)} af {len(js_vars)} varianter på {len(pp)} stikprøvevarer har hverken stregkode eller varenummer (SKU).",
+                                "Uden stregkode skal Google bruge mærke og varenummer til at genkende varen. Uden nogen af delene bliver varen sværere at matche.",
+                                "Udfyld varenummer (SKU) på alle varianter, og stregkode på mærkevarer.", REF["gtin"]))
         bad_gtin = [((v.get("name") or v.get("title") or "").replace("'", "’")[:50], str(v["barcode"]).strip()) for v in js_vars
                     if str(v.get("barcode") or "").strip() and not gtin_ok(v["barcode"])]
         if bad_gtin:
@@ -397,7 +418,7 @@ def run(domain, max_products_pages=3):
                             f"{len(bad_gtin)} af {len(js_vars)} varianter på {len(pp)} stikprøvevarer har en ugyldig stregkode, fx '{bad_gtin[0][0]}' med stregkoden {bad_gtin[0][1]}",
                             "Google tjekker stregkodens kontrolciffer. En ugyldig GTIN giver afviste varer eller begrænset visning.",
                             "Ret stregkoden til producentens rigtige EAN/GTIN, eller fjern den, hvis varen ikke har en.", REF["gtin"]))
-        no_ld, mism, avail_bad, comma, cur_bad, ld_gap = [], [], [], [], [], []
+        no_ld, mism, avail_bad, comma, cur_bad, ld_gap, gtin_lost, dup_ld, no_brand = [], [], [], [], [], [], [], [], []
         for prod, b, js in pp:
             items = [x for x in _ldjson(b) if str(x.get("@type", "")).lower() in ("product", "productgroup")]
             if not items:
@@ -410,6 +431,15 @@ def run(domain, max_products_pages=3):
             if shop_cur and ld_cur and shop_cur.group(1) not in ld_cur:
                 cur_bad.append(f"{prod['title'][:40]}: {', '.join(sorted(ld_cur))} i stedet for {shop_cur.group(1)}")
             raw_prices = [o.get("price") for o in offers if o.get("price") not in (None, "")]
+            name = re.sub(r"\s+", " ", prod["title"]).strip().lower()
+            same_item = [it for it in items if re.sub(r"\s+", " ", str(it.get("name") or "")).strip().lower() == name]
+            if len(same_item) >= 2:
+                dup_ld.append(f"{prod['title'][:40]}: {len(same_item)} sæt")
+            if not any(it.get("brand") for it in items):
+                no_brand.append(prod["title"][:40])
+            good = [v for v in (js or {}).get("variants", []) if str(v.get("barcode") or "").strip() and gtin_ok(v["barcode"])]
+            if good and not re.search(r'"gtin(?:8|12|13|14)?"', json.dumps(items)):
+                gtin_lost.append(f"'{prod['title'][:40]}' har stregkoden {str(good[0]['barcode']).strip()} i butikken")
             missing = [w for w, ok in (("billede", any(it.get("image") for it in items)), ("pris", bool(raw_prices))) if not ok]
             if missing:
                 ld_gap.append(f"{prod['title'][:40]}: mangler {' og '.join(missing)}")
@@ -441,6 +471,18 @@ def run(domain, max_products_pages=3):
             C.append(_check("S07", A3, "middel", "Strukturerede produktdata har billede og pris", "fejl", "; ".join(ld_gap[:2]),
                             "Google bruger produktdataene i koden til at vise og tjekke varen. Uden billede eller pris kan varen ikke vises med pris i Google.",
                             "Ret temaets JSON-LD, så hver vare har image, price og priceCurrency.", REF["price"]))
+        if gtin_lost:
+            C.append(_check("S09", A3, "middel", "Stregkoden står i produktdataene", "advarsel", "; ".join(gtin_lost[:2]) + ", men den står ikke i produktdataene på siden.",
+                            "Google sammenligner feedet med produktsiden. Når stregkoden kun findes i butikken og ikke i produktdataene, kan Google ikke bekræfte den.",
+                            "Ret temaets JSON-LD, så hver variant har gtin (stregkoden) med.", REF["gtin"]))
+        if dup_ld:
+            C.append(_check("S10", A3, "middel", "Én vare har ét sæt produktdata", "advarsel", "; ".join(dup_ld[:2]) + " produktdata for samme vare.",
+                            "Når både temaet og en app udskriver produktdata, ser Google to versioner af samme vare. Er de forskellige, kan Google vælge den forkerte pris eller lagerstatus.",
+                            "Slå produktdata fra i enten temaet eller SEO-appen, så der kun er ét sæt.", REF["price"]))
+        if no_brand and len(no_brand) == len(pp):
+            C.append(_check("S08", A3, "lav", "Produktdataene har mærke", "advarsel", f"Mærke (brand) mangler i produktdataene på alle {len(pp)} tjekkede sider.",
+                            "Google bruger mærket til at genkende varen og vise den på de rigtige søgninger.",
+                            "Udfyld 'Leverandør' på varerne, og sørg for at temaet udskriver brand i JSON-LD.", REF["gtin"]))
         if cur_bad:
             C.append(_check("S06", A3, "høj", "Valutaen i strukturerede data passer med butikken", "fejl", "; ".join(cur_bad[:2]),
                             "Google afviser varer, når valutaen i produktdata ikke passer med den valuta, kunden ser på siden.",
@@ -520,6 +562,19 @@ def run(domain, max_products_pages=3):
                         f"Forsidens titel er '{title or 'tom'}'." if generic else "Forsiden har ingen beskrivelse (meta description).",
                         "Titel og beskrivelse er det, kunderne ser om butikken i Google. Mangler de, finder Google selv på en tekst.",
                         "Skriv en titel og beskrivelse under Onlinebutik → Præferencer.", None))
+    lang = HTML_LANG.search(home)
+    words = re.findall(r"[a-zæøå]+", home_txt.lower())
+    da, en = sum(w in DA_WORDS for w in words), sum(w in EN_WORDS for w in words)
+    if lang and not lang.group(1).lower().startswith(("da", "no", "nb", "sv")) and da >= 20 and da > 2 * en:
+        C.append(_check("M11", A4, "middel", "Siden er sat til det rigtige sprog", "advarsel",
+                        f"Siden er sat til sproget '{lang.group(1)}', men teksten er dansk ({da} almindelige danske ord mod {en} engelske).",
+                        "Browsere og Google bruger sproget i koden. Står der et andet sprog end teksten, kan siden blive tilbudt oversat, og det ser uprofessionelt ud.",
+                        "Sæt butikkens standardsprog til dansk under Indstillinger → Sprog.", None))
+    under = UNDER.search(home_txt)
+    if under:
+        C.append(_check("M12", A4, "middel", "Forsiden siger ikke, at butikken er under opbygning", "advarsel", f"Forsiden siger '{under.group(0)}'.",
+                        "Google afviser butikker, der ser ufærdige ud, og kunder handler sjældent i en butik, der siger, den ikke er klar.",
+                        "Fjern teksten, når butikken er klar, eller lås butikken med adgangskode, indtil den er det.", REF["misrep"]))
     hi = HTTP_IMG.search(home)
     if hi:
         C.append(_check("M10", A4, "lav", "Alle billeder hentes over sikker forbindelse", "advarsel", f"fx {hi.group(0)[-80:]}",

@@ -1,7 +1,7 @@
 // Instant version of the GMC-Doktor checker (gmcdoktor/checks.py) for the "Tjek din webshop" field on webshopdoktoren.dk.
 // Same ids, texts and design rule: a 'fejl' is only something we actually saw on the public pages. Lighter than the full
 // check: homepage, up to 2 contact/about pages, /products.json?limit=100 and 2 product pages (+ .js), robots.txt respected.
-export const VERSION = "w0.3.1";
+export const VERSION = "w0.4.0";
 const UA = "Mozilla/5.0 (compatible; GMC-Doktor/0.1; offentligt Merchant Center-tjek af butikssider; webshopdoktoren.dk)";
 const PENALTY = {kritisk: 15, "høj": 8, middel: 4, lav: 2};
 const SEV = {kritisk: 0, "høj": 1, middel: 2, lav: 3};
@@ -46,8 +46,15 @@ export const PROBLEM = {
   M08: "Butikken bruger ikke sikker forbindelse (https)",
   M09: "Forsiden mangler titel eller beskrivelse til Google",
   M10: "Billeder hentes over usikker forbindelse (http)",
+  D13: "Flere varer har præcis samme titel",
+  D14: "Varer uden både stregkode og varenummer",
+  S08: "Mærke mangler i produktdataene",
+  S09: "Stregkoden kommer ikke med i produktdataene",
+  S10: "To sæt produktdata for samme vare",
+  M11: "Siden er sat til et andet sprog end dansk",
+  M12: "Forsiden siger, at butikken er under opbygning",
 };
-const CONCRETE = new Set(["S05", "D07", "M02", "D04", "S03", "S01", "D08", "D09", "P05"]);
+const CONCRETE = new Set(["S05", "D07", "M02", "D04", "S03", "S01", "D08", "D09", "P05", "S09", "S10", "M11", "M12"]);
 
 const NB = "(?<![\\p{L}\\p{N}_])"; // a \b that also works before æ, ø and å
 const SALES_WORDS = /(gratis fragt|fri fragt|\btilbud\b|\budsalg\b|spar \d+|\brabat\b|nr\.? ?1\b|!!|køb nu|free shipping|\bsale\b|bestseller)/i;
@@ -73,6 +80,12 @@ const DEMO_PRODUCT = /(lorem ipsum|this is a demo|dette er en demo|example produ
 const COPYRIGHT = /(?:©|copyright)\s*(?:20\d{2}\s*[-–]\s*)?(20\d{2})/gi;
 const GENERIC_TITLE = /^\s*(home|forside|hjem|my store|min butik|welcome|velkommen|shop|webshop)?\s*$/i;
 const HTTP_IMG = /<img\b[^>]*\ssrc=["']http:\/\/[^"']+/i;
+const PRICE_TITLE = /\d+\s?(?:kr\.?|,-)(?![\wæøå])/i;
+const GIFT = /(gavekort|gift ?card)/i;
+const UNDER = /(under construction|under opbygning|åbner snart|opening soon|website coming soon|webshoppen åbner)/i;
+const DA_WORDS = new Set(["og", "til", "med", "på", "er", "det", "vi", "af", "din", "dine", "jeres", "kurv", "levering", "fragt", "køb", "varer", "ikke", "eller"]);
+const EN_WORDS = new Set(["the", "and", "with", "your", "you", "our", "shipping", "cart", "buy", "products", "not", "or"]);
+const norm = s => String(s || "").replace(/\s+/g, " ").trim().toLowerCase();
 
 const ENT = {amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " ", copy: "©", aelig: "æ", oslash: "ø", aring: "å", AElig: "Æ",
   Oslash: "Ø", Aring: "Å", ndash: "–", mdash: "—", hellip: "…", rsquo: "’", lsquo: "‘", ldquo: "“", rdquo: "”", laquo: "«", raquo: "»",
@@ -282,7 +295,7 @@ export async function run(domain) {
     const n = products.length;
     const zero = products.filter(p => (p.variants || []).some(v => Number(v.price || 0) === 0)).map(p => p.title);
     if (zero.length) C.push(chk("D02", "høj", "fejl", `${zero.length} varer med pris 0, fx '${zero[0].slice(0, 60)}'`, "Sæt en rigtig pris, eller fjern varen fra Google-kanalen.")); else ok();
-    const badT = products.filter(p => (p.title || "").length > 150 || ((p.title || "") === (p.title || "").toUpperCase() && /[A-ZÆØÅ]/.test(p.title) && p.title.length > 8) || SALES_WORDS.test(p.title || "")).map(p => p.title);
+    const badT = products.filter(p => (p.title || "").length > 150 || ((p.title || "") === (p.title || "").toUpperCase() && /[A-ZÆØÅ]/.test(p.title) && p.title.length > 8) || SALES_WORDS.test(p.title || "") || (PRICE_TITLE.test(p.title || "") && !GIFT.test(p.title || ""))).map(p => p.title);
     if (badT.length) C.push(chk("D04", "middel", "advarsel", `${badT.length} titler, fx '${badT[0].slice(0, 70)}'`, "Skriv titler som 'Mærke + produkttype + egenskab', uden salgsord.")); else ok();
     const noimg = products.filter(p => !(p.images || []).length).map(p => p.title);
     if (noimg.length) C.push(chk("D05", "høj", "fejl", `${noimg.length} varer uden billede, fx '${noimg[0].slice(0, 60)}'`, "Tilføj mindst ét tydeligt produktbillede.")); else ok();
@@ -304,6 +317,10 @@ export async function run(domain) {
     else ok();
     const demoP = products.filter(p => DEMO_PRODUCT.test((p.title || "") + " " + text(p.body_html || ""))).map(p => p.title);
     if (demoP.length) C.push(chk("D11", "høj", "fejl", `${demoP.length} varer med demo- eller fyldtekst, fx '${demoP[0].slice(0, 60)}'`, "Slet demo-varerne, eller skriv rigtige titler og beskrivelser."));
+    const same = new Map();
+    for (const p of products) if (p.title) same.set(norm(p.title), (same.get(norm(p.title)) || 0) + 1);
+    const dups = [...same].filter(([, c]) => c > 1).sort((a, b) => b[1] - a[1]);
+    if (dups.length >= 3) C.push(chk("D13", "lav", "advarsel", `${dups.length} titler bruges af flere varer, fx '${products.find(p => norm(p.title) === dups[0][0]).title.slice(0, 60)}' (${dups[0][1]} varer)`, "Skriv det, der adskiller varerne, i titlen."));
     const sold = products.filter(p => (p.variants || []).length && !p.variants.some(v => v.available)).map(p => p.title);
     if (n >= 10 && sold.length >= n / 2) C.push(chk("D12", "lav", "advarsel", `${sold.length} af ${n} varer er udsolgt, fx '${sold[0].slice(0, 60)}'`, "Skjul udsolgte varer, der ikke kommer igen."));
     if (n < 3) C.push(chk("M04", "høj", "fejl", `Kun ${n} varer fundet.`, "Tilføj flere varer, eller vent med Google Shopping."));
@@ -315,14 +332,21 @@ export async function run(domain) {
     if (jsVars.length) {
       const share = jsVars.filter(v => !String(v.barcode || "").trim()).length / jsVars.length;
       if (share > 0.5) C.push(chk("D03", "middel", "advarsel", `${Math.round(share * 100)} % af ${jsVars.length} varianter på ${pp.length} stikprøvevarer mangler stregkode.`, "Udfyld GTIN for mærkevarer, eller marker 'ingen GTIN' for egne produkter.")); else ok();
+      const noid = jsVars.filter(v => !String(v.barcode || "").trim() && !String(v.sku || "").trim());
+      if (noid.length > jsVars.length / 2) C.push(chk("D14", "lav", "advarsel", `${noid.length} af ${jsVars.length} varianter på ${pp.length} stikprøvevarer har hverken stregkode eller varenummer (SKU).`, "Udfyld varenummer (SKU) på alle varianter."));
       const badG = jsVars.filter(v => String(v.barcode || "").trim() && !gtinOk(v.barcode));
       if (badG.length) C.push(chk("D10", "høj", "fejl", `${badG.length} af ${jsVars.length} varianter har en ugyldig stregkode, fx '${String(badG[0].name || badG[0].title || "").slice(0, 50)}' med stregkoden ${String(badG[0].barcode).trim()}`, "Ret stregkoden til producentens rigtige EAN, eller fjern den."));
     }
-    const noLd = [], mism = [], availBad = [], comma = [], curBad = [], ldGap = [];
+    const noLd = [], mism = [], availBad = [], comma = [], curBad = [], ldGap = [], gtinLost = [], dupLd = [], noBrand = [];
     for (const [prod, b, js] of pp) {
       const items = ldjson(b).filter(x => ["product", "productgroup"].includes(String(x["@type"] || "").toLowerCase()));
       if (!items.length) { if (!/itemtype=["']https?:\/\/schema\.org\/Product["']/i.test(b)) noLd.push(prod.title); continue; }
       const offers = offersOf(items);
+      const sameItem = items.filter(it => norm(it.name) === norm(prod.title));
+      if (sameItem.length >= 2) dupLd.push(`${prod.title.slice(0, 40)}: ${sameItem.length} sæt`);
+      if (!items.some(it => it.brand)) noBrand.push(prod.title.slice(0, 40));
+      const good = ((js && js.variants) || []).filter(v => String(v.barcode || "").trim() && gtinOk(v.barcode));
+      if (good.length && !/"gtin(?:8|12|13|14)?"/.test(JSON.stringify(items))) gtinLost.push(`'${prod.title.slice(0, 40)}' har stregkoden ${String(good[0].barcode).trim()} i butikken`);
       const shopCur = b.match(/Shopify\.currency\s*=\s*\{"active":"([A-Z]{3})"/);
       const ldCur = new Set(offers.filter(o => o.priceCurrency).map(o => String(o.priceCurrency).toUpperCase()));
       if (shopCur && ldCur.size && !ldCur.has(shopCur[1])) curBad.push(`${prod.title.slice(0, 40)}: ${[...ldCur].join(", ")} i stedet for ${shopCur[1]}`);
@@ -343,6 +367,9 @@ export async function run(domain) {
     if (noLd.length) C.push(chk("S01", "middel", "advarsel", `Mangler på ${noLd.length} af ${pp.length} tjekkede sider`, "Brug et tema eller en app, der udsender Product-data (JSON-LD).")); else ok();
     if (mism.length) C.push(chk("S02", "høj", "fejl", mism.slice(0, 2).join("; "), "Sørg for, at temaet udsender samme pris som den viste pris.")); else ok();
     if (comma.length) C.push(chk("S05", "middel", "advarsel", comma.slice(0, 2).join("; "), "Ret temaets JSON-LD, så prisen skrives med punktum (fx 349.00)."));
+    if (gtinLost.length) C.push(chk("S09", "middel", "advarsel", gtinLost.slice(0, 2).join("; ") + ", men den står ikke i produktdataene på siden.", "Ret temaets JSON-LD, så hver variant har gtin med."));
+    if (dupLd.length) C.push(chk("S10", "middel", "advarsel", dupLd.slice(0, 2).join("; ") + " produktdata for samme vare.", "Slå produktdata fra i enten temaet eller SEO-appen."));
+    if (noBrand.length && noBrand.length === pp.length) C.push(chk("S08", "lav", "advarsel", `Mærke (brand) mangler i produktdataene på alle ${pp.length} tjekkede sider.`, "Sørg for at temaet udskriver brand i JSON-LD."));
     if (curBad.length) C.push(chk("S06", "høj", "fejl", curBad.slice(0, 2).join("; "), "Ret temaets JSON-LD, så priceCurrency er butikkens valuta."));
     if (ldGap.length) C.push(chk("S07", "middel", "fejl", ldGap.slice(0, 2).join("; "), "Ret temaets JSON-LD, så hver vare har image, price og priceCurrency."));
     if (availBad.length) C.push(chk("S03", "middel", "advarsel", availBad.slice(0, 3).join(", "), "Lad udsolgte varer markeres som udsolgt i produktdataene.")); else ok();
@@ -363,6 +390,13 @@ export async function run(domain) {
   const desc = (home.slice(0, 200_000).match(/<meta\b[^>]*>/gi) || []).some(t => /name=["']description["']/i.test(t) && /content=["'][^"']{20,}/i.test(t));
   const generic = GENERIC_TITLE.test(title);
   if (generic || !desc) C.push(chk("M09", "lav", "advarsel", generic ? `Forsidens titel er '${title || "tom"}'.` : "Forsiden har ingen beskrivelse (meta description).", "Skriv en titel og beskrivelse under Onlinebutik → Præferencer."));
+  const lang = home.match(/<html\b[^>]*\slang=["']?([A-Za-z-]+)/i);
+  const words = homeTxt.toLowerCase().match(/[a-zæøå]+/g) || [];
+  const da = words.filter(w => DA_WORDS.has(w)).length, en = words.filter(w => EN_WORDS.has(w)).length;
+  if (lang && !/^(da|no|nb|sv)/i.test(lang[1]) && da >= 20 && da > 2 * en)
+    C.push(chk("M11", "middel", "advarsel", `Siden er sat til sproget '${lang[1]}', men teksten er dansk (${da} almindelige danske ord mod ${en} engelske).`, "Sæt butikkens standardsprog til dansk."));
+  const under = homeTxt.match(UNDER);
+  if (under) C.push(chk("M12", "middel", "advarsel", `Forsiden siger '${under[0]}'.`, "Fjern teksten, når butikken er klar."));
   const hi = home.match(HTTP_IMG);
   if (hi) C.push(chk("M10", "lav", "advarsel", `fx ${hi[0].slice(-80)}`, "Upload billedet til Shopify og brug det nye link."));
   const ni = noindex(home);

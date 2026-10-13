@@ -44,9 +44,13 @@ OPENER = {
     "M08": "butikken ikke bruger sikker forbindelse (https)",
     "D11": "der er varer med demo- eller fyldtekst{ex}, som bliver afvist, hvis de kommer med i Google-feedet",
     "S07": "de strukturerede produktdata mangler billede eller pris",
+    "S09": "jeres stregkoder står i butikken, men kommer ikke med i de produktdata, Google læser på siden",
+    "S10": "jeres produktsider har to sæt produktdata for samme vare, typisk fra både temaet og en app",
+    "M11": "jeres side er sat til engelsk i koden, selvom teksten er dansk",
+    "M12": "der står på forsiden, at butikken er under opbygning",
 }
 # Warnings concrete enough to name on the phone (each one is something we saw, just not proven to be an error).
-CONCRETE_WARN = {"S05", "D07", "M02", "D04", "S03", "S01", "D08", "D09", "P05"}
+CONCRETE_WARN = {"S05", "D07", "M02", "D04", "S03", "S01", "D08", "D09", "P05", "S09", "S10", "M11", "M12"}
 SEV = {"kritisk": 0, "høj": 1, "middel": 2, "lav": 3}
 
 
