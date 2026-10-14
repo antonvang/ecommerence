@@ -16,7 +16,7 @@ from datetime import datetime, timezone
 
 from .fetch import Fetcher, Robots
 
-VERSION = "0.11.3"
+VERSION = "0.12.1"
 G = "https://support.google.com/merchants/answer/"
 REF = {"misrep": G + "6150127?hl=da", "gtin": G + "160161?hl=da", "price": G + "6324371?hl=da",
        "availability": G + "6324448?hl=da", "title": G + "6324415?hl=da", "image": G + "6324350?hl=da"}
@@ -30,6 +30,14 @@ QTY = re.compile(r"(?<![\w.,])\d+(?:[.,]\d+)?\s*(?:g|gr|gram|kg|ml|cl|l|liter|lt
 CONTAINER = re.compile(r"(flaske|kande|glas\b|gryde|termo|krus|\bkop\b|beholder|taske|rygsæk|\bbag\b|potte|kasse|spand|balje|vase|skål|bowl|strop|dummy|lift|sæk|tank|karaffel|carafe|bottle|tumbler|thermo|\bcup\b|\bmug\b|\bjar\b|opbevaring|madkasse|drikkedunk|saddle|kapacitet|belastning|\bmax\b|dækken|gavekort|gift ?card|pocket|plantepose|krukke|urtepotte|bøjn|\brør\b|°|\d\s*mm\b)", re.I)
 # a shown unit price: 'pr. kg', 'pr. 100 g', '/ l', 'kr/kg', 'per liter'
 UNIT_SHOWN = re.compile(r"(pr\.?\s*(?:kg|kilo|liter|ltr|l|100\s*g|100\s*ml)\b|\d\s*(?:kr\.?|dkk)?\s*/\s*(?:kg|l|ltr|liter|100\s*g|100\s*ml)\b|per\s*(?:kg|liter|100\s*g|100\s*ml)\b)", re.I)
+# return terms that break forbrugeraftaleloven: withdrawal only for unopened goods, or a period counted from the order
+WITHDRAW = re.compile(r"(fortryd|retur|tilbagelever)", re.I)
+UNOPENED = re.compile(r"(uåbnet|uåbnede|ubrudt|ubrudte|ikke\s+(?:være\s+)?(?:åbnet|brudt))", re.I)
+# sealed hygiene/health goods may lawfully be excluded once opened; a voluntary longer return right may set its own terms
+LAW_EXEMPT = re.compile(r"(forsegl|plomb|hygiejn|undertøj|badetøj|øreringe|piercing|intim|sutte|tandbørst|kontaktlins|kosmetik|software|spil\b|film|cd\b|dvd)", re.I)
+LONG_RIGHT = re.compile(r"(\b(?:1[5-9]|[2-9]\d|\d{3})\s*dage|ubegrænset|livstid|fuld returret)", re.I)
+HYGIENE_SHOP = re.compile(r"(protein|kosttilskud|vitamin|creme|serum|shampoo|balsam|parfume|læbe|makeup|mascara|\bvin\b|øl\b|spiritus|gin\b|whisky|kaffe|te\b|chokolade|sæbe|olie)", re.I)
+FROM_ORDER = re.compile(r"(?:14|fjorten)\s*dag\w*[^.]{0,60}?\b(?:efter|fra)\s+(?:købet|købsdato\w*|købsdagen|bestilling\w*|ordredato\w*|ordren\s+(?:er\s+|blev\s+)?(?:afgivet|afsendt|sendt)|afsendelse\w*|fakturadato\w*|den\s+dag\s+(?:du|ordren)\s+(?:bestiller|bestilte|køber|købte|afgiver|afgav))", re.I)
 SALES_WORDS = re.compile(r"(gratis fragt|fri fragt|\btilbud\b|\budsalg\b|spar \d+|\brabat\b|nr\.? ?1\b|!!|køb nu|free shipping|\bsale\b|bestseller)", re.I)
 SCARCITY = re.compile(r"([1-9]\d* (personer|people) (kigger|ser|are viewing)|sælges hurtigt|selling fast|tilbuddet udløber|offer ends in|hurry,? only)", re.I)
 TIMER_APPS = re.compile(r"(hurrify|essential-countdown|countdown-timer-bar|sales-countdown|fomo-app|stock-countdown|urgency-app)", re.I)
@@ -197,7 +205,7 @@ def _offers(items):
 
 
 def run(domain, max_products_pages=5):
-    f = Fetcher(domain, max_requests=20)
+    f = Fetcher(domain, max_requests=24)
     res = {"domain": f.domain, "checker_version": VERSION, "checked_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
            "shopify": False, "reachable": False, "password": False, "contact": {}, "checks": [], "notes": []}
     C = res["checks"]
@@ -723,7 +731,7 @@ def run(domain, max_products_pages=5):
                                 "Sæt tilstanden til 'Brugt' (eller 'Renoveret') på de brugte varer i Google & YouTube-kanalen, og få temaet til at skrive itemCondition i produktdataene.", REF["misrep"]))
 
     # ---------- policy pages we can read (normal /pages/ pages; Shopify's /policies/ is blocked by robots) ----------
-    dead, empty = [], []
+    dead, empty, law_txt = [], [], []
     for k in ("returns", "shipping", "terms"):
         if k not in pol_pages:
             continue
@@ -737,6 +745,8 @@ def run(domain, max_products_pages=5):
         if sp != 200:
             continue
         body = _main_text(bp)
+        if k in ("returns", "terms"):
+            law_txt.append((path, body))
         if len(body) < 150:  # could be filled in by an app's script, so only a warning
             empty.append(f"'{label[:40]}' ({path}) viser næsten ingen tekst")
             continue
@@ -760,6 +770,35 @@ def run(domain, max_products_pages=5):
         C.append(_check("P05", A1, "høj", "Links til politikker virker", "fejl" if dead else "advarsel", "; ".join((dead + empty)[:2]),
                         "Når et link til en politik er dødt eller tomt, ser Google det som en manglende politik, og kunderne kan ikke finde oplysningerne.",
                         "Ret linket, eller udfyld siden med den rigtige politik.", REF["misrep"]))
+
+    # ---------- return terms that break forbrugeraftaleloven ----------
+    law_txt = [(p, t) for p, t in law_txt if t]
+    if not any(p == "/policies/refund-policy" for p, _ in law_txt):  # Shopify's own refund policy often says more
+        sr, _, _, br = f.get("/policies/refund-policy")
+        if sr == 200:
+            law_txt.append(("/policies/refund-policy", _main_text(br)))
+    hygiene_shop = products and sum(1 for p in products if HYGIENE_SHOP.search(p.get("title", "") + " " + (p.get("product_type") or ""))) > len(products) * 0.3
+    unopened, from_order = None, None
+    for p, t in law_txt:
+        sents = re.split(r"(?<=[.!?])\s+", t)
+        for i, sent in enumerate(sents):
+            near = " ".join(sents[max(0, i - 1): i + 1])  # abbreviations ('mf.') and 'returret i 365 dage. Returretten er ...' span two pieces
+            if unopened is None and not hygiene_shop and WITHDRAW.search(sent) and UNOPENED.search(sent) \
+                    and not LAW_EXEMPT.search(near) and not LONG_RIGHT.search(near):
+                unopened = (p, sent.strip()[:170])
+            m = FROM_ORDER.search(sent)
+            if from_order is None and m and not re.search(r"modtag", sent, re.I):
+                from_order = (p, sent.strip()[:170])
+    if unopened:
+        C.append(_check("P08", A1, "middel", "Fortrydelsesretten kræver ikke ubrudt emballage", "advarsel",
+                        f"Betingelserne ({unopened[0]}) siger: '{unopened[1]}'",
+                        "Efter forbrugeraftaleloven må kunden åbne varen og undersøge den, ligesom i en fysisk butik. Fortrydelsesretten må derfor ikke kræve ubrudt emballage; butikken kan i stedet trække et beløb fra, hvis varen er blevet mindre værd. Undtaget er forseglede varer, der af hygiejne- eller sundhedshensyn ikke kan returneres, når forseglingen er brudt.",
+                        "Fjern kravet om ubrudt eller uåbnet emballage fra fortrydelsesretten, og skriv i stedet, at kunden hæfter for en eventuel værdiforringelse.", REF["misrep"]))
+    if from_order:
+        C.append(_check("P09", A1, "middel", "Fortrydelsesfristen regnes fra modtagelsen", "advarsel",
+                        f"Betingelserne ({from_order[0]}) siger: '{from_order[1]}'",
+                        "Ved køb af varer løber de 14 dages fortrydelsesret fra den dag, kunden modtager varen, ikke fra købet eller afsendelsen.",
+                        "Skriv, at fristen på 14 dage regnes fra den dag, kunden har modtaget varen.", REF["misrep"]))
 
     # ---------- trust & red flags ----------
     scar = SCARCITY.search(home_txt)

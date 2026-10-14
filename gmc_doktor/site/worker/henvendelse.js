@@ -62,17 +62,23 @@ export default {
     try { d = await req.json(); } catch { return json({ok: false, error: "Formularen kunne ikke læses. Prøv igen."}, 400); }
     if (clean(d.hp)) return json({ok: true}); // honeypot: bots fill it in, people never see it
     const shop = clean(d.shop).replace(/^https?:\/\//i, "").replace(/\/+$/, "").toLowerCase();
-    const mail = clean(d.mail).toLowerCase(), navn = clean(d.navn, 100), tlf = clean(d.tlf, 40);
+    const mail0 = clean(d.mail).toLowerCase(), mail = MAIL_RE.test(mail0) ? mail0 : "", navn = clean(d.navn, 100), tlf = clean(d.tlf, 40);
+    const WANT = {rapport: "Gratis rapport", vejledning: "Trin-for-trin-vejledning (495 kr.)", ret: "Vil have fejlene rettet (995 kr.)"};
+    const onsker = WANT[clean(d.onsker, 20)] ? clean(d.onsker, 20) : "rapport";
     if (!SHOP_RE.test(shop)) return json({ok: false, field: "shop", error: "Skriv jeres webshops adresse, fx dinbutik.dk."}, 400);
-    if (!MAIL_RE.test(mail)) return json({ok: false, field: "mail", error: "Skriv den mail, rapporten skal sendes til."}, 400);
-    const body = [`Webshop: ${shop}`, `Navn: ${navn || "-"}`, `Telefon: ${tlf || "-"}`, `Mail: ${mail}`, "",
+    // a mail or a phone number is enough: the fewer fields, the more shops ask
+    const okTlf = /^\+?\d{8,15}$/.test(tlf.replace(/[\s().-]/g, ""));
+    if (!mail && !okTlf) return json({ok: false, field: "kontakt", error: "Skriv jeres mail eller telefonnummer, så vi kan svare jer."}, 400);
+    const body = [`Webshop: ${shop}`, `Ønske: ${WANT[onsker]}`, `Navn: ${navn || "-"}`, `Telefon: ${tlf || "-"}`, `Mail: ${mail || "-"}`, "",
       ...(await cachedFund(shop)),
-      "Sendt fra formularen på webshopdoktoren.dk. Svar på denne mail for at skrive til kunden."].join("\r\n");
+      mail ? "Sendt fra formularen på webshopdoktoren.dk. Svar på denne mail for at skrive til kunden." : "Sendt fra formularen på webshopdoktoren.dk. Kunden har kun skrevet et telefonnummer: ring op."].join("\r\n");
+    // the subject keeps 'Gratis tjek:' first, so the dashboard's Gmail search still finds it
+    const subject = `Gratis tjek: ${shop}` + (onsker === "ret" ? " · vil have det rettet" : onsker === "vejledning" ? " · vil have vejledningen" : "") + (mail ? "" : " · ring op");
     const raw = [
       `From: Webshopdoktoren formular <${FROM}>`,
       `To: <${TO}>`,
-      `Reply-To: <${mail}>`,
-      `Subject: =?UTF-8?B?${b64(`Gratis tjek: ${shop}`)}?=`,
+      ...(mail ? [`Reply-To: <${mail}>`] : []),
+      `Subject: =?UTF-8?B?${b64(subject)}?=`,
       `Message-ID: <${crypto.randomUUID()}@webshopdoktoren.dk>`,
       `Date: ${new Date().toUTCString()}`,
       "MIME-Version: 1.0",

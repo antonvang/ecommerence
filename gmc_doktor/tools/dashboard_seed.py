@@ -82,6 +82,8 @@ PROBLEM = {
     "D26": "EAN står i varenummer-feltet i stedet for stregkode-feltet",
     "D27": "Brugte varer er ikke markeret som brugte",
     "S16": "Ingen pris pr. kg eller liter på varer solgt efter vægt eller rumfang",
+    "P08": "Fortrydelsesretten kræver ubrudt emballage",
+    "P09": "Fortrydelsesfristen regnes fra købet i stedet for modtagelsen",
 }
 # The one example sentence read aloud on the call (follows "... fundet N ting, der kan give problemer i Google Shopping.").
 # Short, plain and never stronger than what was observed: "kan", not "bliver". {ex} = a named product, if any.
@@ -140,6 +142,8 @@ SAY = {
     "D26": "Fx står EAN-numrene i varenummer-feltet og ikke i stregkode-feltet{ex} Så får Google dem ikke.",
     "D27": "Fx er jeres brugte varer ikke markeret som brugte{ex} Google ser en brugt vare solgt som ny som vildledning.",
     "S16": "Fx viser varer, der sælges efter vægt eller rumfang, ingen pris pr. kg eller liter{ex} Det kræver prismærkningsreglerne som udgangspunkt.",
+    "P08": "Fx kræver jeres betingelser ubrudt emballage for at fortryde et køb. Det må fortrydelsesretten ikke kræve.",
+    "P09": "Fx regner jeres betingelser fortrydelsesfristen fra købet. Den løber fra den dag, kunden modtager varen.",
 }
 DOC_ID = re.compile(r"^[A-Za-z0-9_\-.~:@+]{1,200}$")
 # Large organisations/chains: unlikely to buy a 495-995 kr. fix from a cold call -> called last.

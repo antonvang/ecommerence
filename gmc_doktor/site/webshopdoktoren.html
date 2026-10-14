@@ -204,6 +204,19 @@ section{padding-block:96px}
 .journal footer.thanks .tick{flex:none;width:36px;height:36px;background:var(--green);color:var(--green-ink)}
 .journal footer.thanks .tick svg{width:20px;height:20px}
 @media (max-width:560px){.jform{grid-template-columns:1fr;border-radius:16px}.jform .btn{justify-content:center}}
+/* what do you want: two or three choices, then one field for mail or phone */
+.want{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.want button{font:600 14px var(--body);min-height:38px;padding:0 14px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--ink2);cursor:pointer;transition:background .2s,color .2s,border-color .2s}
+.want button[aria-pressed="true"]{background:var(--green);border-color:var(--green);color:var(--green-ink)}
+.signup .want{margin-top:0}
+.signup .want button{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.22);color:var(--deep-ink)}
+.signup .want button[aria-pressed="true"]{background:var(--deep-ink);border-color:var(--deep-ink);color:var(--deep)}
+.wantlbl{font-size:14px;font-weight:600;color:var(--deep-ink)}
+.price .btn.ghost{background:var(--card)}
+/* phones: the free check is always one tap away */
+.stick{position:fixed;left:12px;right:12px;bottom:12px;z-index:40;justify-content:center;box-shadow:var(--shadow);opacity:0;transform:translateY(16px);pointer-events:none;transition:opacity .3s var(--ease),transform .3s var(--ease)}
+.stick.on{opacity:1;transform:none;pointer-events:auto}
+@media (min-width:721px){.stick{display:none}}
 .ph{display:inline-block;padding:0 6px;border-radius:5px;background:var(--warn-soft);color:var(--warn);font:500 .92em var(--body)}
 footer.site{padding-block:40px 56px;font-size:14.5px;color:var(--muted);display:grid;gap:8px}
 footer.site b{color:var(--ink)}
@@ -244,7 +257,7 @@ footer.site b{color:var(--ink)}
       <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="1" y="1" width="30" height="30" rx="9" fill="var(--green)"/><path d="M13 8h6v5h5v6h-5v5h-6v-5H8v-6h5z" fill="var(--green-ink)"/></svg>
       Webshopdoktoren
     </a>
-    <nav aria-label="Sider"><a href="#tjek">Det tjekker vi</a><a href="#priser">Priser</a><a href="#forloeb">Sådan foregår det</a><a class="pill" href="#top">Gratis tjek</a></nav>
+    <nav aria-label="Sider"><a href="#tjek">Det tjekker vi</a><a href="#priser">Priser</a><a href="#forloeb">Sådan foregår det</a><a class="pill go" href="#top">Gratis tjek</a></nav>
   </div>
 </header>
 
@@ -278,7 +291,7 @@ footer.site b{color:var(--ink)}
 <section id="tjek"><div class="wrap split">
   <div class="sechead rv"><p class="eyebrow">Det tjekker vi</p><h2>Det, Google kigger efter, før varerne må vises</h2>
     <p>Vi gennemgår jeres offentlige sider og produktdata. Det er de samme ting, der oftest får Google til at afvise varer eller lukke en butik.</p>
-    <div class="ctarow"><a class="btn primary" href="#kontakt">Start med et gratis tjek <span class="arr" aria-hidden="true">→</span></a></div></div>
+    <div class="ctarow"><a class="btn primary go" href="#top">Tjek jeres webshop gratis <span class="arr" aria-hidden="true">→</span></a></div></div>
   <ul class="checks">
     <li class="rv"><span class="ck" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><div><p class="lbl">Firmaoplysninger</p><h3>Hvem står bag butikken?</h3><p>CVR-nummer, adresse, telefon og mail skal være lette at finde, og CVR-nummeret skal være rigtigt.</p></div></li>
     <li class="rv"><span class="ck" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><div><p class="lbl">Politikker</p><h3>Retur, fragt og vilkår</h3><p>14 dages fortrydelsesret, fragtpriser, handelsbetingelser og privatlivspolitik, og at linkene virker.</p></div></li>
@@ -292,12 +305,12 @@ footer.site b{color:var(--ink)}
 <section id="priser"><div class="wrap">
   <div class="sechead pricehead rv"><p class="eyebrow">Priser</p><h2>Fast pris. I betaler først, når det er rettet.</h2></div>
   <div class="prices">
-    <div class="price rv"><span class="tag">Start her</span><div class="amt">0 kr.</div><h3>Gratis tjek</h3><p>En rapport på mail med det, vi fandt, og hvordan I retter det.</p><ul><li>Svar inden for 2 hverdage</li><li>Uden binding</li></ul><a class="btn primary" href="#kontakt">Start med et gratis tjek <span class="arr" aria-hidden="true">→</span></a></div>
-    <div class="price rv"><span class="tag">Gør det selv</span><div class="amt">495 kr.</div><h3>Trin-for-trin-vejledning</h3><p>En præcis vejledning, så I selv kan rette fejlene.</p><ul><li>Leveres på mail inden for 2 hverdage</li><li>Fakturaen kommer med vejledningen</li></ul></div>
-    <div class="price main rv"><span class="tag">Vi gør det</span><div class="amt">995 kr.</div><h3>Vi retter det for jer</h3><p>Vi retter fejlene i butikken og hjælper jer med at bede Google om at kigge igen.</p><ul><li>Rettet inden for 2 hverdage</li><li>Oversigt over alt, vi har ændret</li><li>I betaler først, når det er rettet</li></ul></div>
+    <div class="price rv"><span class="tag">Start her</span><div class="amt">0 kr.</div><h3>Gratis tjek</h3><p>En rapport på mail med det, vi fandt, og hvordan I retter det.</p><ul><li>Svar inden for 2 hverdage</li><li>Uden binding</li></ul><a class="btn primary go" href="#top">Tjek jeres webshop gratis <span class="arr" aria-hidden="true">→</span></a></div>
+    <div class="price rv"><span class="tag">Gør det selv</span><div class="amt">495 kr.</div><h3>Trin-for-trin-vejledning</h3><p>En præcis vejledning, så I selv kan rette fejlene.</p><ul><li>Leveres på mail inden for 2 hverdage</li><li>Fakturaen kommer med vejledningen</li></ul><a class="btn ghost" href="#kontakt" data-want="vejledning">Vælg vejledningen <span class="arr" aria-hidden="true">→</span></a></div>
+    <div class="price main rv"><span class="tag">Vi gør det</span><div class="amt">995 kr.</div><h3>Vi retter det for jer</h3><p>Vi retter fejlene i butikken og hjælper jer med at bede Google om at kigge igen.</p><ul><li>Rettet inden for 2 hverdage</li><li>Oversigt over alt, vi har ændret</li><li>I betaler først, når det er rettet</li></ul><a class="btn primary" href="#kontakt" data-want="ret">Ret det for mig <span class="arr" aria-hidden="true">→</span></a></div>
   </div>
   <div class="pricecta rv"><p><b>Alle forløb starter med det gratis tjek.</b> Så ved I præcis, hvad der skal rettes, før I beslutter noget.</p>
-    <a class="btn primary" href="#kontakt">Få jeres gratis tjek <span class="arr" aria-hidden="true">→</span></a></div>
+    <a class="btn primary go" href="#top">Tjek jeres webshop gratis <span class="arr" aria-hidden="true">→</span></a></div>
   <p class="note">Ydelserne sælges kun til virksomheder. <span class="ph" data-f="moms">moms udfyldes</span></p>
 </div></section>
 
@@ -330,34 +343,34 @@ footer.site b{color:var(--ink)}
 
 <section id="kontakt"><div class="wrap">
   <div class="panel rv">
-    <div class="panelinfo"><p class="eyebrow">Kontakt</p><h2>Få et gratis tjek af jeres webshop</h2>
-      <p class="sub">Skriv jeres webshop og jeres mail, og tryk Send. Det tager 20 sekunder. Vi sender rapporten inden for 2 hverdage.</p>
+    <div class="panelinfo"><p class="eyebrow">Kontakt</p><h2>Skriv til os på 20 sekunder</h2>
+      <p class="sub">Vælg hvad I vil have, skriv jeres webshop og jeres mail eller telefonnummer, og tryk Send. Vi svarer inden for 2 hverdage.</p>
       <div class="direct"><span class="muted-d">Eller skriv direkte til</span>
         <div class="row"><span class="addr" id="mail">info@webshopdoktoren.dk</span><button class="copy" type="button" id="copymail">Kopiér</button></div></div>
     </div>
     <div class="formwrap">
       <form class="signup" id="signup" novalidate>
+        <span class="wantlbl" id="f-want-l">Det vil vi gerne have</span>
+        <div class="want" id="f-want" role="group" aria-labelledby="f-want-l"><button type="button" data-v="rapport" aria-pressed="true">Gratis rapport</button><button type="button" data-v="vejledning" aria-pressed="false">Vejledning · 495 kr.</button><button type="button" data-v="ret" aria-pressed="false">Ret det for mig · 995 kr.</button></div>
         <label for="f-shop">Jeres webshop<input id="f-shop" name="shop" type="text" placeholder="dinbutik.dk" autocomplete="url" inputmode="url" spellcheck="false" required></label>
-        <label for="f-mail">Jeres mail<input id="f-mail" name="mail" type="email" placeholder="navn@dinbutik.dk" autocomplete="email" inputmode="email" spellcheck="false" required></label>
-        <div class="two">
-          <label for="f-navn">Navn <span>(valgfrit)</span><input id="f-navn" name="navn" type="text" autocomplete="name"></label>
-          <label for="f-tlf">Telefon <span>(valgfrit)</span><input id="f-tlf" name="tlf" type="tel" autocomplete="tel" inputmode="tel"></label>
-        </div>
+        <label for="f-kontakt">Jeres mail eller telefon<input id="f-kontakt" name="kontakt" type="text" placeholder="navn@dinbutik.dk eller 12 34 56 78" autocomplete="email" spellcheck="false" required></label>
         <label class="hp" for="f-hp" aria-hidden="true">Lad dette felt være tomt<input id="f-hp" name="hp" type="text" tabindex="-1" autocomplete="off"></label>
         <p class="err" id="f-err" role="alert" hidden></p>
-        <button class="send" id="f-send" type="submit">Send og få mit gratis tjek <span class="arr" aria-hidden="true">→</span></button>
+        <button class="send" id="f-send" type="submit">Send <span class="arr" aria-hidden="true">→</span></button>
         <p class="fine">Vi bruger kun oplysningerne til at sende jer rapporten og svare jer. <a href="/privatliv">Privatlivspolitik</a></p>
       </form>
       <div class="done" id="done" tabindex="-1" hidden>
         <div class="tick" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
         <h3>Tak! Vi har fået jeres henvendelse.</h3>
-        <p>Vi tjekker <b id="done-shop">jeres webshop</b> og sender rapporten til <b id="done-mail">jeres mail</b> inden for 2 hverdage.</p>
-        <p class="fine">Kig også i spam-mappen, hvis I ikke kan finde den.</p>
+        <p id="done-text">Vi vender tilbage inden for 2 hverdage.</p>
+        <p class="fine" id="done-spam">Kig også i spam-mappen, hvis I ikke kan finde vores mail.</p>
         <button class="linkbtn" type="button" id="again">Send en henvendelse mere</button>
       </div>
     </div>
   </div>
 </div></section>
+
+<a class="btn primary stick go" href="#top" id="stick" aria-hidden="true" tabindex="-1">Tjek jeres webshop gratis <span class="arr" aria-hidden="true">→</span></a>
 
 <div class="wrap"><footer class="site">
   <span><b>Webshopdoktoren</b><span class="ph" data-f="cvr"> v/ ejerens navn udfyldes</span> · <span class="ph" data-f="adresse">adresse udfyldes</span> · <a href="mailto:info@webshopdoktoren.dk">info@webshopdoktoren.dk</a></span>
@@ -378,6 +391,16 @@ document.getElementById('copymail').addEventListener('click', async e => {
   const shopOf = v => v.trim().replace(/^https?:\/\//i, '').replace(/\/+$/, '');
   const okShop = s => /^[^\s@/]+\.[a-z]{2,}(\/\S*)?$/i.test(s);
   const okMail = s => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s);
+  // one field takes a mail or a phone number
+  const contactOf = v => { v = v.trim(); if (okMail(v)) return {mail: v}; return /^\+?\d{8,15}$/.test(v.replace(/[\s().-]/g, '')) ? {tlf: v} : null; };
+  const pick = (box, v) => box.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === v)));
+  const picked = box => (box.querySelector('[aria-pressed="true"]') || {}).dataset?.v || 'rapport';
+  const thanks = (shop, c, want) => {
+    const how = c.mail ? `skriver til ${esc(c.mail)}` : `ringer til ${esc(c.tlf)}`;
+    if (want === 'ret') return `Vi ${how} inden for 2 hverdage om at rette fejlene i ${esc(shop)}. I betaler først, når det er rettet.`;
+    if (want === 'vejledning') return `Vi ${how} inden for 2 hverdage med vejledningen til ${esc(shop)}.`;
+    return c.mail ? `Den fulde rapport om ${esc(shop)} kommer til ${esc(c.mail)} inden for 2 hverdage.` : `Vi ringer til ${esc(c.tlf)} inden for 2 hverdage og gennemgår rapporten om ${esc(shop)}.`;
+  };
   const SORRY = 'Det gik ikke lige nu. Prøv igen om lidt, eller skriv til info@webshopdoktoren.dk.';
   async function send(data) {
     try {
@@ -399,14 +422,22 @@ document.getElementById('copymail').addEventListener('click', async e => {
     res.classList.add('live'); res.setAttribute('aria-label', 'Tjek af ' + cur); res.innerHTML = html;
     const r = res.getBoundingClientRect();
     if (scroll && (r.top > innerHeight * .55 || r.top < 0)) res.scrollIntoView({behavior: reduce ? 'auto' : 'smooth', block: 'start'});
-    const f = $('r-form');
+    const f = $('r-form'), w = $('r-want');
     if (f) f.addEventListener('submit', report);
+    if (w) w.addEventListener('click', e => {
+      const b = e.target.closest('button'); if (!b) return;
+      pick(w, b.dataset.v); $('r-send').innerHTML = `${RBTN[b.dataset.v]} <span class="arr" aria-hidden="true">→</span>`; $('r-mail').focus();
+    });
   }
   const head = right => `<header><span><b>${esc(cur)}</b></span><span>${right}</span></header>`;
   const row = (i, cls, mark, label, b, small) => `<li style="--i:${i}"><span class="mark ${cls}"${label ? ` aria-label="${label}"` : ' aria-hidden="true"'}>${mark}</span><span><b>${b}</b>${small ? `<small>${small}</small>` : ''}</span></li>`;
-  const mailFoot = (lead, note) => `<footer><b>${lead}</b><form class="jform" id="r-form" novalidate><label class="sr" for="r-mail">Jeres mail</label>`
-    + `<input id="r-mail" type="email" placeholder="jeres@mail.dk" autocomplete="email" inputmode="email" spellcheck="false"><input class="hp" id="r-hp" type="text" tabindex="-1" autocomplete="off" aria-hidden="true">`
-    + `<button class="btn primary" id="r-send" type="submit">Send rapporten <span class="arr" aria-hidden="true">→</span></button></form>`
+  // under the result: choose report or fix, then one field (mail or phone) and one button
+  const RBTN = {rapport: 'Send rapporten', ret: 'Ret det for mig'};
+  const mailFoot = (lead, note, choose) => `<footer><b>${lead}</b>`
+    + (choose ? `<div class="want" id="r-want" role="group" aria-label="Det vil vi gerne have"><button type="button" data-v="rapport" aria-pressed="true">Send mig rapporten · gratis</button><button type="button" data-v="ret" aria-pressed="false">Ret det for mig · 995 kr.</button></div>` : '')
+    + `<form class="jform" id="r-form" novalidate><label class="sr" for="r-mail">Jeres mail eller telefon</label>`
+    + `<input id="r-mail" type="text" placeholder="Mail eller telefonnummer" autocomplete="email" spellcheck="false"><input class="hp" id="r-hp" type="text" tabindex="-1" autocomplete="off" aria-hidden="true">`
+    + `<button class="btn primary" id="r-send" type="submit">${RBTN.rapport} <span class="arr" aria-hidden="true">→</span></button></form>`
     + `<p class="qerr" id="r-err" role="alert" hidden></p><small>${note}</small></footer>`;
   const STEPS = ['Henter forsiden', 'Leder efter firmaoplysninger og politikker', 'Tjekker varer og produktdata'];
   // the card stays calm: three counts, at most four short rows, similar findings merged, details in the report
@@ -431,8 +462,9 @@ document.getElementById('copymail').addEventListener('click', async e => {
     let rows = top.map((x, i) => x.s === 'fejl' ? row(i, 'f', '✕', 'Fejl', esc(x.t), x.ex ? `Fx ${esc(x.ex)}` : '') : row(i, 'w', '!', 'Bør tjekkes', esc(x.t), x.ex ? `Fx ${esc(x.ex)}` : '')).join('');
     if (!all.length) rows = row(0, 'o', '✓', 'I orden', 'Ingen tydelige fejl på de sider, vi tjekkede', '');
     const moreLine = more > 0 ? `<p class="rmore">+ ${more} ${more === 1 ? 'fund' : 'fund'} mere i den fulde rapport</p>` : '';
-    const note = (d.shopify ? 'Gratis og uden binding. Rapporten fortæller også, hvordan I retter det.' : 'Butikken kører ikke på Shopify, så vi har kun tjekket forsiden. Gratis og uden binding.') + ' <a href="/privatliv">Privatlivspolitik</a>';
-    show(head('Resultat') + tiles + `<ul>${rows}</ul>` + moreLine + mailFoot(nf ? 'Få hele rapporten på mail' : 'Få rapporten på mail', note), true);
+    const note = (d.shopify ? 'Rapporten er gratis og uden binding. Vælger I, at vi retter det, betaler I først, når det er rettet.' : 'Butikken kører ikke på Shopify, så vi har kun tjekket forsiden. Gratis og uden binding.') + ' <a href="/privatliv">Privatlivspolitik</a>';
+    const fix = all.length > 0;
+    show(head('Resultat') + tiles + `<ul>${rows}</ul>` + moreLine + mailFoot(fix ? 'Næste skridt: få hele rapporten, eller få det rettet' : 'Få rapporten', note, fix), true);
   }
   $('quick').addEventListener('submit', async e => {
     e.preventDefault();
@@ -445,51 +477,77 @@ document.getElementById('copymail').addEventListener('click', async e => {
     const tick = setInterval(() => { const m = marks.find(x => !x.classList.contains('d')); if (m && m !== marks.at(-1)) m.classList.add('d'); }, 1400);
     let d;
     try { const r = await fetch('/api/tjek?shop=' + encodeURIComponent(shop)); d = await r.json(); }
-    catch (err) { d = {ok: false, error: 'Tjekket kunne ikke køre lige nu. Skriv jeres mail, så kigger vi selv.'}; }
+    catch (err) { d = {ok: false, error: 'Tjekket kunne ikke køre lige nu. Skriv jeres mail eller telefonnummer, så kigger vi selv.'}; }
     clearInterval(tick); busy($('q-send'), false, QS);
     if (cur !== shop) return;
     if (d.ok) return result(d);
     if (/Skriv jeres webshops adresse/.test(d.error || '')) { res.classList.remove('live'); return qfail(d.error); }
-    show(head('') + `<ul>${row(0, 'w', '!', '', esc(d.error || SORRY), '')}</ul>` + mailFoot('Få rapporten på mail:', 'Gratis og uden binding. I får den inden for 2 hverdage.'), true);
+    show(head('') + `<ul>${row(0, 'w', '!', '', esc(d.error || SORRY), '')}</ul>` + mailFoot('Så kigger vi selv. Hvor skal vi svare?', 'Gratis og uden binding. I hører fra os inden for 2 hverdage.', false), true);
   });
   const pre = new URLSearchParams(location.search).get('tjek');
   if (pre && okShop(hostOf(pre))) { $('q-shop').value = hostOf(pre); $('quick').requestSubmit ? $('quick').requestSubmit() : $('q-send').click(); }
   async function report(e) {
     e.preventDefault();
-    const mail = $('r-mail').value.trim();
+    const c = contactOf($('r-mail').value), want = $('r-want') ? picked($('r-want')) : 'rapport', label = $('r-send').innerHTML;
     const err = msg => { $('r-err').textContent = msg; $('r-err').hidden = false; $('r-mail').focus(); };
-    if (!okMail(mail)) return err('Skriv den mail, rapporten skal sendes til.');
+    if (!c) return err('Skriv jeres mail eller telefonnummer, så vi kan svare jer.');
     $('r-err').hidden = true; busy($('r-send'), true);
-    const r = await send({shop: cur, mail, hp: $('r-hp').value});
-    if (!r.ok) { busy($('r-send'), false, 'Send rapporten <span class="arr" aria-hidden="true">→</span>'); return err(r.error); }
+    const r = await send({shop: cur, ...c, onsker: want, hp: $('r-hp').value});
+    if (!r.ok) { busy($('r-send'), false, label); return err(r.error); }
     const foot = res.querySelector('footer');
     foot.className = 'thanks'; foot.tabIndex = -1;
     foot.innerHTML = `<div class="tick" aria-hidden="true">${'<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>'}</div>`
-      + `<p><b>Tak! Rapporten er på vej.</b>Den fulde rapport om ${esc(cur)} kommer til ${esc(mail)} inden for 2 hverdage.</p>`;
+      + `<p><b>Tak! Vi har fået det.</b>${thanks(cur, c, want)}</p>`;
     foot.focus();
   }
 
-  // contact form: the same, with name and phone
-  const FS = $('f-send').innerHTML;
+  // contact form: what you want, the webshop, and a mail or a phone number
+  const FS = $('f-send').innerHTML, fw = $('f-want');
+  fw.addEventListener('click', e => { const b = e.target.closest('button'); if (b) pick(fw, b.dataset.v); });
   const fail = (msg, id) => {
     $('f-err').textContent = msg; $('f-err').hidden = false;
-    ['f-shop', 'f-mail'].forEach(x => $(x).classList.toggle('bad', x === id));
+    ['f-shop', 'f-kontakt'].forEach(x => $(x).classList.toggle('bad', x === id));
     if (id) $(id).focus();
   };
-  ['f-shop', 'f-mail'].forEach(id => $(id).addEventListener('input', () => { $(id).classList.remove('bad'); }));
+  ['f-shop', 'f-kontakt'].forEach(id => $(id).addEventListener('input', () => { $(id).classList.remove('bad'); }));
   $('signup').addEventListener('submit', async e => {
     e.preventDefault();
-    const shop = shopOf($('f-shop').value), mail = $('f-mail').value.trim();
+    const shop = shopOf($('f-shop').value), c = contactOf($('f-kontakt').value), want = picked(fw);
     if (!okShop(shop)) return fail('Skriv jeres webshops adresse, fx dinbutik.dk.', 'f-shop');
-    if (!okMail(mail)) return fail('Skriv den mail, rapporten skal sendes til.', 'f-mail');
+    if (!c) return fail('Skriv jeres mail eller telefonnummer, så vi kan svare jer.', 'f-kontakt');
     $('f-err').hidden = true; busy($('f-send'), true);
-    const r = await send({shop, mail, navn: $('f-navn').value, tlf: $('f-tlf').value, hp: $('f-hp').value});
+    const r = await send({shop, ...c, onsker: want, hp: $('f-hp').value});
     busy($('f-send'), false, FS);
     if (!r.ok) return fail(r.error, r.field ? 'f-' + r.field : null);
-    $('done-shop').textContent = shop; $('done-mail').textContent = mail;
+    $('done-text').innerHTML = thanks(shop, c, want); $('done-spam').hidden = !c.mail;
     $('signup').hidden = true; $('done').hidden = false; $('done').focus();
   });
-  $('again').addEventListener('click', () => { $('signup').reset(); $('done').hidden = true; $('signup').hidden = false; $('f-shop').focus(); });
+  $('again').addEventListener('click', () => { $('signup').reset(); pick(fw, 'rapport'); $('done').hidden = true; $('signup').hidden = false; $('f-shop').focus(); });
+
+  // every 'free check' button goes to the check field and puts the cursor in it
+  document.querySelectorAll('a.go').forEach(a => a.addEventListener('click', e => {
+    e.preventDefault();
+    $('q-shop').focus({preventScroll: true});  // focus first: moving focus later would stop the smooth scroll
+    $('top').scrollIntoView({behavior: reduce ? 'auto' : 'smooth', block: 'start'});
+  }));
+  // the price buttons open the contact form with that choice made
+  document.querySelectorAll('a[data-want]').forEach(a => a.addEventListener('click', e => {
+    e.preventDefault(); pick(fw, a.dataset.want);
+    if (!$('done').hidden) $('again').click();
+    if (cur && !$('f-shop').value) $('f-shop').value = cur;  // already checked a shop: fill it in
+    $($('f-shop').value ? 'f-kontakt' : 'f-shop').focus({preventScroll: true});
+    $('signup').scrollIntoView({behavior: reduce ? 'auto' : 'smooth', block: 'center'});  // the fields themselves, not the heading above
+  }));
+  // phones: show the sticky button once the check field is out of view, hide it at the contact form
+  if ('IntersectionObserver' in window) {
+    const st = $('stick'), seen = new Map();
+    const io = new IntersectionObserver(es => {
+      es.forEach(x => seen.set(x.target.id, x.isIntersecting));
+      const on = !seen.get('quick') && !seen.get('kontakt') && !seen.get('res');
+      st.classList.toggle('on', on); st.tabIndex = on ? 0 : -1; st.setAttribute('aria-hidden', String(!on));
+    });
+    ['quick', 'kontakt', 'res'].forEach(id => io.observe($(id)));
+  }
 })();
 // browsers without scroll-driven animations: the same blur-to-sharp, started when each block scrolls in
 (() => {
