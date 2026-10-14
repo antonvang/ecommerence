@@ -60,6 +60,10 @@ PROBLEM = {
     "S10": "To sæt produktdata for samme vare",
     "M11": "Siden er sat til et andet sprog end dansk",
     "M12": "Forsiden siger, at butikken er under opbygning",
+    "D15": "Varianter med mistænkeligt lav pris",
+    "D16": "Kladde- eller testvarer er synlige i butikken",
+    "S11": "Lagerstatus mangler i produktdataene",
+    "S12": "Prisen i produktdataene er udløbet",
 }
 # The one example sentence read aloud on the call (follows "... fundet N ting, der kan give problemer i Google Shopping.").
 # Short, plain and never stronger than what was observed: "kan", not "bliver". {ex} = a named product, if any.
@@ -101,6 +105,9 @@ SAY = {
     "S10": "Fx har jeres produktsider to sæt produktdata for samme vare, typisk fra både temaet og en app.",
     "M11": "Fx er jeres side sat til engelsk i koden, selvom teksten er dansk.",
     "M12": "Fx står der på forsiden, at butikken er under opbygning.",
+    "D15": "Fx har nogle varer en variant til få kroner{ex} Det ligner en fejlpris, og Google viser den laveste pris.",
+    "D16": "Fx er der varer, der ligner kladder eller tests{ex} De kommer også med i Google-feedet.",
+    "S12": "Fx siger produktdataene på jeres side, at prisen er udløbet.",
 }
 DOC_ID = re.compile(r"^[A-Za-z0-9_\-.~:@+]{1,200}$")
 # Large organisations/chains: unlikely to buy a 495-995 kr. fix from a cold call -> called last.

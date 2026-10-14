@@ -16,7 +16,7 @@ from datetime import datetime, timezone
 
 from .fetch import Fetcher
 
-VERSION = "0.4.0"
+VERSION = "0.5.0"
 G = "https://support.google.com/merchants/answer/"
 REF = {"misrep": G + "6150127?hl=da", "gtin": G + "160161?hl=da", "price": G + "6324371?hl=da",
        "availability": G + "6324448?hl=da", "title": G + "6324415?hl=da", "image": G + "6324350?hl=da"}
@@ -59,6 +59,8 @@ GENERIC_TITLE = re.compile(r"\s*(home|forside|hjem|my store|min butik|welcome|ve
 HTTP_IMG = re.compile(r"""<img\b[^>]*\ssrc=["']http://[^"']+""", re.I)
 PRICE_TITLE = re.compile(r"\d+\s?(?:kr\.?|,-)(?![\wæøå])", re.I)
 GIFT = re.compile(r"(gavekort|gift ?card)", re.I)
+DRAFT = re.compile(r"^\s*(copy of|kopi af|testprodukt|test product|testvare|do not (?:buy|use)|ikke køb|fejloprettelse|dummy|placeholder)\b|^\s*test\s*\d*\s*$", re.I)
+SAMPLE = re.compile(r"(prøve|sample|tester|vareprøve|gavekort|gift ?card|stof ?prøve|farveprøve)", re.I)
 UNDER = re.compile(r"(under construction|under opbygning|åbner snart|opening soon|website coming soon|webshoppen åbner)", re.I)
 HTML_LANG = re.compile(r"""<html\b[^>]*\slang=["']?([A-Za-z-]+)""", re.I)
 DA_WORDS = {"og", "til", "med", "på", "er", "det", "vi", "af", "din", "dine", "jeres", "kurv", "levering", "fragt", "køb", "varer", "ikke", "eller"}
@@ -374,6 +376,23 @@ def run(domain, max_products_pages=3):
                             else f"{len(small)} varer har et hovedbillede under 500 px, fx '{small[0][:60]}'",
                             "Google afviser billeder under 100 × 100 px (250 × 250 px for tøj) og anbefaler mindst 800 px, så varen kan vises skarpt.",
                             "Upload produktbilleder på mindst 800 × 800 px.", REF["image"]))
+        draft = [p["title"] for p in products if DRAFT.search(p.get("title", ""))]
+        if draft:
+            C.append(_check("D16", A2, "middel", "Ingen kladde- eller testvarer i butikken", "advarsel", f"{len(draft)} varer ligner kladder eller tests, fx '{draft[0][:60]}'",
+                            "Varer som 'Copy of …' eller 'Test' er synlige for kunder og kommer med i Google-feedet, hvor de ser ufærdige ud.",
+                            "Skjul eller slet varerne, eller giv dem en rigtig titel.", REF["misrep"]))
+        low = []
+        for p in products:
+            vs = [(float(v.get("price") or 0), v.get("title") or "") for v in p.get("variants", [])]
+            real = [pr for pr, t in vs if pr > 0 and not SAMPLE.search(t)]
+            if len(real) >= 2 and min(real) <= 20 and min(real) <= max(real) * 0.05 and not SAMPLE.search(p.get("title", "")):
+                low.append((p["title"], min(real), max(real)))
+        if low:
+            t, lo, hi = low[0]
+            C.append(_check("D15", A2, "middel", "Ingen varianter med mistænkeligt lav pris", "advarsel",
+                            f"{len(low)} varer har en variant til ned til {lo:.0f} kr., mens samme vare ellers koster op til {hi:.0f} kr., fx '{t[:60]}'",
+                            "En variant til få kroner ligner en fejlpris. Google viser den laveste pris, og kunder, der bestiller den, kan kræve at få varen til den pris.",
+                            "Tjek prisen på varianten, og ret den, hvis den er forkert.", REF["price"]))
         demo_p = [p["title"] for p in products if DEMO_PRODUCT.search(p.get("title", "") + " " + _text(p.get("body_html") or ""))]
         if demo_p:
             C.append(_check("D11", A2, "høj", "Ingen demo-varer eller fyldtekst", "fejl", f"{len(demo_p)} varer med demo- eller fyldtekst, fx '{demo_p[0][:60]}'",
@@ -419,6 +438,8 @@ def run(domain, max_products_pages=3):
                             "Google tjekker stregkodens kontrolciffer. En ugyldig GTIN giver afviste varer eller begrænset visning.",
                             "Ret stregkoden til producentens rigtige EAN/GTIN, eller fjern den, hvis varen ikke har en.", REF["gtin"]))
         no_ld, mism, avail_bad, comma, cur_bad, ld_gap, gtin_lost, dup_ld, no_brand = [], [], [], [], [], [], [], [], []
+        no_avail, expired = [], []
+        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
         for prod, b, js in pp:
             items = [x for x in _ldjson(b) if str(x.get("@type", "")).lower() in ("product", "productgroup")]
             if not items:
@@ -440,6 +461,11 @@ def run(domain, max_products_pages=3):
             good = [v for v in (js or {}).get("variants", []) if str(v.get("barcode") or "").strip() and gtin_ok(v["barcode"])]
             if good and not re.search(r'"gtin(?:8|12|13|14)?"', json.dumps(items)):
                 gtin_lost.append(f"'{prod['title'][:40]}' har stregkoden {str(good[0]['barcode']).strip()} i butikken")
+            if offers and any(not o.get("availability") for o in offers):
+                no_avail.append(prod["title"][:40])
+            old = sorted(str(o.get("priceValidUntil"))[:10] for o in offers if o.get("priceValidUntil") and str(o.get("priceValidUntil"))[:10] < today)
+            if old:
+                expired.append(f"'{prod['title'][:40]}' har en pris, der udløb {old[0]}")
             missing = [w for w, ok in (("billede", any(it.get("image") for it in items)), ("pris", bool(raw_prices))) if not ok]
             if missing:
                 ld_gap.append(f"{prod['title'][:40]}: mangler {' og '.join(missing)}")
@@ -471,6 +497,14 @@ def run(domain, max_products_pages=3):
             C.append(_check("S07", A3, "middel", "Strukturerede produktdata har billede og pris", "fejl", "; ".join(ld_gap[:2]),
                             "Google bruger produktdataene i koden til at vise og tjekke varen. Uden billede eller pris kan varen ikke vises med pris i Google.",
                             "Ret temaets JSON-LD, så hver vare har image, price og priceCurrency.", REF["price"]))
+        if expired:
+            C.append(_check("S12", A3, "middel", "Prisen i produktdataene er ikke udløbet", "advarsel", "; ".join(expired[:2]) + ".",
+                            "Produktdataene på siden siger, at prisen kun gælder til en dato, der er overstået. Så kan Google se prisen som forældet.",
+                            "Fjern priceValidUntil fra temaets JSON-LD, eller sæt en dato i fremtiden.", REF["price"]))
+        if no_avail:
+            C.append(_check("S11", A3, "lav", "Produktdataene har lagerstatus", "advarsel", f"Lagerstatus mangler i produktdataene for fx '{no_avail[0]}'.",
+                            "Google bruger lagerstatus til at vise, om varen kan købes. Mangler den, skal Google gætte.",
+                            "Sørg for at temaets JSON-LD har availability på alle tilbud.", REF["availability"]))
         if gtin_lost:
             C.append(_check("S09", A3, "middel", "Stregkoden står i produktdataene", "advarsel", "; ".join(gtin_lost[:2]) + ", men den står ikke i produktdataene på siden.",
                             "Google sammenligner feedet med produktsiden. Når stregkoden kun findes i butikken og ikke i produktdataene, kan Google ikke bekræfte den.",

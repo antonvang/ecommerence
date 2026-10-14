@@ -1,7 +1,7 @@
 // Instant version of the GMC-Doktor checker (gmcdoktor/checks.py) for the "Tjek din webshop" field on webshopdoktoren.dk.
 // Same ids, texts and design rule: a 'fejl' is only something we actually saw on the public pages. Lighter than the full
 // check: homepage, up to 2 contact/about pages, /products.json?limit=100 and 2 product pages (+ .js), robots.txt respected.
-export const VERSION = "w0.4.0";
+export const VERSION = "w0.5.0";
 const UA = "Mozilla/5.0 (compatible; GMC-Doktor/0.1; offentligt Merchant Center-tjek af butikssider; webshopdoktoren.dk)";
 const PENALTY = {kritisk: 15, "høj": 8, middel: 4, lav: 2};
 const SEV = {kritisk: 0, "høj": 1, middel: 2, lav: 3};
@@ -53,8 +53,12 @@ export const PROBLEM = {
   S10: "To sæt produktdata for samme vare",
   M11: "Siden er sat til et andet sprog end dansk",
   M12: "Forsiden siger, at butikken er under opbygning",
+  D15: "Varianter med mistænkeligt lav pris",
+  D16: "Kladde- eller testvarer er synlige i butikken",
+  S11: "Lagerstatus mangler i produktdataene",
+  S12: "Prisen i produktdataene er udløbet",
 };
-const CONCRETE = new Set(["S05", "D07", "M02", "D04", "S03", "S01", "D08", "D09", "P05", "S09", "S10", "M11", "M12"]);
+const CONCRETE = new Set(["S05", "D07", "M02", "D04", "S03", "S01", "D08", "D09", "P05", "S09", "S10", "M11", "M12", "D15", "D16", "S12"]);
 
 const NB = "(?<![\\p{L}\\p{N}_])"; // a \b that also works before æ, ø and å
 const SALES_WORDS = /(gratis fragt|fri fragt|\btilbud\b|\budsalg\b|spar \d+|\brabat\b|nr\.? ?1\b|!!|køb nu|free shipping|\bsale\b|bestseller)/i;
@@ -82,6 +86,8 @@ const GENERIC_TITLE = /^\s*(home|forside|hjem|my store|min butik|welcome|velkomm
 const HTTP_IMG = /<img\b[^>]*\ssrc=["']http:\/\/[^"']+/i;
 const PRICE_TITLE = /\d+\s?(?:kr\.?|,-)(?![\wæøå])/i;
 const GIFT = /(gavekort|gift ?card)/i;
+const DRAFT = /^\s*(copy of|kopi af|testprodukt|test product|testvare|do not (?:buy|use)|ikke køb|fejloprettelse|dummy|placeholder)\b|^\s*test\s*\d*\s*$/i;
+const SAMPLE = /(prøve|sample|tester|vareprøve|gavekort|gift ?card|stof ?prøve|farveprøve)/i;
 const UNDER = /(under construction|under opbygning|åbner snart|opening soon|website coming soon|webshoppen åbner)/i;
 const DA_WORDS = new Set(["og", "til", "med", "på", "er", "det", "vi", "af", "din", "dine", "jeres", "kurv", "levering", "fragt", "køb", "varer", "ikke", "eller"]);
 const EN_WORDS = new Set(["the", "and", "with", "your", "you", "our", "shipping", "cart", "buy", "products", "not", "or"]);
@@ -321,6 +327,14 @@ export async function run(domain) {
     for (const p of products) if (p.title) same.set(norm(p.title), (same.get(norm(p.title)) || 0) + 1);
     const dups = [...same].filter(([, c]) => c > 1).sort((a, b) => b[1] - a[1]);
     if (dups.length >= 3) C.push(chk("D13", "lav", "advarsel", `${dups.length} titler bruges af flere varer, fx '${products.find(p => norm(p.title) === dups[0][0]).title.slice(0, 60)}' (${dups[0][1]} varer)`, "Skriv det, der adskiller varerne, i titlen."));
+    const draft = products.filter(p => DRAFT.test(p.title || "")).map(p => p.title);
+    if (draft.length) C.push(chk("D16", "middel", "advarsel", `${draft.length} varer ligner kladder eller tests, fx '${draft[0].slice(0, 60)}'`, "Skjul eller slet varerne, eller giv dem en rigtig titel."));
+    const low = [];
+    for (const p of products) {
+      const real = (p.variants || []).filter(v => Number(v.price || 0) > 0 && !SAMPLE.test(v.title || "")).map(v => Number(v.price));
+      if (real.length >= 2 && Math.min(...real) <= 20 && Math.min(...real) <= Math.max(...real) * 0.05 && !SAMPLE.test(p.title || "")) low.push([p.title, Math.min(...real), Math.max(...real)]);
+    }
+    if (low.length) C.push(chk("D15", "middel", "advarsel", `${low.length} varer har en variant til ned til ${Math.round(low[0][1])} kr., mens samme vare ellers koster op til ${Math.round(low[0][2])} kr., fx '${low[0][0].slice(0, 60)}'`, "Tjek prisen på varianten, og ret den, hvis den er forkert."));
     const sold = products.filter(p => (p.variants || []).length && !p.variants.some(v => v.available)).map(p => p.title);
     if (n >= 10 && sold.length >= n / 2) C.push(chk("D12", "lav", "advarsel", `${sold.length} af ${n} varer er udsolgt, fx '${sold[0].slice(0, 60)}'`, "Skjul udsolgte varer, der ikke kommer igen."));
     if (n < 3) C.push(chk("M04", "høj", "fejl", `Kun ${n} varer fundet.`, "Tilføj flere varer, eller vent med Google Shopping."));
@@ -337,11 +351,15 @@ export async function run(domain) {
       const badG = jsVars.filter(v => String(v.barcode || "").trim() && !gtinOk(v.barcode));
       if (badG.length) C.push(chk("D10", "høj", "fejl", `${badG.length} af ${jsVars.length} varianter har en ugyldig stregkode, fx '${String(badG[0].name || badG[0].title || "").slice(0, 50)}' med stregkoden ${String(badG[0].barcode).trim()}`, "Ret stregkoden til producentens rigtige EAN, eller fjern den."));
     }
-    const noLd = [], mism = [], availBad = [], comma = [], curBad = [], ldGap = [], gtinLost = [], dupLd = [], noBrand = [];
+    const noLd = [], mism = [], availBad = [], comma = [], curBad = [], ldGap = [], gtinLost = [], dupLd = [], noBrand = [], noAvail = [], expired = [];
+    const today = new Date().toISOString().slice(0, 10);
     for (const [prod, b, js] of pp) {
       const items = ldjson(b).filter(x => ["product", "productgroup"].includes(String(x["@type"] || "").toLowerCase()));
       if (!items.length) { if (!/itemtype=["']https?:\/\/schema\.org\/Product["']/i.test(b)) noLd.push(prod.title); continue; }
       const offers = offersOf(items);
+      if (offers.length && offers.some(o => !o.availability)) noAvail.push(prod.title.slice(0, 40));
+      const old = offers.map(o => String(o.priceValidUntil || "").slice(0, 10)).filter(x => x && x < today).sort();
+      if (old.length) expired.push(`'${prod.title.slice(0, 40)}' har en pris, der udløb ${old[0]}`);
       const sameItem = items.filter(it => norm(it.name) === norm(prod.title));
       if (sameItem.length >= 2) dupLd.push(`${prod.title.slice(0, 40)}: ${sameItem.length} sæt`);
       if (!items.some(it => it.brand)) noBrand.push(prod.title.slice(0, 40));
@@ -367,6 +385,8 @@ export async function run(domain) {
     if (noLd.length) C.push(chk("S01", "middel", "advarsel", `Mangler på ${noLd.length} af ${pp.length} tjekkede sider`, "Brug et tema eller en app, der udsender Product-data (JSON-LD).")); else ok();
     if (mism.length) C.push(chk("S02", "høj", "fejl", mism.slice(0, 2).join("; "), "Sørg for, at temaet udsender samme pris som den viste pris.")); else ok();
     if (comma.length) C.push(chk("S05", "middel", "advarsel", comma.slice(0, 2).join("; "), "Ret temaets JSON-LD, så prisen skrives med punktum (fx 349.00)."));
+    if (expired.length) C.push(chk("S12", "middel", "advarsel", expired.slice(0, 2).join("; ") + ".", "Fjern priceValidUntil fra temaets JSON-LD, eller sæt en dato i fremtiden."));
+    if (noAvail.length) C.push(chk("S11", "lav", "advarsel", `Lagerstatus mangler i produktdataene for fx '${noAvail[0]}'.`, "Sørg for at temaets JSON-LD har availability på alle tilbud."));
     if (gtinLost.length) C.push(chk("S09", "middel", "advarsel", gtinLost.slice(0, 2).join("; ") + ", men den står ikke i produktdataene på siden.", "Ret temaets JSON-LD, så hver variant har gtin med."));
     if (dupLd.length) C.push(chk("S10", "middel", "advarsel", dupLd.slice(0, 2).join("; ") + " produktdata for samme vare.", "Slå produktdata fra i enten temaet eller SEO-appen."));
     if (noBrand.length && noBrand.length === pp.length) C.push(chk("S08", "lav", "advarsel", `Mærke (brand) mangler i produktdataene på alle ${pp.length} tjekkede sider.`, "Sørg for at temaet udskriver brand i JSON-LD."));

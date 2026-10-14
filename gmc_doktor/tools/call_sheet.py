@@ -48,9 +48,12 @@ OPENER = {
     "S10": "jeres produktsider har to sæt produktdata for samme vare, typisk fra både temaet og en app",
     "M11": "jeres side er sat til engelsk i koden, selvom teksten er dansk",
     "M12": "der står på forsiden, at butikken er under opbygning",
+    "D15": "nogle varer har en variant til få kroner{ex}, som ligner en fejlpris",
+    "D16": "der ligger varer, der ligner kladder eller tests{ex}, synligt i butikken",
+    "S12": "produktdataene på jeres side siger, at prisen er udløbet",
 }
 # Warnings concrete enough to name on the phone (each one is something we saw, just not proven to be an error).
-CONCRETE_WARN = {"S05", "D07", "M02", "D04", "S03", "S01", "D08", "D09", "P05", "S09", "S10", "M11", "M12"}
+CONCRETE_WARN = {"S05", "D07", "M02", "D04", "S03", "S01", "D08", "D09", "P05", "S09", "S10", "M11", "M12", "D15", "D16", "S12"}
 SEV = {"kritisk": 0, "høj": 1, "middel": 2, "lav": 3}
 
 

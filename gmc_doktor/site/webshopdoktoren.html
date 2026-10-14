@@ -194,6 +194,15 @@ section{padding-block:96px}
 @keyframes rot{to{transform:rotate(360deg)}}
 .journal li small{overflow-wrap:anywhere}
 .journal footer b{display:block;font-size:15px;color:var(--ink)}
+.rsum{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:16px 22px 6px}
+.rsum span{border-radius:14px;padding:10px 12px 9px;font-size:13px;line-height:1.3}
+.rsum b{display:block;font:700 26px/1.05 var(--display);letter-spacing:-.02em;margin-bottom:2px}
+.rsum .f{background:var(--fail-soft);color:var(--fail)}
+.rsum .w{background:var(--warn-soft);color:var(--warn)}
+.rsum .o{background:var(--green-soft);color:var(--ok)}
+.journal.live li{padding:12px 22px;align-items:center}
+.journal.live li small{margin-top:1px}
+.rmore{margin:0;padding:2px 22px 14px 64px;font-size:13.5px;color:var(--muted)}
 .journal footer small{display:block;color:var(--muted);margin-top:8px;font-size:13px}
 .journal footer .qerr{margin-top:8px}
 .jform{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px;margin-top:10px;padding:5px;background:var(--card);border:1px solid var(--line);border-radius:999px}
@@ -403,22 +412,37 @@ document.getElementById('copymail').addEventListener('click', async e => {
     const f = $('r-form');
     if (f) f.addEventListener('submit', report);
   }
-  const head = right => `<header><span><b>${esc(cur)}</b> · gratis tjek</span><span>${right}</span></header>`;
+  const head = right => `<header><span><b>${esc(cur)}</b></span><span>${right}</span></header>`;
   const row = (i, cls, mark, label, b, small) => `<li style="--i:${i}"><span class="mark ${cls}"${label ? ` aria-label="${label}"` : ' aria-hidden="true"'}>${mark}</span><span><b>${b}</b>${small ? `<small>${small}</small>` : ''}</span></li>`;
   const mailFoot = (lead, note) => `<footer><b>${lead}</b><form class="jform" id="r-form" novalidate><label class="sr" for="r-mail">Jeres mail</label>`
     + `<input id="r-mail" type="email" placeholder="jeres@mail.dk" autocomplete="email" inputmode="email" spellcheck="false"><input class="hp" id="r-hp" type="text" tabindex="-1" autocomplete="off" aria-hidden="true">`
     + `<button class="btn primary" id="r-send" type="submit">Send rapporten <span class="arr" aria-hidden="true">→</span></button></form>`
     + `<p class="qerr" id="r-err" role="alert" hidden></p><small>${note}</small></footer>`;
   const STEPS = ['Henter forsiden', 'Leder efter firmaoplysninger og politikker', 'Tjekker varer og produktdata'];
+  // the card stays calm: three counts, at most four short rows, similar findings merged, details in the report
+  const POL = {P01: 'returret', P02: 'fragt', P03: 'handelsbetingelser', P04: 'privatlivspolitik'};
+  const IDN = {C01: 'CVR-nummer', C02: 'fuld adresse', C03: 'telefonnummer', C04: 'mail'};
+  const list = a => a.length > 1 ? a.slice(0, -1).join(', ') + ' og ' + a.at(-1) : a[0];
+  function tidyRows(f) {
+    const out = [], pol = f.filter(x => POL[x.id]), idn = f.filter(x => IDN[x.id] && !/gratis mailudbyder/.test(x.hvad || ''));
+    const worst = g => g.some(x => x.s === 'fejl') ? 'fejl' : 'advarsel';
+    for (const x of f) {
+      if (POL[x.id]) { if (x === pol[0]) out.push({s: worst(pol), t: pol.length > 1 ? `Ingen tydelige links til ${list(pol.map(y => POL[y.id]))}` : x.t}); continue; }
+      if (idn.includes(x)) { if (x === idn[0]) out.push({s: worst(idn), t: idn.length > 1 ? `${list(idn.map(y => IDN[y.id]))} står ikke på siden`.replace(/^./, c => c.toUpperCase()) : x.t}); continue; }
+      const m = String(x.hvad || '').match(/fx '([^']{2,60})'/);
+      out.push({s: x.s, t: x.t, ex: m ? m[1] : ''});
+    }
+    return out.sort((a, b) => (a.s === 'fejl' ? 0 : 1) - (b.s === 'fejl' ? 0 : 1));
+  }
   function result(d) {
-    const top = d.fund.slice(0, 5), more = d.fund.length - top.length;
-    const right = d.n_fejl ? `${d.n_fejl} fejl` + (d.n_adv ? ` · ${d.n_adv} at tjekke` : '') : d.n_adv ? `${d.n_adv} at tjekke` : 'Ingen fejl';
-    let rows = top.map((x, i) => x.s === 'fejl' ? row(i, 'f', '✕', 'Fejl', esc(x.t), esc(x.hvad)) : row(i, 'w', '!', 'Bør tjekkes', esc(x.t), esc(x.hvad))).join('');
-    if (more > 0) rows += row(top.length, 'w', '+', '', `${more} ${more === 1 ? 'ting' : 'ting'} mere`, 'Står i den fulde rapport sammen med, hvordan I retter det.');
-    if (d.n_ok) rows += row(top.length + 1, 'o', '✓', 'I orden', `${d.n_ok} ting er i orden`, 'Dem skriver vi også i rapporten, så I ved, hvad der virker.');
-    if (!d.fund.length) rows = row(0, 'o', '✓', 'I orden', 'Vi fandt ingen tydelige fejl på de sider, vi tjekkede', 'Vi kan kigge dybere, fx i jeres Merchant Center.') + rows;
-    const note = (d.shopify ? 'Et hurtigt tjek af forsiden, kontaktsiden og 2 varer. Den fulde rapport går dybere.' : 'Butikken ser ikke ud til at køre på Shopify, så vi har kun tjekket forsiden og kontaktsiden.') + ' Gratis og uden binding.';
-    show(head(right) + `<ul>${rows}</ul>` + mailFoot(d.n_fejl ? 'Få hele rapporten med vejledning, så I kan rette det:' : 'Få rapporten på mail:', note), true);
+    const all = tidyRows(d.fund), top = all.slice(0, 4), more = all.length - top.length;
+    const nf = all.filter(x => x.s === 'fejl').length, nw = all.length - nf;
+    const tiles = `<div class="rsum"><span class="f"><b>${nf}</b>fejl</span><span class="w"><b>${nw}</b>bør tjekkes</span><span class="o"><b>${d.n_ok}</b>i orden</span></div>`;
+    let rows = top.map((x, i) => x.s === 'fejl' ? row(i, 'f', '✕', 'Fejl', esc(x.t), x.ex ? `Fx ${esc(x.ex)}` : '') : row(i, 'w', '!', 'Bør tjekkes', esc(x.t), x.ex ? `Fx ${esc(x.ex)}` : '')).join('');
+    if (!all.length) rows = row(0, 'o', '✓', 'I orden', 'Ingen tydelige fejl på de sider, vi tjekkede', '');
+    const moreLine = more > 0 ? `<p class="rmore">+ ${more} ${more === 1 ? 'fund' : 'fund'} mere i den fulde rapport</p>` : '';
+    const note = d.shopify ? 'Gratis og uden binding. Rapporten fortæller også, hvordan I retter det.' : 'Butikken kører ikke på Shopify, så vi har kun tjekket forsiden. Gratis og uden binding.';
+    show(head('Resultat') + tiles + `<ul>${rows}</ul>` + moreLine + mailFoot(nf ? 'Få hele rapporten på mail' : 'Få rapporten på mail', note), true);
   }
   $('quick').addEventListener('submit', async e => {
     e.preventDefault();
