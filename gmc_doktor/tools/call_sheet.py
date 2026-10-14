@@ -48,7 +48,7 @@ OPENER = {
     "S10": "jeres produktsider har to sæt produktdata for samme vare, typisk fra både temaet og en app",
     "M11": "jeres side er sat til engelsk i koden, selvom teksten er dansk",
     "M12": "der står på forsiden, at butikken er under opbygning",
-    "D15": "nogle varer har en variant til få kroner{ex}, som ligner en fejlpris",
+    "D15": "nogle varer har en variant til 1 krone{ex}, som ligner en fejlpris",
     "D16": "der ligger varer, der ligner kladder eller tests{ex}, synligt i butikken",
     "S12": "produktdataene på jeres side siger, at prisen er udløbet",
 }

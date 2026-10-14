@@ -16,7 +16,7 @@ from datetime import datetime, timezone
 
 from .fetch import Fetcher
 
-VERSION = "0.5.0"
+VERSION = "0.5.1"
 G = "https://support.google.com/merchants/answer/"
 REF = {"misrep": G + "6150127?hl=da", "gtin": G + "160161?hl=da", "price": G + "6324371?hl=da",
        "availability": G + "6324448?hl=da", "title": G + "6324415?hl=da", "image": G + "6324350?hl=da"}
@@ -59,7 +59,7 @@ GENERIC_TITLE = re.compile(r"\s*(home|forside|hjem|my store|min butik|welcome|ve
 HTTP_IMG = re.compile(r"""<img\b[^>]*\ssrc=["']http://[^"']+""", re.I)
 PRICE_TITLE = re.compile(r"\d+\s?(?:kr\.?|,-)(?![\wæøå])", re.I)
 GIFT = re.compile(r"(gavekort|gift ?card)", re.I)
-DRAFT = re.compile(r"^\s*(copy of|kopi af|testprodukt|test product|testvare|do not (?:buy|use)|ikke køb|fejloprettelse|dummy|placeholder)\b|^\s*test\s*\d*\s*$", re.I)
+DRAFT = re.compile(r"^\s*(copy of|kopi af|testprodukt|test product|testvare|do not (?:buy|use)|ikke køb|fejloprettelse|placeholder)\b|^\s*test\s*\d*\s*$", re.I)
 SAMPLE = re.compile(r"(prøve|sample|tester|vareprøve|gavekort|gift ?card|stof ?prøve|farveprøve)", re.I)
 UNDER = re.compile(r"(under construction|under opbygning|åbner snart|opening soon|website coming soon|webshoppen åbner)", re.I)
 HTML_LANG = re.compile(r"""<html\b[^>]*\slang=["']?([A-Za-z-]+)""", re.I)
@@ -384,13 +384,15 @@ def run(domain, max_products_pages=3):
         low = []
         for p in products:
             vs = [(float(v.get("price") or 0), v.get("title") or "") for v in p.get("variants", [])]
-            real = [pr for pr, t in vs if pr > 0 and not SAMPLE.search(t)]
-            if len(real) >= 2 and min(real) <= 20 and min(real) <= max(real) * 0.05 and not SAMPLE.search(p.get("title", "")):
-                low.append((p["title"], min(real), max(real)))
+            real = [(pr, t) for pr, t in vs if pr > 0 and not SAMPLE.search(t)]
+            hi = max((pr for pr, _ in real), default=0)
+            tiny = [(pr, t) for pr, t in real if pr <= 1]  # a price of 1 kr. or less next to a real price is a placeholder, not a size
+            if tiny and hi >= 50 and not SAMPLE.search(p.get("title", "")):
+                low.append((p["title"], tiny[0][1], tiny[0][0], hi))
         if low:
-            t, lo, hi = low[0]
+            t, vt, lo, hi = low[0]
             C.append(_check("D15", A2, "middel", "Ingen varianter med mistænkeligt lav pris", "advarsel",
-                            f"{len(low)} varer har en variant til ned til {lo:.0f} kr., mens samme vare ellers koster op til {hi:.0f} kr., fx '{t[:60]}'",
+                            f"{len(low)} varer har en variant til højst 1 kr., mens samme vare ellers koster op til {hi:.0f} kr., fx '{t[:50]}' (varianten '{vt[:30]}')",
                             "En variant til få kroner ligner en fejlpris. Google viser den laveste pris, og kunder, der bestiller den, kan kræve at få varen til den pris.",
                             "Tjek prisen på varianten, og ret den, hvis den er forkert.", REF["price"]))
         demo_p = [p["title"] for p in products if DEMO_PRODUCT.search(p.get("title", "") + " " + _text(p.get("body_html") or ""))]
@@ -463,7 +465,8 @@ def run(domain, max_products_pages=3):
                 gtin_lost.append(f"'{prod['title'][:40]}' har stregkoden {str(good[0]['barcode']).strip()} i butikken")
             if offers and any(not o.get("availability") for o in offers):
                 no_avail.append(prod["title"][:40])
-            old = sorted(str(o.get("priceValidUntil"))[:10] for o in offers if o.get("priceValidUntil") and str(o.get("priceValidUntil"))[:10] < today)
+            dates = [re.search(r"\d{4}-\d{2}-\d{2}", str(o.get("priceValidUntil") or "")) for o in offers]
+            old = sorted(m.group(0) for m in dates if m and m.group(0) < today)
             if old:
                 expired.append(f"'{prod['title'][:40]}' har en pris, der udløb {old[0]}")
             missing = [w for w, ok in (("billede", any(it.get("image") for it in items)), ("pris", bool(raw_prices))) if not ok]

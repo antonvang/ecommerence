@@ -1,7 +1,7 @@
 // Instant version of the GMC-Doktor checker (gmcdoktor/checks.py) for the "Tjek din webshop" field on webshopdoktoren.dk.
 // Same ids, texts and design rule: a 'fejl' is only something we actually saw on the public pages. Lighter than the full
 // check: homepage, up to 2 contact/about pages, /products.json?limit=100 and 2 product pages (+ .js), robots.txt respected.
-export const VERSION = "w0.5.0";
+export const VERSION = "w0.5.1";
 const UA = "Mozilla/5.0 (compatible; GMC-Doktor/0.1; offentligt Merchant Center-tjek af butikssider; webshopdoktoren.dk)";
 const PENALTY = {kritisk: 15, "høj": 8, middel: 4, lav: 2};
 const SEV = {kritisk: 0, "høj": 1, middel: 2, lav: 3};
@@ -86,7 +86,7 @@ const GENERIC_TITLE = /^\s*(home|forside|hjem|my store|min butik|welcome|velkomm
 const HTTP_IMG = /<img\b[^>]*\ssrc=["']http:\/\/[^"']+/i;
 const PRICE_TITLE = /\d+\s?(?:kr\.?|,-)(?![\wæøå])/i;
 const GIFT = /(gavekort|gift ?card)/i;
-const DRAFT = /^\s*(copy of|kopi af|testprodukt|test product|testvare|do not (?:buy|use)|ikke køb|fejloprettelse|dummy|placeholder)\b|^\s*test\s*\d*\s*$/i;
+const DRAFT = /^\s*(copy of|kopi af|testprodukt|test product|testvare|do not (?:buy|use)|ikke køb|fejloprettelse|placeholder)\b|^\s*test\s*\d*\s*$/i;
 const SAMPLE = /(prøve|sample|tester|vareprøve|gavekort|gift ?card|stof ?prøve|farveprøve)/i;
 const UNDER = /(under construction|under opbygning|åbner snart|opening soon|website coming soon|webshoppen åbner)/i;
 const DA_WORDS = new Set(["og", "til", "med", "på", "er", "det", "vi", "af", "din", "dine", "jeres", "kurv", "levering", "fragt", "køb", "varer", "ikke", "eller"]);
@@ -331,10 +331,11 @@ export async function run(domain) {
     if (draft.length) C.push(chk("D16", "middel", "advarsel", `${draft.length} varer ligner kladder eller tests, fx '${draft[0].slice(0, 60)}'`, "Skjul eller slet varerne, eller giv dem en rigtig titel."));
     const low = [];
     for (const p of products) {
-      const real = (p.variants || []).filter(v => Number(v.price || 0) > 0 && !SAMPLE.test(v.title || "")).map(v => Number(v.price));
-      if (real.length >= 2 && Math.min(...real) <= 20 && Math.min(...real) <= Math.max(...real) * 0.05 && !SAMPLE.test(p.title || "")) low.push([p.title, Math.min(...real), Math.max(...real)]);
+      const real = (p.variants || []).filter(v => Number(v.price || 0) > 0 && !SAMPLE.test(v.title || ""));
+      const hi = Math.max(0, ...real.map(v => Number(v.price))), tiny = real.find(v => Number(v.price) <= 1);
+      if (tiny && hi >= 50 && !SAMPLE.test(p.title || "")) low.push([p.title, tiny.title || "", hi]);
     }
-    if (low.length) C.push(chk("D15", "middel", "advarsel", `${low.length} varer har en variant til ned til ${Math.round(low[0][1])} kr., mens samme vare ellers koster op til ${Math.round(low[0][2])} kr., fx '${low[0][0].slice(0, 60)}'`, "Tjek prisen på varianten, og ret den, hvis den er forkert."));
+    if (low.length) C.push(chk("D15", "middel", "advarsel", `${low.length} varer har en variant til højst 1 kr., mens samme vare ellers koster op til ${Math.round(low[0][2])} kr., fx '${low[0][0].slice(0, 50)}' (varianten '${String(low[0][1]).slice(0, 30)}')`, "Tjek prisen på varianten, og ret den, hvis den er forkert."));
     const sold = products.filter(p => (p.variants || []).length && !p.variants.some(v => v.available)).map(p => p.title);
     if (n >= 10 && sold.length >= n / 2) C.push(chk("D12", "lav", "advarsel", `${sold.length} af ${n} varer er udsolgt, fx '${sold[0].slice(0, 60)}'`, "Skjul udsolgte varer, der ikke kommer igen."));
     if (n < 3) C.push(chk("M04", "høj", "fejl", `Kun ${n} varer fundet.`, "Tilføj flere varer, eller vent med Google Shopping."));
@@ -358,7 +359,7 @@ export async function run(domain) {
       if (!items.length) { if (!/itemtype=["']https?:\/\/schema\.org\/Product["']/i.test(b)) noLd.push(prod.title); continue; }
       const offers = offersOf(items);
       if (offers.length && offers.some(o => !o.availability)) noAvail.push(prod.title.slice(0, 40));
-      const old = offers.map(o => String(o.priceValidUntil || "").slice(0, 10)).filter(x => x && x < today).sort();
+      const old = offers.map(o => (String(o.priceValidUntil || "").match(/\d{4}-\d{2}-\d{2}/) || [""])[0]).filter(x => x && x < today).sort();
       if (old.length) expired.push(`'${prod.title.slice(0, 40)}' har en pris, der udløb ${old[0]}`);
       const sameItem = items.filter(it => norm(it.name) === norm(prod.title));
       if (sameItem.length >= 2) dupLd.push(`${prod.title.slice(0, 40)}: ${sameItem.length} sæt`);

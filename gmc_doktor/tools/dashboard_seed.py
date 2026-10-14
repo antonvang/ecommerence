@@ -105,7 +105,7 @@ SAY = {
     "S10": "Fx har jeres produktsider to sæt produktdata for samme vare, typisk fra både temaet og en app.",
     "M11": "Fx er jeres side sat til engelsk i koden, selvom teksten er dansk.",
     "M12": "Fx står der på forsiden, at butikken er under opbygning.",
-    "D15": "Fx har nogle varer en variant til få kroner{ex} Det ligner en fejlpris, og Google viser den laveste pris.",
+    "D15": "Fx har nogle varer en variant til 1 krone{ex} Det ligner en fejlpris, og Google viser den laveste pris.",
     "D16": "Fx er der varer, der ligner kladder eller tests{ex} De kommer også med i Google-feedet.",
     "S12": "Fx siger produktdataene på jeres side, at prisen er udløbet.",
 }
