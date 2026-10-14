@@ -858,7 +858,7 @@ function henvHtml() {
   return `<section class="card" aria-label="Henvendelser fra hjemmesiden"><div class="kh"><div><h2>Henvendelser fra hjemmesiden</h2>
       <p class="muted small">${henv.err ? esc(henv.err) : henv.busy && !henv.at ? 'Henter fra firmaets Gmail …' : henv.list.length ? `${open ? `${open} venter på svar` : 'Alle er besvaret'} · tjekket ${esc(henv.at ? hhmm(henv.at.toISOString()) : '')}` : 'Ingen endnu. Når nogen skriver deres webshop på webshopdoktoren.dk, kommer de her.'}</p></div>
       <button class="btn" data-act="henv"${henv.busy ? ' disabled' : ''}>${henv.busy ? 'Henter …' : 'Opdater'}</button></div>
-    ${items ? `<ul class="hvlist">${items}</ul><p class="foot" style="text-align:left">1. Tryk "Send bekræftelse", og tryk Send i Gmail. 2. Tryk "Kopiér til Claude", og sæt teksten ind i chatten med Claude. Så tjekker Claude butikken og lægger den i listen. 3. Send rapporten som altid inden for 2 hverdage.</p>` : ''}</section>`;
+    ${items ? `<ul class="hvlist">${items}</ul><p class="foot" style="text-align:left">1. Tryk "Send bekræftelse", og tryk Send i Gmail. 2. Tryk "Kopiér til Claude", og sæt teksten ind i chatten med Claude. Så tjekker Claude butikken og lægger den i listen. 3. Svar og send rapporten samme dag: hjemmesiden lover svar samme dag.</p>` : ''}</section>`;
 }
 // ---------- sent-watch: after "Åbn mailen i Gmail" the dashboard looks in Gmail's Sent folder and ticks the mail off by itself (read-only, it never sends) ----------
 const sentWatch = new Map(); // `${kind}:${id}` -> {id, kind, mail, subject, since}
