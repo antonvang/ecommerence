@@ -75,6 +75,11 @@ PROBLEM = {
     "M15": "Priserne vises ekskl. moms",
     "C07": "Siden viser flere forskellige CVR-numre",
     "S15": "Navnet i produktdataene passer ikke med titlen",
+    "D22": "Butiksinterne stregkoder, som Google ikke godtager",
+    "D23": "Samme stregkode på flere varianter",
+    "D24": "Produkttitler over 150 tegn",
+    "D25": "Produktbeskrivelser over 5.000 tegn",
+    "D26": "EAN står i varenummer-feltet i stedet for stregkode-feltet",
 }
 # The one example sentence read aloud on the call (follows "... fundet N ting, der kan give problemer i Google Shopping.").
 # Short, plain and never stronger than what was observed: "kan", not "bliver". {ex} = a named product, if any.
@@ -126,6 +131,11 @@ SAY = {
     "M14": "Fx er jeres side ikke sat op til mobil, så den vises som en lille computerside på telefonen.",
     "M15": "Fx står priserne på jeres side ekskl. moms. Sælger I til private, skal de stå inkl. moms.",
     "S15": "Fx hedder varerne noget andet i jeres produktdata end i titlen, som Google sammenligner.",
+    "D22": "Fx har nogle varer en butiksintern stregkode{ex} Den godtager Google ikke som EAN.",
+    "D23": "Fx står den samme stregkode på flere varianter{ex} Så kan Google ikke skelne dem.",
+    "D24": "Fx er nogle produkttitler over 150 tegn{ex} Google skærer resten af.",
+    "D25": "Fx er nogle produktbeskrivelser over 5.000 tegn{ex} Google skærer resten af.",
+    "D26": "Fx står EAN-numrene i varenummer-feltet og ikke i stregkode-feltet{ex} Så får Google dem ikke.",
 }
 DOC_ID = re.compile(r"^[A-Za-z0-9_\-.~:@+]{1,200}$")
 # Large organisations/chains: unlikely to buy a 495-995 kr. fix from a cold call -> called last.

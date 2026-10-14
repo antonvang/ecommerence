@@ -16,7 +16,7 @@ from datetime import datetime, timezone
 
 from .fetch import Fetcher, Robots
 
-VERSION = "0.7.0"
+VERSION = "0.9.0"
 G = "https://support.google.com/merchants/answer/"
 REF = {"misrep": G + "6150127?hl=da", "gtin": G + "160161?hl=da", "price": G + "6324371?hl=da",
        "availability": G + "6324448?hl=da", "title": G + "6324415?hl=da", "image": G + "6324350?hl=da"}
@@ -80,6 +80,17 @@ def noindex(h):
 SHIP_PRICE = re.compile(r"(\d+[.,]?\d*\s*(?:kr\b|kr\.|dkk|,-)|gratis|fri fragt|free shipping|\bkr\.?\s*\d)", re.I)
 
 
+def gtin_reserved(code):
+    """True for a GTIN in a range kept for in-store use (prefix 2, 02 or 04), which Google does not accept."""
+    d = re.sub(r"\s", "", str(code))
+    if len(d) == 8:
+        return d[0] == "2"
+    if len(d) == 14:
+        d = d[1:]  # drop the packaging indicator
+    d = d.zfill(13)
+    return d[0] == "2" or d[:2] in ("02", "04")
+
+
 def gtin_ok(code):
     """True for a GTIN-8/12/13/14 with a correct check digit."""
     d = re.sub(r"\s", "", str(code))
@@ -98,8 +109,12 @@ def cvr_ok(digits):
 
 
 def _base(title):
-    """The first two words of a title: colours, sizes and names of one product share them, different products rarely do."""
-    return " ".join(re.findall(r"[a-zæøå0-9]+", (title or "").lower())[:2])
+    """The first two words of a title, before any ' - ', ',' or '(' and without numbers: colours, sizes, years and model
+    numbers of one product share them, different products rarely do."""
+    t = (title or "").lower()
+    head = re.split(r"\s[-–|]\s|,|\(", t)[0]
+    words = [w for w in re.findall(r"\w+", head) if not re.search(r"\d", w) and len(w) > 1]
+    return " ".join(words[:2]) or t.strip()
 
 
 def _site(url):
@@ -419,6 +434,18 @@ def run(domain, max_products_pages=5):
             C.append(_check("D20", A2, "lav", "Produkttitlerne beskriver varen", "advarsel", f"{len(one)} af {len(products)} titler er kun ét ord, fx '{one[0][:40]}'",
                             "Google matcher søgninger med titlen. En titel som 'Kjole' rammer langt færre søgninger end 'Mærke kjole i hør, sort, str. 38'.",
                             "Skriv titler som 'Mærke + produkttype + egenskab (farve, materiale, størrelse)'.", REF["title"]))
+        long_t = [p["title"].strip() for p in products if len((p.get("title") or "").strip()) > 150]
+        if long_t:
+            C.append(_check("D24", A2, "lav", "Produkttitlerne er højst 150 tegn", "advarsel",
+                            f"{len(long_t)} titler er over 150 tegn, fx '{long_t[0][:60]}…' ({len(long_t[0])} tegn)",
+                            "Google tillader højst 150 tegn i en titel. Resten bliver skåret af, så det vigtigste skal stå først.",
+                            "Kort titlen ned til under 150 tegn, med mærke og produkttype først.", REF["title"]))
+        long_d = [(p["title"], len(t)) for p in products for t in [re.sub(r"\s+", " ", _text(p.get("body_html") or "")).strip()] if len(t) > 5000]
+        if long_d:
+            C.append(_check("D25", A2, "lav", "Produktbeskrivelserne er højst 5.000 tegn", "advarsel",
+                            f"{len(long_d)} beskrivelser er over 5.000 tegn, fx '{long_d[0][0][:50]}' ({long_d[0][1]} tegn)",
+                            "Google tillader højst 5.000 tegn i en beskrivelse. Længere tekst bliver skåret af eller giver en fejl i feedet.",
+                            "Kort beskrivelsen ned, og flyt fx vaskeanvisning og fragtinfo ud af produktteksten.", REF["title"]))
         emo = [p["title"] for p in products if EMOJI.search(p.get("title", ""))]
         if emo:
             C.append(_check("D19", A2, "middel", "Produkttitler uden emojis", "advarsel", f"{len(emo)} titler med emojis eller symboler, fx '{emo[0][:60]}'",
@@ -498,6 +525,34 @@ def run(domain, max_products_pages=5):
                             f"{len(bad_gtin)} af {len(js_vars)} varianter på {len(pp)} stikprøvevarer har en ugyldig stregkode, fx '{bad_gtin[0][0]}' med stregkoden {bad_gtin[0][1]}",
                             "Google tjekker stregkodens kontrolciffer. En ugyldig GTIN giver afviste varer eller begrænset visning.",
                             "Ret stregkoden til producentens rigtige EAN/GTIN, eller fjern den, hvis varen ikke har en.", REF["gtin"]))
+        resv = [((v.get("name") or v.get("title") or "").replace("'", "’")[:50], str(v["barcode"]).strip()) for v in js_vars
+                if str(v.get("barcode") or "").strip() and gtin_ok(v["barcode"]) and gtin_reserved(v["barcode"])]
+        if resv:
+            C.append(_check("D22", A2, "høj", "Stregkoderne er rigtige EAN fra producenten", "fejl",
+                            f"{len(resv)} af {len(js_vars)} varianter på {len(pp)} stikprøvevarer har en butiksintern stregkode, fx '{resv[0][0]}' med stregkoden {resv[0][1]}",
+                            "Stregkoder, der starter med 2, 02 eller 04, er numre til butikkens eget brug (fx vægtvarer). Google godtager dem ikke som GTIN.",
+                            "Brug producentens rigtige EAN. Har varen ingen, så fjern stregkoden og marker 'ingen GTIN' i feed-appen.", REF["gtin"]))
+        def ean_like(s):  # a real EAN-13/UPC typed into the SKU field (short or zero-padded numbers are often plain item numbers)
+            s = str(s or "").strip()
+            return bool(re.fullmatch(r"\d{12,14}", s)) and len(s.lstrip("0")) >= 11 and gtin_ok(s)
+        sku_only = [((v.get("name") or v.get("title") or "").replace("'", "’")[:50], str(v["sku"]).strip()) for v in js_vars
+                    if ean_like(v.get("sku")) and not str(v.get("barcode") or "").strip()]
+        if sku_only:
+            C.append(_check("D26", A2, "middel", "Stregkoden står i stregkode-feltet", "advarsel",
+                            f"{len(sku_only)} af {len(js_vars)} varianter på {len(pp)} stikprøvevarer har en EAN i varenummer-feltet (SKU), men stregkode-feltet er tomt, fx '{sku_only[0][0]}' med {sku_only[0][1]}",
+                            "Shopify sender kun stregkode-feltet til Google som GTIN. Står EAN'en i varenummer-feltet, får Google den ikke, og varen bliver sværere at matche.",
+                            "Kopiér EAN'en over i feltet 'Stregkode (ISBN, UPC, GTIN osv.)' på hver variant. Det kan gøres for alle varer på én gang med en CSV-eksport og -import.", REF["gtin"]))
+        by_bar = {}
+        for v in js_vars:
+            b = re.sub(r"\s", "", str(v.get("barcode") or ""))
+            if b and gtin_ok(b) and not gtin_reserved(b):
+                by_bar.setdefault(b.lstrip("0"), []).append((v.get("name") or v.get("title") or "").replace("'", "’")[:50])
+        dup_bar = sorted((t for t in by_bar.values() if len(t) >= 2), key=len, reverse=True)
+        if dup_bar:
+            C.append(_check("D23", A2, "middel", "Hver variant har sin egen stregkode", "advarsel",
+                            f"Den samme stregkode står på {len(dup_bar[0])} varianter, fx '{dup_bar[0][0]}' og '{dup_bar[0][1]}'",
+                            "En stregkode hører til præcis én vare i én størrelse og farve. Står den på flere varianter, kan Google ikke se forskel og viser den forkerte variant eller afviser dem.",
+                            "Giv hver variant producentens egen EAN. Har varianterne ingen, så fjern stregkoden og marker 'ingen GTIN'.", REF["gtin"]))
         no_ld, mism, avail_bad, comma, cur_bad, ld_gap, gtin_lost, dup_ld, no_brand = [], [], [], [], [], [], [], [], []
         no_avail, expired, name_bad = [], [], []
         today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
@@ -535,7 +590,7 @@ def run(domain, max_products_pages=5):
             old = sorted(m.group(0) for m in dates if m and m.group(0) < today)
             if old:
                 expired.append(f"'{prod['title'][:40]}' har en pris, der udløb {old[0]}")
-            missing = [w for w, ok in (("billede", any(it.get("image") for it in items)), ("pris", bool(raw_prices))) if not ok]
+            missing = [w for w, ok in (("billede", any(it.get("image") or any(isinstance(hv, dict) and hv.get("image") for hv in it.get("hasVariant") or []) for it in items)), ("pris", bool(raw_prices))) if not ok]
             if missing:
                 ld_gap.append(f"{prod['title'][:40]}: mangler {' og '.join(missing)}")
             if any(isinstance(p, str) and "," in p for p in raw_prices):

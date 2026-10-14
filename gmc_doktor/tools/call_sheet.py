@@ -58,9 +58,13 @@ OPENER = {
     "M14": "jeres side ikke er sat op til mobil, så den vises som en lille computerside på telefonen",
     "M15": "priserne på jeres side står ekskl. moms, og sælger I til private, skal de stå inkl. moms",
     "S15": "varerne hedder noget andet i jeres produktdata end i titlen, og det sammenligner Google",
+    "D22": "nogle varer har en butiksintern stregkode{ex}, som Google ikke godtager som EAN",
+    "D23": "den samme stregkode står på flere varianter{ex}, så Google ikke kan skelne dem",
+    "D24": "nogle produkttitler er over 150 tegn{ex}, og Google skærer resten af",
+    "D26": "jeres EAN-numre står i varenummer-feltet og ikke i stregkode-feltet{ex}, så Google får dem ikke",
 }
 # Warnings concrete enough to name on the phone (each one is something we saw, just not proven to be an error).
-CONCRETE_WARN = {"S05", "D07", "M02", "D04", "S03", "S01", "D08", "D09", "P05", "S09", "S10", "M11", "M12", "D15", "D16", "S12", "D17", "D19", "M14", "M15", "S15"}
+CONCRETE_WARN = {"S05", "D07", "M02", "D04", "S03", "S01", "D08", "D09", "P05", "S09", "S10", "M11", "M12", "D15", "D16", "S12", "D17", "D19", "M14", "M15", "S15", "D23", "D24", "D26"}
 SEV = {"kritisk": 0, "høj": 1, "middel": 2, "lav": 3}
 
 

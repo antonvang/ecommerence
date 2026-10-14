@@ -1,7 +1,7 @@
 // Instant version of the GMC-Doktor checker (gmcdoktor/checks.py) for the "Tjek din webshop" field on webshopdoktoren.dk.
 // Same ids, texts and design rule: a 'fejl' is only something we actually saw on the public pages. Lighter than the full
 // check: homepage, up to 2 contact/about pages, /products.json?limit=100 and 2 product pages (+ .js), robots.txt respected.
-export const VERSION = "w0.6.5";
+export const VERSION = "w0.9.0";
 const UA = "Mozilla/5.0 (compatible; GMC-Doktor/0.1; offentligt Merchant Center-tjek af butikssider; webshopdoktoren.dk)";
 const PENALTY = {kritisk: 15, "høj": 8, middel: 4, lav: 2};
 const SEV = {kritisk: 0, "høj": 1, middel: 2, lav: 3};
@@ -68,8 +68,13 @@ export const PROBLEM = {
   M15: "Priserne vises ekskl. moms",
   C07: "Siden viser flere forskellige CVR-numre",
   S15: "Navnet i produktdataene passer ikke med titlen",
+  D22: "Butiksinterne stregkoder, som Google ikke godtager",
+  D23: "Samme stregkode på flere varianter",
+  D24: "Produkttitler over 150 tegn",
+  D25: "Produktbeskrivelser over 5.000 tegn",
+  D26: "EAN står i varenummer-feltet i stedet for stregkode-feltet",
 };
-const CONCRETE = new Set(["S05", "D07", "M02", "D04", "S03", "S01", "D08", "D09", "P05", "S09", "S10", "M11", "M12", "D15", "D16", "S12", "D17", "D19", "M14", "M15", "S15"]);
+const CONCRETE = new Set(["S05", "D07", "M02", "D04", "S03", "S01", "D08", "D09", "P05", "S09", "S10", "M11", "M12", "D15", "D16", "S12", "D17", "D19", "M14", "M15", "S15", "D23", "D24", "D26"]);
 
 const NB = "(?<![\\p{L}\\p{N}_])"; // a \b that also works before æ, ø and å
 const SALES_WORDS = /(gratis fragt|fri fragt|\btilbud\b|\budsalg\b|spar \d+|\brabat\b|nr\.? ?1\b|!!|køb nu|free shipping|\bsale\b|bestseller)/i;
@@ -148,6 +153,14 @@ function num(x) {
   const v = parseFloat(s);
   return Number.isFinite(v) ? v : null;
 }
+export function gtinReserved(code) {
+  let d = String(code).replace(/\s/g, "");
+  if (d.length === 8) return d[0] === "2";
+  if (d.length === 14) d = d.slice(1);
+  d = d.padStart(13, "0");
+  return d[0] === "2" || d.startsWith("02") || d.startsWith("04");
+}
+
 export function gtinOk(code) {
   const d = String(code).replace(/\s/g, "");
   if (!/^\d+$/.test(d) || ![8, 12, 13, 14].includes(d.length)) return false;
@@ -217,7 +230,12 @@ class Fetcher {
   }
 }
 
-const baseOf = t => (String(t || "").toLowerCase().match(/[a-zæøå0-9]+/g) || []).slice(0, 2).join(" ");
+const baseOf = title => {
+  const t = String(title || "").toLowerCase();
+  const head = t.split(/\s[-–|]\s|,|\(/)[0];
+  const words = (head.match(/[\p{L}\p{N}_]+/gu) || []).filter(w => !/\d/.test(w) && w.length > 1);
+  return words.slice(0, 2).join(" ") || t.trim();
+};
 const siteOf = url => { try { return new URL(url).hostname.toLowerCase().split(".").slice(-2).join("."); } catch { return ""; } };
 const chk = (id, sev, s, hvad, ret) => ({id, sev, s, t: PROBLEM[id] || id, hvad, ret});
 
@@ -349,6 +367,10 @@ export async function run(domain) {
     if (pre.length) C.push(chk("D21", "lav", "advarsel", `${pre.length} varer er markeret som forudbestilling (i titel eller tags), fx '${pre[0].slice(0, 50)}'`, "Sæt lagerstatus til forudbestilling og en leveringsdato i feedet."));
     const one = products.filter(p => (p.title || "").trim().split(/\s+/).length === 1 && !GIFT.test(p.title || "")).map(p => p.title);
     if (n >= 10 && one.length >= n / 2) C.push(chk("D20", "lav", "advarsel", `${one.length} af ${n} titler er kun ét ord, fx '${one[0].slice(0, 40)}'`, "Skriv titler som 'Mærke + produkttype + egenskab'."));
+    const longT = products.map(p => String(p.title || "").trim()).filter(t => t.length > 150);
+    if (longT.length) C.push(chk("D24", "lav", "advarsel", `${longT.length} titler er over 150 tegn, fx '${longT[0].slice(0, 60)}…' (${longT[0].length} tegn)`, "Kort titlen ned til under 150 tegn."));
+    const longD = products.map(p => [p.title, text(p.body_html || "").replace(/\s+/g, " ").trim().length]).filter(([, n]) => n > 5000);
+    if (longD.length) C.push(chk("D25", "lav", "advarsel", `${longD.length} beskrivelser er over 5.000 tegn, fx '${String(longD[0][0]).slice(0, 50)}' (${longD[0][1]} tegn)`, "Kort beskrivelsen ned til under 5.000 tegn."));
     const emo = products.filter(p => EMOJI.test(p.title || "")).map(p => p.title);
     if (emo.length) C.push(chk("D19", "middel", "advarsel", `${emo.length} titler med emojis eller symboler, fx '${emo[0].slice(0, 60)}'`, "Fjern emojis og symboler fra titlerne."));
     const byDesc = new Map();
@@ -388,6 +410,18 @@ export async function run(domain) {
       const noid = jsVars.filter(v => !String(v.barcode || "").trim() && !String(v.sku || "").trim());
       if (noid.length > jsVars.length / 2) C.push(chk("D14", "lav", "advarsel", `${noid.length} af ${jsVars.length} varianter på ${pp.length} stikprøvevarer har hverken stregkode eller varenummer (SKU).`, "Udfyld varenummer (SKU) på alle varianter."));
       const badG = jsVars.filter(v => String(v.barcode || "").trim() && !gtinOk(v.barcode));
+      const resv = jsVars.filter(v => String(v.barcode || "").trim() && gtinOk(v.barcode) && gtinReserved(v.barcode));
+      if (resv.length) C.push(chk("D22", "høj", "fejl", `${resv.length} af ${jsVars.length} varianter har en butiksintern stregkode, fx '${String(resv[0].name || resv[0].title || "").slice(0, 50)}' med stregkoden ${String(resv[0].barcode).trim()}`, "Brug producentens rigtige EAN, eller fjern stregkoden."));
+      const eanLike = s => { s = String(s || "").trim(); return /^\d{12,14}$/.test(s) && s.replace(/^0+/, "").length >= 11 && gtinOk(s); };
+      const skuOnly = jsVars.filter(v => eanLike(v.sku) && !String(v.barcode || "").trim());
+      if (skuOnly.length) C.push(chk("D26", "middel", "advarsel", `${skuOnly.length} af ${jsVars.length} varianter har en EAN i varenummer-feltet (SKU), men stregkode-feltet er tomt, fx '${String(skuOnly[0].name || skuOnly[0].title || "").slice(0, 50)}' med ${String(skuOnly[0].sku).trim()}`, "Kopiér EAN'en over i stregkode-feltet på hver variant."));
+      const byBar = new Map();
+      for (const v of jsVars) {
+        const b = String(v.barcode || "").replace(/\s/g, "");
+        if (b && gtinOk(b) && !gtinReserved(b)) { const k = b.replace(/^0+/, ""); byBar.set(k, [...(byBar.get(k) || []), String(v.name || v.title || "").slice(0, 50)]); }
+      }
+      const dupBar = [...byBar.values()].filter(t => t.length >= 2).sort((a, b) => b.length - a.length);
+      if (dupBar.length) C.push(chk("D23", "middel", "advarsel", `Den samme stregkode står på ${dupBar[0].length} varianter, fx '${dupBar[0][0]}' og '${dupBar[0][1]}'`, "Giv hver variant sin egen EAN."));
       if (badG.length) C.push(chk("D10", "høj", "fejl", `${badG.length} af ${jsVars.length} varianter har en ugyldig stregkode, fx '${String(badG[0].name || badG[0].title || "").slice(0, 50)}' med stregkoden ${String(badG[0].barcode).trim()}`, "Ret stregkoden til producentens rigtige EAN, eller fjern den."));
     }
     const nameBad = [];
@@ -413,7 +447,7 @@ export async function run(domain) {
       const ldCur = new Set(offers.filter(o => o.priceCurrency).map(o => String(o.priceCurrency).toUpperCase()));
       if (shopCur && ldCur.size && !ldCur.has(shopCur[1])) curBad.push(`${prod.title.slice(0, 40)}: ${[...ldCur].join(", ")} i stedet for ${shopCur[1]}`);
       const raw = offers.map(o => o.price).filter(p => p !== undefined && p !== null && p !== "");
-      const missing = [["billede", items.some(it => it.image)], ["pris", raw.length > 0]].filter(([, okk]) => !okk).map(([w]) => w);
+      const missing = [["billede", items.some(it => it.image || (it.hasVariant || []).some(hv => hv && hv.image))], ["pris", raw.length > 0]].filter(([, okk]) => !okk).map(([w]) => w);
       if (missing.length) ldGap.push(`${prod.title.slice(0, 40)}: mangler ${missing.join(" og ")}`);
       const cp = raw.find(p => typeof p === "string" && p.includes(","));
       if (cp) comma.push(`${prod.title.slice(0, 40)}: '${cp}'`);
