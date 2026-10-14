@@ -796,16 +796,21 @@ function parseHenv(m) {
   const shop = (get(/Webshop:\s*(\S+)/i) || (sub.match(/Gratis tjek:\s*(\S+)/i) || [])[1] || '').replace(/^https?:\/\//i, '').replace(/\/+$/, '').toLowerCase();
   let navn = get(/Navn:\s*(.*?)\s*Telefon:/i);
   if (!navn || navn === '-') { const dn = from.replace(/<[^>]*>/, '').replace(/"/g, '').trim(); navn = dn && !dn.includes('@') && !viaForm ? dn : ''; }
-  const tlf = get(/Telefon:\s*(\+?\d[\d \-]{5,}\d)/i);
-  return {id: String(m.messageId || m.threadId || ''), t: msgTime(m), shop, navn, tlf, mail};
+  const tlf = get(/Telefon:\s*(\+?\d[\d \-().]{5,}\d)/i);
+  // what they asked for on the site ('Ønske:' line, or the subject's ' · vil have det rettet')
+  const want = /rettet/i.test(get(/Ønske:\s*(.*?)\s*Navn:/i) + sub) ? 'ret' : /vejledning/i.test(get(/Ønske:\s*(.*?)\s*Navn:/i) + sub) ? 'vejledning' : 'rapport';
+  const auto = /Bekræftelse:\s*sendt automatisk/i.test(pv);  // the website already mailed the customer
+  return {id: String(m.messageId || m.threadId || ''), t: msgTime(m), shop, navn, tlf, mail, want, auto};
 }
+const WANT_TXT = {ret: 'Vil have fejlene rettet · 995 kr.', vejledning: 'Vil have vejledningen · 495 kr.', rapport: 'Gratis rapport'};
 async function checkHenv() {
   if (!mcp || henv.busy) return;
   henv.busy = true; render();
   try {
     const msgs = await gmailFetch('subject:"Gratis tjek" -in:sent newer_than:120d', 30, 'Read sign-ups from the website for the call dashboard');
     const own = firmMail().toLowerCase();
-    henv.list = msgs.map(parseHenv).filter(x => /^[\w-]+$/.test(x.id) && MAIL_RE.test(x.mail) && x.mail !== own && x.shop).sort((a, b) => (b.t || 0) - (a.t || 0));
+    // a phone number alone is enough: the site lets people leave just that
+    henv.list = msgs.map(parseHenv).filter(x => /^[\w-]+$/.test(x.id) && (MAIL_RE.test(x.mail) || x.tlf) && (!x.mail || x.mail !== own) && x.shop).sort((a, b) => (b.t || 0) - (a.t || 0));
     henv.at = new Date(); henv.err = ''; henv.retried = false;
   } catch (e) {
     // the first call can fail while the viewer is still answering the permission dialog: try once more by itself before showing an error
@@ -817,13 +822,16 @@ const henvStore = h => { for (const [id, st] of stores) if (bare(id) === bare(h.
 const henvIsDone = h => { const x = henvStore(h); return !!((henvDone[h.id] && henvDone[h.id].klaret) || (x && (x[1].mail_sendt || x[1].ordre))); };
 // the confirmation the customer gets right away: opened ready-made in the company's Gmail, the caller presses Send
 function confirmMail(h) {
-  const fn = firstName(h.navn), due = henvDue(h);
-  return {subject: `Vi har fået jeres henvendelse: ${h.shop}`, body: [fn ? `Hej ${fn},` : 'Hej,',
-    `Tak for jeres henvendelse om et gratis tjek af ${h.shop}.`,
-    `Vi går i gang og sender rapporten til denne mail senest ${due ? `${dayName(due, true).toLowerCase()} den ${due.getDate()}/${due.getMonth() + 1}` : 'om 2 hverdage'}.`,
+  const fn = firstName(h.navn);
+  const what = h.want === 'ret' ? [`Tak for jeres henvendelse. I vil gerne have os til at rette fejlene i ${h.shop}.`,
+      'Vi kontakter jer i dag og aftaler det praktiske. I betaler først, når det er rettet (995 kr.).']
+    : h.want === 'vejledning' ? [`Tak for jeres henvendelse om en trin-for-trin-vejledning til ${h.shop}.`, 'Vi vender tilbage i dag.']
+    : [`Tak for jeres henvendelse om et gratis tjek af ${h.shop}.`, 'Vi går i gang med det samme og sender rapporten til denne mail i dag.'];
+  return {subject: `Vi har fået jeres henvendelse: ${h.shop}`, body: [fn ? `Hej ${fn},` : 'Hej,', ...what,
     'Har I spørgsmål imens, så svar bare på denne mail.', sig(cfg())].join('\n\n')};
 }
-const henvDue = h => h.t ? nextWeekday(nextWeekday(h.t)) : null;
+// the site promises an answer the same day
+const henvDue = h => h.t ? dayStart(h.t) : null;
 const henvOpen = () => henv.list.filter(h => !henvIsDone(h));
 const henvKey = () => JSON.stringify([!!mcp, henv.busy, henv.at && henv.at.getTime(), henv.err, henv.list.map(h => h.id), henvDone, settings]);
 async function markConfirmed(id) {
@@ -846,19 +854,23 @@ function henvHtml() {
   const open = henvOpen().length, now = dayStart(new Date());
   const items = henv.list.slice(0, 12).map(h => {
     const done = henvIsDone(h), st = henvStore(h), due = henvDue(h), late = !done && due && due < now, conf = henvDone[h.id] && henvDone[h.id].bekraeftet, cm = confirmMail(h);
-    const ask = `Lav en gratis rapport til en henvendelse fra hjemmesiden: webshop ${h.shop}, ${h.navn || 'intet navn'}, ${h.mail}${h.tlf ? `, tlf. ${h.tlf}` : ''}. Læg butikken i dashboardet, så jeg kan sende rapporten.`;
-    return `<li class="hv${done ? ' done' : ''}"><div class="hv-main"><div><b>${esc(h.shop)}</b> <span class="pill ${done ? '' : late ? 'w' : 'a'}">${done ? 'Klaret' : late ? 'Over fristen' : 'Ny'}</span></div>
-      <small>${esc([h.navn, h.mail, h.tlf].filter(Boolean).join(' · '))}</small>
-      <small>Kom ${esc(fmtDT(h.t ? h.t.toISOString() : ''))}${!done && due ? ` · svar senest ${esc(dayName(due).toLowerCase())} ${due.getDate()}/${due.getMonth() + 1}` : ''}${st ? ' · står i listen' : ''}</small>
-      ${conf ? `<small class="okmsg">Bekræftelse åbnet ${esc(fmtDT(conf))}</small>` : ''}</div>
-      <div class="row">${!done ? `<a class="btn${conf ? '' : ' primary'}" target="_blank" rel="noopener" data-act="hvconfirm" data-id="${esc(h.id)}" href="${esc(gmailUrl(h.mail, cm.subject, cm.body))}">${conf ? 'Send bekræftelse igen' : 'Send bekræftelse'}</a>` : ''}${h.tlf ? `<a class="btn" href="tel:${esc(h.tlf.replace(/[^\d+]/g, ''))}">${ic('phone')}Ring</a>` : ''}${svarBtn(h.mail)}
+    const ask = `Lav en gratis rapport til en henvendelse fra hjemmesiden: webshop ${h.shop}, ${h.navn || 'intet navn'}, ${h.mail || 'ingen mail'}${h.tlf ? `, tlf. ${h.tlf}` : ''}, ønske: ${WANT_TXT[h.want]}. Læg butikken i dashboardet, så jeg kan sende rapporten.`;
+    const today = due && due.getTime() === now.getTime();
+    // phone only: ringing is the next step; with a mail: the confirmation first
+    const ring = h.tlf ? `<a class="btn${h.mail ? '' : ' primary'}" href="tel:${esc(h.tlf.replace(/[^\d+]/g, ''))}">${ic('phone')}Ring ${esc(h.tlf)}</a>` : '';
+    const confirmBtn = !done && h.mail && !h.auto ? `<a class="btn${conf ? '' : ' primary'}" target="_blank" rel="noopener" data-act="hvconfirm" data-id="${esc(h.id)}" href="${esc(gmailUrl(h.mail, cm.subject, cm.body))}">${conf ? 'Send bekræftelse igen' : 'Send bekræftelse'}</a>` : '';
+    return `<li class="hv${done ? ' done' : ''}"><div class="hv-main"><div><b>${esc(h.shop)}</b> <span class="pill ${done ? '' : late ? 'w' : 'a'}">${done ? 'Klaret' : late ? 'Over fristen' : 'Ny'}</span>${h.want !== 'rapport' ? ` <span class="pill g">${esc(WANT_TXT[h.want])}</span>` : ''}</div>
+      <small>${esc([h.navn, h.mail, h.tlf].filter(Boolean).join(' · '))}${h.mail ? '' : ' · kun telefon: ring op'}</small>
+      <small>Kom ${esc(fmtDT(h.t ? h.t.toISOString() : ''))}${!done && due ? ` · svar ${today ? 'i dag' : `senest ${esc(dayName(due).toLowerCase())} ${due.getDate()}/${due.getMonth() + 1}`}` : ''}${st ? ' · står i listen' : ''}</small>
+      ${h.auto ? '<small class="okmsg">Bekræftelse sendt automatisk ✓</small>' : conf ? `<small class="okmsg">Bekræftelse åbnet ${esc(fmtDT(conf))}</small>` : ''}</div>
+      <div class="row">${h.mail ? confirmBtn + ring : ring + confirmBtn}${svarBtn(h.mail)}
         ${st ? `<button class="btn" data-act="openstore" data-id="${esc(st[0])}">Åbn butikken</button>` : `<button class="btn" data-act="copy" data-text="${esc(ask)}">Kopiér til Claude</button>`}
         <button class="btn" data-act="hvdone" data-id="${esc(h.id)}" data-k="${done ? '0' : '1'}">${done ? 'Gør ny igen' : 'Klaret'}</button></div></li>`;
   }).join('');
   return `<section class="card" aria-label="Henvendelser fra hjemmesiden"><div class="kh"><div><h2>Henvendelser fra hjemmesiden</h2>
       <p class="muted small">${henv.err ? esc(henv.err) : henv.busy && !henv.at ? 'Henter fra firmaets Gmail …' : henv.list.length ? `${open ? `${open} venter på svar` : 'Alle er besvaret'} · tjekket ${esc(henv.at ? hhmm(henv.at.toISOString()) : '')}` : 'Ingen endnu. Når nogen skriver deres webshop på webshopdoktoren.dk, kommer de her.'}</p></div>
       <button class="btn" data-act="henv"${henv.busy ? ' disabled' : ''}>${henv.busy ? 'Henter …' : 'Opdater'}</button></div>
-    ${items ? `<ul class="hvlist">${items}</ul><p class="foot" style="text-align:left">1. Tryk "Send bekræftelse", og tryk Send i Gmail. 2. Tryk "Kopiér til Claude", og sæt teksten ind i chatten med Claude. Så tjekker Claude butikken og lægger den i listen. 3. Svar og send rapporten samme dag: hjemmesiden lover svar samme dag.</p>` : ''}</section>`;
+    ${items ? `<ul class="hvlist">${items}</ul><p class="foot" style="text-align:left">1. Kunden får en bekræftelse automatisk. Står der "Send bekræftelse", så tryk på den og Send i Gmail; har de kun skrevet telefon, så tryk "Ring". 2. Tryk "Kopiér til Claude", og sæt teksten ind i chatten med Claude. Så tjekker Claude butikken og lægger den i listen. 3. Svar og send rapporten samme dag: hjemmesiden lover svar samme dag.</p>` : ''}</section>`;
 }
 // ---------- sent-watch: after "Åbn mailen i Gmail" the dashboard looks in Gmail's Sent folder and ticks the mail off by itself (read-only, it never sends) ----------
 const sentWatch = new Map(); // `${kind}:${id}` -> {id, kind, mail, subject, since}

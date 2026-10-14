@@ -392,7 +392,13 @@ document.getElementById('copymail').addEventListener('click', async e => {
   const okShop = s => /^[^\s@/]+\.[a-z]{2,}(\/\S*)?$/i.test(s);
   const okMail = s => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s);
   // one field takes a mail or a phone number
-  const contactOf = v => { v = v.trim(); if (okMail(v)) return {mail: v}; return /^\+?\d{8,15}$/.test(v.replace(/[\s().-]/g, '')) ? {tlf: v} : null; };
+  // 'tlf 12 34 56 78', '+45 12345678', 'Ring: 1234-5678' all count: anything without @ that has 8-15 digits
+  const contactOf = v => {
+    v = v.trim(); if (okMail(v)) return {mail: v};
+    if (v.includes('@')) return null;
+    const d = v.replace(/[^\d+]/g, '').replace(/(?!^)\+/g, '');
+    return /^\+?\d{8,15}$/.test(d) ? {tlf: d} : null;
+  };
   const pick = (box, v) => box.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === v)));
   const picked = box => (box.querySelector('[aria-pressed="true"]') || {}).dataset?.v || 'rapport';
   const thanks = (shop, c, want) => {
@@ -406,7 +412,7 @@ document.getElementById('copymail').addEventListener('click', async e => {
     try {
       const r = await fetch('/api/henvendelse', {method: 'POST', headers: {'content-type': 'application/json'}, body: JSON.stringify(data)});
       const d = await r.json().catch(() => ({}));
-      return r.ok && d.ok ? {ok: true} : {ok: false, error: d.error || SORRY, field: d.field};
+      return r.ok && d.ok ? {ok: true, bekraeftet: !!d.bekraeftet} : {ok: false, error: d.error || SORRY, field: d.field};
     } catch (e) { return {ok: false, error: SORRY}; }
   }
   const busy = (b, on, html, label = 'Sender …') => { b.disabled = on; if (on) b.textContent = label; else b.innerHTML = html; };
@@ -497,7 +503,7 @@ document.getElementById('copymail').addEventListener('click', async e => {
     const foot = res.querySelector('footer');
     foot.className = 'thanks'; foot.tabIndex = -1;
     foot.innerHTML = `<div class="tick" aria-hidden="true">${'<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>'}</div>`
-      + `<p><b>Tak! Vi har fået det.</b>${thanks(cur, c, want)}</p>`;
+      + `<p><b>Tak! Vi har fået det.</b>${thanks(cur, c, want)}${r.bekraeftet ? ` Vi har sendt en bekræftelse til ${esc(c.mail)}.` : ''}</p>`;
     foot.focus();
   }
 
@@ -519,7 +525,7 @@ document.getElementById('copymail').addEventListener('click', async e => {
     const r = await send({shop, ...c, onsker: want, hp: $('f-hp').value});
     busy($('f-send'), false, FS);
     if (!r.ok) return fail(r.error, r.field ? 'f-' + r.field : null);
-    $('done-text').innerHTML = thanks(shop, c, want); $('done-spam').hidden = !c.mail;
+    $('done-text').innerHTML = thanks(shop, c, want) + (r.bekraeftet ? ` Vi har sendt en bekræftelse til ${esc(c.mail)}.` : ''); $('done-spam').hidden = !c.mail;
     $('signup').hidden = true; $('done').hidden = false; $('done').focus();
   });
   $('again').addEventListener('click', () => { $('signup').reset(); pick(fw, 'rapport'); $('done').hidden = true; $('signup').hidden = false; $('f-shop').focus(); });
