@@ -24,6 +24,8 @@ def fresh(r, old):
     """New Claude-owned fields for one store, None when the new result cannot be trusted."""
     if not (r.get("reachable") and r.get("shopify")) or r.get("password"):
         return None
+    if any("429" in str(n) for n in r.get("notes", [])):  # the shop rate-limited the check: half a result, keep the old one
+        return None
     fails = sorted([c for c in r["checks"] if c["status"] == "fejl"], key=lambda c: SEV[c["severity"]])
     cwarn = sorted([c for c in r["checks"] if c["status"] == "advarsel" and c["id"] in CONCRETE_WARN], key=lambda c: SEV[c["severity"]])
     if not fails and not cwarn:

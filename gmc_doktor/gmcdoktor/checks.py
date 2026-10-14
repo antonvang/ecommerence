@@ -16,13 +16,20 @@ from datetime import datetime, timezone
 
 from .fetch import Fetcher, Robots
 
-VERSION = "0.9.0"
+VERSION = "0.11.3"
 G = "https://support.google.com/merchants/answer/"
 REF = {"misrep": G + "6150127?hl=da", "gtin": G + "160161?hl=da", "price": G + "6324371?hl=da",
        "availability": G + "6324448?hl=da", "title": G + "6324415?hl=da", "image": G + "6324350?hl=da"}
 PENALTY = {"kritisk": 15, "høj": 8, "middel": 4, "lav": 2}
 AREAS = ["Virksomhedsidentitet og kontakt", "Politikker", "Produktdata", "Pris og lager", "Tillid og røde flag"]
 
+# words that say an item is not new; 'vintage' (wine years, colours) and 'genbrug' (recycled material) are left out
+USED = re.compile(r"(?<!aldrig )(?<!ikke )\b(brugt|brugte|refurbished|renoveret|renoverede|istandsat|demomodel|demo-model|udstillingsmodel|udstillingsvare|second[\s-]?hand|pre-?owned|pre-?loved)\b", re.I)
+# an amount of content in a title ('500 ml', '75 cl', '350 g'); container sizes and load limits are not content
+QTY = re.compile(r"(?<![\w.,])\d+(?:[.,]\d+)?\s*(?:g|gr|gram|kg|ml|cl|l|liter|ltr)\b(?![²³\w])", re.I)
+CONTAINER = re.compile(r"(flaske|kande|glas\b|gryde|termo|krus|\bkop\b|beholder|taske|rygsæk|\bbag\b|potte|kasse|spand|balje|vase|skål|bowl|strop|dummy|lift|sæk|tank|karaffel|carafe|bottle|tumbler|thermo|\bcup\b|\bmug\b|\bjar\b|opbevaring|madkasse|drikkedunk|saddle|kapacitet|belastning|\bmax\b|dækken|gavekort|gift ?card|pocket|plantepose|krukke|urtepotte|bøjn|\brør\b|°|\d\s*mm\b)", re.I)
+# a shown unit price: 'pr. kg', 'pr. 100 g', '/ l', 'kr/kg', 'per liter'
+UNIT_SHOWN = re.compile(r"(pr\.?\s*(?:kg|kilo|liter|ltr|l|100\s*g|100\s*ml)\b|\d\s*(?:kr\.?|dkk)?\s*/\s*(?:kg|l|ltr|liter|100\s*g|100\s*ml)\b|per\s*(?:kg|liter|100\s*g|100\s*ml)\b)", re.I)
 SALES_WORDS = re.compile(r"(gratis fragt|fri fragt|\btilbud\b|\budsalg\b|spar \d+|\brabat\b|nr\.? ?1\b|!!|køb nu|free shipping|\bsale\b|bestseller)", re.I)
 SCARCITY = re.compile(r"([1-9]\d* (personer|people) (kigger|ser|are viewing)|sælges hurtigt|selling fast|tilbuddet udløber|offer ends in|hurry,? only)", re.I)
 TIMER_APPS = re.compile(r"(hurrify|essential-countdown|countdown-timer-bar|sales-countdown|fomo-app|stock-countdown|urgency-app)", re.I)
@@ -665,6 +672,55 @@ def run(domain, max_products_pages=5):
                         ", ".join(avail_bad[:3]) if avail_bad else "Lagerstatus stemmer på de tjekkede sider.",
                         "Uoverensstemmende lagerstatus giver afvisninger og dårlige kundeoplevelser.",
                         "Synkroniser lager, og lad udsolgte varer markeres som udsolgt i feedet.", REF["availability"]))
+
+    # ---------- unit price for goods sold by weight or volume (prismærkningsreglerne) ----------
+    by_qty = [p for p in products if QTY.search(p.get("title", "")) and not CONTAINER.search(p.get("title", "") + " " + (p.get("product_type") or ""))]
+    if len(by_qty) >= 3:
+        seen = {prod.get("handle"): (b, js) for prod, b, js in pp}
+        probe = next((p for p in by_qty if p.get("handle") in seen), None)
+        body, pjs = seen.get(probe["handle"]) if probe else (None, None)
+        if probe is None:
+            probe = by_qty[len(by_qty) // 2]
+            sb, fin, _, body = f.get(f"/products/{probe['handle']}")
+            body = body if sb == 200 else None
+            if body:
+                sj, _, _, jb = f.get(urllib.parse.urlsplit(fin).path.rstrip("/") + ".js")
+                try:
+                    pjs = json.loads(jb) if sj == 200 else None
+                except ValueError:
+                    pjs = None
+        if body and pjs is not None:
+            set_up = any(v.get("unit_price_measurement") or v.get("unit_price") for v in pjs.get("variants", []))
+            if not set_up and not UNIT_SHOWN.search(_text(body)):
+                C.append(_check("S16", A3, "middel", "Varer solgt efter vægt eller rumfang viser pris pr. kg/liter", "advarsel",
+                                f"{len(by_qty)} varer sælges efter vægt eller rumfang, men fx '{probe['title'][:50]}' viser ingen pris pr. kg eller liter.",
+                                "Efter prismærkningsreglerne skal varer, der sælges efter vægt eller rumfang, som udgangspunkt vise prisen pr. kg eller liter. Google bruger også enhedsprisen i annoncen.",
+                                "Udfyld 'Enhedspris' (samlet mængde og basisenhed) på varianterne i Shopify, så temaet viser fx '35,00 kr / 100 g'.", REF["price"]))
+
+    # ---------- used goods must say so (Google's condition attribute) ----------
+    def _used(p):
+        if USED.search(p.get("title", "") + " | " + (p.get("product_type") or "")):
+            return True
+        return any(USED.search(t) or t.strip().lower() == "used" for t in (p.get("tags") or []))
+    used = [p for p in products if _used(p)]
+    if used:
+        seen = {prod.get("handle"): b for prod, b, _ in pp}
+        probe = next((p for p in used if p.get("handle") in seen), None)
+        body = seen.get(probe["handle"]) if probe else None
+        if probe is None:
+            probe = used[0]
+            sb, _, _, body = f.get(f"/products/{probe['handle']}")
+            body = body if sb == 200 else None
+        if body:
+            items = [x for x in _ldjson(body) if str(x.get("@type", "")).lower() in ("product", "productgroup")]
+            conds = set(re.findall(r'"itemCondition"\s*:\s*"(?:https?://schema\.org/)?(\w+)"', json.dumps(items)))
+            conds |= set(re.findall(r"""itemprop=["']itemCondition["'][^>]*(?:href|content)=["'](?:https?://schema\.org/)?(\w+)""", body, re.I))
+            if not conds & {"UsedCondition", "RefurbishedCondition", "DamagedCondition"}:
+                C.append(_check("D27", A2, "høj", "Brugte varer er markeret som brugte", "advarsel",
+                                f"{len(used)} varer er markeret som brugte eller renoverede i titel, type eller tags (fx '{probe['title'][:50]}'), men produktdataene på siden siger "
+                                + (f"'{sorted(conds)[0]}'" if conds else "ikke, at varen er brugt") + ".",
+                                "Google kræver, at brugte og renoverede varer har tilstanden 'brugt' eller 'renoveret'. Shopifys Google-kanal sender som udgangspunkt 'ny', og en brugt vare solgt som ny ses som vildledning.",
+                                "Sæt tilstanden til 'Brugt' (eller 'Renoveret') på de brugte varer i Google & YouTube-kanalen, og få temaet til at skrive itemCondition i produktdataene.", REF["misrep"]))
 
     # ---------- policy pages we can read (normal /pages/ pages; Shopify's /policies/ is blocked by robots) ----------
     dead, empty = [], []

@@ -1,11 +1,11 @@
 // Instant version of the GMC-Doktor checker (gmcdoktor/checks.py) for the "Tjek din webshop" field on webshopdoktoren.dk.
 // Same ids, texts and design rule: a 'fejl' is only something we actually saw on the public pages. Lighter than the full
 // check: homepage, up to 2 contact/about pages, /products.json?limit=100 and 2 product pages (+ .js), robots.txt respected.
-export const VERSION = "w0.9.0";
+export const VERSION = "w0.11.3";
 const UA = "Mozilla/5.0 (compatible; GMC-Doktor/0.1; offentligt Merchant Center-tjek af butikssider; webshopdoktoren.dk)";
 const PENALTY = {kritisk: 15, "høj": 8, middel: 4, lav: 2};
 const SEV = {kritisk: 0, "høj": 1, middel: 2, lav: 3};
-const MAX_REQ = 10, MAX_BODY = 1_500_000;
+const MAX_REQ = 12, MAX_BODY = 1_500_000;
 
 // problem-phrased headings (same as tools/dashboard_seed.py PROBLEM)
 export const PROBLEM = {
@@ -73,11 +73,17 @@ export const PROBLEM = {
   D24: "Produkttitler over 150 tegn",
   D25: "Produktbeskrivelser over 5.000 tegn",
   D26: "EAN står i varenummer-feltet i stedet for stregkode-feltet",
+  D27: "Brugte varer er ikke markeret som brugte",
+  S16: "Ingen pris pr. kg eller liter på varer solgt efter vægt eller rumfang",
 };
-const CONCRETE = new Set(["S05", "D07", "M02", "D04", "S03", "S01", "D08", "D09", "P05", "S09", "S10", "M11", "M12", "D15", "D16", "S12", "D17", "D19", "M14", "M15", "S15", "D23", "D24", "D26"]);
+const CONCRETE = new Set(["S05", "D07", "M02", "D04", "S03", "S01", "D08", "D09", "P05", "S09", "S10", "M11", "M12", "D15", "D16", "S12", "D17", "D19", "M14", "M15", "S15", "D23", "D24", "D26", "D27", "S16"]);
 
 const NB = "(?<![\\p{L}\\p{N}_])"; // a \b that also works before æ, ø and å
 const SALES_WORDS = /(gratis fragt|fri fragt|\btilbud\b|\budsalg\b|spar \d+|\brabat\b|nr\.? ?1\b|!!|køb nu|free shipping|\bsale\b|bestseller)/i;
+const QTY = /(?<![\w.,])\d+(?:[.,]\d+)?\s*(?:g|gr|gram|kg|ml|cl|l|liter|ltr)\b(?![²³\w])/i;
+const CONTAINER = /(flaske|kande|glas\b|gryde|termo|krus|\bkop\b|beholder|taske|rygsæk|\bbag\b|potte|kasse|spand|balje|vase|skål|bowl|strop|dummy|lift|sæk|tank|karaffel|carafe|bottle|tumbler|thermo|\bcup\b|\bmug\b|\bjar\b|opbevaring|madkasse|drikkedunk|saddle|kapacitet|belastning|\bmax\b|dækken|gavekort|gift ?card|pocket|plantepose|krukke|urtepotte|bøjn|\brør\b|°|\d\s*mm\b)/i;
+const UNIT_SHOWN = /(pr\.?\s*(?:kg|kilo|liter|ltr|l|100\s*g|100\s*ml)\b|\d\s*(?:kr\.?|dkk)?\s*\/\s*(?:kg|l|ltr|liter|100\s*g|100\s*ml)\b|per\s*(?:kg|liter|100\s*g|100\s*ml)\b)/i;
+const USED = /(?<!aldrig )(?<!ikke )\b(brugt|brugte|refurbished|renoveret|renoverede|istandsat|demomodel|demo-model|udstillingsmodel|udstillingsvare|second[\s-]?hand|pre-?owned|pre-?loved)\b/i;
 const SCARCITY = /([1-9]\d* (personer|people) (kigger|ser|are viewing)|sælges hurtigt|selling fast|tilbuddet udløber|offer ends in|hurry,? only)/i;
 const TIMER_APPS = /(hurrify|essential-countdown|countdown-timer-bar|sales-countdown|fomo-app|stock-countdown|urgency-app)/i;
 const EMAIL = /\b[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}\b/g;
@@ -480,6 +486,44 @@ export async function run(domain) {
     if (curBad.length) C.push(chk("S06", "høj", "fejl", curBad.slice(0, 2).join("; "), "Ret temaets JSON-LD, så priceCurrency er butikkens valuta."));
     if (ldGap.length) C.push(chk("S07", "middel", "fejl", ldGap.slice(0, 2).join("; "), "Ret temaets JSON-LD, så hver vare har image, price og priceCurrency."));
     if (availBad.length) C.push(chk("S03", "middel", "advarsel", availBad.slice(0, 3).join(", "), "Lad udsolgte varer markeres som udsolgt i produktdataene.")); else ok();
+  }
+
+  // unit price for goods sold by weight or volume
+  const byQty = products.filter(p => QTY.test(p.title || "") && !CONTAINER.test((p.title || "") + " " + (p.product_type || "")));
+  if (byQty.length >= 3) {
+    let probe = byQty.find(p => pp.some(([q]) => q.handle === p.handle));
+    let body = null, pjs = null;
+    if (probe) { const hit = pp.find(([q]) => q.handle === probe.handle); body = hit[1]; pjs = hit[2]; }
+    else {
+      probe = byQty[Math.floor(byQty.length / 2)];
+      const [sb, fin, , bb] = await f.get(`/products/${probe.handle}`);
+      if (sb === 200) {
+        body = bb;
+        const [sj, , , jb] = await f.get(new URL(fin).pathname.replace(/\/$/, "") + ".js");
+        if (sj === 200) { try { pjs = JSON.parse(jb); } catch { pjs = null; } }
+      }
+    }
+    if (body && pjs) {
+      const setUp = (pjs.variants || []).some(v => v.unit_price_measurement || v.unit_price);
+      if (!setUp && !UNIT_SHOWN.test(text(body)))
+        C.push(chk("S16", "middel", "advarsel", `${byQty.length} varer sælges efter vægt eller rumfang, men fx '${String(probe.title).slice(0, 50)}' viser ingen pris pr. kg eller liter.`, "Udfyld 'Enhedspris' på varianterne i Shopify."));
+    }
+  }
+
+  // used goods must say so (Google's condition attribute)
+  const isUsed = p => USED.test((p.title || "") + " | " + (p.product_type || "")) || (p.tags || []).some(t => USED.test(t) || String(t).trim().toLowerCase() === "used");
+  const used = products.filter(isUsed);
+  if (used.length) {
+    let probe = used.find(p => pp.some(([q]) => q.handle === p.handle));
+    let body = probe ? pp.find(([q]) => q.handle === probe.handle)[1] : null;
+    if (!probe) { probe = used[0]; const [sb, , , bb] = await f.get(`/products/${probe.handle}`); body = sb === 200 ? bb : null; }
+    if (body) {
+      const items = ldjson(body).filter(x => ["product", "productgroup"].includes(String(x["@type"] || "").toLowerCase()));
+      const conds = new Set([...JSON.stringify(items).matchAll(/"itemCondition"\s*:\s*"(?:https?:\/\/schema\.org\/)?(\w+)"/g)].map(m => m[1]));
+      for (const m of body.matchAll(/itemprop=["']itemCondition["'][^>]*(?:href|content)=["'](?:https?:\/\/schema\.org\/)?(\w+)/gi)) conds.add(m[1]);
+      if (!["UsedCondition", "RefurbishedCondition", "DamagedCondition"].some(c => conds.has(c)))
+        C.push(chk("D27", "høj", "advarsel", `${used.length} varer er markeret som brugte eller renoverede i titel, type eller tags (fx '${String(probe.title).slice(0, 50)}'), men produktdataene på siden siger ${conds.size ? "'" + [...conds].sort()[0] + "'" : "ikke, at varen er brugt"}.`, "Sæt tilstanden til 'Brugt' på de brugte varer i Google-kanalen."));
+    }
   }
 
   // trust & red flags

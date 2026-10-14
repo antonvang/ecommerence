@@ -80,6 +80,8 @@ PROBLEM = {
     "D24": "Produkttitler over 150 tegn",
     "D25": "Produktbeskrivelser over 5.000 tegn",
     "D26": "EAN står i varenummer-feltet i stedet for stregkode-feltet",
+    "D27": "Brugte varer er ikke markeret som brugte",
+    "S16": "Ingen pris pr. kg eller liter på varer solgt efter vægt eller rumfang",
 }
 # The one example sentence read aloud on the call (follows "... fundet N ting, der kan give problemer i Google Shopping.").
 # Short, plain and never stronger than what was observed: "kan", not "bliver". {ex} = a named product, if any.
@@ -136,6 +138,8 @@ SAY = {
     "D24": "Fx er nogle produkttitler over 150 tegn{ex} Google skærer resten af.",
     "D25": "Fx er nogle produktbeskrivelser over 5.000 tegn{ex} Google skærer resten af.",
     "D26": "Fx står EAN-numrene i varenummer-feltet og ikke i stregkode-feltet{ex} Så får Google dem ikke.",
+    "D27": "Fx er jeres brugte varer ikke markeret som brugte{ex} Google ser en brugt vare solgt som ny som vildledning.",
+    "S16": "Fx viser varer, der sælges efter vægt eller rumfang, ingen pris pr. kg eller liter{ex} Det kræver prismærkningsreglerne som udgangspunkt.",
 }
 DOC_ID = re.compile(r"^[A-Za-z0-9_\-.~:@+]{1,200}$")
 # Large organisations/chains: unlikely to buy a 495-995 kr. fix from a cold call -> called last.
