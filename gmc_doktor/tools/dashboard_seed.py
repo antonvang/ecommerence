@@ -64,6 +64,17 @@ PROBLEM = {
     "D16": "Kladde- eller testvarer er synlige i butikken",
     "S11": "Lagerstatus mangler i produktdataene",
     "S12": "Prisen i produktdataene er udløbet",
+    "D17": "Samme billede på mange forskellige varer",
+    "S13": "Produktsiderne peger på et andet domæne (canonical)",
+    "M13": "robots.txt spærrer Google ude",
+    "D18": "Samme beskrivelse på mange forskellige varer",
+    "D19": "Emojis eller symboler i produkttitler",
+    "D20": "Mange produkttitler er kun ét ord",
+    "M14": "Siden er ikke sat op til mobil (viewport)",
+    "D21": "Forudbestillingsvarer skal markeres i feedet",
+    "M15": "Priserne vises ekskl. moms",
+    "C07": "Siden viser flere forskellige CVR-numre",
+    "S15": "Navnet i produktdataene passer ikke med titlen",
 }
 # The one example sentence read aloud on the call (follows "... fundet N ting, der kan give problemer i Google Shopping.").
 # Short, plain and never stronger than what was observed: "kan", not "bliver". {ex} = a named product, if any.
@@ -108,6 +119,13 @@ SAY = {
     "D15": "Fx har nogle varer en variant til 1 krone{ex} Det ligner en fejlpris, og Google viser den laveste pris.",
     "D16": "Fx er der varer, der ligner kladder eller tests{ex} De kommer også med i Google-feedet.",
     "S12": "Fx siger produktdataene på jeres side, at prisen er udløbet.",
+    "D17": "Fx bruges det samme billede på mange forskellige varer{ex} Det ligner et pladsholder-billede for Google.",
+    "S13": "Fx peger jeres produktsider på et andet domæne som den rigtige adresse.",
+    "M13": "Fx forbyder jeres robots.txt Google at læse butikken.",
+    "D19": "Fx har nogle produkttitler emojis{ex} Det tillader Googles regler ikke.",
+    "M14": "Fx er jeres side ikke sat op til mobil, så den vises som en lille computerside på telefonen.",
+    "M15": "Fx står priserne på jeres side ekskl. moms. Sælger I til private, skal de stå inkl. moms.",
+    "S15": "Fx hedder varerne noget andet i jeres produktdata end i titlen, som Google sammenligner.",
 }
 DOC_ID = re.compile(r"^[A-Za-z0-9_\-.~:@+]{1,200}$")
 # Large organisations/chains: unlikely to buy a 495-995 kr. fix from a cold call -> called last.

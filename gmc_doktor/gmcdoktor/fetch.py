@@ -14,7 +14,7 @@ _CTX = ssl.create_default_context()
 class Robots:
     """Minimal robots.txt matcher with '*' and '$' support. Longest match wins; allow wins ties."""
 
-    def __init__(self, text):
+    def __init__(self, text, token=UA_TOKEN):
         self.rules = []
         groups, agents, rules, in_rules = [], [], [], False
         for raw in (text or "").splitlines():
@@ -33,7 +33,7 @@ class Robots:
                 if v:
                     rules.append((k == "allow", v))
         groups.append((agents, rules))
-        mine = [r for a, r in groups if any(UA_TOKEN in x for x in a)]
+        mine = [r for a, r in groups if any(token in x for x in a)]
         star = [r for a, r in groups if "*" in a]
         self.rules = [x for r in (mine or star) for x in r]
 
@@ -64,7 +64,8 @@ class Fetcher:
         self.n, self._last = 0, 0.0
         self.log = []
         st, _, _, txt = self._raw("/robots.txt")
-        self.robots = Robots(txt if st == 200 else "")
+        self.robots_txt = txt if st == 200 else ""
+        self.robots = Robots(self.robots_txt)
 
     def _raw(self, path):
         wait = self.min_interval - (time.time() - self._last)

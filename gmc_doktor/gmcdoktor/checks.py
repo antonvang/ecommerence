@@ -14,9 +14,9 @@ import re
 import urllib.parse
 from datetime import datetime, timezone
 
-from .fetch import Fetcher
+from .fetch import Fetcher, Robots
 
-VERSION = "0.5.1"
+VERSION = "0.7.0"
 G = "https://support.google.com/merchants/answer/"
 REF = {"misrep": G + "6150127?hl=da", "gtin": G + "160161?hl=da", "price": G + "6324371?hl=da",
        "availability": G + "6324448?hl=da", "title": G + "6324415?hl=da", "image": G + "6324350?hl=da"}
@@ -59,6 +59,9 @@ GENERIC_TITLE = re.compile(r"\s*(home|forside|hjem|my store|min butik|welcome|ve
 HTTP_IMG = re.compile(r"""<img\b[^>]*\ssrc=["']http://[^"']+""", re.I)
 PRICE_TITLE = re.compile(r"\d+\s?(?:kr\.?|,-)(?![\wæøå])", re.I)
 GIFT = re.compile(r"(gavekort|gift ?card)", re.I)
+EX_VAT = re.compile(r"(ekskl\.?\s*moms|eksklusiv(?:e)?\s+moms|ex\.?\s*moms|excl\.?\s*(?:vat|moms)|priser(?:ne)? er uden moms)", re.I)
+PREORDER = re.compile(r"(pre-?order|forudbestil)", re.I)
+EMOJI = re.compile("[\U0001F300-\U0001FAFF\u2600-\u27BF\u2B50\u2B55\u2705\u274C]")
 DRAFT = re.compile(r"^\s*(copy of|kopi af|testprodukt|test product|testvare|do not (?:buy|use)|ikke køb|fejloprettelse|placeholder)\b|^\s*test\s*\d*\s*$", re.I)
 SAMPLE = re.compile(r"(prøve|sample|tester|vareprøve|gavekort|gift ?card|stof ?prøve|farveprøve)", re.I)
 UNDER = re.compile(r"(under construction|under opbygning|åbner snart|opening soon|website coming soon|webshoppen åbner)", re.I)
@@ -92,6 +95,17 @@ def cvr_ok(digits):
     if not re.fullmatch(r"\d{8}", digits or ""):
         return False
     return sum(int(c) * w for c, w in zip(digits, (2, 7, 6, 5, 4, 3, 2, 1))) % 11 == 0
+
+
+def _base(title):
+    """The first two words of a title: colours, sizes and names of one product share them, different products rarely do."""
+    return " ".join(re.findall(r"[a-zæøå0-9]+", (title or "").lower())[:2])
+
+
+def _site(url):
+    """The registrable part of a URL's host (shop.x.dk and www.x.dk are the same site)."""
+    host = (urllib.parse.urlsplit(url).hostname or "").lower()
+    return ".".join(host.split(".")[-2:])
 
 
 def _main_text(h):
@@ -160,8 +174,8 @@ def _offers(items):
     return [o for o in offers if isinstance(o, dict)]
 
 
-def run(domain, max_products_pages=3):
-    f = Fetcher(domain)
+def run(domain, max_products_pages=5):
+    f = Fetcher(domain, max_requests=20)
     res = {"domain": f.domain, "checker_version": VERSION, "checked_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
            "shopify": False, "reachable": False, "password": False, "contact": {}, "checks": [], "notes": []}
     C = res["checks"]
@@ -219,7 +233,9 @@ def run(domain, max_products_pages=3):
             products = []
     res["n_products_sampled"] = len(products)
     pp = []
-    for prod in products[:max_products_pages]:
+    # spread the sample over the whole catalogue instead of only the newest products
+    step = max(1, len(products) // max_products_pages) if products else 1
+    for prod in products[::step][:max_products_pages]:
         h = prod.get("handle")
         if not h:
             continue
@@ -269,6 +285,11 @@ def run(domain, max_products_pages=3):
                     "En synlig e-mail er lovpligtig og et tillidssignal. En adresse på eget domæne virker mere troværdig end Gmail/Hotmail.",
                     "Vis en e-mail på butikkens eget domæne, fx kontakt@dinbutik.dk, i footeren og på kontaktsiden.", REF["misrep"]))
     cvr_digits = re.sub(r"\D", "", cvr.group(1)) if cvr else None
+    all_cvr = sorted({re.sub(r"\D", "", m.group(1)) for m in CVR.finditer(all_txt) if re.search(r"CVR", m.group(0), re.I)})
+    if len(all_cvr) >= 2:
+        C.append(_check("C07", A0, "lav", "Siden viser ét CVR-nummer", "advarsel", f"Siden viser {len(all_cvr)} forskellige CVR-numre: {', '.join(all_cvr[:3])}.",
+                        "Med flere CVR-numre er det uklart for kunder og Google, hvilken virksomhed der sælger varen.",
+                        "Vis kun CVR-nummeret på den virksomhed, der sælger, eller forklar tydeligt, hvem der er hvem.", REF["misrep"]))
     if cvr and re.search(r"CVR", cvr.group(0), re.I) and not cvr_ok(cvr_digits):
         C.append(_check("C06", A0, "høj", "CVR-nummeret er gyldigt", "fejl", f"fx '{cvr.group(0).strip()}' består ikke CVR-registrets kontrol.",
                         "Et forkert CVR-nummer gør, at hverken Google eller kunderne kan slå virksomheden op, og det ligner urigtige oplysninger.",
@@ -376,6 +397,44 @@ def run(domain, max_products_pages=3):
                             else f"{len(small)} varer har et hovedbillede under 500 px, fx '{small[0][:60]}'",
                             "Google afviser billeder under 100 × 100 px (250 × 250 px for tøj) og anbefaler mindst 800 px, så varen kan vises skarpt.",
                             "Upload produktbilleder på mindst 800 × 800 px.", REF["image"]))
+        by_img = {}
+        for p in products:
+            im = (p.get("images") or [None])[0]
+            src = re.sub(r"^https?:|\?.*$", "", str(im.get("src") or "")) if isinstance(im, dict) else ""
+            if src and not GIFT.search(p.get("title", "")):
+                by_img.setdefault(src, []).append(p["title"])
+        shared = sorted((t for t in by_img.values() if len({_base(x) for x in t}) >= 3), key=len, reverse=True)
+        if shared:
+            C.append(_check("D17", A2, "middel", "Hver vare har sit eget billede", "advarsel",
+                            f"Det samme billede bruges på {len(shared[0])} forskellige varer, fx '{shared[0][0][:40]}' og '{shared[0][1][:40]}'",
+                            "Google vil se den vare, der sælges. Et fælles billede på mange varer ligner et pladsholder-billede, og varerne kan blive afvist eller vist dårligt.",
+                            "Upload et rigtigt billede af hver vare.", REF["image"]))
+        pre = [p["title"] for p in products if PREORDER.search(p.get("title", "") + " " + " ".join(p.get("tags") or []))]
+        if pre:
+            C.append(_check("D21", A2, "lav", "Forudbestillingsvarer er markeret rigtigt", "advarsel", f"{len(pre)} varer er markeret som forudbestilling (i titel eller tags), fx '{pre[0][:50]}'",
+                            "Google kræver, at forudbestillingsvarer har lagerstatus 'preorder' og en dato for, hvornår de kan leveres. Ellers kan de blive afvist.",
+                            "Sæt lagerstatus til forudbestilling og en leveringsdato i Google-kanalen eller feed-appen.", REF["availability"]))
+        one = [p["title"] for p in products if len(p.get("title", "").split()) == 1 and not GIFT.search(p.get("title", ""))]
+        if len(products) >= 10 and len(one) >= len(products) / 2:
+            C.append(_check("D20", A2, "lav", "Produkttitlerne beskriver varen", "advarsel", f"{len(one)} af {len(products)} titler er kun ét ord, fx '{one[0][:40]}'",
+                            "Google matcher søgninger med titlen. En titel som 'Kjole' rammer langt færre søgninger end 'Mærke kjole i hør, sort, str. 38'.",
+                            "Skriv titler som 'Mærke + produkttype + egenskab (farve, materiale, størrelse)'.", REF["title"]))
+        emo = [p["title"] for p in products if EMOJI.search(p.get("title", ""))]
+        if emo:
+            C.append(_check("D19", A2, "middel", "Produkttitler uden emojis", "advarsel", f"{len(emo)} titler med emojis eller symboler, fx '{emo[0][:60]}'",
+                            "Googles regler for titler tillader ikke emojis og pyntesymboler. Titler med dem kan blive afvist.",
+                            "Fjern emojis og symboler fra titlerne. Brug dem gerne i beskrivelsen i stedet.", REF["title"]))
+        by_desc = {}
+        for p in products:
+            d = re.sub(r"\s+", " ", _text(p.get("body_html") or "")).strip().lower()
+            if len(d) >= 60:
+                by_desc.setdefault(d, []).append(p["title"])
+        same_desc = sorted((t for t in by_desc.values() if len({_base(x) for x in t}) >= 5), key=len, reverse=True)
+        if same_desc:
+            C.append(_check("D18", A2, "lav", "Hver vare har sin egen beskrivelse", "advarsel",
+                            f"Den samme beskrivelse står på {len(same_desc[0])} forskellige varer, fx '{same_desc[0][0][:40]}' og '{same_desc[0][1][:40]}'",
+                            "Når mange varer har præcis samme tekst, har Google svært ved at skelne dem, og varerne matcher færre søgninger.",
+                            "Skriv det, der er særligt for hver vare: mål, materiale, farve og brug.", REF["title"]))
         draft = [p["title"] for p in products if DRAFT.search(p.get("title", ""))]
         if draft:
             C.append(_check("D16", A2, "middel", "Ingen kladde- eller testvarer i butikken", "advarsel", f"{len(draft)} varer ligner kladder eller tests, fx '{draft[0][:60]}'",
@@ -440,7 +499,7 @@ def run(domain, max_products_pages=3):
                             "Google tjekker stregkodens kontrolciffer. En ugyldig GTIN giver afviste varer eller begrænset visning.",
                             "Ret stregkoden til producentens rigtige EAN/GTIN, eller fjern den, hvis varen ikke har en.", REF["gtin"]))
         no_ld, mism, avail_bad, comma, cur_bad, ld_gap, gtin_lost, dup_ld, no_brand = [], [], [], [], [], [], [], [], []
-        no_avail, expired = [], []
+        no_avail, expired, name_bad = [], [], []
         today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
         for prod, b, js in pp:
             items = [x for x in _ldjson(b) if str(x.get("@type", "")).lower() in ("product", "productgroup")]
@@ -455,6 +514,13 @@ def run(domain, max_products_pages=3):
                 cur_bad.append(f"{prod['title'][:40]}: {', '.join(sorted(ld_cur))} i stedet for {shop_cur.group(1)}")
             raw_prices = [o.get("price") for o in offers if o.get("price") not in (None, "")]
             name = re.sub(r"\s+", " ", prod["title"]).strip().lower()
+            words = set(re.findall(r"[a-zæøå0-9]+", name))
+            def overlap(n):
+                w = set(re.findall(r"[a-zæøå0-9]+", str(n or "").lower()))
+                return len(words & w) / max(1, min(len(words), len(w)))
+            names = [it.get("name") for it in items if it.get("name")]
+            if names and words and max(overlap(n) for n in names) < 0.3:
+                name_bad.append(f"'{prod['title'][:40]}' hedder '{str(names[0])[:40]}' i produktdataene")
             same_item = [it for it in items if re.sub(r"\s+", " ", str(it.get("name") or "")).strip().lower() == name]
             if len(same_item) >= 2:
                 dup_ld.append(f"{prod['title'][:40]}: {len(same_item)} sæt")
@@ -508,10 +574,26 @@ def run(domain, max_products_pages=3):
             C.append(_check("S11", A3, "lav", "Produktdataene har lagerstatus", "advarsel", f"Lagerstatus mangler i produktdataene for fx '{no_avail[0]}'.",
                             "Google bruger lagerstatus til at vise, om varen kan købes. Mangler den, skal Google gætte.",
                             "Sørg for at temaets JSON-LD har availability på alle tilbud.", REF["availability"]))
+        site = _site(final)
+        other = []
+        for prod, b, _ in pp:
+            m = re.search(r"""<link[^>]+rel=["']canonical["'][^>]*>""", b, re.I)
+            href = re.search(r"""href=["']([^"']+)""", m.group(0)) if m else None
+            host = urllib.parse.urlsplit(href.group(1)).hostname if href else None
+            if host and _site("https://" + host) != site:
+                other.append(f"'{prod['title'][:40]}' peger på {host}")
+        if other:
+            C.append(_check("S13", A3, "middel", "Produktsiderne peger på butikkens eget domæne", "fejl", "; ".join(other[:2]) + f" som den rigtige adresse (canonical), men butikken ligger på {urllib.parse.urlsplit(final).hostname}.",
+                            "Google bruger canonical-adressen som varens rigtige side. Peger den på et andet domæne, passer siden ikke med linket i feedet.",
+                            "Sæt butikkens eget domæne som primært domæne i Shopify, og ret temaet, hvis det skriver canonical selv.", REF["misrep"]))
         if gtin_lost:
             C.append(_check("S09", A3, "middel", "Stregkoden står i produktdataene", "advarsel", "; ".join(gtin_lost[:2]) + ", men den står ikke i produktdataene på siden.",
                             "Google sammenligner feedet med produktsiden. Når stregkoden kun findes i butikken og ikke i produktdataene, kan Google ikke bekræfte den.",
                             "Ret temaets JSON-LD, så hver variant har gtin (stregkoden) med.", REF["gtin"]))
+        if name_bad:
+            C.append(_check("S15", A3, "middel", "Navnet i produktdataene passer med titlen", "advarsel", "; ".join(name_bad[:2]) + ".",
+                            "Google sammenligner varens navn i produktdataene med titlen i feedet. Passer de ikke, kan Google ikke se, at det er samme vare.",
+                            "Ret temaets JSON-LD, så name er varens titel.", REF["title"]))
         if dup_ld:
             C.append(_check("S10", A3, "middel", "Én vare har ét sæt produktdata", "advarsel", "; ".join(dup_ld[:2]) + " produktdata for samme vare.",
                             "Når både temaet og en app udskriver produktdata, ser Google to versioner af samme vare. Er de forskellige, kan Google vælge den forkerte pris eller lagerstatus.",
@@ -589,6 +671,11 @@ def run(domain, max_products_pages=3):
         C.append(_check("M06", A4, "lav", "Årstallet i footeren er opdateret", "advarsel", f"Footeren siger © {max(years)}.",
                         "Et gammelt årstal får siden til at se forladt ud for både kunder og Google.",
                         "Brug temaets automatiske årstal, eller ret det til i år.", None))
+    exv = EX_VAT.search(home_txt) or next((m for m in (EX_VAT.search(_text(b)) for _, b, _ in pp) if m), None)
+    if exv:
+        C.append(_check("M15", A4, "middel", "Priserne vises inkl. moms", "advarsel", f"Siden skriver '{exv.group(0)}'.",
+                        "Sælger I til private, skal prisen vises inkl. moms. Google tjekker også, at prisen på siden er den, kunden betaler.",
+                        "Vis priser inkl. moms, hvis I sælger til private. Sælger I kun til virksomheder, så skriv det tydeligt.", REF["price"]))
     tm = re.search(r"<title[^>]*>(.*?)</title>", home, re.S | re.I)
     title = html.unescape(re.sub(r"\s+", " ", tm.group(1))).strip() if tm else ""
     desc = any(re.search(r"""name=["']description["']""", t, re.I) and re.search(r"""content=["'][^"']{20,}""", t, re.I)
@@ -612,6 +699,21 @@ def run(domain, max_products_pages=3):
         C.append(_check("M12", A4, "middel", "Forsiden siger ikke, at butikken er under opbygning", "advarsel", f"Forsiden siger '{under.group(0)}'.",
                         "Google afviser butikker, der ser ufærdige ud, og kunder handler sjældent i en butik, der siger, den ikke er klar.",
                         "Fjern teksten, når butikken er klar, eller lås butikken med adgangskode, indtil den er det.", REF["misrep"]))
+    rb = getattr(f, "robots_txt", "")
+    if rb:
+        blocked = []
+        for token in ("googlebot", "storebot-google"):
+            g = Robots(rb, token)
+            paths = ["/"] + [f"/products/{p['handle']}" for p, _, _ in pp[:1]]
+            blocked += [f"{token}: {x}" for x in paths if not g.allowed(x)]
+        if blocked:
+            C.append(_check("M13", A4, "kritisk", "robots.txt giver Google lov til at læse butikken", "fejl", f"robots.txt forbyder fx {blocked[0]}.",
+                            "Google må ikke læse sider, som robots.txt forbyder. Så kan Google hverken finde forsiden eller tjekke produktsiderne.",
+                            "Ret robots.txt (i Shopify: temaets robots.txt.liquid), så Googlebot og Storebot-Google må læse butikken.", REF["misrep"]))
+    if not re.search(r"""<meta[^>]+name=["']?viewport""", home[:200_000], re.I):
+        C.append(_check("M14", A4, "middel", "Siden er sat op til mobil", "advarsel", "Forsiden har ingen viewport-indstilling til mobil.",
+                        "Uden viewport vises siden som en lille computerside på mobilen. Google Ads vurderer også, hvor godt siden virker på mobil.",
+                        "Tilføj <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"> i temaets theme.liquid, eller skift til et moderne tema.", None))
     hi = HTTP_IMG.search(home)
     if hi:
         C.append(_check("M10", A4, "lav", "Alle billeder hentes over sikker forbindelse", "advarsel", f"fx {hi.group(0)[-80:]}",

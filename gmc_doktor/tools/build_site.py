@@ -11,6 +11,7 @@ CVR number once there is one. Below 50.000 kr. a year in sales a CVR number is n
 "Webshopdoktoren v/ <owner>" instead."""
 import argparse
 import html
+import json
 import os
 import re
 import sys
@@ -19,12 +20,19 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 MAIL = "info@webshopdoktoren.dk"  # already in the page, with the copy and mail buttons
 SRC = os.path.join(HERE, "..", "site", "webshopdoktoren.html")
 OUT = os.path.join(HERE, "..", "site", "upload", "index.html")
+PAGES = [(SRC, OUT, "/"), (os.path.join(HERE, "..", "site", "privatliv.html"), os.path.join(HERE, "..", "site", "upload", "privatliv.html"), "/privatliv")]
 FAVICON = ("data:image/svg+xml," + "%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='1' y='1' width='30' height='30' rx='8' "
            "fill='%230b6b4f'/%3E%3Cpath d='M13 8h6v5h5v6h-5v5h-6v-5H8v-6h5z' fill='%23fff'/%3E%3C/svg%3E")
 
 
 def build(navn, cvr, adresse, mail, moms, domaene, ejer=""):
-    s = open(SRC, encoding="utf-8").read()
+    for src, out, path in PAGES:
+        build_page(src, out, path, navn, cvr, adresse, mail, moms, domaene, ejer)
+    return os.path.abspath(os.path.dirname(OUT))
+
+
+def build_page(src, out, path, navn, cvr, adresse, mail, moms, domaene, ejer):
+    s = open(src, encoding="utf-8").read()
     if mail != MAIL:
         s = s.replace(MAIL, mail)
     if navn != "Webshopdoktoren":
@@ -38,14 +46,19 @@ def build(navn, cvr, adresse, mail, moms, domaene, ejer=""):
     cut = s.index("</style>") + len("</style>")
     head, body = s[:cut], s[cut:]
     desc = re.search(r'<meta name="description" content="([^"]*)"', head).group(1)
-    extra = (f'<link rel="icon" href="{FAVICON}">\n<link rel="canonical" href="https://{domaene}/">\n'
+    org = json.dumps({"@context": "https://schema.org", "@type": "ProfessionalService", "name": navn, "url": f"https://{domaene}/",
+                      "email": mail, "areaServed": "DK", "description": html.unescape(desc),
+                      "address": {"@type": "PostalAddress", "streetAddress": adresse.split(",")[0].strip(),
+                                  "postalCode": (re.search(r"(\d{4})", adresse.split(",")[-1]) or [None, ""])[1],
+                                  "addressLocality": re.sub(r"^\s*\d{4}\s*", "", adresse.split(",")[-1]).strip(), "addressCountry": "DK"}}, ensure_ascii=False)
+    extra = (f'<link rel="icon" href="{FAVICON}">\n<link rel="canonical" href="https://{domaene}{path}">\n'
              f'<meta property="og:title" content="{e(navn)}">\n<meta property="og:description" content="{desc}">\n'
-             f'<meta property="og:url" content="https://{domaene}/">\n<meta property="og:type" content="website">\n')
+             f'<meta property="og:url" content="https://{domaene}{path}">\n<meta property="og:type" content="website">\n'
+             + (f'<script type="application/ld+json">{org}</script>\n' if path == "/" else ""))
     page = ('<!doctype html>\n<html lang="da">\n<head>\n<meta charset="utf-8">\n'
             '<meta name="viewport" content="width=device-width,initial-scale=1">\n' + extra + head + "\n</head>\n<body>\n" + body + "\n</body>\n</html>\n")
-    os.makedirs(os.path.dirname(OUT), exist_ok=True)
-    open(OUT, "w", encoding="utf-8").write(page)
-    return os.path.abspath(OUT)
+    os.makedirs(os.path.dirname(out), exist_ok=True)
+    open(out, "w", encoding="utf-8").write(page)
 
 
 if __name__ == "__main__":

@@ -1,7 +1,7 @@
 // Instant version of the GMC-Doktor checker (gmcdoktor/checks.py) for the "Tjek din webshop" field on webshopdoktoren.dk.
 // Same ids, texts and design rule: a 'fejl' is only something we actually saw on the public pages. Lighter than the full
 // check: homepage, up to 2 contact/about pages, /products.json?limit=100 and 2 product pages (+ .js), robots.txt respected.
-export const VERSION = "w0.5.1";
+export const VERSION = "w0.6.5";
 const UA = "Mozilla/5.0 (compatible; GMC-Doktor/0.1; offentligt Merchant Center-tjek af butikssider; webshopdoktoren.dk)";
 const PENALTY = {kritisk: 15, "høj": 8, middel: 4, lav: 2};
 const SEV = {kritisk: 0, "høj": 1, middel: 2, lav: 3};
@@ -57,8 +57,19 @@ export const PROBLEM = {
   D16: "Kladde- eller testvarer er synlige i butikken",
   S11: "Lagerstatus mangler i produktdataene",
   S12: "Prisen i produktdataene er udløbet",
+  D17: "Samme billede på mange forskellige varer",
+  S13: "Produktsiderne peger på et andet domæne (canonical)",
+  M13: "robots.txt spærrer Google ude",
+  D18: "Samme beskrivelse på mange forskellige varer",
+  D19: "Emojis eller symboler i produkttitler",
+  D20: "Mange produkttitler er kun ét ord",
+  M14: "Siden er ikke sat op til mobil (viewport)",
+  D21: "Forudbestillingsvarer skal markeres i feedet",
+  M15: "Priserne vises ekskl. moms",
+  C07: "Siden viser flere forskellige CVR-numre",
+  S15: "Navnet i produktdataene passer ikke med titlen",
 };
-const CONCRETE = new Set(["S05", "D07", "M02", "D04", "S03", "S01", "D08", "D09", "P05", "S09", "S10", "M11", "M12", "D15", "D16", "S12"]);
+const CONCRETE = new Set(["S05", "D07", "M02", "D04", "S03", "S01", "D08", "D09", "P05", "S09", "S10", "M11", "M12", "D15", "D16", "S12", "D17", "D19", "M14", "M15", "S15"]);
 
 const NB = "(?<![\\p{L}\\p{N}_])"; // a \b that also works before æ, ø and å
 const SALES_WORDS = /(gratis fragt|fri fragt|\btilbud\b|\budsalg\b|spar \d+|\brabat\b|nr\.? ?1\b|!!|køb nu|free shipping|\bsale\b|bestseller)/i;
@@ -86,6 +97,9 @@ const GENERIC_TITLE = /^\s*(home|forside|hjem|my store|min butik|welcome|velkomm
 const HTTP_IMG = /<img\b[^>]*\ssrc=["']http:\/\/[^"']+/i;
 const PRICE_TITLE = /\d+\s?(?:kr\.?|,-)(?![\wæøå])/i;
 const GIFT = /(gavekort|gift ?card)/i;
+const EX_VAT = /(ekskl\.?\s*moms|eksklusiv(?:e)?\s+moms|ex\.?\s*moms|excl\.?\s*(?:vat|moms)|priser(?:ne)? er uden moms)/i;
+const PREORDER = /(pre-?order|forudbestil)/i;
+const EMOJI = /[\u{1F300}-\u{1FAFF}\u2600-\u27BF\u2B50\u2B55\u2705\u274C]/u;
 const DRAFT = /^\s*(copy of|kopi af|testprodukt|test product|testvare|do not (?:buy|use)|ikke køb|fejloprettelse|placeholder)\b|^\s*test\s*\d*\s*$/i;
 const SAMPLE = /(prøve|sample|tester|vareprøve|gavekort|gift ?card|stof ?prøve|farveprøve)/i;
 const UNDER = /(under construction|under opbygning|åbner snart|opening soon|website coming soon|webshoppen åbner)/i;
@@ -151,7 +165,7 @@ function noindex(h) {
 }
 
 class Robots {
-  constructor(txt) {
+  constructor(txt, token = "gmc-doktor") {
     const groups = []; let agents = [], rules = [], inRules = false;
     for (const raw of (txt || "").split(/\r?\n/)) {
       const line = raw.split("#")[0].trim(); const i = line.indexOf(":");
@@ -161,7 +175,7 @@ class Robots {
       else if (k === "allow" || k === "disallow") { inRules = true; if (v) rules.push([k === "allow", v]); }
     }
     groups.push([agents, rules]);
-    const mine = groups.filter(([a]) => a.some(x => x.includes("gmc-doktor"))).map(g => g[1]);
+    const mine = groups.filter(([a]) => a.some(x => x.includes(token))).map(g => g[1]);
     const star = groups.filter(([a]) => a.includes("*")).map(g => g[1]);
     this.rules = (mine.length ? mine : star).flat();
   }
@@ -181,7 +195,7 @@ class Robots {
 
 class Fetcher {
   constructor(domain) { this.domain = domain; this.base = "https://" + domain; this.n = 0; this.log = []; this.robots = new Robots(""); }
-  async init() { const [st, , , txt] = await this.raw("/robots.txt"); this.robots = new Robots(st === 200 ? txt : ""); }
+  async init() { const [st, , , txt] = await this.raw("/robots.txt"); this.robotsTxt = st === 200 ? txt : ""; this.robots = new Robots(this.robotsTxt); }
   async raw(path) {
     this.n++;
     try {
@@ -203,6 +217,8 @@ class Fetcher {
   }
 }
 
+const baseOf = t => (String(t || "").toLowerCase().match(/[a-zæøå0-9]+/g) || []).slice(0, 2).join(" ");
+const siteOf = url => { try { return new URL(url).hostname.toLowerCase().split(".").slice(-2).join("."); } catch { return ""; } };
 const chk = (id, sev, s, hvad, ret) => ({id, sev, s, t: PROBLEM[id] || id, hvad, ret});
 
 export async function run(domain) {
@@ -275,6 +291,8 @@ export async function run(domain) {
   else C.push(mail ? {...chk("C04", "høj", "advarsel", `${mail} (gratis mailudbyder)`, "Brug en mail på butikkens eget domæne."), t: "Kontaktmailen er en gratis mailadresse (fx Gmail)"}
     : chk("C04", "høj", notSeen, `Ingen e-mailadresse fundet på ${where}.${hint}`, "Vis en e-mail på butikkens eget domæne i footeren og på kontaktsiden."));
   const cvrDigits = cvr ? cvr[1].replace(/\D/g, "") : null;
+  const allCvr = [...new Set([...allTxt.matchAll(new RegExp(CVR.source, "gi"))].filter(m => /CVR/i.test(m[0])).map(m => m[1].replace(/\D/g, "")))].sort();
+  if (allCvr.length >= 2) C.push(chk("C07", "lav", "advarsel", `Siden viser ${allCvr.length} forskellige CVR-numre: ${allCvr.slice(0, 3).join(", ")}.`, "Vis kun CVR-nummeret på den virksomhed, der sælger."));
   if (cvr && /CVR/i.test(cvr[0]) && !cvrOk(cvrDigits))
     C.push(chk("C06", "høj", "fejl", `fx '${cvr[0].trim()}' består ikke CVR-registrets kontrol.`, "Ret CVR-nummeret, så det passer med virk.dk."));
   let phone = null;
@@ -327,6 +345,26 @@ export async function run(domain) {
     for (const p of products) if (p.title) same.set(norm(p.title), (same.get(norm(p.title)) || 0) + 1);
     const dups = [...same].filter(([, c]) => c > 1).sort((a, b) => b[1] - a[1]);
     if (dups.length >= 3) C.push(chk("D13", "lav", "advarsel", `${dups.length} titler bruges af flere varer, fx '${products.find(p => norm(p.title) === dups[0][0]).title.slice(0, 60)}' (${dups[0][1]} varer)`, "Skriv det, der adskiller varerne, i titlen."));
+    const pre = products.filter(p => PREORDER.test((p.title || "") + " " + (p.tags || []).join(" "))).map(p => p.title);
+    if (pre.length) C.push(chk("D21", "lav", "advarsel", `${pre.length} varer er markeret som forudbestilling (i titel eller tags), fx '${pre[0].slice(0, 50)}'`, "Sæt lagerstatus til forudbestilling og en leveringsdato i feedet."));
+    const one = products.filter(p => (p.title || "").trim().split(/\s+/).length === 1 && !GIFT.test(p.title || "")).map(p => p.title);
+    if (n >= 10 && one.length >= n / 2) C.push(chk("D20", "lav", "advarsel", `${one.length} af ${n} titler er kun ét ord, fx '${one[0].slice(0, 40)}'`, "Skriv titler som 'Mærke + produkttype + egenskab'."));
+    const emo = products.filter(p => EMOJI.test(p.title || "")).map(p => p.title);
+    if (emo.length) C.push(chk("D19", "middel", "advarsel", `${emo.length} titler med emojis eller symboler, fx '${emo[0].slice(0, 60)}'`, "Fjern emojis og symboler fra titlerne."));
+    const byDesc = new Map();
+    for (const p of products) {
+      const d = text(p.body_html || "").replace(/\s+/g, " ").trim().toLowerCase();
+      if (d.length >= 60) byDesc.set(d, [...(byDesc.get(d) || []), p.title]);
+    }
+    const sameDesc = [...byDesc.values()].filter(t => new Set(t.map(baseOf)).size >= 5).sort((a, b) => b.length - a.length);
+    if (sameDesc.length) C.push(chk("D18", "lav", "advarsel", `Den samme beskrivelse står på ${sameDesc[0].length} forskellige varer, fx '${sameDesc[0][0].slice(0, 40)}' og '${sameDesc[0][1].slice(0, 40)}'`, "Skriv det, der er særligt for hver vare."));
+    const byImg = new Map();
+    for (const p of products) {
+      const im = (p.images || [])[0], src = im && im.src ? String(im.src).replace(/^https?:|\?.*$/g, "") : "";
+      if (src && !GIFT.test(p.title || "")) byImg.set(src, [...(byImg.get(src) || []), p.title]);
+    }
+    const shared = [...byImg.values()].filter(t => new Set(t.map(baseOf)).size >= 3).sort((a, b) => b.length - a.length);
+    if (shared.length) C.push(chk("D17", "middel", "advarsel", `Det samme billede bruges på ${shared[0].length} forskellige varer, fx '${shared[0][0].slice(0, 40)}' og '${shared[0][1].slice(0, 40)}'`, "Upload et rigtigt billede af hver vare."));
     const draft = products.filter(p => DRAFT.test(p.title || "")).map(p => p.title);
     if (draft.length) C.push(chk("D16", "middel", "advarsel", `${draft.length} varer ligner kladder eller tests, fx '${draft[0].slice(0, 60)}'`, "Skjul eller slet varerne, eller giv dem en rigtig titel."));
     const low = [];
@@ -352,6 +390,7 @@ export async function run(domain) {
       const badG = jsVars.filter(v => String(v.barcode || "").trim() && !gtinOk(v.barcode));
       if (badG.length) C.push(chk("D10", "høj", "fejl", `${badG.length} af ${jsVars.length} varianter har en ugyldig stregkode, fx '${String(badG[0].name || badG[0].title || "").slice(0, 50)}' med stregkoden ${String(badG[0].barcode).trim()}`, "Ret stregkoden til producentens rigtige EAN, eller fjern den."));
     }
+    const nameBad = [];
     const noLd = [], mism = [], availBad = [], comma = [], curBad = [], ldGap = [], gtinLost = [], dupLd = [], noBrand = [], noAvail = [], expired = [];
     const today = new Date().toISOString().slice(0, 10);
     for (const [prod, b, js] of pp) {
@@ -361,6 +400,10 @@ export async function run(domain) {
       if (offers.length && offers.some(o => !o.availability)) noAvail.push(prod.title.slice(0, 40));
       const old = offers.map(o => (String(o.priceValidUntil || "").match(/\d{4}-\d{2}-\d{2}/) || [""])[0]).filter(x => x && x < today).sort();
       if (old.length) expired.push(`'${prod.title.slice(0, 40)}' har en pris, der udløb ${old[0]}`);
+      const words = new Set(norm(prod.title).match(/[a-zæøå0-9]+/g) || []);
+      const overlap = nm => { const w = new Set(String(nm || "").toLowerCase().match(/[a-zæøå0-9]+/g) || []); let k = 0; for (const x of w) if (words.has(x)) k++; return k / Math.max(1, Math.min(words.size, w.size)); };
+      const names = items.map(it => it.name).filter(Boolean);
+      if (names.length && words.size && Math.max(...names.map(overlap)) < 0.3) nameBad.push(`'${prod.title.slice(0, 40)}' hedder '${String(names[0]).slice(0, 40)}' i produktdataene`);
       const sameItem = items.filter(it => norm(it.name) === norm(prod.title));
       if (sameItem.length >= 2) dupLd.push(`${prod.title.slice(0, 40)}: ${sameItem.length} sæt`);
       if (!items.some(it => it.brand)) noBrand.push(prod.title.slice(0, 40));
@@ -388,7 +431,16 @@ export async function run(domain) {
     if (comma.length) C.push(chk("S05", "middel", "advarsel", comma.slice(0, 2).join("; "), "Ret temaets JSON-LD, så prisen skrives med punktum (fx 349.00)."));
     if (expired.length) C.push(chk("S12", "middel", "advarsel", expired.slice(0, 2).join("; ") + ".", "Fjern priceValidUntil fra temaets JSON-LD, eller sæt en dato i fremtiden."));
     if (noAvail.length) C.push(chk("S11", "lav", "advarsel", `Lagerstatus mangler i produktdataene for fx '${noAvail[0]}'.`, "Sørg for at temaets JSON-LD har availability på alle tilbud."));
+    const site = siteOf(final), other = [];
+    for (const [prod, b] of pp) {
+      const m = b.match(/<link[^>]+rel=["']canonical["'][^>]*>/i), href = m && m[0].match(/href=["']([^"']+)/);
+      let host = null;
+      try { host = href ? new URL(href[1], final).hostname : null; } catch {}
+      if (host && siteOf("https://" + host) !== site) other.push(`'${prod.title.slice(0, 40)}' peger på ${host}`);
+    }
+    if (other.length) C.push(chk("S13", "middel", "fejl", other.slice(0, 2).join("; ") + ` som den rigtige adresse (canonical), men butikken ligger på ${new URL(final).hostname}.`, "Sæt butikkens eget domæne som primært domæne i Shopify."));
     if (gtinLost.length) C.push(chk("S09", "middel", "advarsel", gtinLost.slice(0, 2).join("; ") + ", men den står ikke i produktdataene på siden.", "Ret temaets JSON-LD, så hver variant har gtin med."));
+    if (nameBad.length) C.push(chk("S15", "middel", "advarsel", nameBad.slice(0, 2).join("; ") + ".", "Ret temaets JSON-LD, så name er varens titel."));
     if (dupLd.length) C.push(chk("S10", "middel", "advarsel", dupLd.slice(0, 2).join("; ") + " produktdata for samme vare.", "Slå produktdata fra i enten temaet eller SEO-appen."));
     if (noBrand.length && noBrand.length === pp.length) C.push(chk("S08", "lav", "advarsel", `Mærke (brand) mangler i produktdataene på alle ${pp.length} tjekkede sider.`, "Sørg for at temaet udskriver brand i JSON-LD."));
     if (curBad.length) C.push(chk("S06", "høj", "fejl", curBad.slice(0, 2).join("; "), "Ret temaets JSON-LD, så priceCurrency er butikkens valuta."));
@@ -406,6 +458,8 @@ export async function run(domain) {
   if (demo) C.push(chk("M05", "høj", "fejl", `fx '${demo[0]}'`, "Erstat temaets eksempeltekster med jeres egne tekster."));
   const years = [...homeTxt.matchAll(COPYRIGHT)].map(m => Number(m[1]));
   if (years.length && Math.max(...years) <= new Date().getUTCFullYear() - 2) C.push(chk("M06", "lav", "advarsel", `Footeren siger © ${Math.max(...years)}.`, "Brug temaets automatiske årstal."));
+  const exv = homeTxt.match(EX_VAT) || pp.map(([, b]) => text(b).match(EX_VAT)).find(Boolean);
+  if (exv) C.push(chk("M15", "middel", "advarsel", `Siden skriver '${exv[0]}'.`, "Vis priser inkl. moms, hvis I sælger til private."));
   const tm = home.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
   const title = tm ? unescape(tm[1].replace(/\s+/g, " ")).trim() : "";
   const desc = (home.slice(0, 200_000).match(/<meta\b[^>]*>/gi) || []).some(t => /name=["']description["']/i.test(t) && /content=["'][^"']{20,}/i.test(t));
@@ -418,6 +472,15 @@ export async function run(domain) {
     C.push(chk("M11", "middel", "advarsel", `Siden er sat til sproget '${lang[1]}', men teksten er dansk (${da} almindelige danske ord mod ${en} engelske).`, "Sæt butikkens standardsprog til dansk."));
   const under = homeTxt.match(UNDER);
   if (under) C.push(chk("M12", "middel", "advarsel", `Forsiden siger '${under[0]}'.`, "Fjern teksten, når butikken er klar."));
+  if (f.robotsTxt) {
+    const blocked = [];
+    for (const token of ["googlebot", "storebot-google"]) {
+      const g = new Robots(f.robotsTxt, token);
+      for (const x of ["/", ...pp.slice(0, 1).map(([p]) => `/products/${p.handle}`)]) if (!g.allowed(x)) blocked.push(`${token}: ${x}`);
+    }
+    if (blocked.length) C.push(chk("M13", "kritisk", "fejl", `robots.txt forbyder fx ${blocked[0]}.`, "Ret robots.txt, så Googlebot og Storebot-Google må læse butikken."));
+  }
+  if (!/<meta[^>]+name=["']?viewport/i.test(home.slice(0, 200_000))) C.push(chk("M14", "middel", "advarsel", "Forsiden har ingen viewport-indstilling til mobil.", "Tilføj en viewport-indstilling i temaet."));
   const hi = home.match(HTTP_IMG);
   if (hi) C.push(chk("M10", "lav", "advarsel", `fx ${hi[0].slice(-80)}`, "Upload billedet til Shopify og brug det nye link."));
   const ni = noindex(home);

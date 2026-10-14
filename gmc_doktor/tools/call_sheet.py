@@ -51,9 +51,16 @@ OPENER = {
     "D15": "nogle varer har en variant til 1 krone{ex}, som ligner en fejlpris",
     "D16": "der ligger varer, der ligner kladder eller tests{ex}, synligt i butikken",
     "S12": "produktdataene på jeres side siger, at prisen er udløbet",
+    "D17": "det samme billede bruges på mange forskellige varer{ex}, og det ligner et pladsholder-billede for Google",
+    "S13": "jeres produktsider peger på et andet domæne som den rigtige adresse",
+    "M13": "jeres robots.txt forbyder Google at læse butikken",
+    "D19": "nogle produkttitler har emojis{ex}, som Googles regler for titler ikke tillader",
+    "M14": "jeres side ikke er sat op til mobil, så den vises som en lille computerside på telefonen",
+    "M15": "priserne på jeres side står ekskl. moms, og sælger I til private, skal de stå inkl. moms",
+    "S15": "varerne hedder noget andet i jeres produktdata end i titlen, og det sammenligner Google",
 }
 # Warnings concrete enough to name on the phone (each one is something we saw, just not proven to be an error).
-CONCRETE_WARN = {"S05", "D07", "M02", "D04", "S03", "S01", "D08", "D09", "P05", "S09", "S10", "M11", "M12", "D15", "D16", "S12"}
+CONCRETE_WARN = {"S05", "D07", "M02", "D04", "S03", "S01", "D08", "D09", "P05", "S09", "S10", "M11", "M12", "D15", "D16", "S12", "D17", "D19", "M14", "M15", "S15"}
 SEV = {"kritisk": 0, "høj": 1, "middel": 2, "lav": 3}
 
 

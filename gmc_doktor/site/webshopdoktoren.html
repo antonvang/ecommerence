@@ -324,7 +324,7 @@ footer.site b{color:var(--ink)}
     <div class="rv"><h3>Vi har allerede et bureau</h3><p>Så kan I give den gratis rapport videre til dem. Den er jeres at bruge.</p></div>
     <div class="rv"><h3>Hvor lang tid tager det?</h3><p>I får rapporten inden for 2 hverdage. Vælger I, at vi retter fejlene, er det gjort inden for 2 hverdage, efter I har givet adgang.</p></div>
     <div class="rv"><h3>Hvad sker der efter det gratis tjek?</h3><p>Ingenting, medmindre I selv vil have hjælp. Der er ingen binding, og vi sender kun rapporten og svarer på det, I spørger om.</p></div>
-    <div class="rv"><h3>Bruger I vores data til andet?</h3><p>Nej. Vi bruger kun det, der skal til for at hjælpe jer, og sletter adgang og kopier senest 30 dage efter.</p></div>
+    <div class="rv"><h3>Bruger I vores data til andet?</h3><p>Nej. Vi bruger kun det, der skal til for at hjælpe jer, og sletter adgang og kopier senest 30 dage efter. Læs mere i vores <a href="/privatliv">privatlivspolitik</a>.</p></div>
   </div>
 </div></section>
 
@@ -346,7 +346,7 @@ footer.site b{color:var(--ink)}
         <label class="hp" for="f-hp" aria-hidden="true">Lad dette felt være tomt<input id="f-hp" name="hp" type="text" tabindex="-1" autocomplete="off"></label>
         <p class="err" id="f-err" role="alert" hidden></p>
         <button class="send" id="f-send" type="submit">Send og få mit gratis tjek <span class="arr" aria-hidden="true">→</span></button>
-        <p class="fine">Vi bruger kun oplysningerne til at sende jer rapporten og svare jer.</p>
+        <p class="fine">Vi bruger kun oplysningerne til at sende jer rapporten og svare jer. <a href="/privatliv">Privatlivspolitik</a></p>
       </form>
       <div class="done" id="done" tabindex="-1" hidden>
         <div class="tick" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
@@ -361,6 +361,7 @@ footer.site b{color:var(--ink)}
 
 <div class="wrap"><footer class="site">
   <span><b>Webshopdoktoren</b><span class="ph" data-f="cvr"> v/ ejerens navn udfyldes</span> · <span class="ph" data-f="adresse">adresse udfyldes</span> · <a href="mailto:info@webshopdoktoren.dk">info@webshopdoktoren.dk</a></span>
+  <span><a href="/privatliv">Privatlivspolitik</a></span>
   <span>Ydelserne sælges kun til erhvervsdrivende. Google, Google Shopping og Merchant Center er varemærker tilhørende Google LLC. Webshopdoktoren har ingen forbindelse til Google.</span>
 </footer></div>
 
@@ -430,7 +431,7 @@ document.getElementById('copymail').addEventListener('click', async e => {
     let rows = top.map((x, i) => x.s === 'fejl' ? row(i, 'f', '✕', 'Fejl', esc(x.t), x.ex ? `Fx ${esc(x.ex)}` : '') : row(i, 'w', '!', 'Bør tjekkes', esc(x.t), x.ex ? `Fx ${esc(x.ex)}` : '')).join('');
     if (!all.length) rows = row(0, 'o', '✓', 'I orden', 'Ingen tydelige fejl på de sider, vi tjekkede', '');
     const moreLine = more > 0 ? `<p class="rmore">+ ${more} ${more === 1 ? 'fund' : 'fund'} mere i den fulde rapport</p>` : '';
-    const note = d.shopify ? 'Gratis og uden binding. Rapporten fortæller også, hvordan I retter det.' : 'Butikken kører ikke på Shopify, så vi har kun tjekket forsiden. Gratis og uden binding.';
+    const note = (d.shopify ? 'Gratis og uden binding. Rapporten fortæller også, hvordan I retter det.' : 'Butikken kører ikke på Shopify, så vi har kun tjekket forsiden. Gratis og uden binding.') + ' <a href="/privatliv">Privatlivspolitik</a>';
     show(head('Resultat') + tiles + `<ul>${rows}</ul>` + moreLine + mailFoot(nf ? 'Få hele rapporten på mail' : 'Få rapporten på mail', note), true);
   }
   $('quick').addEventListener('submit', async e => {
@@ -438,6 +439,7 @@ document.getElementById('copymail').addEventListener('click', async e => {
     const shop = hostOf($('q-shop').value);
     if (!okShop(shop)) return qfail('Skriv jeres webshops adresse, fx dinbutik.dk.');
     $('q-err').hidden = true; cur = shop; busy($('q-send'), true, null, 'Tjekker …');
+    try { history.replaceState(null, '', '?tjek=' + encodeURIComponent(shop)); } catch (err) {}
     show(head('Tjekker …') + `<ul>${STEPS.map((t, i) => row(i, 's', '', '', t, '')).join('')}</ul>`, true);
     const marks = [...res.querySelectorAll('.mark.s')];
     const tick = setInterval(() => { const m = marks.find(x => !x.classList.contains('d')); if (m && m !== marks.at(-1)) m.classList.add('d'); }, 1400);
@@ -450,6 +452,8 @@ document.getElementById('copymail').addEventListener('click', async e => {
     if (/Skriv jeres webshops adresse/.test(d.error || '')) { res.classList.remove('live'); return qfail(d.error); }
     show(head('') + `<ul>${row(0, 'w', '!', '', esc(d.error || SORRY), '')}</ul>` + mailFoot('Få rapporten på mail:', 'Gratis og uden binding. I får den inden for 2 hverdage.'), true);
   });
+  const pre = new URLSearchParams(location.search).get('tjek');
+  if (pre && okShop(hostOf(pre))) { $('q-shop').value = hostOf(pre); $('quick').requestSubmit ? $('quick').requestSubmit() : $('q-send').click(); }
   async function report(e) {
     e.preventDefault();
     const mail = $('r-mail').value.trim();
