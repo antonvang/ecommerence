@@ -19,7 +19,8 @@ Saadan goer du
     coins i minutter/timer - ikke sekunder.
  3. Aabn wallets.txt i Notesblok. Skriv en wallet pr. linje:  ADRESSE  navn
  4. Dobbeltklik START_COPYBOT.bat og vaelg:
-      1 = Backtest (tager 10-40 min foerste gang, saa er data gemt)
+      1 = Backtest (foerste gang: op til en nat paa den gratis server,
+          minutter med en Helius-noegle. Data gemmes bagefter)
       2 = Paper trading live i 1-2 uger (lad PC'en koere)
       3 = Dashboard for backtesten
       4 = Rapport over paper trading
@@ -39,3 +40,4 @@ Hurtigere og mere stabilt (gratis)
   noegle paa helius.dev og skriv i config.json:
     "rpc_url": "https://mainnet.helius-rpc.com/?api-key=DIN-NOEGLE",
     "rpc_requests_per_second": 8,
+  Saa henter backtesten kun wallettens egne handler (ingen spam) og tager minutter.

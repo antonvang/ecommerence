@@ -10,7 +10,9 @@
 862TYSvRYoiHAK3F3WwTRYAfuGiQaGdxedN9AGvRGWo2  Wugi       # +739 SOL, 67 handler, 93 %
 DjM7Tu7whh6P3pGVBfDzwXAx2zaw51GJWrJE3PwtuN7s  LUKEY      # +710 SOL, 127 handler, 80 %
 4fZFcK8ms3bFMpo1ACzEUz8bH741fQW4zhAMGd5yZMHu  Rilsio     # +655 SOL, 342 handler, 51 %
-4BdKaxN8G6ka4GYtQQWk4G4dZRUTX2vQH9GcXdBREFUk  Jijo       # +517 SOL, 461 handler, 56 %
+# 4BdKaxN8G6ka4GYtQQWk4G4dZRUTX2vQH9GcXdBREFUk  Jijo       # +517 SOL, 461 handler, 56 %
+#   ^ Jijo slået fra 15.10: ca. 60.000 transaktioner om dagen (andres handler i coins, Jijo har lavet).
+#     Kan ikke følges med en gratis RPC - hverken i backtest eller paper.
 G6fUXjMKPJzCY1rveAE6Qm7wy5U3vZgKDJmN1VPAdiZC  clukz      # +474 SOL, 321 handler, 45 %
 A3W8psibkTUvjxs4LRscbnjux6TFDXdvD4m4GsGpQ2KJ  Numer0     # +323 SOL, 229 handler, 55 %
 8nqtxpFpuXwfXG4pBLsDkkuMMPK9FjSkBMCn542HiM3v  dov        # +321 SOL, 432 handler, 47 %

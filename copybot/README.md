@@ -27,7 +27,9 @@ Prisregler, der holder tallene ærlige:
 
 | Nøgle | Standard | Betydning |
 |---|---|---|
-| `rpc_url` | offentlig | Solana RPC. En gratis Helius-nøgle er langt hurtigere. |
+| `rpc_url` | offentlig | Solana RPC. En gratis Helius-nøgle er langt hurtigere: backtesten bruger så `getTransactionsForAddress` og tager minutter i stedet for timer. |
+| `rpc_requests_per_second` | 1.5 | Den offentlige RPC giver 429-fejl over ca. 1,5 kald/sek. Med Helius: 8. |
+| `paper.rpc_url` | tom | RPC til paper trading. Tom + offentlig `rpc_url` = PublicNode (gratis, hurtig, men kun ca. 1 dags historik, hvilket er nok live). |
 | `start_balance_usd` | 50 | Startbeløb (falske penge) |
 | `position_pct` | 20 | Procent af kontoen pr. handel |
 | `max_open_positions` | 4 | Højst så mange åbne handler ad gangen |
@@ -48,6 +50,7 @@ Prisregler, der holder tallene ærlige:
 | `fees.mev_slippage_pct` | 0.5 | Ekstra tab til sandwich-bots og slippage-tolerance |
 | `fees.network_fee_sol` | 0.0015 | Priority fee og Jito-tip pr. transaktion |
 | `backtest.copy_delay_seconds` | 10 | Antaget forsinkelse i backtest |
+| `backtest.max_tx_per_wallet` | 15000 | Højst så mange transaktioner pr. wallet. Mange KOL-wallets får ~1.000 spam-transaktioner om dagen (andres handler i coins, de selv har lavet), så 14 dage kan være 10.000+. På den offentlige RPC tager det 1 sek pr. transaktion; første kørsel kan derfor tage en hel nat. |
 
 ## Kommandoer
 
@@ -60,6 +63,8 @@ python -m unittest discover -s tests
 ```
 
 ## Begrænsninger
+
+- Wallets med mange tusinde transaktioner om dagen (fx coin-skabere) kan ikke følges på en gratis RPC. Botten siger til i backtesten, hvis loftet nås.
 
 - **Backtesten er for optimistisk**, når wallets kommer fra en leaderboard, fordi de er valgt efter at have vundet i perioden. Paper trading på nye dage er den rigtige test.
 - Minut-candles skjuler udsving inden for minuttet. Stop-loss i backtesten rammer derfor lidt for pænt.

@@ -137,7 +137,7 @@ def build_state(s):
         })
 
     last6 = [1 if p > 0 else 0 for p in by_wallet.get(active, [])[-6:]] if active else []
-    feed = [dict(r) for r in s.q("SELECT ts, kind, wallet, text, pnl FROM events WHERE kind NOT IN ('start') "
+    feed = [dict(r) for r in s.q("SELECT ts, kind, wallet, text, pnl FROM events WHERE kind NOT IN ('start', 'skip') "
                                   "ORDER BY id DESC LIMIT 60")]
     lat = s.get("latency", [])
     hb = s.get("heartbeat")

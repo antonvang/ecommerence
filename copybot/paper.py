@@ -12,13 +12,21 @@ from solana_rpc import RPC
 from store import Store
 from swaps import parse_swaps
 
+PUBLICNODE = "https://solana-rpc.publicnode.com"
+
 
 def run_paper(cfg, wallets, root, log=print):
     p = cfg["paper"]
     store = Store(os.path.join(root, "paper.db"))
     store.set("mode", "PAPER")
     market = LiveMarket(log=log)
-    rpc = RPC(cfg["rpc_url"], cfg["rpc_requests_per_second"], log=log)
+    url, rps = cfg["rpc_url"], cfg["rpc_requests_per_second"]
+    if p.get("rpc_url"):
+        url, rps = p["rpc_url"], p.get("rpc_requests_per_second") or rps
+    elif "api.mainnet-beta.solana.com" in url:
+        url, rps = PUBLICNODE, 8  # live kræver kun nye data: PublicNode er gratis og langt hurtigere end Solanas egen
+    log(f"Paper RPC: {url.split('?')[0]} ({rps}/sek)")
+    rpc = RPC(url, rps, log=log)
     eng = Engine(cfg, store, market, wallets, live=True, quiet=False, log=log)
     eng.start(int(time.time()))
 
