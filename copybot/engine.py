@@ -147,10 +147,12 @@ class Engine:
 
     def _reject(self, sw, q, size):
         c = self.cfg
-        if q is None:
-            return "ingen prisdata"
         if sw.quote_usd < c["min_leader_buy_usd"]:
             return "lille køb"
+        if q is None:
+            if sw.reserve_usd and 2 * sw.reserve_usd < c["min_liquidity_usd"]:
+                return "lav likviditet"  # backtesten henter ikke priser for coins, der alligevel springes over
+            return "ingen prisdata"
         r = q.reserve_usd
         if r is None:
             return "ukendt likviditet" if c["min_liquidity_usd"] > 0 else None

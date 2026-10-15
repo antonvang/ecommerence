@@ -20,6 +20,15 @@ from swaps import WSOL, parse_swaps
 
 
 def fetch_wallet_swaps(rpc, wallet, label, cutoff, max_tx, sol_usd, log):
+    txs = rpc.history(wallet, cutoff)
+    if txs is not None:
+        swaps = []
+        for tx in txs:
+            try:
+                swaps += parse_swaps(tx, wallet, sol_usd)
+            except Exception as e:
+                log(f"    sprang {((tx.get('transaction') or {}).get('signatures') or ['?'])[0][:10]}... over: {e}")
+        return swaps, cutoff, len(txs)
     sigs, before = [], None
     done = False
     while len(sigs) < max_tx and not done:
@@ -144,7 +153,7 @@ def run_backtest(cfg, wallets, root, days=None, sweep=True, log=print):
         coverage[w["addr"]] = frm
         buys = sum(1 for s in swaps if s.side == "buy")
         days_cov = (now - frm) / 86400
-        note = f"  (loftet på {n} transaktioner nået: dækker kun {days_cov:.1f} dage)" if n >= b["max_tx_per_wallet"] else ""
+        note = f"  (loftet på {n} transaktioner nået: dækker kun {days_cov:.1f} dage)" if n >= b["max_tx_per_wallet"] and frm > cutoff else ""
         log(f"    @{w['label']}: {n} transaktioner, {buys} køb, {len(swaps) - buys} salg{note}")
         all_swaps += swaps
     if not all_swaps:

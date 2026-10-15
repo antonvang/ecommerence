@@ -2,7 +2,7 @@
   "_hjaelp": "Forklaring af hver indstilling staar i README.md. Slet en linje for at bruge standardvaerdien.",
 
   "rpc_url": "https://api.mainnet-beta.solana.com",
-  "rpc_requests_per_second": 3,
+  "rpc_requests_per_second": 1,
 
   "start_balance_usd": 50,
   "position_pct": 20,

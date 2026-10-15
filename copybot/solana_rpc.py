@@ -1,11 +1,15 @@
 """Minimal Solana JSON-RPC-klient (læser kun, sender aldrig transaktioner)."""
 from __future__ import annotations
 
+import re
+
 from net import DiskCache, Throttle, http_json
 
 
 class RPCError(Exception):
-    pass
+    def __init__(self, msg, code=None):
+        super().__init__(msg)
+        self.code = code
 
 
 class RPC:
@@ -14,12 +18,15 @@ class RPC:
         self.th = Throttle(1.0 / max(requests_per_second, 0.1))
         self.cache = DiskCache(cache_dir)
         self.log = log
+        self.tx_version = 1  # Solana har version 0 og 1 transaktioner; nyere versioner fanges i transaction()
+        self.has_history = "helius" in url  # Helius' getTransactionsForAddress: hele transaktioner, 1000 pr. kald
 
     def call(self, method, params):
         self.th.wait()
         r = http_json(self.url, {"jsonrpc": "2.0", "id": 1, "method": method, "params": params}, log=self.log)
         if "error" in r:
-            raise RPCError(f"{method}: {r['error']}")
+            err = r["error"]
+            raise RPCError(f"{method}: {err}", err.get("code") if isinstance(err, dict) else None)
         return r.get("result")
 
     def signatures(self, address, before=None, until=None, limit=1000):
@@ -34,8 +41,48 @@ class RPC:
         tx = self.cache.get("tx:" + signature)
         if tx is not None:
             return tx
-        tx = self.call("getTransaction", [signature, {
-            "encoding": "jsonParsed", "maxSupportedTransactionVersion": 0, "commitment": "confirmed"}])
+        try:
+            tx = self._get_tx(signature)
+        except RPCError as e:
+            m = re.search(r'"maxSupportedTransactionVersion": (\d+)', str(e))
+            if e.code != -32015 or not m or int(m.group(1)) <= self.tx_version:
+                raise
+            self.tx_version = int(m.group(1))  # ny transaktionsversion på kæden: spørg efter den fremover
+            tx = self._get_tx(signature)
         if tx is not None:
             self.cache.put("tx:" + signature, tx)
         return tx
+
+    def history(self, address, t0, t1=None):
+        """Alle lykkedes transaktioner for en adresse i [t0, t1), nyeste først. None hvis RPC'en ikke kan det.
+
+        Meget hurtigere end signatures() + transaction() for wallets, der får tusindvis af spam-transaktioner.
+        """
+        if not self.has_history:
+            return None
+        bt = {"gte": int(t0)}
+        if t1:
+            bt["lt"] = int(t1)
+        out, token = [], None
+        while True:
+            opts = {"transactionDetails": "full", "encoding": "jsonParsed", "maxSupportedTransactionVersion": self.tx_version,
+                    "sortOrder": "desc", "limit": 1000, "commitment": "confirmed",
+                    "filters": {"blockTime": bt, "status": "succeeded"}}
+            if token:
+                opts["paginationToken"] = token
+            try:
+                r = self.call("getTransactionsForAddress", [address, opts]) or {}
+            except RPCError as e:
+                if out:
+                    raise
+                self.has_history = False
+                self.log(f"  getTransactionsForAddress virker ikke her ({e}) · bruger den langsomme metode")
+                return None
+            out += r.get("data") or []
+            token = r.get("paginationToken")
+            if not token or not r.get("data"):
+                return out
+
+    def _get_tx(self, signature):
+        return self.call("getTransaction", [signature, {
+            "encoding": "jsonParsed", "maxSupportedTransactionVersion": self.tx_version, "commitment": "confirmed"}])
