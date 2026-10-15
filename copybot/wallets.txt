@@ -1,10 +1,16 @@
 # Wallets der skal kopieres. Én pr. linje: ADRESSE  navn
 # Rækkefølgen er din "leaderboard" (#1 øverst).
-# Find dem fx på kolscan.io eller gmgn.ai (Solana-leaderboards). Vælg wallets der har
-# tjent penge over 30 dage, ikke kun i går, og som holder deres coins i minutter/timer.
 #
-# Sådan ser en linje ud (uden # foran):
-#   <wallet-adresse på 32-44 tegn>  kai_blitz
-#
-# Sæt dine wallets ind herunder:
+# Udvalgt fra kolscan.io's månedlige top 48 (hentet 15.10.2026), sorteret efter månedsprofit.
+# Kun wallets med 30-600 handler/måned og mindst 45 % vindere er med. De andre 40 laver
+# 1.000-5.000 handler om måneden (sniper-bots) og kan ikke kopieres med overskud.
+# Månedsprofit, handler og win rate står i kommentaren.
 
+4Be9CvxqHW6BYiRAxW9Q3xu1ycTMWaL5z8NX4HR3ha7t  Mitch      # +1289 SOL, 122 handler, 61 %
+862TYSvRYoiHAK3F3WwTRYAfuGiQaGdxedN9AGvRGWo2  Wugi       # +739 SOL, 67 handler, 93 %
+DjM7Tu7whh6P3pGVBfDzwXAx2zaw51GJWrJE3PwtuN7s  LUKEY      # +710 SOL, 127 handler, 80 %
+4fZFcK8ms3bFMpo1ACzEUz8bH741fQW4zhAMGd5yZMHu  Rilsio     # +655 SOL, 342 handler, 51 %
+4BdKaxN8G6ka4GYtQQWk4G4dZRUTX2vQH9GcXdBREFUk  Jijo       # +517 SOL, 461 handler, 56 %
+G6fUXjMKPJzCY1rveAE6Qm7wy5U3vZgKDJmN1VPAdiZC  clukz      # +474 SOL, 321 handler, 45 %
+A3W8psibkTUvjxs4LRscbnjux6TFDXdvD4m4GsGpQ2KJ  Numer0     # +323 SOL, 229 handler, 55 %
+8nqtxpFpuXwfXG4pBLsDkkuMMPK9FjSkBMCn542HiM3v  dov        # +321 SOL, 432 handler, 47 %
