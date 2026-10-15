@@ -62,10 +62,13 @@ def merge(base, over):
 
 
 def load_config(path):
-    if not os.path.exists(path):
-        return copy.deepcopy(DEFAULTS)
-    with open(path, encoding="utf-8-sig") as f:
-        return merge(DEFAULTS, json.load(f))
+    cfg = copy.deepcopy(DEFAULTS)
+    # config.local.json (ignoreres af git) til private ting som en API-nøgle; overskriver config.json
+    for p in (path, os.path.join(os.path.dirname(path) or ".", "config.local.json")):
+        if os.path.exists(p):
+            with open(p, encoding="utf-8-sig") as f:
+                cfg = merge(cfg, json.load(f))
+    return cfg
 
 
 def load_wallets(path):

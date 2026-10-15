@@ -38,6 +38,8 @@
   },
 
   "paper": {
+    "rpc_url": "https://solana-rpc.publicnode.com",
+    "rpc_requests_per_second": 8,
     "poll_seconds": 10,
     "check_seconds": 20
   },
