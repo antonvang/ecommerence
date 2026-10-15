@@ -42,7 +42,7 @@ DEFAULTS = {
     "snapshot_seconds": 300,
     "fees": {"dex_pct": 0.5, "bot_pct": 1.0, "mev_slippage_pct": 0.5, "network_fee_sol": 0.0015},
     "backtest": {"days": 14, "max_tx_per_wallet": 600, "copy_delay_seconds": 10},
-    "paper": {"poll_seconds": 10, "check_seconds": 20, "max_tx_per_poll": 50, "rpc_url": "", "rpc_requests_per_second": 0},
+    "paper": {"poll_seconds": 10, "check_seconds": 20, "max_tx_per_poll": 400, "rpc_url": "", "rpc_requests_per_second": 0},
     "dashboard_port": 8765,
 }
 B58 = re.compile(r"^[1-9A-HJ-NP-Za-km-z]{32,44}$")

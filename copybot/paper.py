@@ -57,9 +57,10 @@ def run_paper(cfg, wallets, root, log=print):
                 if not cursors.get(a):
                     cursors[a] = new[0]["signature"] if new else None
                     continue
-                if len(new) > p["max_tx_per_poll"]:
-                    log(f"  @{w['label']} lavede {len(new)} transaktioner siden sidst - tager kun de {p['max_tx_per_poll']} nyeste")
-                    new = new[: p["max_tx_per_poll"]]
+                ok = [i for i, s in enumerate(new) if s.get("err") is None]  # fejlede transaktioner hentes aldrig
+                if len(ok) > p["max_tx_per_poll"]:
+                    log(f"  @{w['label']} lavede {len(ok)} transaktioner siden sidst - tager kun de {p['max_tx_per_poll']} nyeste")
+                    new = new[: ok[p["max_tx_per_poll"]]]
                 for s in reversed(new):  # ældste først
                     sig = s["signature"]
                     if s.get("err") is None and not store.one("SELECT 1 FROM seen WHERE sig=?", sig):
