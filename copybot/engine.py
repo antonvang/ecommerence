@@ -162,9 +162,16 @@ class Engine:
             return "for høj slippage"
         return None
 
+    def _signal(self, t, sw, sym, status, copied=0):
+        """Radar: hver handel fra hver wallet, og hvad botten gjorde ved den."""
+        self.s.x("INSERT INTO signals(ts,wallet,side,mint,symbol,usd,status,copied) VALUES(?,?,?,?,?,?,?,?)",
+                 t, sw.wallet, sw.side, sw.mint, sym, sw.quote_usd, status, copied)
+
     def _buy(self, sw):
         t = self._now(sw.ts)
-        if self._open_rows(sw.wallet, sw.mint):
+        held = self._open_rows(sw.wallet, sw.mint)
+        if held:
+            self._signal(t, sw, held[0]["symbol"] or sw.mint[:4], "køber mere · vi holder")
             return  # walletten køber mere af noget, vi allerede har
         q = self.m.quote(sw.mint, t, sw)
         active = self.active
@@ -178,20 +185,25 @@ class Engine:
             self.s.set("skips", sk)
             if sw.wallet == active:
                 self._event(t, "skip", sw.wallet, f"{lbl} købte ${sym} · springer over ({why})")
+            self._signal(t, sw, sym, why)
             return
         spot = max(q.price, sw.price_usd)  # vi kan ikke købe billigere end den, vi kopierer
         self._open("shadow", sw, t, spot, q, self.cfg["shadow_trade_usd"])
         if sw.wallet != active:
+            self._signal(t, sw, sym, "måles i shadow")
             return
         n_open = self.s.one("SELECT COUNT(*) FROM positions WHERE book='port' AND closed_ts IS NULL")[0]
         cash = self.s.get("cash")
         size = min(cash, port_size)
         if n_open >= self.cfg["max_open_positions"]:
             self._event(t, "skip", sw.wallet, f"{lbl} købte ${sym} · springer over (max {n_open} positioner)")
+            self._signal(t, sw, sym, f"max {n_open} positioner")
             return
         if size < self.cfg["min_trade_usd"]:
             self._event(t, "skip", sw.wallet, f"{lbl} købte ${sym} · springer over (ikke nok kontanter)")
+            self._signal(t, sw, sym, "ikke nok kontanter")
             return
+        self._signal(t, sw, sym, f"vi køber for ${size:.2f}", copied=1)
         self._open("port", sw, t, spot, q, size)
         self.s.set("cash", cash - size)
         self._event(t, "copy", sw.wallet, f"{lbl} købte ${sym} · vi køber for ${size:.2f}")
@@ -212,9 +224,12 @@ class Engine:
 
     def _sell(self, sw):
         rows = self._open_rows(sw.wallet, sw.mint)
-        if not rows:
-            return
         t = self._now(sw.ts)
+        if not rows:
+            self._signal(t, sw, sw.mint[:4], "vi har den ikke")
+            return
+        port = any(r["book"] == "port" for r in rows)
+        self._signal(t, sw, rows[0]["symbol"] or sw.mint[:4], "vi sælger" if port else "shadow sælger", copied=int(port))
         left = sw.leader_left
         frac = 1.0 if left <= sw.tokens * 0.02 else sw.tokens / (sw.tokens + left)
         q = self.m.quote(sw.mint, t, sw)

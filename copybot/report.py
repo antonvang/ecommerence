@@ -161,6 +161,15 @@ def build_state(s):
         "stats": {**st, "max_dd": max_drawdown([p[1] for p in eq_pts])},
         "shadow_all": shadow_all,
         "verdict": verdict(st, mode == "BACKTEST"),
+        "radar": [{"ts": r["ts"], "label": label.get(r["wallet"], r["wallet"][:6]), "color": color.get(r["wallet"], "#3a4466"),
+                   "initials": initials(label.get(r["wallet"], "??")), "side": r["side"], "symbol": r["symbol"],
+                   "usd": r["usd"], "status": r["status"], "copied": r["copied"], "following": r["wallet"] == active}
+                  for r in s.q("SELECT * FROM signals ORDER BY id DESC LIMIT 40")],
+        "pulse": {"tx_seen": s.one("SELECT COUNT(*) FROM seen")[0], "heartbeat": hb,
+                  "signals": s.one("SELECT COUNT(*) FROM signals")[0],
+                  "signals_24h": s.one("SELECT COUNT(*) FROM signals WHERE ts >= ?", int(time.time()) - 86400)[0],
+                  "last_signal": (s.one("SELECT MAX(ts) FROM signals") or [None])[0],
+                  "wallets": len(wallets), "open": len(open_rows)},
         "last_error": s.get("last_error"),
     }
 

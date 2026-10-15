@@ -17,6 +17,8 @@ CREATE INDEX IF NOT EXISTS ix_pos_open ON positions(closed_ts, book);
 CREATE TABLE IF NOT EXISTS events (id INTEGER PRIMARY KEY AUTOINCREMENT, ts INTEGER, kind TEXT, wallet TEXT, text TEXT, pnl REAL);
 CREATE TABLE IF NOT EXISTS equity (ts INTEGER, equity REAL, wallet TEXT);
 CREATE TABLE IF NOT EXISTS seen (sig TEXT PRIMARY KEY);
+CREATE TABLE IF NOT EXISTS signals (id INTEGER PRIMARY KEY AUTOINCREMENT, ts INTEGER, wallet TEXT, side TEXT, mint TEXT,
+  symbol TEXT, usd REAL, status TEXT, copied INTEGER);
 """
 
 
