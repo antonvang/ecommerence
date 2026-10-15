@@ -1,0 +1,41 @@
+CopyBot - kopier memecoin-wallets paa Solana (KUN PAPER TRADING)
+=================================================================
+
+Hvad den goer
+  Foelger de wallets du skriver i wallets.txt. Naar en af dem koeber en memecoin,
+  "koeber" botten ogsaa - med falske penge - til den pris, vi realistisk ville faa:
+  efter forsinkelse, slippage og gebyrer. Den fyrer en wallet efter 3 tab i traek
+  (videoen bruger 2) og skifter til den wallet, botten har maalt som bedst.
+  Botten sender ALDRIG noget til blockchainen og skal ikke bruge din private noegle.
+
+Formaal
+  At finde ud af, OM det her kan tjene penge, foer du saetter rigtige penge i.
+
+Saadan goer du
+ 1. Installer Python fra https://www.python.org/downloads/
+    (saet flueben i "Add python.exe to PATH").
+ 2. Find 5-10 wallets paa kolscan.io eller gmgn.ai (Solana-leaderboards).
+    Vaelg wallets med plus over 30 dage, ikke kun i gaar, og som holder
+    coins i minutter/timer - ikke sekunder.
+ 3. Aabn wallets.txt i Notesblok. Skriv en wallet pr. linje:  ADRESSE  navn
+ 4. Dobbeltklik START_COPYBOT.bat og vaelg:
+      1 = Backtest (tager 10-40 min foerste gang, saa er data gemt)
+      2 = Paper trading live i 1-2 uger (lad PC'en koere)
+      3 = Dashboard for backtesten
+      4 = Rapport over paper trading
+ 5. Send tallene (eller et screenshot af dashboardet) til Claude.
+
+Saadan laeser du svaret
+  IKKE PROFITABEL      -> stop. Saet ikke penge i.
+  USIKKER              -> lille plus, men det haenger paa faa heldige handler.
+  LOVENDE I BACKTEST   -> koer paper trading 1-2 uger (valg 2).
+  LOVENDE (paper)      -> foerst nu giver det mening at tale om rigtige penge.
+
+  Backtesten er for optimistisk, fordi wallets fra en leaderboard er valgt, efter
+  at de vandt. Kun paper trading paa nye dage giver det aerlige svar.
+
+Hurtigere og mere stabilt (gratis)
+  Den offentlige Solana-server er langsom og afviser mange kald. Opret en gratis
+  noegle paa helius.dev og skriv i config.json:
+    "rpc_url": "https://mainnet.helius-rpc.com/?api-key=DIN-NOEGLE",
+    "rpc_requests_per_second": 8,

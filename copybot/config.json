@@ -1,0 +1,45 @@
+{
+  "_hjaelp": "Forklaring af hver indstilling staar i README.md. Slet en linje for at bruge standardvaerdien.",
+
+  "rpc_url": "https://api.mainnet-beta.solana.com",
+  "rpc_requests_per_second": 3,
+
+  "start_balance_usd": 50,
+  "position_pct": 20,
+  "max_open_positions": 4,
+  "shadow_trade_usd": 10,
+
+  "fire_after_losses": 3,
+  "next_trader": "best_shadow",
+  "warmup_hours": 48,
+  "rank_window_days": 7,
+  "min_shadow_trades": 5,
+  "min_median_hold_minutes": 5,
+  "require_positive_shadow": true,
+
+  "min_leader_buy_usd": 50,
+  "min_liquidity_usd": 20000,
+  "max_price_impact_pct": 3,
+  "stop_loss_pct": 40,
+  "max_hold_hours": 24,
+
+  "fees": {
+    "dex_pct": 0.5,
+    "bot_pct": 1.0,
+    "mev_slippage_pct": 0.5,
+    "network_fee_sol": 0.0015
+  },
+
+  "backtest": {
+    "days": 14,
+    "max_tx_per_wallet": 600,
+    "copy_delay_seconds": 10
+  },
+
+  "paper": {
+    "poll_seconds": 10,
+    "check_seconds": 20
+  },
+
+  "dashboard_port": 8765
+}

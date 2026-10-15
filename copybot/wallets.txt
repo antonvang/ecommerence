@@ -1,0 +1,10 @@
+# Wallets der skal kopieres. Én pr. linje: ADRESSE  navn
+# Rækkefølgen er din "leaderboard" (#1 øverst).
+# Find dem fx på kolscan.io eller gmgn.ai (Solana-leaderboards). Vælg wallets der har
+# tjent penge over 30 dage, ikke kun i går, og som holder deres coins i minutter/timer.
+#
+# Sådan ser en linje ud (uden # foran):
+#   <wallet-adresse på 32-44 tegn>  kai_blitz
+#
+# Sæt dine wallets ind herunder:
+
