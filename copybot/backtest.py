@@ -29,19 +29,22 @@ def fetch_wallet_swaps(rpc, wallet, label, cutoff, max_tx, sol_usd, log):
             except Exception as e:
                 log(f"    sprang {((tx.get('transaction') or {}).get('signatures') or ['?'])[0][:10]}... over: {e}")
         return swaps, cutoff, len(txs)
-    sigs, before = [], None
+    ok, before = [], None  # loftet tæller kun lykkedes transaktioner: fejlede hentes aldrig
     done = False
-    while len(sigs) < max_tx and not done:
-        batch = rpc.signatures(wallet, before=before, limit=min(1000, max_tx - len(sigs)))
+    while len(ok) < max_tx and not done:
+        batch = rpc.signatures(wallet, before=before, limit=1000)
         if not batch:
             break
         for s in batch:
             if (s.get("blockTime") or 0) < cutoff:
                 done = True
                 break
-            sigs.append(s)
+            if s.get("err") is None:
+                ok.append(s)
+                if len(ok) >= max_tx:
+                    break
         before = batch[-1]["signature"]
-    ok = [s for s in sigs if s.get("err") is None]
+    sigs = ok
     swaps = []
     for k, s in enumerate(ok, 1):
         if k % 50 == 0 or k == len(ok):

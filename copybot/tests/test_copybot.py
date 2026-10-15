@@ -288,3 +288,17 @@ class Loading(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class RouterReserve(unittest.TestCase):
+    def test_route_via_other_quote_uses_memecoin_side(self):
+        # wallet betaler 1 SOL til en router; memecoin-poolen er parret med en anden token (ikke SOL)
+        keys = [W, "Router", "BigSolPool", "WalletAta", "PoolMemeVault", "PoolQuoteVault"]
+        pre = [10 * SOL, 1 * SOL, 25000 * SOL, 0, 2_039_280, 2_039_280]
+        post = [9 * SOL - 2_039_280 - 5000, 1 * SOL, 25001 * SOL, 2_039_280, 2_039_280, 2_039_280]
+        t = tx(keys, pre, post,
+               [tb(2, WSOL, "SolUsdcAuth", 25000, 9), tb(4, MINT, "MemePool", 10_000_000), tb(5, "Quote", "MemePool", 500)],
+               [tb(2, WSOL, "SolUsdcAuth", 25001, 9), tb(3, MINT, W, 1_000_000), tb(4, MINT, "MemePool", 9_000_000),
+                tb(5, "Quote", "MemePool", 600)])
+        (s,) = parse_swaps(t, W, lambda ts: 150.0)
+        self.assertAlmostEqual(s.reserve_usd, 9_000_000 * 150.0 / 1_000_000, places=3)  # ikke SOL/USDC-poolens 25.000 SOL

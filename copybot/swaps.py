@@ -60,29 +60,50 @@ def _owned(balances, owner):
     return {b["accountIndex"]: (b["mint"], _amount(b)) for b in balances or [] if b.get("owner") == owner}
 
 
-def _reserve_sol(meta, i, wallet, sol_change):
+def _reserve_sol(meta, keys, i, wallet, mint, sol_change):
     """SOL i poolen efter handlen: den konto, der modtog (købt) eller sendte (solgt) flest SOL.
 
     Dækker WSOL-vaults (Raydium, PumpSwap, Meteora) og pump.funs bonding curve (native SOL).
+    Kontoen skal høre til en pool, der også holder selve memecoinen. Ellers er det fx sidste led i en
+    rute via USDC (en kæmpe SOL/USDC-pool), og så kender vi ikke memecoinens likviditet.
     """
     sign = 1 if sol_change < 0 else -1
     need = 0.5 * abs(sol_change)
     best_d, best_r = 0.0, None
     pre_tb = meta.get("preTokenBalances") or []
     post_tb = meta.get("postTokenBalances") or []
-    pre = {b["accountIndex"]: _amount(b) for b in pre_tb if b["mint"] == WSOL and b.get("owner") != wallet}
-    post = {b["accountIndex"]: _amount(b) for b in post_tb if b["mint"] == WSOL and b.get("owner") != wallet}
+    pools = {b.get("owner") for b in pre_tb + post_tb if b["mint"] == mint and b.get("owner") not in (None, wallet)}
+    pre = {b["accountIndex"]: _amount(b) for b in pre_tb if b["mint"] == WSOL and b.get("owner") in pools}
+    post = {b["accountIndex"]: _amount(b) for b in post_tb if b["mint"] == WSOL and b.get("owner") in pools}
     for idx in set(pre) | set(post):
         d = post.get(idx, 0.0) - pre.get(idx, 0.0)
         if d * sign >= need and abs(d) > best_d:
             best_d, best_r = abs(d), post.get(idx, 0.0)
     token_idx = {b["accountIndex"] for b in pre_tb + post_tb}
     for k, (a, b) in enumerate(zip(meta["preBalances"], meta["postBalances"])):
-        if k == i or k in token_idx:
+        if k == i or k in token_idx or k >= len(keys) or keys[k] not in pools:
             continue
         d = (b - a) / 1e9
         if d * sign >= need and abs(d) > best_d:
             best_d, best_r = abs(d), b / 1e9
+    return best_r or None
+
+
+def _reserve_token_side(meta, wallet, mint, d):
+    """Antal memecoins i poolen efter handlen: den pool-konto, hvis beholdning flyttede sig mest modsat walletten.
+
+    I en x*y=k-pool er de to sider lige meget værd, så tokens * pris = poolens anden side i USD,
+    uanset om den er parret med SOL, USDC eller en tredje token (fx via en router).
+    """
+    pre = {b["accountIndex"]: _amount(b) for b in meta.get("preTokenBalances") or []
+           if b["mint"] == mint and b.get("owner") != wallet}
+    post = {b["accountIndex"]: _amount(b) for b in meta.get("postTokenBalances") or []
+            if b["mint"] == mint and b.get("owner") != wallet}
+    best_d, best_r = 0.0, None
+    for idx in set(pre) | set(post):
+        moved = post.get(idx, 0.0) - pre.get(idx, 0.0)
+        if moved * d < 0 and abs(moved) >= 0.5 * abs(d) and abs(moved) > best_d:
+            best_d, best_r = abs(moved), post.get(idx, 0.0)
     return best_r or None
 
 
@@ -123,12 +144,15 @@ def parse_swaps(tx, wallet, sol_usd: Callable[[int], float]):
     if abs(sol_change) >= MIN_SOL and sol_change * want > 0:
         sp = sol_usd(ts)
         quote_usd = abs(sol_change) * sp
-        r = _reserve_sol(meta, i, wallet, sol_change)
+        r = _reserve_sol(meta, keys, i, wallet, mint, sol_change)
         reserve_usd = r * sp if r else None
     elif abs(stable) >= MIN_STABLE and stable * want > 0:
         quote_usd, reserve_usd = abs(stable), None
     else:
         return []
+    if reserve_usd is None:
+        t = _reserve_token_side(meta, wallet, mint, d)
+        reserve_usd = t * quote_usd / abs(d) if t else None
     left = sum(a for (m, a) in post.values() if m == mint)
     return [Swap(
         sig=tx["transaction"]["signatures"][0], wallet=wallet, ts=int(ts), side=side, mint=mint,

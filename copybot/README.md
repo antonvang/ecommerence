@@ -28,7 +28,7 @@ Prisregler, der holder tallene ærlige:
 | Nøgle | Standard | Betydning |
 |---|---|---|
 | `rpc_url` | offentlig | Solana RPC. En gratis Helius-nøgle er langt hurtigere: backtesten bruger så `getTransactionsForAddress` og tager minutter i stedet for timer. |
-| `rpc_requests_per_second` | 1.5 | Den offentlige RPC giver 429-fejl over ca. 1,5 kald/sek. Med Helius: 8. |
+| `rpc_requests_per_second` | 1 | Den offentlige RPC afviser mange kald (429) allerede ved 1,5 kald/sek, og det gør den langsommere. Med Helius: 8. |
 | `paper.rpc_url` | tom | RPC til paper trading. Tom + offentlig `rpc_url` = PublicNode (gratis, hurtig, men kun ca. 1 dags historik, hvilket er nok live). |
 | `start_balance_usd` | 50 | Startbeløb (falske penge) |
 | `position_pct` | 20 | Procent af kontoen pr. handel |
