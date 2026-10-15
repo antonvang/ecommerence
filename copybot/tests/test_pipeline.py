@@ -115,6 +115,27 @@ class HeliusHistory(unittest.TestCase):
             self.assertFalse(rpc.has_history)
 
 
+class Prefetch(unittest.TestCase):
+    def test_prefetch_spreads_over_servers_and_caches(self):
+        hosts = []
+
+        def http(url, payload=None, **kw):
+            hosts.append(url)
+            return {"result": {"sig": payload["params"][0]}}
+
+        root = tempfile.mkdtemp()
+        try:
+            with mock.patch.object(solana_rpc, "http_json", http), mock.patch.object(net.Throttle, "wait", lambda self: None):
+                rpc = solana_rpc.RPC("https://a", cache_dir=root)
+                rpc.prefetch([f"s{i}" for i in range(40)], [{"url": "https://b", "rps": 1}])
+                self.assertEqual(set(hosts), {"https://a", "https://b"})
+                n = len(hosts)
+                self.assertEqual(rpc.transaction("s7"), {"sig": "s7"})
+                self.assertEqual(len(hosts), n)  # fra cachen
+        finally:
+            shutil.rmtree(root)
+
+
 class TxVersion(unittest.TestCase):
     def test_retries_with_newer_transaction_version(self):
         asked = []

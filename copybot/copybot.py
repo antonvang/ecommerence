@@ -19,7 +19,8 @@ sys.path.insert(0, HERE)
 
 DEFAULTS = {
     "rpc_url": "https://api.mainnet-beta.solana.com",
-    "rpc_requests_per_second": 3,
+    "rpc_requests_per_second": 1,
+    "extra_rpcs": [],  # ekstra gratis RPC'er med fuld historik; backtesten henter fra dem parallelt
     "start_balance_usd": 50,
     "position_pct": 20,
     "max_open_positions": 4,

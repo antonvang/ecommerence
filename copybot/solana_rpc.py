@@ -1,7 +1,9 @@
 """Minimal Solana JSON-RPC-klient (læser kun, sender aldrig transaktioner)."""
 from __future__ import annotations
 
+import queue
 import re
+import threading
 
 from net import DiskCache, Throttle, http_json
 
@@ -82,6 +84,42 @@ class RPC:
             token = r.get("paginationToken")
             if not token or not r.get("data"):
                 return out
+
+    def prefetch(self, signatures, extra=(), log=None):
+        """Henter ikke-cachede transaktioner parallelt fra denne og ekstra RPC'er (hver med sin egen hastighed).
+
+        Fejler et kald, springes det over her; transaction() prøver så igen bagefter.
+        """
+        todo = [sg for sg in signatures if self.cache.get("tx:" + sg) is None]
+        if not todo:
+            return
+        clients = [self] + [RPC(e["url"], e.get("rps", 1), self.cache.folder, log=lambda *a: None) for e in extra]
+        q = queue.Queue()
+        for sg in todo:
+            q.put(sg)
+        done = [0]
+        lock = threading.Lock()
+
+        def work(c):
+            while True:
+                try:
+                    sg = q.get_nowait()
+                except queue.Empty:
+                    return
+                try:
+                    c.transaction(sg)
+                except Exception:
+                    pass
+                with lock:
+                    done[0] += 1
+                    if log and done[0] % 200 == 0:
+                        log(f"    hentet {done[0]}/{len(todo)} (fra {len(clients)} servere)")
+
+        ts = [threading.Thread(target=work, args=(c,), daemon=True) for c in clients]
+        for t in ts:
+            t.start()
+        for t in ts:
+            t.join()
 
     def _get_tx(self, signature):
         return self.call("getTransaction", [signature, {

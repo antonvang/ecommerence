@@ -19,7 +19,7 @@ from store import Store
 from swaps import WSOL, parse_swaps
 
 
-def fetch_wallet_swaps(rpc, wallet, label, cutoff, max_tx, sol_usd, log):
+def fetch_wallet_swaps(rpc, wallet, label, cutoff, max_tx, sol_usd, log, extra_rpcs=()):
     txs = rpc.history(wallet, cutoff)
     if txs is not None:
         swaps = []
@@ -45,6 +45,8 @@ def fetch_wallet_swaps(rpc, wallet, label, cutoff, max_tx, sol_usd, log):
                     break
         before = batch[-1]["signature"]
     sigs = ok
+    if extra_rpcs:
+        rpc.prefetch([s["signature"] for s in ok], extra_rpcs, log)
     swaps = []
     for k, s in enumerate(ok, 1):
         if k % 50 == 0 or k == len(ok):
@@ -152,7 +154,8 @@ def run_backtest(cfg, wallets, root, days=None, sweep=True, log=print):
     log(f"2/4  Henter walletternes handler (op til {b['max_tx_per_wallet']} transaktioner pr. wallet) ...")
     all_swaps, coverage = [], {}
     for w in wallets:
-        swaps, frm, n = fetch_wallet_swaps(rpc, w["addr"], w["label"], cutoff, b["max_tx_per_wallet"], market0.sol_usd, log)
+        swaps, frm, n = fetch_wallet_swaps(rpc, w["addr"], w["label"], cutoff, b["max_tx_per_wallet"], market0.sol_usd, log,
+                                           cfg.get("extra_rpcs") or ())
         coverage[w["addr"]] = frm
         buys = sum(1 for s in swaps if s.side == "buy")
         days_cov = (now - frm) / 86400
