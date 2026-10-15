@@ -136,8 +136,16 @@ def parse_swaps(tx, wallet, sol_usd: Callable[[int], float]):
     sol_change = native + delta.pop(WSOL, 0.0) + rent
     stable = sum(delta.pop(m) for m in list(delta) if m in STABLES)
     tokens = {m: d for m, d in delta.items() if abs(d) > 0}
+    sig = tx["transaction"]["signatures"][0]
+    gone = [m for m, d in tokens.items() if d < 0]
+    if len(gone) == 1 and (len(tokens) == 2 or (len(tokens) == 1 and abs(sol_change) < MIN_SOL and abs(stable) < MIN_STABLE)):
+        # walletten kommer af med en coin uden at få SOL/USDC: solgt for en anden token, eller flyttet til en
+        # anden wallet. Prisen kender vi ikke her (0 = brug markedsprisen), men det er et exit, vi skal følge.
+        mint = gone[0]
+        return [Swap(sig=sig, wallet=wallet, ts=int(ts), side="sell", mint=mint, tokens=-tokens[mint], quote_usd=0.0,
+                     price_usd=0.0, leader_left=sum(a for (m, a) in post.values() if m == mint), reserve_usd=None)]
     if len(tokens) != 1:
-        return []  # ingen handel, eller token-til-token som vi ikke kopierer
+        return []  # ingen handel, eller køb betalt med en anden token, som vi ikke kopierer
     mint, d = next(iter(tokens.items()))
     side = "buy" if d > 0 else "sell"
     want = -1 if side == "buy" else 1
@@ -155,6 +163,6 @@ def parse_swaps(tx, wallet, sol_usd: Callable[[int], float]):
         reserve_usd = t * quote_usd / abs(d) if t else None
     left = sum(a for (m, a) in post.values() if m == mint)
     return [Swap(
-        sig=tx["transaction"]["signatures"][0], wallet=wallet, ts=int(ts), side=side, mint=mint,
+        sig=sig, wallet=wallet, ts=int(ts), side=side, mint=mint,
         tokens=abs(d), quote_usd=quote_usd, price_usd=quote_usd / abs(d), leader_left=left,
         reserve_usd=reserve_usd)]

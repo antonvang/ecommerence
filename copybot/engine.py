@@ -233,13 +233,16 @@ class Engine:
         left = sw.leader_left
         frac = 1.0 if left <= sw.tokens * 0.02 else sw.tokens / (sw.tokens + left)
         q = self.m.quote(sw.mint, t, sw)
-        spot = min(q.price, sw.price_usd) if q else sw.price_usd  # vi kan ikke sælge dyrere end den, vi kopierer
+        if sw.price_usd > 0:
+            spot = min(q.price, sw.price_usd) if q else sw.price_usd  # vi kan ikke sælge dyrere end den, vi kopierer
+        else:  # solgt for en anden token / flyttet: wallettens pris er ukendt, så vi bruger markedsprisen
+            spot = q.price if q else rows[0]["last_price"]
         r = (q.reserve_usd if q else None) or sw.reserve_usd
         for p in rows:
             n = p["tokens_left"] * frac
             if p["tokens_left"] - n < 0.05 * p["tokens"]:
                 n = p["tokens_left"]
-            self._exit(p, n, spot, r, t, "leader", leader_price=sw.price_usd)
+            self._exit(p, n, spot, r, t, "leader", leader_price=sw.price_usd if sw.price_usd > 0 else None)
 
     def _exit(self, p, n, spot, r, t, reason, leader_price=None):
         r = r if r and r > 0 else self.cfg["fallback_reserve_usd"]

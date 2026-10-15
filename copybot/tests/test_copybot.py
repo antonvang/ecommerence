@@ -88,11 +88,18 @@ class SwapParsing(unittest.TestCase):
         self.assertEqual(parse_swaps(plain, W, self.sol), [])
         self.assertEqual(parse_swaps(pumpfun_buy(), "SomeoneElse", self.sol), [])
 
-    def test_token_to_token_ignored(self):
+    def test_token_to_token_is_an_exit_not_a_buy(self):
+        # OtherMint byttes til MINT: walletten er ude af OtherMint (pris ukendt), men vi kopierer ikke købet
         t = pumpfun_buy()
         t["meta"]["preTokenBalances"].append(tb(5, "OtherMint", W, 10))
         t["meta"]["postTokenBalances"].append(tb(5, "OtherMint", W, 0))
-        self.assertEqual(parse_swaps(t, W, self.sol), [])
+        (s,) = parse_swaps(t, W, self.sol)
+        self.assertEqual((s.side, s.mint, s.tokens, s.price_usd, s.leader_left), ("sell", "OtherMint", 10, 0.0, 0.0))
+
+    def test_transfer_out_is_an_exit(self):
+        t = tx([W, "Other"], [5 * SOL, 0], [5 * SOL - 5000, 0], [tb(1, MINT, W, 1000)], [tb(1, MINT, W, 0)])
+        (s,) = parse_swaps(t, W, self.sol)
+        self.assertEqual((s.side, s.mint, s.price_usd), ("sell", MINT, 0.0))
 
 
 class FakeMarket:
