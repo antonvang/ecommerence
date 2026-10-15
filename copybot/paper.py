@@ -15,7 +15,27 @@ from swaps import parse_swaps
 PUBLICNODE = "https://solana-rpc.publicnode.com"
 
 
+def single_instance(root):
+    """Lås, så der kun kører én paper-bot ad gangen (fx autostart + START_COPYBOT.bat). Slippes, når processen stopper."""
+    f = open(os.path.join(root, "paper.lock"), "a+")
+    try:
+        if os.name == "nt":
+            import msvcrt
+            f.seek(0)
+            msvcrt.locking(f.fileno(), msvcrt.LK_NBLCK, 1)
+        else:
+            import fcntl
+            fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError:
+        f.close()
+        return None
+    return f
+
+
 def run_paper(cfg, wallets, root, log=print):
+    lock = single_instance(root)
+    if lock is None:
+        raise SystemExit(f"Paper trading kører allerede. Se http://localhost:{cfg['dashboard_port']}")
     p = cfg["paper"]
     store = Store(os.path.join(root, "paper.db"))
     store.set("mode", "PAPER")
