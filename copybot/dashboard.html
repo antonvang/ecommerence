@@ -333,7 +333,8 @@ function render(s) {
   $("snipercard").style.display = sn ? "" : "none";
   if (sn) {
     const NAMES = {"60s": "Sælg efter 60 sek", "5min": "Sælg efter 5 min", "tp50_sl30": "TP +50 % / SL −30 %"};
-    $("sn-meta").textContent = `${sn.grads} graduations · reaktionstid ${sn.latency == null ? "–" : sn.latency.toFixed(0) + " sek"}`
+    const stopped = !sn.heartbeat || Date.now() / 1000 - sn.heartbeat > 120;
+    $("sn-meta").textContent = (stopped ? "STOPPET · slutresultat · " : "") + `${sn.grads} graduations · reaktionstid ${sn.latency == null ? "–" : sn.latency.toFixed(0) + " sek"}`
       + (sn.dropped ? ` · ${sn.dropped} ikke nået` : "");
     setHTML("snrules", Object.entries(sn.rules).map(([k, r]) => `<div class="snr"><div class="nm">${NAMES[k] || k}</div>
       <div class="v ${cls(r.net)}">${usd(r.net, true)}</div>

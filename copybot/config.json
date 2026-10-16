@@ -44,5 +44,10 @@
     "check_seconds": 20
   },
 
-  "dashboard_port": 8765
+  "dashboard_port": 8765,
+
+  "sniper": {
+    "_hjaelp": "Stoppet 16.10.2026: alle tre regler tabte i live-test (149 handler, -10 til -15 % pr. handel, i begge halvdele).",
+    "enabled": false
+  }
 }
