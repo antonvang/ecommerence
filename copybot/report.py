@@ -153,6 +153,46 @@ def funding_state(path, now=None):
             "heartbeat": kv.get("funding_heartbeat"), "error": kv.get("funding_error")}
 
 
+def research_state(root):
+    """Forskning: datasættets helbred og forudregistrerede eksperimenters resultater (historisk, ikke live)."""
+    import glob
+    import json as _j
+    import sqlite3
+    path = os.path.join(root, "research", "launches.db")
+    out = {"dataset": None, "experiments": []}
+    if os.path.exists(path):
+        db = sqlite3.connect(path, timeout=10)
+        try:
+            g = db.execute("SELECT COUNT(*), MIN(grad_ts), MAX(grad_ts), SUM(sampled), "
+                           "SUM(events_status='ok'), MAX(fetched_at) FROM grads").fetchone()
+            sn = db.execute("SELECT SUM(status='ok'), SUM(status!='ok') FROM snapshots").fetchone()
+            out["dataset"] = {"graduations": g[0], "from": g[1], "to": g[2], "sampled": g[3] or 0, "fetched": g[4] or 0,
+                              "last_fetch": g[5], "events": db.execute("SELECT COUNT(*) FROM events").fetchone()[0],
+                              "snapshots_ok": sn[0] or 0, "snapshots_missing": sn[1] or 0}
+        except sqlite3.Error:
+            pass
+        finally:
+            db.close()
+    for f in sorted(glob.glob(os.path.join(root, "research", "results", "*.json"))):
+        try:
+            r = _j.load(open(f, encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        hyps = []
+        for hid, h in r.get("hypotheses", {}).items():
+            if hid == "H0":
+                continue
+            te, va = h.get("test") or {}, h.get("validation") or {}
+            hyps.append({"id": hid, "desc": h.get("desc"), "exit_min": (h.get("exit") or 0) // 60, "verdict": h.get("verdict"),
+                         "val_mean": va.get("mean"), "val_n": va.get("n"), "test_mean": te.get("mean"), "test_median": te.get("median"),
+                         "test_n": te.get("n"), "test_ci": te.get("ci95"), "test_ex_top3": te.get("mean_ex_top3")})
+        h0 = r.get("hypotheses", {}).get("H0", {})
+        out["experiments"].append({"version": r.get("version"), "built": r.get("built"), "n": r.get("n_launches"),
+                                   "splits": r.get("splits"), "assumptions": r.get("assumptions"), "hypotheses": hyps,
+                                   "baseline_test": {k: (v or {}).get("mean") for k, v in (h0.get("test_by_exit") or {}).items()}})
+    return out
+
+
 def build_state(s):
     wallets = s.get("wallets", [])
     cfg = s.get("config", {})
@@ -246,6 +286,7 @@ def build_state(s):
                   "sniper": (sn["bankroll"] + sn["pnl"]) if sn_running else None, "sniper_start": sn["bankroll"] if sn_running else None,
                   "funding": (fu["capital"] + fu["net"]) if fu else None, "funding_start": fu["capital"] if fu else None},
         "funding": fu,
+        "research": research_state(os.path.dirname(s.path)) if live else None,
         "trades_copied": s.one("SELECT COUNT(*) FROM positions WHERE book='port'")[0],
         "open_positions": [{"symbol": r["symbol"], "wallet": label.get(r["wallet"], ""), "value": r["tokens_left"] * r["last_price"],
                             "cost": r["cost_usd"]} for r in open_rows],

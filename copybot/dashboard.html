@@ -215,6 +215,12 @@ svg{display:block}
     <div class="radar" id="radar"></div>
   </div>
 
+  <div class="card" id="researchcard" style="display:none">
+    <div class="hd"><span class="lab">Forskning · forudregistrerede tests på historiske data (ikke live, ikke rigtige penge)</span><span class="lab" id="rs-meta"></span></div>
+    <div class="snrules" id="rs-data"></div>
+    <div id="rs-exp" style="margin-top:10px"></div>
+  </div>
+
   <div class="card" id="fundcard" style="display:none">
     <div class="hd"><span class="lab">Funding-carry · ej coinen + short perp, indsaml funding (paper, live · Hyperliquid)</span><span class="lab" id="fu-meta"></span></div>
     <div class="snrules" id="furules"></div>
@@ -339,6 +345,28 @@ function render(s) {
       <span class="sym">$${esc(r.symbol)}</span><span class="usd">${usd0(r.usd)}</span><span class="st ${st}" title="${esc(r.status)}">${esc(r.status)}</span></div>`;
   }).join("") || `<div class="empty">Ingen handler endnu. Hver gang en af dine wallets køber eller sælger, dukker den op her med det samme.</div>`);
   markSeen("radar", rd);
+
+  const rs = s.research;
+  $("researchcard").style.display = rs && (rs.dataset || rs.experiments.length) ? "" : "none";
+  if (rs) {
+    const d = rs.dataset;
+    const tile = (nm, v, sub) => `<div class="snr"><div class="nm">${nm}</div><div class="v">${v}</div><div class="s2">${sub}</div></div>`;
+    if (d) {
+      const stale = d.last_fetch && Date.now() / 1000 - d.last_fetch > 2 * 86400;
+      $("rs-meta").textContent = `datasæt ${dmhm(d.from)} → ${dmhm(d.to)}` + (stale ? " · FORÆLDET" : "");
+      setHTML("rs-data", tile("Graduations fundet", d.graduations.toLocaleString("da-DK"), `${d.sampled} i stikprøven`)
+        + tile("Pools hentet", `${d.fetched} / ${d.sampled}`, `${d.events.toLocaleString("da-DK")} handler med wallet og reserver`)
+        + tile("Exit-snapshots", d.snapshots_ok.toLocaleString("da-DK"), d.snapshots_missing ? `<span class="neg">${d.snapshots_missing} mangler</span>` : "ingen mangler"));
+    }
+    setHTML("rs-exp", rs.experiments.map(e => `<div class="lab" style="margin:6px 0">${esc(e.version)} · ${e.n} launches · bygget ${dmhm(e.built)}
+        · test ${esc(e.splits.test[1] ? e.splits.test[1][0] + " → " + e.splits.test[1][1] : "–")}</div>`
+      + e.hypotheses.map(h => `<div class="rr" style="grid-template-columns:40px minmax(0,1fr) 70px 110px 110px minmax(150px,auto)">
+        <span class="sym">${esc(h.id)}</span><span class="t" title="${esc(h.desc)}">${esc(h.desc)}</span><span class="t">exit ${h.exit_min} min</span>
+        <span class="usd ${cls(h.val_mean)}">valid. ${pct(h.val_mean == null ? null : h.val_mean * 100)}</span>
+        <span class="usd ${cls(h.test_mean)}">test ${pct(h.test_mean == null ? null : h.test_mean * 100)}</span>
+        <span class="st ${/VALIDATED/.test(h.verdict) ? "copied" : /INCONCLUSIVE/.test(h.verdict) ? "shadow" : "skip"}">${esc(h.verdict)}</span></div>`).join("")).join("")
+      || `<div class="empty">Ingen eksperimenter kørt endnu. De forudregistrerede hypoteser køres, når datasættet er komplet.</div>`);
+  }
 
   const fu = s.funding;
   $("fundcard").style.display = fu ? "" : "none";
