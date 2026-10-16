@@ -163,8 +163,8 @@ def research_state(root):
     if os.path.exists(path):
         db = sqlite3.connect(path, timeout=10)
         try:
-            g = db.execute("SELECT COUNT(*), MIN(grad_ts), MAX(grad_ts), SUM(sampled), "
-                           "SUM(events_status='ok'), MAX(fetched_at) FROM grads").fetchone()
+            g = db.execute("SELECT COUNT(*), MIN(grad_ts), MAX(grad_ts), SUM(sampled > 0), "  # sampled er et stikprøve-nr.
+                           "SUM(sampled > 0 AND events_status='ok'), MAX(fetched_at) FROM grads").fetchone()
             sn = db.execute("SELECT SUM(status='ok'), SUM(status!='ok') FROM snapshots").fetchone()
             out["dataset"] = {"graduations": g[0], "from": g[1], "to": g[2], "sampled": g[3] or 0, "fetched": g[4] or 0,
                               "last_fetch": g[5], "events": db.execute("SELECT COUNT(*) FROM events").fetchone()[0],
@@ -188,6 +188,7 @@ def research_state(root):
                          "test_n": te.get("n"), "test_ci": te.get("ci95"), "test_ex_top3": te.get("mean_ex_top3")})
         h0 = r.get("hypotheses", {}).get("H0", {})
         out["experiments"].append({"version": r.get("version"), "built": r.get("built"), "n": r.get("n_launches"),
+                                   "test_is": r.get("test_is", "test"),
                                    "splits": r.get("splits"), "assumptions": r.get("assumptions"), "hypotheses": hyps,
                                    "baseline_test": {k: (v or {}).get("mean") for k, v in (h0.get("test_by_exit") or {}).items()}})
     return out

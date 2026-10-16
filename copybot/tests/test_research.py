@@ -131,6 +131,18 @@ class Sampling(unittest.TestCase):
         db.close()
 
 
+class ResearchState(unittest.TestCase):
+    def test_counts_pools_not_sample_numbers(self):
+        from report import research_state
+        root = tempfile.mkdtemp()
+        db = open_db(os.path.join(root, "research", "launches.db"))
+        db.executemany("INSERT INTO grads(mint, grad_ts, sampled, events_status) VALUES(?,?,?,?)",
+                       [("a", 1, 1, "ok"), ("b", 2, 2, "ok"), ("c", 3, 2, None), ("d", 4, 0, None)])
+        db.commit(); db.close()
+        d = research_state(root)["dataset"]
+        self.assertEqual((d["graduations"], d["sampled"], d["fetched"]), (4, 3, 2))  # ikke 1+2+2=5
+
+
 class Metrics(unittest.TestCase):
     def test_profit_factor_drawdown_and_ex_top3(self):
         class T:
