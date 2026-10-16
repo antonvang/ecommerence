@@ -71,3 +71,9 @@ not based on power.
    untouched holdout, followed by a new live paper period.
 3. **The running live test** cannot be a test of the strategy as specified (no spot leg). Keep it unchanged as a
    record of its own pre-committed criterion, and run a separate spec-compliant paper test alongside it, or stop it.
+
+## Outcome (same day)
+
+The decisions in "Blockers" were approved; the binding specification is `CARRY_SPEC.md` and the result is
+`RESULTS_carry_v1.md`: **FAIL** (development mean ≤ 0; holdout positive but G3 cannot be met, and the edge has
+decayed). The spec-compliant live paper test was not started because it cannot change a FAIL verdict.

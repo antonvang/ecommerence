@@ -222,7 +222,7 @@ svg{display:block}
   </div>
 
   <div class="card" id="fundcard" style="display:none">
-    <div class="hd"><span class="lab">Funding-carry · ej coinen + short perp, indsaml funding (paper, live · Hyperliquid)</span><span class="lab" id="fu-meta"></span></div>
+    <div class="hd"><span class="lab">Funding-carry, oprindelig live-test · kun short perp, intet spot-ben: ikke delta-neutral og ikke bevis for carry_v1 (paper, live · Hyperliquid)</span><span class="lab" id="fu-meta"></span></div>
     <div class="snrules" id="furules"></div>
     <div class="radar" id="fupos" style="max-height:200px"></div>
     <div class="note" style="text-align:left;margin-top:8px">Uge-regel: de 5 likvide perps med højest funding den forgangne uge (over 10 %/år), skiftes mandag 00:00 UTC.
@@ -361,7 +361,7 @@ function render(s) {
     setHTML("rs-exp", rs.experiments.map(e => `<div class="lab" style="margin:6px 0">${esc(e.version)} · ${e.n ? e.n + " launches · " : ""}bygget ${dmhm(e.built)}
         · ${/holdout/.test(e.test_is) ? "holdout" : "test"} ${esc(e.splits && e.splits.test && e.splits.test[1] ? e.splits.test[1][0] + " → " + e.splits.test[1][1] : "–")}</div>`
       + e.hypotheses.map(h => `<div class="rr" style="grid-template-columns:40px minmax(0,1fr) 70px 110px 110px minmax(150px,auto)">
-        <span class="sym">${esc(h.id)}</span><span class="t" title="${esc(h.desc)}">${esc(h.desc)}</span><span class="t">${h.exit_min ? "exit " + h.exit_min + " min" : "atomisk"}</span>
+        <span class="sym">${esc(h.id)}</span><span class="t" title="${esc(h.desc)}">${esc(h.desc)}</span><span class="t">${!h.exit_min ? "atomisk" : h.exit_min >= 10080 ? "ugentlig" : "exit " + h.exit_min + " min"}</span>
         <span class="usd ${cls(h.val_mean)}">valid. ${pct(h.val_mean == null ? null : h.val_mean * 100)}</span>
         <span class="usd ${cls(h.test_mean)}">${/holdout/.test(e.test_is) ? "holdout" : "test"} ${pct(h.test_mean == null ? null : h.test_mean * 100)}</span>
         <span class="st ${/VALIDATED/.test(h.verdict) ? "copied" : /INCONCLUSIVE/.test(h.verdict) ? "shadow" : "skip"}">${esc(h.verdict)}</span></div>`).join("")).join("")

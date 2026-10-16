@@ -157,6 +157,24 @@ class ResearchStateArb(unittest.TestCase):
         self.assertIn("0 muligheder i 300 slots", h["desc"])
 
 
+class ResearchStateCarry(unittest.TestCase):
+    def test_carry_verdict_follows_frozen_rules_not_numbers(self):
+        import json
+        from report import research_state
+        root = tempfile.mkdtemp()
+        d = os.path.join(root, "research", "results")
+        os.makedirs(d)
+        gates = {"G1 total netto > 0": True, "G2 nedre 99,4 % grænse > 0": True, "G3 aktive uger >= n_req": False}
+        json.dump({"version": "carry_v1", "built": 1, "n_req": None, "gates": gates, "period": ["a", "b"],
+                   "summary": {"mean_week": 0.0007, "active_weeks": 66, "weeks": 152}}, open(os.path.join(d, "carry_v1.json"), "w"))
+        json.dump({"summary": {"mean_week": -0.00003, "active_weeks": 23}}, open(os.path.join(d, "carry_v1_dev.json"), "w"))
+        ex = research_state(root)["experiments"]
+        self.assertEqual(len(ex), 1)                               # udviklingsfilen vises ikke som eget eksperiment
+        h = ex[0]["hypotheses"][0]
+        self.assertEqual(h["verdict"], "FAIL (udvikling ≤ 0)")     # positiv holdout ændrer ikke dommen
+        self.assertEqual((h["val_mean"], h["test_mean"]), (-0.00003, 0.0007))
+
+
 class Metrics(unittest.TestCase):
     def test_profit_factor_drawdown_and_ex_top3(self):
         class T:

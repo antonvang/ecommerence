@@ -174,11 +174,35 @@ def research_state(root):
         finally:
             db.close()
     for f in sorted(glob.glob(os.path.join(root, "research", "results", "*.json"))):
+        if f.endswith("_dev.json"):
+            continue  # udviklingskørsler vises sammen med deres holdout
         try:
             r = _j.load(open(f, encoding="utf-8"))
         except (OSError, ValueError):
             continue
         hyps = []
+        if "gates" in r:  # carry: dom ud fra de frosne regler (CARRY_SPEC §8), aldrig ud fra et pænt tal
+            dev = {}
+            try:
+                dev = _j.load(open(f.replace(".json", "_dev.json"), encoding="utf-8")).get("summary", {})
+            except (OSError, ValueError):
+                pass
+            g = r["gates"]
+            if r.get("n_req") is None:
+                verdict = "FAIL (udvikling ≤ 0)"
+            elif not (g.get("G1 total netto > 0") and g.get("G2 nedre 99,4 % grænse > 0")):
+                verdict = "FAIL"
+            elif all(g.values()):
+                verdict = "INSUFFICIENT EVIDENCE (live paper mangler)"
+            else:
+                verdict = "INSUFFICIENT EVIDENCE"
+            s_ = r.get("summary", {})
+            hyps.append({"id": "CARRY", "desc": f"funding carry, {sum(1 for v in g.values() if v)}/{len(g)} gates · {s_.get('active_weeks')} aktive uger",
+                         "exit_min": 7 * 24 * 60, "verdict": verdict, "val_mean": dev.get("mean_week"), "val_n": dev.get("active_weeks"),
+                         "test_mean": s_.get("mean_week"), "test_median": None, "test_n": s_.get("active_weeks"), "test_ci": None, "test_ex_top3": None})
+            p_ = r.get("period") or [None, None]
+            r["splits"] = {"test": [s_.get("weeks"), p_]}
+            r["test_is"] = "holdout"
         if "parts" in r:  # arbitrage-eksperiment: én samlet hypotese
             t, v = r["parts"].get("test", {}), r["parts"].get("validation", {})
             slots = sum(x.get("slots_with_update", 0) for x in r["parts"].values())

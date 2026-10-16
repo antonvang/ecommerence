@@ -26,13 +26,14 @@ uden at kende samtalen.
 | 4 | Køb pump.fun-coins ved graduation | 443 graduations | Bedst ~−1 %; holdt 1 time: median −95 % | ❌ |
 | 5 | Sniper ved graduation (0,4–15 sek) | 160 + 279 pools, + 11 t live | Live: −10 til −15 % pr. handel | ❌ |
 | 6 | Short nye coins på Hyperliquid | 23 noteringer | −5,6 % (30 d), −10,6 % (7 d); 7 af 23 fordoblede sig | ❌ |
-| 7 | Funding-carry uden gearing (Hyperliquid) | 40 perps, 25 uger | **+8,4–8,6 % om året, alle uger i plus** | ✅ historisk, testes live |
+| 7 | Funding-carry uden gearing (Hyperliquid) | 40 perps, 25 uger | +8,4–8,6 % om året (ikke forudregistreret, survivorship, intet spot-ben) | ⚠️ se 13 |
 | 8 | Funding-carry med gearing | samme | 2x: +7,2 %, 3x: +4,6 %, 5x: −1,6 %, 10x: −16,4 %/år | ❌ |
 | 9 | "Stop når du er foran" på sniper-handlerne | 149 handler pr. regel | Rammer målet tit, men gennemsnittet er stadig minus | ❌ |
 
 | 10 | Launch-udvælgelse ud fra flow ved 60–120 sek (forudregistreret) | 600 graduations, 684k handler | Positiv på train, faldt sammen i validering | ❌ |
 | 11 | Smart money: tidlige køberes historik (forudregistreret, holdout) | 1.200 graduations, 1,4 mio. handler | Holdout −4,7 til −25,6 %; ingen positiv selv på train | ❌ |
 | 12 | Arbitrage SOL/USDC Raydium v4 ↔ PumpSwap (forudregistreret) | 13.049 slots, 58.339 tilstande | 0 muligheder; største prisforskel 0,22 % mod 0,525 % gebyrer | ❌ |
+| 13 | Funding-carry, streng verifikation med spot-ben (forudregistreret, holdout) | 152 uger | Holdout +4,35 %, men udvikling −0,08 % og aftagende kant | ❌ FAIL |
 
 **Konklusion:** Ingen af de testede strategier giver afkast som i videoen. Den eneste, der har holdt, er
 funding-carry uden gearing med ca. 8 % om året. I memecoins vinder dem, der er hurtigst (samme blok) eller har
@@ -246,6 +247,28 @@ samlede gebyrer på 0,525 %. Selv målt efter hver enkelt transaktion (58.339 ti
 gebyr-båndet. **REJECTED:** poolene holdes inden for båndet hele tiden; der er intet at tage, uanset hastighed.
 Forbehold: kun ét venue-par kunne efterprøves; arbitrage mod koncentreret-likviditets-pools kræver at genskabe
 deres tick-/bin-tilstand pr. slot, hvilket den nuværende data ikke kan.
+
+## 13. Funding-carry, streng verifikation (carry_v1, 16.10)
+
+Audit (`research/FUNDING_AUDIT.md`): det tidligere resultat (+8,6 %/år, afsnit 7) var **ikke forudregistreret**,
+brugte et univers valgt efter *dagens* størrelse, og antog et spot-ben, der ikke findes på Hyperliquid for 30 af
+de 40 perps eller for nogen af live-testens coins. Ny bindende specifikation (`research/CARRY_SPEC.md`, commit
+`d9a60fa`, før nye data): kun coins med spot på Hyperliquid (navnekollisioner afvist ved pris-tjek), samme regel
+(ugens top 5 > 10 %/år), ægte spot-ben, basis, gebyrer, spread, likvidation; udvikling = den allerede sete periode,
+**urørt holdout 2023-05 → 2026-04**. Fuld rapport: `research/RESULTS_carry_v1.md`.
+
+| | Udvikling (26 uger, 2026) | Holdout (152 uger, 66 aktive) |
+|---|---|---|
+| Funding | +1,40 % | +5,92 % |
+| Basis | −0,46 % | +0,20 % |
+| Gebyrer + spread | −1,02 % | −1,76 % |
+| **Netto** | **−0,08 %** | **+4,35 %** (nedre 99,4 %-grænse +0,025 %/uge) |
+| Sidste tredjedel | – | +0,10 % (næsten flad) |
+
+**Dom: FAIL** efter de forudregistrerede regler: udviklingens middel var ≤ 0. Holdout var positiv (≈ 3,4 %/år i
+aktive uger, 6 af 7 gates), men kanten er skrumpet: sidste tredjedel af holdout var næsten flad, og de seneste
+6 måneder var negative, fordi gebyrerne ved ugentlige skift var større end funding. Baseline (altid BTC/ETH/SOL)
+var +2,0 % i holdout; den er en sammenligning, ikke en forudregistreret strategi.
 
 ## Andet, der er vurderet
 
