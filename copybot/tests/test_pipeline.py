@@ -136,6 +136,22 @@ class Prefetch(unittest.TestCase):
             shutil.rmtree(root)
 
 
+class Fallback(unittest.TestCase):
+    def test_switches_to_backup_rpc_when_blocked(self):
+        import urllib.error
+        used = []
+
+        def http(url, payload=None, tries=6, **kw):
+            used.append((url, tries))
+            if url == "https://a":
+                raise urllib.error.HTTPError(url, 403, "Forbidden", {}, None)
+            return {"result": 7}
+
+        with mock.patch.object(solana_rpc, "http_json", http), mock.patch.object(net.Throttle, "wait", lambda self: None):
+            self.assertEqual(solana_rpc.RPC("https://a", fallback=["https://b"]).call("getSlot", []), 7)
+        self.assertEqual(used, [("https://a", 1), ("https://b", 3)])  # ingen lang venten på en blokeret server
+
+
 class TxVersion(unittest.TestCase):
     def test_retries_with_newer_transaction_version(self):
         asked = []

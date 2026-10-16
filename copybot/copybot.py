@@ -13,6 +13,7 @@ import json
 import os
 import re
 import sys
+import threading
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
@@ -46,7 +47,7 @@ DEFAULTS = {
     "paper": {"poll_seconds": 10, "check_seconds": 20, "max_tx_per_poll": 400, "rpc_url": "", "rpc_requests_per_second": 0},
     "dashboard_port": 8765,
     "sniper": {"enabled": True, "size_usd": 50, "fee_pct": 0.75, "tip_sol": 0.002, "poll_seconds": 1,
-               "rpc_requests_per_second": 4},
+               "rpc_requests_per_second": 4, "fallback_rpcs": ["https://public.rpc.solanavibestation.com"]},
 }
 B58 = re.compile(r"^[1-9A-HJ-NP-Za-km-z]{32,44}$")
 
@@ -133,10 +134,12 @@ def main():
             raise SystemExit(f"Findes ikke: {a.db}. Kør en backtest eller paper trading først.")
         from server import serve
         import webbrowser
-        url = f"http://localhost:{cfg['dashboard_port']}"
+        # paper trading bruger dashboard_port; et backtest-dashboard tager den næste ledige port
+        srv, port = serve(a.db, cfg["dashboard_port"] + 1, tries=10)
+        url = f"http://localhost:{port}"
         print(f"Dashboard: {url}  (luk vinduet for at stoppe)")
         webbrowser.open(url)
-        serve(a.db, cfg["dashboard_port"], block=True)
+        threading.Event().wait()  # serveren kører i baggrunden, indtil vinduet lukkes
     elif a.cmd == "report":
         if not os.path.exists(a.db):
             raise SystemExit(f"Findes ikke: {a.db}")

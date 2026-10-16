@@ -182,7 +182,8 @@ def build_state(s):
     hb = s.get("heartbeat")
     costs = s.one("SELECT COALESCE(SUM(costs_usd),0) FROM positions WHERE book='port'")[0]
     shadow_all = trade_stats([r["pnl_usd"] for r in s.q("SELECT pnl_usd FROM positions WHERE book='shadow' AND closed_ts IS NOT NULL")])
-    sn = sniper_state(os.path.join(os.path.dirname(s.path), "sniper.db")) if s.path != ":memory:" else None
+    # sniperen kører kun sammen med paper trading: et backtest-dashboard skal ikke blandes med live-tal
+    sn = sniper_state(os.path.join(os.path.dirname(s.path), "sniper.db")) if mode == "PAPER" and s.path != ":memory:" else None
     copy_balance, copy_start = balance, start
     if sn:
         start, balance = start + sn["bankroll"], balance + sn["bankroll"] + sn["pnl"]

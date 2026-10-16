@@ -53,10 +53,21 @@ def make_handler(db_path):
     return Handler
 
 
-def serve(db_path, port, block=False):
-    srv = ThreadingHTTPServer(("127.0.0.1", port), make_handler(db_path))
+class _Server(ThreadingHTTPServer):
+    allow_reuse_address = False  # på Windows ville to dashboards ellers dele porten, og browseren ser det forkerte
+
+
+def serve(db_path, port, block=False, tries=1):
+    """Start dashboardet på `port`; er den optaget, prøves de næste `tries - 1` porte. Returnerer (server, port)."""
+    for p in range(port, port + tries):
+        try:
+            srv = _Server(("127.0.0.1", p), make_handler(db_path))
+            break
+        except OSError:
+            if p == port + tries - 1:
+                raise
     if block:
         srv.serve_forever()
     else:
         threading.Thread(target=srv.serve_forever, daemon=True).start()
-    return srv
+    return srv, srv.server_address[1]

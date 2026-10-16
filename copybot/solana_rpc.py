@@ -4,6 +4,7 @@ from __future__ import annotations
 import queue
 import re
 import threading
+import urllib.error
 
 from net import DiskCache, Throttle, http_json
 
@@ -15,8 +16,9 @@ class RPCError(Exception):
 
 
 class RPC:
-    def __init__(self, url, requests_per_second=3, cache_dir=None, log=print):
+    def __init__(self, url, requests_per_second=3, cache_dir=None, log=print, fallback=()):
         self.url = url
+        self.urls = [url] + [u for u in fallback if u and u != url]
         self.th = Throttle(1.0 / max(requests_per_second, 0.1))
         self.cache = DiskCache(cache_dir)
         self.log = log
@@ -25,7 +27,17 @@ class RPC:
 
     def call(self, method, params):
         self.th.wait()
-        r = http_json(self.url, {"jsonrpc": "2.0", "id": 1, "method": method, "params": params}, log=self.log)
+        payload = {"jsonrpc": "2.0", "id": 1, "method": method, "params": params}
+        r = None
+        for k, url in enumerate(self.urls):
+            last = k == len(self.urls) - 1
+            try:
+                # med en reserve-RPC: skift med det samme i stedet for at vente op til et minut på en blokeret server
+                r = http_json(url, payload, tries=(3 if len(self.urls) > 1 else 6) if last else 1, log=self.log)
+                break
+            except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError, ConnectionError):
+                if last:
+                    raise
         if "error" in r:
             err = r["error"]
             raise RPCError(f"{method}: {err}", err.get("code") if isinstance(err, dict) else None)

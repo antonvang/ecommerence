@@ -73,7 +73,8 @@ class Sniper:
         self.tip_sol = sc["tip_sol"]
         self.poll = sc["poll_seconds"]
         p = cfg["paper"]
-        self.rpc = RPC(p.get("rpc_url") or cfg["rpc_url"], sc["rpc_requests_per_second"], log=lambda *a: None)
+        self.rpc = RPC(p.get("rpc_url") or cfg["rpc_url"], sc["rpc_requests_per_second"], log=lambda *a: None,
+                       fallback=sc.get("fallback_rpcs") or ())
         self.s = Store(os.path.join(root, "sniper.db"))
         self.s.db.executescript(SCHEMA)
         self.log = log
@@ -89,11 +90,14 @@ class Sniper:
         return self.sol_usd
 
     def _reserves(self, rows):
-        """{vault: beholdning} for alle vaults i rows (ét kald pr. 100 konti). Mangler en konto, er poolen tømt."""
+        """{vault: beholdning} for alle vaults i rows. Mangler en konto, er poolen tømt.
+
+        Højst 8 konti pr. kald: PublicNode svarer 403 på getMultipleAccounts med 16 eller flere.
+        """
         keys = sorted({r["sol_vault"] for r in rows} | {r["tok_vault"] for r in rows})
         out = {}
-        for k in range(0, len(keys), 100):
-            chunk = keys[k:k + 100]
+        for k in range(0, len(keys), 8):
+            chunk = keys[k:k + 8]
             res = self.rpc.call("getMultipleAccounts", [chunk, {"encoding": "jsonParsed", "commitment": "processed"}])
             for addr, acc in zip(chunk, (res or {}).get("value") or []):
                 try:
@@ -177,20 +181,27 @@ class Sniper:
                 self.s.x("UPDATE snipes SET closed_ts=?, exit_px=?, proceeds_usd=?, pnl_usd=?, reason=? WHERE id=?",
                          now, px, got, got - r["cost_usd"], reason, r["id"])
 
+    def _detect_and_open(self):
+        for g in self.detect():
+            self.open(g)
+
+    def _check_every_2s(self):
+        if time.time() - self._last_check >= 2:
+            self._last_check = time.time()
+            self.check()
+
     def run(self, market, stop=None):
         self.log(f"Sniper (paper) kører · ${self.size:.0f} pr. regel · regler: {', '.join(RULES)}")
-        last_check = 0.0
+        self._last_check = 0.0
         while not (stop and stop.is_set()):
             t0 = time.time()
-            try:
-                if self._sol_usd(market):
-                    for g in self.detect():
-                        self.open(g)
-                    if time.time() - last_check >= 2:
-                        self.check()
-                        last_check = time.time()
-            except Exception as e:
-                self.s.set("sniper_error", [int(time.time()), f"{type(e).__name__}: {str(e)[:180]}"])
+            if self._sol_usd(market):
+                # hver del for sig: en fejl ved at finde nye graduations må ikke stoppe salget af åbne positioner
+                for step in (self._detect_and_open, self._check_every_2s):
+                    try:
+                        step()
+                    except Exception as e:
+                        self.s.set("sniper_error", [int(time.time()), f"{step.__name__}: {type(e).__name__}: {str(e)[:160]}"])
             self.s.set("sniper_heartbeat", int(time.time()))
             time.sleep(max(0.0, self.poll - (time.time() - t0)))
 
