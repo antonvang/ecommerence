@@ -50,6 +50,10 @@ def run_paper(cfg, wallets, root, log=print):
     eng = Engine(cfg, store, market, wallets, live=True, quiet=False, log=log)
     eng.start(int(time.time()))
 
+    if cfg["sniper"]["enabled"]:
+        from sniper import start_in_background
+        start_in_background(cfg, root, market, log=log)
+
     port = cfg["dashboard_port"]
     serve(store.path, port)
     url = f"http://localhost:{port}"

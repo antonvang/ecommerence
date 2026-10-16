@@ -1,6 +1,7 @@
 """Tal, dom og dashboard-data ud fra databasen."""
 from __future__ import annotations
 
+import os
 import statistics
 import time
 from datetime import datetime
@@ -78,6 +79,38 @@ def initials(label):
     if len(parts) >= 2:
         return (parts[0][0] + parts[1][0]).upper()
     return (t[:2] or "??").upper()
+
+
+def sniper_state(path):
+    """Paper-sniperens tal pr. regel (data/sniper.db ved siden af paper.db)."""
+    if not path or not os.path.exists(path):
+        return None
+    import sqlite3
+    db = sqlite3.connect(path, timeout=10)
+    db.row_factory = sqlite3.Row
+    try:
+        rows = db.execute("SELECT * FROM snipes").fetchall()
+        hb = db.execute("SELECT v FROM kv WHERE k='sniper_heartbeat'").fetchone()
+        err = db.execute("SELECT v FROM kv WHERE k='sniper_error'").fetchone()
+    except sqlite3.Error:
+        return None
+    finally:
+        db.close()
+    rules = {}
+    for rule in ("60s", "5min", "tp50_sl30"):
+        rr = [r for r in rows if r["rule"] == rule]
+        closed = [r["pnl_usd"] / r["cost_usd"] for r in rr if r["closed_ts"]]
+        st = trade_stats(closed)
+        rules[rule] = {"n": st["n"], "open": len(rr) - st["n"], "win_rate": st["win_rate"], "pf": st["pf"],
+                       "net": sum(r["pnl_usd"] for r in rr if r["closed_ts"]),
+                       "avg": statistics.mean(closed) * 100 if closed else None,
+                       "median": statistics.median(closed) * 100 if closed else None}
+    lat = [r["seen_ts"] - r["grad_ts"] for r in rows if r["grad_ts"] and r["rule"] == "60s"]
+    recent = [{"ts": r["closed_ts"], "rule": r["rule"], "mint": r["mint"][:6], "pct": r["pnl_usd"] / r["cost_usd"] * 100,
+               "reason": r["reason"]} for r in sorted((r for r in rows if r["closed_ts"]), key=lambda r: -r["closed_ts"])[:12]]
+    import json as _j
+    return {"rules": rules, "grads": len({r["mint"] for r in rows}), "latency": statistics.median(lat) if lat else None,
+            "recent": recent, "heartbeat": _j.loads(hb[0]) if hb else None, "error": _j.loads(err[0]) if err else None}
 
 
 def build_state(s):
@@ -165,6 +198,7 @@ def build_state(s):
                    "initials": initials(label.get(r["wallet"], "??")), "side": r["side"], "symbol": r["symbol"],
                    "usd": r["usd"], "status": r["status"], "copied": r["copied"], "following": r["wallet"] == active}
                   for r in s.q("SELECT * FROM signals ORDER BY id DESC LIMIT 40")],
+        "sniper": sniper_state(os.path.join(os.path.dirname(s.path), "sniper.db")) if s.path != ":memory:" else None,
         "pulse": {"tx_seen": s.one("SELECT COUNT(*) FROM seen")[0], "heartbeat": hb,
                   "signals": s.one("SELECT COUNT(*) FROM signals")[0],
                   "signals_24h": s.one("SELECT COUNT(*) FROM signals WHERE ts >= ?", int(time.time()) - 86400)[0],

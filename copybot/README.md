@@ -23,6 +23,16 @@ Prisregler, der holder tallene ærlige:
 - Slippage beregnes med x·y=k: gennemsnitsprisen stiger med ordrestørrelse divideret med poolens størrelse.
 - Når walletten sælger en del af sin beholdning, sælger vi samme andel.
 
+## Sniper (paper)
+
+`sniper.py` kører sammen med paper trading og "køber" for falske penge hver pump.fun-coin, i det sekund den
+graduerer til PumpSwap. Prisen læses direkte fra poolens vaults, så vores faktiske reaktionstid (typisk 0-2 sek)
+er med. Tre faste regler testes side om side: sælg efter 60 sek, efter 5 min, eller TP +50 % / SL -30 %.
+
+Historisk data (443 graduations, 14 dage) gav ingen regel, der tjente penge på nye data. Sniperen er den ærlige
+test på fremtidige data. Indstillinger under `sniper` i config: `size_usd`, `fee_pct` (pr. side), `tip_sol` (pr.
+transaktion), `enabled`. Data ligger i `data/sniper.db`.
+
 ## Indstillinger (`config.json`)
 
 | Nøgle | Standard | Betydning |

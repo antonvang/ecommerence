@@ -96,6 +96,12 @@ svg{display:block}
 .st.shadow{background:#7aa7ff1f;color:var(--blue);border:1px solid #7aa7ff44}
 .st.skip{background:#ffffff0a;color:var(--mute);border:1px solid #ffffff14}
 .empty{color:var(--dim);font-size:12px;padding:18px 8px}
+.snrules{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:10px}
+.snr{background:#ffffff06;border:1px solid var(--line2);border-radius:12px;padding:12px 14px}
+.snr .nm{font-weight:800;font-size:13px}
+.snr .v{font-size:22px;font-weight:800;margin-top:4px;font-variant-numeric:tabular-nums}
+.snr .s2{font-size:11px;color:var(--mute);margin-top:3px}
+@media (max-width:900px){.snrules{grid-template-columns:minmax(0,1fr)}}
 .timeline{display:flex;align-items:center;gap:12px}
 .bar{flex:1;min-width:0;height:20px;border-radius:10px;background:#141a3f;display:flex;overflow:hidden;border:1px solid var(--line2)}
 .seg{flex:none;height:100%;font-size:10px;color:#0a0d22;font-weight:800;display:flex;align-items:center;padding-left:8px;white-space:nowrap;overflow:hidden;border-right:2px solid #0a0d22}
@@ -209,6 +215,13 @@ svg{display:block}
     <div class="radar" id="radar"></div>
   </div>
 
+  <div class="card" id="snipercard" style="display:none">
+    <div class="hd"><span class="lab">Sniper · køber ved pump.fun-graduation (paper, live)</span><span class="lab" id="sn-meta"></span></div>
+    <div class="snrules" id="snrules"></div>
+    <div class="radar" id="snrecent" style="max-height:180px"></div>
+    <div class="err" id="snerr"></div>
+  </div>
+
   <div class="timeline"><span class="lab" style="white-space:nowrap">Hvem vi kopierer</span><div class="bar" id="bar"></div><span class="lab" id="tl-end"></span></div>
 
   <div class="traders" id="traders"></div>
@@ -310,6 +323,22 @@ function render(s) {
       <span class="sym">$${esc(r.symbol)}</span><span class="usd">${usd0(r.usd)}</span><span class="st ${st}" title="${esc(r.status)}">${esc(r.status)}</span></div>`;
   }).join("") || `<div class="empty">Ingen handler endnu. Hver gang en af dine wallets køber eller sælger, dukker den op her med det samme.</div>`);
   markSeen("radar", rd);
+
+  const sn = s.sniper;
+  $("snipercard").style.display = sn ? "" : "none";
+  if (sn) {
+    const NAMES = {"60s": "Sælg efter 60 sek", "5min": "Sælg efter 5 min", "tp50_sl30": "TP +50 % / SL −30 %"};
+    $("sn-meta").textContent = `${sn.grads} graduations · reaktionstid ${sn.latency == null ? "–" : sn.latency.toFixed(0) + " sek"}`;
+    setHTML("snrules", Object.entries(sn.rules).map(([k, r]) => `<div class="snr"><div class="nm">${NAMES[k] || k}</div>
+      <div class="v ${cls(r.net)}">${usd(r.net, true)}</div>
+      <div class="s2">${r.n} lukket · ${r.open} åbne · ${r.n ? r.win_rate.toFixed(0) : "–"}% vind</div>
+      <div class="s2">gns. ${pct(r.avg)} · median ${pct(r.median)} pr. handel</div></div>`).join(""));
+    setHTML("snrecent", sn.recent.map(r => `<div class="rr" style="grid-template-columns:44px minmax(0,1fr) 120px 70px 60px">
+      <span class="t">${hhmm(r.ts)}</span><span class="sym">$${esc(r.mint)}</span><span class="w">${NAMES[r.rule] || r.rule}</span>
+      <span class="usd ${cls(r.pct)}">${pct(r.pct)}</span><span class="t">${esc(r.reason)}</span></div>`).join("")
+      || `<div class="empty">Venter på den første graduation ... (ca. hvert minut)</div>`);
+    $("snerr").textContent = sn.error && Date.now() / 1000 - sn.error[0] < 120 ? "Fejl: " + sn.error[1] : "";
+  }
 
   const segs = s.segments.filter(g => g.end > g.start);
   const t0 = segs.length ? segs[0].start : 0, t1 = segs.length ? segs[segs.length - 1].end : 1;
