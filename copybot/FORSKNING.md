@@ -1,0 +1,212 @@
+# CopyBot: alt vi har testet (15.–16. oktober 2026)
+
+Formål: finde en automatisk handelsstrategi på Solana/krypto, der tjener penge **efter alle omkostninger**, gerne
+"ligesom i videoen" (Grok Bot / CopyFomo, hvor $42 blev til $724). Alle tests er lavet med rigtige on-chain data og
+rigtige priser. Ingen rigtige penge er brugt. Denne fil er skrevet, så en anden AI eller person kan vurdere den
+uden at kende samtalen.
+
+## Sådan er der testet (gælder alle tests)
+
+- **Omkostninger er altid med:** DEX-gebyr, slippage (x*y=k ud fra poolens størrelse), netværksgebyr/tip og
+  forsinkelse. Vi kan aldrig købe billigere eller sælge dyrere end den, vi kopierer.
+- **Uge 1 vælger, uge 2 tester.** En regel vælges kun ud fra den første halvdel og skal også holde i den anden.
+- **Regler fastlægges før testen,** så man ikke justerer, indtil noget tilfældigt ser godt ud.
+- **Kriterier før rigtige penge (aftalt 15.10):** mindst 30 handler, positiv efter omkostninger, stadig positiv uden
+  de 3 bedste handler, positiv i begge halvdele, og helst bekræftet live på papir i 1–2 uger.
+- **Data:** Helius (getTransactionsForAddress), offentlig Solana RPC, PublicNode, GeckoTerminal (minut-priser),
+  DexScreener, Hyperliquids offentlige API.
+
+## Resultat på én side
+
+| # | Idé | Data | Resultat | Dom |
+|---|---|---|---|---|
+| 1 | Kopiér KOL-wallets fra kolscan (videoens metode) | 14 dage, 7 wallets, 114 handler | −15 % pr. handel; selv 0 sek + ingen gebyrer: −6,5 % | ❌ |
+| 2 | Find selv de bedste tradere og kopiér dem | 139 wallets fra 90 nye pools | De vinder selv, men kopi 2 sek efter: −7 %, 10 sek: −19 % | ❌ |
+| 3 | Trend-regler på SOL | 7 mdr. timepriser | Alle regler taber til gebyrer; køb og hold +26 % | ❌ |
+| 4 | Køb pump.fun-coins ved graduation | 443 graduations | Bedst ~−1 %; holdt 1 time: median −95 % | ❌ |
+| 5 | Sniper ved graduation (0,4–15 sek) | 160 + 279 pools, + 11 t live | Live: −10 til −15 % pr. handel | ❌ |
+| 6 | Short nye coins på Hyperliquid | 23 noteringer | −5,6 % (30 d), −10,6 % (7 d); 7 af 23 fordoblede sig | ❌ |
+| 7 | Funding-carry uden gearing (Hyperliquid) | 40 perps, 25 uger | **+8,4–8,6 % om året, alle uger i plus** | ✅ historisk, testes live |
+| 8 | Funding-carry med gearing | samme | 2x: +7,2 %, 3x: +4,6 %, 5x: −1,6 %, 10x: −16,4 %/år | ❌ |
+| 9 | "Stop når du er foran" på sniper-handlerne | 149 handler pr. regel | Rammer målet tit, men gennemsnittet er stadig minus | ❌ |
+
+**Konklusion:** Ingen af de testede strategier giver afkast som i videoen. Den eneste, der har holdt, er
+funding-carry uden gearing med ca. 8 % om året. I memecoins vinder dem, der er hurtigst (samme blok) eller har
+insider-viden; alle, der kommer bagefter (inklusive kopi-bots), betaler for det.
+
+---
+
+## 1. Kopiér KOL-wallets (videoens metode)
+
+Botten følger wallets, kopierer køb og salg og fyrer en wallet efter N tab i træk (videoen: 2).
+
+- **Wallets:** 8 fra kolscan.io månedlige top 48 (30–600 handler/md., ≥45 % vindere). Jijo udelukket (60.000 tx/dag).
+- **Backtest 14 dage** (alle transaktioner via Helius), forsinkelse 10 sek, $50 start, 20 % pr. handel:
+  - Videoens regel (2 tab → næste): **$50 → $35,25 (−29,5 %)**, 8 handler, 0 % vindere, 3 wallets fyret.
+  - Kopiér alle wallets med $10 pr. handel: **114 handler, 18 % vindere, −$188, profit factor 0,33.**
+  - Hver eneste wallet tabte som kopi. Rangkorrelation uge 1 → uge 2: **+0,09 (tilfældig).**
+- **Hvorfor:** På handler hvor walletten solgte, fik walletten selv +14,7 % i gennemsnit (median −2,5 %, 41 % vindere),
+  men kopien −3,6 %. De mest aktive wallets holder 0–1 minut. 52 af 114 kopier ramte stop-loss/24 t, fordi walletten
+  holdt længere, solgte til en anden token eller aldrig solgte.
+- **Varianter (kopiér alle, pr. handel efter omkostninger):**
+
+  | Variant | Pr. handel | Uge 1 | Uge 2 |
+  |---|---|---|---|
+  | Basis: $10, 10 sek, alle gebyrer | −15,1 % | −$108 | −$64 |
+  | 0 sek (samme pris som walletten) | −14,1 % | −$101 | −$58 |
+  | 0 sek og ingen gebyrer overhovedet | −6,5 % | −$45 | −$28 |
+  | $100 pr. handel | −12,3 % | −$866 | −$534 |
+  | Egen hurtig bot: $100, 0 sek, lave gebyrer | −8,8 % | −$621 | −$362 |
+  | Ingen stop-loss | −17,7 % | −$119 | −$74 |
+  | Max 2 timer | −12,2 % | −$88 | −$62 |
+  | Kun store køb (> $500) | −10,9 % | −$41 | −$34 |
+  | Kun likvide coins (> $100k) | −16,9 % | −$37 | −$9 |
+  | Også små coins (> $5k) | −10,8 % | **+$36** | **−$337** |
+
+- **Live på papir** siden 15.10 (samme regel som videoen, følger @Mitch). Pr. 16.10 kl. 17: 1 lukket handel (−$4,61);
+  alle wallets kopieret med $10: 11 handler, −$17,70. For tidligt til en dom.
+
+## 2. Find selv de bedste tradere og kopiér dem
+
+- 90 tilfældige graduation-pools → 10.799 købere → 320 købte i ≥3 pools → 181 bots fjernet (>5.000 tx/14 d)
+  → 139 tradere i menneskeligt tempo → 98 med ≥5 lukkede handler i begge uger.
+- **Deres egne resultater holder:** rangkorrelation uge 1 → uge 2 **+0,43**. Top 10 % i uge 1: +37,5 %/handel,
+  i uge 2 **+23,9 %/handel, 9 af 10 stadig i plus.**
+- **Men de er hurtige:** median holdetid 1–22 min, 100–850 coins/uge.
+- **Kopi i uge 2** (pris = andres næste handel efter forsinkelsen): **2 sek bag: −7,1 %/handel** (median −4,0 %,
+  38 % vindere, PF 0,64, 108 handler). **10 sek bag: −18,8 %** (PF 0,18, 34 handler).
+- **Konklusion:** Deres fordel er hastighed. Den kan ikke kopieres.
+
+## 3. Trend-regler på SOL
+
+4.996 timepriser fra 21.03.2026, 0,3 % pr. handel:
+
+| Regel | Hele perioden | 1. halvdel | 2. halvdel |
+|---|---|---|---|
+| Køb og hold | +26,2 % | −1,5 % | +28,1 % |
+| Over 50-timers gennemsnit | −63,7 % | −23,4 % | −52,6 % |
+| Over 200-timers gennemsnit | −37,2 % | −24,9 % | −16,4 % |
+| 20t gns. over 100t gns. | −16,5 % | −17,9 % | +1,7 % |
+| Steget sidste 24 t | −65,9 % | −38,8 % | −44,3 % |
+| Faldet sidste 24 t | −75,8 % | −51,0 % | −50,6 % |
+
+## 4. Køb pump.fun-coins ved graduation
+
+443 rigtige graduations (PumpSwap-pool med 67–85 SOL), minut-priser direkte fra poolen, $50 pr. handel:
+
+| Regel | Pr. handel | Median | Uge 1 | Uge 2 |
+|---|---|---|---|---|
+| Køb 15 sek efter, sælg efter 5 min | −0,8 % | −0,5 % | +1,5 % | −3,1 % |
+| Hold 15 min | −26,8 % | −74,9 % | −20,6 % | −33,2 % |
+| Hold 60 min | −49,8 % | −95,0 % | −49,5 % | −50,2 % |
+| Hold 4 timer | −56,9 % | −95,6 % | −56,5 % | −57,3 % |
+| TP +50 % / SL −30 % | −1,4 % | −34,2 % | +0,3 % | −3,1 % |
+| Steget første 5 min + TP/SL | −2,1 % | −34,2 % | −0,5 % | −3,9 % |
+
+Den typiske coin taber 95 % inden for en time efter graduation. Mange af dem er rug pulls.
+
+## 5. Sniper ved graduation
+
+- **Historisk, slot-præcis** (0,4 sek): 160 pools gav et mønster (køb 0,4–15 sek efter, sælg efter 60 sek: +1,8 til
+  +4,8 %/handel), men uden de 3 bedste coins var det negativt. **Forudbestemt test på 279 nye pools:**
+  1 sek: −2,8 %, 5 sek: −1,9 %, 15 sek: −2,6 % pr. handel (PF 0,71–0,79). Mønstret var held.
+- **Live på papir 16.10** (10,8 timer, 100 % af graduations fanget, reaktionstid 1–2 sek, pris læst direkte fra poolen):
+
+  | Regel | Handler | Resultat | Pr. handel | Median |
+  |---|---|---|---|---|
+  | Sælg efter 60 sek | 149 | −$899 | −12,1 % | −1,6 % |
+  | Sælg efter 5 min | 147 | −$1.112 | −15,1 % | −1,4 % |
+  | TP +50 % / SL −30 % | 130 | −$651 | −10,0 % | −33,2 % |
+
+  Negativ i begge halvdele og uden de 3 bedste. Stoppet.
+- **Reaktionstid fra en almindelig PC på gratis servere:** 1–2 sek. De, der tjener på det, lander i samme blok
+  (0,4 sek) med betalte servere, bundles og store tips.
+
+## 6. Short nye coins på Hyperliquid
+
+23 perps noteret inden for 14 måneder (32 afnoterede manglede prisdata). Short dagen efter notering, inkl. funding
+og gebyrer; fordobles prisen, regnes shorten som −100 %:
+
+| Hold | Pr. handel | Median | Vindere | Udslettet | Uden 3 bedste | 1. halvdel | 2. halvdel |
+|---|---|---|---|---|---|---|---|
+| 30 dage | −5,6 % | +22,9 % | 65 % | 7 af 23 | −16,6 % | −18,8 % | +6,4 % |
+| 7 dage | −10,6 % | +7,9 % | 57 % | 6 af 23 | −20,8 % | −29,8 % | +7,1 % |
+
+De fleste coins faldt, men de få, der fordoblede sig, kostede mere end alle gevinsterne.
+
+## 7. Funding-carry uden gearing ✅
+
+Ej coinen og short dens perp samtidig (prisen går ud mod hinanden); indsaml den funding, som long-siden betaler
+hver time, når markedet er grådigt. 40 perps med ≥$5M open interest og volumen, 25 uger, 0,2 % pr. skift, halvdelen
+af kapitalen køber coinen, halvdelen er margin:
+
+| Regel | Pr. år på kapitalen | Uger i plus | Værste uge | 1. halvdel | 2. halvdel |
+|---|---|---|---|---|---|
+| Hold altid BTC, ETH, SOL | +3,0 % | 92 % | −0,08 % | +2,0 % | +4,1 % |
+| Ugens top 5 efter sidste uges funding | +8,4 % | 100 % | +0,02 % | +4,6 % | +12,2 % |
+| Som ovenfor, kun hvis > 10 %/år | +8,6 % | 100 % | +0,02 % | +4,6 % | +12,5 % |
+
+Sidste uges funding forudsiger næste uges godt (korrelation +0,69). Ca. $40–100 om året pr. $1.000 realistisk.
+
+- **Ikke med i tallene:** spot/perp-prisforskel ved skift, ekstra margin ved store prisstigninger, at spot-benet
+  ikke findes på Hyperliquid for mange små coins, og risiko ved selve børsen. Universet er dagens 40 største perps.
+- **Live på papir** siden 16.10 kl. 14:40 med $1.000 (uge 1: CASHCAT, STRK, VVV, PONS, FIL). Bogføringen er tjekket
+  mod Hyperliquids egne tal: 5 af 5 betalinger stemmer. **Svar efter to hele uger (19.10–1.11).**
+
+## 8. Funding-carry med gearing
+
+| Variant | Pr. år | Uger i minus | Likvidationer |
+|---|---|---|---|
+| 1x (ingen gearing) | +8,2 % | 0 af 24 | 1 |
+| 2x på shorten | +7,2 % | 1 | 12 |
+| 3x på shorten | +4,6 % | 5 | 21 |
+| 5x på shorten | −1,6 % | 9 | 36 |
+| 10x på shorten | −16,4 % | 20 | 67 |
+| Lånte penge, positioner 2x kapitalen | +4,2 % | 10 | 21 |
+| Lånte penge, positioner 3x kapitalen | −21,9 % | 17 | 36 |
+
+Coins med høj funding er dem, der hopper mest, så shorten likvideres tit. Gearing gør det dårligere.
+
+## 9. "Stop når du er foran"
+
+Sniperens rigtige handler, startet på hvert muligt tidspunkt, stop når gevinsten når målet:
+
+| Regel | Stop ved | Når målet | Gennemsnit | Median |
+|---|---|---|---|---|
+| TP/SL | +$10 | 77 % | −$70 | +$20 |
+| TP/SL | +$50 | 50 % | −$150 | +$50 |
+| 5 min | +$10 | 65 % | −$230 | +$12 |
+| 60 sek | +$10 | 30 % | −$414 | −$520 |
+
+Mange små sejre, få store tab: gennemsnittet er stadig minus. Man kan ikke "stoppe før det falder" uden at kende fremtiden.
+
+## Andet, der er vurderet
+
+- **YouTube "How To Rug Pull Using $0 on Pump Fun":** at lave en coin og sælge den på andres bekostning. Bedrageri;
+  ikke testet.
+- **YouTube "How to Trade Solana Using AI Arbitrage Bot" (Louis Moon, 259 visninger, link via tapmy.cc):**
+  alle kendetegn ved en indbetalingssvindel (send SOL til "botten", falsk dashboard, kan ikke hæve). Linket er
+  ikke åbnet. Send ikke penge.
+- **Grok Bot / CopyFomo-videoen:** reklame for en copy-trading-tjeneste, der tjener gebyr på hver handel. Viser den
+  bedste periode. Strategien er test 1 ovenfor.
+
+## Forbehold
+
+- Perioderne er korte (14 dage til 7 måneder) og fra ét markedsklima. Små stikprøver i test 2 (kopi-simulering)
+  og test 6 (23 noteringer).
+- Wallets fra en leaderboard er valgt, fordi de vandt i perioden: det gør backtesten af test 1 *for optimistisk*,
+  og den tabte alligevel.
+- Undervejs blev flere fejl fundet og rettet (bl.a. manglende version-1-transaktioner, spam-transaktioner, forkert
+  pool-størrelse ved ruter, missede graduations, dubletter). Tallene ovenfor er efter rettelserne.
+
+## Hvad kører nu (paper, ingen rigtige penge)
+
+- **Kopi-botten** (videoens regel) på http://localhost:8765, starter automatisk med Windows.
+- **Funding-carry** med $1.000, svar 1.11.
+- **Daglig status kl. 09:00** mod kriterierne.
+
+## Spørgsmål til den, der skal vælge
+
+1. Er der en strategi i listen, der bør testes igen med andre forudsætninger, og hvorfor?
+2. Er funding-carry (~8 %/år, test 7) værd at køre live med et lille beløb, hvis papir-testen holder til 1.11?
+3. Er der en anden idé med positiv forventet værdi efter omkostninger, som ikke kræver at være hurtigst i samme blok?
