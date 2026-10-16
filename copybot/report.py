@@ -184,22 +184,28 @@ def research_state(root):
         if "gates" in r:  # carry: dom ud fra de frosne regler (CARRY_SPEC §8), aldrig ud fra et pænt tal
             dev = {}
             try:
-                dev = _j.load(open(f.replace(".json", "_dev.json"), encoding="utf-8")).get("summary", {})
+                dj = _j.load(open(f.replace(".json", "_dev.json"), encoding="utf-8"))
+                dev = dj.get("summary") or dj.get("validation") or {}
             except (OSError, ValueError):
                 pass
             g = r["gates"]
+            gate = lambda prefix: next((v for k, v in g.items() if k.startswith(prefix)), None)
             if r.get("n_req") is None:
                 verdict = "FAIL (udvikling ≤ 0)"
-            elif not (g.get("G1 total netto > 0") and g.get("G2 nedre 99,4 % grænse > 0")):
+            elif gate("D") is False:
+                verdict = "INSUFFICIENT DATA"
+            elif not (gate("G1") and gate("G2")):
                 verdict = "FAIL"
             elif all(g.values()):
                 verdict = "INSUFFICIENT EVIDENCE (live paper mangler)"
             else:
                 verdict = "INSUFFICIENT EVIDENCE"
             s_ = r.get("summary", {})
-            hyps.append({"id": "CARRY", "desc": f"funding carry, {sum(1 for v in g.values() if v)}/{len(g)} gates · {s_.get('active_weeks')} aktive uger",
+            name = "TSMOM" if str(r.get("version", "")).startswith("tsmom") else "CARRY"
+            what = "tidsserie-momentum BTC/ETH/SOL" if name == "TSMOM" else "funding carry"
+            hyps.append({"id": name, "desc": f"{what}, {sum(1 for v in g.values() if v)}/{len(g)} gates · {s_.get('active_weeks', s_.get('weeks'))} uger",
                          "exit_min": 7 * 24 * 60, "verdict": verdict, "val_mean": dev.get("mean_week"), "val_n": dev.get("active_weeks"),
-                         "test_mean": s_.get("mean_week"), "test_median": None, "test_n": s_.get("active_weeks"), "test_ci": None, "test_ex_top3": None})
+                         "test_mean": s_.get("mean_week"), "test_median": None, "test_n": s_.get("active_weeks", s_.get("weeks")), "test_ci": None, "test_ex_top3": None})
             p_ = r.get("period") or [None, None]
             r["splits"] = {"test": [s_.get("weeks"), p_]}
             r["test_is"] = "holdout"

@@ -175,6 +175,21 @@ class ResearchStateCarry(unittest.TestCase):
         self.assertEqual((h["val_mean"], h["test_mean"]), (-0.00003, 0.0007))
 
 
+class ResearchStateTsmom(unittest.TestCase):
+    def test_tsmom_fails_on_g2_even_with_positive_total(self):
+        import json
+        from report import research_state
+        root = tempfile.mkdtemp()
+        d = os.path.join(root, "research", "results")
+        os.makedirs(d)
+        gates = {"D datatjek": True, "G1 total netto > 0": True, "G2 nedre 99,5 % grænse > 0": False, "G3 uger >= n_req": False}
+        json.dump({"version": "tsmom_v1", "built": 1, "n_req": 221, "gates": gates, "period": ["a", "b"],
+                   "summary": {"mean_week": 0.005, "weeks": 146}}, open(os.path.join(d, "tsmom_v1.json"), "w"))
+        json.dump({"validation": {"mean_week": 0.02}}, open(os.path.join(d, "tsmom_v1_dev.json"), "w"))
+        h = research_state(root)["experiments"][0]["hypotheses"][0]
+        self.assertEqual((h["id"], h["verdict"], h["test_n"], h["val_mean"]), ("TSMOM", "FAIL", 146, 0.02))
+
+
 class Metrics(unittest.TestCase):
     def test_profit_factor_drawdown_and_ex_top3(self):
         class T:

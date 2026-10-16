@@ -34,6 +34,7 @@ uden at kende samtalen.
 | 11 | Smart money: tidlige køberes historik (forudregistreret, holdout) | 1.200 graduations, 1,4 mio. handler | Holdout −4,7 til −25,6 %; ingen positiv selv på train | ❌ |
 | 12 | Arbitrage SOL/USDC Raydium v4 ↔ PumpSwap (forudregistreret) | 13.049 slots, 58.339 tilstande | 0 muligheder; største prisforskel 0,22 % mod 0,525 % gebyrer | ❌ |
 | 13 | Funding-carry, streng verifikation med spot-ben (forudregistreret, holdout) | 152 uger | Holdout +4,35 %, men udvikling −0,08 % og aftagende kant | ❌ FAIL |
+| 14 | Tidsserie-momentum BTC/ETH/SOL (forudregistreret, holdout) | 146 holdout-uger | Holdout Sharpe 0,54 > køb-og-hold 0,32, men ikke signifikant; drawdown 66 % | ❌ FAIL (tættest på) |
 
 **Konklusion:** Ingen af de testede strategier giver afkast som i videoen. Den eneste, der har holdt, er
 funding-carry uden gearing med ca. 8 % om året. I memecoins vinder dem, der er hurtigst (samme blok) eller har
@@ -269,6 +270,24 @@ de 40 perps eller for nogen af live-testens coins. Ny bindende specifikation (`r
 aktive uger, 6 af 7 gates), men kanten er skrumpet: sidste tredjedel af holdout var næsten flad, og de seneste
 6 måneder var negative, fordi gebyrerne ved ugentlige skift var større end funding. Baseline (altid BTC/ETH/SOL)
 var +2,0 % i holdout; den er en sammenligning, ikke en forudregistreret strategi.
+
+## 14. Tidsserie-momentum på BTC/ETH/SOL (tsmom_v1, 16.10)
+
+Valgt efter en gennemgang af porteføljen og verificeret litteratur (`research/NEXT_CANDIDATES.md`): den eneste
+kandidat uden de gentagne fejlmønstre (ingen hastighed, lav omsætning, mest likvide instrumenter, fagfællebedømt
+evidens, lang uafhængig data). Specifikation `research/TSMOM_SPEC.md` committet før data; L og n_req frosset før
+holdout. Data: Binance (2017→), funding fra Binance/Hyperliquid; datatjek mod Hyperliquid bestået. Rapport:
+`research/RESULTS_tsmom_v1.md`.
+
+| | Validering 2022–23 | Holdout 2024 → 10.2026 (146 uger) | Køb-og-hold, holdout |
+|---|---|---|---|
+| Sharpe | 1,24 (køb-og-hold 0,21) | **0,54** | 0,32 |
+| Netto (sum af ugeafkast) | +158 % | **+77 %** (funding −20 %, omk. −3,5 %) | +52 % |
+| Max drawdown | 56 % | 66 % | 90 % |
+
+**Dom: FAIL** efter de forudregistrerede regler: den nedre 99,5 %-grænse for ugeafkastet er −0,72 % (G2), og 146
+uger er færre end de 221, volatiliteten kræver (G3). Det er det mest lovende resultat i porteføljen (positivt i
+både validering og holdout, bedre end køb-og-hold), men det er ikke statistisk sikkert, og risikoen er høj.
 
 ## Andet, der er vurderet
 
