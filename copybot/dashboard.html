@@ -273,11 +273,15 @@ function render(s) {
   $("dot").className = "dot" + (s.live ? " on" : "");
   $("livetxt").textContent = s.mode === "BACKTEST" ? "HISTORIK" : (s.live ? "LIVE" : "STOPPET");
   animate("bal", s.balance, v => usd(v));
-  $("balsub").textContent = `startede på ${usd(s.start_balance)}` + (s.open_positions.length ? ` · ${s.open_positions.length} åbne positioner` : "");
+  const pt = s.parts || {};
+  $("balsub").textContent = `startede på ${usd(s.start_balance)}` + (pt.sniper != null
+    ? ` · kopi ${usd(pt.copy)} · sniper ${usd(pt.sniper)}` + (s.sniper && s.sniper.unrealized ? ` (åbne ${usd(s.sniper.unrealized, true)})` : "")
+    : (s.open_positions.length ? ` · ${s.open_positions.length} åbne positioner` : ""));
   animate("pnl", s.pnl, v => usd(v, true));
   $("pnl").className = "big " + cls(s.pnl);
   $("pnlcard").className = "card pnl" + (s.pnl < 0 ? " neg-b" : "");
-  $("pnlsub").textContent = `${pct(s.pnl_pct)}  ·  x${s.multiple.toFixed(2)}`;
+  $("pnlsub").textContent = `${pct(s.pnl_pct)}  ·  x${s.multiple.toFixed(2)}` + (pt.sniper != null
+    ? `  ·  kopi ${usd(pt.copy - pt.copy_start, true)} · sniper ${usd(pt.sniper - pt.sniper_start, true)}` : "");
 
   const a = s.active;
   if (a) {

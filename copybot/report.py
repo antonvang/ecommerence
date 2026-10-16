@@ -1,6 +1,8 @@
 """Tal, dom og dashboard-data ud fra databasen."""
 from __future__ import annotations
 
+import bisect
+import itertools
 import os
 import statistics
 import time
@@ -105,12 +107,16 @@ def sniper_state(path):
                        "net": sum(r["pnl_usd"] for r in rr if r["closed_ts"]),
                        "avg": statistics.mean(closed) * 100 if closed else None,
                        "median": statistics.median(closed) * 100 if closed else None}
+    unreal = sum((r["proceeds_usd"] or r["cost_usd"]) - r["cost_usd"] for r in rows if not r["closed_ts"])
     lat = [r["seen_ts"] - r["grad_ts"] for r in rows if r["grad_ts"] and r["rule"] == "60s"]
     recent = [{"ts": r["closed_ts"], "rule": r["rule"], "mint": r["mint"][:6], "pct": r["pnl_usd"] / r["cost_usd"] * 100,
                "reason": r["reason"]} for r in sorted((r for r in rows if r["closed_ts"]), key=lambda r: -r["closed_ts"])[:12]]
     import json as _j
-    return {"rules": rules, "grads": len({r["mint"] for r in rows}), "latency": statistics.median(lat) if lat else None,
-            "recent": recent, "heartbeat": _j.loads(hb[0]) if hb else None, "error": _j.loads(err[0]) if err else None}
+    size = rows[0]["cost_usd"] if rows else 50.0
+    return {"rules": rules, "grads": len({r["mint"] for r in rows}), "bankroll": size * 3,
+            "pnl": sum(r["pnl_usd"] for r in rows if r["closed_ts"]) + unreal, "unrealized": unreal, "latency": statistics.median(lat) if lat else None,
+            "recent": recent, "heartbeat": _j.loads(hb[0]) if hb else None, "error": _j.loads(err[0]) if err else None,
+            "_closed": sorted((r["closed_ts"], r["pnl_usd"]) for r in rows if r["closed_ts"])}
 
 
 def build_state(s):
@@ -176,10 +182,25 @@ def build_state(s):
     hb = s.get("heartbeat")
     costs = s.one("SELECT COALESCE(SUM(costs_usd),0) FROM positions WHERE book='port'")[0]
     shadow_all = trade_stats([r["pnl_usd"] for r in s.q("SELECT pnl_usd FROM positions WHERE book='shadow' AND closed_ts IS NOT NULL")])
+    sn = sniper_state(os.path.join(os.path.dirname(s.path), "sniper.db")) if s.path != ":memory:" else None
+    copy_balance, copy_start = balance, start
+    if sn:
+        start, balance = start + sn["bankroll"], balance + sn["bankroll"] + sn["pnl"]
+        # grafen: kopi-kontoens historik + sniperens bankroll og realiserede resultat på hvert tidspunkt
+        closed = sn.pop("_closed")
+        cts = [c[0] for c in closed]
+        cum = list(itertools.accumulate(c[1] for c in closed))
+        for pt in eq_pts:
+            k = bisect.bisect_right(cts, pt[0])
+            pt[1] = round(pt[1] + sn["bankroll"] + (cum[k - 1] if k else 0.0), 4)
+        if mode == "PAPER" and eq_pts:
+            eq_pts[-1][1] = round(balance, 4)  # sidste punkt = nu, inkl. åbne snipes
     return {
         "mode": mode, "live": bool(hb and time.time() - hb < 90), "now": int(time.time()),
         "balance": balance, "start_balance": start, "pnl": balance - start,
         "pnl_pct": (balance / start - 1) * 100 if start else 0.0, "multiple": balance / start if start else 0.0,
+        "parts": {"copy": copy_balance, "copy_start": copy_start, "sniper": (sn["bankroll"] + sn["pnl"]) if sn else None,
+                  "sniper_start": sn["bankroll"] if sn else None},
         "trades_copied": s.one("SELECT COUNT(*) FROM positions WHERE book='port'")[0],
         "open_positions": [{"symbol": r["symbol"], "wallet": label.get(r["wallet"], ""), "value": r["tokens_left"] * r["last_price"],
                             "cost": r["cost_usd"]} for r in open_rows],
@@ -198,7 +219,7 @@ def build_state(s):
                    "initials": initials(label.get(r["wallet"], "??")), "side": r["side"], "symbol": r["symbol"],
                    "usd": r["usd"], "status": r["status"], "copied": r["copied"], "following": r["wallet"] == active}
                   for r in s.q("SELECT * FROM signals ORDER BY id DESC LIMIT 40")],
-        "sniper": sniper_state(os.path.join(os.path.dirname(s.path), "sniper.db")) if s.path != ":memory:" else None,
+        "sniper": sn,
         "pulse": {"tx_seen": s.one("SELECT COUNT(*) FROM seen")[0], "heartbeat": hb,
                   "signals": s.one("SELECT COUNT(*) FROM signals")[0],
                   "signals_24h": s.one("SELECT COUNT(*) FROM signals WHERE ts >= ?", int(time.time()) - 86400)[0],

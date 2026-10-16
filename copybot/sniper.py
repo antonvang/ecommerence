@@ -160,6 +160,9 @@ class Sniper:
                 reason = "sl"
             elif now - r["opened_ts"] >= rule["hold"]:
                 reason = "tid"
+            if not reason:  # åben: gem nuværende salgsværdi, så balancen på dashboardet følger med live
+                self.s.x("UPDATE snipes SET exit_px=?, proceeds_usd=? WHERE id=?", px,
+                         sell(r["tokens"], px, pool_usd, self.fee, tip), r["id"])
             if reason:
                 got = sell(r["tokens"], px, pool_usd, self.fee, tip) if px else 0.0
                 self.s.x("UPDATE snipes SET closed_ts=?, exit_px=?, proceeds_usd=?, pnl_usd=?, reason=? WHERE id=?",
