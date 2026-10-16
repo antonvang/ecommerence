@@ -358,10 +358,10 @@ function render(s) {
         + tile("Pools hentet", `${d.fetched} / ${d.sampled}`, `${d.events.toLocaleString("da-DK")} handler med wallet og reserver`)
         + tile("Exit-snapshots", d.snapshots_ok.toLocaleString("da-DK"), d.snapshots_missing ? `<span class="neg">${d.snapshots_missing} mangler</span>` : "ingen mangler"));
     }
-    setHTML("rs-exp", rs.experiments.map(e => `<div class="lab" style="margin:6px 0">${esc(e.version)} · ${e.n} launches · bygget ${dmhm(e.built)}
-        · ${/holdout/.test(e.test_is) ? "holdout" : "test"} ${esc(e.splits.test[1] ? e.splits.test[1][0] + " → " + e.splits.test[1][1] : "–")}</div>`
+    setHTML("rs-exp", rs.experiments.map(e => `<div class="lab" style="margin:6px 0">${esc(e.version)} · ${e.n ? e.n + " launches · " : ""}bygget ${dmhm(e.built)}
+        · ${/holdout/.test(e.test_is) ? "holdout" : "test"} ${esc(e.splits && e.splits.test && e.splits.test[1] ? e.splits.test[1][0] + " → " + e.splits.test[1][1] : "–")}</div>`
       + e.hypotheses.map(h => `<div class="rr" style="grid-template-columns:40px minmax(0,1fr) 70px 110px 110px minmax(150px,auto)">
-        <span class="sym">${esc(h.id)}</span><span class="t" title="${esc(h.desc)}">${esc(h.desc)}</span><span class="t">exit ${h.exit_min} min</span>
+        <span class="sym">${esc(h.id)}</span><span class="t" title="${esc(h.desc)}">${esc(h.desc)}</span><span class="t">${h.exit_min ? "exit " + h.exit_min + " min" : "atomisk"}</span>
         <span class="usd ${cls(h.val_mean)}">valid. ${pct(h.val_mean == null ? null : h.val_mean * 100)}</span>
         <span class="usd ${cls(h.test_mean)}">${/holdout/.test(e.test_is) ? "holdout" : "test"} ${pct(h.test_mean == null ? null : h.test_mean * 100)}</span>
         <span class="st ${/VALIDATED/.test(h.verdict) ? "copied" : /INCONCLUSIVE/.test(h.verdict) ? "shadow" : "skip"}">${esc(h.verdict)}</span></div>`).join("")).join("")

@@ -179,6 +179,14 @@ def research_state(root):
         except (OSError, ValueError):
             continue
         hyps = []
+        if "parts" in r:  # arbitrage-eksperiment: én samlet hypotese
+            t, v = r["parts"].get("test", {}), r["parts"].get("validation", {})
+            slots = sum(x.get("slots_with_update", 0) for x in r["parts"].values())
+            obs = sum(x.get("observed_opportunities", 0) for x in r["parts"].values())
+            hyps.append({"id": "ARB", "desc": f"SOL/USDC Raydium v4 ↔ PumpSwap: {obs} muligheder i {slots} slots", "exit_min": 0,
+                         "verdict": r.get("verdict"), "val_mean": (v.get("primary") or {}).get("mean"), "val_n": (v.get("primary") or {}).get("decisions"),
+                         "test_mean": (t.get("primary") or {}).get("mean"), "test_median": None, "test_n": (t.get("primary") or {}).get("decisions"),
+                         "test_ci": (t.get("primary") or {}).get("ci95"), "test_ex_top3": None})
         for hid, h in r.get("hypotheses", {}).items():
             if hid == "H0":
                 continue
@@ -187,6 +195,9 @@ def research_state(root):
                          "val_mean": va.get("mean"), "val_n": va.get("n"), "test_mean": te.get("mean"), "test_median": te.get("median"),
                          "test_n": te.get("n"), "test_ci": te.get("ci95"), "test_ex_top3": te.get("mean_ex_top3")})
         h0 = r.get("hypotheses", {}).get("H0", {})
+        if "parts" in r and not r.get("splits"):
+            w = r.get("windows") or []
+            r["splits"] = {"test": [len(w[9:]), [w[9]["start"], w[-1]["start"]] if len(w) > 9 else None]}
         out["experiments"].append({"version": r.get("version"), "built": r.get("built"), "n": r.get("n_launches"),
                                    "test_is": r.get("test_is", "test"),
                                    "splits": r.get("splits"), "assumptions": r.get("assumptions"), "hypotheses": hyps,

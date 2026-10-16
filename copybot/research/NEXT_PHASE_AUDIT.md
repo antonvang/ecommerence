@@ -95,3 +95,12 @@ early entries. Testing "smart money that holds for hours" would need each wallet
 histories, ~10× the data). Before spending that, a specific hypothesis with a reason to expect a different
 result is needed; the evidence so far (copying, flow, wallet history, timing) consistently points to no
 exploitable edge for a late entrant in pump.fun launches.
+
+## Status after the arbitrage phase (16.10.2026 evening)
+
+- arb_v1 (SOL/USDC, Raydium AMM v4 ↔ PumpSwap, the only verifiable constant-product pair): 0 opportunities above the
+  fee band in 13,049 slots and 58,339 transaction-level states; REJECTED.
+- Further arbitrage research would need per-slot reconstruction of concentrated-liquidity pool state (Whirlpool
+  ticks, CLMM ticks, DLMM bins) from program account data or decoded swap events, verified against real swaps the
+  same way. That is a substantial data project; there is no evidence yet that it would find gaps a late entrant can
+  take, since professional searchers arbitrage these pools within the slot.

@@ -32,6 +32,7 @@ uden at kende samtalen.
 
 | 10 | Launch-udvælgelse ud fra flow ved 60–120 sek (forudregistreret) | 600 graduations, 684k handler | Positiv på train, faldt sammen i validering | ❌ |
 | 11 | Smart money: tidlige køberes historik (forudregistreret, holdout) | 1.200 graduations, 1,4 mio. handler | Holdout −4,7 til −25,6 %; ingen positiv selv på train | ❌ |
+| 12 | Arbitrage SOL/USDC Raydium v4 ↔ PumpSwap (forudregistreret) | 13.049 slots, 58.339 tilstande | 0 muligheder; største prisforskel 0,22 % mod 0,525 % gebyrer | ❌ |
 
 **Konklusion:** Ingen af de testede strategier giver afkast som i videoen. Den eneste, der har holdt, er
 funding-carry uden gearing med ca. 8 % om året. I memecoins vinder dem, der er hurtigst (samme blok) eller har
@@ -220,6 +221,31 @@ v2-tal (`465df7d`, `dbd5e5c`, `eb04cfc`). 99–100 % af coins havde mindst én t
 
 Ingen var positiv selv på train. De tidlige køberes historik forudsiger ikke udfaldet. Forsinkelse 0–10 sek,
 størrelse 0,1–2 SOL og høje omkostninger ændrer ikke dommen. Reference-tallene (H0) gentager sig på holdout.
+
+## 12. Arbitrage mellem pools: SOL/USDC Raydium AMM v4 ↔ PumpSwap (arb_v1, 16.10)
+
+Spørgsmål: efterlader prisforskelle mellem to pools en arbitrage, der kan udføres med positiv netto efter alle
+omkostninger? Kun venue-par, hvis data og swap-matematik kunne efterprøves, er med: alle andre SOL/USDC-pools og
+alle ekstra memecoin-pools er koncentreret likviditet (Orca Whirlpool, Raydium CLMM, Meteora DLMM), hvor prisen
+ikke kan genskabes fra vault-saldi. Gebyrer **målt** på rigtige swaps: Raydium 0,2500 % (68 af 68 swaps inden for
+±0,01 pp), PumpSwap 0,274–0,275 % i poolen. Hypotese og kode committet før data (`07fa9ec`, `cf9cf25`).
+
+- Data: 12 vinduer à 5 min jævnt over 02.10–15.10, pool-tilstand efter hver transaktion (52.293 Raydium-, 1.058
+  PumpSwap-tilstande; 13.049 slots).
+- Model: optimal atomisk rundtur (begge ben i én transaktion) med 1.000 USDC, 2 slots forsinkelse, profit-sikring,
+  0,001 SOL pr. transaktion (estimeret). Øvre grænse: konkurrerende arbitragører i samme slot er ikke modelleret.
+
+| Mål | Train | Validering | Test |
+|---|---|---|---|
+| Slots med opdatering | 5.847 | 3.897 | 3.305 |
+| Muligheder med netto > 0 | 0 | 0 | 0 |
+| Handler | 0 | 0 | 0 |
+
+Prisforskellen mellem de to pools ved slut af hvert slot: median 0,068 %, 99 % under 0,213 %, største 0,222 %, mod
+samlede gebyrer på 0,525 %. Selv målt efter hver enkelt transaktion (58.339 tilstande) var forskellen aldrig over
+gebyr-båndet. **REJECTED:** poolene holdes inden for båndet hele tiden; der er intet at tage, uanset hastighed.
+Forbehold: kun ét venue-par kunne efterprøves; arbitrage mod koncentreret-likviditets-pools kræver at genskabe
+deres tick-/bin-tilstand pr. slot, hvilket den nuværende data ikke kan.
 
 ## Andet, der er vurderet
 

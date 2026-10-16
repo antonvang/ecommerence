@@ -143,6 +143,20 @@ class ResearchState(unittest.TestCase):
         self.assertEqual((d["graduations"], d["sampled"], d["fetched"]), (4, 3, 2))  # ikke 1+2+2=5
 
 
+class ResearchStateArb(unittest.TestCase):
+    def test_arbitrage_results_are_shown_without_inventing_numbers(self):
+        import json
+        from report import research_state
+        root = tempfile.mkdtemp()
+        os.makedirs(os.path.join(root, "research", "results"))
+        part = {"slots_with_update": 100, "observed_opportunities": 0, "primary": {"decisions": 0, "executed": 0}}
+        json.dump({"version": "arb_v1", "built": 1, "parts": {"train": part, "validation": part, "test": part}, "verdict": "REJECTED",
+                   "splits": None}, open(os.path.join(root, "research", "results", "arb_v1.json"), "w"))
+        h = research_state(root)["experiments"][0]["hypotheses"][0]
+        self.assertEqual((h["id"], h["verdict"], h["test_mean"], h["test_n"]), ("ARB", "REJECTED", None, 0))
+        self.assertIn("0 muligheder i 300 slots", h["desc"])
+
+
 class Metrics(unittest.TestCase):
     def test_profit_factor_drawdown_and_ex_top3(self):
         class T:
