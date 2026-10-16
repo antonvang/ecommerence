@@ -201,9 +201,17 @@ def research_state(root):
             else:
                 verdict = "INSUFFICIENT EVIDENCE"
             s_ = r.get("summary", {})
-            name = "TSMOM" if str(r.get("version", "")).startswith("tsmom") else "CARRY"
-            what = "tidsserie-momentum BTC/ETH/SOL" if name == "TSMOM" else "funding carry"
-            hyps.append({"id": name, "desc": f"{what}, {sum(1 for v in g.values() if v)}/{len(g)} gates · {s_.get('active_weeks', s_.get('weeks'))} uger",
+            ver = str(r.get("version", ""))
+            name = "TSMOM" if ver.startswith("tsmom") else ("PMCAL" if ver.startswith("pmcal") else "CARRY")
+            what = {"TSMOM": "tidsserie-momentum BTC/ETH/SOL", "PMCAL": f"Polymarket-favoritter ({r.get('config')})",
+                    "CARRY": "funding carry"}[name]
+            if name == "PMCAL":   # enhed: events, middel netto pr. $1 pr. event
+                s_ = dict(r.get("summary", {}), mean_week=r.get("summary", {}).get("mean"),
+                          active_weeks=r.get("summary", {}).get("events"))
+                v_ = (dev.get("summary") or {}) if "summary" in dev else dev
+                dev = {"mean_week": v_.get("mean"), "active_weeks": v_.get("events")}
+            unit = "events" if name == "PMCAL" else "uger"
+            hyps.append({"id": name, "desc": f"{what}, {sum(1 for v in g.values() if v)}/{len(g)} gates · {s_.get('events') if name == 'PMCAL' else s_.get('active_weeks', s_.get('weeks'))} {unit}",
                          "exit_min": 7 * 24 * 60, "verdict": verdict, "val_mean": dev.get("mean_week"), "val_n": dev.get("active_weeks"),
                          "test_mean": s_.get("mean_week"), "test_median": None, "test_n": s_.get("active_weeks", s_.get("weeks")), "test_ci": None, "test_ex_top3": None})
             p_ = r.get("period") or [None, None]

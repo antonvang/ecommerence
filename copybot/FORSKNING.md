@@ -35,9 +35,11 @@ uden at kende samtalen.
 | 12 | Arbitrage SOL/USDC Raydium v4 ↔ PumpSwap (forudregistreret) | 13.049 slots, 58.339 tilstande | 0 muligheder; største prisforskel 0,22 % mod 0,525 % gebyrer | ❌ |
 | 13 | Funding-carry, streng verifikation med spot-ben (forudregistreret, holdout) | 152 uger | Holdout +4,35 %, men udvikling −0,08 % og aftagende kant | ❌ FAIL |
 | 14 | Tidsserie-momentum BTC/ETH/SOL (forudregistreret, holdout) | 146 holdout-uger | Holdout Sharpe 0,54 > køb-og-hold 0,32, men ikke signifikant; drawdown 66 % | ❌ FAIL (tættest på) |
+| 15 | Diversificeret momentum (tsmom_v2) | Kun gennemførlighed | Kan ikke testes: krypto bevæger sig sammen, så 20 coins hjælper kun ×1,15–1,27; kræver 1.000+ urørte uger | ⛔ stoppet |
+| 16 | Polymarket: favorit/longshot-fejlprisning (pmcal_v1, forudregistreret, holdout) | ~7.700 events | Validering −3,4 %, holdout −8,7 % pr. event; fortegnet skifter mellem perioder | ❌ FAIL |
 
-**Konklusion:** Ingen af de testede strategier giver afkast som i videoen. Den eneste, der har holdt, er
-funding-carry uden gearing med ca. 8 % om året. I memecoins vinder dem, der er hurtigst (samme blok) eller har
+**Konklusion:** Ingen af de testede strategier giver afkast som i videoen. Ingen har bestået sin
+forudregistrerede test; ca. 8 % om året fra funding-carry (7) holdt ikke i den strenge version (13). I memecoins vinder dem, der er hurtigst (samme blok) eller har
 insider-viden; alle, der kommer bagefter (inklusive kopi-bots), betaler for det.
 
 ---
@@ -288,6 +290,28 @@ holdout. Data: Binance (2017→), funding fra Binance/Hyperliquid; datatjek mod 
 **Dom: FAIL** efter de forudregistrerede regler: den nedre 99,5 %-grænse for ugeafkastet er −0,72 % (G2), og 146
 uger er færre end de 221, volatiliteten kræver (G3). Det er det mest lovende resultat i porteføljen (positivt i
 både validering og holdout, bedre end køb-og-hold), men det er ikke statistisk sikkert, og risikoen er høj.
+
+## 15. Diversificeret momentum (tsmom_v2, 16.10)
+
+Stoppet før specifikation (`research/TSMOM_V2_PROPOSAL.md`). Krypto-strategiernes afkast korrelerer 0,29–0,45, så
+20 coins i stedet for 3 øger Sharpe med kun ×1,15–1,27. Al data fra 2019 og frem er allerede set, og før 2019 er
+der højst 94 uger. Med realistisk Sharpe kræver en gyldig test 1.000–1.500 uger.
+
+## 16. Prediction markets: favorit/longshot-fejlprisning på Polymarket (pmcal_v1, 16.10)
+
+Valgt efter en ny mekanisme-søgning (`research/NEXT_MECHANISMS.md`): mange uafhængige udfald pr. uge (~1.500
+events), ingen hastighed, målbare omkostninger. Specifikation `research/PMCAL_SPEC.md` committet før data; regel
+frosset før holdout. Rapport: `research/RESULTS_pmcal_v1.md`.
+
+| Køb favoritten (0,80–0,95) 1 dag før slut | Udvikling 2024–25 | Validering 2026-H1 | Holdout 7–10.2026 |
+|---|---|---|---|
+| Events | 2.179 | 3.050 | 2.518 |
+| Netto pr. event | +0,27 % | −3,43 % | **−8,68 %** |
+| Vundet / pris | 88,9 % / 0,875 | 84,8 % / 0,869 | 81,1 % / 0,880 |
+
+**Dom: FAIL** (validering ≤ 0; alle holdout-gates fejler). Longshots, som tabte stort i udviklingen, vandt i
+holdout: fejlprisningen skifter fortegn mellem perioder, så en fast regel fanger den ikke. Det er ikke et signal at
+handle på bagefter.
 
 ## Andet, der er vurderet
 
