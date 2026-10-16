@@ -83,7 +83,8 @@ def coverage(cfg, s, out, now):
     from solana_rpc import RPC
     from sniper import MIGRATION, parse_migration
     rpc = RPC(cfg["rpc_url"], 8, log=lambda *a: None)
-    t0, t1 = int(now - 6 * 3600), int(now - 120)
+    first = s.execute("SELECT MIN(seen_ts) FROM snipes").fetchone()[0]
+    t0, t1 = int(max(now - 6 * 3600, (first or now) + 30)), int(now - 120)  # kun den periode, sniperen har kørt
     real, token = set(), None
     for _ in range(5):
         opts = {"transactionDetails": "full", "encoding": "jsonParsed", "maxSupportedTransactionVersion": 1, "limit": 1000,
@@ -100,7 +101,7 @@ def coverage(cfg, s, out, now):
             break
     ours = {r[0] for r in s.execute("SELECT DISTINCT mint FROM snipes WHERE grad_ts>=? AND grad_ts<?", (t0, t1))}
     pct = len(ours & real) / len(real) * 100 if real else 0
-    out.append(f"  dækning seneste 6 timer: {len(ours & real)} af {len(real)} graduations fanget ({pct:.0f} %)"
+    out.append(f"  dækning seneste {(t1 - t0) / 3600:.1f} timer: {len(ours & real)} af {len(real)} graduations fanget ({pct:.0f} %)"
                + ("" if pct >= 90 else "  <-- FOR LAV, noget er galt"))
 
 
