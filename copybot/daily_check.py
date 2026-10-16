@@ -64,7 +64,8 @@ def main():
         out.append(f"Sniper: {'kører' if shb and now - shb < 120 else 'STOPPET'} (sidst aktiv for {int(now - shb) if shb else '?'} sek siden)")
         sn = s.execute("SELECT * FROM snipes").fetchall()
         lat = [r["seen_ts"] - r["grad_ts"] for r in sn if r["grad_ts"] and r["rule"] == "60s"]
-        out.append(f"  {len({r['mint'] for r in sn})} graduations i alt, reaktionstid median {statistics.median(lat) if lat else '-'} sek")
+        out.append(f"  {len({r['mint'] for r in sn})} graduations i alt, reaktionstid median {statistics.median(lat) if lat else '-'} sek"
+                   f", opgivet (pool ikke synlig i 20 sek): {kv(s, 'sniper_dropped') or 0}")
         for rule in ("60s", "5min", "tp50_sl30"):
             rr = [r for r in sn if r["rule"] == rule and r["closed_ts"]]
             pn = [r["pnl_usd"] / r["cost_usd"] for r in rr]

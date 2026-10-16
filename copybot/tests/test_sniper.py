@@ -75,5 +75,24 @@ class SniperDetect(unittest.TestCase):
         sn.s.close()
 
 
+class SniperOpenRetry(unittest.TestCase):
+    def test_retries_until_pool_is_visible(self):
+        import tempfile
+        from copybot import DEFAULTS
+        import sniper as sn_mod
+        sn = sn_mod.Sniper(DEFAULTS, tempfile.mkdtemp(), log=lambda *a: None)
+        sn.sol_usd = 150.0
+        g = parse_migration(migrate_tx())
+        sn.detect = lambda: [g]
+        sn._reserves = lambda rows: {}  # poolen er ikke synlig endnu
+        sn._detect_and_open()
+        self.assertEqual(sn.s.one("SELECT COUNT(*) FROM snipes")[0], 0)
+        sn.detect = lambda: []
+        sn._reserves = lambda rows: {"PoolSolVault": 84.0, "PoolTokVault": 206_900_000.0}
+        sn._detect_and_open()
+        self.assertEqual(sn.s.one("SELECT COUNT(*) FROM snipes")[0], 3)
+        sn.s.close()
+
+
 if __name__ == "__main__":
     unittest.main()

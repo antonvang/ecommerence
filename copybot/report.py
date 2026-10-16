@@ -94,6 +94,7 @@ def sniper_state(path):
         rows = db.execute("SELECT * FROM snipes").fetchall()
         hb = db.execute("SELECT v FROM kv WHERE k='sniper_heartbeat'").fetchone()
         err = db.execute("SELECT v FROM kv WHERE k='sniper_error'").fetchone()
+        dropped = db.execute("SELECT v FROM kv WHERE k='sniper_dropped'").fetchone()
     except sqlite3.Error:
         return None
     finally:
@@ -114,6 +115,7 @@ def sniper_state(path):
     import json as _j
     size = rows[0]["cost_usd"] if rows else 50.0
     return {"rules": rules, "grads": len({r["mint"] for r in rows}), "bankroll": size * 3,
+            "dropped": int(dropped[0]) if dropped else 0,
             "pnl": sum(r["pnl_usd"] for r in rows if r["closed_ts"]) + unreal, "unrealized": unreal, "latency": statistics.median(lat) if lat else None,
             "recent": recent, "heartbeat": _j.loads(hb[0]) if hb else None, "error": _j.loads(err[0]) if err else None,
             "_closed": sorted((r["closed_ts"], r["pnl_usd"]) for r in rows if r["closed_ts"])}
@@ -219,7 +221,8 @@ def build_state(s):
         "radar": [{"ts": r["ts"], "label": label.get(r["wallet"], r["wallet"][:6]), "color": color.get(r["wallet"], "#3a4466"),
                    "initials": initials(label.get(r["wallet"], "??")), "side": r["side"], "symbol": r["symbol"],
                    "usd": r["usd"], "status": r["status"], "copied": r["copied"], "following": r["wallet"] == active}
-                  for r in s.q("SELECT * FROM signals ORDER BY id DESC LIMIT 40")],
+                  # salg af coins, vi aldrig har haft, er støj (nogle wallets sælger i 10 bidder): vis dem ikke
+                  for r in s.q("SELECT * FROM signals WHERE NOT (side='sell' AND status='vi har den ikke') ORDER BY id DESC LIMIT 40")],
         "sniper": sn,
         "pulse": {"tx_seen": s.one("SELECT COUNT(*) FROM seen")[0], "heartbeat": hb,
                   "signals": s.one("SELECT COUNT(*) FROM signals")[0],

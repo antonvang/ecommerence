@@ -80,6 +80,7 @@ class Sniper:
         self.log = log
         self.sol_usd = None
         self.cursor = None
+        self.to_open = {}  # mint -> (graduation, første forsøg): pool-konti er ikke altid synlige med det samme
         self.pending = {}  # signatur -> (første gang set, sidste forsøg); nye transaktioner kan ikke altid hentes med det samme
 
     def _sol_usd(self, market):
@@ -139,13 +140,14 @@ class Sniper:
         return out
 
     def open(self, g):
+        """True når købet er registreret (eller allerede var det); False hvis poolens pris ikke kan læses endnu."""
         if self.s.one("SELECT 1 FROM snipes WHERE mint=? LIMIT 1", g["mint"]):
-            return  # pump.fun laver nogle gange flere Migrate-transaktioner pr. coin: køb kun én gang
+            return True  # pump.fun laver nogle gange flere Migrate-transaktioner pr. coin: køb kun én gang
         now = int(time.time())
         res = self._reserves([{"sol_vault": g["sol_vault"], "tok_vault": g["tok_vault"]}])
         px, pool_usd = self._price(res, g["sol_vault"], g["tok_vault"])
         if not px:
-            return
+            return False  # de nye pool-konti er ikke synlige hos RPC'en endnu
         tip = self.tip_sol * self.sol_usd
         for rule in RULES:
             tokens = buy(self.size, px, pool_usd, self.fee, tip)
@@ -153,6 +155,7 @@ class Sniper:
                      "VALUES(?,?,?,?,?,?,?,?,?,?,?)", rule, g["mint"], g["pool"], g["sol_vault"], g["tok_vault"],
                      g["grad_ts"], now, now, px, tokens, self.size)
         self.log(f"[SNIPE] {g['mint'][:6]} · set {now - (g['grad_ts'] or now)} sek efter graduation · pris ${px:.8f}")
+        return True
 
     def check(self):
         rows = self.s.q("SELECT * FROM snipes WHERE closed_ts IS NULL")
@@ -182,8 +185,15 @@ class Sniper:
                          now, px, got, got - r["cost_usd"], reason, r["id"])
 
     def _detect_and_open(self):
+        now = time.time()
         for g in self.detect():
-            self.open(g)
+            self.to_open.setdefault(g["mint"], (g, now))
+        for mint, (g, first) in list(self.to_open.items()):
+            if self.open(g):
+                del self.to_open[mint]
+            elif now - first > 20:
+                del self.to_open[mint]  # opgiv, men tæl det, så tabte graduations aldrig er usynlige
+                self.s.set("sniper_dropped", (self.s.get("sniper_dropped") or 0) + 1)
 
     def _check_every_2s(self):
         if time.time() - self._last_check >= 2:

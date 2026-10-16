@@ -191,7 +191,7 @@ svg{display:block}
     </div>
   </div>
 
-  <div class="pulse">
+  <div class="pulse" id="pulse">
     <div class="card chip"><div class="lab">Transaktioner læst</div><div class="v" id="p-tx">–</div></div>
     <div class="card chip"><div class="lab">Handler set · 24t</div><div class="v" id="p-sig">–</div></div>
     <div class="card chip"><div class="lab">Seneste handel</div><div class="v" id="p-last">–</div></div>
@@ -306,6 +306,7 @@ function render(s) {
   $("firedcnt").textContent = `fyret indtil nu: ${f.fired_count}`;
 
   const p = s.pulse || {};
+  $("pulse").style.display = s.mode === "BACKTEST" ? "none" : "";  // live-tal giver ikke mening for en backtest
   $("p-tx").textContent = (p.tx_seen ?? 0).toLocaleString("da-DK");
   $("p-sig").textContent = (p.signals_24h ?? 0).toLocaleString("da-DK");
   $("p-last").textContent = ago(p.last_signal);
@@ -332,7 +333,8 @@ function render(s) {
   $("snipercard").style.display = sn ? "" : "none";
   if (sn) {
     const NAMES = {"60s": "Sælg efter 60 sek", "5min": "Sælg efter 5 min", "tp50_sl30": "TP +50 % / SL −30 %"};
-    $("sn-meta").textContent = `${sn.grads} graduations · reaktionstid ${sn.latency == null ? "–" : sn.latency.toFixed(0) + " sek"}`;
+    $("sn-meta").textContent = `${sn.grads} graduations · reaktionstid ${sn.latency == null ? "–" : sn.latency.toFixed(0) + " sek"}`
+      + (sn.dropped ? ` · ${sn.dropped} ikke nået` : "");
     setHTML("snrules", Object.entries(sn.rules).map(([k, r]) => `<div class="snr"><div class="nm">${NAMES[k] || k}</div>
       <div class="v ${cls(r.net)}">${usd(r.net, true)}</div>
       <div class="s2">${r.n} lukket · ${r.open} åbne · ${r.n ? r.win_rate.toFixed(0) : "–"}% vind</div>
