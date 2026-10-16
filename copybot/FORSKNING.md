@@ -230,7 +230,7 @@ alle ekstra memecoin-pools er koncentreret likviditet (Orca Whirlpool, Raydium C
 ikke kan genskabes fra vault-saldi. Gebyrer **målt** på rigtige swaps: Raydium 0,2500 % (68 af 68 swaps inden for
 ±0,01 pp), PumpSwap 0,274–0,275 % i poolen. Hypotese og kode committet før data (`07fa9ec`, `cf9cf25`).
 
-- Data: 12 vinduer à 5 min jævnt over 02.10–15.10, pool-tilstand efter hver transaktion (52.293 Raydium-, 1.058
+- Data: 12 vinduer à 5 min jævnt over 02.10–15.10, pool-tilstand efter hver transaktion (57.293 Raydium-, 1.058
   PumpSwap-tilstande; 13.049 slots).
 - Model: optimal atomisk rundtur (begge ben i én transaktion) med 1.000 USDC, 2 slots forsinkelse, profit-sikring,
   0,001 SOL pr. transaktion (estimeret). Øvre grænse: konkurrerende arbitragører i samme slot er ikke modelleret.
