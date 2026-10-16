@@ -318,7 +318,8 @@ def frozen_committed():
     with open(p, encoding="utf-8") as f:
         for line in f:
             if line.startswith("n_req:"):
-                return int(line.split(":")[1])
+                v = line.split(":")[1].strip()
+                return "none" if v == "none" else int(v)  # "none": udviklingens middel <= 0 -> G3 kan ikke opfyldes
     return None
 
 
@@ -342,6 +343,8 @@ def main():
         nreq = frozen_committed()
         if nreq is None:
             raise SystemExit("research/CARRY_FROZEN.md skal være committet (uden ændringer) før holdout åbnes")
+        if nreq == "none":
+            nreq = None
         weeks = run_period(mk, HOLDOUT)
         s = summarize(weeks)
         adverse = summarize(run_period(mk, HOLDOUT, delay=True, cost_mult=3.0))
