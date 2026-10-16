@@ -40,5 +40,20 @@ class Sniper(unittest.TestCase):
         self.assertAlmostEqual(sell(t, 0.002, 12_000, 0.0, 0.0) / sell(t, 0.001, 12_000, 0.0, 0.0), 2, delta=0.02)
 
 
+class SniperOpen(unittest.TestCase):
+    def test_same_coin_is_bought_once(self):
+        import tempfile
+        from copybot import DEFAULTS
+        import sniper as sn_mod
+        root = tempfile.mkdtemp()
+        sn = sn_mod.Sniper(DEFAULTS, root, log=lambda *a: None)
+        sn.sol_usd = 150.0
+        sn._reserves = lambda rows: {"PoolSolVault": 84.0, "PoolTokVault": 206_900_000.0}
+        g = parse_migration(migrate_tx())
+        sn.open(g); sn.open(g)
+        self.assertEqual(sn.s.one("SELECT COUNT(*) FROM snipes")[0], 3)  # 3 regler, ikke 6
+        sn.s.close()
+
+
 if __name__ == "__main__":
     unittest.main()

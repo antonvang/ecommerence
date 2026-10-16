@@ -126,6 +126,8 @@ class Sniper:
         return out
 
     def open(self, g):
+        if self.s.one("SELECT 1 FROM snipes WHERE mint=? LIMIT 1", g["mint"]):
+            return  # pump.fun laver nogle gange flere Migrate-transaktioner pr. coin: køb kun én gang
         now = int(time.time())
         res = self._reserves([{"sol_vault": g["sol_vault"], "tok_vault": g["tok_vault"]}])
         px, pool_usd = self._price(res, g["sol_vault"], g["tok_vault"])
