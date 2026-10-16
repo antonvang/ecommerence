@@ -30,6 +30,9 @@ uden at kende samtalen.
 | 8 | Funding-carry med gearing | samme | 2x: +7,2 %, 3x: +4,6 %, 5x: −1,6 %, 10x: −16,4 %/år | ❌ |
 | 9 | "Stop når du er foran" på sniper-handlerne | 149 handler pr. regel | Rammer målet tit, men gennemsnittet er stadig minus | ❌ |
 
+| 10 | Launch-udvælgelse ud fra flow ved 60–120 sek (forudregistreret) | 600 graduations, 684k handler | Positiv på train, faldt sammen i validering | ❌ |
+| 11 | Smart money: tidlige køberes historik (forudregistreret, holdout) | 1.200 graduations, 1,4 mio. handler | Holdout −4,7 til −25,6 %; ingen positiv selv på train | ❌ |
+
 **Konklusion:** Ingen af de testede strategier giver afkast som i videoen. Den eneste, der har holdt, er
 funding-carry uden gearing med ca. 8 % om året. I memecoins vinder dem, der er hurtigst (samme blok) eller har
 insider-viden; alle, der kommer bagefter (inklusive kopi-bots), betaler for det.
@@ -198,6 +201,25 @@ mangler). Køb/salg simuleret mod reserverne (x·y=k), 0,25 SOL, 2 sek forsinkel
 To af tre så positive ud på train og faldt sammen i næste periode: præcis den fælde, opdelingen skal fange.
 Følsomhed: forsinkelse 0–10 sek og størrelse 0,1–2 SOL ændrer ikke dommen. Resultaterne stemmer med de tidligere,
 uafhængige graduation-tests (5 min ≈ −1 til −4 %; 60 min median −95 til −99,5 %).
+
+## 11. Smart money: de tidlige køberes historik (smart_v2, 16.10)
+
+Spørgsmål: forudsiger de tidlige køberes (første 60 sek) resultater i *tidligere* coins, hvordan en ny coin går?
+Wallet-score = gennemsnitligt udfald (køb 62 s, sælg 15 min, efter omkostninger) af de tidligere coins, walletten
+købte tidligt i, kun coins hvis udfald var kendt før beslutningen, mindst 3. Historik kun fra stikprøve 1.
+Udvikling på stikprøve 1 (train 450 / validering 150); **holdout = 600 andre graduations fra samme 14 dage**
+(1.425.830 handler i alt, 4.800 exit-snapshots, ingen overlap). Hypoteser, ændring og kode committet før noget
+v2-tal (`465df7d`, `dbd5e5c`, `eb04cfc`). 99–100 % af coins havde mindst én tidlig køber med historik.
+
+| ID | Regel | Exit | Train | Validering | Holdout (n) | Holdout median | Dom |
+|---|---|---|---|---|---|---|---|
+| H0 | Køb alle (reference) | 5 min | −2,3 % | −3,8 % | −2,3 % (600) | +7,2 % | reference |
+| H4 | ≥ 16 tidlige købere med positiv historik | 15 min | −0,1 % | −10,5 % | −23,2 % (171) | −70,9 % | REJECTED |
+| H5 | Høj SOL-vægtet historik-score | 30 min | −1,8 % | −54,2 % | −25,6 % (137) | −83,3 % | REJECTED |
+| H6 | Næsten ingen køb fra wallets med dårlig historik | 5 min | −6,3 % | −3,8 % | −4,7 % (151) | +2,4 % | REJECTED |
+
+Ingen var positiv selv på train. De tidlige køberes historik forudsiger ikke udfaldet. Forsinkelse 0–10 sek,
+størrelse 0,1–2 SOL og høje omkostninger ændrer ikke dommen. Reference-tallene (H0) gentager sig på holdout.
 
 ## Andet, der er vurderet
 

@@ -80,3 +80,18 @@ Design decisions:
 - Entry and exit prices come from the pool state immediately before the decision time (`getTransactionsForAddress`
   descending with `blockTime < t`, limit 1), not from candles. Same-slot competition is not modelled and is
   reported as an uncertainty; delay sensitivity is reported instead.
+
+## Status after this phase (16.10.2026 evening)
+
+- Built and tested: launch dataset (2 × 600 graduations, 1.43 M pool trades with trader and reserves, 4,800 exit
+  snapshots), executable-price simulator, decision-time features, forward-in-time wallet scores, experiment
+  runners v1 and v2, dashboard research card, 50 unit tests.
+- launch_v1 (H1–H3, flow at 60–120 s): all REJECTED at validation.
+- smart_v2 (H4–H6, early buyers' track records): all REJECTED; none positive even on train; holdout negative.
+- No candidate is HISTORICALLY PROMISING, OUT-OF-SAMPLE VALIDATED or LIVE-PAPER VALIDATED.
+
+Next blocker: the dataset only covers the first 3 minutes of each pool, so wallet skill is measured only on
+early entries. Testing "smart money that holds for hours" would need each wallet's later sells (full pool
+histories, ~10× the data). Before spending that, a specific hypothesis with a reason to expect a different
+result is needed; the evidence so far (copying, flow, wallet history, timing) consistently points to no
+exploitable edge for a late entrant in pump.fun launches.
