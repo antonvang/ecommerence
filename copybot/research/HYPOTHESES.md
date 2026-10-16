@@ -84,3 +84,56 @@ launch_v1 sample (`sampled = 1`)**, both during development and when scoring hol
 holdout outcomes to build scores would leak holdout information into the features, and a denser history in the
 holdout would shift count-based thresholds (H4) relative to train. The holdout's own outcomes are used only as
 the result being evaluated.
+
+---
+
+# Pre-registered hypothesis: cross-pool arbitrage SOL/USDC (arb_v1, written 16.10.2026 before any opportunity was counted)
+
+Question: do price differences between the two constant-product SOL/USDC pools on Solana leave an **executable**
+arbitrage with positive expected net profit for an entrant with realistic latency?
+
+## Venues (only pairs whose data and swap math could be verified)
+
+| Pool | Address | Vaults (SOL / USDC) | Verified fee |
+|---|---|---|---|
+| A: Raydium AMM v4 | `58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2` | `DQyrAc…` / `HLmqeL…` | 0.2500 % retained in vault (68 swaps, all within ±0.01 pp) |
+| B: PumpSwap | `Gf7sXMoP8iRw4iiXmJ1nq4vxcRycbGXy5RL8a8LnTd3v` | `EjHirX…` / `nML7ms…` | 0.274–0.275 % retained (26 swaps); a protocol fee paid outside the vault is possible: +0.05 % in the high-cost scenario (ESTIMATED) |
+
+Every other SOL/USDC venue with ≥ $15k liquidity found (Orca Whirlpool, Raydium CLMM, Meteora DLMM/DAMM v2) is
+concentrated-liquidity; their executable price cannot be reconstructed from vault balances, so they are excluded.
+No memecoin in the launch dataset currently has two constant-product SOL pools.
+
+## Opportunity definition
+
+- Pool state = vault balances after the last transaction touching that pool, ordered by (slot, transactionIndex).
+  End-of-slot state per pool; unchanged between updates.
+- At the end of slot `s`: for both directions (buy SOL with USDC in one pool, sell it for USDC in the other, atomically
+  in one transaction), find the USDC input `u ∈ (0, C]` maximising `profit(u) = out(u) − u − tx_cost` with each pool's
+  fee (x·y=k). An **observed opportunity** is a slot with `profit > 0`.
+- Capital `C` = 1,000 USDC per trade (atomic round trip: no inventory or settlement risk). tx_cost = 0.001 SOL
+  (base + priority/Jito tip, ESTIMATED), converted at the slot's mid price.
+- **Execution:** decision at the end of slot `s`, transaction lands at slot `s + k` and executes against the state at
+  the end of slot `s + k − 1` (we are assumed first in our slot: optimistic). Same `u` and direction as decided.
+  Primary: atomic **profit guard** (the transaction reverts if it would lose; a reverted transaction costs tx_cost).
+  Secondary: no guard. Primary latency `k = 2` slots (~0.8 s); sensitivity `k` ∈ {1, 2, 5, 10}.
+- Not modelled (makes results an **upper bound**): other arbitrageurs in the same slot ahead of us, failed landings,
+  Jito auction competition.
+
+## Data and split
+
+- 12 windows of 300 s at fixed, evenly spaced times over the last 14 days (window i starts at `t0 + i·(14 d / 12)`,
+  so the hour of day varies). All transactions touching either pool in each window (Helius getTransactionsForAddress).
+- Train = windows 1–6, validation = 7–9, test = 10–12 (chronological). The only parameter chosen on train is the
+  firing threshold θ ∈ {0, 0.10, 1.00} USDC of predicted net profit (highest train net P&L).
+- Baseline: no trading (0).
+
+## Verdict
+
+OUT-OF-SAMPLE VALIDATED only if, on test with the primary model, total net P&L > 0, there are ≥ 30 executed trades,
+and the bootstrap 95 % lower bound of mean net P&L per decision > 0. Positive but uncertain = INCONCLUSIVE;
+otherwise REJECTED. Because competition is not modelled, even a pass would only justify a live paper observation,
+not trading.
+
+Always reported: opportunities observed, positive after costs, persistence in slots, survival at each latency,
+net P&L per opportunity, capital, drawdown, by window and by pool-size/volatility, high-cost scenario
+(PumpSwap +0.05 %, tx_cost 0.005 SOL), and which costs are measured vs estimated.
