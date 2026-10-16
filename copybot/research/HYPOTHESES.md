@@ -45,3 +45,36 @@ is 3 selection hypotheses × 4 exits = 12 variants examined on train (H0 is repo
    largest wins, bootstrap CI, and sensitivity to delay (0/2/5/10 s), size (0.1/0.25/1/2 SOL) and a high-cost
    scenario (fee 0.5 %/side, 0.002 SOL per transaction).
 5. Anything that passes goes to a live paper forward test before any discussion of real money.
+
+---
+
+# Pre-registered hypotheses: smart money (v2, written 16.10.2026 after v1, before any v2 number was computed)
+
+Question: does the **track record of the early buyers** (computed only from earlier launches) select launches with
+positive expected return after costs?
+
+## Wallet score (no look-ahead)
+
+For a launch L decided at `grad_ts(L) + 60 s`, a wallet's score uses only earlier launches L' whose outcome was
+already known: `grad_ts(L') + 3600 <= grad_ts(L) + 60`. For each such L' where the wallet bought in the first 60 s,
+take the baseline outcome of L' (H0: buy at 62 s, sell at 15 min, net of costs). Score = mean of those
+outcomes; a wallet needs at least 3 of them to count. History comes from every launch in the dataset.
+
+## Data and split
+
+- Development: the 600 launch_v1 pools. v2 train = first 75 % in time (02.10–12.10), v2 validation = last 25 %.
+- **Holdout (untouched):** a second, disjoint chronological sample of 600 other graduations from the same 14 days
+  (`sampled = 2`), fetched after this file is committed and opened once, after validation.
+- Then a live paper forward test before any discussion of real money.
+
+## Hypotheses (decision at 60 s, entry 62 s, same execution and cost model as v1)
+
+| ID | Name | Entry rule (thresholds = quantiles on v2 train) |
+|---|---|---|
+| H4 | Smart money present | number of early buyers with score > 0 (≥ 3 launches) ≥ train q75 |
+| H5 | Smart money weight | SOL-weighted mean score of early buyers with ≥ 3 launches ≥ train q75 |
+| H6 | Little bad money | share of early buy SOL from wallets with score < −0.3 (≥ 3 launches) ≤ train q25 |
+
+Exit ∈ {5, 15, 30, 60} min chosen on train. Validation gate: mean > 0 and PF > 1. Holdout verdict: OUT-OF-SAMPLE
+VALIDATED only if mean > 0 and the bootstrap lower bound > 0 at 98.3 % (Bonferroni, 3 hypotheses); positive but
+uncertain = INCONCLUSIVE; otherwise REJECTED. Same reporting and sensitivity as v1.
