@@ -78,3 +78,9 @@ outcomes; a wallet needs at least 3 of them to count. History comes from every l
 Exit ∈ {5, 15, 30, 60} min chosen on train. Validation gate: mean > 0 and PF > 1. Holdout verdict: OUT-OF-SAMPLE
 VALIDATED only if mean > 0 and the bootstrap lower bound > 0 at 98.3 % (Bonferroni, 3 hypotheses); positive but
 uncertain = INCONCLUSIVE; otherwise REJECTED. Same reporting and sensitivity as v1.
+
+**Amendment (16.10.2026, before any v2 number was computed):** wallet history for the score comes **only from the
+launch_v1 sample (`sampled = 1`)**, both during development and when scoring holdout launches. Reason: using
+holdout outcomes to build scores would leak holdout information into the features, and a denser history in the
+holdout would shift count-based thresholds (H4) relative to train. The holdout's own outcomes are used only as
+the result being evaluated.

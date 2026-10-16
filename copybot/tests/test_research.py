@@ -114,6 +114,23 @@ class Parsing(unittest.TestCase):
         db.close()
 
 
+class Sampling(unittest.TestCase):
+    def test_holdout_is_disjoint_same_period_and_stable_on_restart(self):
+        from research.launch_data import sample_chronological
+        db = open_db(os.path.join(tempfile.mkdtemp(), "s.db"))
+        db.executemany("INSERT INTO grads(mint, grad_ts, grad_slot) VALUES(?,?,?)", [(f"m{i}", 1000 + i, i) for i in range(40)])
+        self.assertEqual(sample_chronological(db, 10, 1, None), 10)
+        last1 = db.execute("SELECT MAX(grad_ts) FROM grads WHERE sampled=1").fetchone()[0]
+        db.executemany("INSERT INTO grads(mint, grad_ts, grad_slot) VALUES(?,?,?)", [(f"n{i}", 2000 + i, 100 + i) for i in range(5)])
+        self.assertEqual(sample_chronological(db, 10, 2, last1), 10)
+        one = {r[0] for r in db.execute("SELECT mint FROM grads WHERE sampled=1")}
+        two = {r[0] for r in db.execute("SELECT mint FROM grads WHERE sampled=2")}
+        self.assertFalse(one & two)
+        self.assertTrue(all(db.execute("SELECT grad_ts FROM grads WHERE mint=?", (m,)).fetchone()[0] <= last1 for m in two))
+        self.assertEqual(sample_chronological(db, 10, 2, last1), 0)  # genstart: stikprøven ændres ikke
+        db.close()
+
+
 class Metrics(unittest.TestCase):
     def test_profit_factor_drawdown_and_ex_top3(self):
         class T:

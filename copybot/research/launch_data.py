@@ -116,14 +116,17 @@ def collect_graduations(db, rpc, t0, t1, log=print):
     return n
 
 
-def sample_chronological(db, n):
-    """Hver k'te graduation i tidsorden, så stikprøven dækker hele perioden jævnt (markeres sampled=1)."""
-    rows = db.execute("SELECT mint FROM grads ORDER BY grad_ts, grad_slot").fetchall()
+def sample_chronological(db, n, flag=1, until_ts=None):
+    """Hver k'te endnu ikke udtrukne graduation i tidsorden (markeres sampled=flag). Flag 2 = disjunkt holdout."""
+    if db.execute("SELECT COUNT(*) FROM grads WHERE sampled=?", (flag,)).fetchone()[0]:
+        return 0  # allerede trukket: genstart må ikke ændre stikprøven
+    rows = db.execute("SELECT mint FROM grads WHERE sampled=0 AND (? IS NULL OR grad_ts <= ?) ORDER BY grad_ts, grad_slot",
+                      (until_ts, until_ts)).fetchall()
     if not rows:
         return 0
     step = max(len(rows) / n, 1.0)
     pick = {rows[int(i * step)]["mint"] for i in range(min(n, len(rows)))}
-    db.executemany("UPDATE grads SET sampled=1 WHERE mint=?", [(m,) for m in pick])
+    db.executemany("UPDATE grads SET sampled=? WHERE mint=?", [(flag, m) for m in pick])
     db.commit()
     return len(pick)
 
@@ -174,6 +177,9 @@ def main():
     ap.add_argument("--window", type=int, default=180, help="sekunders handler efter graduation (beslutningsdata)")
     ap.add_argument("--horizons", default="300,900,1800,3600", help="exit-tidspunkter i sek efter graduation")
     ap.add_argument("--db", default=os.path.join(HERE, "data", "research", "launches.db"))
+    ap.add_argument("--flag", type=int, default=1, help="stikprøve-nummer (2 = disjunkt holdout)")
+    ap.add_argument("--no-collect", action="store_true", help="hent ikke nye graduations (samme periode som før)")
+    ap.add_argument("--same-period", action="store_true", help="kun graduations til og med den seneste i stikprøve 1")
     a = ap.parse_args()
     cfg = load_config(os.path.join(HERE, "config.json"))
     if "helius" not in cfg["rpc_url"]:
@@ -183,11 +189,13 @@ def main():
     now = int(time.time())
     t0, t1 = int(now - a.days * 86400), now - 2 * 3600  # de seneste 2 timer har ikke fuld exit-historik endnu
     day = 86400
-    for s in range(t0, t1, day):
-        collect_graduations(db, rpc, s, min(s + day, t1))
-    print("stikprøve:", sample_chronological(db, a.sample))
+    if not a.no_collect:
+        for s in range(t0, t1, day):
+            collect_graduations(db, rpc, s, min(s + day, t1))
+    until = db.execute("SELECT MAX(grad_ts) FROM grads WHERE sampled=1").fetchone()[0] if a.same_period else None
+    print("stikprøve:", sample_chronological(db, a.sample, a.flag, until))
     hz = [int(x) for x in a.horizons.split(",")]
-    todo = db.execute("SELECT * FROM grads WHERE sampled=1 ORDER BY grad_ts").fetchall()
+    todo = db.execute("SELECT * FROM grads WHERE sampled=? ORDER BY grad_ts", (a.flag,)).fetchall()
     for k, g in enumerate(todo, 1):
         if g["events_status"] != "ok" or (g["events_window"] or 0) < a.window:
             fetch_events(db, rpc, g, a.window)
