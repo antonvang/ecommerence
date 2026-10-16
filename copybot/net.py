@@ -10,7 +10,7 @@ import urllib.parse
 import urllib.request
 
 HEADERS = {"User-Agent": "Mozilla/5.0 (copybot-paper/1.0)", "Accept": "application/json"}
-RETRY_CODES = (429, 500, 502, 503, 504)
+RETRY_CODES = (403, 429, 500, 502, 503, 504)  # PublicNode svarer 403 (ikke 429), når man spørger for tit
 
 
 def http_json(url, payload=None, timeout=30, tries=6, log=print):

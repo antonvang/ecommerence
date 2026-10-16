@@ -55,5 +55,25 @@ class SniperOpen(unittest.TestCase):
         sn.s.close()
 
 
+class SniperDetect(unittest.TestCase):
+    def test_retries_transactions_that_are_not_ready_yet(self):
+        import tempfile
+        from copybot import DEFAULTS
+        import sniper as sn_mod
+        sn = sn_mod.Sniper(DEFAULTS, tempfile.mkdtemp(), log=lambda *a: None)
+        sn.cursor = "old"
+        ready = {"n": 0}
+        sn.rpc.signatures = lambda *a, **k: [{"signature": "new", "err": None}]
+        def tx(sig):
+            ready["n"] += 1
+            return migrate_tx() if ready["n"] >= 2 else None  # først klar ved andet forsøg
+        sn.rpc.transaction = tx
+        self.assertEqual(sn.detect(), [])
+        sn.pending["new"][1] -= 5  # der er gået mere end 2 sek siden sidste forsøg
+        sn.rpc.signatures = lambda *a, **k: []
+        self.assertEqual([g["mint"] for g in sn.detect()], [MINT])
+        sn.s.close()
+
+
 if __name__ == "__main__":
     unittest.main()

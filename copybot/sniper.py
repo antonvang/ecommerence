@@ -79,6 +79,7 @@ class Sniper:
         self.log = log
         self.sol_usd = None
         self.cursor = None
+        self.pending = {}  # signatur -> (første gang set, sidste forsøg); nye transaktioner kan ikke altid hentes med det samme
 
     def _sol_usd(self, market):
         try:
@@ -110,17 +111,25 @@ class Sniper:
     def detect(self):
         """Nye graduations siden sidst (ældste først)."""
         sigs = self.rpc.signatures(MIGRATION, until=self.cursor, limit=100) if self.cursor else self.rpc.signatures(MIGRATION, limit=1)
-        if not sigs:
-            return []
-        first_run = self.cursor is None
-        self.cursor = sigs[0]["signature"]
-        if first_run:
+        if self.cursor is None:
+            self.cursor = sigs[0]["signature"] if sigs else None
             return []  # start fra nu: ingen gamle graduations
-        out = []
+        if sigs:
+            self.cursor = sigs[0]["signature"]
+        now = time.time()
         for sg in reversed(sigs):
-            if sg.get("err") is not None:
-                continue
-            g = parse_migration(self.rpc.transaction(sg["signature"]))
+            if sg.get("err") is None:
+                self.pending.setdefault(sg["signature"], [now, 0.0])
+        out = []
+        for sig, (first, last) in list(self.pending.items()):
+            if now - last < 2:
+                continue  # prøv højst hvert 2. sekund, så den gratis RPC ikke blokerer os
+            self.pending[sig][1] = now
+            tx = self.rpc.transaction(sig)
+            if tx is None and now - first < 30:
+                continue  # endnu ikke tilgængelig hos RPC'en: prøv igen senere
+            del self.pending[sig]
+            g = parse_migration(tx)
             if g:
                 out.append(g)
         return out
@@ -180,9 +189,9 @@ class Sniper:
                     if time.time() - last_check >= 2:
                         self.check()
                         last_check = time.time()
-                self.s.set("sniper_heartbeat", int(time.time()))
             except Exception as e:
-                self.s.set("sniper_error", [int(time.time()), str(e)[:200]])
+                self.s.set("sniper_error", [int(time.time()), f"{type(e).__name__}: {str(e)[:180]}"])
+            self.s.set("sniper_heartbeat", int(time.time()))
             time.sleep(max(0.0, self.poll - (time.time() - t0)))
 
 
