@@ -168,3 +168,16 @@ same way, which would need real orders and is out of scope.
 6. After D0+41, run `holdout` once; write `RESULTS_pm_lp_v1.md`.
 
 Commands from `copybot/`: `python -m research.pm_lp collect | dev | holdout`.
+
+## Amendment 1 (16.10.2026, before any data was collected)
+
+Changes, made while implementing:
+- **Selection order (§3).** Checking every reward market for eligibility at each midnight would take thousands of
+  requests and halt the snapshots. Instead:
+  1. All markets with `total_daily_rate` ≥ 5 that were never in the panel are sorted and shuffled with the same seed
+     (`random.Random(20261017 + day_index)`).
+  2. Each one is checked for the remaining eligibility conditions, in that order, until the panel has 200 markets.
+
+  The selection stays random, deterministic and independent of any outcome.
+- **Trades (§2).** The `start` parameter of `v2/trades` is not applied by the server (checked 16.10.2026). Pages are
+  read newest-first and cut at the start time on our side.
