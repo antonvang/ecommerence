@@ -364,7 +364,7 @@ CREATE TABLE IF NOT EXISTS reward_payouts(wallet TEXT, t INTEGER, size REAL, tx 
 
 def open_db(path=DB):
     os.makedirs(os.path.dirname(path), exist_ok=True)
-    db = sqlite3.connect(path, timeout=60)
+    db = sqlite3.connect(path, timeout=60, check_same_thread=False)   # skrivninger går gennem Collector.lock
     db.executescript(SCHEMA)
     return db
 
@@ -397,7 +397,8 @@ class Collector:
             self.db.commit()
 
     def market(self, cid):
-        row = self.db.execute("SELECT yes, no FROM markets WHERE cid=?", (cid,)).fetchone()
+        with self.lock:
+            row = self.db.execute("SELECT yes, no FROM markets WHERE cid=?", (cid,)).fetchone()
         if row:
             return row
         m = http(f"{CLOB}/markets/{cid}")
@@ -428,6 +429,11 @@ class Collector:
         return bool(bids and asks and 0.10 <= (max(bids) + min(asks)) / 2 <= 0.90)
 
     def refresh_panel(self, day_index, today):
+        with self.lock:
+            done = self.db.execute("SELECT COUNT(*) FROM panel WHERE day=?", (today,)).fetchone()[0]
+        if done:                       # genstart samme dag: fortsæt med dagens panel, vælg ikke igen
+            self.log(f"panel dag {day_index}: genoptaget ({done} markeder)")
+            return
         cur = [r[0] for r in self.db.execute("SELECT cid FROM panel WHERE day=?", (today - 1,))]
         keep = []
         for cid in cur:
@@ -511,7 +517,7 @@ class Collector:
                 ok = 0
         if ok:
             self.last_trade[cid] = int(time.time())
-        with self.lock:
+        with self.lock:   # én forbindelse delt mellem tråde: al adgang under låsen
             self.db.executemany("INSERT OR IGNORE INTO trades VALUES(?,?,?,?,?,?,?,?,?)", got)
             self.db.execute("INSERT INTO polls VALUES(?,?,?,?)", (int(time.time()), "trades", cid, ok))
             self.db.commit()
@@ -551,23 +557,29 @@ class Collector:
                 except Exception:
                     pass
                 last["rewards"] = now
-            if d != today and d <= d0 + HOLD_DAYS[1]:
-                self.refresh_panel(d - d0, d)
-                today = d
-            quoting = [r[0] for r in self.db.execute("SELECT cid FROM panel WHERE day=?", (d,))] if d <= d0 + HOLD_DAYS[1] else []
-            if quoting and now - last["snap"] >= SNAP_EVERY:
-                n_snap += 1
-                self.snapshot(quoting, raw=n_snap % 15 == 0)
-                last["snap"] = now
-            if quoting and now - last["trades"] >= TRADES_EVERY:
-                with ThreadPoolExecutor(4) as ex:
-                    list(ex.map(self.trades, quoting))
-                last["trades"] = now
-            if now - last["status"] >= STATUS_EVERY:
-                ever = [r[0] for r in self.db.execute("SELECT DISTINCT cid FROM panel")]
-                with ThreadPoolExecutor(4) as ex:
-                    list(ex.map(self.status, ever))
-                last["status"] = now
+            try:
+                if d != today and d <= d0 + HOLD_DAYS[1]:
+                    self.refresh_panel(d - d0, d)
+                    today = d
+                with self.lock:
+                    quoting = [r[0] for r in self.db.execute("SELECT cid FROM panel WHERE day=?", (d,))] \
+                        if d <= d0 + HOLD_DAYS[1] else []
+                if quoting and now - last["snap"] >= SNAP_EVERY:
+                    n_snap += 1
+                    last["snap"] = now
+                    self.snapshot(quoting, raw=n_snap % 15 == 0)
+                if quoting and now - last["trades"] >= TRADES_EVERY:
+                    last["trades"] = now
+                    with ThreadPoolExecutor(4) as ex:
+                        list(ex.map(self.trades, quoting))
+                if now - last["status"] >= STATUS_EVERY:
+                    last["status"] = now
+                    with self.lock:
+                        ever = [r[0] for r in self.db.execute("SELECT DISTINCT cid FROM panel")]
+                    with ThreadPoolExecutor(4) as ex:
+                        list(ex.map(self.status, ever))
+            except Exception as e:      # ét fejlet trin må ikke stoppe indsamlingen; huller tæller i D1
+                self.log(f"fejl {datetime.now(timezone.utc).isoformat()}: {e!r}")
             time.sleep(5)
 
 

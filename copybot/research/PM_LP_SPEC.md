@@ -181,3 +181,16 @@ Changes, made while implementing:
   The selection stays random, deterministic and independent of any outcome.
 - **Trades (§2).** The `start` parameter of `v2/trades` is not applied by the server (checked 16.10.2026). Pages are
   read newest-first and cut at the start time on our side.
+
+## Amendment 2 (16.10.2026 ~22:10 UTC, before D0, the first study day)
+
+This is an engineering fix only; no methodology changed.
+
+- **What happened.** The first collector run (started 22:00 UTC) stopped after one snapshot round. It had selected
+  the day −1 panel and written 200 snapshots. It stopped because the SQLite connection was used from the trade
+  worker threads.
+- **The fix:**
+  - the connection is shared under a lock;
+  - one failed step no longer stops the loop (gaps count against D1);
+  - a restart on the same day resumes that day's panel instead of selecting again.
+- No study-day data existed. D0 (2026-10-17) is unchanged.

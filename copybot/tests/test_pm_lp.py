@@ -163,6 +163,30 @@ class PanelAndSeal(unittest.TestCase):
         finally:
             sys.argv = argv
 
+    def test_db_usable_from_worker_threads_and_panel_resumes(self):
+        # regression 16.10: indsamleren døde, fordi SQLite-forbindelsen blev brugt fra trade-trådene
+        import threading
+        with tempfile.TemporaryDirectory() as tmp:
+            c = pm_lp.Collector(pm_lp.open_db(os.path.join(tmp, "t.db")), log=lambda *a: None)
+            err = []
+
+            def write():
+                try:
+                    with c.lock:
+                        c.db.execute("INSERT INTO polls VALUES(1,'trades','c',1)")
+                        c.db.commit()
+                except Exception as e:
+                    err.append(e)
+            th = threading.Thread(target=write)
+            th.start()
+            th.join()
+            self.assertEqual(err, [])
+            c.db.executemany("INSERT INTO panel VALUES(?,?)", [(D, "a"), (D, "b")])
+            c.db.commit()
+            c.refresh_panel(0, D)                              # genstart: ingen ny udvælgelse, ingen netværk
+            self.assertEqual(c.db.execute("SELECT COUNT(*) FROM panel WHERE day=?", (D,)).fetchone()[0], 2)
+            c.db.close()
+
     def test_evaluate_carries_inventory_across_periods(self):
         with tempfile.TemporaryDirectory() as tmp:
             db = pm_lp.open_db(os.path.join(tmp, "t.db"))
