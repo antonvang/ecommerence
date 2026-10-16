@@ -180,6 +180,25 @@ Sniperens rigtige handler, startet på hvert muligt tidspunkt, stop når gevinst
 
 Mange små sejre, få store tab: gennemsnittet er stadig minus. Man kan ikke "stoppe før det falder" uden at kende fremtiden.
 
+## 10. Launch-udvælgelse med forudregistrerede hypoteser (launch_v1, 16.10)
+
+Ny forskningsmotor i `research/` (se `research/NEXT_PHASE_AUDIT.md`, `research/HYPOTHESES.md`,
+`research/RESULTS_launch_v1.md`). 600 graduations jævnt fordelt over 02.10–16.10 (af 10.158), de første 3 minutter
+af hver pool med wallet og præcise reserver (684.299 handler), pool-tilstand ved exit (2.400 snapshots, ingen
+mangler). Køb/salg simuleret mod reserverne (x·y=k), 0,25 SOL, 2 sek forsinkelse, 0,30 %/side + 0,0005 SOL/tx
+(estimeret). Hypoteser og procedure committet før resultater (`3871414`).
+
+| ID | Regel (tærskler fra train) | Exit | Train | Validering | Test | Dom |
+|---|---|---|---|---|---|---|
+| H0 | Køb alle (reference) | 5 min | −1,0 % | −4,9 % | −3,8 % (median +6,2 %) | reference |
+| H1 | Mange unikke købere, lav top-3-andel, netto køb | 30 min | +45,8 % (n=17) | −83,3 % (n=7) | −99,4 % (n=7) | REJECTED |
+| H2 | Faldet siden graduation, netto køb sidste 30 s | 5 min | +2,3 % (n=35) | −12,6 % (n=15) | −16,0 % (n=15) | REJECTED |
+| H3 | Ingen enkelt holder > 25 % | 30 min | +14,5 % (n=140) | −53,3 % (n=66) | −42,0 % (n=65) | REJECTED |
+
+To af tre så positive ud på train og faldt sammen i næste periode: præcis den fælde, opdelingen skal fange.
+Følsomhed: forsinkelse 0–10 sek og størrelse 0,1–2 SOL ændrer ikke dommen. Resultaterne stemmer med de tidligere,
+uafhængige graduation-tests (5 min ≈ −1 til −4 %; 60 min median −95 til −99,5 %).
+
 ## Andet, der er vurderet
 
 - **YouTube "How To Rug Pull Using $0 on Pump Fun":** at lave en coin og sælge den på andres bekostning. Bedrageri;
