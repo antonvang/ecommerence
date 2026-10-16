@@ -121,6 +121,38 @@ def sniper_state(path):
             "_closed": sorted((r["closed_ts"], r["pnl_usd"]) for r in rows if r["closed_ts"])}
 
 
+def funding_state(path, now=None):
+    """Funding-carry (paper): kapital, indsamlet funding, gebyrer og de nuværende coins."""
+    if not path or not os.path.exists(path):
+        return None
+    import json as _j
+    import sqlite3
+    now = now or time.time()
+    db = sqlite3.connect(path, timeout=10)
+    db.row_factory = sqlite3.Row
+    try:
+        kv = {r["k"]: _j.loads(r["v"]) for r in db.execute("SELECT k, v FROM kv")}
+        pos = db.execute("SELECT * FROM fpos ORDER BY id").fetchall()
+        earned = {r["pos_id"]: r["s"] for r in db.execute("SELECT pos_id, SUM(usd) s FROM fpay GROUP BY pos_id")}
+        hours = db.execute("SELECT COUNT(DISTINCT hour) FROM fpay").fetchone()[0]
+        costs = db.execute("SELECT COALESCE(SUM(usd), 0) FROM fcost").fetchone()[0]
+        last24 = db.execute("SELECT COALESCE(SUM(usd), 0) FROM fpay WHERE hour >= ?", (int(now // 3600) - 24,)).fetchone()[0]
+    except sqlite3.Error:
+        return None
+    finally:
+        db.close()
+    capital = kv.get("funding_capital", 1000.0)
+    start = min((r["opened_ts"] for r in pos), default=now)
+    net = sum(earned.values()) - costs
+    days = (now - start) / 86400
+    return {"capital": capital, "earned": sum(earned.values()), "costs": costs, "net": net, "hours": hours, "since": start,
+            "apr": net / capital / days * 365 * 100 if pos and days >= 1 else None, "last24": last24,
+            "open": [{"coin": r["coin"], "notional": r["notional"], "picked_apr": r["picked_apr"] * 100,
+                      "earned": earned.get(r["id"], 0.0), "since": r["opened_ts"]} for r in pos if not r["closed_ts"]],
+            "closed": len([r for r in pos if r["closed_ts"]]), "week": kv.get("funding_week"),
+            "heartbeat": kv.get("funding_heartbeat"), "error": kv.get("funding_error")}
+
+
 def build_state(s):
     wallets = s.get("wallets", [])
     cfg = s.get("config", {})
@@ -185,25 +217,35 @@ def build_state(s):
     costs = s.one("SELECT COALESCE(SUM(costs_usd),0) FROM positions WHERE book='port'")[0]
     shadow_all = trade_stats([r["pnl_usd"] for r in s.q("SELECT pnl_usd FROM positions WHERE book='shadow' AND closed_ts IS NOT NULL")])
     # sniperen kører kun sammen med paper trading: et backtest-dashboard skal ikke blandes med live-tal
-    sn = sniper_state(os.path.join(os.path.dirname(s.path), "sniper.db")) if mode == "PAPER" and s.path != ":memory:" else None
+    live = mode == "PAPER" and s.path != ":memory:"
+    sn = sniper_state(os.path.join(os.path.dirname(s.path), "sniper.db")) if live else None
+    fu = funding_state(os.path.join(os.path.dirname(s.path), "funding.db")) if live else None
     copy_balance, copy_start = balance, start
-    if sn:
+    # en stoppet strategi vises kun med sit slutresultat i sit eget kort, ikke i balancen
+    sn_running = bool(sn and sn.get("heartbeat") and time.time() - sn["heartbeat"] < 600)
+    closed = sn.pop("_closed") if sn else []
+    if fu:
+        start, balance = start + fu["capital"], balance + fu["capital"] + fu["net"]
+        for pt in eq_pts:
+            pt[1] = round(pt[1] + fu["capital"], 4)
+    if sn and sn_running:
         start, balance = start + sn["bankroll"], balance + sn["bankroll"] + sn["pnl"]
-        # grafen: kopi-kontoens historik + sniperens bankroll og realiserede resultat på hvert tidspunkt
-        closed = sn.pop("_closed")
+        # grafen: sniperens bankroll og realiserede resultat på hvert tidspunkt
         cts = [c[0] for c in closed]
         cum = list(itertools.accumulate(c[1] for c in closed))
         for pt in eq_pts:
             k = bisect.bisect_right(cts, pt[0])
             pt[1] = round(pt[1] + sn["bankroll"] + (cum[k - 1] if k else 0.0), 4)
-        if mode == "PAPER" and eq_pts:
-            eq_pts[-1][1] = round(balance, 4)  # sidste punkt = nu, inkl. åbne snipes
+    if (fu or sn_running) and mode == "PAPER" and eq_pts:
+        eq_pts[-1][1] = round(balance, 4)  # sidste punkt = nu, inkl. åbne positioner og funding indtil nu
     return {
         "mode": mode, "live": bool(hb and time.time() - hb < 90), "now": int(time.time()),
         "balance": balance, "start_balance": start, "pnl": balance - start,
         "pnl_pct": (balance / start - 1) * 100 if start else 0.0, "multiple": balance / start if start else 0.0,
-        "parts": {"copy": copy_balance, "copy_start": copy_start, "sniper": (sn["bankroll"] + sn["pnl"]) if sn else None,
-                  "sniper_start": sn["bankroll"] if sn else None},
+        "parts": {"copy": copy_balance, "copy_start": copy_start,
+                  "sniper": (sn["bankroll"] + sn["pnl"]) if sn_running else None, "sniper_start": sn["bankroll"] if sn_running else None,
+                  "funding": (fu["capital"] + fu["net"]) if fu else None, "funding_start": fu["capital"] if fu else None},
+        "funding": fu,
         "trades_copied": s.one("SELECT COUNT(*) FROM positions WHERE book='port'")[0],
         "open_positions": [{"symbol": r["symbol"], "wallet": label.get(r["wallet"], ""), "value": r["tokens_left"] * r["last_price"],
                             "cost": r["cost_usd"]} for r in open_rows],

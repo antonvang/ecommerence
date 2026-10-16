@@ -46,6 +46,7 @@ DEFAULTS = {
     "backtest": {"days": 14, "max_tx_per_wallet": 600, "copy_delay_seconds": 10},
     "paper": {"poll_seconds": 10, "check_seconds": 20, "max_tx_per_poll": 400, "rpc_url": "", "rpc_requests_per_second": 0},
     "dashboard_port": 8765,
+    "funding": {"enabled": True, "capital_usd": 1000, "top": 5, "min_apr_pct": 10, "switch_cost_pct": 0.2},
     "sniper": {"enabled": True, "size_usd": 50, "fee_pct": 0.75, "tip_sol": 0.002, "poll_seconds": 1,
                "rpc_requests_per_second": 4, "fallback_rpcs": ["https://public.rpc.solanavibestation.com"]},
 }

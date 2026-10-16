@@ -56,6 +56,24 @@ def main():
     if err and now - err[0] < 86400:
         out.append(f"  seneste fejl: {err[1]}")
 
+    fp = os.path.join(DATA, "funding.db")
+    if os.path.exists(fp):
+        from report import funding_state
+        fu = funding_state(fp, now=now)
+        if fu:
+            alive = fu["heartbeat"] and now - fu["heartbeat"] < 900
+            out.append(f"Funding-carry: {'kører' if alive else 'STOPPET'} · ${fu['net']:+.2f} efter gebyrer "
+                       f"(funding ${fu['earned']:+.2f}, gebyrer ${fu['costs']:.2f}) · {fu['hours']} timer · "
+                       f"takt {('%.1f %%/år' % fu['apr']) if fu['apr'] is not None else '-'} · coins: "
+                       + ", ".join(f"{p['coin']} ${p['earned']:+.2f}" for p in fu["open"]))
+            # kriterium for funding: positiv efter gebyrer i hver af de første to hele uger
+            f = sqlite3.connect(fp)
+            weeks = f.execute("SELECT (hour*3600 - 345600) / 604800 AS w, SUM(usd) FROM fpay GROUP BY w ORDER BY w").fetchall()
+            out.append("  uger: " + (", ".join(f"uge {w}: ${u:+.2f}" for w, u in weeks) or "ingen endnu")
+                       + " · kriterie: positiv efter gebyrer i mindst 2 hele uger i træk")
+            if fu["error"] and now - fu["error"][0] < 86400:
+                out.append(f"  seneste fejl: {fu['error'][1]}")
+
     sp = os.path.join(DATA, "sniper.db")
     if os.path.exists(sp):
         s = sqlite3.connect(sp)

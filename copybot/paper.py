@@ -50,6 +50,9 @@ def run_paper(cfg, wallets, root, log=print):
     eng = Engine(cfg, store, market, wallets, live=True, quiet=False, log=log)
     eng.start(int(time.time()))
 
+    if cfg["funding"]["enabled"]:
+        from funding import start_in_background as start_funding
+        start_funding(cfg, root, log=log)
     if cfg["sniper"]["enabled"]:
         from sniper import start_in_background
         start_in_background(cfg, root, market, log=log)

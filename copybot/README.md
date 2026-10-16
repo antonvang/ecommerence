@@ -23,7 +23,20 @@ Prisregler, der holder tallene ærlige:
 - Slippage beregnes med x·y=k: gennemsnitsprisen stiger med ordrestørrelse divideret med poolens størrelse.
 - Når walletten sælger en del af sin beholdning, sælger vi samme andel.
 
-## Sniper (paper)
+## Funding-carry (paper)
+
+`funding.py` kører sammen med paper trading. Idéen: når markedet er grådigt, betaler dem, der er long på perps,
+et gebyr (funding) hver time til dem, der er short. Ejer man coinen og shorter den samtidig, går prisen ud mod
+hinanden, og man indsamler funding. Hver mandag 00:00 UTC vælges de 5 likvide perps på Hyperliquid med højest
+funding den forgangne uge (kun over 10 %/år). Historisk (6 mdr.) gav det +8,6 %/år på kapitalen efter gebyrer med
+alle uger i plus, og det er det eneste af de testede idéer, der holdt i begge halvdele. Nu testes det live.
+
+Ikke med i tallene: spot/perp-prisforskel ved skift, og risiko for ekstra margin, hvis prisen stiger meget. For
+mange små coins findes spot-benet ikke på Hyperliquid. Data i `data/funding.db`. Indstillinger under `funding`.
+
+## Sniper (paper, stoppet)
+
+Stoppet 16.10.2026 efter en klar live-test: 149 handler pr. regel, -10 til -15 % pr. handel, negativ i begge halvdele.
 
 `sniper.py` kører sammen med paper trading og "køber" for falske penge hver pump.fun-coin, i det sekund den
 graduerer til PumpSwap. Prisen læses direkte fra poolens vaults, så vores faktiske reaktionstid (typisk 0-2 sek)
