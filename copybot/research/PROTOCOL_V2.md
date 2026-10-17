@@ -56,3 +56,18 @@ costs; DSR probability >= 0.95.
   train net Sharpe 0.01 vs buy-and-hold 0.42, placebo p 0.92. If those figures reproduce, v2 rejects it at the train
   gate. This is stated in advance so the outcome cannot be reinterpreted afterwards.
 - New hypotheses added to the catalogue later run under v2.
+
+## Amendment 1 (2026-10-17, before any v2 run on real data; found by the v2 tests)
+
+The text above contradicted itself: section 2 listed validation-file quality as a pre-validation check, while sections
+1-2 promise that no validation data is read before the gates pass. In v1 the data step read both train and validation
+files for quality checks. Resolution, strictly in the direction of reading less:
+
+- the v2 data step reads and quality-checks **train only**;
+- validation files are read for the first time inside the validation step, after the train and pre-validation gates
+  passed; their quality (coverage >= 99 %, no duplicates, monotonic) becomes an additional validation gate
+  ("validation data quality").
+
+Observation recorded with this amendment (fixture tests, not real data): because the batch trial set pools all members,
+very different strategies in one batch widen the dispersion of trial Sharpes and raise the DSR hurdle for every member.
+This is the intended, stricter behaviour; it is not adjusted.
