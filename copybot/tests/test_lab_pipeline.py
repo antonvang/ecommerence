@@ -381,6 +381,47 @@ class Control(Env):
         a(self.db)
         self.assertEqual(jobs.get(self.db, "data|E_day_of_week_p2")["status"], "done")
 
+    def test_risk_agent_releases_a_resource_hold(self):
+        """Regression: risk-1 was itself blocked by the hold it sets, so a hold could never be released."""
+        control.update_hold(self.db, "t", {"ok": False, "disk": {"free": 1}, "ram": {"free": 1}})
+        self.assertTrue(control.state(self.db)["hold"])
+        risk = [a for a in fleet.agents(self.db_path) if a.name == "risk-1"][0]
+        ok = {"ok": True, "disk": {"free": 10 ** 12, "free_ok": True}, "ram": {"free": 10 ** 10}, "ram_min_free": 1}
+        with mock.patch.object(control, "resources", lambda *a, **k: ok):
+            risk(self.db)
+        self.assertFalse(control.state(self.db)["hold"])
+        control.pause(self.db, "human:t", "pause in this test")
+        with mock.patch.object(control, "resources", lambda *a, **k: ok):
+            risk(self.db)                                       # risk checks keep running while paused
+        self.assertEqual(self.db.one("SELECT status FROM heartbeats WHERE worker='risk-1'")[0], "idle")
+
+    def test_agent_logs_go_next_to_their_database(self):
+        """Regression: agent logs of test runs were written into the production log directory."""
+        a = [x for x in fleet.agents(self.db_path) if x.name == "data-1"][0]
+        a(self.db)
+        a.log("probe", note="test")
+        logs = os.path.join(self.tmp, "logs")
+        self.assertTrue(os.path.isdir(logs))
+        self.assertTrue(any(f.startswith("agents-") for f in os.listdir(logs)))
+
+    def test_heavy_agent_waits_for_memory_instead_of_claiming(self):
+        pipeline.discover_catalogue(self.db)
+        self.approve("day_of_week")
+        fleet.strategy_pass(self.db)
+        [a for a in fleet.agents(self.db_path) if a.name == "data-1"][0](self.db)          # real data step
+        self.assertEqual(jobs.get(self.db, "data|E_day_of_week_p2")["status"], "done")
+        bt = [a for a in fleet.agents(self.db_path) if a.name == "backtest-1"][0]
+        low = {"total": 16e9, "free": control.RAM_MIN_FREE + 50 * 2 ** 20, "load_pct": 99}
+        with mock.patch.object(control, "ram", lambda: low):
+            bt(self.db)
+        hb = self.db.one("SELECT status, detail FROM heartbeats WHERE worker='backtest-1'")
+        self.assertEqual(hb["status"], "queued")
+        self.assertIn("RAM", hb["detail"])
+        self.assertEqual(jobs.get(self.db, "backtest|E_day_of_week_p2")["attempts"], 0)        # not claimed
+        with mock.patch.object(control, "ram", lambda: {"total": 16e9, "free": 8e9, "load_pct": 40}):
+            bt(self.db)
+        self.assertEqual(jobs.get(self.db, "backtest|E_day_of_week_p2")["status"], "done")
+
     def test_resource_limits(self):
         r = control.resources()
         self.assertIn("ok", r)
@@ -418,6 +459,9 @@ class Control(Env):
                                                               "('backtest','cost','adversarial','validate')")}
         self.assertNotIn(None, pids)                                    # every heavy step ran in a worker process
         self.assertNotIn(os.getpid(), pids)
+        peaks = [json.loads(r[0]).get("peak_mb") for r in self.db.q("SELECT result FROM jobs WHERE kind='adversarial'")]
+        self.assertTrue(all(p and p > 10 for p in peaks), peaks)      # measured worker memory feeds RAM-aware claiming
+        self.assertGreater(fleet.job_ram_estimate(self.db), 10 * 2 ** 20)
         roles = {r[0] for r in self.db.q("SELECT role FROM heartbeats WHERE role IS NOT NULL")}
         self.assertGreaterEqual(len(roles), 6)
         self.assertTrue(self.db.one("SELECT 1 FROM events WHERE kind='system.stopped'"))

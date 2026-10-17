@@ -43,6 +43,42 @@ def _get_pool():
         return _pool
 
 
+JOB_RAM_DEFAULT = 400 * 2 ** 20          # used until worker processes have reported a measured peak
+
+
+def _peak_bytes():
+    """Peak working set of this process (Windows) or max RSS elsewhere; None if unknown."""
+    try:
+        if os.name == "nt":
+            import ctypes
+            from ctypes import c_size_t, c_ulong
+
+            class PMC(ctypes.Structure):
+                _fields_ = [("cb", c_ulong), ("faults", c_ulong), ("peak_ws", c_size_t), ("ws", c_size_t),
+                            ("a", c_size_t), ("b", c_size_t), ("c", c_size_t), ("d", c_size_t),
+                            ("pagefile", c_size_t), ("peak_pagefile", c_size_t)]
+            m = PMC()
+            m.cb = ctypes.sizeof(PMC)
+            ok = ctypes.windll.psapi.GetProcessMemoryInfo(ctypes.windll.kernel32.GetCurrentProcess(), ctypes.byref(m), m.cb)
+            return m.peak_ws if ok else None
+        import resource
+        return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss * 1024
+    except Exception:
+        return None
+
+
+def job_ram_estimate(db):
+    """Largest measured worker peak among the last 50 heavy jobs (bytes), or the default."""
+    peaks = []
+    for (r,) in db.q("SELECT result FROM jobs WHERE status='done' AND kind IN ('backtest','cost','adversarial',"
+                     "'validate','holdout') AND result LIKE '%peak_mb%' ORDER BY finished_ts DESC LIMIT 50"):
+        try:
+            peaks.append(json.loads(r)["peak_mb"])
+        except (ValueError, KeyError, TypeError):
+            pass
+    return max(peaks) * 2 ** 20 if peaks else JOB_RAM_DEFAULT
+
+
 def _overrides():
     from lab.engine import data as mdata
     return {"ARTIFACTS": pipeline.ARTIFACTS, "REPORTS": pipeline.REPORTS, "PLACEBO_N": pipeline.PLACEBO_N,
@@ -57,7 +93,9 @@ def _child(kind, db_path, job, worker, overrides):
     db = DB(db_path)
     try:
         res = pipeline.HANDLERS[kind](db, job, worker)
-        return {**res, "pid": os.getpid()} if isinstance(res, dict) else res
+        peak = _peak_bytes()
+        extra = {"pid": os.getpid(), **({"peak_mb": round(peak / 2 ** 20, 1)} if peak else {})}
+        return {**res, **extra} if isinstance(res, dict) else res
     finally:
         db.close()
 
@@ -91,6 +129,7 @@ class Agent:
         self.name, self.role, self.kinds, self.every, self.fn = name, role, tuple(kinds or ()), every, fn
         self.interval, self.stale_after, self.heavy, self.db_path = interval, stale_after, heavy, db_path
         self.started = time.time()
+        self.always_run = name == "risk-1"
         self.next_periodic = 0.0
         self.counters = None
 
@@ -105,13 +144,16 @@ class Agent:
               interval=self.interval, **self.counters, **f)
 
     def log(self, kind, **fields):
-        ops.log_json("agents", kind, agent=self.name, role=self.role, **fields)
+        log_dir = os.path.join(os.path.dirname(os.path.abspath(self.db_path)), "logs") if self.db_path else ops.LOG_DIR
+        ops.log_json("agents", kind, log_dir, agent=self.name, role=self.role, **fields)
 
     # ---------- one tick (called by the supervisor worker loop) ----------
     def __call__(self, db):
         if self.counters is None:
             self._load_counters(db)
         why = blocked_reason(db)
+        if why and self.always_run and why != "stop requested":
+            why = None                     # the risk agent must keep checking, or it could never lift its own hold
         if why:
             self.beat(db, "blocked", detail=why, current_job=None, current_exp=None, next_action="wait: " + why)
             return
@@ -146,6 +188,13 @@ class Agent:
     def _job_tick(self, db):
         slot = False
         if self.heavy:
+            r = control.ram()
+            need = job_ram_estimate(db)
+            if r and r["free"] < control.RAM_MIN_FREE + need:
+                self.beat(db, "queued", detail=f"waiting for RAM: {r['free'] / 2 ** 30:.1f} GB free, a heavy job "
+                          f"needs about {need / 2 ** 20:.0f} MB above the {control.RAM_MIN_FREE / 2 ** 30:.1f} GB floor",
+                          current_job=None, current_exp=None, next_action="claim when memory frees")
+                return
             slot = _slots.acquire(blocking=False)
             if not slot:
                 self.beat(db, "queued", detail=f"waiting for a compute slot ({HEAVY_SLOTS} shared)",
