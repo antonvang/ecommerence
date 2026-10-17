@@ -14,6 +14,7 @@
   python -m lab supervise [--duration S] [--worker module:factory ...] [--no-default]   (manual start only)
   python -m lab health                                                     (heartbeats, FAIL_CLOSED, pauses, warm-up)
   python -m lab web [--port 8770] [--duration S]                           (dashboard on 127.0.0.1; manual start only)
+  python -m lab gate [--require]                                           (S7 automation gate: 7 days of clean operation)
 """
 from __future__ import annotations
 
@@ -59,6 +60,7 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
     sv = sub.add_parser("supervise"); sv.add_argument("--duration", type=float)
     sv.add_argument("--worker", action="append", default=[]); sv.add_argument("--no-default", action="store_true")
     sub.add_parser("health")
+    gt = sub.add_parser("gate"); gt.add_argument("--require", action="store_true")
     wb = sub.add_parser("web"); wb.add_argument("--port", type=int, default=8770); wb.add_argument("--duration", type=float)
     args = ap.parse_args(argv)
     db_path = args.db or db_path
@@ -183,6 +185,12 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
                     v = o["value"]
                     out(f"  last scan: {o['detector']:<21} {o['metric']:<26} {o['instrument'] or '':<28} "
                         f"{'' if v is None else round(v, 6)}{'  FLAGGED' if o['flagged'] else ''}")
+        elif args.cmd == "gate":
+            from lab.gates import s7_gate
+            g = s7_gate(db)
+            out(f"S7 gate: {'OPEN' if g['open'] else 'CLOSED'} - {g['reason']} "
+                f"({g['covered_s'] / 86400:.2f} of {g['required_s'] / 86400:.0f} days, {g['alive_records']} alive records)")
+            return 0 if (g["open"] or not args.require) else 4
         elif args.cmd == "health":
             import time as _t
             from lab.risk import Risk

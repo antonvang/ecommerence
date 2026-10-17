@@ -72,6 +72,10 @@ class DB:
         if path != ":memory:":
             self.con.execute("PRAGMA journal_mode=WAL")
         self.con.executescript(SCHEMA)
+        cols = {r[1] for r in self.con.execute("PRAGMA table_info(heartbeats)")}
+        for c, typ in (("status", "TEXT"), ("stale_after", "INTEGER"), ("interval", "REAL")):
+            if c not in cols:                         # operational table only (not hash-chained): safe to extend
+                self.con.execute(f"ALTER TABLE heartbeats ADD COLUMN {c} {typ}")
 
     def last_hash(self, table):
         r = self.con.execute(f"SELECT hash FROM {table} ORDER BY id DESC LIMIT 1").fetchone()

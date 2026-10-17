@@ -19,7 +19,7 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
-from lab import lifecycle, registry
+from lab import lifecycle, mission, registry
 from lab.data import AccessRefused
 from lab.db import DB, DEFAULT_DB
 from lab.paper import PaperEngine
@@ -136,6 +136,7 @@ def paper(db):
                                                      "WHERE exp_id=? ORDER BY id", x["exp_id"])],
                     "capital": led["capital"], "cash": led["cash"], "positions": led["positions"],
                     "trades": len(led["trades"]), "net_closed_pnl": sum(p for _, p in led["trades"]),
+                    "trade_pnls": [{"ts": t, "pnl": p} for t, p in led["trades"][-200:]],
                     "streak": {"wins": wins, "losses": losses},
                     "costs": [dict(r) for r in fills], "open_orders": len(pe.open_orders(x["exp_id"])),
                     "paused": rk.paused(x["exp_id"]), "warming": rk.warming(x["exp_id"])})
@@ -207,6 +208,11 @@ class Handler(BaseHTTPRequestHandler):
                       "/api/candidates": lambda: candidates(db), "/api/paper": lambda: paper(db),
                       "/api/risk": lambda: risk(db), "/api/data": lambda: data_quality(db),
                       "/api/audit": lambda: audit(db, (qs.get("kind") or [None])[0], (qs.get("limit") or [200])[0])}
+            routes.update({"/api/mission": lambda: mission.mission(db), "/api/pipeline": lambda: mission.pipeline_rows(db),
+                           "/api/throughput": lambda: mission.throughput(db), "/api/results": lambda: mission.results_view(db)})
+            if u.path == "/api/stream":
+                db.close()
+                return self._stream()
             if u.path.startswith("/api/experiment/"):
                 r = experiment(db, u.path.rsplit("/", 1)[1])
                 return self._send(200 if r else 404, r or {"error": "not found"})
@@ -215,6 +221,43 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(404, {"error": "not found"})
         finally:
             db.close()
+
+    def _stream(self):
+        """Server-sent events: one message whenever new registry events or simulated fills appear (checked every 2 s),
+        plus a keep-alive comment every 15 s. The client refreshes its views on each message."""
+        self.send_response(200)
+        self.send_header("Content-Type", "text/event-stream")
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("Connection", "keep-alive")
+        self.end_headers()
+        last, quiet = None, 0.0
+        try:
+            while not getattr(self.server, "closing", False):
+                db = DB(self.server.db_path)
+                try:
+                    top = db.one("SELECT COALESCE(MAX(id),0) FROM events")[0]
+                    fills = db.one("SELECT COUNT(*) FROM sim_fills")[0]
+                    beat = db.one("SELECT COALESCE(MAX(ts),0) FROM heartbeats")[0]
+                    new = [] if last is None else [dict(r) for r in db.q(
+                        "SELECT id, ts, kind, exp_id FROM events WHERE id>? ORDER BY id LIMIT 20", last[0])]
+                finally:
+                    db.close()
+                state = (top, fills, beat)
+                if state != last:
+                    msg = {"last_event_id": top, "fills": fills, "heartbeat_ts": beat, "new_events": new,
+                           "first": last is None}
+                    self.wfile.write(("data: " + json.dumps(msg, default=str) + "\n\n").encode())
+                    self.wfile.flush()
+                    last, quiet = state, 0.0
+                else:
+                    quiet += 2
+                    if quiet >= 15:
+                        self.wfile.write(b": keep-alive\n\n")
+                        self.wfile.flush()
+                        quiet = 0.0
+                time.sleep(2)
+        except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError, OSError):
+            return
 
     def do_POST(self):
         host = f"127.0.0.1:{self.server.server_address[1]}"
@@ -278,6 +321,7 @@ def run(db_path=DEFAULT_DB, port=DEFAULT_PORT, duration=None, log=print):
     except KeyboardInterrupt:
         pass
     finally:
+        srv.closing = True
         srv.shutdown()
         srv.server_close()
     return 0

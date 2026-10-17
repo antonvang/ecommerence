@@ -16,11 +16,14 @@ import os
 import threading
 import time
 
-from lab import legacy, lifecycle
+from lab import legacy, lifecycle, ops
 from lab.db import DB, DEFAULT_DB
 from lab.risk import Risk
 
 BACKOFF_BASE, BACKOFF_MAX = 5.0, 300.0
+SUPERVISOR_BEAT = "supervisor"
+ALIVE_EVERY = 3600          # append-only proof of continuous operation (used by the S7 gate)
+DISK_EVERY = 60
 MAX_RESTARTS_PER_HOUR = 5
 ACTOR = "system:supervisor"
 
@@ -129,20 +132,28 @@ class Supervisor:
         self.check_evidence = check_evidence
         self.stop = threading.Event()
         self.db = None
+        self.log_dir = os.path.join(os.path.dirname(os.path.abspath(db_path)), "logs")
+        self.last_alive = self.last_disk = 0.0
 
     # ---------- workers ----------
+    def beat(self, db, name, ok, detail, status, stale_after, interval):
+        db.con.execute("INSERT OR REPLACE INTO heartbeats(worker, ts, pid, ok, detail, status, stale_after, interval) "
+                       "VALUES(?,?,?,?,?,?,?,?)", (name, int(self.now()), os.getpid(), ok, detail, status,
+                                                   int(stale_after), interval))
+
     def _loop(self, w):
         db = DB(self.db_path)
         try:
             while not self.stop.is_set():
+                self.beat(db, w.name, 1, "working", "running", w.stale_after, w.interval)
                 try:
                     w.fn(db)
                     ok, detail = 1, "ok"
                 except Exception as e:
                     db.event("worker.error", ACTOR, None, {"worker": w.name, "error": repr(e)})
+                    ops.log_json("supervisor", "worker.error", self.log_dir, worker=w.name, error=repr(e))
                     ok, detail = 0, repr(e)[:200]
-                db.con.execute("INSERT OR REPLACE INTO heartbeats VALUES(?,?,?,?,?)",
-                               (w.name, int(self.now()), os.getpid(), ok, detail))
+                self.beat(db, w.name, ok, detail, "idle" if ok else "error", w.stale_after, w.interval)
                 if not ok:
                     return                                            # crashed: the supervisor decides on restart
                 self.stop.wait(w.interval)
@@ -152,6 +163,21 @@ class Supervisor:
     def _start(self, w):
         w.thread = threading.Thread(target=self._loop, args=(w,), name=f"lab-{w.name}", daemon=True)
         w.thread.start()
+
+    def housekeeping(self):
+        """Supervisor heartbeat, hourly alive record and disk-space guard."""
+        now = self.now()
+        self.beat(self.db, SUPERVISOR_BEAT, 1, "supervising", "running", 30, 1.0)
+        if now - self.last_alive >= ALIVE_EVERY:
+            self.last_alive = now
+            self.db.event("system.alive", ACTOR, None, {"pid": os.getpid(), "workers": [w.name for w in self.workers]})
+        if now - self.last_disk >= DISK_EVERY:
+            self.last_disk = now
+            d = ops.disk(os.path.dirname(os.path.abspath(self.db_path)))
+            if not d["free_ok"]:
+                self.db.event("system.disk_low", ACTOR, None, d)
+                ops.log_json("supervisor", "disk_low", self.log_dir, **d)
+                Risk(self.db, self.now).trip_fail_closed("disk_low", f"free {d['free']} bytes < {d['min_free']}")
 
     def check(self):
         """One supervision pass: restart dead or stale workers with exponential backoff; give up after too many."""
@@ -180,6 +206,7 @@ class Supervisor:
             w.next_start = now + delay
             self.db.event("worker.restarted", ACTOR, None, {"worker": w.name, "attempt": len(w.restarts),
                                                             "next_backoff_s": delay})
+            ops.log_json("supervisor", "worker.restarted", self.log_dir, worker=w.name, attempt=len(w.restarts))
             self._start(w)
 
     # ---------- main ----------
@@ -190,6 +217,7 @@ class Supervisor:
         try:
             ok, report = recover(self.db, Risk(self.db, self.now), now=self.now, check_evidence=self.check_evidence)
             self.log(f"startup recovery: {'ok' if ok else 'FAILED (FAIL_CLOSED)'} {report}")
+            ops.log_json("supervisor", "startup", self.log_dir, ok=ok, report=report, pid=os.getpid())
             if not ok:
                 return 2
             for w in self.workers:
@@ -197,6 +225,7 @@ class Supervisor:
             self.db.event("system.running", ACTOR, None, {"workers": [w.name for w in self.workers], "pid": os.getpid()})
             t0 = self.now()
             while not self.stop.is_set() and (duration is None or self.now() - t0 < duration):
+                self.housekeeping()
                 self.sleep(1.0)
                 self.check()
             return 0
@@ -206,5 +235,9 @@ class Supervisor:
                 if w.thread is not None:
                     w.thread.join(timeout=10)
             self.db.event("system.stopped", ACTOR, None, {"pid": os.getpid()})
+            self.beat(self.db, SUPERVISOR_BEAT, 1, "stopped cleanly", "stopped", 30, 1.0)
+            for w in self.workers:
+                self.db.con.execute("UPDATE heartbeats SET status='stopped' WHERE worker=?", (w.name,))
+            ops.log_json("supervisor", "stopped", self.log_dir, pid=os.getpid())
             self.db.close()
             release_lock(lock)
