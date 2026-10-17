@@ -71,3 +71,20 @@ files for quality checks. Resolution, strictly in the direction of reading less:
 Observation recorded with this amendment (fixture tests, not real data): because the batch trial set pools all members,
 very different strategies in one batch widen the dispersion of trial Sharpes and raise the DSR hurdle for every member.
 This is the intended, stricter behaviour; it is not adjusted.
+
+## Amendment 2 (2026-10-17): four cross-sectional hypotheses added to the catalogue (before any data run)
+
+Mechanisms not in the graveyard. All run under PROTOCOL v2 unchanged (train gate, pre-validation gate with exact
+look-ahead/poison tests and placebo p < 0.10, batch DSR, validation gates, sealed holdout and paper by human approval).
+Rebalance Mondays 00:00 UTC; long k = 2 / short k = 2 of the 8 perps; each grid has two fixed variants.
+
+| Template | Mechanism tag | Grid | Evidence (DOI verified via Crossref 2026-10-17) |
+|---|---|---|---|
+| xs_momentum | cross_sectional_momentum | lookback 7 / 28 days | Liu, Tsyvinski & Wu 2022, J. Finance, 10.1111/jofi.13119 |
+| xs_max_lottery | lottery_demand_max | max daily return window 7 / 28 days | Bali, Cakici & Whitelaw 2011, JFE, 10.1016/j.jfineco.2010.08.014 (equities) |
+| xs_low_volatility | low_volatility_anomaly | hourly volatility lookback 7 / 28 days | Ang, Hodrick, Xing & Zhang 2006, J. Finance, 10.1111/j.1540-6261.2006.00836.x (equities) |
+| xs_betting_against_beta | betting_against_beta | beta lookback 28 / 56 days vs equal-weight market | Frazzini & Pedersen 2014, JFE, 10.1016/j.jfineco.2013.10.005 (equities) |
+
+Stated in advance: these are market-neutral long/short books. The validation gate "net Sharpe above buy-and-hold"
+compares them with buy-and-hold in the 2023-09..12 rally (buy-and-hold net Sharpe 4.07), which a market-neutral book
+will rarely beat. The gate is locked and is not adjusted.
