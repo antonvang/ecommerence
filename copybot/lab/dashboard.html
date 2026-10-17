@@ -217,6 +217,15 @@ body{font-size:14px}
   14%{transform:translate(-50%,-50%) scale(1)}85%{opacity:1}100%{opacity:0}}
 .found .h{font:700 13px var(--mono);letter-spacing:.2em;color:var(--green)}
 .found .n{font:700 24px var(--mono);margin-top:6px} .found .s{font:12px var(--mono);color:var(--mute);margin-top:6px}
+.appr{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:14px}
+@media (max-width:900px){.appr{grid-template-columns:minmax(0,1fr)}}
+.wcard{border:1px solid var(--amber);background:#2a1d0a66;border-radius:12px;padding:12px 14px;margin-bottom:8px}
+.wcard .nm{font:700 16px var(--mono)} .wcard .ex{color:var(--mute);font:12px var(--mono);margin:3px 0 8px}
+.trow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line2)}
+.trow .nm{font:700 14px var(--mono)} .trow .ex{grid-column:1;color:var(--dim);font:11px var(--mono)}
+.chipst{font:700 10px var(--mono);letter-spacing:.04em;padding:3px 8px;border-radius:999px;border:1px solid currentColor;white-space:nowrap}
+.c-ok{color:var(--green)} .c-wait{color:var(--amber)} .c-no{color:var(--mute)} .c-bad{color:var(--red)}
+.btn.go{background:var(--green);border-color:var(--green);color:#03140b}
 details.more{border:1px solid var(--line);border-radius:var(--r);background:#0e1116;padding:10px 14px}
 details.more>summary{cursor:pointer;font:700 12px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--mute)}
 details.more[open]>summary{margin-bottom:12px}
@@ -267,6 +276,11 @@ details.more[open]>summary{margin-bottom:12px}
   </section>
 
   <section class="status" id="status" aria-label="Status"></section>
+
+  <section class="panel corner" id="approvals"><h2>Godkendelser <span class="tagx">hvad der er godkendt, og hvad der venter på dig</span></h2>
+    <div class="appr"><div><div class="note" style="margin:0 0 8px;font-size:12px;color:var(--sand)">VENTER PÅ DIG</div><div id="waiting"></div></div>
+      <div><div class="note" style="margin:0 0 4px;font-size:12px;color:var(--sand)">STRATEGITYPER</div><div id="tpls"></div></div></div>
+    <div class="note" id="appr-msg">Godkendelse sker i to trin: tryk "Godkend", og bekræft derefter. Alt handler kun simuleret — aldrig rigtige penge.</div></section>
 
   <section class="hero">
     <div class="panel corner"><h2>Hændelser <span class="tagx">nyeste først</span></h2><div class="feed" id="feed"><div class="sk" style="height:200px"></div></div></div>
@@ -438,8 +452,8 @@ const Planet = (() => {
 
 
 /* ---------------- orbit overlay: stages + agent nodes ---------------- */
-const DA = {DISCOVERED:"Opdaget", QUEUED:"I kø", RUNNING:"Kører", COST_CHECK:"Omkostninger", VALIDATION:"Validering",
-            PAPER_ELIGIBLE:"Klar til paper", PAPER_TRADING:"Handler (paper)", ACCEPTED:"Accepteret", REJECTED:"Afvist", PAUSED:"Pause"};
+const DA = {DISCOVERED:"Ny idé", QUEUED:"I kø", RUNNING:"Testes", COST_CHECK:"Efter gebyrer", VALIDATION:"Anden test",
+            PAPER_ELIGIBLE:"Klar til handel", PAPER_TRADING:"Handler (sim.)", ACCEPTED:"Accepteret", REJECTED:"Afvist", PAUSED:"Pause"};
 const Orbits = (() => {
   const svg = $("#orbits");
   const ANG = {}; STAGES.forEach((s, i) => ANG[s] = -162 + i * 36);
@@ -471,7 +485,7 @@ const Orbits = (() => {
     const [cx, cy] = pos(ANG.REJECTED, 232), list = items.slice(0, 30);
     svg.querySelector("#rejdots").innerHTML = list.map((r, i) => {
       const a = (i / Math.max(list.length, 1)) * Math.PI * 2, rr = 32 + (i % 3) * 7;
-      return `<circle class="rej" data-id="${esc(r.exp_id)}" cx="${cx + rr*Math.cos(a)}" cy="${cy + rr*Math.sin(a)}" r="3" fill="#ff5d5d" fill-opacity=".8" style="cursor:pointer"><title>${esc(r.exp_id)} — ${esc(r.reason || "ingen begrundelse")}</title></circle>`;
+      return `<circle class="rej" data-id="${esc(r.exp_id)}" cx="${cx + rr*Math.cos(a)}" cy="${cy + rr*Math.sin(a)}" r="3" fill="#ff5d5d" fill-opacity=".8" style="cursor:pointer"><title>${esc(r.name || r.exp_id)} — ${esc(r.reason_plain || r.reason || "ingen begrundelse")}</title></circle>`;
     }).join("");
   }
   function agentsRender(agents){
@@ -607,11 +621,44 @@ async function loadExperiments(){
   const x = await api("/api/v2/experiments?" + qs({stage:F.stage, market:F.market, strategy:F.strategy, worker:F.worker, status:F.status, since, page:F.page, size:25}));
   X = x; renderExperiments(all, x);
 }
+let pendingCode = {};
+function renderApprovals(a){
+  const w = a.waiting;
+  $("#waiting").innerHTML = w.length ? w.map(x => `<div class="wcard"><div class="nm">${esc(x.name)}</div><div class="ex">${esc(x.explain || "")}${x.round ? " · " + esc(x.round) : ""}<br>${esc(x.status)}</div>
+      <div class="crow"><b style="font:12px var(--mono)">${esc(x.action)}</b></div>
+      <div class="crow">${pendingCode[x.exp_id] ? `<button class="btn go" data-confirm-exp="${esc(x.exp_id)}">Bekræft</button><span class="dim mono">kode ${esc(pendingCode[x.exp_id])}</span>`
+        : `<button class="btn primary" data-approve-exp="${esc(x.exp_id)}" data-to="${esc(x.to)}" data-ev="${x.needs_evidence ? 1 : 0}">Godkend</button>`}</div></div>`).join("")
+    : `<div class="empty" style="text-align:left">Intet venter på dig lige nu. Når en strategi består første test, dukker den op her.</div>`;
+  const cls = s => s.startsWith("Godkendt") || s.startsWith("Handler") ? "c-ok" : s.startsWith("Ikke") || s.includes("venter") ? "c-wait" : s.startsWith("Afvist") ? "c-bad" : "c-no";
+  $("#tpls").innerHTML = a.templates.map(x => `<div class="trow"><span class="nm">${esc(x.name)}</span>
+      <span>${x.can_approve ? (pendingCode["t:" + x.template] ? `<button class="btn go" data-confirm-tpl="${esc(x.template)}">Bekræft</button>` : `<button class="btn primary" data-approve-tpl="${esc(x.template)}">Godkend til test</button>`) : `<span class="chipst ${cls(x.status)}">${esc(x.status)}</span>`}</span>
+      <span class="ex">${esc(x.explain || "")}</span></div>`).join("");
+  $("#approvals").querySelectorAll("[data-approve-exp]").forEach(b => b.onclick = async () => {
+    try { const r = await control("/api/control/approve", {exp_id: b.dataset.approveExp, to: b.dataset.to, reason: "Godkendt fra dashboardet af brugeren",
+        committed: b.dataset.ev === "1" ? ["research/PROTOCOL_V2.md"] : []});
+      pendingCode[b.dataset.approveExp] = r.code; renderApprovals(a); $("#appr-msg").textContent = "Tryk Bekræft inden for 15 minutter for at gennemføre godkendelsen."; }
+    catch (err) { $("#appr-msg").textContent = "Ikke muligt: " + err.message; } });
+  $("#approvals").querySelectorAll("[data-confirm-exp]").forEach(b => b.onclick = async () => {
+    try { const r = await control("/api/control/confirm", {code: pendingCode[b.dataset.confirmExp]}); delete pendingCode[b.dataset.confirmExp];
+      $("#appr-msg").textContent = "Godkendt."; refresh(true); }
+    catch (err) { $("#appr-msg").textContent = "Ikke muligt: " + err.message; } });
+  $("#approvals").querySelectorAll("[data-approve-tpl]").forEach(b => b.onclick = async () => {
+    try { const r = await control("/api/control/approve-template", {template: b.dataset.approveTpl, reason: "Godkendt fra dashboardet af brugeren"});
+      pendingCode["t:" + b.dataset.approveTpl] = r.code; renderApprovals(a); $("#appr-msg").textContent = "Tryk Bekræft inden for 15 minutter."; }
+    catch (err) { $("#appr-msg").textContent = "Ikke muligt: " + err.message; } });
+  $("#approvals").querySelectorAll("[data-confirm-tpl]").forEach(b => b.onclick = async () => {
+    try { await control("/api/control/confirm-template", {code: pendingCode["t:" + b.dataset.confirmTpl]}); delete pendingCode["t:" + b.dataset.confirmTpl];
+      $("#appr-msg").textContent = "Godkendt til test. Den testes, så snart flåden kører."; refresh(true); }
+    catch (err) { $("#appr-msg").textContent = "Ikke muligt: " + err.message; } });
+}
 function renderPipe(c){
   const max = Math.max(1, ...STAGES.map(s => c[s] || 0));
   $("#pipe").innerHTML = STAGES.map(s => `<div class="pr" title="${DA[s]}"><span>${DA[s]}</span><span class="bar"><i style="width:${(c[s]||0)/max*100}%;background:${STAGE_COL[s] || "#f07a3a"}"></i></span><span class="n">${c[s]||0}</span></div>`).join("");
   $("#flow-note").textContent = "Accepteret forbliver 0: der findes ingen accept til rigtige penge. 'Klar til paper' kræver en bestået forseglet holdout.";
 }
+const MARKET_DA = {"crypto derivatives":"Krypto (futures)", "crypto spot":"Krypto (spot)", "Solana memecoins":"Solana-memecoins",
+                   "prediction markets":"Forudsigelsesmarkeder", "unspecified":"Andet"};
+const dash = '<span class="na" title="ikke tilgængelig">—</span>';
 function renderExperiments(all, x){
   const c = all.stage_counts;
   Orbits.stagesRender(c);
@@ -625,24 +672,24 @@ function renderExperiments(all, x){
   $("#fsel").querySelectorAll("select").forEach(s => s.onchange = () => { F[s.dataset.f] = s.value; F.page = 1; loadExperiments(); });
   if ($("#fclear")) $("#fclear").onclick = () => { Object.assign(F, {stage:"", market:"", strategy:"", worker:"", status:"", since:"", page:1}); loadExperiments(); };
   $("#pl-note").textContent = `${x.total} fundet · side ${x.page}/${x.pages} · klik en række for alle detaljer`;
-  const sh = v => v == null ? na() : num(v, 2);
-  const ci = v => v && v.ci95 ? `[${pct(v.ci95[0],3)}, ${pct(v.ci95[1],3)}]` : na();
+  const sh = v => v == null ? dash : num(v, 2);
+  const ci = v => v && v.ci95 ? `${pct(v.ci95[0],2)} til ${pct(v.ci95[1],2)}` : dash;
   $("#exp-table").innerHTML = table([
-    {h:"Strategi",f:e=>`<div style="font-weight:700">${esc(e.exp_id)}</div><div class="dim">${esc(e.template || e.mechanism || "")}</div>`},
-    {h:"Trin",f:e=>`<span class="badge" style="color:${STAGE_COL[e.stage]||"#f07a3a"}">${esc(DA[e.stage] || e.stage || "—")}</span><div class="dim">${esc(e.phase || "")}</div>`},
-    {h:"Marked",f:e=>esc(e.market)},
-    {h:"Train netto Sharpe",num:1,f:e=>e.train ? sh(e.train.net_sharpe_ann) : na()},
-    {h:"Valid. netto Sharpe",num:1,f:e=>e.validation ? sh(e.validation.net_sharpe_ann) : na()},
-    {h:"Valid. 95 % CI / dag",f:e=>ci(e.validation)},
-    {h:"DSR",num:1,f:e=>e.dsr == null ? na() : num(e.dsr, 3)},
-    {h:"Agent",f:e=>esc(e.worker || "") || na()},
-    {h:"Dom / næste skridt",f:e=>`${e.rejection_reason ? `<span class="flag">${esc(e.rejection_reason)}</span>` : esc(e.verdict || "")}<div class="dim">${esc(e.next_action || "")}</div>`}],
+    {h:"Strategi",f:e=>`<div style="font-weight:700">${esc(e.name)}</div><div class="dim">${esc(e.explain || "")}${e.round ? " · " + esc(e.round) : ""}</div>`},
+    {h:"Trin",f:e=>`<span class="badge" style="color:${STAGE_COL[e.stage]||"#f07a3a"}">${esc(DA[e.stage] || e.stage || "—")}</span>`},
+    {h:"Marked",f:e=>esc(MARKET_DA[e.market] || e.market)},
+    {h:"Træning: afkast/risiko",num:1,f:e=>e.train ? sh(e.train.net_sharpe_ann) : dash},
+    {h:"Anden test: afkast/risiko",num:1,f:e=>e.validation ? sh(e.validation.net_sharpe_ann) : dash},
+    {h:"Anden test: usikkerhed pr. dag",f:e=>ci(e.validation)},
+    {h:"Held-tjek",num:1,f:e=>e.dsr == null ? dash : `${Math.round(e.dsr*100)}%`},
+    {h:"Agent",f:e=>esc(e.worker || "") || dash},
+    {h:"Resultat",f:e=>`${e.reason_plain ? `<span class="flag" title="${esc(e.rejection_reason || "")}">${esc(e.reason_plain)}</span>` : esc(e.status_plain || "")}`}],
     x.items, "Ingen strategier matcher filtrene.", e => `class="click" data-id="${esc(e.exp_id)}"`);
-  $("#exp-cards").innerHTML = x.items.length ? x.items.map(e => `<div class="ecard" data-id="${esc(e.exp_id)}"><div class="id">${esc(e.exp_id)}</div>
-      <div class="row"><span class="badge" style="color:${STAGE_COL[e.stage]||"#f07a3a"}">${esc(e.stage||"—")}</span><span>${esc(e.market)}</span></div>
-      <div class="row"><span>valid. Sharpe ${e.validation ? sh(e.validation.net_sharpe_ann) : NA}</span><span>DSR ${e.dsr == null ? NA : num(e.dsr,3)}</span></div>
-      <div class="row"><span>${esc(e.rejection_reason || e.next_action || "")}</span></div></div>`).join("") : `<div class="empty">No experiments match the filters.</div>`;
-  $("#pager").innerHTML = `<button class="btn" id="pprev" ${x.page<=1?"disabled":""}>‹ forrige</button><span>${x.page} / ${x.pages}</span><button class="btn" id="pnext" ${x.page>=x.pages?"disabled":""}>næste ›</button>`;
+  $("#exp-cards").innerHTML = x.items.length ? x.items.map(e => `<div class="ecard" data-id="${esc(e.exp_id)}"><div class="id">${esc(e.name)}</div>
+      <div class="row"><span class="badge" style="color:${STAGE_COL[e.stage]||"#f07a3a"}">${esc(DA[e.stage]||e.stage||"—")}</span><span>${esc(MARKET_DA[e.market] || e.market)}</span></div>
+      <div class="row"><span>anden test: ${e.validation ? num(e.validation.net_sharpe_ann, 2) : "—"}</span></div>
+      <div class="row"><span>${esc(e.reason_plain || e.status_plain || "")}</span></div></div>`).join("") : `<div class="empty">No experiments match the filters.</div>`;
+  $("#pager").innerHTML = `<span class="dim" style="margin-right:auto">— = ikke tilgængelig · afkast/risiko = Sharpe (over 1 er godt) · held-tjek = chancen for at resultatet ikke bare er held (skal være mindst 95%)</span>` + `<button class="btn" id="pprev" ${x.page<=1?"disabled":""}>‹ forrige</button><span>${x.page} / ${x.pages}</span><button class="btn" id="pnext" ${x.page>=x.pages?"disabled":""}>næste ›</button>`;
   $("#pprev").onclick = () => { if (F.page > 1) { F.page--; loadExperiments(); } };
   $("#pnext").onclick = () => { if (F.page < x.pages) { F.page++; loadExperiments(); } };
 }
@@ -721,8 +768,8 @@ function renderCosts(c){
 function renderRejected(r){
   Orbits.rejectedRender(r.items);
   $("#rej-n").textContent = `${r.total} i alt · nyeste først`;
-  $("#rejected").innerHTML = table([{h:"Strategi",f:x=>`<b>${esc(x.exp_id)}</b><div class="dim">${esc(x.mechanism||"")}</div>`},{h:"Hvornår",f:x=>x.ts?ago(x.ts):na()},
-    {h:"Begrundelse",f:x=>`<span class="flag">${esc(x.reason || NA)}</span>${x.pattern?`<div class="dim">pattern: ${esc(x.pattern)}</div>`:""}`}], r.items, "Ingen afviste strategier.", x => `class="click" data-id="${esc(x.exp_id)}"`);
+  $("#rejected").innerHTML = table([{h:"Strategi",f:x=>`<b>${esc(x.name || x.exp_id)}</b>${x.round ? `<div class="dim">${esc(x.round)}</div>` : ""}`},{h:"Hvornår",f:x=>x.ts?ago(x.ts):na()},
+    {h:"Begrundelse",f:x=>`<span class="flag" title="${esc(x.reason || "")}">${esc(x.reason_plain || x.reason || NA)}</span>${x.pattern?`<div class="dim">pattern: ${esc(x.pattern)}</div>`:""}`}], r.items, "Ingen afviste strategier.", x => `class="click" data-id="${esc(x.exp_id)}"`);
 }
 async function loadJobs(){
   const j = await api("/api/jobs?" + qs({status: jobTab, page: jobPage, size: 20}));
@@ -769,8 +816,8 @@ let fastBusy = false, slowAt = 0;
 async function refresh(full){
   if (fastBusy) return; fastBusy = true;
   try {
-    const [k, a, b, f] = await Promise.all([api("/api/kpis"), api("/api/agents"), api("/api/balance"), api("/api/feed?limit=40")]);
-    renderStatus(k); renderAgents(a); renderMoney(b); renderFeed(f);
+    const [k, a, b, f, ap] = await Promise.all([api("/api/kpis"), api("/api/agents"), api("/api/balance"), api("/api/feed?limit=40"), api("/api/approvals")]);
+    renderStatus(k); renderAgents(a); renderMoney(b); renderFeed(f); renderApprovals(ap);
     await loadExperiments();
     if (full || Date.now() - slowAt > 20000) {
       slowAt = Date.now();
@@ -836,7 +883,7 @@ async function openDetail(id){
   const e = (X && X.items.find(x => x.exp_id === id)) || (await api("/api/v2/experiments?size=200")).items.find(x => x.exp_id === id);
   const v = d.versions[d.versions.length-1];
   const human = (d.next_actions || []).filter(a => a.who === "human").map(a => a.to);
-  $("#detail").innerHTML = `<div class="crow" style="justify-content:space-between"><p class="title">${esc(d.exp_id)}</p><button class="btn" id="close">Close</button></div>
+  $("#detail").innerHTML = `<div class="crow" style="justify-content:space-between"><p class="title">${esc(e ? e.name : d.exp_id)}<br><span class="dim mono" style="font-size:11px">${esc(d.exp_id)}</span></p><button class="btn" id="close">Close</button></div>
     <div class="crow">${badge(d.display_label)}<span class="dim mono">state ${esc(d.state)} · stage ${esc(e ? e.stage : "")} · v${esc(v.version)}</span></div>
     ${recordBlock(e)}
     <h3>Results (${d.results.length})</h3>${table([{h:"#",f:r=>r.id},{h:"Label",f:r=>badge(r.label)},{h:"Verdict",f:r=>esc(r.verdict)}], d.results, "No results recorded.")}

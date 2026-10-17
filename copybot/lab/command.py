@@ -181,8 +181,12 @@ def experiment_record(db, x, now=None):
         ev = db.one("SELECT actor FROM events WHERE exp_id=? AND kind LIKE 'job.%' ORDER BY id DESC LIMIT 1", eid)
         worker = ev["actor"] if ev else None
     holdout = _result(db, eid, "VALIDATION") if is_cat else None
+    name, explain, round_ = plain(db, eid)
     return {
-        "exp_id": eid, "title": spec.get("title") or spec.get("hypothesis") or eid, "template": spec.get("template"),
+        "exp_id": eid, "name": name, "explain": explain, "round": round_, "status_plain": STATE_PLAIN.get(st, st),
+        "reason_plain": short_reason(((res or {}).get("verdict") or (tr_reason["reason"] if tr_reason else None)))
+        if st in ("REJECTED", "SUPPRESSED", "WITHDRAWN") else None,
+        "title": spec.get("title") or spec.get("hypothesis") or eid, "template": spec.get("template"),
         "hypothesis": spec.get("hypothesis"), "mechanism": x["mechanism"],
         "market": mission.market_class(spec.get("instrument") or x["mechanism"]),
         "instrument": spec.get("instrument"), "universe": spec.get("universe"), "timeframe": spec.get("timeframe"),
@@ -345,7 +349,8 @@ def rejected(db, limit=100):
         if x["state"] not in ("REJECTED", "SUPPRESSED", "WITHDRAWN"):
             continue
         r = experiment_record(db, x)
-        out.append({"exp_id": r["exp_id"], "state": r["state"], "mechanism": r["mechanism"], "market": r["market"],
+        out.append({"exp_id": r["exp_id"], "name": r["name"], "round": r["round"], "reason_plain": r["reason_plain"],
+                    "state": r["state"], "mechanism": r["mechanism"], "market": r["market"],
                     "reason": r["rejection_reason"], "failed_gates": r["failed_gates"],
                     "pattern": mission.FAILURE_PATTERN.get(r["exp_id"]),
                     "ts": db.one("SELECT MAX(ts) FROM transitions WHERE exp_id=?", r["exp_id"])[0]})
@@ -403,11 +408,11 @@ def short_reason(reason):
     """Short Danish summary of a verdict for the feed (the full text stays available as `detail`)."""
     r = reason or ""
     n = len([x for x in r.split("failed", 1)[-1].split(",") if x.strip()]) if "failed" in r else 0
-    for key, da in (("at train gate", "afvist ved train-gaten (slog ikke buy-and-hold på train)"),
-                    ("before validation", "afvist før validering (placebo/look-ahead)"),
-                    ("at cost check", "afvist ved omkostningstjek (taber efter omkostninger)"),
-                    ("at validation", f"afvist ved validering ({n} krav ikke opfyldt)" if n else "afvist ved validering"),
-                    ("FAIL (holdout)", "afvist i forseglet holdout"), ("FAIL (paper", "afvist efter paper-gennemgang"),
+    for key, da in (("at train gate", "afvist i første test: dårligere end bare at købe og holde"),
+                    ("before validation", "afvist i første test: kunne ikke skelnes fra tilfældighed"),
+                    ("at cost check", "afvist: taber penge efter gebyrer"),
+                    ("at validation", f"afvist i anden test: {n} af kravene ikke opfyldt" if n else "afvist i anden test"),
+                    ("FAIL (holdout)", "afvist i slut-testen"), ("FAIL (paper", "afvist efter simuleret handel"),
                     ("matches rejected", "sorteret fra: samme idé er allerede afvist"),
                     ("circuit breaker", "sat på pause af risikostyring")):
         if key in r:
@@ -425,26 +430,28 @@ def feed(db, limit=40):
     for r in rows:
         p = _j(r["payload"]) or {}
         e = {"id": r["id"], "ts": r["ts"], "exp_id": r["exp_id"], "found": False, "pnl": None}
+        nm = plain(db, r["exp_id"])[0] if r["exp_id"] else None
         k = r["kind"]
         if k == "candidate.discovered":
-            e.update(tag="IDÉ", text=f"{r['exp_id']} foreslået som ny hypotese")
+            e.update(tag="IDÉ", text=f"Ny idé: {nm}")
         elif k == "lifecycle.transition":
             to = p.get("to")
             short = short_reason(p.get("reason")) if to in ("REJECTED", "PAUSED", "SUPPRESSED") else None
             e.update(tag=TAG_OF_STATE.get(to, "STATUS"), found=to in FOUND_STATES, detail=p.get("reason"),
-                     text=f"{r['exp_id']}: {short}" if short else f"{r['exp_id']} {STAGE_DA.get(to, to)}")
+                     text=f"{nm}: {short}" if short else f"{nm}: {STAGE_DA.get(to, to)}")
         elif k == "batch.registered":
-            e.update(tag="TEST", text=f"Test-batch startet med {len(p.get('exp_ids', []))} strategi(er)")
+            e.update(tag="TEST", text=f"Ny testrunde startet: {', '.join(plain(db, x)[0] for x in p.get('exp_ids', []))}")
         elif k == "template.approved":
-            e.update(tag="GODKENDT", text=f"Skabelon {p.get('template')} godkendt til test")
+            e.update(tag="GODKENDT", text=f"Godkendt til test: {TEMPLATE_DA.get(p.get('template'), (p.get('template'),))[0]}")
         elif k == "paper.order":
             o = db.one("SELECT side, instrument, qty FROM sim_orders WHERE order_id=?", p.get("order_id"))
             side = (o["side"] if o else "?")
             e.update(tag="KØB" if side == "buy" else "SÆLG",
-                     text=f"{r['exp_id']}: {'køb' if side == 'buy' else 'salg'} {o['instrument'] if o else ''} "
+                     text=f"{nm}: {'køb' if side == 'buy' else 'salg'} {o['instrument'] if o else ''} "
                           f"(simuleret, fyldt {p.get('filled', 0):.4g})")
         elif k == "job.failed":
-            e.update(tag="FEJL", text=f"Job {p.get('job_id')} fejlede: {str(p.get('error', ''))[:120]}")
+            e.update(tag="FEJL", text=f"En opgave fejlede ({str(p.get('job_id', '')).split('|')[0]}) — prøves ikke igen automatisk",
+                     detail=str(p.get("error", "")))
         elif k == "system.running":
             e.update(tag="START", text=f"Flåden startet ({len(p.get('workers', []))} agenter)")
         elif k == "system.stopped":
@@ -459,3 +466,90 @@ def feed(db, limit=40):
             e.update(tag=k.upper(), text=k)
         out.append(e)
     return {"items": out}
+
+
+# ---------- plain-language names (Mission 7: less code language in the dashboard) ----------
+TEMPLATE_DA = {
+    "vol_managed_long": ("Rolig-marked-køb", "Køber mønterne, men skruer ned for indsatsen, når markedet er uroligt"),
+    "day_of_week": ("Ugedags-mønster", "Er kun med på bestemte ugedage"),
+    "hour_of_day": ("Bedste timer på døgnet", "Køber kun i de timer, der historisk steg mest"),
+    "funding_contrarian": ("Mod flokken (funding)", "Går imod flokken, når finansieringsrenten er ekstrem"),
+    "daily_reversal": ("Dagens tilbagefald", "Satser på, at et meget stort dagsudsving delvist vender"),
+    "donchian_trend": ("Trendfølger", "Køber nye toppe og sælger nye bunde"),
+    "xs_momentum": ("Momentum", "Køber de stærkeste mønter og sælger de svageste"),
+    "xs_max_lottery": ("Anti-lotteri", "Sælger mønter med vilde hop og køber de rolige"),
+    "xs_low_volatility": ("Lav uro", "Køber de roligste mønter og sælger de mest urolige"),
+    "xs_betting_against_beta": ("Lav markedsfølsomhed", "Køber mønter, der følger markedet mindst, og sælger dem, der følger mest"),
+}
+LEGACY_DA = {
+    "L01_copy_kol": "Kopiér kendte wallets", "L02_self_found_traders": "Kopiér selvfundne tradere",
+    "L03_sol_trend_hourly": "SOL-trend pr. time", "L04_buy_graduations": "Køb nye pump.fun-mønter",
+    "L05_graduation_sniper": "Sniper på nye mønter", "L06_short_new_hl_listings": "Sælg nye Hyperliquid-mønter",
+    "L07_funding_carry_v0": "Funding-rente (første version)", "L08_funding_carry_leverage": "Funding-rente med gearing",
+    "L09_stop_when_ahead": "Stop når foran", "L10_launch_v1": "Udvælg nye mønter tidligt",
+    "L11_smart_v2": "Følg tidlige købere", "L12_arb_v1": "Prisforskel mellem to børser (SOL)",
+    "L13_carry_v1": "Funding-rente uden kursrisiko", "L14_tsmom_v1": "Ugentlig trend BTC/ETH/SOL",
+    "L15_tsmom_v2": "Bred trend på mange mønter", "L16_pmcal_v1": "Polymarket favorit-skævhed",
+    "L17_p1_btc15m_model": "BTC op/ned på 15 min", "L18_p2_negrisk_arb": "Polymarket prisfejl",
+    "L19_p3_maker_fills": "Passive ordrer på Polymarket", "L20_m1_orderflow": "Ordrestrøms-ubalance",
+    "L21_m2_liquidation_reversal": "Køb efter tvangslukninger", "L22_m3_premium_convergence": "Præmie-udligning på perps",
+    "X01_pm_lp_v1": "Polymarket likviditets-belønning", "X02_copybot_paper": "CopyBot paper-test",
+    "X03_funding_live_v0": "Funding live paper-test", "C_0755f34d6d": "Perp-præmie vender (scanner-fund)",
+    "C_ce89a47faa": "Prisforskel Hyperliquid/Binance (scanner-fund)",
+}
+
+
+def plain(db, eid):
+    """(name, one-line explanation, version label) for any experiment id."""
+    if eid in LEGACY_DA:
+        return LEGACY_DA[eid], None, None
+    v = registry.latest(db, eid) if eid else None
+    spec = _j(v["spec_json"]) if v else {}
+    t = (spec or {}).get("template")
+    if t in TEMPLATE_DA:
+        n, x = TEMPLATE_DA[t]
+        ver = eid.rsplit("_p", 1)[-1] if "_p" in eid else None
+        return n, x, (f"testrunde {ver}" if ver else None)
+    return (spec or {}).get("title") or eid, None, None
+
+
+STATE_PLAIN = {"DISCOVERED": "Ny idé", "SUPPRESSED": "Sorteret fra (prøvet før)", "REGISTERED": "Står i kø",
+               "SCREENING": "Testes nu", "SCREEN_PASSED": "Bestod første test — venter på din godkendelse",
+               "VALIDATION": "Slut-test kører", "VALIDATED": "Bestod alle tests — venter på din godkendelse",
+               "PAPER_TRADING": "Handler (simuleret)", "PAUSED": "Sat på pause", "REJECTED": "Afvist",
+               "RETIRED": "Afsluttet", "WITHDRAWN": "Trukket tilbage", "EXTERNAL": "Ekstern undersøgelse"}
+NEEDS_YOU = {"SCREEN_PASSED": ("VALIDATION", "Start slut-testen på 2024-data (kan kun gøres én gang)"),
+             "VALIDATED": ("PAPER_TRADING", "Start simuleret handel med strategien"),
+             "PAUSED": ("PAPER_TRADING", "Genoptag simuleret handel (kræver dokumenteret gen-test)")}
+
+
+def approvals(db):
+    """What a human can approve, in plain words: strategy types (templates) and experiments waiting for a decision."""
+    from lab import templates as tpl_mod
+    from lab.engine import catalogue
+    waiting = []
+    for x in registry.status(db):
+        if x["state"] in NEEDS_YOU:
+            n, ex, ver = plain(db, x["exp_id"])
+            to, what = NEEDS_YOU[x["state"]]
+            waiting.append({"exp_id": x["exp_id"], "name": n, "explain": ex, "round": ver, "state": x["state"],
+                            "status": STATE_PLAIN[x["state"]], "to": to, "action": what,
+                            "needs_evidence": x["state"] in ("SCREEN_PASSED", "PAUSED")})
+    rows = []
+    blob = tpl_mod.catalogue_blob()
+    for t in catalogue.TEMPLATES:
+        n, ex = TEMPLATE_DA.get(t, (t, None))
+        eid = catalogue.exp_id(t)
+        st = lifecycle.state(db, eid)
+        approved = tpl_mod.approval(db, t) is not None
+        if st in ("REJECTED", "SUPPRESSED", "WITHDRAWN", "RETIRED"):
+            status, can = ("Afvist i test" if st == "REJECTED" else "Sorteret fra — samme idé er afvist før"), False
+        elif st and st != "DISCOVERED":
+            status, can = STATE_PLAIN.get(st, st), False
+        elif approved:
+            status, can = "Godkendt — testes, når flåden kører", False
+        else:
+            status, can = "Ikke godkendt endnu", blob is not None
+        rows.append({"template": t, "name": n, "explain": ex, "status": status, "state": st, "approved": approved,
+                     "can_approve": can})
+    return {"waiting": waiting, "templates": rows, "catalogue_committed": blob is not None}

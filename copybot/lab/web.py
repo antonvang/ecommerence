@@ -232,7 +232,8 @@ class Handler(BaseHTTPRequestHandler):
                                                                    one("catalogue") == "1"),
                 "/api/distribution": lambda: command.distribution(db), "/api/costs": lambda: command.costs(db),
                 "/api/paper2": lambda: command.paper_view(db), "/api/rejected": lambda: command.rejected(db),
-                "/api/balance": lambda: command.balance(db), "/api/feed": lambda: command.feed(db, int(one("limit", 40)))})
+                "/api/balance": lambda: command.balance(db), "/api/feed": lambda: command.feed(db, int(one("limit", 40))),
+                "/api/approvals": lambda: command.approvals(db)})
             if u.path.startswith("/api/agent/"):
                 return self._send(200, command.agent_log(db, u.path.rsplit("/", 1)[1], int(one("limit", 50))))
             if u.path == "/api/stream":
@@ -324,6 +325,17 @@ class Handler(BaseHTTPRequestHandler):
                 fn = {"pause": control.pause, "resume": control.resume, "stop": control.request_stop}[act]
                 changed = fn(db, actor, body["reason"])
                 return self._send(200, {"action": act, "changed": changed, "control": control.state(db)})
+            if p in ("/api/control/approve-template", "/api/control/confirm-template"):
+                from lab import templates
+                try:
+                    if p.endswith("approve-template"):
+                        code = templates.request(db, body.get("template", ""), actor,
+                                                 body.get("reason") or "approved from the dashboard for exploratory testing")
+                        return self._send(200, {"code": code, "expires_in_s": templates.APPROVAL_SECONDS})
+                    tpl, _ = templates.confirm(db, body.get("code", ""), actor)
+                    return self._send(200, {"template": tpl, "approved": True})
+                except templates.TemplateError as e:
+                    return self._send(400, {"error": str(e)})
             if p == "/api/control/clear-fail-closed":
                 Risk(db).clear_fail_closed(actor, body.get("reason", ""))
                 return self._send(200, {"fail_closed": Risk(db).fail_closed()})

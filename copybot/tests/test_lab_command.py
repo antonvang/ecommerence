@@ -176,6 +176,23 @@ class Api(unittest.TestCase):
         finally:
             db.close()
 
+    def test_template_approval_from_dashboard_is_two_step_and_guarded(self):
+        a = self.get("/api/approvals")
+        names = {r["template"]: r for r in a["templates"]}
+        self.assertEqual(names["xs_momentum"]["name"], "Momentum")
+        code, _ = self.post("/api/control/approve-template", {"template": "xs_momentum"}, token=False)
+        self.assertEqual(code, 403)
+        if not a["catalogue_committed"]:
+            self.skipTest("catalogue has uncommitted changes in this checkout")
+        code, r = self.post("/api/control/approve-template", {"template": "xs_momentum"})
+        self.assertEqual(code, 200)
+        self.assertFalse({x["template"]: x for x in self.get("/api/approvals")["templates"]}["xs_momentum"]["approved"])
+        code, r = self.post("/api/control/confirm-template", {"code": r["code"]})
+        self.assertEqual((code, r["approved"]), (200, True))
+        row = {x["template"]: x for x in self.get("/api/approvals")["templates"]}["xs_momentum"]
+        self.assertTrue(row["approved"])
+        self.assertTrue(row["status"].startswith("Godkendt"))
+
     def test_stream_events_carry_stage(self):
         req = urllib.request.urlopen(self.base + "/api/stream", timeout=10)
         json.loads(req.readline().decode().removeprefix("data: "))
@@ -212,8 +229,8 @@ class Gate(unittest.TestCase):
 class FeedText(unittest.TestCase):
     def test_short_danish_reasons(self):
         self.assertEqual(command.short_reason("REJECTED at validation: failed a, b, c"),
-                         "afvist ved validering (3 krav ikke opfyldt)")
-        self.assertIn("train-gaten", command.short_reason("REJECTED at train gate: selected ..."))
+                         "afvist i anden test: 3 af kravene ikke opfyldt")
+        self.assertIn("købe og holde", command.short_reason("REJECTED at train gate: selected ..."))
         self.assertIn("allerede afvist", command.short_reason("matches rejected experiment(s) L14"))
         self.assertEqual(command.short_reason("something else"), "something else")
 
