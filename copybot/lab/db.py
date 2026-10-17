@@ -20,6 +20,7 @@ TABLES = {
     "results": ("exp_id", "version", "ts", "label", "verdict", "metrics", "evidence", "supersedes"),
     "alpha_ledger": ("exp_id", "ts", "alpha", "note"),
     "approvals": ("code_hash", "exp_id", "to_state", "ts", "expires_ts", "actor", "reason", "evidence"),
+    "trials": ("exp_id", "ts", "variant", "split", "sharpe_daily", "n_days", "net_total", "params"),
     "observations": ("ts", "detector", "source", "instrument", "metric", "value", "threshold", "flagged", "payload"),
     "sim_orders": ("order_id", "exp_id", "ts", "instrument", "side", "qty", "limit_px", "style", "reduce_only",
                    "signal_ref", "cost_model"),
@@ -73,7 +74,10 @@ class DB:
             self.con.execute("PRAGMA journal_mode=WAL")
         self.con.executescript(SCHEMA)
         cols = {r[1] for r in self.con.execute("PRAGMA table_info(heartbeats)")}
-        for c, typ in (("status", "TEXT"), ("stale_after", "INTEGER"), ("interval", "REAL")):
+        for c, typ in (("status", "TEXT"), ("stale_after", "INTEGER"), ("interval", "REAL"), ("role", "TEXT"),
+                       ("current_job", "TEXT"), ("current_exp", "TEXT"), ("started_ts", "REAL"),
+                       ("tasks_done", "INTEGER"), ("errors", "INTEGER"), ("retries", "INTEGER"),
+                       ("last_result", "TEXT"), ("next_action", "TEXT")):
             if c not in cols:                         # operational table only (not hash-chained): safe to extend
                 self.con.execute(f"ALTER TABLE heartbeats ADD COLUMN {c} {typ}")
 

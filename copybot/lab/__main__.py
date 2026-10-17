@@ -15,6 +15,11 @@
   python -m lab health                                                     (heartbeats, FAIL_CLOSED, pauses, warm-up)
   python -m lab web [--port 8770] [--duration S]                           (dashboard on 127.0.0.1; manual start only)
   python -m lab gate [--require]                                           (S7 automation gate: 7 days of clean operation)
+  python -m lab fleet [--duration S]                                       (research agent fleet under the supervisor; manual)
+  python -m lab pause|resume|stop --reason ".."                           (fleet control, logged in the event chain)
+  python -m lab jobs [--status S]                                          (persistent job queue)
+  python -m lab approve-template TEMPLATE --reason ".."  -> code;  python -m lab confirm-template CODE
+  python -m lab revoke-template TEMPLATE --reason ".."
 """
 from __future__ import annotations
 
@@ -61,6 +66,13 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
     sv.add_argument("--worker", action="append", default=[]); sv.add_argument("--no-default", action="store_true")
     sub.add_parser("health")
     gt = sub.add_parser("gate"); gt.add_argument("--require", action="store_true")
+    fl = sub.add_parser("fleet"); fl.add_argument("--duration", type=float)
+    for c in ("pause", "resume", "stop"):
+        sub.add_parser(c).add_argument("--reason", required=True)
+    jb = sub.add_parser("jobs"); jb.add_argument("--status")
+    at = sub.add_parser("approve-template"); at.add_argument("template"); at.add_argument("--reason", required=True)
+    ct = sub.add_parser("confirm-template"); ct.add_argument("code")
+    rt = sub.add_parser("revoke-template"); rt.add_argument("template"); rt.add_argument("--reason", required=True)
     wb = sub.add_parser("web"); wb.add_argument("--port", type=int, default=8770); wb.add_argument("--duration", type=float)
     args = ap.parse_args(argv)
     db_path = args.db or db_path
@@ -75,8 +87,44 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
         except supervisor.AlreadyRunning as e:
             out(f"refused: {e}")
             return 3
+    if args.cmd == "fleet":           # the research agent fleet runs inside the single-instance supervisor
+        from lab import fleet, supervisor
+        try:
+            return supervisor.Supervisor(db_path, fleet.workers(db_path), log=out).run(args.duration)
+        except supervisor.AlreadyRunning as e:
+            out(f"refused: {e}")
+            return 3
     db = DB(db_path)
     try:
+        if args.cmd in ("pause", "resume", "stop"):
+            from lab import control
+            fn = {"pause": control.pause, "resume": control.resume, "stop": control.request_stop}[args.cmd]
+            out(f"{args.cmd}: {'recorded' if fn(db, human(), args.reason) else 'already in that state (no-op)'}")
+            return 0
+        if args.cmd == "jobs":
+            from lab import jobs
+            out(json.dumps(jobs.counts(db)))
+            q = "SELECT job_id, status, attempts, lease_owner, error FROM jobs"
+            rows = db.q(q + " WHERE status=? ORDER BY updated_ts DESC LIMIT 50", args.status) if args.status else                 db.q(q + " ORDER BY updated_ts DESC LIMIT 50")
+            for r in rows:
+                out(f"{r['job_id']:<45} {r['status']:<9} try {r['attempts']} {r['lease_owner'] or ''} {r['error'] or ''}")
+            return 0
+        if args.cmd in ("approve-template", "confirm-template", "revoke-template"):
+            from lab import templates
+            try:
+                if args.cmd == "approve-template":
+                    code = templates.request(db, args.template, human(), args.reason)
+                    out(f"confirm within 15 min: python -m lab confirm-template {code}")
+                elif args.cmd == "confirm-template":
+                    tpl, _ = templates.confirm(db, args.code, human())
+                    out(f"template {tpl} approved for exploratory screening (catalogue blob bound)")
+                else:
+                    templates.revoke(db, args.template, human(), args.reason)
+                    out(f"template {args.template} revoked")
+            except templates.TemplateError as e:
+                out(f"refused: {e}")
+                return 1
+            return 0
         if args.cmd == "init":
             out(f"registry ready: {db_path}")
         elif args.cmd == "import-legacy":

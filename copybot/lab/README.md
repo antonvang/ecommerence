@@ -62,3 +62,92 @@ Nothing starts automatically.
 
 To open the gate, the supervisor must run under supervision for 7 clean days, started by hand. Only then may the
 installer be run, by the user.
+
+## Mission 6: research fleet
+
+### Start, pause, stop (all manual; nothing autostarts)
+
+```
+py -m lab approve-template TEMPLATE --reason ".."    # human; prints a one-time code bound to the committed catalogue
+py -m lab confirm-template CODE
+py -m lab fleet [--duration S]                       # supervisor + 12 agents; holds data/lab/lab.lock
+py -m lab pause  --reason ".." | resume --reason ".." | stop --reason ".."
+py -m lab jobs [--status running|queued|failed ...]
+py -m lab web                                        # Mars Command Center on http://127.0.0.1:8770
+```
+
+Pause, resume and stop are events in the hash-chained log. They survive restarts and are idempotent. The dashboard
+buttons call the same functions and need the page token. A paused, resource-held, stopping or FAIL_CLOSED lab claims
+no new job. Running jobs finish, or time out and are retried. Stop ends the supervisor after its current pass.
+
+### Agents (`lab/fleet.py`)
+
+| Agent | Role |
+|---|---|
+| data-1 | downloads Binance USD-M 1h klines and funding from data.binance.vision (public), checks coverage, gaps, duplicates |
+| discovery-scanner | S3 live anomaly scanner (hourly) |
+| discovery-catalogue | proposes catalogue hypotheses; graveyard deduplication applies |
+| strategy-1 | registers DISCOVERED instances of human-approved templates; queues holdouts a human approved |
+| backtest-1, backtest-2 | grid positions on the train window |
+| cost-1 | net and 2x-cost results, trials ledger (every attempt), variant selection on train |
+| adversarial-1 | look-ahead truncation, future poison, one-bar delay, block-shuffled placebo |
+| validation-1 | frozen variant on validation (DSR over all trials); sealed holdout only in lifecycle VALIDATION |
+| report-1 | result record, lifecycle verdict (SCREEN_PASSED or REJECTED), markdown report |
+| paper-1 | simulated execution for PAPER_TRADING experiments only (public REST data, idempotent order ids) |
+| risk-1 | RAM/disk resource hold, paper reconciliation (mismatch -> FAIL_CLOSED) |
+
+Heavy steps share two compute slots. An agent waiting for a slot reports `queued`. Each agent writes its role,
+status, current job and experiment, start time, heartbeat, task/error/retry counts, last result and next action.
+
+### Job queue (`lab/jobs.py`)
+
+Jobs are persistent and keyed by a deterministic id, so enqueueing twice does nothing.
+- **Claiming.** A claim is a lease taken atomically under `BEGIN IMMEDIATE`. Only the lease owner can complete it.
+- **Retries.** A failed job retries with exponential backoff (10 s · 2^n, at most 600 s). After `max_attempts` it is dead-lettered.
+- **Dependencies.** A job waits until the jobs it depends on finish. If one of them fails, it is cancelled.
+- **Long jobs.** The agent extends the lease up to the job timeout. After that the lease expires and the queue retries the job.
+- **Restart.** At supervisor start, `recover()` turns leases left by a dead process into retries.
+
+### Protocol (`lab/engine/catalogue.py`, PROTOCOL v1)
+
+| Window | Period | Use |
+|---|---|---|
+| Train | 2023-01..08 | Selection: best net Sharpe in a fixed two-variant grid. |
+| Validation | 2023-09..12 | Gates; all must pass (list below). |
+| Holdout | 2024 | Only after a human-approved `SCREEN_PASSED -> VALIDATION`, opened once. |
+| Reserved | 2025 onwards | Never read: `data.window` raises. |
+
+Validation gates:
+- net mean > 0;
+- 90 % one-sided block-bootstrap lower bound > 0;
+- net Sharpe above equal-weight buy-and-hold;
+- net total > 0 at 2× costs;
+- deflated Sharpe probability ≥ 0.95, computed against every trial recorded so far;
+- exact look-ahead and poison tests.
+
+Paper trading needs a passed holdout and a human `VALIDATED -> PAPER_TRADING` approval.
+
+Costs per unit of turnover:
+- taker fee 0.05 %;
+- half-spread 0.02 % (ESTIMATE);
+- slippage 0.02 % (ESTIMATE);
+- plus settled funding, taken from data.
+
+### Dashboard (Mars Command Center)
+
+- **KPI strip.**
+  - Supervisor, active/total agents, queued jobs.
+  - Tests running and completed.
+  - Tests per minute over 15 min: trials ledger rows plus finished validation runs.
+  - Errors and retries.
+  - Disk, RAM and last data update.
+- **Mars.** Ten pipeline stages around the planet. Agent nodes move to the stage of the job they are running; idle agents wait in the dock. Pulses come from the stage of each `job.*` event on the live stream. Red dots mark rejected experiments, with their reason as a tooltip.
+- **Experiments.** Filters by market, strategy, worker, status, stage and time; paginated. Each row opens the full experiment record and the two-step approval controls (the only path to paper).
+- **Paper.** Uninterpolated step charts of equity and drawdown, realised and unrealised P&L, orders, fills and rejected orders, and reconciliation.
+- **Analysis panels.**
+  - Result distribution over all trials.
+  - Validation estimates with 95 % CI.
+  - Costs against benchmark.
+  - Rejected strategies with reasons.
+  - Job queue, worker log, risk events and audit trail.
+- **Missing values** show "ikke tilgængelig". Real-account profit is always "ikke tilgængelig": no real account, broker or live path exists.

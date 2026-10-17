@@ -93,7 +93,36 @@ class PaperEngine:
                     realized[inst] = 0.0
                     basis[inst] = px
         return {"cash": cash, "positions": {k: v for k, v in pos.items() if v}, "trades": trades,
-                "capital": capital, "simulated": True}
+                "basis": {k: basis[k] for k, v in pos.items() if v}, "capital": capital, "simulated": True}
+
+    def pnl(self, exp_id, marks):
+        """Simulated P&L split: unrealized = open positions marked to `marks` vs their cost basis; realized = the rest
+        (closed trades and fees). Total = equity - capital."""
+        led = self.ledger(exp_id)
+        equity = led["cash"] + sum(q * marks[i] for i, q in led["positions"].items())
+        unreal = sum(q * (marks[i] - led["basis"][i]) for i, q in led["positions"].items())
+        total = equity - led["capital"]
+        return {"equity": equity, "total": total, "unrealized": unreal, "realized": total - unreal, "simulated": True}
+
+    def reconcile(self, exp_id):
+        """Orders vs fills vs cancels vs positions. Any problem is returned (the caller fails the lab closed)."""
+        problems = []
+        for o in self.db.q("SELECT * FROM sim_orders WHERE exp_id=?", exp_id):
+            fills = self.db.q("SELECT * FROM sim_fills WHERE order_id=?", o["order_id"])
+            filled = sum(f["qty"] for f in fills)
+            if filled > o["qty"] + 1e-9:
+                problems.append(f"overfill {o['order_id']}")
+            for f in fills:
+                if (f["exp_id"], f["instrument"], f["side"]) != (o["exp_id"], o["instrument"], o["side"]):
+                    problems.append(f"fill {f['fill_id']} does not match its order")
+            cancelled = self.db.one("SELECT 1 FROM sim_cancels WHERE order_id=?", o["order_id"])
+            if o["style"] == "taker" and filled < o["qty"] - 1e-9 and not cancelled:
+                problems.append(f"taker order {o['order_id']} partially filled without IOC cancel")
+        orphan = self.db.one("SELECT COUNT(*) FROM sim_fills f WHERE f.exp_id=? AND NOT EXISTS "
+                             "(SELECT 1 FROM sim_orders o WHERE o.order_id=f.order_id)", exp_id)[0]
+        if orphan:
+            problems.append(f"{orphan} fills without an order")
+        return {"ok": not problems, "problems": problems}
 
     def open_orders(self, exp_id=None, instrument=None):
         q = ("SELECT o.* FROM sim_orders o WHERE o.style='maker' AND NOT EXISTS (SELECT 1 FROM sim_cancels c "

@@ -19,7 +19,7 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
-from lab import lifecycle, mission, registry
+from lab import command, control, lifecycle, mission, registry
 from lab.data import AccessRefused
 from lab.db import DB, DEFAULT_DB
 from lab.paper import PaperEngine
@@ -87,6 +87,8 @@ def experiment(db, exp_id):
         return None
     return {"exp_id": exp_id, "state": lifecycle.state(db, exp_id),
             "display_label": LABEL_OF_STATE.get(lifecycle.state(db, exp_id)),
+            "next_actions": [{"to": b, "who": who} for (a, b), who in lifecycle.EDGES.items()
+                             if a == lifecycle.state(db, exp_id)],
             "versions": [{k: (_j(v["spec_json"]) if k == "spec_json" else v[k]) for k in v.keys()} for v in vs],
             "transitions": [dict(r) | {"evidence": _j(r["evidence"])} for r in
                             db.q("SELECT * FROM transitions WHERE exp_id=? ORDER BY id", exp_id)],
@@ -172,6 +174,14 @@ def audit(db, kind=None, limit=200):
             "chains": {t: {"rows": n, "broken_at": b} for t, (n, b) in chains.items()}, "triggers": triggers}
 
 
+def _sse_event(r):
+    p = _j(r["payload"]) or {}
+    kind = p.get("kind") if isinstance(p, dict) else None
+    return {"id": r["id"], "ts": r["ts"], "kind": r["kind"], "actor": r["actor"], "exp_id": r["exp_id"],
+            "job_kind": kind, "stage": command.STAGE_OF_KIND.get(kind),
+            "to": p.get("to") if isinstance(p, dict) else None}
+
+
 # ---------- server ----------
 class LabServer(ThreadingHTTPServer):
     allow_reuse_address = False
@@ -210,6 +220,20 @@ class Handler(BaseHTTPRequestHandler):
                       "/api/audit": lambda: audit(db, (qs.get("kind") or [None])[0], (qs.get("limit") or [200])[0])}
             routes.update({"/api/mission": lambda: mission.mission(db), "/api/pipeline": lambda: mission.pipeline_rows(db),
                            "/api/throughput": lambda: mission.throughput(db), "/api/results": lambda: mission.results_view(db)})
+            one = lambda k, d=None: (qs.get(k) or [d])[0]  # noqa: E731
+            routes.update({
+                "/api/kpis": lambda: command.kpis(db, int(one("window", 900))),
+                "/api/agents": lambda: command.agents(db),
+                "/api/jobs": lambda: command.job_list(db, one("status"), one("kind"), one("exp"), one("page", 1),
+                                                      one("size", 50)),
+                "/api/v2/experiments": lambda: command.experiments(db, one("market"), one("strategy"), one("worker"),
+                                                                   one("status"), one("stage"), one("since"),
+                                                                   one("page", 1), one("size", 50),
+                                                                   one("catalogue") == "1"),
+                "/api/distribution": lambda: command.distribution(db), "/api/costs": lambda: command.costs(db),
+                "/api/paper2": lambda: command.paper_view(db), "/api/rejected": lambda: command.rejected(db)})
+            if u.path.startswith("/api/agent/"):
+                return self._send(200, command.agent_log(db, u.path.rsplit("/", 1)[1], int(one("limit", 50))))
             if u.path == "/api/stream":
                 db.close()
                 return self._stream()
@@ -238,8 +262,9 @@ class Handler(BaseHTTPRequestHandler):
                     top = db.one("SELECT COALESCE(MAX(id),0) FROM events")[0]
                     fills = db.one("SELECT COUNT(*) FROM sim_fills")[0]
                     beat = db.one("SELECT COALESCE(MAX(ts),0) FROM heartbeats")[0]
-                    new = [] if last is None else [dict(r) for r in db.q(
-                        "SELECT id, ts, kind, exp_id FROM events WHERE id>? ORDER BY id LIMIT 20", last[0])]
+                    new = [] if last is None else [_sse_event(r) for r in db.q(
+                        "SELECT id, ts, kind, actor, exp_id, payload FROM events WHERE id>? ORDER BY id LIMIT 40",
+                        last[0])]
                 finally:
                     db.close()
                 state = (top, fills, beat)
@@ -289,6 +314,15 @@ class Handler(BaseHTTPRequestHandler):
                 Risk(db).pause(body["exp_id"], "manual_pause", None, None, f"{actor}: {body['reason']}",
                                PaperEngine(db).cancel_entries)
                 return self._send(200, {"exp_id": body["exp_id"], "state": lifecycle.state(db, body["exp_id"])})
+            if p == "/api/control/fleet":                 # pause / resume / graceful stop, logged in the event chain
+                act = body.get("action")
+                if act not in ("pause", "resume", "stop"):
+                    return self._send(400, {"error": "action must be pause, resume or stop"})
+                if len(body.get("reason", "")) < 10:
+                    return self._send(400, {"error": "a reason of at least 10 characters is required"})
+                fn = {"pause": control.pause, "resume": control.resume, "stop": control.request_stop}[act]
+                changed = fn(db, actor, body["reason"])
+                return self._send(200, {"action": act, "changed": changed, "control": control.state(db)})
             if p == "/api/control/clear-fail-closed":
                 Risk(db).clear_fail_closed(actor, body.get("reason", ""))
                 return self._send(200, {"fail_closed": Risk(db).fail_closed()})

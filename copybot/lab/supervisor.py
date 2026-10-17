@@ -63,8 +63,9 @@ def release_lock(f):
 class Worker:
     """fn(db) is called every `interval` seconds in its own thread with its own DB connection."""
 
-    def __init__(self, name, fn, interval, stale_after=None, critical=False):
+    def __init__(self, name, fn, interval, stale_after=None, critical=False, beats_itself=False, role=None):
         self.name, self.fn, self.interval, self.critical = name, fn, interval, critical
+        self.beats_itself, self.role = beats_itself, role
         self.stale_after = stale_after or max(3 * interval, 10)
         self.thread, self.restarts, self.next_start, self.failed = None, [], 0.0, False
 
@@ -137,15 +138,18 @@ class Supervisor:
 
     # ---------- workers ----------
     def beat(self, db, name, ok, detail, status, stale_after, interval):
-        db.con.execute("INSERT OR REPLACE INTO heartbeats(worker, ts, pid, ok, detail, status, stale_after, interval) "
-                       "VALUES(?,?,?,?,?,?,?,?)", (name, int(self.now()), os.getpid(), ok, detail, status,
-                                                   int(stale_after), interval))
+        db.con.execute("INSERT INTO heartbeats(worker, ts, pid, ok, detail, status, stale_after, interval) "
+                       "VALUES(?,?,?,?,?,?,?,?) ON CONFLICT(worker) DO UPDATE SET ts=excluded.ts, pid=excluded.pid, "
+                       "ok=excluded.ok, detail=excluded.detail, status=excluded.status, "
+                       "stale_after=excluded.stale_after, interval=excluded.interval",
+                       (name, int(self.now()), os.getpid(), ok, detail, status, int(stale_after), interval))
 
     def _loop(self, w):
         db = DB(self.db_path)
         try:
             while not self.stop.is_set():
-                self.beat(db, w.name, 1, "working", "running", w.stale_after, w.interval)
+                if not w.beats_itself:
+                    self.beat(db, w.name, 1, "working", "running", w.stale_after, w.interval)
                 try:
                     w.fn(db)
                     ok, detail = 1, "ok"
@@ -153,7 +157,8 @@ class Supervisor:
                     db.event("worker.error", ACTOR, None, {"worker": w.name, "error": repr(e)})
                     ops.log_json("supervisor", "worker.error", self.log_dir, worker=w.name, error=repr(e))
                     ok, detail = 0, repr(e)[:200]
-                self.beat(db, w.name, ok, detail, "idle" if ok else "error", w.stale_after, w.interval)
+                if not w.beats_itself or not ok:
+                    self.beat(db, w.name, ok, detail, "idle" if ok else "error", w.stale_after, w.interval)
                 if not ok:
                     return                                            # crashed: the supervisor decides on restart
                 self.stop.wait(w.interval)
@@ -224,7 +229,14 @@ class Supervisor:
                 self._start(w)
             self.db.event("system.running", ACTOR, None, {"workers": [w.name for w in self.workers], "pid": os.getpid()})
             t0 = self.now()
+            from lab import control, jobs
+            requeued = jobs.recover(self.db, self.now())
+            if requeued:
+                self.log(f"recovered {requeued} job(s) left running by a previous process")
             while not self.stop.is_set() and (duration is None or self.now() - t0 < duration):
+                if control.state(self.db)["stop"]:
+                    self.log("stop requested: shutting down gracefully")
+                    break
                 self.housekeeping()
                 self.sleep(1.0)
                 self.check()

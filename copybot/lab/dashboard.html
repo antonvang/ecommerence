@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Research Lab · Mission Control</title>
+<title>Mars Command Center · Mission Control</title>
 <meta name="color-scheme" content="dark">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='9' fill='%23c4452a'/%3E%3Cellipse cx='16' cy='16' rx='15' ry='5' fill='none' stroke='%23f0a35a' stroke-width='1.6' transform='rotate(-20 16 16)'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -141,6 +141,36 @@ button.btn.danger{border-color:var(--red);color:var(--red)}
 .ms.done{color:var(--dim)}
 footer{font:11px var(--mono);color:var(--dim);text-align:center;padding-top:8px;line-height:1.7}
 @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+
+/* ---- Mission 6 command center ---- */
+.kpis{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:8px}
+@media (max-width:1300px){.kpis{grid-template-columns:repeat(5,minmax(0,1fr))}}
+@media (max-width:640px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kpi{border:1px solid var(--line);background:linear-gradient(180deg,#12151bee,#0e1116ee);border-radius:12px;padding:10px 11px;min-width:0}
+.kpi .k{font:600 9px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi .v{font:700 20px var(--mono);font-variant-numeric:tabular-nums;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi .s{font:10px var(--mono);color:var(--dim);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi .v.good{color:var(--green)} .kpi .v.bad{color:var(--red)} .kpi .v.hot{color:var(--orange)} .kpi .v.na{color:var(--dim);font-size:12px}
+.kpi.stale{opacity:.55}
+.ctl{display:flex;gap:6px;flex-wrap:wrap}
+.ag{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 8px;padding:7px 0;border-bottom:1px solid var(--line2);font:11px var(--mono);cursor:pointer}
+.ag:last-child{border-bottom:0} .ag:hover{background:#1a130f}
+.ag .n{font-weight:700;font-size:12px} .ag .r{grid-column:1/-1;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.s-idle{color:var(--blue)} .s-blocked,.s-queued{color:var(--amber)} .s-failed{color:var(--red)} .s-completed{color:var(--mute)}
+.flow{grid-template-columns:repeat(10,minmax(0,1fr))}
+@media (max-width:1100px){.flow{grid-template-columns:repeat(5,minmax(0,1fr))}}
+@media (max-width:480px){.flow{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.fsel{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.fsel select{font:11px var(--mono)}
+.pager{display:flex;gap:8px;align-items:center;justify-content:flex-end;margin-top:8px;font:11px var(--mono);color:var(--mute)}
+.axis{fill:#6f6a65;font:9px "JetBrains Mono",monospace}
+.cap{font:10px var(--mono);color:var(--dim);margin-top:4px;line-height:1.5}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tabs button{font:600 10px var(--mono);padding:5px 9px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--mute);cursor:pointer}
+.tabs button.on{color:var(--sand);border-color:var(--mars);background:#2a0f0855}
+.gnode{transition:transform 1.2s cubic-bezier(.4,.1,.2,1)}
+@media (prefers-reduced-motion: reduce){.gnode{transition:none}}
+.na{color:var(--dim)} td .na,td.num{white-space:nowrap}
 </style>
 </head>
 <body>
@@ -148,11 +178,11 @@ footer{font:11px var(--mono);color:var(--dim);text-align:center;padding-top:8px;
   <div class="top">
     <div class="brand">
       <svg class="mark" viewBox="0 0 40 40" aria-hidden="true"><defs><radialGradient id="mg" cx="35%" cy="35%"><stop offset="0" stop-color="#f08a52"/><stop offset=".6" stop-color="#c4452a"/><stop offset="1" stop-color="#5a1a0c"/></radialGradient></defs>
-        <circle cx="20" cy="20" r="10" fill="url(#mg)"/><ellipse cx="20" cy="20" rx="18" ry="6" fill="none" stroke="#f4b860" stroke-width="1" opacity=".8" transform="rotate(-18 20 20)"/></svg>
-      <div><h1>Research Lab · Mission Control</h1><div class="sub">AUTONOMOUS RESEARCH FACILITY · PRE-REGISTERED · SEALED HOLDOUTS</div></div>
+        <circle cx="20" cy="20" r="12" fill="url(#mg)"/><ellipse cx="20" cy="20" rx="19" ry="6" fill="none" stroke="#f0a35a" stroke-width="1.2" transform="rotate(-20 20 20)"/></svg>
+      <div><h1>Mars Command Center</h1><div class="sub">Research fleet · Mission Control · copybot lab</div></div>
     </div>
     <div class="chips">
-      <span class="chip paper">PAPER ONLY · NO REAL ORDERS</span>
+      <span class="chip paper">PAPER ONLY · no real orders</span>
       <span class="chip" id="c-link"><span class="led"></span>connecting…</span>
       <span class="chip" id="c-chain"><span class="led"></span>chain</span>
       <span class="chip" id="c-gate"><span class="led"></span>S7 gate</span>
@@ -160,79 +190,88 @@ footer{font:11px var(--mono);color:var(--dim);text-align:center;padding-top:8px;
     </div>
   </div>
 
-  <div class="banner red" id="b-fail">LAB IS FAIL_CLOSED — no simulated entries until a human clears it. <button class="btn danger" id="clearfc">Clear with reason…</button></div>
+  <div class="banner red" id="b-fail">LAB IS FAIL_CLOSED — no new simulated trades or jobs until a human clears it. <button class="btn danger" id="clearfc">Clear with reason…</button></div>
+  <div class="banner amber" id="b-ctl"></div>
   <div class="banner amber" id="b-off"></div>
 
+  <section class="kpis" id="kpis" aria-label="Key figures"></section>
+
   <section class="hero">
-    <div class="panel corner tel" id="t-system">
-      <h2>System telemetry <span class="tagx" id="t-sys-age"></span></h2>
-      <div id="sys"><div class="sk" style="height:180px"></div></div>
+    <div class="panel corner tel">
+      <h2>Agent fleet <span class="ctl"><button class="btn" id="f-pause">Pause</button><button class="btn" id="f-resume">Resume</button><button class="btn danger" id="f-stop">Stop</button></span></h2>
+      <div class="note" id="sup-note" style="margin-top:0"></div>
+      <div id="agents" class="scroll" style="max-height:520px"><div class="sk" style="height:200px"></div></div>
     </div>
     <div class="globe-wrap">
       <div class="stage" id="stage">
         <canvas id="planet" aria-label="Rotating Mars globe"></canvas>
-        <svg id="orbits" viewBox="0 0 600 600" role="img" aria-label="Research pipeline orbiting the planet"></svg>
+        <svg id="orbits" viewBox="0 0 600 600" role="img" aria-label="Pipeline stages around the planet with agent nodes at the stage of their current task"></svg>
       </div>
       <div class="globe-cap" id="g-cap">—</div>
-      <div class="globe-sub" id="g-sub"></div>
+      <div class="globe-sub" id="g-sub">Agents sit at the stage of the job they are running; idle agents wait in the dock. Red dots = rejected.</div>
     </div>
-    <div class="panel corner tel" id="t-research">
-      <h2>Research telemetry <span class="tagx">from the registry</span></h2>
-      <div id="res"><div class="sk" style="height:180px"></div></div>
+    <div class="panel corner tel">
+      <h2>Pipeline <span class="tagx">experiments per stage</span></h2>
+      <div id="stagecounts"><div class="sk" style="height:200px"></div></div>
+      <div class="metric"><div class="k">Real account profit</div><div class="v na">ikke tilgængelig</div><div class="s">no real account, broker or live execution path exists</div></div>
     </div>
   </section>
 
   <section class="panel corner" id="pipeline">
-    <h2>Research pipeline <span class="tagx" id="pl-note"></span></h2>
+    <h2>Experiments <span class="tagx" id="pl-note"></span></h2>
     <div class="flow" id="flow"></div>
-    <div class="filters" id="filters"></div>
+    <div class="fsel" id="fsel"></div>
     <div class="exp-table scroll" id="exp-table"><div class="sk" style="height:200px"></div></div>
     <div class="exp-cards" id="exp-cards"></div>
+    <div class="pager" id="pager"></div>
   </section>
+
+  <section class="panel corner"><h2>Paper trading <span class="tagx">SIMULATED · step chart, no interpolation</span></h2><div id="paper"><div class="sk" style="height:120px"></div></div></section>
 
   <section class="grid3">
-    <div class="panel"><h2>Research throughput <span class="tagx">registry events / day · 30 days</span></h2><div id="ch-through"><div class="sk" style="height:160px"></div></div></div>
-    <div class="panel"><h2>Holdout results <span class="tagx">net mean · lower bound</span></h2><div id="ch-results"><div class="sk" style="height:160px"></div></div></div>
-    <div class="panel"><h2>Why ideas failed <span class="tagx">documented failure pattern</span></h2><div id="ch-fail"><div class="sk" style="height:160px"></div></div></div>
-  </section>
-
-  <section class="panel corner"><h2>Paper trading <span class="tagx">SIMULATED · never realised profit</span></h2><div id="paper"><div class="sk" style="height:90px"></div></div></section>
-
-  <section class="grid2">
-    <div class="panel"><h2>Candidates <span class="tagx">discovered · not evaluated</span></h2><div id="cands"></div></div>
-    <div class="panel"><h2>Last scan <span class="tagx" id="scan-ts"></span></h2><div class="scroll" id="scan"></div></div>
+    <div class="panel"><h2>Result distribution <span class="tagx">all variants · trials ledger</span></h2><div id="ch-dist"></div></div>
+    <div class="panel"><h2>Validation estimates <span class="tagx">net mean/day · 95 % CI</span></h2><div id="ch-est"></div></div>
+    <div class="panel"><h2>Costs vs benchmark <span class="tagx">train window</span></h2><div id="ch-cost"></div></div>
   </section>
 
   <section class="grid2">
-    <div class="panel"><h2>Risk events <span class="tagx">pauses · blocks · fail-closed</span></h2><div class="scroll" id="risk"></div></div>
-    <div class="panel"><h2>Data quality <span class="tagx">detectors · gateway</span></h2><div class="scroll" id="data"></div></div>
+    <div class="panel"><h2>Rejected strategies <span class="tagx" id="rej-n"></span></h2><div class="scroll" id="rejected"></div></div>
+    <div class="panel"><h2>Job queue <span class="tagx" id="jobs-n"></span></h2><div class="tabs" id="jtabs"></div><div class="scroll" id="jobs" style="margin-top:8px"></div><div class="pager" id="jpager"></div></div>
   </section>
 
-  <section class="panel"><h2>Audit log <span class="crow" style="margin:0"><input id="kind" placeholder="filter: lifecycle, risk, candidate…" size="26"></span></h2>
+  <section class="grid2">
+    <div class="panel"><h2>Worker log <span class="tagx"><select id="logsel"></select></span></h2><div class="scroll" id="wlog"></div></div>
+    <div class="panel"><h2>Risk events <span class="tagx">pauses · blocks · fail-closed · resource holds</span></h2><div class="scroll" id="risk"></div></div>
+  </section>
+
+  <section class="panel"><h2>Audit trail <span class="crow" style="margin:0"><input id="kind" placeholder="filter: job, lifecycle, system, template…" size="30"></span></h2>
     <div class="note" id="chainnote" style="margin-top:0"></div><div class="scroll" id="audit"></div></section>
 
-  <footer>Every figure on this page is read from the lab registry, the heartbeat table or committed files at request time.
-    Simulated results are marked PAPER/SIMULATED; holdout results are net and historical; nothing here is a forecast.<br>
+  <footer>All figures are read from lab.db at request time. Backtest (train), validation, holdout and paper are separate labels; none is a real-money result.<br>
     <span id="foot"></span></footer>
 </div>
-
 <div class="drawer" id="drawer"><div class="dpanel" id="detail"></div></div>
-
 <script>
 "use strict";
 const TOKEN = "__LAB_TOKEN__";
+const NA = "ikke tilgængelig";
 const $ = s => document.querySelector(s);
 const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const num = (v, d=2) => v == null || Number.isNaN(v) ? "—" : Number(v).toLocaleString("en-US",{maximumFractionDigits:d});
-const pct = (v, d=2) => v == null ? "—" : (v*100).toFixed(d) + "%";
-const dur = s => { if (s == null) return "—"; s = Math.max(0, Math.round(s));
+const na = () => `<span class="na">${NA}</span>`;
+const num = (v, d=2) => v == null || Number.isNaN(v) ? na() : Number(v).toLocaleString("en-US",{maximumFractionDigits:d});
+const pct = (v, d=2) => v == null || Number.isNaN(v) ? na() : (v*100).toFixed(d) + "%";
+const dur = s => { if (s == null) return NA; s = Math.max(0, Math.round(s));
   return s < 90 ? s+"s" : s < 5400 ? Math.round(s/60)+"m" : s < 172800 ? (s/3600).toFixed(1)+"h" : (s/86400).toFixed(1)+"d"; };
-const ago = ts => ts ? dur(Date.now()/1000 - ts) + " ago" : "never";
-const until = s => { if (s == null) return "—"; const d = Math.floor(s/86400), h = Math.floor(s%86400/3600), m = Math.floor(s%3600/60); return (d? d+"d ":"") + h+"h " + m+"m"; };
+const ago = ts => ts ? dur(Date.now()/1000 - ts) + " ago" : NA;
+const utc = ts => ts ? new Date(ts*1000).toISOString().replace("T"," ").slice(0,16) + " UTC" : NA;
 const badge = l => { const k = String(l||"").split(/[ (]/)[0]; return `<span class="badge b-${esc(k)}">${esc(l||"")}</span>`; };
 const stateChip = s => `<span class="state s-${esc(s)}">${esc(s)}</span>`;
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-let M = null, P = null, lastOk = 0, link = "connecting", filter = "ALL", es = null, pollTimer = null;
+const STAGES = ["DISCOVERED","QUEUED","RUNNING","COST_CHECK","VALIDATION","PAPER_ELIGIBLE","PAPER_TRADING","ACCEPTED","REJECTED","PAUSED"];
+const STAGE_COL = {REJECTED:"#ff5d5d", PAUSED:"#f4b860", PAPER_TRADING:"#5fd39a", PAPER_ELIGIBLE:"#5fd39a", ACCEPTED:"#5fd39a", DISCOVERED:"#b39cff"};
+let K = null, A = null, X = null, lastOk = 0, link = "connecting", es = null, pollTimer = null;
+const F = {stage:"", market:"", strategy:"", worker:"", status:"", since:"", page:1};
+let jobTab = "", jobPage = 1, logAgent = "";
 
 async function api(p){ const r = await fetch(p,{cache:"no-store"}); if(!r.ok) throw new Error(p+" "+r.status); return r.json(); }
 async function control(p, body){
@@ -244,6 +283,7 @@ function table(cols, rows, empty, rowAttr){
   return `<table><thead><tr>${cols.map(c=>`<th class="${c.num?"num":""}">${esc(c.h)}</th>`).join("")}</tr></thead><tbody>${
     rows.map(r=>`<tr ${rowAttr?rowAttr(r):""}>${cols.map(c=>`<td class="${c.num?"num":""}">${c.f(r)}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
 }
+function metric(k, v, s, cls=""){ return `<div class="metric"><div class="k">${esc(k)}</div><div class="v ${cls}">${v}</div>${s?`<div class="s">${s}</div>`:""}</div>`; }
 
 /* ---------------- planet ---------------- */
 const Planet = (() => {
@@ -324,289 +364,368 @@ const Planet = (() => {
   return { start, setActive(a){ speed = a ? 1/240 : 1/1800; } };
 })();
 
-/* ---------------- orbit overlay (pipeline + workers) ---------------- */
+
+
+/* ---------------- orbit overlay: stages + agent nodes ---------------- */
 const Orbits = (() => {
-  const svg = $("#orbits"); let sats = [], t0 = performance.now();
-  const STAGE_ANG = {"DISCOVERY":-150,"HYPOTHESIS":-115,"REGISTERED":-80,"SCREENING":-45,"VALIDATION":-10,"PAPER TRADING":25,"PAUSED":60,"REJECTED":120,"COMPLETED":155,"EXTERNAL":-185};
+  const svg = $("#orbits");
+  const ANG = {}; STAGES.forEach((s, i) => ANG[s] = -162 + i * 36);          // ten stages, 36 degrees apart
   const pos = (deg, r) => [300 + r*Math.cos(deg*Math.PI/180), 300 + r*Math.sin(deg*Math.PI/180)];
-  function render(m){
-    const stages = Object.keys(STAGE_ANG), C = m.stage_counts || {};
-    let h = `<defs><radialGradient id="pulse"><stop offset="0" stop-color="#f07a3a" stop-opacity="0"/><stop offset=".9" stop-color="#f07a3a" stop-opacity=".55"/><stop offset="1" stop-color="#f07a3a" stop-opacity="0"/></radialGradient></defs>`;
-    // coordinate ring
-    h += `<circle cx="300" cy="300" r="268" fill="none" stroke="#2a2f38" stroke-width="1"/>`;
-    for (let a = 0; a < 360; a += 10) { const [x1,y1] = pos(a, 268), [x2,y2] = pos(a, a % 30 ? 263 : 256);
-      h += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#3a3f4a" stroke-width="1"/>`;
-      if (a % 90 === 0) { const [tx,ty] = pos(a, 282); h += `<text x="${tx}" y="${ty}" fill="#5f5b57" font-family="JetBrains Mono,monospace" font-size="9" text-anchor="middle" dominant-baseline="middle">${String(a).padStart(3,"0")}°</text>`; } }
-    // worker orbit (inner, tilted)
-    h += `<ellipse cx="300" cy="300" rx="218" ry="74" fill="none" stroke="#d4512c" stroke-opacity=".35" stroke-dasharray="2 5" transform="rotate(-18 300 300)"/>`;
-    // pipeline arcs between consecutive stages that hold experiments
-    const order = ["DISCOVERY","HYPOTHESIS","REGISTERED","SCREENING","VALIDATION","PAPER TRADING"];
-    for (let i = 0; i < order.length - 1; i++) {
-      const a = STAGE_ANG[order[i]], b = STAGE_ANG[order[i+1]], live = (C[order[i]]||0) + (C[order[i+1]]||0) > 0;
-      const [x1,y1] = pos(a, 240), [x2,y2] = pos(b, 240);
-      h += `<path d="M${x1},${y1} A240,240 0 0,1 ${x2},${y2}" fill="none" stroke="${live ? "#f07a3a" : "#2c313b"}" stroke-width="${live ? 1.6 : 1}" stroke-opacity="${live ? .8 : 1}"/>`;
-    }
-    // stage nodes
-    for (const s of stages) {
-      const n = C[s] || 0, [x,y] = pos(STAGE_ANG[s], 240), r = n ? Math.min(19, 9 + Math.sqrt(n)*2.6) : 7;
-      const col = s === "REJECTED" ? "#ff5d5d" : s === "EXTERNAL" ? "#7fb0ff" : s === "PAUSED" ? "#f4b860" : s === "COMPLETED" ? "#9a958f" : "#f07a3a";
-      h += `<g class="snode" data-stage="${esc(s)}" style="cursor:pointer"><circle cx="${x}" cy="${y}" r="${r}" fill="${n ? col+"33" : "#101318"}" stroke="${n ? col : "#3a3f4a"}" stroke-width="1.4"/>
-        <text x="${x}" y="${y+1}" fill="${n ? "#ece7e2" : "#5f5b57"}" font-family="JetBrains Mono,monospace" font-size="11" font-weight="700" text-anchor="middle" dominant-baseline="middle">${n}</text>`;
-      const [lx,ly] = pos(STAGE_ANG[s], 240 + r + 13);
-      h += `<text x="${lx}" y="${ly}" fill="#9a958f" font-family="JetBrains Mono,monospace" font-size="8.5" letter-spacing=".08em" text-anchor="middle" dominant-baseline="middle">${esc(s)}</text></g>`;
-    }
-    h += `<g id="sats"></g><g id="pulses"></g>`;
-    svg.innerHTML = h;
-    svg.querySelectorAll(".snode").forEach(g => g.addEventListener("click", () => { setFilter(g.dataset.stage); $("#pipeline").scrollIntoView({behavior:"smooth"}); }));
-    sats = (m.workers.workers || []).map((w, i, all) => ({...w, phase: i / Math.max(1, all.length)}));
-    drawSats(performance.now());
+  const DOCK = 90;                                                              // idle agents wait below the planet
+  let built = false, rejected = [];
+  function build(){
+    let h = `<circle cx="300" cy="300" r="270" fill="none" stroke="#2a2f38"/>`;
+    for (let a = 0; a < 360; a += 10) { const [x1,y1] = pos(a, 270), [x2,y2] = pos(a, a % 30 ? 265 : 258);
+      h += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#3a3f4a"/>`; }
+    for (let i = 0; i < 6; i++) { const [x1,y1] = pos(ANG[STAGES[i]], 236), [x2,y2] = pos(ANG[STAGES[i+1]], 236);
+      h += `<path d="M${x1},${y1} A236,236 0 0,1 ${x2},${y2}" fill="none" stroke="#3a2a22" stroke-width="1.4" id="arc-${i}"/>`; }
+    h += `<g id="stagenodes"></g><g id="rejdots"></g><g id="agentnodes"></g><g id="pulses"></g>`;
+    svg.innerHTML = h; built = true;
   }
-  function drawSats(t){
-    const g = svg.querySelector("#sats"); if (!g) return;
+  function stagesRender(counts){
+    if (!built) build();
     let h = "";
-    sats.forEach(w => {
-      const moving = (w.state === "running" || w.state === "scheduled") && !reduce;
-      const ang = (w.phase + (moving ? (t - t0)/1000 / (w.state === "running" ? 20 : 60) : 0)) * 2*Math.PI;
-      const ex = 218*Math.cos(ang), ey = 74*Math.sin(ang), rr = -18*Math.PI/180;
-      const x = 300 + ex*Math.cos(rr) - ey*Math.sin(rr), y = 300 + ex*Math.sin(rr) + ey*Math.cos(rr);
-      const col = w.state === "running" ? "#5fd39a" : w.state === "scheduled" ? "#7fb0ff" : w.state === "stale" || w.state === "error" ? "#ff5d5d" : "#5f5b57";
-      h += `<g><circle cx="${x}" cy="${y}" r="5.5" fill="${w.state === "offline" || w.state === "stopped" ? "none" : col}" stroke="${col}" stroke-width="1.5"/>
-        <text x="${x}" y="${y-11}" fill="${col}" font-family="JetBrains Mono,monospace" font-size="9" text-anchor="middle">${esc(w.worker)}</text></g>`;
+    STAGES.forEach(s => {
+      const n = counts[s] || 0, [x,y] = pos(ANG[s], 236), r = n ? Math.min(19, 10 + Math.sqrt(n)*2.4) : 8, col = STAGE_COL[s] || "#f07a3a";
+      h += `<g class="snode" data-stage="${s}" style="cursor:pointer"><title>${s}: ${n} experiment(s)</title><circle cx="${x}" cy="${y}" r="${r}" fill="${n ? col+"33" : "#101318"}" stroke="${n ? col : "#3a3f4a"}" stroke-width="1.4"/>
+        <text x="${x}" y="${y+1}" fill="${n ? "#ece7e2" : "#5f5b57"}" font-family="JetBrains Mono,monospace" font-size="11" font-weight="700" text-anchor="middle" dominant-baseline="middle">${n}</text>`;
+      const [lx,ly] = pos(ANG[s], 236 + r + 14);
+      h += `<text x="${lx}" y="${ly}" fill="#9a958f" font-family="JetBrains Mono,monospace" font-size="8" letter-spacing=".06em" text-anchor="middle" dominant-baseline="middle">${s.replace("_"," ")}</text></g>`;
     });
-    g.innerHTML = h;
+    svg.querySelector("#stagenodes").innerHTML = h;
+    svg.querySelectorAll(".snode").forEach(g => g.onclick = () => { F.stage = F.stage === g.dataset.stage ? "" : g.dataset.stage; F.page = 1; loadExperiments(); $("#pipeline").scrollIntoView({behavior:"smooth"}); });
   }
-  function pulse(){
-    if (reduce) return;
-    const g = svg.querySelector("#pulses"); if (!g) return;
+  function rejectedRender(items){
+    rejected = items.slice(0, 30);
+    const [cx, cy] = pos(ANG.REJECTED, 236);
+    svg.querySelector("#rejdots").innerHTML = rejected.map((r, i) => {
+      const a = (i / Math.max(rejected.length, 1)) * Math.PI * 2, rr = 30 + (i % 3) * 7;
+      return `<circle class="rej" data-id="${esc(r.exp_id)}" cx="${cx + rr*Math.cos(a)}" cy="${cy + rr*Math.sin(a)}" r="3" fill="#ff5d5d" fill-opacity=".85" style="cursor:pointer"><title>${esc(r.exp_id)} — ${esc(r.reason || "no reason recorded")}</title></circle>`;
+    }).join("");
+  }
+  function agentsRender(agents){
+    if (!built) build();
+    const g = svg.querySelector("#agentnodes"), seen = new Set();
+    const byStage = {};
+    agents.forEach(a => { const st = a.status === "running" && a.stage ? a.stage : "_dock"; (byStage[st] = byStage[st] || []).push(a); });
+    Object.entries(byStage).forEach(([st, list]) => list.forEach((a, i) => {
+      let x, y;
+      if (st === "_dock") { const span = Math.min(150, list.length * 13), ang = DOCK + (list.length > 1 ? -span/2 + span * i/(list.length-1) : 0); [x, y] = pos(ang, 196); }
+      else { const ang = ANG[st] + (i - (list.length-1)/2) * 7; [x, y] = pos(ang, 200); }
+      const col = a.status === "running" ? "#5fd39a" : a.status === "idle" ? "#7fb0ff" : (a.status === "blocked" || a.status === "queued") ? "#f4b860" : (a.status === "stale" || a.status === "error" || a.status === "failed") ? "#ff5d5d" : "#5f5b57";
+      let node = g.querySelector(`[data-agent="${CSS.escape(a.agent)}"]`);
+      if (!node) { node = document.createElementNS("http://www.w3.org/2000/svg", "g"); node.setAttribute("class", "gnode"); node.dataset.agent = a.agent;
+        node.style.cursor = "pointer"; node.addEventListener("click", () => { logAgent = a.agent; $("#logsel").value = a.agent; loadLog(); $("#wlog").scrollIntoView({behavior:"smooth"}); });
+        node.innerHTML = `<title></title><circle r="6" stroke-width="1.6"/><text y="-10" font-family="JetBrains Mono,monospace" font-size="8.5" text-anchor="middle"></text>`; g.appendChild(node); }
+      node.style.transform = `translate(${x}px, ${y}px)`;
+      const c = node.querySelector("circle"); c.setAttribute("fill", a.status === "offline" ? "none" : col); c.setAttribute("stroke", col);
+      const t = node.querySelector("text"); t.setAttribute("fill", col); t.textContent = a.agent;
+      node.querySelector("title").textContent = `${a.agent} · ${a.status}${a.current_job ? " · " + a.current_job : ""}`;
+      seen.add(a.agent);
+    }));
+    g.querySelectorAll(".gnode").forEach(n => { if (!seen.has(n.dataset.agent)) n.remove(); });
+  }
+  function pulse(stage, color){
+    if (reduce || !built || !ANG[stage]) return;
+    const [x, y] = pos(ANG[stage], 236), g = svg.querySelector("#pulses");
     const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-    c.setAttribute("cx", 300); c.setAttribute("cy", 300); c.setAttribute("r", 172); c.setAttribute("fill", "none");
-    c.setAttribute("stroke", "#f07a3a"); c.setAttribute("stroke-width", 2);
-    c.animate([{r:172, opacity:.9},{r:265, opacity:0}], {duration:1800, easing:"ease-out"}).onfinish = () => c.remove();
+    c.setAttribute("cx", x); c.setAttribute("cy", y); c.setAttribute("r", 10); c.setAttribute("fill", "none");
+    c.setAttribute("stroke", color); c.setAttribute("stroke-width", 2);
+    c.animate([{r:10, opacity:.95},{r:44, opacity:0}], {duration:1500, easing:"ease-out"}).onfinish = () => c.remove();
     g.appendChild(c);
   }
-  (function tick(t){ if (sats.some(s => s.state === "running" || s.state === "scheduled")) drawSats(t); requestAnimationFrame(tick); })(0);
-  return { render, pulse };
+  return {stagesRender, agentsRender, rejectedRender, pulse};
 })();
 
-/* ---------------- charts ---------------- */
-const COLORS = {discovered:"#b39cff",suppressed:"#ff5d5d",transitions:"#f07a3a",results:"#f4b860",scans:"#7fb0ff","data reads":"#5fd39a",risk:"#ff9f6e",system:"#6b6660",other:"#3a3f4a"};
-function throughputChart(t){
-  const days = t.days, cats = t.categories, W = 600, H = 190, pad = 26, bw = (W - pad) / days.length;
-  const tot = days.map(d => cats.reduce((s,c) => s + (d[c]||0), 0)), max = Math.max(1, ...tot);
-  if (!tot.some(Boolean)) return `<div class="empty">No registry events in the last 30 days.</div>`;
-  let h = `<svg class="chart" viewBox="0 0 ${W} ${H+18}">`;
-  for (let i = 0; i <= 4; i++) { const y = H - (H-10)*i/4; h += `<line x1="${pad}" x2="${W}" y1="${y}" y2="${y}" stroke="#1d2129"/><text x="${pad-4}" y="${y}" fill="#5f5b57" font-size="9" font-family="JetBrains Mono" text-anchor="end" dominant-baseline="middle">${Math.round(max*i/4)}</text>`; }
-  days.forEach((d, i) => { let y = H; cats.forEach(c => { const v = d[c]||0; if (!v) return; const hh = (H-10)*v/max; y -= hh;
-      h += `<rect x="${pad + i*bw + 1}" y="${y}" width="${Math.max(1,bw-2)}" height="${hh}" fill="${COLORS[c]}"><title>${new Date(d.day*1000).toISOString().slice(0,10)} · ${c}: ${v}</title></rect>`; }); });
-  const lab = i => new Date(days[i].day*1000).toISOString().slice(5,10);
-  h += `<text x="${pad}" y="${H+13}" fill="#5f5b57" font-size="9" font-family="JetBrains Mono">${lab(0)}</text><text x="${W}" y="${H+13}" fill="#5f5b57" font-size="9" font-family="JetBrains Mono" text-anchor="end">${lab(days.length-1)}</text></svg>`;
-  h += `<div class="legend">${cats.filter(c => days.some(d => d[c])).map(c => `<span><i style="background:${COLORS[c]}"></i>${esc(c)}</span>`).join("")}</div>`;
-  return h;
-}
-function resultsChart(r){
-  if (!r.estimates.length) return `<div class="empty">No finished holdout with a stated uncertainty bound.</div>`;
-  return r.estimates.map(e => {
-    const lo = Math.min(0, e.lower_bound ?? e.mean, e.mean), hi = Math.max(0, e.mean, e.lower_bound ?? 0), span = (hi - lo) || 1, W = 560;
-    const X = v => 10 + (v - lo)/span*(W-20);
-    const ok = (e.lower_bound ?? -1) > 0;
-    return `<div style="margin-bottom:12px"><div class="crow" style="justify-content:space-between;margin:0"><span class="mono" style="font-weight:700">${esc(e.exp_id)}</span>${badge("HOLDOUT")}</div>
-      <svg class="chart" viewBox="0 0 ${W} 34"><line x1="${X(0)}" x2="${X(0)}" y1="4" y2="30" stroke="#5f5b57" stroke-dasharray="2 3"/>
-      ${e.lower_bound != null ? `<line x1="${X(e.lower_bound)}" x2="${X(Math.max(e.mean, e.lower_bound))}" y1="17" y2="17" stroke="${ok ? "#5fd39a" : "#ff5d5d"}" stroke-width="2"/><line x1="${X(e.lower_bound)}" x2="${X(e.lower_bound)}" y1="10" y2="24" stroke="${ok ? "#5fd39a" : "#ff5d5d"}" stroke-width="2"/>` : ""}
-      <circle cx="${X(e.mean)}" cy="17" r="5" fill="#f4b860"/></svg>
-      <div class="note" style="margin-top:0">mean ${pct(e.mean,3)} · lower bound (${esc(e.lb_quantile)}) ${pct(e.lower_bound,3)} · n = ${num(e.n,0)} ${esc(e.n_unit)} · ${esc(e.unit)}<br>verdict: ${esc(e.verdict || "—")}</div></div>`;
-  }).join("") + `<div class="note">Dot = net mean; bar = one-sided lower bound to the mean; dashed line = 0. Read from ${esc(r.estimates.map(e=>e.source).join(", "))}.</div>`;
-}
-function failChart(r){
-  const e = Object.entries(r.failure_patterns); if (!e.length) return `<div class="empty">No finished experiments.</div>`;
-  const max = Math.max(...e.map(x => x[1]));
-  return e.map(([k, v]) => `<div style="margin:6px 0"><div class="crow" style="justify-content:space-between;margin:0;font:11px var(--mono)"><span>${esc(k)}</span><span class="mute">${v}</span></div>
-    <div style="height:7px;background:#1a1e26;border-radius:4px;overflow:hidden"><div style="width:${v/max*100}%;height:100%;background:linear-gradient(90deg,#a63a20,#f07a3a)"></div></div></div>`).join("")
-    + `<div class="note">${r.finished.length} finished ideas. Classification from the research reports, not inferred.</div>`;
-}
-function lineChart(points, key, color, fmtv){
-  if (points.length < 2) return `<div class="note">${points.length} point(s) — a curve needs at least two simulated marks.</div>`;
-  const v = points.map(p => p[key]), lo = Math.min(...v), hi = Math.max(...v), W = 600, H = 110;
-  const xy = v.map((y, i) => `${(i/(v.length-1)*W).toFixed(1)},${(H-6-(hi===lo?.5:(y-lo)/(hi-lo))*(H-14)).toFixed(1)}`).join(" ");
-  return `<svg class="chart" viewBox="0 0 ${W} ${H}"><polyline fill="none" stroke="${color}" stroke-width="2" points="${xy}"/></svg>
-    <div class="note" style="margin-top:0">min ${fmtv(lo)} · max ${fmtv(hi)} · last ${fmtv(v[v.length-1])} (${points.length} marks)</div>`;
+/* ---------------- KPI strip ---------------- */
+function kpi(k, v, s, cls=""){ return `<div class="kpi"><div class="k">${esc(k)}</div><div class="v ${cls}">${v}</div><div class="s">${s||"&nbsp;"}</div></div>`; }
+function renderKpis(k){
+  K = k;
+  const sup = k.supervisor, gb = b => b == null ? null : (b/1e9);
+  $("#b-fail").classList.toggle("show", !!k.fail_closed);
+  const c = k.control, ctl = $("#b-ctl");
+  const msgs = []; if (c.paused) msgs.push("FLEET PAUSED by operator — no new jobs are claimed"); if (c.hold) msgs.push("RESOURCE HOLD — RAM or disk below limit, no new jobs"); if (c.stop) msgs.push("STOP REQUESTED — supervisor is shutting down");
+  ctl.textContent = msgs.join(" · "); ctl.classList.toggle("show", msgs.length > 0);
+  const g = k.gate_s7; $("#c-gate").innerHTML = `<span class="led ${g.open?"ok":"warn"}"></span>S7 gate ${g.open?"open":"closed"} · ${(g.covered_s/86400).toFixed(1)}/7 d`; $("#c-gate").title = g.reason;
+  const ram = k.ram, disk = k.disk, data = k.data, lastData = Math.max(data.last_gateway_read_ts || 0, data.last_download_ts || 0) || null;
+  $("#kpis").innerHTML =
+      kpi("Supervisor", sup.alive ? "ONLINE" : "OFFLINE", sup.alive ? `beat ${dur(sup.age_s)} ago` : sup.last_run_ts ? `last run ${ago(sup.last_run_ts)}` : "never started", sup.alive ? "good" : "bad")
+    + kpi("Agents active", `${k.agents_active}/${k.agents_total}`, `${k.agents_running} running a job`, k.agents_active ? "good" : "")
+    + kpi("Queued jobs", num(k.queued_jobs, 0), `${k.jobs.queued} ready · ${k.jobs.blocked} waiting on deps`)
+    + kpi("Tests running", num(k.tests_running, 0), "backtest · cost · adversarial · validation", k.tests_running ? "hot" : "")
+    + kpi("Tests completed", num(k.tests_completed.variant_evaluations + k.tests_completed.validation_runs, 0), `${k.tests_completed.variant_evaluations} variants · ${k.tests_completed.validation_runs} validations`)
+    + kpi(`Tests / min (${Math.round(k.window_s/60)} min)`, num(k.tests_per_min, 2), `jobs/min ${num(k.jobs_per_min, 2)}`)
+    + kpi(`Errors · retries (${Math.round(k.window_s/60)} min)`, `${k.errors_window} · ${k.retries_window}`, `total ${k.errors_total} · ${k.retries_total}`, k.errors_window ? "bad" : "")
+    + kpi("Disk free", disk ? `${gb(disk.free).toFixed(0)} GB` : NA, disk ? `fail-closed below ${gb(disk.min_free).toFixed(0)} GB` : "", disk && !disk.free_ok ? "bad" : "")
+    + kpi("RAM free", ram ? `${gb(ram.free).toFixed(1)} GB` : NA, ram ? `of ${gb(ram.total).toFixed(0)} GB · hold below ${gb(k.ram_min_free).toFixed(1)} GB` : "not measurable on this OS", ram && ram.free < k.ram_min_free ? "bad" : ram ? "" : "na")
+    + kpi("Last data update", lastData ? ago(lastData) : NA, lastData ? utc(lastData) : "no market data read yet", lastData ? "" : "na");
+  $("#kpis").title = k.tests_per_min_basis;
+  Planet.setActive(sup.alive);
+  $("#g-cap").innerHTML = sup.alive ? `<span style="color:var(--green)">● ACTIVE</span> · ${k.agents_running} agent(s) working` : `<span class="dim">○ STANDBY</span> · supervisor not running (start: py -m lab fleet)`;
 }
 
-/* ---------------- views ---------------- */
-function metric(k, v, s, cls=""){ return `<div class="metric"><div class="k">${esc(k)}</div><div class="v ${cls}">${v}</div>${s?`<div class="s">${s}</div>`:""}</div>`; }
-function renderMission(m){
-  M = m;
-  const w = m.workers, sup = w.supervisor;
-  $("#b-fail").classList.toggle("show", !!m.fail_closed);
-  const chainOk = m.chain_ok; $("#c-chain").innerHTML = `<span class="led ${chainOk?"ok":"bad"}"></span>chain ${chainOk?"verified":"BROKEN"}`;
-  const g = m.gate_s7; $("#c-gate").innerHTML = `<span class="led ${g.open?"ok":"warn"}"></span>S7 gate ${g.open?"open":"closed"} · ${(g.covered_s/86400).toFixed(1)}/7 d`;
-  $("#c-gate").title = g.reason;
-  // system telemetry
-  const ext = Object.entries(m.external).map(([id, e]) => {
-    const st = e.last_write_age_s == null ? "offline" : e.last_write_age_s <= 900 ? "running" : "stale";
-    return `<div class="wk"><span>${esc(e.label)}</span><span>${stateChip(st)} <span class="dim">${e.last_write_age_s==null?"no file":dur(e.last_write_age_s)}</span></span></div>`; }).join("");
-  const wl = w.workers.length ? w.workers.map(x => `<div class="wk"><span>${esc(x.worker)}</span><span>${stateChip(x.state)} <span class="dim">${dur(x.age_s)}</span></span></div>`).join("")
-                              : `<div class="wk"><span class="dim">no lab worker has ever reported</span></div>`;
-  const det = m.detectors.map(d => `<div class="wk"><span>${esc(d.detector)}</span><span class="dim">${ago(d.last_ts)}${d.errors?` · <span class="flag">${d.errors} err</span>`:""}</span></div>`).join("") || `<div class="wk"><span class="dim">no scans recorded</span></div>`;
-  const free = m.disk.free/1e9;
-  $("#sys").innerHTML =
-    metric("Supervisor", sup.alive ? `<span style="color:var(--green)">ONLINE</span>` : `<span class="dim">OFFLINE</span>`, sup.alive ? `last beat ${dur(sup.age_s)} ago` : sup.last_run_ts ? `not running · last run ${ago(sup.last_run_ts)} · manual start: py -m lab supervise` : "never run · manual start: py -m lab supervise")
-    + metric("Lab workers active", `${w.active}`, `${w.running} executing now`, w.active ? "good" : "")
-    + `<div>${wl}</div>`
-    + metric("Last scan", m.last_scan_ts ? ago(m.last_scan_ts) : "never", "scanner observations")
-    + `<div>${det}</div>`
-    + `<div class="k mono dim" style="font-size:10px;letter-spacing:.14em;margin-top:10px">EXTERNAL PROCESSES (file writes)</div><div>${ext}</div>`
-    + metric("Disk free", `${free.toFixed(0)} GB`, m.disk.free_ok ? `fail-closed below ${(m.disk.min_free/1e9).toFixed(0)} GB` : "BELOW MINIMUM", m.disk.free_ok ? "" : "bad");
-  $("#t-sys-age").textContent = "updated " + new Date(m.now*1000).toISOString().slice(11,19) + " UTC";
-  // research telemetry
-  const c = m.counts;
-  $("#res").innerHTML = metric("Opportunities discovered", c.discovered_total, `${c.candidates} awaiting a human · ${c.suppressed} suppressed by the graveyard`, c.candidates ? "hot" : "")
-    + metric("Experiments running", c.running, c.running ? "screening or validation" : "none in screening or validation")
-    + metric("Awaiting evaluation", c.awaiting, "candidates, registered or awaiting approval")
-    + metric("Accepted", c.accepted, "validated or in paper trading", c.accepted ? "good" : "")
-    + metric("Paused", c.paused, "circuit breaker or manual", c.paused ? "hot" : "")
-    + metric("Rejected", c.rejected, `${c.completed} more retired or withdrawn`, "bad")
-    + metric("Paper simulations", c.paper_active, "SIMULATED · never real orders")
-    + metric("External studies", c.external, "mirrored, never changed by the lab");
-  // globe
-  Planet.setActive(sup.alive);
-  $("#g-cap").innerHTML = sup.alive ? `<span style="color:var(--green)">● ACTIVE</span> · ${w.active} worker(s) in orbit` : `<span class="dim">○ STANDBY</span> · supervisor not running`;
-  const s = m.pm_lp_schedule;
-  $("#g-sub").innerHTML = s && s.next ? `next milestone · pm_lp_v1 ${esc(s.next.label)} in ${until(s.remaining_s)} <span class="dim">(calendar)</span>` : "";
-  Orbits.render(m);
+/* ---------------- agents ---------------- */
+function renderAgents(a){
+  A = a;
+  const sup = a.supervisor;
+  $("#sup-note").textContent = sup.alive ? `Supervisor online · ${a.total} agents · ${a.running} running` : `Supervisor offline — agents shown as last reported. Manual start: py -m lab fleet`;
+  $("#agents").innerHTML = a.agents.length ? a.agents.map(x => `<div class="ag" data-agent="${esc(x.agent)}">
+      <span class="n">${esc(x.agent)}</span><span>${stateChip(x.status)}</span>
+      <span class="r">${esc(x.role)}</span>
+      <span class="r">${x.current_job ? `▶ ${esc(x.current_job)} · ${dur(x.job_running_s)}` : esc(x.next_action || x.detail || "")}</span>
+      <span class="r">tasks ${x.tasks_done ?? 0} · errors ${x.errors ?? 0} · retries ${x.retries ?? 0} · beat ${dur(x.heartbeat_age_s)} ago${x.uptime_s != null ? ` · up ${dur(x.uptime_s)}` : ""}</span>
+      ${x.last_result ? `<span class="r" title="${esc(x.last_result)}">last: ${esc(x.last_result)}</span>` : ""}</div>`).join("")
+    : `<div class="empty">No agent has reported yet. Start the fleet with: py -m lab fleet</div>`;
+  $("#agents").querySelectorAll(".ag").forEach(n => n.onclick = () => { logAgent = n.dataset.agent; $("#logsel").value = logAgent; loadLog(); });
+  const opts = a.agents.map(x => x.agent);
+  if ($("#logsel").options.length !== opts.length) { $("#logsel").innerHTML = opts.map(o => `<option>${esc(o)}</option>`).join(""); if (!logAgent && opts.length) logAgent = opts[0]; $("#logsel").value = logAgent; }
+  Orbits.agentsRender(a.agents);
 }
-const STAGE_ORDER = ["DISCOVERY","HYPOTHESIS","REGISTERED","SCREENING","VALIDATION","PAPER TRADING","PAUSED","REJECTED"];
-function setFilter(f){ filter = f; renderPipeline(P); }
-function renderPipeline(p){
-  if (!p) return; P = p;
-  $("#flow").innerHTML = STAGE_ORDER.map(s => `<div class="node ${p.counts[s]?"":"zero"} ${filter===s?"sel":""}" data-stage="${esc(s)}"><div class="n">${p.counts[s]||0}</div><div class="l">${esc(s)}</div></div>`).join("");
-  $("#flow").querySelectorAll(".node").forEach(n => n.onclick = () => setFilter(filter === n.dataset.stage ? "ALL" : n.dataset.stage));
-  const fl = ["ALL", ...STAGE_ORDER, "COMPLETED", "EXTERNAL"];
-  $("#filters").innerHTML = fl.map(f => `<button class="${filter===f?"on":""}" data-f="${esc(f)}">${esc(f)} ${f==="ALL"?p.experiments.length:(p.counts[f]||0)}</button>`).join("");
-  $("#filters").querySelectorAll("button").forEach(b => b.onclick = () => setFilter(b.dataset.f));
-  const rows = p.experiments.filter(e => filter === "ALL" || e.stage === filter);
-  $("#pl-note").textContent = `${rows.length} shown · click a row for its full history`;
-  const fresh = e => e.freshness.age_s == null ? `<span class="dim">${esc(e.freshness.basis)}</span>` : `${dur(e.freshness.age_s)} <span class="dim">· ${esc(e.freshness.basis)}</span>`;
-  const next = e => e.next_actions.length ? e.next_actions.map(a => `${esc(a.to)}<span class="dim">(${esc(a.who)})</span>`).join(", ") : `<span class="dim">final</span>`;
+
+/* ---------------- experiments ---------------- */
+function qs(o){ return Object.entries(o).filter(([, v]) => v !== "" && v != null).map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join("&"); }
+async function loadExperiments(){
+  const since = F.since ? Math.floor(Date.now()/1000 - Number(F.since)) : "";
+  const all = await api("/api/v2/experiments?size=200");                        // unfiltered: stage counts + filter options
+  const x = await api("/api/v2/experiments?" + qs({stage:F.stage, market:F.market, strategy:F.strategy, worker:F.worker, status:F.status, since, page:F.page, size:25}));
+  X = x; renderExperiments(all, x);
+}
+function renderExperiments(all, x){
+  const c = all.stage_counts;
+  Orbits.stagesRender(c);
+  $("#stagecounts").innerHTML = STAGES.map(s => metric(s.replace("_"," "), num(c[s] || 0, 0), "", s === "REJECTED" ? "bad" : (c[s] && ["PAPER_TRADING","PAPER_ELIGIBLE"].includes(s)) ? "good" : "")).join("")
+    + `<div class="note">ACCEPTED stays 0: no lifecycle state grants acceptance for real money; PAPER_ELIGIBLE needs a passed sealed holdout.</div>`;
+  $("#flow").innerHTML = STAGES.map(s => `<div class="node ${c[s]?"":"zero"} ${F.stage===s?"sel":""}" data-stage="${s}"><div class="n">${c[s]||0}</div><div class="l">${s.replace("_"," ")}</div></div>`).join("");
+  $("#flow").querySelectorAll(".node").forEach(n => n.onclick = () => { F.stage = F.stage === n.dataset.stage ? "" : n.dataset.stage; F.page = 1; loadExperiments(); });
+  const f = all.filters, sel = (id, label, opts) => `<select data-f="${id}" aria-label="${label}"><option value="">${label}: all</option>${opts.map(o => `<option ${F[id]===o?"selected":""}>${esc(o)}</option>`).join("")}</select>`;
+  $("#fsel").innerHTML = sel("market","Market",f.markets) + sel("strategy","Strategy",f.strategies) + sel("worker","Worker",f.workers) + sel("status","Status",f.statuses)
+    + `<select data-f="since" aria-label="Time"><option value="">Time: all</option>${[[3600,"last hour"],[86400,"last 24 h"],[604800,"last 7 d"]].map(([v,l]) => `<option value="${v}" ${String(F.since)===String(v)?"selected":""}>${l}</option>`).join("")}</select>`
+    + (Object.values({...F, page:""}).some(Boolean) ? `<button class="btn" id="fclear">clear filters</button>` : "");
+  $("#fsel").querySelectorAll("select").forEach(s => s.onchange = () => { F[s.dataset.f] = s.value; F.page = 1; loadExperiments(); });
+  if ($("#fclear")) $("#fclear").onclick = () => { Object.assign(F, {stage:"", market:"", strategy:"", worker:"", status:"", since:"", page:1}); loadExperiments(); };
+  $("#pl-note").textContent = `${x.total} match · page ${x.page}/${x.pages} · click a row for the full record`;
+  const sh = v => v == null ? na() : num(v, 2);
+  const ci = v => v && v.ci95 ? `[${pct(v.ci95[0],3)}, ${pct(v.ci95[1],3)}]` : na();
   $("#exp-table").innerHTML = table([
-    {h:"Experiment",f:e=>`<div style="font-weight:700">${esc(e.exp_id)}</div><div class="dim">${esc(e.title)}</div>`},
-    {h:"Market",f:e=>`${esc(e.market)}<div class="dim">${esc(e.instrument||"")}</div>`},
-    {h:"State",f:e=>`${badge(e.display_label)}<div class="dim" style="margin-top:3px">${esc(e.status)}</div>`},
-    {h:"Latest event",f:e=>e.latest_event?`${esc(e.latest_event.kind)}<div class="dim">${ago(e.latest_event.ts)}</div>`:"—"},
-    {h:"Data",f:e=>fresh(e)},
-    {h:"Tests",num:1,f:e=>num(e.tests_completed,0)},
-    {h:"Result / reason",f:e=>`${esc(e.reason || (e.result && e.result.verdict) || "—")}${e.eta?`<div style="color:var(--amber)">${esc(e.eta.label)} in ${until(e.eta.remaining_s)} <span class="dim">(calendar)</span></div>`:""}`},
-    {h:"Next permitted",f:e=>next(e)}], rows, "No experiments in this stage.", e => `class="click" data-id="${esc(e.exp_id)}"`);
-  $("#exp-cards").innerHTML = rows.length ? rows.map(e => `<div class="ecard" data-id="${esc(e.exp_id)}"><div class="id">${esc(e.exp_id)}</div>
-      <div class="row">${badge(e.display_label)}<span>${esc(e.market)}</span></div><div class="row"><span>${esc(e.status)}</span></div>
-      <div class="row"><span>${esc(e.reason || (e.result && e.result.verdict) || "")}</span></div>
-      ${e.eta?`<div class="row" style="color:var(--amber)">${esc(e.eta.label)} in ${until(e.eta.remaining_s)} (calendar)</div>`:""}</div>`).join("") : `<div class="empty">No experiments in this stage.</div>`;
+    {h:"Experiment",f:e=>`<div style="font-weight:700">${esc(e.exp_id)}</div><div class="dim">${esc(e.template || e.mechanism || "")}</div>`},
+    {h:"Stage",f:e=>`<span class="badge" style="color:${STAGE_COL[e.stage]||"#f07a3a"}">${esc(e.stage || "—")}</span><div class="dim">${esc(e.phase || "")}</div>`},
+    {h:"Market",f:e=>esc(e.market)},
+    {h:"Train net Sharpe",num:1,f:e=>e.train ? sh(e.train.net_sharpe_ann) : na()},
+    {h:"Valid. net Sharpe",num:1,f:e=>e.validation ? sh(e.validation.net_sharpe_ann) : na()},
+    {h:"Valid. 95 % CI / day",f:e=>ci(e.validation)},
+    {h:"DSR",num:1,f:e=>e.dsr == null ? na() : num(e.dsr, 3)},
+    {h:"Worker",f:e=>esc(e.worker || "") || na()},
+    {h:"Verdict / next",f:e=>`${e.rejection_reason ? `<span class="flag">${esc(e.rejection_reason)}</span>` : esc(e.verdict || "")}<div class="dim">${esc(e.next_action || "")}</div>`}],
+    x.items, "No experiments match the filters.", e => `class="click" data-id="${esc(e.exp_id)}"`);
+  $("#exp-cards").innerHTML = x.items.length ? x.items.map(e => `<div class="ecard" data-id="${esc(e.exp_id)}"><div class="id">${esc(e.exp_id)}</div>
+      <div class="row"><span class="badge" style="color:${STAGE_COL[e.stage]||"#f07a3a"}">${esc(e.stage||"—")}</span><span>${esc(e.market)}</span></div>
+      <div class="row"><span>valid. Sharpe ${e.validation ? sh(e.validation.net_sharpe_ann) : NA}</span><span>DSR ${e.dsr == null ? NA : num(e.dsr,3)}</span></div>
+      <div class="row"><span>${esc(e.rejection_reason || e.next_action || "")}</span></div></div>`).join("") : `<div class="empty">No experiments match the filters.</div>`;
+  $("#pager").innerHTML = `<button class="btn" id="pprev" ${x.page<=1?"disabled":""}>‹ prev</button><span>${x.page} / ${x.pages}</span><button class="btn" id="pnext" ${x.page>=x.pages?"disabled":""}>next ›</button>`;
+  $("#pprev").onclick = () => { if (F.page > 1) { F.page--; loadExperiments(); } };
+  $("#pnext").onclick = () => { if (F.page < x.pages) { F.page++; loadExperiments(); } };
 }
-function renderPaper(pa){
-  if (!pa.strategies.length) { $("#paper").innerHTML = `<div class="empty">No strategy is in paper trading. Nothing has been promoted — promotion needs a validated holdout and a human approval.<br>Equity curves, drawdown, costs and win/loss sequences appear here once a strategy is simulated.</div>`; return; }
-  $("#paper").innerHTML = pa.strategies.map(s => {
-    const eq = s.equity, lastEq = eq.length ? eq[eq.length-1] : null;
-    const fees = s.costs.reduce((a,c) => a + c.fees, 0), slip = s.costs.reduce((a,c) => a + c.slip, 0);
-    const seq = s.trade_pnls.slice(-60).map(t => `<span title="${num(t.pnl)}" style="display:inline-block;width:7px;height:14px;margin-right:2px;border-radius:2px;background:${t.pnl<0?"#ff5d5d":"#5fd39a"}"></span>`).join("");
-    return `<div class="panel" style="margin-bottom:10px;background:var(--panel2)"><div class="crow" style="justify-content:space-between"><b class="mono">${esc(s.exp_id)}</b>
-      <span>${badge(s.state==="PAUSED"?"PAPER (simulated, paused)":"PAPER (simulated)")} ${s.warming?badge("EXPLORATORY warming up"):""}</span></div>
-      <div class="grid2"><div><div class="note">SIMULATED EQUITY</div>${lineChart(eq, "equity", "#f4b860", v => num(v))}</div>
-        <div><div class="note">SIMULATED DRAWDOWN</div>${lineChart(eq, "drawdown", "#ff5d5d", v => pct(v))}</div></div>
-      <div class="grid3" style="margin-top:8px">
-        <div>${metric("Net closed P&L (sim.)", num(s.net_closed_pnl), `${s.trades} closed trades · capital ${num(s.capital)}`)}</div>
-        <div>${metric("Fees / slippage (sim.)", `${num(fees)} / ${num(slip)}`, s.costs.map(c=>`${c.liquidity}: ${c.n} fills`).join(" · "))}</div>
-        <div>${metric("Streak", `${s.streak.wins}W / ${s.streak.losses}L`, `latest equity ${lastEq ? num(lastEq.equity) : "—"} · open orders ${s.open_orders}`)}</div></div>
-      <div class="note">WIN/LOSS SEQUENCE (simulated, last 60)</div><div>${seq || '<span class="dim">no closed trades</span>'}</div></div>`; }).join("");
+
+/* ---------------- charts (axes, units, period, source on each) ---------------- */
+function axisChart(W, H, pad, xr, yr, inner, xlab, ylab, xfmt, yfmt){
+  const [x0, x1] = xr, [y0, y1] = yr, X = v => pad.l + (x1 === x0 ? .5 : (v - x0)/(x1 - x0)) * (W - pad.l - pad.r), Y = v => H - pad.b - (y1 === y0 ? .5 : (v - y0)/(y1 - y0)) * (H - pad.t - pad.b);
+  let h = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img">`;
+  for (let i = 0; i <= 4; i++) { const v = y0 + (y1 - y0)*i/4, y = Y(v); h += `<line x1="${pad.l}" x2="${W-pad.r}" y1="${y}" y2="${y}" stroke="#1d2129"/><text class="axis" x="${pad.l-4}" y="${y}" text-anchor="end" dominant-baseline="middle">${yfmt(v)}</text>`; }
+  for (let i = 0; i <= 3; i++) { const v = x0 + (x1 - x0)*i/3, x = X(v); h += `<text class="axis" x="${x}" y="${H-pad.b+12}" text-anchor="${i===0?"start":i===3?"end":"middle"}">${xfmt(v)}</text>`; }
+  h += `<line x1="${pad.l}" x2="${pad.l}" y1="${pad.t}" y2="${H-pad.b}" stroke="#3a3f4a"/><line x1="${pad.l}" x2="${W-pad.r}" y1="${H-pad.b}" y2="${H-pad.b}" stroke="#3a3f4a"/>`;
+  h += `<text class="axis" x="${W-pad.r}" y="${H-2}" text-anchor="end">${esc(xlab)}</text><text class="axis" x="4" y="${pad.t-4}">${esc(ylab)}</text>`;
+  return h + inner(X, Y) + `</svg>`;
 }
-function renderCands(ca){
-  $("#cands").innerHTML = table([
-    {h:"Candidate",f:r=>`<span style="font-weight:700">${esc(r.exp_id)}</span>`},{h:"State",f:r=>badge(r.display_label)},
-    {h:"Detector",f:r=>esc(r.detector)},{h:"Why",f:r=>esc(r.reason || r.hypothesis)+(r.state==="SUPPRESSED"?`<div class="dim">${esc(r.last_reason)}</div>`:"")}],
-    ca.candidates, "No candidates.", r => `class="click" data-id="${esc(r.exp_id)}"`)
-    + `<div class="note">Deduplication: ${ca.dedupe_events.slice(0,6).map(e=>`${esc(e.kind.replace("candidate.",""))} ${esc(e.exp_id||"")}`).join(" · ") || "none"}</div>`;
-  $("#scan-ts").textContent = ca.last_scan_ts ? ago(ca.last_scan_ts) : "never";
-  $("#scan").innerHTML = table([{h:"Detector",f:r=>esc(r.detector)},{h:"Metric",f:r=>esc(r.metric)},{h:"Instrument",f:r=>esc(r.instrument)},
-    {h:"Value",num:1,f:r=>`<span class="${r.flagged?"flag":""}">${num(r.value,4)}${r.flagged?" ⚑":""}</span>`}], ca.last_scan, "No scan recorded.");
+function stepPath(pts, X, Y){ if (!pts.length) return ""; let d = `M${X(pts[0][0])},${Y(pts[0][1])}`; for (let i = 1; i < pts.length; i++) d += ` H${X(pts[i][0])} V${Y(pts[i][1])}`; return d; }
+const day = ts => new Date(ts*1000).toISOString().slice(5,16).replace("T"," ");
+
+function renderPaper(p){
+  const head = `<div class="grid3" style="margin-bottom:8px">${metric("Real account profit", `<span class="na">${NA}</span>`, esc(p.real_account_profit.reason))}
+     ${metric("Paper-eligible (VALIDATED)", num(p.eligible.length, 0), p.eligible.length ? esc(p.eligible.join(", ")) + " — start only via the approved transition in the experiment drawer" : "none: needs a passed sealed holdout")}
+     ${metric("Strategies in paper", num(p.strategies.length, 0), "simulated fills against public order books")}</div>`;
+  if (!p.strategies.length) { $("#paper").innerHTML = head + `<div class="empty">Paper equity: ${NA} — no strategy has been promoted to PAPER_TRADING. Promotion needs a validated sealed holdout and a human approval.</div><div class="cap">Source: ${esc(p.source)}</div>`; return; }
+  $("#paper").innerHTML = head + p.strategies.map(s => {
+    const eq = s.equity, pts = eq.map(e => [e.ts, e.equity]), dd = eq.map(e => [e.ts, e.drawdown]);
+    const chart = pts.length < 1 ? `<div class="empty">No equity mark yet (${NA}).</div>` : axisChart(600, 170, {l:58,r:8,t:14,b:22},
+        [pts[0][0], Math.max(pts[pts.length-1][0], pts[0][0] + 3600)], [Math.min(...pts.map(p=>p[1]), s.capital), Math.max(...pts.map(p=>p[1]), s.capital)],
+        (X, Y) => `<line x1="${X(pts[0][0])}" x2="${X(pts[pts.length-1][0])}" y1="${Y(s.capital)}" y2="${Y(s.capital)}" stroke="#5f5b57" stroke-dasharray="3 3"/><path d="${stepPath(pts, X, Y)}" fill="none" stroke="#f4b860" stroke-width="1.8"/>`,
+        "time (UTC)", "USD (simulated)", day, v => num(v, 0));
+    const ddc = dd.length < 1 ? "" : axisChart(600, 110, {l:58,r:8,t:14,b:22}, [dd[0][0], Math.max(dd[dd.length-1][0], dd[0][0] + 3600)], [0, Math.max(0.01, ...dd.map(d=>d[1]))],
+        (X, Y) => `<path d="${stepPath(dd, X, Y)}" fill="none" stroke="#ff5d5d" stroke-width="1.6"/>`, "time (UTC)", "drawdown (fraction)", day, v => (v*100).toFixed(1)+"%");
+    return `<div class="panel" style="background:var(--panel2);margin-bottom:10px"><div class="crow" style="justify-content:space-between"><b class="mono">${esc(s.exp_id)}</b><span>${badge(s.label)} ${s.paused?badge("PAUSED"):""} ${s.warming?badge("warming up"):""}</span></div>
+      <div class="grid2"><div>${chart}<div class="cap">Equity step chart (value held until the next hourly mark; no interpolation) · ${eq.length} marks · ${eq.length ? utc(eq[0].ts) + " → " + utc(eq[eq.length-1].ts) : ""} · source sim_equity</div></div>
+      <div>${ddc}<div class="cap">Drawdown from running peak · source sim_equity</div></div></div>
+      <div class="grid3">${metric("Realised P&L (sim.)", num(s.realized), "closed trades and fees, USD")}${metric("Unrealised P&L (sim.)", num(s.unrealized), "open positions at the last mark, USD")}${metric("Total P&L (sim.)", num(s.total_pnl), `capital ${num(s.capital,0)} USD`)}</div>
+      <div class="grid3">${metric("Max / daily drawdown", `${pct(s.max_drawdown)} / ${pct(s.daily_drawdown)}`, "from sim_equity")}${metric("Orders · fills · rejected", `${s.orders} · ${s.fills} · ${s.rejected_orders}`, `${s.open_positions} open positions · ${s.closed_trades} closed trades`)}${metric("Reconciliation", s.reconciliation.ok ? "OK" : "MISMATCH", s.reconciliation.ok ? "orders = fills + cancels" : esc(s.reconciliation.problems.join("; ")), s.reconciliation.ok ? "good" : "bad")}</div></div>`;
+  }).join("") + `<div class="cap">Source: ${esc(p.source)}</div>`;
 }
-function renderRisk(rk, dq){
-  $("#risk").innerHTML = (rk.paused.length?`<div class="note">Paused: ${rk.paused.map(p=>`${esc(p.exp_id)} — resume requires ${esc(p.resume_requires)}`).join("; ")}</div>`:"")
-    + table([{h:"When",f:r=>ago(r.ts)},{h:"Strategy",f:r=>esc(r.exp_id)},{h:"Rule",f:r=>esc(r.rule)},{h:"Action",f:r=>`<b>${esc(r.action)}</b>`},
-      {h:"Value / limit",num:1,f:r=>`${num(r.value,4)} / ${num(r.threshold,4)}`},{h:"Detail",f:r=>esc(r.detail)}], rk.events, "No risk events recorded.");
-  $("#data").innerHTML = table([{h:"Detector",f:r=>esc(r.detector)},{h:"Last",f:r=>ago(r.last_ts)},{h:"Obs.",num:1,f:r=>num(r.n,0)},
-      {h:"Flagged",num:1,f:r=>num(r.flagged,0)},{h:"Errors",num:1,f:r=>`<span class="${r.errors?"flag":""}">${num(r.errors,0)}</span>`}], dq.detectors, "No scans recorded.")
-    + `<div class="note">${num(dq.datasets.length,0)} gateway reads · ${num(dq.data_blocks.length,0)} data blocks · ${num(dq.refused_reads.length,0)} refused reads</div>`
-    + table([{h:"Experiment",f:r=>esc(r.exp_id)},{h:"Split",f:r=>esc(r.split)},{h:"Purpose",f:r=>esc(r.purpose)},{h:"SHA-256",f:r=>esc(String(r.sha256).slice(0,12))},{h:"File",f:r=>esc(r.path)}], dq.datasets.slice(0,10), "");
+function renderDist(d){
+  const t = d.trials.filter(x => x.sharpe_ann != null);
+  if (!t.length) { $("#ch-dist").innerHTML = `<div class="empty">${NA} — no variant has been evaluated yet.</div><div class="cap">Source: ${esc(d.source)}</div>`; }
+  else {
+    const v = t.map(x => x.sharpe_ann), lo = Math.floor(Math.min(...v, -1)), hi = Math.ceil(Math.max(...v, 1)), bins = 16, w = (hi - lo)/bins, cnt = Array(bins).fill(0);
+    v.forEach(s => cnt[Math.min(bins-1, Math.floor((s - lo)/w))]++);
+    $("#ch-dist").innerHTML = axisChart(600, 190, {l:34,r:8,t:14,b:24}, [lo, hi], [0, Math.max(...cnt)], (X, Y) =>
+        cnt.map((c, i) => `<rect x="${X(lo + i*w)+1}" y="${Y(c)}" width="${Math.max(1, X(lo+(i+1)*w)-X(lo+i*w)-2)}" height="${Y(0)-Y(c)}" fill="${lo+(i+.5)*w > 0 ? "#f07a3a" : "#5a2a1c"}"><title>${(lo+i*w).toFixed(1)} … ${(lo+(i+1)*w).toFixed(1)}: ${c}</title></rect>`).join("")
+        + `<line x1="${X(0)}" x2="${X(0)}" y1="14" y2="${Y(0)}" stroke="#ece7e2" stroke-dasharray="2 3"/>`,
+      "annualised net Sharpe (train, after costs)", "variants", v => v.toFixed(1), v => Math.round(v))
+      + `<div class="cap">${t.length} variant evaluations recorded (every attempt, including losers — this count feeds the deflated Sharpe). Period: train 2023-01..08. Source: trials ledger.</div>`;
+  }
+  const e = d.estimates;
+  if (!e.length) { $("#ch-est").innerHTML = `<div class="empty">${NA} — no experiment has finished validation.</div>`; return; }
+  const lo = Math.min(0, ...e.map(x => x.ci95 ? x.ci95[0] : x.mean_daily)), hi = Math.max(0, ...e.map(x => x.ci95 ? x.ci95[1] : x.mean_daily));
+  const rowH = 26, H = 30 + e.length*rowH;
+  $("#ch-est").innerHTML = axisChart(600, H, {l:150,r:10,t:14,b:22}, [lo, hi], [0, e.length], (X, Y) => e.map((x, i) => {
+      const y = 14 + i*rowH + rowH/2, ok = x.ci95 && x.ci95[0] > 0;
+      return `<text class="axis" x="146" y="${y}" text-anchor="end" dominant-baseline="middle">${esc(x.exp_id.replace(/^E_|_p1$/g,""))}</text>`
+        + (x.ci95 ? `<line x1="${X(x.ci95[0])}" x2="${X(x.ci95[1])}" y1="${y}" y2="${y}" stroke="${ok?"#5fd39a":"#9a958f"}" stroke-width="2"/>` : "")
+        + `<circle cx="${X(x.mean_daily)}" cy="${y}" r="4.5" fill="#f4b860"><title>mean ${(x.mean_daily*100).toFixed(3)}%/day · Sharpe ${x.sharpe_ann?.toFixed(2)} · benchmark Sharpe ${x.benchmark_sharpe?.toFixed(2)}</title></circle>`;
+    }).join("") + `<line x1="${X(0)}" x2="${X(0)}" y1="14" y2="${H-22}" stroke="#ece7e2" stroke-dasharray="2 3"/>`,
+    "net mean return per day (%)", "", v => (v*100).toFixed(2), () => "")
+    + `<div class="cap">Dot = mean daily net return on validation (2023-09..12), bar = 95 % moving-block bootstrap interval (5-day blocks, 2,000 draws, seed 7). Label EXPLORATORY. Source: results table.</div>`;
+}
+function renderCosts(c){
+  const r = c.rows;
+  if (!r.length) { $("#ch-cost").innerHTML = `<div class="empty">${NA} — no cost check has finished.</div>`; return; }
+  const vals = r.flatMap(x => [x.gross, x.net, x.net_2x_costs, x.benchmark_net].filter(v => v != null)), lo = Math.min(0, ...vals), hi = Math.max(0, ...vals);
+  const rowH = 30, H = 30 + r.length*rowH;
+  $("#ch-cost").innerHTML = axisChart(600, H, {l:150,r:10,t:14,b:22}, [lo, hi], [0, r.length], (X, Y) => r.map((x, i) => {
+      const y = 14 + i*rowH, bar = (v, dy, col, lab) => v == null ? "" : `<rect x="${Math.min(X(0), X(v))}" y="${y+dy}" width="${Math.abs(X(v)-X(0))}" height="6" fill="${col}"><title>${lab}: ${(v*100).toFixed(2)}%</title></rect>`;
+      return `<text class="axis" x="146" y="${y+12}" text-anchor="end" dominant-baseline="middle">${esc(x.exp_id.replace(/^E_|_p1$/g,""))}</text>` + bar(x.gross, 2, "#7fb0ff", "gross") + bar(x.net, 9, "#f07a3a", "net") + bar(x.net_2x_costs, 16, "#a63a20", "net at 2x costs") + bar(x.benchmark_net, 23, "#6b6660", "buy-and-hold net");
+    }).join("") + `<line x1="${X(0)}" x2="${X(0)}" y1="14" y2="${H-22}" stroke="#ece7e2" stroke-dasharray="2 3"/>`,
+    "sum of daily portfolio returns (%)", "", v => (v*100).toFixed(0), () => "")
+    + `<div class="legend"><span><i style="background:#7fb0ff"></i>gross</span><span><i style="background:#f07a3a"></i>net</span><span><i style="background:#a63a20"></i>net at 2× costs</span><span><i style="background:#6b6660"></i>buy-and-hold net</span></div>`
+    + `<div class="cap">Train 2023-01..08, selected variant. Costs: taker fee ${(c.cost_model.taker_fee*100).toFixed(2)}% + half-spread ${(c.cost_model.half_spread*100).toFixed(2)}% (estimate) + slippage ${(c.cost_model.slippage*100).toFixed(2)}% (estimate) per unit turnover, plus settled funding. Source: results table.</div>`;
+}
+function renderRejected(r){
+  Orbits.rejectedRender(r.items);
+  $("#rej-n").textContent = `${r.total} total · newest first`;
+  $("#rejected").innerHTML = table([{h:"Experiment",f:x=>`<b>${esc(x.exp_id)}</b><div class="dim">${esc(x.mechanism||"")}</div>`},{h:"When",f:x=>x.ts?ago(x.ts):na()},
+    {h:"Reason",f:x=>`<span class="flag">${esc(x.reason || NA)}</span>${x.pattern?`<div class="dim">pattern: ${esc(x.pattern)}</div>`:""}`}], r.items, "No rejected experiments.", x => `class="click" data-id="${esc(x.exp_id)}"`);
+}
+async function loadJobs(){
+  const j = await api("/api/jobs?" + qs({status: jobTab, page: jobPage, size: 20}));
+  const c = j.counts;
+  $("#jobs-n").textContent = Object.entries(c).map(([k, v]) => `${k} ${v}`).join(" · ");
+  $("#jtabs").innerHTML = ["", "running", "queued", "blocked", "done", "failed", "cancelled"].map(s => `<button class="${jobTab===s?"on":""}" data-s="${s}">${s || "all"}</button>`).join("");
+  $("#jtabs").querySelectorAll("button").forEach(b => b.onclick = () => { jobTab = b.dataset.s; jobPage = 1; loadJobs(); });
+  $("#jobs").innerHTML = table([{h:"Job",f:x=>`<b>${esc(x.job_id)}</b>`},{h:"Status",f:x=>stateChip(x.status)},{h:"Try",num:1,f:x=>`${x.attempts}/${x.max_attempts}`},
+    {h:"Agent",f:x=>esc(x.lease_owner || "")},{h:"Updated",f:x=>ago(x.updated_ts)},{h:"Error",f:x=>x.error?`<span class="flag">${esc(x.error).slice(0,120)}</span>`:""}], j.items, "No jobs.");
+  $("#jpager").innerHTML = `<button class="btn" id="jprev" ${j.page<=1?"disabled":""}>‹</button><span>${j.page}/${j.pages} · ${j.total} jobs</span><button class="btn" id="jnext" ${j.page>=j.pages?"disabled":""}>›</button>`;
+  $("#jprev").onclick = () => { if (jobPage > 1) { jobPage--; loadJobs(); } };
+  $("#jnext").onclick = () => { if (jobPage < j.pages) { jobPage++; loadJobs(); } };
+}
+async function loadLog(){
+  if (!logAgent) { $("#wlog").innerHTML = `<div class="empty">No agent selected.</div>`; return; }
+  const l = await api("/api/agent/" + encodeURIComponent(logAgent) + "?limit=60");
+  $("#wlog").innerHTML = table([{h:"When",f:r=>ago(r.ts)},{h:"Event",f:r=>esc(r.kind)},{h:"Exp.",f:r=>esc(r.exp_id||"")},{h:"Detail",f:r=>`<span class="dim">${esc(JSON.stringify(r.payload)).slice(0,160)}</span>`}],
+    l.events, `No events recorded for ${logAgent}.`);
+}
+async function loadRisk(){
+  const rk = await api("/api/risk"), au = await api("/api/audit?limit=40&kind=system.resource");
+  const holds = au.events.map(e => ({ts:e.ts, exp_id:"GLOBAL", rule:"resources", action:e.kind.replace("system.",""), value:null, threshold:null, detail:JSON.stringify(e.payload)}));
+  $("#risk").innerHTML = table([{h:"When",f:r=>ago(r.ts)},{h:"Scope",f:r=>esc(r.exp_id)},{h:"Rule",f:r=>esc(r.rule)},{h:"Action",f:r=>`<b>${esc(r.action)}</b>`},{h:"Detail",f:r=>esc(r.detail)}],
+    [...rk.events, ...holds].sort((a, b) => b.ts - a.ts).slice(0, 100), "No risk events recorded.");
 }
 async function refreshAudit(){
   const kind = $("#kind").value.trim();
   const a = await api("/api/audit?limit=120" + (kind ? "&kind=" + encodeURIComponent(kind) : ""));
-  const broken = Object.entries(a.chains).filter(([t, c]) => c.broken_at != null);
-  $("#chainnote").textContent = `Hash chains ${broken.length ? "BROKEN in " + broken.map(b => b[0]).join(", ") : "intact"} · append-only triggers ${a.triggers ? "present" : "MISSING"} · ${Object.values(a.chains).reduce((s,c) => s + c.rows, 0)} rows`;
+  const broken = Object.entries(a.chains).filter(([, c]) => c.broken_at != null);
+  const ok = !broken.length && a.triggers;
+  $("#c-chain").innerHTML = `<span class="led ${ok?"ok":"bad"}"></span>chain ${ok?"verified":"BROKEN"}`;
+  $("#chainnote").textContent = `Hash chains ${broken.length ? "BROKEN in " + broken.map(b => b[0]).join(", ") : "intact"} · append-only triggers ${a.triggers ? "present" : "MISSING"} · ${Object.values(a.chains).reduce((s, c) => s + c.rows, 0)} rows`;
   $("#audit").innerHTML = table([{h:"#",num:1,f:r=>r.id},{h:"When",f:r=>ago(r.ts)},{h:"Kind",f:r=>esc(r.kind)},{h:"Actor",f:r=>esc(r.actor)},
     {h:"Experiment",f:r=>esc(r.exp_id)},{h:"Payload",f:r=>`<span class="dim">${esc(JSON.stringify(r.payload)).slice(0,200)}</span>`}], a.events, "No events.");
 }
 
 /* ---------------- refresh, live link, offline ---------------- */
-function setLink(state, extra){
+function setLink(state){
   link = state;
   const map = {live:["ok live","LIVE STREAM"], polling:["warn","POLLING 10 s"], offline:["bad","OFFLINE"], connecting:["","CONNECTING"]};
-  const [cls, txt] = map[state]; $("#c-link").innerHTML = `<span class="led ${cls}"></span>${txt}${extra ? " · " + extra : ""}`;
+  const [cls, txt] = map[state]; $("#c-link").innerHTML = `<span class="led ${cls}"></span>${txt}`;
 }
-async function refresh(){
+let fastBusy = false, slowAt = 0;
+async function refresh(full){
+  if (fastBusy) return; fastBusy = true;
   try {
-    const [m, p, t, r, pa, ca, rk, dq] = await Promise.all(["/api/mission","/api/pipeline","/api/throughput","/api/results","/api/paper","/api/candidates","/api/risk","/api/data"].map(api));
-    renderMission(m); renderPipeline(p);
-    $("#ch-through").innerHTML = throughputChart(t); $("#ch-results").innerHTML = resultsChart(r); $("#ch-fail").innerHTML = failChart(r);
-    renderPaper(pa); renderCands(ca); renderRisk(rk, dq); await refreshAudit();
-    lastOk = Date.now(); $("#b-off").classList.remove("show");
-    const skew = Math.abs(Date.now()/1000 - m.now);
-    $("#foot").textContent = `Last refresh ${new Date().toISOString().slice(11,19)} UTC · registry event #${m.last_event_id}` + (skew > 60 ? ` · clock skew ${dur(skew)}` : "");
+    const [k, a] = await Promise.all([api("/api/kpis"), api("/api/agents")]);
+    renderKpis(k); renderAgents(a);
+    await loadExperiments(); await loadJobs();
+    if (full || Date.now() - slowAt > 20000) {
+      slowAt = Date.now();
+      const [p, d, c, r] = await Promise.all(["/api/paper2", "/api/distribution", "/api/costs", "/api/rejected"].map(api));
+      renderPaper(p); renderDist(d); renderCosts(c); renderRejected(r);
+      await Promise.all([loadLog(), loadRisk(), refreshAudit()]);
+    }
+    lastOk = Date.now(); $("#b-off").classList.remove("show"); document.querySelectorAll(".kpi").forEach(n => n.classList.remove("stale"));
+    const skew = Math.abs(Date.now()/1000 - k.now);
+    $("#foot").textContent = `Last refresh ${new Date().toISOString().slice(11,19)} UTC · event #${k.last_event_id}` + (skew > 60 ? ` · clock skew ${dur(skew)}` : "");
     if (link === "offline") setLink(es ? "live" : "polling");
-  } catch (e) {
-    showOffline();
-  }
+  } catch (e) { showOffline(); }
+  finally { fastBusy = false; }
 }
 function showOffline(){
   setLink("offline");
+  document.querySelectorAll(".kpi").forEach(n => n.classList.add("stale"));
   const b = $("#b-off"); b.classList.add("show");
-  b.textContent = lastOk ? `CONNECTION LOST — the lab server is not answering. Showing data from ${dur((Date.now()-lastOk)/1000)} ago; nothing below is live.` : "CANNOT REACH THE LAB SERVER — start it with: py -m lab web";
+  b.textContent = lastOk ? `CONNECTION LOST — the lab server is not answering. Values are from ${dur((Date.now()-lastOk)/1000)} ago and are NOT live.` : "CANNOT REACH THE LAB SERVER — start it with: py -m lab web";
 }
+let pending = null;
+function schedule(){ if (pending) return; pending = setTimeout(() => { pending = null; refresh(false); }, 600); }
 function startStream(){
-  if (!window.EventSource) { setLink("polling"); pollTimer = setInterval(refresh, 10000); return; }
+  if (!window.EventSource) { setLink("polling"); pollTimer = setInterval(() => refresh(false), 10000); return; }
   es = new EventSource("/api/stream");
   es.onopen = () => setLink("live");
-  es.onmessage = ev => { const d = JSON.parse(ev.data); if (!d.first && d.new_events && d.new_events.length) { Orbits.pulse();
-      d.new_events.forEach(e => { const x = P && e.exp_id && P.experiments.find(r => r.exp_id === e.exp_id);
-        const n = x && document.querySelector(`.node[data-stage="${CSS.escape(x.stage)}"]`);
-        if (n) { n.classList.remove("flash"); void n.offsetWidth; n.classList.add("flash"); } }); }
-    refresh(); };
-  es.onerror = () => { if (es.readyState === 2) { es = null; setLink("polling"); if (!pollTimer) pollTimer = setInterval(refresh, 10000); } else { showOffline(); } };
+  es.onmessage = ev => { const d = JSON.parse(ev.data);
+    if (!d.first) (d.new_events || []).forEach(e => {
+      if (e.stage && e.kind.startsWith("job.")) Orbits.pulse(e.stage, e.kind === "job.failed" || e.kind === "job.timeout" ? "#ff5d5d" : e.kind === "job.retry" ? "#f4b860" : e.kind === "job.done" ? "#5fd39a" : "#f07a3a");
+      if (e.kind === "lifecycle.transition" && e.to) Orbits.pulse({REJECTED:"REJECTED", SUPPRESSED:"REJECTED", REGISTERED:"QUEUED", SCREENING:"RUNNING", SCREEN_PASSED:"VALIDATION", VALIDATED:"PAPER_ELIGIBLE", PAPER_TRADING:"PAPER_TRADING", PAUSED:"PAUSED"}[e.to], e.to === "REJECTED" ? "#ff5d5d" : "#f07a3a");
+      if (e.kind === "candidate.discovered") Orbits.pulse("DISCOVERED", "#b39cff");
+    });
+    schedule(); };
+  es.onerror = () => { if (es.readyState === 2) { es = null; setLink("polling"); if (!pollTimer) pollTimer = setInterval(() => refresh(false), 10000); } else { showOffline(); } };
   setInterval(() => { if (lastOk && Date.now() - lastOk > 45000) showOffline(); }, 5000);
+  setInterval(() => refresh(false), 15000);                                   // heartbeat ages keep moving without events
 }
 
 /* ---------------- detail drawer & controls ---------------- */
+function recordBlock(e){
+  if (!e) return "";
+  const row = (k, v) => `<div class="ms"><span class="dim">${esc(k)}</span><span>${v}</span><span></span></div>`;
+  const m = (o, k, f=pct) => o && o[k] != null ? f(o[k]) : na();
+  return `<h3>Experiment record</h3>`
+    + row("Hypothesis", esc(e.hypothesis || NA)) + row("Market / universe", `${esc(e.market)} · ${esc((e.universe||[]).join(", ") || NA)}`)
+    + row("Timeframe", esc(e.timeframe || NA)) + row("Split", e.split ? esc(Object.entries(e.split).map(([k, v]) => `${k} ${v}`).join(" · ")) : na())
+    + row("Parameters (selected)", e.selected_params ? esc(JSON.stringify(e.selected_params)) : na()) + row("Grid", e.grid ? esc(JSON.stringify(e.grid)) : na())
+    + row("Seed", e.seed ?? na()) + row("Benchmark", esc(e.benchmark || NA)) + row("Cost assumptions", e.cost_assumptions ? esc(JSON.stringify(e.cost_assumptions)) : na())
+    + row("Train gross / net", `${m(e.train,"gross_total")} / ${m(e.train,"net_total")}`) + row("Validation gross / net", `${m(e.validation,"gross_total")} / ${m(e.validation,"net_total")}`)
+    + row("Validation Sharpe / max DD", `${m(e.validation,"net_sharpe_ann",v=>num(v,2))} / ${m(e.validation,"max_drawdown")}`)
+    + row("Position changes / exposure", `${m(e.validation,"position_changes",v=>num(v,0))} / ${m(e.validation,"exposure")}`)
+    + row("Win rate (days) / expectancy", `${m(e.validation,"win_rate_days")} / ${m(e.validation,"expectancy_per_change",v=>pct(v,4))}`)
+    + row("Fees / spread / slippage / funding", e.validation ? `${pct(e.validation.fees)} / ${pct(e.validation.spread)} / ${pct(e.validation.slippage)} / ${pct(e.validation.funding)}` : na())
+    + row("95 % CI (mean/day)", e.validation && e.validation.ci95 ? `[${pct(e.validation.ci95[0],3)}, ${pct(e.validation.ci95[1],3)}]` : na())
+    + row("Deflated Sharpe probability", e.dsr == null ? na() : num(e.dsr, 3)) + row("Gates", e.gates ? esc(Object.entries(e.gates).map(([k, v]) => `${v ? "✓" : "✗"} ${k}`).join(" · ")) : na())
+    + row("Holdout", e.holdout ? esc(JSON.stringify(e.holdout.gates || {})) : na()) + row("Status / next action", `${esc(e.state)} · ${esc(e.next_action || NA)}`)
+    + row("Rejection reason", e.rejection_reason ? `<span class="flag">${esc(e.rejection_reason)}</span>` : na()) + row("Report", esc(e.report || NA));
+}
 async function openDetail(id){
   const d = await api("/api/experiment/" + encodeURIComponent(id));
-  const e = (P && P.experiments.find(x => x.exp_id === id)) || {};
+  const e = (X && X.items.find(x => x.exp_id === id)) || (await api("/api/v2/experiments?size=200")).items.find(x => x.exp_id === id);
   const v = d.versions[d.versions.length-1];
-  const human = (e.next_actions || []).filter(a => a.who === "human").map(a => a.to);
-  const sched = id === "X01_pm_lp_v1" && M && M.pm_lp_schedule ? M.pm_lp_schedule : null;
+  const human = (d.next_actions || []).filter(a => a.who === "human").map(a => a.to);
   $("#detail").innerHTML = `<div class="crow" style="justify-content:space-between"><p class="title">${esc(d.exp_id)}</p><button class="btn" id="close">Close</button></div>
-    <div class="crow">${badge(d.display_label)}<span class="dim mono">state ${esc(d.state)} · v${esc(v.version)} · ${esc(v.mechanism_tag)}</span></div>
-    <div class="note">${esc(e.status || "")} ${e.failure_pattern ? "· failure pattern: " + esc(e.failure_pattern) : ""}</div>
-    ${sched ? `<h3>Schedule (calendar, from committed files)</h3>${sched.milestones.map(m => `<div class="ms ${m.passed?"done":""}"><span>${m.passed?"✓":"○"}</span><span>${esc(m.label)}</span><span>${new Date(m.ts*1000).toISOString().slice(0,10)}</span></div>`).join("")}` : ""}
-    <h3>Specification</h3><pre>${esc(JSON.stringify(v.spec_json, null, 1))}</pre>
-    <div class="note">spec ${esc(v.spec_path || "—")} @ ${esc((v.spec_commit || "—").slice(0,10))} · code ${esc((v.code_hash || "—").slice(0,10))}</div>
-    <h3>Results (${d.results.length})</h3>${table([{h:"#",f:r=>r.id},{h:"Label",f:r=>badge(r.label)},{h:"Verdict",f:r=>esc(r.verdict)+(r.supersedes?` <span class="dim">(supersedes #${esc(r.supersedes)})</span>`:"")}], d.results, "No results recorded.")}
+    <div class="crow">${badge(d.display_label)}<span class="dim mono">state ${esc(d.state)} · stage ${esc(e ? e.stage : "")} · v${esc(v.version)}</span></div>
+    ${recordBlock(e)}
+    <h3>Results (${d.results.length})</h3>${table([{h:"#",f:r=>r.id},{h:"Label",f:r=>badge(r.label)},{h:"Verdict",f:r=>esc(r.verdict)}], d.results, "No results recorded.")}
     <h3>Lifecycle history</h3>${table([{h:"When",f:r=>ago(r.ts)},{h:"From → to",f:r=>`${esc(r.from_state||"∅")} → <b>${esc(r.to_state)}</b>`},{h:"Actor",f:r=>esc(r.actor)},{h:"Reason",f:r=>esc(r.reason)}], d.transitions, "")}
-    <h3>Data read through the gateway</h3>${table([{h:"Split",f:r=>esc(r.split)},{h:"Purpose",f:r=>esc(r.purpose)},{h:"SHA-256",f:r=>esc(String(r.sha256).slice(0,16))},{h:"File",f:r=>esc(r.path)}], d.datasets, "None.")}
-    <h3>Events</h3>${table([{h:"When",f:r=>ago(r.ts)},{h:"Kind",f:r=>esc(r.kind)},{h:"Actor",f:r=>esc(r.actor)}], d.events, "None.")}
-    <h3>Controls</h3>
+    <h3>Data read through the gateway (${d.datasets.length})</h3>${table([{h:"Split",f:r=>esc(r.split)},{h:"SHA-256",f:r=>esc(String(r.sha256).slice(0,12))},{h:"File",f:r=>esc(r.path)}], d.datasets.slice(0, 30), "None.")}
+    <h3>Controls (human, two-step)</h3>
     ${human.length ? `<div class="crow"><select id="to">${human.map(s => `<option>${esc(s)}</option>`).join("")}</select><input id="reason" placeholder="reason (≥ 10 characters)" size="28"></div>
       <div class="crow"><input id="committed" placeholder="committed evidence files, comma-separated (needed for VALIDATION / resume)" style="flex:1;min-width:200px"></div>
       <div class="crow"><button class="btn primary" id="approve">Request approval code</button><input id="code" placeholder="code" size="8"><button class="btn" id="confirm">Confirm</button></div>`
       : `<div class="note">No human transition is available from ${esc(d.state)}.</div>`}
     ${d.state === "PAPER_TRADING" ? `<div class="crow"><button class="btn danger" id="pause">Pause (risk-reducing)</button></div>` : ""}
-    <div class="note" id="cmsg">Two-step approval exactly like the CLI: a one-time code valid 15 minutes. Promotions are never automatic.</div>`;
+    <div class="note" id="cmsg">Paper trading starts only through the approved VALIDATED → PAPER_TRADING transition. One-time code, valid 15 minutes. Nothing is promoted automatically.</div>`;
   $("#drawer").classList.add("open");
   $("#close").onclick = () => $("#drawer").classList.remove("open");
   const msg = t => { $("#cmsg").textContent = t; };
@@ -616,21 +735,28 @@ async function openDetail(id){
       $("#code").value = r.code; msg(`Approval code issued (expires in ${Math.round(r.expires_in_s/60)} min). Press Confirm to execute.`);
     } catch (err) { msg("Refused: " + err.message); } };
   if ($("#confirm")) $("#confirm").onclick = async () => { try {
-      const r = await control("/api/control/confirm", {code:$("#code").value.trim()}); msg(`${r.exp_id} → ${r.state}`); refresh();
+      const r = await control("/api/control/confirm", {code:$("#code").value.trim()}); msg(`${r.exp_id} → ${r.state}`); refresh(true);
     } catch (err) { msg("Refused: " + err.message); } };
   if ($("#pause")) $("#pause").onclick = async () => { const reason = prompt("Reason for pausing (≥ 10 characters)"); if (!reason) return;
-    try { await control("/api/control/pause", {exp_id:d.exp_id, reason}); msg("Paused."); refresh(); } catch (err) { msg("Refused: " + err.message); } };
+    try { await control("/api/control/pause", {exp_id:d.exp_id, reason}); msg("Paused."); refresh(true); } catch (err) { msg("Refused: " + err.message); } };
 }
+async function fleet(action){
+  const reason = prompt(`Reason to ${action} the research fleet (≥ 10 characters)`); if (!reason) return;
+  try { const r = await control("/api/control/fleet", {action, reason}); if (!r.changed) alert(`Already ${action === "stop" ? "stopping" : action + "d"} — nothing changed.`); refresh(true); }
+  catch (err) { alert("Refused: " + err.message); }
+}
+$("#f-pause").onclick = () => fleet("pause"); $("#f-resume").onclick = () => fleet("resume"); $("#f-stop").onclick = () => fleet("stop");
 document.addEventListener("click", ev => { const el = ev.target.closest("[data-id]"); if (el) { ev.preventDefault(); openDetail(el.dataset.id).catch(() => showOffline()); } });
 $("#drawer").addEventListener("click", ev => { if (ev.target.id === "drawer") $("#drawer").classList.remove("open"); });
 addEventListener("keydown", ev => { if (ev.key === "Escape") $("#drawer").classList.remove("open"); });
 $("#kind").addEventListener("change", () => refreshAudit().catch(() => showOffline()));
+$("#logsel").addEventListener("change", () => { logAgent = $("#logsel").value; loadLog().catch(() => showOffline()); });
 $("#clearfc").onclick = async () => { const reason = prompt("Why is it safe to clear FAIL_CLOSED? (≥ 10 characters)"); if (!reason) return;
-  try { await control("/api/control/clear-fail-closed", {reason}); refresh(); } catch (err) { alert("Refused: " + err.message); } };
+  try { await control("/api/control/clear-fail-closed", {reason}); refresh(true); } catch (err) { alert("Refused: " + err.message); } };
 setInterval(() => { $("#clock").textContent = new Date().toISOString().slice(11,19) + " UTC"; }, 1000);
 
 Planet.start();
-refresh().then(startStream);
+refresh(true).then(startStream);
 </script>
 </body>
 </html>
