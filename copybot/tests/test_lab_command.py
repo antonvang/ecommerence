@@ -10,6 +10,7 @@ import time
 import unittest
 import urllib.error
 import urllib.request
+from unittest import mock
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -245,6 +246,38 @@ class FeedText(unittest.TestCase):
         self.assertIn("købe og holde", command.short_reason("REJECTED at train gate: selected ..."))
         self.assertIn("allerede afvist", command.short_reason("matches rejected experiment(s) L14"))
         self.assertEqual(command.short_reason("something else"), "something else")
+
+
+class Performance(unittest.TestCase):
+    """Regressions: /api/approvals ran the git lookup once per template (about 6 s); /api/audit re-walked every hash
+    chain on every refresh (about 6 s on the live registry)."""
+
+    def test_approvals_look_up_the_catalogue_once(self):
+        from lab import templates
+        calls = []
+        with mock.patch.object(templates, "catalogue_blob", lambda: calls.append(1) or "blob"):
+            command.approvals(DB(":memory:"))
+        self.assertEqual(len(calls), 1)
+
+    def test_incremental_chain_verification_matches_full_and_catches_breaks(self):
+        db = DB(":memory:")
+        for i in range(5):
+            db.event("x.test", "t", None, {"i": i})
+        cache = {}
+        a = web.verify_chains(db, cache)
+        self.assertEqual(a, db.verify())
+        for i in range(3):
+            db.event("x.test", "t", None, {"i": i})
+        b = web.verify_chains(db, cache)
+        self.assertEqual(b, db.verify())
+        self.assertEqual(b[0]["events"][0], 8)
+        db.con.execute("DROP TRIGGER events_no_update")                    # tamper with a new row
+        last = db.one("SELECT MAX(id) FROM events")[0]
+        db.con.execute("UPDATE events SET payload='{}' WHERE id=?", (last,))
+        db.event("x.test", "t", None, {"i": 99})
+        c = web.verify_chains(db, cache)
+        self.assertFalse(c[1])                                             # trigger missing is reported
+        self.assertEqual(c[0]["events"][1], last)                          # and a full walk locates the broken row
 
 
 class StopState(unittest.TestCase):

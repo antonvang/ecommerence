@@ -83,9 +83,14 @@ def revoke(db, template, actor, reason):
     db.event("template.revoked", actor, None, {"template": template, "reason": reason})
 
 
-def approval(db, template):
-    """The valid approval event row for a template, or None (revoked, never approved, or catalogue changed)."""
-    blob = catalogue_blob()
+_UNSET = object()
+
+
+def approval(db, template, blob=_UNSET):
+    """The valid approval event row for a template, or None (revoked, never approved, or catalogue changed).
+    Pass `blob` (from catalogue_blob()) when checking many templates: the git lookup is the slow part."""
+    if blob is _UNSET:
+        blob = catalogue_blob()
     for r in db.q("SELECT id, kind, payload FROM events WHERE kind IN ('template.approved','template.revoked') "
                   "ORDER BY id DESC"):
         p = json.loads(r["payload"])

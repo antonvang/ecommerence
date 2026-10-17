@@ -115,7 +115,8 @@ def register_batch(db, eids, actor="strategy-1"):
     """PROTOCOL v2 batch: register every approved instance in `eids` together. Logs `batch.registered` with the
     trials-ledger cutoff, then queues the jobs so that no member validates before every member finished its cost step.
     Instances without a valid template approval are skipped. Returns the registered ids."""
-    ok = sorted(e for e in eids if templates.approval(db, _template(db, e)) is not None)
+    blob = templates.catalogue_blob()
+    ok = sorted(e for e in eids if templates.approval(db, _template(db, e), blob) is not None)
     if not ok:
         return []
     for eid in ok:

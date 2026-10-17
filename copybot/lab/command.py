@@ -564,7 +564,7 @@ def approvals(db):
         n, ex = TEMPLATE_DA.get(t, (t, None))
         eid = catalogue.exp_id(t)
         st = lifecycle.state(db, eid)
-        approved = tpl_mod.approval(db, t) is not None
+        approved = tpl_mod.approval(db, t, blob) is not None
         if st in ("REJECTED", "SUPPRESSED", "WITHDRAWN", "RETIRED"):
             status, can = ("Afvist i test" if st == "REJECTED" else "Sorteret fra — samme idé er afvist før"), False
         elif st and st != "DISCOVERED":

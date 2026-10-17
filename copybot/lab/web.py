@@ -166,10 +166,57 @@ def data_quality(db):
     return {"detectors": det, "data_blocks": blocks, "datasets": ds, "refused_reads": refused}
 
 
+_VERIFY = {}
+FULL_VERIFY_EVERY = 600                                  # seconds between full chain walks in the dashboard
+
+
+def verify_chains(db, cache):
+    """Same result as db.verify(), but incremental: only rows added since the last call are re-hashed (the tables are
+    append-only and the triggers that enforce that are checked on every call). The supervisor still runs the full
+    verify at startup."""
+    from lab.db import GENESIS, TABLES, row_hash
+    trig = {r[0] for r in db.con.execute("SELECT name FROM sqlite_master WHERE type='trigger'")}
+    triggers_ok = {f"{t}_no_{k}" for t in TABLES for k in ("update", "delete")} <= trig
+    if not triggers_ok:
+        cache.clear()                                   # a missing trigger: re-walk everything to locate any break
+    out = {}
+    for t, cols in TABLES.items():
+        last_id, prev, n, bad = cache.get(t, (0, GENESIS, 0, None))
+        if bad is None:
+            for r in db.con.execute(f"SELECT * FROM {t} WHERE id>? ORDER BY id", (last_id,)):
+                vals = {c: r[c] for c in cols}
+                if r["prev_hash"] != prev or row_hash(prev, t, vals) != r["hash"]:
+                    bad = r["id"]
+                    n += 1
+                    break
+                prev, last_id, n = r["hash"], r["id"], n + 1
+        if bad is not None:
+            n = db.one(f"SELECT COUNT(*) FROM {t}")[0]
+        cache[t] = (last_id, prev, n, bad)
+        out[t] = (n, bad)
+    return out, triggers_ok
+
+
+def _full_verify_loop(db_path, stop):
+    """Background: re-walk every chain from the start every FULL_VERIFY_EVERY seconds and swap in the fresh state, so
+    dashboard requests stay incremental and fast."""
+    while not stop.is_set():
+        db = DB(db_path)
+        try:
+            fresh = {}
+            verify_chains(db, fresh)
+            _VERIFY[db_path] = fresh
+        except Exception:
+            pass
+        finally:
+            db.close()
+        stop.wait(FULL_VERIFY_EVERY)
+
+
 def audit(db, kind=None, limit=200):
     q = "SELECT id, ts, kind, actor, exp_id, payload, hash FROM events" + (" WHERE kind LIKE ?" if kind else "")
     rows = db.q(q + " ORDER BY id DESC LIMIT ?", *([kind + "%"] if kind else []), int(limit))
-    chains, triggers = db.verify()
+    chains, triggers = verify_chains(db, _VERIFY.setdefault(db.path, {}))
     return {"events": [dict(r) | {"payload": _j(r["payload"])} for r in rows],
             "chains": {t: {"rows": n, "broken_at": b} for t, (n, b) in chains.items()}, "triggers": triggers}
 
@@ -357,6 +404,8 @@ def serve(db_path=DEFAULT_DB, port=DEFAULT_PORT, tries=10):
 
 def run(db_path=DEFAULT_DB, port=DEFAULT_PORT, duration=None, log=print):
     srv = serve(db_path, port)
+    srv.verify_stop = threading.Event()
+    threading.Thread(target=_full_verify_loop, args=(db_path, srv.verify_stop), daemon=True).start()
     log(f"lab dashboard: http://127.0.0.1:{srv.server_address[1]}  (read-only; Ctrl+C to stop)")
     t = threading.Thread(target=srv.serve_forever, daemon=True)
     t.start()
@@ -369,6 +418,7 @@ def run(db_path=DEFAULT_DB, port=DEFAULT_PORT, duration=None, log=print):
         pass
     finally:
         srv.closing = True
+        srv.verify_stop.set()
         srv.shutdown()
         srv.server_close()
     return 0
