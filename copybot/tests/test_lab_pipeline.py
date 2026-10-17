@@ -198,6 +198,32 @@ class Pipeline(Env):
         self.assertEqual((hb["errors"], hb["retries"]), (3, 2))
 
 
+class FamiliesAreCausal(unittest.TestCase):
+    """Regression: daily_reversal p1 read bars[-1] (the last bar of the window) at i = 24. The poison test caught it on
+    real data; here every family is poisoned at early and late cut points and must not change earlier positions."""
+
+    def test_every_family_ignores_the_future(self):
+        from lab.engine import catalogue
+        rng = random.Random(1)
+        t0 = int(datetime(2023, 1, 1, tzinfo=timezone.utc).timestamp())
+        px, bars = 100.0, []
+        for k in range(24 * 120):
+            o = px
+            px *= 1 + rng.gauss(0, 0.002) + (0.006 if k // 24 == 30 else 0.0)   # large move on day 30: first z decision
+            bars.append((t0 + k * HOUR, o, px))
+        bars[-1] = (bars[-1][0], bars[-1][1], bars[23][2])   # last close = early close: wrap-around reads look normal
+        funding = {t0 + k * 8 * HOUR: rng.gauss(0.0001, 0.0003) for k in range(3 * 120)}
+        for name, tpl in catalogue.TEMPLATES.items():
+            for params in tpl["grid"]:
+                fit = tpl["fit"](bars[:24 * 60], params) if tpl.get("fit") else None
+                full = tpl["family"](bars, funding, params, fit)
+                for cut in (24, 25, 30, 24 * 32, 24 * 40, 24 * 100):
+                    pb = bars[:cut + 1] + [(ts, o * 1000, c * 1000) for ts, o, c in bars[cut + 1:]]
+                    pf = {k: (v if k <= bars[cut][0] else 1.0) for k, v in funding.items()}
+                    got = tpl["family"](pb, pf, params, fit)
+                    self.assertEqual(full[:cut + 1], got[:cut + 1], f"{name} {params} looks ahead (cut {cut})")
+
+
 class Control(Env):
     def test_pause_hold_and_stop_block_claims(self):
         pipeline.discover_catalogue(self.db)

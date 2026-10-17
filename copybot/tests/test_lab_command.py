@@ -55,6 +55,13 @@ class ReadModels(unittest.TestCase):
         self.assertAlmostEqual(k["jobs_per_min"], 5 / 15)
         self.assertIsNone(k["real_account_profit"]["value"])
 
+    def test_skipped_validation_is_not_counted_as_a_test(self):
+        for eid, res in (("V1", {"passed": False, "tests": 1}), ("V2", {"skipped": True})):
+            jobs.enqueue(self.db, f"validate|{eid}", "validate", eid, now=self.now)
+            j = jobs.claim(self.db, "validation-1", ["validate"], now=self.now)
+            jobs.complete(self.db, j["job_id"], "validation-1", res, now=self.now + 1)
+        self.assertEqual(command.kpis(self.db, 900, self.now + 2)["tests_completed"]["validation_runs"], 1)
+
     def test_agents_offline_without_supervisor_and_running_with_it(self):
         db = self.db
         a = fleet.Agent("backtest-1", "Backtest agent", kinds=("backtest",))
@@ -200,6 +207,19 @@ class Gate(unittest.TestCase):
         with open(ps, encoding="utf-8") as f:
             src = f.read()
         self.assertIn("gate --require", src)                              # installer is gated on the S7 check
+
+
+class StopState(unittest.TestCase):
+    def test_stop_is_pending_only_until_the_supervisor_stopped(self):
+        db = DB(":memory:")
+        db.event("system.running", "t")
+        self.assertFalse(control.state(db)["stop"])
+        control.request_stop(db, "human:t", "stop for the test")
+        self.assertTrue(control.state(db)["stop"])
+        db.event("system.stopped", "t")
+        self.assertFalse(control.state(db)["stop"])
+        db.event("system.running", "t")                                    # a new run is not blocked by the old stop
+        self.assertFalse(control.state(db)["stop"])
 
 
 class Resources(unittest.TestCase):

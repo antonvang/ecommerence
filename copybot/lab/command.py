@@ -126,6 +126,7 @@ def kpis(db, window_s=900, now=None):
     since = now - window_s
     trials_win = db.one("SELECT COUNT(*) FROM trials WHERE ts>=?", int(since))[0]
     evals_win = db.one("SELECT COUNT(*) FROM jobs WHERE status='done' AND kind IN ('validate','holdout') AND "
+                       "COALESCE(result,'') NOT LIKE '%skipped%' AND "
                        "finished_ts>=?", since)[0]
     jobs_win = db.one("SELECT COUNT(*) FROM jobs WHERE status='done' AND finished_ts>=?", since)[0]
     errors_win = db.one("SELECT COUNT(*) FROM events WHERE kind IN ('job.failed','job.timeout','agent.error',"
@@ -143,7 +144,8 @@ def kpis(db, window_s=900, now=None):
                                 f"({','.join('?' * len(TEST_KINDS))})", *TEST_KINDS)[0],
         "tests_completed": {"variant_evaluations": db.one("SELECT COUNT(*) FROM trials")[0],
                             "validation_runs": db.one("SELECT COUNT(*) FROM jobs WHERE status='done' AND kind IN "
-                                                      "('validate','holdout')")[0]},
+                                                      "('validate','holdout') AND COALESCE(result,'') NOT LIKE "
+                                                      "'%skipped%'")[0]},
         "tests_per_min": (trials_win + evals_win) / minutes, "jobs_per_min": jobs_win / minutes,
         "tests_per_min_basis": f"variant evaluations (trials ledger) + validation runs finished in the last "
                                f"{int(minutes)} min, divided by {int(minutes)}",

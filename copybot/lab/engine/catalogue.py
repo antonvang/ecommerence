@@ -107,7 +107,7 @@ def daily_reversal(bars, funding, p, fit=None):
     """At 00:00 UTC: take the opposite side of an extreme previous-day move for the next 24 h (Nagel 2012)."""
     pos, cur, daily = [0.0] * len(bars), 0.0, []
     for i in range(len(bars)):
-        if _is_midnight(bars[i][0]) and i >= 24:
+        if _is_midnight(bars[i][0]) and i >= 25:                  # i - 25 >= 0: never wrap to bars[-1] (look-ahead)
             d = bars[i - 1][2] / bars[i - 25][2] - 1
             if len(daily) >= 30:
                 sd = statistics.pstdev(daily[-30:])
