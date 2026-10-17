@@ -181,6 +181,19 @@ class Pipeline(Env):
         gross = sum(r[2] for r in rows)
         self.assertAlmostEqual(sum(r[7] for r in rows), gross - fees - spread - slip)
 
+    def test_long_short_book_reports_real_exposure_and_trades(self):
+        """Regression: exposure and position changes were computed from the portfolio's NET position, so a
+        market-neutral book showed 0 trades and ~0 exposure although it traded every week."""
+        bars = [(i * HOUR, 100.0, 100.0 * (1 + 0.001 * ((i % 5) - 2))) for i in range(200)]
+        flip = [0.0] + [1.0 if (i // 24) % 2 else -1.0 for i in range(1, 200)]
+        costs = {"taker_fee": 0.0005, "half_spread": 0.0002, "slippage": 0.0002}
+        rows = {"A": backtest.apply_costs(backtest.gross(bars, flip), {}, costs),
+                "B": backtest.apply_costs(backtest.gross(bars, [-x for x in flip]), {}, costs)}
+        m = backtest.metrics(backtest.portfolio(rows))
+        self.assertGreater(m["position_changes"], 5)
+        self.assertAlmostEqual(m["exposure"], 1.0, places=2)                  # gross exposure, not net
+        self.assertGreater(m["turnover"], 5)
+
     def test_step_failure_retries_then_dead_letters_and_cancels_dependants(self):
         pipeline.discover_catalogue(self.db)
         self.approve("day_of_week")

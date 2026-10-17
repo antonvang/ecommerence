@@ -39,19 +39,25 @@ def apply_costs(rows, funding, costs, mult=1.0):
 
 
 def portfolio(per_symbol):
-    """Equal-weight average across symbols present at each timestamp. per_symbol: {sym: [cost rows]}."""
-    acc = {}
-    for rows in per_symbol.values():
+    """Equal-weight average across symbols present at each timestamp. per_symbol: {sym: [cost rows]}.
+    Rows: (ts, net position, gross, fee, spread, slippage, funding, net, gross exposure, turnover); the last two are
+    averages of |position| and |position change| per symbol, so a market-neutral book shows its real activity."""
+    acc, prev = {}, {}
+    for sym, rows in per_symbol.items():
+        p0 = 0.0
         for r in rows:
-            a = acc.setdefault(r[0], [0.0] * 8 + [0])
+            a = acc.setdefault(r[0], [0.0] * 10 + [0])
             for k in range(1, 8):
                 a[k] += r[k]
-            a[8] += 1
+            a[8] += abs(r[1])
+            a[9] += abs(r[1] - p0)
+            p0 = r[1]
+            a[10] += 1
     out = []
     for ts in sorted(acc):
         a = acc[ts]
-        n = a[8]
-        out.append((ts,) + tuple(a[k] / n for k in range(1, 8)))
+        n = a[10]
+        out.append((ts,) + tuple(a[k] / n for k in range(1, 10)))
     return out
 
 
@@ -96,7 +102,10 @@ def metrics(rows, seed=7, lb_q=0.10):
     net_d, gross_d = daily(rows, 7), daily(rows, 2)
     sd = statistics.stdev(net_d) if len(net_d) > 1 else 0.0
     mean = statistics.mean(net_d)
-    trades = sum(1 for i in range(1, len(rows)) if abs(rows[i][1] - rows[i - 1][1]) > 1e-12)
+    if len(rows[0]) > 9:                                   # portfolio rows: count bars where any symbol traded
+        trades = sum(1 for r in rows if r[9] > 1e-12)
+    else:
+        trades = sum(1 for i in range(1, len(rows)) if abs(rows[i][1] - rows[i - 1][1]) > 1e-12)
     total_net = sum(net_d)
     boot = bootstrap_means(net_d, 5, 2000, seed)
     active_days = sum(1 for x in net_d if x != 0)
@@ -106,7 +115,8 @@ def metrics(rows, seed=7, lb_q=0.10):
         "gross_sharpe_ann": (statistics.mean(gross_d) / statistics.stdev(gross_d) * math.sqrt(365))
         if len(gross_d) > 1 and statistics.stdev(gross_d) > 0 else None,
         "max_drawdown": stats.max_drawdown(net_d), "worst_day": min(net_d), "best_day": max(net_d),
-        "exposure": statistics.mean(abs(r[1]) for r in rows), "position_changes": trades,
+        "exposure": statistics.mean((r[8] if len(r) > 9 else abs(r[1])) for r in rows), "position_changes": trades,
+        "turnover": sum(r[9] for r in rows) if len(rows[0]) > 9 else None,
         "win_rate_days": (sum(1 for x in net_d if x > 0) / active_days) if active_days else None,
         "expectancy_per_change": (total_net / trades) if trades else None,
         "fees": sum(r[3] for r in rows), "spread": sum(r[4] for r in rows), "slippage": sum(r[5] for r in rows),
