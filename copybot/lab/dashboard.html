@@ -626,7 +626,7 @@ function renderApprovals(a){
   const w = a.waiting;
   $("#waiting").innerHTML = w.length ? w.map(x => `<div class="wcard"><div class="nm">${esc(x.name)}</div><div class="ex">${esc(x.explain || "")}${x.round ? " · " + esc(x.round) : ""}<br>${esc(x.status)}</div>
       <div class="crow"><b style="font:12px var(--mono)">${esc(x.action)}</b></div>
-      <div class="crow">${pendingCode[x.exp_id] ? `<button class="btn go" data-confirm-exp="${esc(x.exp_id)}">Bekræft</button><span class="dim mono">kode ${esc(pendingCode[x.exp_id])}</span>`
+      <div class="crow">${!x.to ? `<span class="dim mono">Ingen godkendelse mulig</span>` : pendingCode[x.exp_id] ? `<button class="btn go" data-confirm-exp="${esc(x.exp_id)}">Bekræft</button><span class="dim mono">kode ${esc(pendingCode[x.exp_id])}</span>`
         : `<button class="btn primary" data-approve-exp="${esc(x.exp_id)}" data-to="${esc(x.to)}" data-ev="${x.needs_evidence ? 1 : 0}">Godkend</button>`}</div></div>`).join("")
     : `<div class="empty" style="text-align:left">Intet venter på dig lige nu. Når en strategi består første test, dukker den op her.</div>`;
   const cls = s => s.startsWith("Godkendt") || s.startsWith("Handler") ? "c-ok" : s.startsWith("Ikke") || s.includes("venter") ? "c-wait" : s.startsWith("Afvist") ? "c-bad" : "c-no";

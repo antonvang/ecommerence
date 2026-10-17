@@ -492,6 +492,14 @@ TEMPLATE_DA = {
     "xs_near_high": ("Tæt på toppen", "Køber mønter tæt på deres seneste top og sælger dem langt under (30 mønter)"),
     "turn_of_month": ("Månedsskifte", "Er kun med i dagene omkring månedsskiftet (30 mønter)"),
     "btc_lead_lag": ("Følg Bitcoin", "Efter et stort Bitcoin-hop handles de andre mønter samme vej næste dag (30 mønter)"),
+    "oi_growth": ("Åben-interesse-vækst", "Køber mønter, hvor flere penge bindes i futures, og sælger dem, hvor pengene trækkes ud"),
+    "oi_confirmed_return": ("Ny penge eller short-dækning", "Følger kursbevægelser med nye penge bag sig og går imod dem uden"),
+    "smart_vs_crowd": ("Smart money mod flokken", "Følger de største tradere, når de er mere optimistiske end de almindelige konti"),
+    "leverage_cycle": ("Gearings-cyklus", "Holder markedet, men går ud, når gearingen bygges hurtigere op end kurserne"),
+    "vrp_timing": ("Frygtpræmie", "Holder BTC og ETH, når optionsmarkedet betaler ekstra for beskyttelse"),
+    "stablecoin_flow": ("Stablecoin-tilførsel", "Holder markedet, når der kommer flere stablecoins i omløb"),
+    "btc_volume_share": ("Bitcoin-dominans (volumen)", "Køber BTC mod resten, når Bitcoins andel af handlen stiger, og omvendt"),
+    "taker_pressure": ("Købspres", "Køber mønter med usædvanligt aggressive køb og sælger dem med det modsatte"),
 }
 LEGACY_DA = {
     "L01_copy_kol": "Kopiér kendte wallets", "L02_self_found_traders": "Kopiér selvfundne tradere",
@@ -544,6 +552,9 @@ def approvals(db):
         if x["state"] in NEEDS_YOU:
             n, ex, ver = plain(db, x["exp_id"])
             to, what = NEEDS_YOU[x["state"]]
+            tpl = ((_j(registry.latest(db, x["exp_id"])["spec_json"]) or {}).get("template"))
+            if x["state"] == "SCREEN_PASSED" and tpl in ("vrp_timing", "btc_volume_share"):
+                to, what = None, "Ingen ren slut-test mulig: BTC/ETH-data for 2024 er allerede set (PROTOCOL v3 ændring 1)"
             waiting.append({"exp_id": x["exp_id"], "name": n, "explain": ex, "round": ver, "state": x["state"],
                             "status": STATE_PLAIN[x["state"]], "to": to, "action": what,
                             "needs_evidence": x["state"] in ("SCREEN_PASSED", "PAUSED")})

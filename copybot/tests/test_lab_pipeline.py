@@ -274,8 +274,8 @@ class FamiliesAreCausal(unittest.TestCase):
             return tpl["family"](bars_by, funding_by, params)
 
         for name, tpl in catalogue.TEMPLATES.items():
-            if not tpl.get("cross_sectional"):
-                continue
+            if not tpl.get("cross_sectional") or tpl.get("needs"):
+                continue                                     # PROTOCOL v3 families: tests/test_lab_v3.py
             bars_by, funding_by, vol_by = market(catalogue.universe(name))
             ref = catalogue.universe(name)[0]
             for params in tpl["grid"]:

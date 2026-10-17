@@ -39,6 +39,44 @@ def poison_test(family, bars, funding, params, fit=None, seed=13):
     return {"cut_index": i, "mismatches": diff, "ok": diff == 0}
 
 
+HOUR, DAY = 3600, 86400
+BUNDLE_KEYS = {"volume", "taker", "metrics", "dvol", "stable"}
+
+
+def _is_bundle(x):
+    return isinstance(x, dict) and bool(x) and set(x) <= BUNDLE_KEYS
+
+
+def _scale(v, k):
+    if isinstance(v, dict):
+        return {kk: (vv * k if isinstance(vv, float) and kk != "rows" else vv) for kk, vv in v.items()}
+    return v * k
+
+
+def cut_bundle(b, cut, poison=False):
+    """Data a decision at time `cut` may not see: hourly values from bars opening at or after `cut`, daily values of days
+    not fully closed by `cut`. Truncate (drop them) or poison (multiply them by 1000)."""
+    def hourly(series):
+        if poison:
+            return {ts: (q * 1000 if ts >= cut else q) for ts, q in series.items()}
+        return {ts: q for ts, q in series.items() if ts < cut}
+
+    def daily(series):
+        if poison:
+            return {d: (_scale(v, 1000) if d + DAY > cut else v) for d, v in series.items()}
+        return {d: v for d, v in series.items() if d + DAY <= cut}
+
+    out = {}
+    for k, v in b.items():
+        if k in ("volume", "taker"):
+            out[k] = {s: hourly(x) for s, x in v.items()}
+        elif k in ("metrics", "dvol"):
+            out[k] = {s: daily(x) for s, x in v.items()}
+        elif k == "stable":
+            out[k] = daily(v)
+    return out
+
+
 def _call(family, bars_by, funding_by, params, volume_by):
     return family(bars_by, funding_by, params, None, volume_by) if volume_by is not None else family(bars_by, funding_by, params)
 
@@ -55,7 +93,8 @@ def truncation_test_xs(family, bars_by, funding_by, params, samples=20, seed=11,
         cut = bars_by[ref][i][0]
         part = _call(family, {s: [x for x in b if x[0] <= cut] for s, b in bars_by.items()},
                      {s: {k: v for k, v in f.items() if k <= cut} for s, f in funding_by.items()}, params,
-                     {s: {k: q for k, q in v.items() if k <= cut} for s, v in volume_by.items()} if volume_by else None)
+                     cut_bundle(volume_by, cut) if _is_bundle(volume_by) else
+                     ({s: {k: q for k, q in v.items() if k <= cut} for s, v in volume_by.items()} if volume_by else None))
         for s, b in bars_by.items():
             m = sum(1 for x in b if x[0] <= cut)
             if any(abs(part[s][j] - full[s][j]) > 1e-12 for j in range(m)):
@@ -74,7 +113,10 @@ def poison_test_xs(family, bars_by, funding_by, params, seed=13, volume_by=None)
     cut = bars_by[ref][i][0]
     pb = {s: [(ts, o, c) if ts <= cut else (ts, o * 1000, c * 1000) for ts, o, c in b] for s, b in bars_by.items()}
     pf = {s: {k: (v if k <= cut else 1.0) for k, v in f.items()} for s, f in funding_by.items()}
-    pv = {s: {k: (q if k <= cut else q * 1000) for k, q in v.items()} for s, v in volume_by.items()} if volume_by else None
+    if _is_bundle(volume_by):
+        pv = cut_bundle(volume_by, cut, poison=True)
+    else:
+        pv = {s: {k: (q if k <= cut else q * 1000) for k, q in v.items()} for s, v in volume_by.items()} if volume_by else None
     a, b2 = _call(family, bars_by, funding_by, params, volume_by), _call(family, pb, pf, params, pv)
     diff = sum(1 for s, b in bars_by.items() for j, x in enumerate(b) if x[0] <= cut and abs(a[s][j] - b2[s][j]) > 1e-12)
     return {"cut_ts": cut, "mismatches": diff, "ok": diff == 0}

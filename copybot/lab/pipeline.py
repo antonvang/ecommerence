@@ -66,8 +66,21 @@ def discover_catalogue(db, actor="discovery-catalogue"):
     return out
 
 
+def _windows(protocol):
+    keys = {"train": "train3", "validation": "validation3", "holdout": "holdout"} if protocol >= 3 else \
+        {"train": "train", "validation": "validation", "holdout": "holdout"}
+    return {k: [f"{data.SPLITS[v][0][0]}-{data.SPLITS[v][0][1]:02d}", f"{data.SPLITS[v][1][0]}-{data.SPLITS[v][1][1]:02d}"]
+            for k, v in keys.items()}
+
+
 def template_spec(t):
     tpl = catalogue.TEMPLATES[t]
+    proto = catalogue.protocol_of(t)
+    needs = tpl.get("needs") or []
+    extra_sources = [x for k, x in (("metrics", "Binance futures/um daily metrics (open interest, long/short ratios)"),
+                                    ("taker", "Binance klines column 11 (taker buy quote volume)"),
+                                    ("dvol", "Deribit public get_volatility_index_data (DVOL, daily)"),
+                                    ("stable", "DefiLlama stablecoincharts/all (window rows only)")) if k in needs]
     return {"template": t, "title": t.replace("_", " "), "hypothesis": tpl["hypothesis"], "mechanism": tpl["rationale"],
             "mechanism_tag": tpl["mechanism_tag"], "evidence": tpl["evidence"],
             "sources": ["lab/engine/catalogue.py"] + tpl["evidence"], "instrument": catalogue.instrument_family(t),
@@ -75,14 +88,15 @@ def template_spec(t):
             "horizon": catalogue.HORIZON[t], "execution": "taker",
             "long_only": tpl["long_only"],
             "datasets": {"source": "https://data.binance.vision (futures/um monthly klines 1h + fundingRate)",
-                         "splits": {k: [f"{a[0]}-{a[1]:02d}", f"{b[0]}-{b[1]:02d}"] for k, (a, b) in data.SPLITS.items()},
+                         "extra_sources": extra_sources, "splits": _windows(proto),
                          "reserved_from": "2025-01-01 (never read)"},
-            "grid": tpl["grid"], "methodology": catalogue.PROTOCOL, "baseline": "equal-weight buy-and-hold of the same "
-            "8 perpetuals with the same costs and funding", "costs": catalogue.COSTS,
-            "acceptance": catalogue.PROTOCOL["validation"],
-            "rejection": "train gate, pre-validation gate or any validation gate fails (research/PROTOCOL_V2.md)",
+            "grid": tpl["grid"], "methodology": catalogue.PROTOCOLS[proto], "baseline": "equal-weight buy-and-hold of "
+            "the same universe with the same costs and funding", "costs": catalogue.COSTS,
+            "acceptance": catalogue.PROTOCOLS[proto]["validation"],
+            "rejection": "train gate, pre-validation gate or any validation gate fails ("
+                         + catalogue.PROTOCOLS[proto].get("spec", "research/PROTOCOL_V2.md") + ")",
             "alpha": ALPHA_PER_EXPERIMENT, "code": ENGINE_CODE, "seed": SEED,
-            "protocol_version": catalogue.PROTOCOL_VERSION, "label": "EXPLORATORY until a sealed holdout passes"}
+            "protocol_version": proto, "label": "EXPLORATORY until a sealed holdout passes"}
 
 
 def register(db, eid, actor="strategy-1"):
@@ -109,7 +123,8 @@ def register_batch(db, eids, actor="strategy-1"):
     cutoff = db.one("SELECT COALESCE(MAX(id),0) FROM trials")[0]
     batch = "B-" + hashlib.sha256("|".join(ok).encode()).hexdigest()[:12]
     db.event("batch.registered", f"system:{actor}", None, {"batch": batch, "exp_ids": ok, "trial_cutoff_id": cutoff,
-                                                          "protocol_version": catalogue.PROTOCOL_VERSION})
+                                                          "protocol_version": max(catalogue.protocol_of(
+                                                              _template(db, e)) for e in ok)})
     for eid in ok:
         enqueue_pipeline(db, eid, actor, batch_members=ok)
     return ok
@@ -198,16 +213,66 @@ def _load(per_sym, split):
     return bars, funding, dups
 
 
+V3_SPLITS = {"train": "train3", "validation": "validation3", "holdout": "holdout"}
+
+
+def _sp(spec, split):
+    """Logical split -> data window of the experiment's protocol (v3 uses longer windows)."""
+    return V3_SPLITS[split] if (spec.get("protocol_version") or 1) >= 3 else split
+
+
+def _code_hash():
+    return registry.blob_at(registry.last_commit(templates.CATALOGUE), templates.CATALOGUE)
+
+
+def _extra(db, eid, split, worker, symbols, per_sym, needs):
+    """PROTOCOL v3 data bundle: hourly volume/taker, daily metrics, DVOL, stablecoins; reads go through the gateway."""
+    from concurrent.futures import ThreadPoolExecutor
+    gw, win, b = Gateway(db, f"system:{worker}"), data.window(split), {}
+    if "volume" in needs:
+        b["volume"] = {s: data.load_volume(per_sym[s], split) for s in per_sym}
+    if "taker" in needs:
+        b["taker"] = {s: data.load_taker(per_sym[s], split) for s in per_sym}
+    if "metrics" in needs:
+        with ThreadPoolExecutor(4) as ex:
+            paths = dict(zip(symbols, ex.map(lambda s: data.metrics_for(s, split), symbols)))
+        gw.access(eid, data.GATEWAY_SPLIT[split], list(paths.values()), win, data.METRICS_URL, "evaluate", _code_hash())
+        b["metrics"] = {s: data.load_metrics(p) for s, p in paths.items()}
+    if "dvol" in needs:
+        curs = sorted({s.replace("USDT", "") for s in symbols})
+        paths = {c: data.dvol_for(c, split) for c in curs}
+        gw.access(eid, data.GATEWAY_SPLIT[split], list(paths.values()), win, "https://www.deribit.com/api/v2/public",
+                  "evaluate", _code_hash())
+        b["dvol"] = {c: data.load_days(p) for c, p in paths.items()}
+    if "stable" in needs:
+        p = data.stable_for(split)
+        gw.access(eid, data.GATEWAY_SPLIT[split], [p], win, "https://stablecoins.llama.fi", "evaluate", _code_hash())
+        b["stable"] = data.load_days(p)
+    return b
+
+
 def _market(db, eid, split, worker, spec, exclude=()):
-    """Bars, funding, duplicates and (when the template needs it) hourly quote volume of the experiment's universe,
-    without the symbols excluded by the data rule."""
-    per_sym = _files(db, eid, split, worker, catalogue.universe(spec["template"]))
+    """Bars, funding, duplicates and the template's extra data (hourly volume for the older 30-coin templates, or the
+    PROTOCOL v3 bundle), without the symbols excluded by the data rule."""
+    split = _sp(spec, split)
+    tpl = catalogue.TEMPLATES[spec["template"]]
+    symbols = catalogue.universe(spec["template"])
+    per_sym = _files(db, eid, split, worker, symbols)
     bars, funding, dups = _load(per_sym, split)
-    vol = ({s: data.load_volume(per_sym[s], split) for s in per_sym}
-           if catalogue.TEMPLATES[spec["template"]].get("needs_volume") else None)
+    if tpl.get("needs_volume"):
+        vol = {s: data.load_volume(per_sym[s], split) for s in per_sym}
+    elif tpl.get("needs"):
+        vol = _extra(db, eid, split, worker, symbols, per_sym, tpl["needs"])
+    else:
+        vol = None
     for s in exclude:
-        for d in (bars, funding, dups) + ((vol,) if vol is not None else ()):
+        for d in (bars, funding, dups):
             d.pop(s, None)
+        if vol is not None and tpl.get("needs_volume"):
+            vol.pop(s, None)
+        elif vol is not None:
+            for k in ("volume", "taker", "metrics"):
+                (vol.get(k) or {}).pop(s, None)
     return bars, funding, dups, vol
 
 
@@ -216,14 +281,44 @@ def _train(db, eid, worker, spec):
     return _market(db, eid, "train", worker, spec, excluded)
 
 
-def _quality(bars, split, dups, t):
+METRICS_MIN_COVERAGE, SERIES_MIN_COVERAGE = 0.95, 0.95
+
+
+def _quality(bars, split, dups, spec, bundle=None):
+    """Per-symbol quality (klines; plus daily metrics coverage for v3) and whether enough symbols remain. External
+    series (DVOL, stablecoins) below 95 % day coverage fail the data gate."""
+    t, split = spec["template"], _sp(spec, split)
     q = {s: data.quality(bars[s], split, dups[s]) for s in bars}
+    series_ok = True
+    if isinstance(bundle, dict) and "metrics" in bundle:
+        for s in q:
+            days = bundle["metrics"].get(s) or {}
+            cov = data.coverage({d for d, v in days.items() if v.get("rows", 0) >= data.METRICS_MIN_ROWS}, split)
+            q[s]["metrics_coverage"] = cov
+            q[s]["ok"] = q[s]["ok"] and cov >= METRICS_MIN_COVERAGE
+    if isinstance(bundle, dict):
+        for key in ("dvol",):
+            for cur, days in (bundle.get(key) or {}).items():
+                series_ok = series_ok and data.coverage(days, split) >= SERIES_MIN_COVERAGE
+        if "stable" in bundle:
+            series_ok = series_ok and data.coverage(bundle["stable"], split) >= SERIES_MIN_COVERAGE
     excluded = sorted(s for s, x in q.items() if not x["ok"])
-    return q, excluded, len(q) - len(excluded) >= catalogue.min_symbols(t)
+    return q, excluded, series_ok and len(q) - len(excluded) >= catalogue.min_symbols(t)
+
+
+def _family(t):
+    """The template's family with one calling convention: (bars_by, funding_by, params, fit=None, data=None)."""
+    tpl = catalogue.TEMPLATES[t]
+    fam = tpl["family"]
+    if tpl.get("needs"):
+        return lambda b, f, p, fit=None, volume_by=None: fam(b, f, p, None, extra=volume_by)
+    return fam
 
 
 def _positions(t, bars, funding, params, fit, vol=None):
     fam = catalogue.TEMPLATES[t]["family"]
+    if catalogue.TEMPLATES[t].get("needs"):
+        return fam(bars, funding, params, None, extra=vol)
     if catalogue.TEMPLATES[t].get("cross_sectional"):
         return fam(bars, funding, params, None, vol) if vol is not None else fam(bars, funding, params, None)
     return {s: fam(bars[s], funding[s], params, fit.get(s) if fit else None) for s in bars}
@@ -256,8 +351,8 @@ def step_data(db, job, worker):
     report, excluded, oks = {}, {}, []
     spec = _spec(db, eid)
     for split in (("train",) if _v2(spec) else ("train", "validation")):     # v2: validation is read only to validate
-        bars, _, dups, _ = _market(db, eid, split, worker, spec)
-        report[split], excluded[split], ok_split = _quality(bars, split, dups, spec["template"])
+        bars, _, dups, bundle = _market(db, eid, split, worker, spec)
+        report[split], excluded[split], ok_split = _quality(bars, split, dups, spec, bundle)
         oks.append(ok_split)
     ok = all(oks)
     art = save_artifact(eid, "data", {"quality": report, "ok": ok, "excluded": excluded,
@@ -318,7 +413,7 @@ def step_adversarial(db, job, worker):
         return {"skipped": True, "artifact": art}
     t, v = spec["template"], load_artifact(eid, "backtest")["variants"][cost["selected"]]
     bars, funding, _, vol = _train(db, eid, worker, spec)
-    fam = catalogue.TEMPLATES[t]["family"]
+    fam = _family(t)
     if catalogue.TEMPLATES[t].get("cross_sectional"):
         trunc = {"ALL": adversarial.truncation_test_xs(fam, bars, funding, v["params"], 20, volume_by=vol)}
         poison = {"ALL": adversarial.poison_test_xs(fam, bars, funding, v["params"], volume_by=vol)}
@@ -359,11 +454,8 @@ def step_validate(db, job, worker):
         return {"skipped": True, "artifact": art}                           # validation data is never read
     v = load_artifact(eid, "backtest")["variants"][cost["selected"]]
     bars, funding, dups, vol = _market(db, eid, "validation", worker, spec)
-    vq, v_excluded, v_enough = _quality(bars, "validation", dups, spec["template"])
-    for s in v_excluded:
-        bars.pop(s), funding.pop(s)
-        if vol is not None:
-            vol.pop(s, None)
+    vq, v_excluded, v_enough = _quality(bars, "validation", dups, spec, vol)
+    _drop(bars, funding, vol, v_excluded, spec)
     pos = _positions(spec["template"], bars, funding, v["params"], v["fit"], vol)  # frozen params and train fit
     m = _evaluate(bars, funding, pos, spec["costs"])
     hi = _evaluate(bars, funding, pos, spec["costs"], catalogue.COST_HIGH_MULT)
@@ -446,20 +538,36 @@ def render_report(eid, spec, verdict, m):
     return "\n".join(lines) + "\n"
 
 
+NO_CLEAN_HOLDOUT = ("vrp_timing", "btc_volume_share")
+
+
+def _drop(bars, funding, vol, symbols, spec):
+    tpl = catalogue.TEMPLATES[spec["template"]]
+    for s in symbols:
+        bars.pop(s, None), funding.pop(s, None)
+        if vol is not None and tpl.get("needs_volume"):
+            vol.pop(s, None)
+        elif vol is not None:
+            for k in ("volume", "taker", "metrics"):
+                (vol.get(k) or {}).pop(s, None)
+
+
 def step_holdout(db, job, worker):
     """Sealed 2024 holdout, only reachable after a human-approved SCREEN_PASSED -> VALIDATION transition."""
     eid = job["exp_id"]
     if lifecycle.state(db, eid) != "VALIDATION":
         raise StepError("holdout requires lifecycle VALIDATION")
     spec = _spec(db, eid)
+    if spec["template"] in NO_CLEAN_HOLDOUT:
+        raise StepError("no clean holdout possible: BTC/ETH 2024 data was already seen by L14_tsmom_v1 "
+                        "(research/PROTOCOL_V3.md amendment 1)")
     cost = load_artifact(eid, "cost")
     v = load_artifact(eid, "backtest")["variants"][cost["selected"]]
     bars, funding, dups, vol = _market(db, eid, "holdout", worker, spec)
-    _, h_excluded, _ = _quality(bars, "holdout", dups, spec["template"])
-    for s in h_excluded:
-        bars.pop(s), funding.pop(s)
-        if vol is not None:
-            vol.pop(s, None)
+    _, h_excluded, _ = _quality(bars, "holdout", dups, spec, vol)
+    if catalogue.TEMPLATES[spec["template"]].get("universe") in ("30", "30v3"):
+        h_excluded = sorted(set(h_excluded) | set(data.HOLDOUT_SEEN))
+    _drop(bars, funding, vol, h_excluded, spec)
     pos = _positions(spec["template"], bars, funding, v["params"], v["fit"], vol)
     m = _evaluate(bars, funding, pos, spec["costs"], lb_q=0.05)
     bench = _benchmark(bars, funding, spec["costs"])

@@ -5,6 +5,8 @@ Data policy (fixed in code, see lab/README.md):
 - universe: 8 liquid perpetuals that no earlier experiment in this project examined (BTC/ETH/SOL are excluded because
   tsmom_v1 opened their 2024-2026 holdout, and BTC 2023 was used by Mission 3);
 - train 2023-01..2023-08, validation 2023-09..2023-12, holdout 2024 (sealed: only in lifecycle VALIDATION);
+- PROTOCOL v3 (research/PROTOCOL_V3.md): train3 2022-01..2023-06, validation3 2023-07..2023-12, same 2024 holdout;
+- 2024 holdouts of 30-coin universes exclude BTC/ETH/SOL (already seen by L14_tsmom_v1; PROTOCOL v3 amendment 1);
 - 2025-01-01 and later is reserved and always refused.
 """
 from __future__ import annotations
@@ -24,8 +26,15 @@ UNIVERSE = ("BNBUSDT", "XRPUSDT", "DOGEUSDT", "ADAUSDT", "LINKUSDT", "LTCUSDT", 
 # research/PROTOCOL_V2.md amendment 3: first 30 of the ordered candidate list with every monthly file (HEAD check only)
 UNIVERSE_30 = tuple(c + "USDT" for c in ("BTC ETH BNB XRP SOL ADA DOGE TRX DOT LINK AVAX LTC BCH ATOM ETC XLM NEAR FIL "
                                          "UNI AAVE ALGO VET ICP EOS XTZ THETA AXS SAND MANA APE").split())
-SPLITS = {"train": ((2023, 1), (2023, 8)), "validation": ((2023, 9), (2023, 12)), "holdout": ((2024, 1), (2024, 12))}
-GATEWAY_SPLIT = {"train": "dev", "validation": "validation", "holdout": "holdout"}
+# PROTOCOL v3 universe: same rule on 2022-01..2024-12 (ICP, APE out; CRV, SNX in)
+UNIVERSE_30_V3 = tuple(c + "USDT" for c in ("BTC ETH BNB XRP SOL ADA DOGE TRX DOT LINK AVAX LTC BCH ATOM ETC XLM NEAR "
+                                            "FIL UNI AAVE ALGO VET EOS XTZ THETA AXS SAND MANA CRV SNX").split())
+HOLDOUT_SEEN = ("BTCUSDT", "ETHUSDT", "SOLUSDT")
+SPLITS = {"train": ((2023, 1), (2023, 8)), "validation": ((2023, 9), (2023, 12)), "holdout": ((2024, 1), (2024, 12)),
+          "train3": ((2022, 1), (2023, 6)), "validation3": ((2023, 7), (2023, 12))}
+GATEWAY_SPLIT = {"train": "dev", "validation": "validation", "holdout": "holdout", "train3": "dev",
+                 "validation3": "validation"}
+DAY = 86400
 RESERVED_FROM = datetime(2025, 1, 1, tzinfo=timezone.utc).timestamp()
 CACHE = os.path.join(HERE, "data", "lab", "market")
 BASE = "https://data.binance.vision/data/futures/um/monthly"
@@ -138,6 +147,169 @@ def load_volume(paths, split):
             if a <= ts <= b and len(r) > 7:
                 out.setdefault(ts, float(r[7]))
     return out
+
+
+def load_taker(paths, split):
+    """Hourly aggressive-buy quote volume {bar open ts: volume} (kline column 11, taker_buy_quote_volume)."""
+    a, b = window(split)
+    out = {}
+    for p in sorted(paths["klines"]):
+        for r in _rows(p):
+            ts = int(r[0]) // 1000
+            if ts > 10 ** 11:
+                ts //= 1000
+            if a <= ts <= b and len(r) > 10:
+                out.setdefault(ts, float(r[10]))
+    return out
+
+
+# ---------- PROTOCOL v3 external series (all cached per window; nothing outside the window is stored) ----------
+METRICS_URL = "https://data.binance.vision/data/futures/um/daily/metrics"
+METRICS_MIN_ROWS = 200
+
+
+def _sha(path):
+    import hashlib
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def _days(split):
+    a, b = window(split)
+    return list(range(a, b + 1, DAY))
+
+
+def _parse_metrics(zpath):
+    """{day start ts: {oi, top, acct, rows}} from one daily metrics zip (5-minute rows)."""
+    rows = []
+    for r in _rows(zpath):
+        try:
+            ts = int(datetime.strptime(r[0], "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc).timestamp())
+            rows.append((ts, float(r[3] or "nan"), float(r[5] or "nan"), float(r[6] or "nan")))
+        except (ValueError, IndexError):
+            continue
+    out = {}
+    for ts, oi, top, acct in sorted(rows):
+        d = out.setdefault(ts - ts % DAY, {"oi": None, "top": [], "acct": [], "rows": 0})
+        d["rows"] += 1
+        if oi == oi:
+            d["oi"] = oi                                   # last valid value of the day
+        if top == top and top > 0:
+            d["top"].append(top)
+        if acct == acct and acct > 0:
+            d["acct"].append(acct)
+    return {k: {"oi": v["oi"], "top": (sum(v["top"]) / len(v["top"])) if v["top"] else None,
+                "acct": (sum(v["acct"]) / len(v["acct"])) if v["acct"] else None, "rows": v["rows"]}
+            for k, v in out.items()}
+
+
+def metrics_for(sym, split, get=None, threads=8):
+    """Download the window's daily metrics zips and consolidate them into one per-symbol file with a SHA-256
+    manifest of the source files. Returns the consolidated path."""
+    import json
+    from concurrent.futures import ThreadPoolExecutor
+    window(split)
+    out = os.path.join(CACHE, "metrics_daily", f"{sym}-{split}.json")
+    if os.path.exists(out):
+        return out
+
+    def one(day):
+        name = f"{sym}-metrics-{datetime.fromtimestamp(day, timezone.utc):%Y-%m-%d}.zip"
+        return _fetch(f"{METRICS_URL}/{sym}/{name}", os.path.join(CACHE, "metrics", sym, name), get)
+
+    with ThreadPoolExecutor(threads) as ex:
+        paths = [x for x in ex.map(one, _days(split)) if x]
+    a, b = window(split)
+    days, manifest = {}, {}
+    for zp in paths:
+        manifest[os.path.basename(zp)] = _sha(zp)
+        for d, v in _parse_metrics(zp).items():
+            if a <= d <= b:
+                days[str(d)] = v
+    os.makedirs(os.path.dirname(out), exist_ok=True)
+    with open(out + ".part", "w", encoding="utf-8") as f:
+        json.dump({"symbol": sym, "split": split, "days": days, "manifest": manifest}, f, sort_keys=True)
+    os.replace(out + ".part", out)
+    return out
+
+
+def load_metrics(path):
+    import json
+    with open(path, encoding="utf-8") as f:
+        return {int(k): v for k, v in json.load(f)["days"].items()}
+
+
+def _get_json(url, get=None):
+    import json
+    raw = get(url) if get else urllib.request.urlopen(
+        urllib.request.Request(url, headers={"User-Agent": "copybot-research/1.0"}), timeout=120).read()
+    return json.loads(raw)
+
+
+def dvol_for(currency, split, get=None):
+    """Deribit DVOL daily closes for the window only (request bounded to the window; paged)."""
+    import json
+    a, b = window(split)
+    out = os.path.join(CACHE, "dvol", f"{currency}-{split}.json")
+    if os.path.exists(out):
+        return out
+    days, end = {}, (b + 1) * 1000
+    for _ in range(50):
+        url = (f"https://www.deribit.com/api/v2/public/get_volatility_index_data?currency={currency}"
+               f"&start_timestamp={a * 1000}&end_timestamp={end}&resolution=1D")
+        res = _get_json(url, get)["result"]
+        for ts, _o, _h, _l, c in res.get("data") or []:
+            d = int(ts) // 1000
+            d -= d % DAY
+            if a <= d <= b:
+                days[str(d)] = float(c)
+        cont = res.get("continuation")
+        if not cont or int(cont) <= a * 1000:
+            break
+        end = int(cont)
+    os.makedirs(os.path.dirname(out), exist_ok=True)
+    with open(out + ".part", "w", encoding="utf-8") as f:
+        json.dump({"currency": currency, "split": split, "days": days, "source": "deribit get_volatility_index_data"},
+                  f, sort_keys=True)
+    os.replace(out + ".part", out)
+    return out
+
+
+def stable_for(split, get=None):
+    """DefiLlama total stablecoin supply (USD-pegged). The API returns the full history; only rows inside the window
+    are kept and stored, the rest is discarded before any computation (PROTOCOL v3 section 4)."""
+    import json
+    a, b = window(split)
+    out = os.path.join(CACHE, "stable", f"all-{split}.json")
+    if os.path.exists(out):
+        return out
+    days = {}
+    for row in _get_json("https://stablecoins.llama.fi/stablecoincharts/all", get):
+        d = int(row.get("date", 0))
+        d -= d % DAY
+        if a <= d <= b:
+            v = (row.get("totalCirculatingUSD") or {}).get("peggedUSD")
+            if v is not None:
+                days[str(d)] = float(v)
+    os.makedirs(os.path.dirname(out), exist_ok=True)
+    with open(out + ".part", "w", encoding="utf-8") as f:
+        json.dump({"split": split, "days": days, "source": "stablecoins.llama.fi/stablecoincharts/all (window only)"},
+                  f, sort_keys=True)
+    os.replace(out + ".part", out)
+    return out
+
+
+def load_days(path):
+    import json
+    with open(path, encoding="utf-8") as f:
+        return {int(k): v for k, v in json.load(f)["days"].items()}
+
+
+def coverage(days, split):
+    return len([d for d in _days(split) if d in days]) / len(_days(split))
 
 
 def quality(bars, split, duplicates=0):

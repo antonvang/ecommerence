@@ -54,7 +54,15 @@ PROTOCOL_V2 = {
                    "batch trial set (all trials up to the batch cutoff plus the batch's own trials; validation waits "
                    "until every batch member finished its cost step)"),
 }
-PROTOCOLS = {1: PROTOCOL_V1, 2: PROTOCOL_V2}
+PROTOCOL_V3 = {
+    **PROTOCOL_V2,
+    "version": 3,
+    "spec": "research/PROTOCOL_V3.md",
+    "windows": "train 2022-01..2023-06, validation 2023-07..2023-12, holdout 2024 (BTC/ETH/SOL excluded), 2025+ reserved",
+    "selection": PROTOCOL_V2["selection"].replace("TRAIN (2023-01..2023-08)", "TRAIN (2022-01..2023-06)"),
+    "validation": PROTOCOL_V2["validation"].replace("VALIDATION (2023-09..2023-12)", "VALIDATION (2023-07..2023-12)"),
+}
+PROTOCOLS = {1: PROTOCOL_V1, 2: PROTOCOL_V2, 3: PROTOCOL_V3}
 PROTOCOL = PROTOCOLS[PROTOCOL_VERSION]
 
 
@@ -177,9 +185,29 @@ def _daily_returns(close, T, days):
     return out
 
 
-def _xs(bars_by, funding_by, p, score, long_low, volume_by=None):
+def _apply(bars_by, weights):
+    """Positions per symbol from {decision ts: {symbol: weight}}: each bar holds the latest decision at or before it."""
+    times = sorted(weights)
+    out = {}
+    for s, b in bars_by.items():
+        pos, cur, j = [], 0.0, 0
+        for ts, _, _ in b:
+            while j < len(times) and times[j] <= ts:
+                cur = weights[times[j]].get(s, 0.0)
+                j += 1
+            pos.append(cur)
+        out[s] = pos
+    return out
+
+
+def _midnights(bars_by):
+    return sorted({ts for b in bars_by.values() for ts, _, _ in b if ts % DAY == 0})
+
+
+def _xs(bars_by, funding_by, p, score, long_low, volume_by=None, extra=None):
     close = {s: {ts: c for ts, _, c in b} for s, b in bars_by.items()}
     ctx = {"dv": _daily_dollar_volume(volume_by)} if volume_by else {}
+    ctx["extra"] = extra or {}
     times = sorted({ts for b in bars_by.values() for ts, _, _ in b if _is_monday_midnight(ts)})
     k, weights = p["k"], {}
     for T in times:
@@ -367,6 +395,187 @@ def btc_lead_lag(bars_by, funding_by, p, fit=None, volume_by=None):
     return out
 
 
+# ---------- PROTOCOL v3 families (research/PROTOCOL_V3.md). A daily value for day D is usable from D + 1 day. ----------
+def _metric(ctx, s, day, key):
+    v = ((ctx["extra"].get("metrics") or {}).get(s) or {}).get(day)
+    if not v or v.get("rows", 0) < 200 or v.get(key) is None:
+        return None
+    return v[key]
+
+
+def _score_oi_growth(close, s, T, p, ctx):
+    now, then = _metric(ctx, s, T - DAY, "oi"), _metric(ctx, s, T - (p["lookback_days"] + 1) * DAY, "oi")
+    return (now / then - 1) if (now and then) else None
+
+
+def _score_oi_confirmed(close, s, T, p, ctx):
+    r = _ret_over(close[s], T - HOUR, T - HOUR - p["lookback_days"] * DAY)
+    g = _score_oi_growth(close, s, T, p, ctx)
+    if r is None or g is None:
+        return None
+    return r if g > 0 else -r
+
+
+def _score_smart_vs_crowd(close, s, T, p, ctx):
+    vals = []
+    for k in range(1, p["lookback_days"] + 1):
+        top, acct = _metric(ctx, s, T - k * DAY, "top"), _metric(ctx, s, T - k * DAY, "acct")
+        if top and acct:
+            vals.append(math.log(top) - math.log(acct))
+    return statistics.fmean(vals) if len(vals) >= p["lookback_days"] - 1 else None
+
+
+def _taker_daily(ctx):
+    if "taker_daily" not in ctx:
+        tk, vol = ctx["extra"].get("taker") or {}, ctx["extra"].get("volume") or {}
+        out = {}
+        for s, series in tk.items():
+            num, den = {}, {}
+            for ts, q in series.items():
+                d = ts - ts % DAY
+                num[d] = num.get(d, 0.0) + q
+            for ts, q in (vol.get(s) or {}).items():
+                d = ts - ts % DAY
+                den[d] = den.get(d, 0.0) + q
+            out[s] = {d: num[d] / den[d] for d in num if den.get(d)}
+        ctx["taker_daily"] = out
+    return ctx["taker_daily"]
+
+
+def _score_taker(close, s, T, p, ctx):
+    d = _taker_daily(ctx).get(s, {})
+    f = p["formation_days"]
+    recent = [d.get(T - k * DAY) for k in range(1, f + 1)]
+    before = [d.get(T - k * DAY) for k in range(f + 1, f + 61)]
+    if any(v is None for v in recent + before):
+        return None
+    return statistics.fmean(recent) - statistics.fmean(before)
+
+
+def oi_growth(bars_by, funding_by, p, fit=None, volume_by=None, extra=None):
+    """Long the 5 coins with the fastest open-interest growth, short the 5 slowest (Hong & Yogo 2012)."""
+    return _xs(bars_by, funding_by, p, _score_oi_growth, long_low=False, extra=extra)
+
+
+def oi_confirmed_return(bars_by, funding_by, p, fit=None, volume_by=None, extra=None):
+    """Price moves confirmed by new open interest continue; moves on falling open interest do not (Bessembinder & Seguin 1993)."""
+    return _xs(bars_by, funding_by, p, _score_oi_confirmed, long_low=False, extra=extra)
+
+
+def smart_vs_crowd(bars_by, funding_by, p, fit=None, volume_by=None, extra=None):
+    """Follow top traders when they are more bullish than all accounts (Wang 2003)."""
+    return _xs(bars_by, funding_by, p, _score_smart_vs_crowd, long_low=False, extra=extra)
+
+
+def taker_pressure(bars_by, funding_by, p, fit=None, volume_by=None, extra=None):
+    """Coins with unusually aggressive buying keep rising (Chordia & Subrahmanyam 2004), daily and cross-sectional."""
+    return _xs(bars_by, funding_by, p, _score_taker, long_low=False, extra=extra)
+
+
+def _q(values, frac):
+    s = sorted(values)
+    return s[math.floor((len(s) - 1) * frac)]
+
+
+def leverage_cycle(bars_by, funding_by, p, fit=None, volume_by=None, extra=None):
+    """Hold the whole universe except when leverage builds faster than prices (Geanakoplos 2010)."""
+    metrics = (extra or {}).get("metrics") or {}
+    close = {s: {ts: c for ts, _, c in b} for s, b in bars_by.items()}
+    L, hist, weights, cur = p["lookback_days"], [], {}, 1.0
+    for T in _midnights(bars_by):
+        now, then, rets = 0.0, 0.0, []
+        for s in bars_by:
+            a = (metrics.get(s) or {}).get(T - DAY) or {}
+            b = (metrics.get(s) or {}).get(T - (L + 1) * DAY) or {}
+            if a.get("rows", 0) >= 200 and b.get("rows", 0) >= 200 and a.get("oi") and b.get("oi"):
+                now += a["oi"]
+                then += b["oi"]
+            r = _ret_over(close[s], T - HOUR, T - HOUR - L * DAY)
+            if r is not None:
+                rets.append(r)
+        if then > 0 and rets:
+            G = math.log(now / then) - math.log(1 + statistics.fmean(rets))
+            if len(hist) >= 60:
+                cur = 0.0 if G >= _q(hist[-90:], 2 / 3) else 1.0
+            else:
+                cur = 1.0
+            hist.append(G)
+        weights[T] = {s: cur for s in bars_by}
+    return _apply(bars_by, weights)
+
+
+def vrp_timing(bars_by, funding_by, p, fit=None, volume_by=None, extra=None):
+    """Hold BTC/ETH when implied volatility is high relative to realised volatility (Bollerslev, Tauchen & Zhou 2009)."""
+    dvol = (extra or {}).get("dvol") or {}
+    close = {s: {ts: c for ts, _, c in b} for s, b in bars_by.items()}
+    frac = 0.5 if p["threshold"] == "median" else 2 / 3
+    hist, weights = {s: [] for s in bars_by}, {}
+    for T in _midnights(bars_by):
+        w = {}
+        for s in bars_by:
+            iv = (dvol.get(s.replace("USDT", "")) or {}).get(T - DAY)
+            c, rs = close[s], []
+            for h in range(14 * 24):
+                a, b = c.get(T - HOUR - h * HOUR), c.get(T - 2 * HOUR - h * HOUR)
+                if not a or not b:
+                    rs = None
+                    break
+                rs.append(math.log(a / b))
+            if iv is None or rs is None:
+                w[s] = 0.0
+                continue
+            vrp = (iv / 100) ** 2 - (statistics.pstdev(rs) * math.sqrt(24 * 365)) ** 2
+            h = hist[s]
+            w[s] = 1.0 if (len(h) >= 30 and vrp > _q(h[-30:], frac)) else 0.0
+            h.append(vrp)
+        weights[T] = w
+    return _apply(bars_by, weights)
+
+
+def stablecoin_flow(bars_by, funding_by, p, fit=None, volume_by=None, extra=None):
+    """Hold the universe when stablecoin supply grows (Griffin & Shams 2020)."""
+    stable = (extra or {}).get("stable") or {}
+    hist, weights, cur = [], {}, 0.0
+    for T in _midnights(bars_by):
+        a, b = stable.get(T - DAY), stable.get(T - 8 * DAY)
+        if a and b:
+            g = a / b - 1
+            if p["rule"] == "positive":
+                cur = 1.0 if g > 0 else 0.0
+            else:
+                cur = 1.0 if (len(hist) >= 30 and g > _q(hist[-30:], 0.5)) else 0.0
+            hist.append(g)
+        else:
+            cur = 0.0
+        weights[T] = {s: cur for s in bars_by}
+    return _apply(bars_by, weights)
+
+
+def btc_volume_share(bars_by, funding_by, p, fit=None, volume_by=None, extra=None):
+    """BTC vs the rest, by the trend in BTC's share of dollar volume (hypothesis; proxy for dominance)."""
+    dv = _daily_dollar_volume((extra or {}).get("volume"))
+    L, weights = p["lookback_days"], {}
+    others = [s for s in bars_by if s != "BTCUSDT"]
+
+    def share(day):
+        tot = sum(d.get(day, 0.0) for d in dv.values())
+        b = (dv.get("BTCUSDT") or {}).get(day)
+        return (b / tot) if (b and tot) else None
+
+    for T in _midnights(bars_by):
+        rec = [share(T - k * DAY) for k in range(1, L + 1)]
+        pri = [share(T - k * DAY) for k in range(L + 1, 2 * L + 1)]
+        w = {s: 0.0 for s in bars_by}
+        if "BTCUSDT" in bars_by and others and not any(v is None for v in rec + pri):
+            diff = statistics.fmean(rec) - statistics.fmean(pri)
+            sign = 1.0 if diff > 0 else (-1.0 if diff < 0 else 0.0)
+            w["BTCUSDT"] = sign
+            for s in others:
+                w[s] = -sign / len(others)
+        weights[T] = w
+    return _apply(bars_by, weights)
+
+
 def xs_momentum(bars_by, funding_by, p, fit=None, volume_by=None):
     """Long the k strongest, short the k weakest over the lookback (Liu, Tsyvinski & Wu 2022)."""
     return _xs(bars_by, funding_by, p, _score_momentum, long_low=False)
@@ -496,6 +705,63 @@ TEMPLATES = {
         "hypothesis": "Large BTC moves are followed by same-direction moves in other coins the next day.",
         "rationale": "Information is priced first in the leader and diffuses slowly to followers.",
         "evidence": ["Hou 2007, Review of Financial Studies, https://doi.org/10.1093/revfin/hhm003 (equities; adapted to BTC as leader)"]},
+    # ---- PROTOCOL v3 (research/PROTOCOL_V3.md) ----
+    "oi_growth": {
+        "family": oi_growth, "cross_sectional": True, "protocol": 3, "universe": "30v3", "needs": ["metrics"],
+        "mechanism_tag": "open_interest_growth", "long_only": False,
+        "grid": [{"lookback_days": 7, "k": 5}, {"lookback_days": 28, "k": 5}],
+        "hypothesis": "Coins whose futures open interest grows fastest outperform those whose open interest shrinks.",
+        "rationale": "Rising open interest means new money committing to a market; in commodity futures it predicts higher returns.",
+        "evidence": ["Hong & Yogo 2012, Journal of Financial Economics, https://doi.org/10.1016/j.jfineco.2012.04.005 (commodities)"]},
+    "oi_confirmed_return": {
+        "family": oi_confirmed_return, "cross_sectional": True, "protocol": 3, "universe": "30v3", "needs": ["metrics"],
+        "mechanism_tag": "oi_confirmed_trend", "long_only": False,
+        "grid": [{"lookback_days": 7, "k": 5}, {"lookback_days": 14, "k": 5}],
+        "hypothesis": "Price moves accompanied by rising open interest continue; moves with falling open interest reverse.",
+        "rationale": "Open interest separates new positioning from position closing (short covering), which volume cannot.",
+        "evidence": ["Bessembinder & Seguin 1993, Journal of Financial and Quantitative Analysis, https://doi.org/10.2307/2331149"]},
+    "smart_vs_crowd": {
+        "family": smart_vs_crowd, "cross_sectional": True, "protocol": 3, "universe": "30v3", "needs": ["metrics"],
+        "mechanism_tag": "informed_positioning_divergence", "long_only": False,
+        "grid": [{"lookback_days": 7, "k": 5}, {"lookback_days": 14, "k": 5}],
+        "hypothesis": "When top traders are more bullish than the average account, the coin outperforms, and vice versa.",
+        "rationale": "Large speculators are better informed than small traders, so their divergence from the crowd carries information.",
+        "evidence": ["Wang 2003, Journal of Futures Markets, https://doi.org/10.1002/fut.10056"]},
+    "leverage_cycle": {
+        "family": leverage_cycle, "cross_sectional": True, "protocol": 3, "universe": "30v3", "needs": ["metrics"],
+        "mechanism_tag": "leverage_cycle_timing", "long_only": True,
+        "grid": [{"lookback_days": 7}, {"lookback_days": 14}],
+        "hypothesis": "Stepping out of the market when leverage builds faster than prices improves risk-adjusted returns.",
+        "rationale": "Leverage cycles end in forced deleveraging; fast leverage build-up raises crash risk.",
+        "evidence": ["Geanakoplos 2010, NBER Macroeconomics Annual, https://doi.org/10.1086/648285"]},
+    "vrp_timing": {
+        "family": vrp_timing, "cross_sectional": True, "protocol": 3, "universe": "btceth", "needs": ["dvol"],
+        "mechanism_tag": "variance_risk_premium_timing", "long_only": True,
+        "grid": [{"threshold": "median"}, {"threshold": "tercile"}],
+        "hypothesis": "BTC and ETH earn more when implied volatility is high relative to realised volatility.",
+        "rationale": "A high variance risk premium means investors pay for protection; bearing that risk is compensated.",
+        "evidence": ["Bollerslev, Tauchen & Zhou 2009, Review of Financial Studies, https://doi.org/10.1093/rfs/hhp008 (equities)"]},
+    "stablecoin_flow": {
+        "family": stablecoin_flow, "cross_sectional": True, "protocol": 3, "universe": "30v3", "needs": ["stable"],
+        "mechanism_tag": "stablecoin_liquidity_flow", "long_only": True,
+        "grid": [{"rule": "positive"}, {"rule": "above_median"}],
+        "hypothesis": "Crypto returns are higher in weeks after the total stablecoin supply grows.",
+        "rationale": "New stablecoins are dry powder waiting to buy crypto; issuance has preceded price increases.",
+        "evidence": ["Griffin & Shams 2020, Journal of Finance, https://doi.org/10.1111/jofi.12903"]},
+    "btc_volume_share": {
+        "family": btc_volume_share, "cross_sectional": True, "protocol": 3, "universe": "30v3", "needs": ["volume"],
+        "mechanism_tag": "btc_dominance_rotation", "long_only": False,
+        "grid": [{"lookback_days": 7}, {"lookback_days": 14}],
+        "hypothesis": "When BTC's share of trading rises, BTC outperforms the other coins, and vice versa.",
+        "rationale": "Hypothesis only (user's choice): capital rotating into BTC signals risk aversion within crypto.",
+        "evidence": ["hypothesis only: no direct peer-reviewed source; dollar-volume share is a proxy for market-cap dominance"]},
+    "taker_pressure": {
+        "family": taker_pressure, "cross_sectional": True, "protocol": 3, "universe": "30v3",
+        "needs": ["taker", "volume"], "mechanism_tag": "orderflow_imbalance", "long_only": False,
+        "grid": [{"formation_days": 7, "k": 5}, {"formation_days": 14, "k": 5}],
+        "hypothesis": "Coins with unusually aggressive buying over a week keep outperforming the next week.",
+        "rationale": "Order imbalance reflects informed or persistent demand that prices absorb gradually.",
+        "evidence": ["Chordia & Subrahmanyam 2004, Journal of Financial Economics, https://doi.org/10.1016/S0304-405X(03)00175-2 (equities)"]},
 }
 
 INSTRUMENT_FAMILY = "binance_usdm_perps_8alt"
@@ -505,21 +771,31 @@ MIN_SYMBOLS_30 = 24                     # amendment 3: experiment continues only
 
 def universe(template):
     from lab.engine import data
-    return data.UNIVERSE_30 if TEMPLATES[template].get("universe") == "30" else data.UNIVERSE
+    u = TEMPLATES[template].get("universe")
+    return {"30": data.UNIVERSE_30, "30v3": data.UNIVERSE_30_V3, "btceth": ("BTCUSDT", "ETHUSDT")}.get(u, data.UNIVERSE)
 
 
 def instrument_family(template):
-    return INSTRUMENT_FAMILY_30 if TEMPLATES[template].get("universe") == "30" else INSTRUMENT_FAMILY
+    u = TEMPLATES[template].get("universe")
+    return {"30": INSTRUMENT_FAMILY_30, "30v3": "binance_usdm_perps_30v3", "btceth": "binance_usdm_btc_eth"}.get(
+        u, INSTRUMENT_FAMILY)
 
 
 def min_symbols(template):
-    return MIN_SYMBOLS_30 if TEMPLATES[template].get("universe") == "30" else len(universe(template))
+    u = TEMPLATES[template].get("universe")
+    return MIN_SYMBOLS_30 if u in ("30", "30v3") else len(universe(template))
+
+
+def protocol_of(template):
+    return TEMPLATES[template].get("protocol", PROTOCOL_VERSION)
 HORIZON = {"vol_managed_long": "days", "day_of_week": "days", "hour_of_day": "hours", "funding_contrarian": "hours",
            "daily_reversal": "days", "donchian_trend": "days", "xs_momentum": "weeks", "xs_max_lottery": "weeks",
            "xs_low_volatility": "weeks", "xs_betting_against_beta": "weeks", "xs_illiquidity": "weeks",
            "xs_high_volume": "weeks", "xs_downside_beta": "weeks", "xs_coskewness": "weeks", "xs_near_high": "weeks",
-           "turn_of_month": "days", "btc_lead_lag": "days"}
+           "turn_of_month": "days", "btc_lead_lag": "days", "oi_growth": "weeks", "oi_confirmed_return": "weeks",
+           "smart_vs_crowd": "weeks", "leverage_cycle": "days", "vrp_timing": "days", "stablecoin_flow": "days",
+           "btc_volume_share": "days", "taker_pressure": "weeks"}
 
 
-def exp_id(template, version=PROTOCOL_VERSION):
-    return f"E_{template}_p{version}"
+def exp_id(template, version=None):
+    return f"E_{template}_p{version or protocol_of(template)}"
