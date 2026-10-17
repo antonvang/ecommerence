@@ -7,6 +7,8 @@
   python -m lab confirm CODE
   python -m lab transition EXP TO_STATE --reason ".." --result-id N         (automatic edges only)
   python -m lab result EXP --label EXPLORATORY --verdict ".." [--metrics JSON] [--supersedes ID --reason ..]
+  python -m lab reproduce tsmom|pmcal|all                                  (S2 acceptance: dev results through the lab)
+  python -m lab datasets [EXP]                                             (data read through the gateway)
 """
 from __future__ import annotations
 
@@ -16,6 +18,7 @@ import json
 import sys
 
 from lab import legacy, lifecycle, registry
+from lab.data import AccessRefused
 from lab.db import DB, DEFAULT_DB
 
 
@@ -43,6 +46,8 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
     r = sub.add_parser("result"); r.add_argument("exp"); r.add_argument("--label", required=True)
     r.add_argument("--verdict", required=True); r.add_argument("--metrics", default="{}")
     r.add_argument("--supersedes", type=int); r.add_argument("--reason")
+    rp = sub.add_parser("reproduce"); rp.add_argument("which", choices=("tsmom", "pmcal", "all"))
+    ds = sub.add_parser("datasets"); ds.add_argument("exp", nargs="?")
     args = ap.parse_args(argv)
     db = DB(db_path)
     try:
@@ -107,8 +112,23 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
             rid = registry.record_result(db, args.exp, args.label, args.verdict, json.loads(args.metrics), {},
                                          human(), args.supersedes, args.reason)
             out(f"result #{rid} recorded")
+        elif args.cmd == "reproduce":
+            from lab import repro
+            ok = True
+            for name, fn in (("tsmom", repro.reproduce_tsmom), ("pmcal", repro.reproduce_pmcal)):
+                if args.which in (name, "all"):
+                    r = fn(db)
+                    ok &= r["ok"]
+                    out(f"{r['exp_id']}: {r['fields'] - len(r['mismatches'])}/{r['fields']} fields match"
+                        + ("" if r["ok"] else f"; MISMATCH: {[m['field'] for m in r['mismatches']]}"))
+            out("REPRODUCED EXACTLY" if ok else "REPRODUCTION FAILED")
+            return 0 if ok else 2
+        elif args.cmd == "datasets":
+            q = "SELECT exp_id, split, purpose, path, sha256, size FROM datasets" + (" WHERE exp_id=?" if args.exp else "")
+            for r in db.q(q + " ORDER BY id", *([args.exp] if args.exp else [])):
+                out(f"{r['exp_id']:<16} {r['split']:<10} {r['purpose']:<9} {r['sha256'][:12]} {r['size']:>10} {r['path']}")
         return 0
-    except (lifecycle.LifecycleError, registry.RegistryError) as e:
+    except (lifecycle.LifecycleError, registry.RegistryError, AccessRefused) as e:
         out(f"refused: {e}")
         return 1
     finally:

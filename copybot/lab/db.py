@@ -20,6 +20,8 @@ TABLES = {
     "results": ("exp_id", "version", "ts", "label", "verdict", "metrics", "evidence", "supersedes"),
     "alpha_ledger": ("exp_id", "ts", "alpha", "note"),
     "approvals": ("code_hash", "exp_id", "to_state", "ts", "expires_ts", "actor", "reason", "evidence"),
+    "datasets": ("exp_id", "split", "source", "path", "window_start", "window_end", "ts", "sha256", "size", "purpose",
+                 "code_hash"),
 }
 
 SCHEMA = "\n".join(
@@ -32,6 +34,7 @@ SCHEMA = "\n".join(
 CREATE UNIQUE INDEX IF NOT EXISTS experiments_ver ON experiments(exp_id, version);
 CREATE INDEX IF NOT EXISTS transitions_exp ON transitions(exp_id, id);
 CREATE INDEX IF NOT EXISTS results_exp ON results(exp_id, id);
+CREATE INDEX IF NOT EXISTS datasets_exp ON datasets(exp_id, split, path);
 """
 
 
