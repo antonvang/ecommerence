@@ -43,6 +43,8 @@ CREATE UNIQUE INDEX IF NOT EXISTS experiments_ver ON experiments(exp_id, version
 CREATE INDEX IF NOT EXISTS transitions_exp ON transitions(exp_id, id);
 CREATE INDEX IF NOT EXISTS results_exp ON results(exp_id, id);
 CREATE INDEX IF NOT EXISTS datasets_exp ON datasets(exp_id, split, path);
+-- operational, mutable, not evidence (not hash-chained): latest heartbeat per worker
+CREATE TABLE IF NOT EXISTS heartbeats(worker TEXT PRIMARY KEY, ts INTEGER, pid INTEGER, ok INTEGER, detail TEXT);
 CREATE UNIQUE INDEX IF NOT EXISTS sim_orders_oid ON sim_orders(order_id);
 CREATE UNIQUE INDEX IF NOT EXISTS sim_fills_fid ON sim_fills(fill_id);
 CREATE UNIQUE INDEX IF NOT EXISTS sim_cancels_oid ON sim_cancels(order_id);
@@ -76,7 +78,14 @@ class DB:
         return r[0] if r else GENESIS
 
     def append(self, table, **row):
-        """Insert one row; returns its id. Must be called inside a transaction for multi-row consistency."""
+        """Insert one row; returns its id. Outside a transaction it opens its own BEGIN IMMEDIATE, so concurrent
+        writers (worker threads, processes) can never read the same previous hash and fork the chain."""
+        if not self.con.in_transaction:
+            with self.tx():
+                return self._append(table, **row)
+        return self._append(table, **row)
+
+    def _append(self, table, **row):
         cols = TABLES[table]
         unknown = set(row) - set(cols)
         if unknown:

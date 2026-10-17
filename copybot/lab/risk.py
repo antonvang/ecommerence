@@ -42,6 +42,26 @@ class Risk:
         r = self._last(GLOBAL, ("FAIL_CLOSED", "CLEAR"))
         return r is not None and r["action"] == "FAIL_CLOSED"
 
+    def warming(self, exp_id):
+        r = self._last(exp_id, ("WARMUP", "WARMUP_DONE"))
+        return r is not None and r["action"] == "WARMUP"
+
+    def start_warmup(self, exp_id, detail="restart: entries blocked until fresh data passes the guards"):
+        if not self.warming(exp_id):
+            with self.db.tx():
+                self._event(exp_id, "restart_warmup", None, None, "WARMUP", detail)
+
+    def observe_book(self, exp_id, book):
+        """A fresh, valid book ends the post-restart warm-up (logged). Stale or crossed data does not."""
+        if not self.warming(exp_id) or book is None or book.crossed():
+            return False
+        lim = rules_for(self.db, exp_id)["data_max_age_s"]
+        if self.now() - book.ts > lim:
+            return False
+        with self.db.tx():
+            self._event(exp_id, "restart_warmup", self.now() - book.ts, lim, "WARMUP_DONE", "fresh data passed guards")
+        return True
+
     def last_clear_ts(self, exp_id):
         r = self._last(exp_id, ("CLEAR",))
         return r["ts"] if r else 0
@@ -67,6 +87,8 @@ class Risk:
             return self.block(exp_id, "data_inconsistent", None, None, "crossed or empty book")
         if not reduce_only and self.fail_closed():
             return False, "lab is FAIL_CLOSED"
+        if not reduce_only and self.warming(exp_id):
+            return False, "warming up after a restart"
         if not reduce_only and (st == "PAUSED" or self.paused(exp_id)):
             return False, "strategy is paused"
         return True, "ok"

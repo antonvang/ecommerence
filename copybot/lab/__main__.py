@@ -11,6 +11,8 @@
   python -m lab datasets [EXP]                                             (data read through the gateway)
   python -m lab scan [--detector venue_subsidy|pricing_constraint]         (read-only public data; candidates only)
   python -m lab candidates                                                 (discovered, suppressed, covered, seen again)
+  python -m lab supervise [--duration S] [--worker module:factory ...] [--no-default]   (manual start only)
+  python -m lab health                                                     (heartbeats, FAIL_CLOSED, pauses, warm-up)
 """
 from __future__ import annotations
 
@@ -30,6 +32,7 @@ def human():
 
 def main(argv=None, db_path=DEFAULT_DB, out=print):
     ap = argparse.ArgumentParser(prog="python -m lab")
+    ap.add_argument("--db", help="registry path (default data/lab/lab.db)")
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("init")
     sub.add_parser("import-legacy")
@@ -52,7 +55,19 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
     ds = sub.add_parser("datasets"); ds.add_argument("exp", nargs="?")
     sc = sub.add_parser("scan"); sc.add_argument("--detector", action="append")
     sub.add_parser("candidates")
+    sv = sub.add_parser("supervise"); sv.add_argument("--duration", type=float)
+    sv.add_argument("--worker", action="append", default=[]); sv.add_argument("--no-default", action="store_true")
+    sub.add_parser("health")
     args = ap.parse_args(argv)
+    db_path = args.db or db_path
+    if args.cmd == "supervise":       # opens its own connections; holds the single-instance lock
+        from lab import supervisor
+        specs = ([] if args.no_default else list(supervisor.DEFAULT_WORKERS)) + args.worker
+        try:
+            return supervisor.Supervisor(db_path, [supervisor.load_worker(s) for s in specs], log=out).run(args.duration)
+        except supervisor.AlreadyRunning as e:
+            out(f"refused: {e}")
+            return 3
     db = DB(db_path)
     try:
         if args.cmd == "init":
@@ -163,6 +178,20 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
                     v = o["value"]
                     out(f"  last scan: {o['detector']:<21} {o['metric']:<26} {o['instrument'] or '':<28} "
                         f"{'' if v is None else round(v, 6)}{'  FLAGGED' if o['flagged'] else ''}")
+        elif args.cmd == "health":
+            import time as _t
+            from lab.risk import Risk
+            rk = Risk(db)
+            out(f"FAIL_CLOSED: {'YES' if rk.fail_closed() else 'no'}")
+            for h in db.q("SELECT * FROM heartbeats ORDER BY worker"):
+                out(f"worker {h['worker']:<12} last beat {int(_t.time() - h['ts'])}s ago, pid {h['pid']}, "
+                    f"{'ok' if h['ok'] else 'ERROR ' + (h['detail'] or '')}")
+            for x in registry.status(db):
+                if x["state"] in ("PAPER_TRADING", "PAUSED"):
+                    out(f"{x['exp_id']:<20} {x['state']:<14} paused={rk.paused(x['exp_id'])} warming={rk.warming(x['exp_id'])}")
+            for e in db.q("SELECT ts, kind, payload FROM events WHERE kind LIKE 'system.%' OR kind LIKE 'worker.%' "
+                          "ORDER BY id DESC LIMIT 8"):
+                out(f"  {e['ts']} {e['kind']} {e['payload'][:140]}")
         return 0
     except (lifecycle.LifecycleError, registry.RegistryError, AccessRefused) as e:
         out(f"refused: {e}")
