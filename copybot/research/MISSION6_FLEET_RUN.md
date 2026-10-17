@@ -89,3 +89,13 @@ v1 results stay as recorded. A v2 run would be new experiments (`_p2`) with new 
 - **Shutdown.** The watcher requested a graceful stop at 13:17:31 UTC, once all 6 jobs were done.
 
 `E_vol_managed_long_p1` keeps its recorded v1 status (SCREEN_PASSED). Under v2 the same strategy does not pass the train gate. Whether to retire or withdraw p1 instead of spending the sealed 2024 holdout on it is the user's decision.
+
+## E_vol_managed_long_p1 closed (2026-10-17, 13:33 UTC)
+
+- **What changed.** At the user's decision, `E_vol_managed_long_p1` moved from SCREEN_PASSED to **REJECTED** through the two-step human approval. The code was requested at 13:25:15 UTC and confirmed at 13:33:00 UTC. At the user's explicit chat instruction, Claude executed the confirmation; an `approval.note` event records this.
+- **Why REJECTED.** The lifecycle has no SCREEN_PASSED → WITHDRAWN edge. REJECTED was used rather than changing the locked state machine.
+- **Unchanged.** The v1 result record (PASS screen) stays as recorded.
+- **Evidence.** The cited evidence is research/PROTOCOL_V2.md and this file.
+- **Holdout.** The sealed 2024 holdout was not opened and remains unused for every catalogue strategy.
+
+State of the catalogue after Mission 6: every `_p1` and `_p2` experiment is REJECTED or SUPPRESSED. Nothing is in validation, paper or live.
