@@ -163,3 +163,16 @@ Costs per unit of turnover:
   - Rejected strategies with reasons.
   - Job queue, worker log, risk events and audit trail.
 - **Missing values** show "ikke tilgængelig". Real-account profit is always "ikke tilgængelig": no real account, broker or live path exists.
+
+## Mission 7: reliability and PROTOCOL v3
+
+- **Start.** `START_LAB.bat` (double-click, user-started) opens the dashboard and runs the fleet in its window.
+- **PROTOCOL v3.** Defined in `research/PROTOCOL_V3.md`, with experiment ids `_p3`.
+  - Longer windows: train 2022-01..2023-06, validation 2023-07..2023-12, holdout 2024 with BTC/ETH/SOL excluded.
+  - Unchanged gates.
+  - New data types: open interest and long/short ratios (Binance metrics), taker flow, DVOL (Deribit) and stablecoin supply (DefiLlama, clipped to the window before storing).
+- **Resource holds.** risk-1 always runs, so a hold it sets can be lifted again. Heavy agents claim a job only when free RAM covers the 0.5 GB floor plus the largest measured worker peak; otherwise they report "queued: waiting for RAM".
+- **Logs.** Agent logs go to `<db dir>/logs`, so test runs no longer write into the production log.
+- **Long/short reporting.** Books report gross exposure, turnover and trades.
+- **Dashboard speed.** The approvals and audit endpoints are fast: one catalogue lookup, and incremental chain verification with a 10-minute background full walk.
+- **Diagnosis.** See `research/DIAGNOSE_HVORFOR_INTET_BESTAAR.md` for why nothing has passed so far.
