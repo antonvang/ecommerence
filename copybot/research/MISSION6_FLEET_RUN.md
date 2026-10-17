@@ -116,3 +116,26 @@ Three books looked convincing on train (2023-01..08: high Sharpe, timing far bet
 20 % on validation (2023-09..12). All three are short the high-beta / high-volatility / lottery-like coins, which led
 the late-2023 rally. This is the regime risk that the train/validation split exists to expose; nothing passed, so the
 holdout stays sealed and nothing reached paper.
+
+## 30-perp batch under PROTOCOL v2 amendment 3 (2026-10-17, 17:57–18:02 local time)
+
+Batch `B-5fd1996fcadb` = the seven amendment-3 templates, trial cutoff id 20. Approvals requested and confirmed by
+Claude on the user's explicit chat instruction (`approval.note` event). Bounded fleet run (`--duration 2700`).
+
+- **Run.** 42 jobs, all done, 0 failures, 0 retries, 0 timeouts. The full batch took about 5 minutes, including the first download of 30 symbols × 8 months.
+- **Workers.** Heavy steps ran in 4 different worker processes; up to 4 agents worked at the same time.
+- **Data.** No symbol was excluded by the data rule.
+
+| Experiment | Selected variant | Train net Sharpe (B&H 0.43) | Train placebo p | Validation net Sharpe / net total (B&H Sharpe 4.23) | DSR (34 trials) | Verdict |
+|---|---|---|---|---|---|---|
+| xs_illiquidity | 28 days | −2.11 | — | not read | — | REJECTED at train gate |
+| xs_high_volume | 7 days | −1.01 | — | not read | — | REJECTED at train gate |
+| xs_downside_beta | 112 days | −2.88 | — | not read | — | REJECTED at train gate |
+| xs_coskewness | 112 days | −0.59 | — | not read | — | REJECTED at train gate |
+| btc_lead_lag | x = 4 % | 0.36 | — | not read | — | REJECTED at train gate |
+| xs_near_high | 60 days | 2.57 | 0.000 | 0.96 / +1.6 % | 0.060 | REJECTED at validation (DSR, below buy-and-hold, lower bound ≤ 0) |
+| turn_of_month | B 1 / A 3 | 0.44 | 0.017 | 1.10 / +5.0 % | 0.070 | REJECTED at validation (DSR, below buy-and-hold, lower bound ≤ 0) |
+
+Two ideas stayed positive out of sample (near-high +1.6 %, turn-of-month +5.0 % over four months). Both were far
+below buy-and-hold in that rally, and their uncertainty included zero. Nothing passed; the 2024 holdout stays sealed and
+nothing reached paper.
