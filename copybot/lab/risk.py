@@ -1,0 +1,154 @@
+"""Risk and failure controls for simulated strategies (ENGINE_PROPOSAL.md §5, stage S4).
+
+Circuit breakers PAUSE a strategy (lifecycle PAPER_TRADING -> PAUSED) or put the whole lab in FAIL_CLOSED. They never
+reject a strategy: rejection only happens through the registered acceptance/rejection criteria. A pause is lifted
+only through the lifecycle's human approval (PAUSED -> PAPER_TRADING with committed revalidation evidence), never
+because a later simulated trade would have been profitable. Signals seen during a pause are logged as counterfactual
+and excluded from any resume decision.
+"""
+from __future__ import annotations
+
+import json
+import time
+
+from lab import lifecycle
+
+GLOBAL = "GLOBAL"
+DEFAULTS = {"consecutive_losses": 2, "max_drawdown": 0.10, "data_max_age_s": 60, "spread_max_mult": 3.0,
+            "spread_strikes": 3, "spread_window_s": 86400}
+ACTOR = "system:risk"
+
+
+def rules_for(db, exp_id):
+    r = db.one("SELECT spec_json FROM experiments WHERE exp_id=? ORDER BY version DESC LIMIT 1", exp_id)
+    spec = json.loads(r["spec_json"] or "{}") if r else {}
+    return {**DEFAULTS, **(spec.get("risk") or {})}
+
+
+class Risk:
+    def __init__(self, db, now=time.time):
+        self.db, self.now = db, now
+
+    # ---------- state ----------
+    def _last(self, exp_id, actions):
+        q = f"SELECT * FROM risk_events WHERE exp_id=? AND action IN ({','.join('?' * len(actions))}) ORDER BY id DESC LIMIT 1"
+        return self.db.one(q, exp_id, *actions)
+
+    def paused(self, exp_id):
+        r = self._last(exp_id, ("PAUSE", "CLEAR"))
+        return r is not None and r["action"] == "PAUSE"
+
+    def fail_closed(self):
+        r = self._last(GLOBAL, ("FAIL_CLOSED", "CLEAR"))
+        return r is not None and r["action"] == "FAIL_CLOSED"
+
+    def last_clear_ts(self, exp_id):
+        r = self._last(exp_id, ("CLEAR",))
+        return r["ts"] if r else 0
+
+    def _event(self, exp_id, rule, value, threshold, action, detail, actor=ACTOR):
+        self.db.append("risk_events", exp_id=exp_id, ts=int(self.now()), rule=rule, value=value, threshold=threshold,
+                       action=action, detail=detail, actor=actor)
+        self.db.event(f"risk.{action.lower()}", actor, None if exp_id == GLOBAL else exp_id,
+                      {"rule": rule, "value": value, "threshold": threshold, "detail": detail})
+
+    # ---------- entry gate ----------
+    def entry_allowed(self, exp_id, reduce_only, book):
+        st = lifecycle.state(self.db, exp_id)
+        if st not in ("PAPER_TRADING", "PAUSED"):
+            return False, f"strategy is {st}; only PAPER_TRADING strategies simulate orders"
+        if book is None:
+            return self.block(exp_id, "data_missing", None, None, "no order book")
+        age = self.now() - book.ts
+        lim = rules_for(self.db, exp_id)["data_max_age_s"]
+        if age > lim:
+            return self.block(exp_id, "data_stale", age, lim, f"book is {age:.0f}s old")
+        if book.crossed():
+            return self.block(exp_id, "data_inconsistent", None, None, "crossed or empty book")
+        if not reduce_only and self.fail_closed():
+            return False, "lab is FAIL_CLOSED"
+        if not reduce_only and (st == "PAUSED" or self.paused(exp_id)):
+            return False, "strategy is paused"
+        return True, "ok"
+
+    def block(self, exp_id, rule, value, threshold, detail):
+        with self.db.tx():
+            self._event(exp_id, rule, value, threshold, "BLOCK", detail)
+        return False, f"blocked: {detail}"
+
+    # ---------- breakers ----------
+    def pause(self, exp_id, rule, value, threshold, detail, cancel_open=None):
+        if self.paused(exp_id):
+            return
+        with self.db.tx():
+            self._event(exp_id, rule, value, threshold, "PAUSE", detail)
+        if cancel_open:
+            cancel_open(exp_id, f"paused by {rule}")
+        if lifecycle.state(self.db, exp_id) == "PAPER_TRADING":
+            lifecycle.auto_transition(self.db, exp_id, "PAUSED", ACTOR, f"circuit breaker {rule}: {detail}",
+                                      {"rule": rule, "value": value, "threshold": threshold})
+
+    def trip_fail_closed(self, rule, detail):
+        if self.fail_closed():
+            return
+        with self.db.tx():
+            self._event(GLOBAL, rule, None, None, "FAIL_CLOSED", detail)
+
+    def clear_fail_closed(self, actor, reason):
+        if not actor.startswith("human:"):
+            raise lifecycle.LifecycleError("only a human can clear FAIL_CLOSED")
+        if not reason or len(reason) < 10:
+            raise lifecycle.LifecycleError("a reason is required")
+        with self.db.tx():
+            self._event(GLOBAL, "manual_clear", None, None, "CLEAR", reason, actor)
+
+    def record_resume(self, exp_id, actor):
+        """Log the CLEAR that pairs with a human-approved PAUSED -> PAPER_TRADING transition."""
+        last = self.db.one("SELECT to_state, actor FROM transitions WHERE exp_id=? ORDER BY id DESC LIMIT 1", exp_id)
+        if not last or last["to_state"] != "PAPER_TRADING" or not last["actor"].startswith("human:"):
+            raise lifecycle.LifecycleError("resume requires the human-approved lifecycle transition first")
+        with self.db.tx():
+            self._event(exp_id, "revalidated", None, None, "CLEAR", "resumed after approved revalidation", actor)
+
+    def after_trade_closed(self, exp_id, trades, cancel_open=None):
+        """trades: [(close_ts, pnl)] of completed round trips. Counts only trades after the last CLEAR."""
+        lim = rules_for(self.db, exp_id)["consecutive_losses"]
+        since = self.last_clear_ts(exp_id)
+        streak = 0
+        for ts, pnl in reversed([t for t in trades if t[0] >= since]):
+            if pnl < 0:
+                streak += 1
+            else:
+                break
+        if streak >= lim:
+            with self.db.tx():
+                self._event(exp_id, "consecutive_losses", streak, lim, "WARN",
+                            "two losses are not evidence the edge is gone; temporary pause only")
+            self.pause(exp_id, "consecutive_losses", streak, lim, f"{streak} losing trades in a row", cancel_open)
+        return streak
+
+    def after_equity(self, exp_id, drawdown, cancel_open=None):
+        lim = rules_for(self.db, exp_id)["max_drawdown"]
+        if drawdown >= lim:
+            self.pause(exp_id, "max_drawdown", drawdown, lim, f"drawdown {drawdown:.2%}", cancel_open)
+
+    def after_spread(self, exp_id, spread, expected, cancel_open=None):
+        r = rules_for(self.db, exp_id)
+        if expected and spread > r["spread_max_mult"] * expected:
+            with self.db.tx():
+                self._event(exp_id, "spread_anomaly", spread, r["spread_max_mult"] * expected, "INVESTIGATE",
+                            "spread far above the registered model")
+            n = self.db.one("SELECT COUNT(*) FROM risk_events WHERE exp_id=? AND rule='spread_anomaly' AND "
+                            "action='INVESTIGATE' AND ts>=?", exp_id, int(self.now()) - r["spread_window_s"])[0]
+            if n >= r["spread_strikes"]:
+                self.pause(exp_id, "spread_anomaly", n, r["spread_strikes"], f"{n} spread anomalies", cancel_open)
+
+    def check_exposure(self, exp_id, claimed, ledger_positions):
+        """Compare what a strategy believes it holds with the fill ledger; any mismatch fails the lab closed."""
+        keys = set(claimed) | set(ledger_positions)
+        diff = {k: (claimed.get(k, 0.0), ledger_positions.get(k, 0.0)) for k in keys
+                if abs(claimed.get(k, 0.0) - ledger_positions.get(k, 0.0)) > 1e-9}
+        if diff:
+            self.trip_fail_closed("exposure_mismatch", f"{exp_id}: {diff}")
+            return False
+        return True
