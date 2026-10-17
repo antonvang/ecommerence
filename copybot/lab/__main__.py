@@ -9,6 +9,8 @@
   python -m lab result EXP --label EXPLORATORY --verdict ".." [--metrics JSON] [--supersedes ID --reason ..]
   python -m lab reproduce tsmom|pmcal|all                                  (S2 acceptance: dev results through the lab)
   python -m lab datasets [EXP]                                             (data read through the gateway)
+  python -m lab scan [--detector venue_subsidy|pricing_constraint]         (read-only public data; candidates only)
+  python -m lab candidates                                                 (discovered, suppressed, covered, seen again)
 """
 from __future__ import annotations
 
@@ -48,6 +50,8 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
     r.add_argument("--supersedes", type=int); r.add_argument("--reason")
     rp = sub.add_parser("reproduce"); rp.add_argument("which", choices=("tsmom", "pmcal", "all"))
     ds = sub.add_parser("datasets"); ds.add_argument("exp", nargs="?")
+    sc = sub.add_parser("scan"); sc.add_argument("--detector", action="append")
+    sub.add_parser("candidates")
     args = ap.parse_args(argv)
     db = DB(db_path)
     try:
@@ -127,6 +131,38 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
             q = "SELECT exp_id, split, purpose, path, sha256, size FROM datasets" + (" WHERE exp_id=?" if args.exp else "")
             for r in db.q(q + " ORDER BY id", *([args.exp] if args.exp else [])):
                 out(f"{r['exp_id']:<16} {r['split']:<10} {r['purpose']:<9} {r['sha256'][:12]} {r['size']:>10} {r['path']}")
+        elif args.cmd == "scan":
+            from lab import scanner
+            s = scanner.run(db, args.detector)
+            out(f"observations {s['observations']} (flagged {s['flagged']}), proposals {s['proposals']}, "
+                f"waiting for persistence {s['waiting_persistence']}")
+            for k in ("created", "suppressed", "covered", "seen_again"):
+                if s[k]:
+                    out(f"  {k}: {', '.join(s[k])}")
+            for e in s["errors"]:
+                out(f"  detector error: {e}")
+            out("CANDIDATES ONLY - nothing was evaluated or traded")
+        elif args.cmd == "candidates":
+            for r in db.q("SELECT exp_id, spec_json FROM experiments e WHERE version=(SELECT MAX(version) FROM "
+                          "experiments WHERE exp_id=e.exp_id) ORDER BY exp_id"):
+                st = lifecycle.state(db, r["exp_id"])
+                if st not in ("DISCOVERED", "SUPPRESSED"):
+                    continue
+                spec = json.loads(r["spec_json"] or "{}")
+                why = db.one("SELECT reason FROM transitions WHERE exp_id=? ORDER BY id DESC LIMIT 1", r["exp_id"])[0]
+                out(f"{r['exp_id']:<14} {st:<11} {spec.get('discovered_by', 'manual'):<19} {spec.get('reason', spec.get('hypothesis', ''))}")
+                if st == "SUPPRESSED":
+                    out(f"{'':<14} graveyard: {why}")
+            for kind in ("candidate.covered", "candidate.seen_again", "candidate.pending_persistence"):
+                for e in db.q("SELECT ts, exp_id, payload FROM events WHERE kind=? ORDER BY id DESC LIMIT 5", kind):
+                    out(f"{kind:<30} {e['ts']} {e['exp_id'] or ''} {e['payload'][:120]}")
+            last = db.one("SELECT MAX(ts) FROM observations")[0]
+            if last:
+                for o in db.q("SELECT detector, instrument, metric, value, flagged FROM observations WHERE ts=? "
+                              "ORDER BY detector, metric", last):
+                    v = o["value"]
+                    out(f"  last scan: {o['detector']:<19} {o['metric']:<26} {o['instrument'] or '':<28} "
+                        f"{'' if v is None else round(v, 6)}{'  FLAGGED' if o['flagged'] else ''}")
         return 0
     except (lifecycle.LifecycleError, registry.RegistryError, AccessRefused) as e:
         out(f"refused: {e}")
