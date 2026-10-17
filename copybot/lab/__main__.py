@@ -150,7 +150,7 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
                     continue
                 spec = json.loads(r["spec_json"] or "{}")
                 why = db.one("SELECT reason FROM transitions WHERE exp_id=? ORDER BY id DESC LIMIT 1", r["exp_id"])[0]
-                out(f"{r['exp_id']:<14} {st:<11} {spec.get('discovered_by', 'manual'):<19} {spec.get('reason', spec.get('hypothesis', ''))}")
+                out(f"{r['exp_id']:<14} {st:<11} {spec.get('discovered_by', 'manual'):<21} {spec.get('reason', spec.get('hypothesis', ''))}")
                 if st == "SUPPRESSED":
                     out(f"{'':<14} graveyard: {why}")
             for kind in ("candidate.covered", "candidate.seen_again", "candidate.pending_persistence"):
@@ -161,7 +161,7 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
                 for o in db.q("SELECT detector, instrument, metric, value, flagged FROM observations WHERE ts=? "
                               "ORDER BY detector, metric", last):
                     v = o["value"]
-                    out(f"  last scan: {o['detector']:<19} {o['metric']:<26} {o['instrument'] or '':<28} "
+                    out(f"  last scan: {o['detector']:<21} {o['metric']:<26} {o['instrument'] or '':<28} "
                         f"{'' if v is None else round(v, 6)}{'  FLAGGED' if o['flagged'] else ''}")
         return 0
     except (lifecycle.LifecycleError, registry.RegistryError, AccessRefused) as e:

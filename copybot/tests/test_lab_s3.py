@@ -30,13 +30,19 @@ class World:
         if "/book?token_id=" in url:
             c = self.competition
             return {"bids": [{"price": "0.49", "size": str(c)}], "asks": [{"price": "0.51", "size": str(c)}]}
+        if "exchangeInfo" in url:
+            mk = lambda s, ct="PERPETUAL", ut="COIN": {"symbol": s, "contractType": ct, "underlyingType": ut,
+                                                       "status": "TRADING", "quoteAsset": "USDT"}
+            return {"symbols": [mk("ETHUSDT"), mk("SOLUSDT"), mk("PIXUSDT"), mk("SOLUSDT_261225", "CURRENT_QUARTER"),
+                                mk("STOCKUSDT", ut="EQUITY")]}
         if "ticker/bookTicker" in url:
             if self.fail:
                 raise OSError("binance unreachable")
-            return [{"symbol": "ETHUSDT", "bidPrice": "1999.9", "askPrice": "2000.1"}]
+            return [{"symbol": "ETHUSDT", "bidPrice": "1999.9", "askPrice": "2000.1"},
+                    {"symbol": "PIXUSDT", "bidPrice": "0.999", "askPrice": "1.001"}]
         if "premiumIndex" in url:
-            return [{"symbol": "SOLUSDT", "markPrice": str(100 * (1 + self.premium)), "indexPrice": "100",
-                     "lastFundingRate": "0.0001"}]
+            return [{"symbol": s, "markPrice": str(100 * (1 + p)), "indexPrice": "100", "lastFundingRate": "0.0001"}
+                    for s, p in (("SOLUSDT", self.premium), ("SOLUSDT_261225", 0.02), ("STOCKUSDT", 0.02))]
         if "events/keyset" in url:
             return {"events": [{"slug": "who-wins", "negRisk": True, "markets": [
                 {"active": True, "closed": False, "clobTokenIds": json.dumps([f"y{i}", f"n{i}"])} for i in range(2)]}]}
@@ -44,7 +50,7 @@ class World:
 
     def post(self, url, body):
         if url.endswith("/info"):
-            return {"ETH": str(2000 * (1 + self.gap)), "kPEPE": "1"}
+            return {"ETH": str(2000 * (1 + self.gap)), "kPEPE": "1", "PIX": "3.3"}   # PIX: identity mismatch
         if url.endswith("/books"):
             return [{"asset_id": b["token_id"], "asks": [{"price": str(self.negrisk_ask), "size": "100"}], "bids": []}
                     for b in body]
@@ -102,6 +108,14 @@ class Scanner(unittest.TestCase):
         s = self.scan(World(competition=0.0), 2, ["venue_subsidy"])[1]
         self.assertEqual(s["covered"], ["X01"])
         self.assertEqual(self.db.one("SELECT COUNT(*) FROM experiments")[0], 1)
+
+    def test_identity_mismatch_and_non_perpetuals_never_flag(self):
+        self.scan(World(), 1, ["pricing_constraint"])
+        rows = self.db.q("SELECT instrument, metric, flagged FROM observations")
+        self.assertIn(("PIX", "identity_mismatch_suspected", 0), [tuple(r) for r in rows])
+        flagged = [tuple(r) for r in rows if r["flagged"]]
+        self.assertEqual(flagged, [])                                  # dated futures and stock contracts ignored
+        self.assertTrue(all(r["detector"] == "pricing_constraint/2" for r in self.db.q("SELECT detector FROM observations")))
 
     def test_errors_recorded_and_no_evaluation_written(self):
         s = self.scan(World(fail_binance=True, premium=0.0), 1, ["pricing_constraint"])[0]

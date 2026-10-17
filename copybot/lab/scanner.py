@@ -25,6 +25,8 @@ from lab.lifecycle import state
 from lab.registry import fingerprint
 
 PERSIST = 2
+VERSION = {"venue_subsidy": 1, "pricing_constraint": 2}   # persistence only counts observations of the same version
+GAP_IDENTITY_MAX = 0.03            # larger gaps are treated as an instrument-identity mismatch, never as an opportunity
 SUBSIDY_YIELD_DAY = 0.005          # 0.5 %/day gross reward yield (median of the sample) flags a subsidy class
 SUBSIDY_SAMPLE = 60
 GAP_MIN = 0.0030                   # 0.30 % > about 0.19 % round-trip taker fees on two venues + spreads
@@ -60,13 +62,18 @@ def http_post(url, body):
             time.sleep(1 + i)
 
 
+def vname(detector):
+    base = detector.split("/")[0]
+    return f"{base}/{VERSION[base]}"
+
+
 def obs(detector, source, instrument, metric, value, threshold=None, flagged=False, payload=None):
-    return {"detector": detector, "source": source, "instrument": instrument, "metric": metric, "value": value,
+    return {"detector": vname(detector), "source": source, "instrument": instrument, "metric": metric, "value": value,
             "threshold": threshold, "flagged": int(bool(flagged)), "payload": payload or {}}
 
 
 def proposal(detector, metric, instrument_key, tag, family, horizon, execution, hypothesis, reason, needs, source):
-    return {"detector": detector, "metric": metric, "instrument_key": instrument_key, "mechanism_tag": tag,
+    return {"detector": vname(detector), "metric": metric, "instrument_key": instrument_key, "mechanism_tag": tag,
             "instrument": family, "horizon": horizon, "execution": execution, "hypothesis": hypothesis,
             "reason": reason, "data_requirements": needs, "source": source}
 
@@ -127,10 +134,17 @@ def venue_subsidy(get, post, now):
 
 def pricing_constraint(get, post, now):
     out, props = [], []
+    try:   # only live USDT-margined perpetuals on crypto underlyings (no dated futures, no stock/commodity contracts)
+        info = get(f"{BN}/fapi/v1/exchangeInfo")
+        perps = {s["symbol"] for s in info.get("symbols", []) if s.get("contractType") == "PERPETUAL"
+                 and s.get("underlyingType") == "COIN" and s.get("status") == "TRADING" and s.get("quoteAsset") == "USDT"}
+    except Exception as e:
+        perps = set()
+        out.append(obs("pricing_constraint", BN, "binance_perps", "error", None, payload={"error": repr(e)}))
     # (a) cross-venue perpetual gaps
     try:
         hl = post(HL_INFO, {"type": "allMids"})
-        bn = {x["symbol"]: x for x in get(f"{BN}/fapi/v1/ticker/bookTicker")}
+        bn = {x["symbol"]: x for x in get(f"{BN}/fapi/v1/ticker/bookTicker") if x["symbol"] in perps}
         gaps = []
         for coin, mid in hl.items():
             if coin.startswith(("k", "@")) or f"{coin}USDT" not in bn:
@@ -141,6 +155,10 @@ def pricing_constraint(get, post, now):
                 continue
             bmid, spread = (bb + ba) / 2, (ba - bb) / ((bb + ba) / 2)
             gap = float(mid) / bmid - 1
+            if abs(gap) > GAP_IDENTITY_MAX:
+                out.append(obs("pricing_constraint", HL_INFO, coin, "identity_mismatch_suspected", gap, GAP_IDENTITY_MAX,
+                               False, {"note": "same ticker, different instrument or units; not an opportunity"}))
+                continue
             gaps.append(abs(gap))
             if abs(gap) >= GAP_MIN and spread < GAP_MAX_SPREAD:
                 out.append(obs("pricing_constraint", f"{HL_INFO} allMids + {BN}/fapi/v1/ticker/bookTicker", coin,
@@ -152,7 +170,7 @@ def pricing_constraint(get, post, now):
                 "pricing_constraint", "cross_venue_gap", None, "cross_venue_perp_gap", "hyperliquid_binance_perps",
                 "minutes", "taker_two_venues",
                 "Hyperliquid and Binance perpetual prices for the same coin diverge by more than two-venue costs, and converge",
-                "mid gap >= 0.30 % with Binance spread < 0.10 % (HL spread not observed)",
+                "mid gap 0.30-3 % with Binance spread < 0.10 % (HL spread not observed; >3 % treated as identity mismatch)",
                 ["simultaneous top-of-book on both venues", "fees", "funding on both venues", "transfer constraints"],
                 HL_INFO))
     except Exception as e:
@@ -162,6 +180,8 @@ def pricing_constraint(get, post, now):
         pi = get(f"{BN}/fapi/v1/premiumIndex")
         n = 0
         for x in pi:
+            if x.get("symbol") not in perps:
+                continue
             m, i = float(x.get("markPrice") or 0), float(x.get("indexPrice") or 0)
             if m <= 0 or i <= 0:
                 continue
