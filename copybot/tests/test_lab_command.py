@@ -81,6 +81,18 @@ class ReadModels(unittest.TestCase):
         db.con.execute("UPDATE heartbeats SET stale_after=60 WHERE worker='backtest-1'")
         self.assertEqual(command.agents(db)["agents"][0]["status"], "stale")
 
+    def test_retired_workers_are_not_counted(self):
+        db = self.db
+        db.con.execute("INSERT INTO heartbeats(worker, ts, pid, ok, detail, status) VALUES('heartbeat',?,1,1,'',"
+                       "'stopped')", (int(time.time()) - 7200,))
+        db.con.execute("INSERT INTO heartbeats(worker, ts, pid, ok, detail, status) VALUES('data-1',?,1,1,'',"
+                       "'idle')", (int(time.time()) - 7200,))
+        r = command.agents(db)
+        names = [a["agent"] for a in r["agents"]]
+        self.assertNotIn("heartbeat", names)                         # not in the fleet roster and silent
+        self.assertIn("data-1", names)                               # roster agents always show, even when silent
+        self.assertEqual(r["retired"], ["heartbeat"])
+
     def test_pagination_and_filters(self):
         j = command.job_list(self.db, page=2, size=10)
         self.assertEqual((j["total"], j["pages"], len(j["items"]), j["page"]), (30, 3, 10, 2))

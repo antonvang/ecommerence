@@ -30,6 +30,7 @@ WAITING_HUMAN = {"DISCOVERED": "template approval (human) before registration",
                  "VALIDATED": "human approval to start PAPER trading",
                  "PAUSED": "human-approved revalidation before resume"}
 TEST_KINDS = ("backtest", "cost", "adversarial", "validate", "holdout")
+RETIRED_AFTER_S = 3600           # a worker outside the current roster that is silent this long is not counted
 REAL_ACCOUNT = {"value": None, "reason": "no real account, broker or live execution path exists in this system"}
 
 
@@ -74,9 +75,13 @@ def agents(db, now=None):
     now = now or time.time()
     wk = mission.workers(db, now)
     rows = {r["worker"]: dict(r) for r in db.q("SELECT * FROM heartbeats")}
-    out = []
+    from lab.fleet import ROLES
+    out, retired = [], []
     for w in wk["workers"]:
         r = rows.get(w["worker"], {})
+        if w["worker"] not in ROLES and (w["age_s"] or 0) > RETIRED_AFTER_S:
+            retired.append(w["worker"])                      # e.g. the S5 'heartbeat' demo worker: not in the fleet
+            continue
         st = w["state"]
         raw = r.get("status")
         if st not in ("offline", "stale", "error"):
@@ -96,7 +101,7 @@ def agents(db, now=None):
                     "tasks_done": r.get("tasks_done"), "errors": r.get("errors"), "retries": r.get("retries"),
                     "last_result": r.get("last_result"), "next_action": r.get("next_action"), "detail": r.get("detail"),
                     "pid": r.get("pid")})
-    return {"supervisor": wk["supervisor"], "agents": out, "total": len(out),
+    return {"supervisor": wk["supervisor"], "agents": out, "total": len(out), "retired": retired,
             "active": sum(1 for a in out if a["status"] in ("running", "idle", "queued", "blocked")),
             "running": sum(1 for a in out if a["status"] == "running")}
 
