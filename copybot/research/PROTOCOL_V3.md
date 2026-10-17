@@ -196,3 +196,9 @@ køber de 3 højeste scores og sælger de 3 laveste (eller omvendt, hvor det st�
 
 **Dækning:** en ekstern serie, der dækker færre end 95 % af vinduets dage (FRED: handelsdage, mindst 90 % af hverdage),
 fejler data-gaten for idéen. Et symbol med under 95 % CoinMetrics-dækning udelukkes.
+
+### Registrering (2026-10-18)
+
+- **Godkendelse.** `real_rate_filter`, `supply_dilution` og `mvrv_value` er godkendt til test. Claude bekræftede på brugerens instruks, hvilket er logget som `approval.note`.
+- **Registrering.** De tre er registreret som én batch `B-e794bc210975` (cutoff for forsøg 50) med `observation_test` slået til.
+- **Data.** Der er ikke læst nogen data. Jobbene står i køen og kører, når flåden startes.
