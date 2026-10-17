@@ -107,3 +107,13 @@ minute-level order-flow signal on BTC alone that failed on costs at that turnove
 Paper-motoren har endnu ikke live-data for open interest, long/short-forhold, DVOL og stablecoins.
 - **Hvis en v3-idé består slut-testen,** bygges og testes live-dataforbindelsen, før en paper-godkendelse kan gives.
 - **Indtil da** afviser paper-motoren disse skabeloner uden at handle.
+
+## Ændring 1 (2026-10-17, før nogen v3-data er læst og før nogen slut-test er åbnet)
+
+**Fund.** BTC, ETH og SOL's data for 2024–2026 blev allerede set, da `L14_tsmom_v1` åbnede sin slut-test (derfor var
+de udelukket fra det oprindelige 8-mønt-univers). Deres 2024-data er altså ikke usete.
+
+**Regel:**
+- **Hvilke mønter.** I slut-testen (2024) for alle eksperimenter med 30-mønt-universer (PROTOCOL v2 ændring 3 og v3) udelukkes BTCUSDT, ETHUSDT og SOLUSDT, før noget afkast beregnes. Kravet om mindst 24 symboler gælder fortsat.
+- **Idé 5 (`vrp_timing`, kun BTC/ETH) og idé 7 (`btc_volume_share`, bygger på BTC)** kan derfor ikke få en ren slut-test. Består en af dem valideringen, kan den ikke sendes videre til simuleret handel på grundlag af 2024. Den markeres som "ingen ren slut-test mulig" og afventer data, der er usete (tidligst 2025-data, som er reserveret og kræver en ny, separat beslutning).
+- **Træning og validering (2022–2023)** er ikke berørt. Disse år er ikke en slut-test for noget tidligere eksperiment på disse idéer.
