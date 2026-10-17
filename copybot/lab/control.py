@@ -11,7 +11,7 @@ import os
 
 from lab import ops
 
-RAM_MIN_FREE = 1.0 * 1024 ** 3
+RAM_MIN_FREE = 0.5 * 1024 ** 3        # ESTIMATE: a job holds one window of 8 symbols x hourly bars (tens of MB)
 
 
 def _latest(db, kinds):

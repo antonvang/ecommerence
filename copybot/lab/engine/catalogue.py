@@ -154,6 +154,112 @@ def donchian_trend(bars, funding, p, fit=None):
     return pos
 
 
+# ---------- cross-sectional families (PROTOCOL v2) ----------
+# Interface: family(bars_by_symbol, funding_by_symbol, params, fit=None) -> {symbol: positions aligned to its bars}.
+# Rebalance every Monday 00:00 UTC. A score at rebalance time T uses only closes of bars that closed at or before T
+# (bar open ts <= T - 1h). The k lowest / highest scores get +1 / -1 (or the reverse); everything else 0.
+def _is_monday_midnight(ts):
+    return ts % DAY == 0 and datetime.fromtimestamp(ts, timezone.utc).weekday() == 0
+
+
+def _ret_over(close, end, start):
+    a, b = close.get(start), close.get(end)
+    return (b / a - 1) if (a and b) else None
+
+
+def _daily_returns(close, T, days):
+    out = []
+    for d in range(days):
+        r = _ret_over(close, T - HOUR - d * DAY, T - HOUR - (d + 1) * DAY)
+        if r is None:
+            return None
+        out.append(r)
+    return out
+
+
+def _xs(bars_by, funding_by, p, score, long_low):
+    close = {s: {ts: c for ts, _, c in b} for s, b in bars_by.items()}
+    times = sorted({ts for b in bars_by.values() for ts, _, _ in b if _is_monday_midnight(ts)})
+    k, weights = p["k"], {}
+    for T in times:
+        sc = {}
+        for s in bars_by:
+            v = score(close, s, T, p)
+            if v is not None:
+                sc[s] = v
+        w = {s: 0.0 for s in bars_by}
+        if len(sc) >= 2 * k:
+            order = sorted(sc, key=lambda s: (sc[s], s))
+            lo, hi = order[:k], order[-k:]
+            for s in lo:
+                w[s] = 1.0 if long_low else -1.0
+            for s in hi:
+                w[s] = -1.0 if long_low else 1.0
+        weights[T] = w
+    out = {}
+    for s, b in bars_by.items():
+        pos, cur, j = [], 0.0, 0
+        for ts, _, _ in b:
+            while j < len(times) and times[j] <= ts:
+                cur = weights[times[j]][s]
+                j += 1
+            pos.append(cur)
+        out[s] = pos
+    return out
+
+
+def _score_momentum(close, s, T, p):
+    return _ret_over(close[s], T - HOUR, T - HOUR - p["lookback_days"] * DAY)
+
+
+def _score_max(close, s, T, p):
+    r = _daily_returns(close[s], T, p["window_days"])
+    return max(r) if r else None
+
+
+def _score_vol(close, s, T, p):
+    c, rs = close[s], []
+    for h in range(p["lookback_days"] * 24):
+        r = _ret_over(c, T - HOUR - h * HOUR, T - 2 * HOUR - h * HOUR)
+        if r is None:
+            return None
+        rs.append(r)
+    return statistics.pstdev(rs)
+
+
+def _score_beta(close, s, T, p):
+    own = _daily_returns(close[s], T, p["lookback_days"])
+    others = [_daily_returns(close[x], T, p["lookback_days"]) for x in close]
+    if own is None or any(o is None for o in others):
+        return None
+    mkt = [sum(o[d] for o in others) / len(others) for d in range(len(own))]
+    var = statistics.pvariance(mkt)
+    if var <= 0:
+        return None
+    mo, mm = statistics.fmean(own), statistics.fmean(mkt)
+    return sum((a - mo) * (b - mm) for a, b in zip(own, mkt)) / len(own) / var
+
+
+def xs_momentum(bars_by, funding_by, p, fit=None):
+    """Long the k strongest, short the k weakest over the lookback (Liu, Tsyvinski & Wu 2022)."""
+    return _xs(bars_by, funding_by, p, _score_momentum, long_low=False)
+
+
+def xs_max_lottery(bars_by, funding_by, p, fit=None):
+    """Short the k coins with the highest maximum daily return, long the k lowest (Bali, Cakici & Whitelaw 2011)."""
+    return _xs(bars_by, funding_by, p, _score_max, long_low=True)
+
+
+def xs_low_volatility(bars_by, funding_by, p, fit=None):
+    """Long the k least volatile, short the k most volatile (Ang, Hodrick, Xing & Zhang 2006)."""
+    return _xs(bars_by, funding_by, p, _score_vol, long_low=True)
+
+
+def xs_betting_against_beta(bars_by, funding_by, p, fit=None):
+    """Long the k lowest-beta, short the k highest-beta coins vs the equal-weight 8-coin market (Frazzini & Pedersen 2014)."""
+    return _xs(bars_by, funding_by, p, _score_beta, long_low=True)
+
+
 TEMPLATES = {
     "vol_managed_long": {
         "family": vol_managed, "mechanism_tag": "volatility_managed_exposure", "long_only": True,
@@ -191,11 +297,36 @@ TEMPLATES = {
         "hypothesis": "Daily breakout trend following earns positive net returns.",
         "rationale": "Under-reaction and herding create trends (time-series momentum).",
         "evidence": ["Hurst, Ooi & Pedersen 2017, Journal of Portfolio Management, https://doi.org/10.3905/jpm.2017.44.1.015"]},
+    "xs_momentum": {
+        "family": xs_momentum, "cross_sectional": True, "mechanism_tag": "cross_sectional_momentum", "long_only": False,
+        "grid": [{"lookback_days": 7, "k": 2}, {"lookback_days": 28, "k": 2}],
+        "hypothesis": "Coins with the highest past returns keep outperforming coins with the lowest, net of costs.",
+        "rationale": "Investor attention and slow diffusion of information create relative-strength continuation.",
+        "evidence": ["Liu, Tsyvinski & Wu 2022, Journal of Finance, https://doi.org/10.1111/jofi.13119"]},
+    "xs_max_lottery": {
+        "family": xs_max_lottery, "cross_sectional": True, "mechanism_tag": "lottery_demand_max", "long_only": False,
+        "grid": [{"window_days": 7, "k": 2}, {"window_days": 28, "k": 2}],
+        "hypothesis": "Coins with extreme recent daily jumps are overpriced lotteries and underperform.",
+        "rationale": "Lottery-seeking traders overpay for right-skewed payoffs; the premium is paid back later.",
+        "evidence": ["Bali, Cakici & Whitelaw 2011, Journal of Financial Economics, https://doi.org/10.1016/j.jfineco.2010.08.014 (equities)"]},
+    "xs_low_volatility": {
+        "family": xs_low_volatility, "cross_sectional": True, "mechanism_tag": "low_volatility_anomaly", "long_only": False,
+        "grid": [{"lookback_days": 7, "k": 2}, {"lookback_days": 28, "k": 2}],
+        "hypothesis": "Low-volatility coins earn higher risk-adjusted returns than high-volatility coins.",
+        "rationale": "Leverage-constrained and attention-driven traders bid up volatile assets.",
+        "evidence": ["Ang, Hodrick, Xing & Zhang 2006, Journal of Finance, https://doi.org/10.1111/j.1540-6261.2006.00836.x (equities)"]},
+    "xs_betting_against_beta": {
+        "family": xs_betting_against_beta, "cross_sectional": True, "mechanism_tag": "betting_against_beta",
+        "long_only": False, "grid": [{"lookback_days": 28, "k": 2}, {"lookback_days": 56, "k": 2}],
+        "hypothesis": "Low-beta coins outperform high-beta coins relative to their market exposure.",
+        "rationale": "Funding-constrained investors tilt to high-beta assets instead of using leverage, flattening the security market line.",
+        "evidence": ["Frazzini & Pedersen 2014, Journal of Financial Economics, https://doi.org/10.1016/j.jfineco.2013.10.005 (equities)"]},
 }
 
 INSTRUMENT_FAMILY = "binance_usdm_perps_8alt"
 HORIZON = {"vol_managed_long": "days", "day_of_week": "days", "hour_of_day": "hours", "funding_contrarian": "hours",
-           "daily_reversal": "days", "donchian_trend": "days"}
+           "daily_reversal": "days", "donchian_trend": "days", "xs_momentum": "weeks", "xs_max_lottery": "weeks",
+           "xs_low_volatility": "weeks", "xs_betting_against_beta": "weeks"}
 
 
 def exp_id(template, version=PROTOCOL_VERSION):

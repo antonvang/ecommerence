@@ -351,3 +351,95 @@ def rejected(db, limit=100):
                     "ts": db.one("SELECT MAX(ts) FROM transitions WHERE exp_id=?", r["exp_id"])[0]})
     out.sort(key=lambda r: -(r["ts"] or 0))
     return {"items": out[:limit], "total": len(out)}
+
+
+# ---------- money box and event feed (Mission 7 dashboard) ----------
+def balance(db, now=None):
+    """Aggregate simulated paper account over every strategy that has a paper ledger. No real account exists."""
+    now = now or time.time()
+    p = paper_view(db)
+    st = p["strategies"]
+    out = {"simulated": True, "strategies": len(st), "active": sum(1 for s in st if s["state"] == "PAPER_TRADING"),
+           "real_account_profit": REAL_ACCOUNT, "source": p["source"]}
+    if not st:
+        out.update({"capital": None, "equity": None, "pnl": None, "pnl_pct": None, "today": None, "realized": None,
+                    "unrealized": None, "open_positions": 0, "closed_trades": 0, "win_rate": None, "history": []})
+        return out
+    capital = sum(s["capital"] for s in st)
+    last = {s["exp_id"]: (s["equity"][-1]["equity"] if s["equity"] else s["capital"]) for s in st}
+    equity = sum(last.values())
+    pts, cur = [], {}
+    for ts, eid, eq in sorted((e["ts"], s["exp_id"], e["equity"]) for s in st for e in s["equity"]):
+        cur[eid] = eq
+        total = sum(cur.get(s["exp_id"], s["capital"]) for s in st)
+        if pts and pts[-1][0] == ts:
+            pts[-1] = (ts, total)
+        else:
+            pts.append((ts, total))
+    day0 = int(now) // 86400 * 86400
+    before = [v for ts, v in pts if ts < day0]
+    start_today = before[-1] if before else capital
+    trades = [t for s in st for t in __import__("lab.paper", fromlist=["PaperEngine"]).PaperEngine(db).ledger(s["exp_id"])["trades"]]
+    wins = sum(1 for _, pnl in trades if pnl > 0)
+    out.update({"capital": capital, "equity": equity, "pnl": equity - capital, "pnl_pct": (equity - capital) / capital,
+                "today": equity - start_today, "realized": sum(s["realized"] or 0 for s in st),
+                "unrealized": sum(s["unrealized"] or 0 for s in st), "open_positions": sum(s["open_positions"] for s in st),
+                "closed_trades": len(trades), "win_rate": (wins / len(trades)) if trades else None,
+                "history": [{"ts": ts, "equity": v} for ts, v in pts]})
+    return out
+
+
+STAGE_DA = {"DISCOVERED": "opdaget", "SUPPRESSED": "sorteret fra", "REGISTERED": "registreret", "SCREENING": "testes",
+            "SCREEN_PASSED": "bestod screening", "VALIDATION": "holdout åbnet", "VALIDATED": "bestod holdout",
+            "PAPER_TRADING": "handler nu (paper)", "PAUSED": "sat på pause", "REJECTED": "afvist",
+            "RETIRED": "pensioneret", "WITHDRAWN": "trukket tilbage"}
+TAG_OF_STATE = {"SCREEN_PASSED": "BESTÅET", "VALIDATED": "GODKENDT", "PAPER_TRADING": "HANDLER", "REJECTED": "AFVIST",
+                "PAUSED": "PAUSE", "VALIDATION": "HOLDOUT", "SCREENING": "TEST", "REGISTERED": "TEST",
+                "SUPPRESSED": "SORTERET"}
+FOUND_STATES = ("SCREEN_PASSED", "VALIDATED", "PAPER_TRADING")
+
+
+def feed(db, limit=40):
+    kinds = ("candidate.discovered", "lifecycle.transition", "batch.registered", "template.approved", "paper.order",
+             "job.failed", "system.running", "system.stopped", "system.paused", "system.resumed",
+             "system.resource_hold", "risk.event")
+    rows = db.q(f"SELECT id, ts, kind, actor, exp_id, payload FROM events WHERE kind IN ({','.join('?' * len(kinds))}) "
+                f"ORDER BY id DESC LIMIT ?", *kinds, int(limit))
+    out = []
+    for r in rows:
+        p = _j(r["payload"]) or {}
+        e = {"id": r["id"], "ts": r["ts"], "exp_id": r["exp_id"], "found": False, "pnl": None}
+        k = r["kind"]
+        if k == "candidate.discovered":
+            e.update(tag="IDÉ", text=f"{r['exp_id']} foreslået som ny hypotese")
+        elif k == "lifecycle.transition":
+            to = p.get("to")
+            e.update(tag=TAG_OF_STATE.get(to, "STATUS"), found=to in FOUND_STATES,
+                     text=f"{r['exp_id']} {STAGE_DA.get(to, to)}"
+                     + (f": {p.get('reason', '')[:140]}" if to in ("REJECTED", "PAUSED", "SUPPRESSED") else ""))
+        elif k == "batch.registered":
+            e.update(tag="TEST", text=f"Test-batch startet med {len(p.get('exp_ids', []))} strategi(er)")
+        elif k == "template.approved":
+            e.update(tag="GODKENDT", text=f"Skabelon {p.get('template')} godkendt til test")
+        elif k == "paper.order":
+            o = db.one("SELECT side, instrument, qty FROM sim_orders WHERE order_id=?", p.get("order_id"))
+            side = (o["side"] if o else "?")
+            e.update(tag="KØB" if side == "buy" else "SÆLG",
+                     text=f"{r['exp_id']}: {'køb' if side == 'buy' else 'salg'} {o['instrument'] if o else ''} "
+                          f"(simuleret, fyldt {p.get('filled', 0):.4g})")
+        elif k == "job.failed":
+            e.update(tag="FEJL", text=f"Job {p.get('job_id')} fejlede: {str(p.get('error', ''))[:120]}")
+        elif k == "system.running":
+            e.update(tag="START", text=f"Flåden startet ({len(p.get('workers', []))} agenter)")
+        elif k == "system.stopped":
+            e.update(tag="STOP", text="Flåden stoppet")
+        elif k == "system.paused":
+            e.update(tag="PAUSE", text=f"Flåden sat på pause: {p.get('reason', '')}")
+        elif k == "system.resumed":
+            e.update(tag="START", text="Flåden genoptaget")
+        elif k == "system.resource_hold":
+            e.update(tag="RESSOURCER", text="Lav RAM eller disk: nye jobs holdes tilbage")
+        else:
+            e.update(tag=k.upper(), text=k)
+        out.append(e)
+    return {"items": out}

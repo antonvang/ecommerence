@@ -81,6 +81,22 @@ class Runner(unittest.TestCase):
         self.assertLess(r2["pnl"]["realized"], 0)                                   # flat prices: costs only
         self.assertTrue(PaperEngine(self.db).reconcile(EID)["ok"])
 
+    def test_cross_sectional_strategy_trades_long_short_and_reconciles(self):
+        eid = "E_xs_momentum_p2"
+        self.db.append("experiments", exp_id=eid, version=1, created_ts=0, mechanism_tag="cross_sectional_momentum",
+                       fingerprint="x", spec_json={"template": "xs_momentum", "execution": "taker"})
+        self.db.append("transitions", exp_id=eid, ts=0, from_state=None, to_state="PAPER_TRADING", actor="fixture",
+                       reason="fixture: approved for paper trading")
+        pipeline.save_artifact(eid, "cost", {"selected": 0})
+        pipeline.save_artifact(eid, "backtest", {"variants": [{"variant": 0, "params": {"lookback_days": 7, "k": 2},
+                                                               "fit": None, "positions": {}}]})
+        r = paper_runner.run(self.db, feed(SAT), SAT)["results"][eid]
+        self.assertEqual(r["status"], "ok")
+        sides = {o["symbol"]: self.db.one("SELECT side FROM sim_orders WHERE order_id LIKE ?", f"{eid}|%|{o['symbol']}")[0]
+                 for o in r["orders"]}
+        self.assertEqual(sorted(sides.values()), ["buy", "buy", "sell", "sell"])   # k = 2 long, 2 short
+        self.assertTrue(r["reconciled"])
+
     def test_stale_data_pauses_and_blocks_new_trades(self):
         r = paper_runner.run(self.db, feed(SAT - 5 * HOUR), SAT)["results"][EID]
         self.assertEqual(r["status"], "paused")

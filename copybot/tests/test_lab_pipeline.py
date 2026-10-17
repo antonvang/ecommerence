@@ -217,6 +217,8 @@ class FamiliesAreCausal(unittest.TestCase):
         bars[-1] = (bars[-1][0], bars[-1][1], bars[23][2])   # last close = early close: wrap-around reads look normal
         funding = {t0 + k * 8 * HOUR: rng.gauss(0.0001, 0.0003) for k in range(3 * 120)}
         for name, tpl in catalogue.TEMPLATES.items():
+            if tpl.get("cross_sectional"):
+                continue                                     # covered by test_cross_sectional_families_ignore_the_future
             for params in tpl["grid"]:
                 fit = tpl["fit"](bars[:24 * 60], params) if tpl.get("fit") else None
                 full = tpl["family"](bars, funding, params, fit)
@@ -225,6 +227,35 @@ class FamiliesAreCausal(unittest.TestCase):
                     pf = {k: (v if k <= bars[cut][0] else 1.0) for k, v in funding.items()}
                     got = tpl["family"](pb, pf, params, fit)
                     self.assertEqual(full[:cut + 1], got[:cut + 1], f"{name} {params} looks ahead (cut {cut})")
+
+
+    def test_cross_sectional_families_ignore_the_future(self):
+        from lab.engine import catalogue
+        rng = random.Random(2)
+        t0 = int(datetime(2023, 1, 2, tzinfo=timezone.utc).timestamp())          # a Monday
+        bars_by, funding_by = {}, {}
+        for j, s in enumerate(data.UNIVERSE):
+            px, b = 100.0, []
+            for k in range(24 * 140):
+                o = px
+                px *= 1 + rng.gauss(0.0001 * (j - 3), 0.004 + 0.001 * j)
+                b.append((t0 + k * HOUR, o, px))
+            bars_by[s] = b
+            funding_by[s] = {t0 + k * 8 * HOUR: rng.gauss(0.0001, 0.0003) for k in range(3 * 140)}
+        for name, tpl in catalogue.TEMPLATES.items():
+            if not tpl.get("cross_sectional"):
+                continue
+            for params in tpl["grid"]:
+                full = tpl["family"](bars_by, funding_by, params)
+                self.assertTrue(any(full[s][-1] for s in full), f"{name} {params} never takes a position")
+                for cut_i in (24 * 7, 24 * 60, 24 * 61 + 5, 24 * 120):
+                    cut = bars_by[data.UNIVERSE[0]][cut_i][0]
+                    pb = {s: [(ts, o, c) if ts <= cut else (ts, o * 1000, c * 1000) for ts, o, c in b]
+                          for s, b in bars_by.items()}
+                    got = tpl["family"](pb, funding_by, params)
+                    for s in bars_by:
+                        self.assertEqual(full[s][:cut_i + 1], got[s][:cut_i + 1],
+                                         f"{name} {params} looks ahead on {s} (cut {cut_i})")
 
 
 class ProtocolV2(Env):

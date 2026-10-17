@@ -194,6 +194,8 @@ def _load(per_sym, split):
 
 def _positions(t, bars, funding, params, fit):
     fam = catalogue.TEMPLATES[t]["family"]
+    if catalogue.TEMPLATES[t].get("cross_sectional"):
+        return fam(bars, funding, params, None)
     return {s: fam(bars[s], funding[s], params, fit.get(s) if fit else None) for s in bars}
 
 
@@ -285,9 +287,14 @@ def step_adversarial(db, job, worker):
     t, v = spec["template"], load_artifact(eid, "backtest")["variants"][cost["selected"]]
     bars, funding, _ = _load(_files(db, eid, "train", worker), "train")
     fam = catalogue.TEMPLATES[t]["family"]
-    trunc = {s: adversarial.truncation_test(fam, bars[s], funding[s], v["params"], (v["fit"] or {}).get(s), 20)
-             for s in bars}
-    poison = {s: adversarial.poison_test(fam, bars[s], funding[s], v["params"], (v["fit"] or {}).get(s)) for s in bars}
+    if catalogue.TEMPLATES[t].get("cross_sectional"):
+        trunc = {"ALL": adversarial.truncation_test_xs(fam, bars, funding, v["params"], 20)}
+        poison = {"ALL": adversarial.poison_test_xs(fam, bars, funding, v["params"])}
+    else:
+        trunc = {s: adversarial.truncation_test(fam, bars[s], funding[s], v["params"], (v["fit"] or {}).get(s), 20)
+                 for s in bars}
+        poison = {s: adversarial.poison_test(fam, bars[s], funding[s], v["params"], (v["fit"] or {}).get(s))
+                  for s in bars}
     dq = load_artifact(eid, "data")
     others = [r["net"]["net_sharpe_ann"] for r in cost["variants"] if r["variant"] != cost["selected"]]
     res = {"truncation": trunc, "poison": poison, "data_ok": dq["ok"],

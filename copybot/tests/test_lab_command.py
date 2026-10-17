@@ -193,7 +193,7 @@ class Api(unittest.TestCase):
     def test_page_is_the_command_center(self):
         with urllib.request.urlopen(self.base + "/", timeout=10) as r:
             html = r.read().decode()
-        for s in ("Mars Command Center", "Mission Control", "PAPER ONLY", "ikke tilgængelig", "Real account profit"):
+        for s in ("Mars Command Center", "Mission Control", "PAPER ONLY", "ikke tilgængelig", "Rigtig konto", "Saldo (paper)"):
             self.assertIn(s, html)
         self.assertIn(self.srv.token, html)
 

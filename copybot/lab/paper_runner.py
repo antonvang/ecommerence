@@ -85,11 +85,13 @@ def run_one(db, eid, get, now):
         risk.observe_book(eid, book)
     marks = {s: m[2].mid() for s, m in market.items()}
     equity = eng.pnl(eid, marks)["equity"]
-    fam = catalogue.TEMPLATES[spec["template"]]["family"]
+    tpl = catalogue.TEMPLATES[spec["template"]]
+    fam = tpl["family"]
+    nxt = {s: m[0] + [(m[0][-1][0] + HOUR, m[0][-1][2], m[0][-1][2])] for s, m in market.items()}   # prices unused
+    xs = fam(nxt, {s: m[1] for s, m in market.items()}, variant["params"]) if tpl.get("cross_sectional") else None
     orders = []
     for s, (bars, funding, book) in market.items():
-        nxt = bars + [(bars[-1][0] + HOUR, bars[-1][2], bars[-1][2])]      # the hour now starting (prices unused)
-        target_pos = fam(nxt, funding, variant["params"], (variant["fit"] or {}).get(s))[-1]
+        target_pos = xs[s][-1] if xs else fam(nxt[s], funding, variant["params"], (variant["fit"] or {}).get(s))[-1]
         target_qty = target_pos * (equity / len(data.UNIVERSE)) / marks[s]
         cur = eng.ledger(eid)["positions"].get(s, 0.0)
         delta = target_qty - cur

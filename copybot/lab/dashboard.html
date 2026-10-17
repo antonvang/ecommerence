@@ -171,6 +171,71 @@ footer{font:11px var(--mono);color:var(--dim);text-align:center;padding-top:8px;
 .gnode{transition:transform 1.2s cubic-bezier(.4,.1,.2,1)}
 @media (prefers-reduced-motion: reduce){.gnode{transition:none}}
 .na{color:var(--dim)} td .na,td.num{white-space:nowrap}
+
+/* ---- Mission 7: lettere at aflæse ---- */
+body{font-size:14px}
+.wrap{gap:16px}
+.brand h1{font-size:20px}
+.money{display:grid;grid-template-columns:1.3fr 1.3fr 1fr 1fr;gap:12px}
+@media (max-width:1000px){.money{grid-template-columns:1fr 1fr}}
+@media (max-width:520px){.money{grid-template-columns:1fr}}
+.mcard{position:relative;border:1px solid var(--line);border-radius:16px;padding:16px 18px;background:linear-gradient(180deg,#14181fee,#0f1217ee);overflow:hidden;min-width:0}
+.mcard .lab{font:700 11px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--mute)}
+.mcard .big{font:700 36px/1.15 var(--mono);font-variant-numeric:tabular-nums;margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mcard .sub{font:12px var(--mono);color:var(--mute);margin-top:4px;min-height:16px}
+.mcard.pnl::before{content:"";position:absolute;left:0;top:16px;bottom:16px;width:4px;border-radius:4px;background:var(--green);box-shadow:0 0 14px var(--green)}
+.mcard.pnl.neg::before{background:var(--red);box-shadow:0 0 14px var(--red)}
+.mcard.pnl.zero::before{background:var(--dim);box-shadow:none}
+.pos{color:var(--green)} .neg{color:var(--red)}
+.mcard.glow{animation:glow 2.4s ease-out}
+@keyframes glow{0%{box-shadow:0 0 0 0 #5fd39aaa;border-color:var(--green)}100%{box-shadow:0 0 0 22px #5fd39a00}}
+.status{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:8px}
+@media (max-width:1200px){.status{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:520px){.status{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.st{border:1px solid var(--line2);background:#0e1116;border-radius:12px;padding:8px 10px;min-width:0}
+.st .k{font:600 10px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.st .v{font:700 17px var(--mono);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.st .v.good{color:var(--green)} .st .v.bad{color:var(--red)} .st .v.na{color:var(--dim);font-size:12px}
+.st.stale{opacity:.5}
+.feed{display:grid;gap:2px;max-height:520px;overflow:auto}
+.fl{display:grid;grid-template-columns:44px auto 1fr;gap:8px;align-items:baseline;font:12px/1.45 var(--mono);padding:6px 4px;border-bottom:1px solid var(--line2)}
+.fl .t{color:var(--dim)} .fl .x{color:var(--text);word-break:break-word}
+.fl.new{animation:flin 1.2s ease-out}
+@keyframes flin{from{background:#f07a3a33}to{background:transparent}}
+.tg{font:700 10px var(--mono);letter-spacing:.06em;padding:1px 6px;border-radius:5px;border:1px solid currentColor;white-space:nowrap}
+.tg-BESTÅET,.tg-GODKENDT,.tg-HANDLER,.tg-KØB{color:var(--green)} .tg-AFVIST,.tg-FEJL,.tg-SÆLG{color:var(--red)}
+.tg-PAUSE,.tg-HOLDOUT,.tg-RESSOURCER{color:var(--amber)} .tg-IDÉ,.tg-TEST{color:var(--violet)} .tg-START,.tg-STOP,.tg-SORTERET{color:var(--blue)}
+.pl{display:grid;gap:7px}
+.pr{display:grid;grid-template-columns:120px 1fr 34px;gap:8px;align-items:center;font:12px var(--mono)}
+.pr .bar{height:9px;background:#1a1e26;border-radius:5px;overflow:hidden}
+.pr .bar i{display:block;height:100%;border-radius:5px}
+.pr .n{text-align:right;font-weight:700}
+.found{position:fixed;left:50%;top:22%;transform:translate(-50%,-50%) scale(.9);z-index:40;pointer-events:none;opacity:0;
+  border:1px solid var(--green);background:#07140ee8;border-radius:18px;padding:22px 30px;text-align:center;box-shadow:0 0 60px #5fd39a55}
+.found.show{animation:found 6s ease-out forwards}
+@keyframes found{0%{opacity:0;transform:translate(-50%,-50%) scale(.85)}8%{opacity:1;transform:translate(-50%,-50%) scale(1.03)}
+  14%{transform:translate(-50%,-50%) scale(1)}85%{opacity:1}100%{opacity:0}}
+.found .h{font:700 13px var(--mono);letter-spacing:.2em;color:var(--green)}
+.found .n{font:700 24px var(--mono);margin-top:6px} .found .s{font:12px var(--mono);color:var(--mute);margin-top:6px}
+details.more{border:1px solid var(--line);border-radius:var(--r);background:#0e1116;padding:10px 14px}
+details.more>summary{cursor:pointer;font:700 12px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--mute)}
+details.more[open]>summary{margin-bottom:12px}
+.ag{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 8px;padding:7px 0;border-bottom:1px solid var(--line2);font:12px var(--mono)}
+.ag .n{font-weight:700} .ag .r{grid-column:1/-1;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.s-idle{color:var(--blue)} .s-blocked,.s-queued{color:var(--amber)} .s-failed{color:var(--red)}
+.flow{grid-template-columns:repeat(10,minmax(0,1fr))}
+@media (max-width:1100px){.flow{grid-template-columns:repeat(5,minmax(0,1fr))}}
+@media (max-width:480px){.flow{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.fsel{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.pager{display:flex;gap:8px;align-items:center;justify-content:flex-end;margin-top:8px;font:11px var(--mono);color:var(--mute)}
+.axis{fill:#7a756f;font:10px "JetBrains Mono",monospace}
+.cap{font:11px var(--mono);color:var(--dim);margin-top:4px;line-height:1.5}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tabs button{font:600 11px var(--mono);padding:5px 9px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--mute);cursor:pointer}
+.tabs button.on{color:var(--sand);border-color:var(--mars);background:#2a0f0855}
+.gnode{transition:transform 1.2s cubic-bezier(.4,.1,.2,1)}
+.na{color:var(--dim)} td .na,td.num{white-space:nowrap}
+@media (prefers-reduced-motion: reduce){.gnode{transition:none}.found.show{animation:none;opacity:1}}
 </style>
 </head>
 <body>
@@ -179,46 +244,48 @@ footer{font:11px var(--mono);color:var(--dim);text-align:center;padding-top:8px;
     <div class="brand">
       <svg class="mark" viewBox="0 0 40 40" aria-hidden="true"><defs><radialGradient id="mg" cx="35%" cy="35%"><stop offset="0" stop-color="#f08a52"/><stop offset=".6" stop-color="#c4452a"/><stop offset="1" stop-color="#5a1a0c"/></radialGradient></defs>
         <circle cx="20" cy="20" r="12" fill="url(#mg)"/><ellipse cx="20" cy="20" rx="19" ry="6" fill="none" stroke="#f0a35a" stroke-width="1.2" transform="rotate(-20 20 20)"/></svg>
-      <div><h1>Mars Command Center</h1><div class="sub">Research fleet · Mission Control · copybot lab</div></div>
+      <div><h1>Mars Command Center</h1><div class="sub">Mission Control · forskningsflåde · alt er simuleret</div></div>
     </div>
     <div class="chips">
-      <span class="chip paper">PAPER ONLY · no real orders</span>
-      <span class="chip" id="c-link"><span class="led"></span>connecting…</span>
-      <span class="chip" id="c-chain"><span class="led"></span>chain</span>
-      <span class="chip" id="c-gate"><span class="led"></span>S7 gate</span>
+      <span class="chip paper">PAPER ONLY · ingen rigtige penge</span>
+      <span class="chip" id="c-link"><span class="led"></span>forbinder…</span>
+      <span class="chip" id="c-chain"><span class="led"></span>kæde</span>
+      <span class="chip" id="c-gate"><span class="led"></span>S7</span>
       <span class="chip clock" id="clock">--:--:-- UTC</span>
     </div>
   </div>
 
-  <div class="banner red" id="b-fail">LAB IS FAIL_CLOSED — no new simulated trades or jobs until a human clears it. <button class="btn danger" id="clearfc">Clear with reason…</button></div>
+  <div class="banner red" id="b-fail">LAB ER FAIL_CLOSED — ingen nye simulerede handler eller jobs, før et menneske rydder det. <button class="btn danger" id="clearfc">Ryd med begrundelse…</button></div>
   <div class="banner amber" id="b-ctl"></div>
   <div class="banner amber" id="b-off"></div>
 
-  <section class="kpis" id="kpis" aria-label="Key figures"></section>
-
-  <section class="hero">
-    <div class="panel corner tel">
-      <h2>Agent fleet <span class="ctl"><button class="btn" id="f-pause">Pause</button><button class="btn" id="f-resume">Resume</button><button class="btn danger" id="f-stop">Stop</button></span></h2>
-      <div class="note" id="sup-note" style="margin-top:0"></div>
-      <div id="agents" class="scroll" style="max-height:520px"><div class="sk" style="height:200px"></div></div>
-    </div>
-    <div class="globe-wrap">
-      <div class="stage" id="stage">
-        <canvas id="planet" aria-label="Rotating Mars globe"></canvas>
-        <svg id="orbits" viewBox="0 0 600 600" role="img" aria-label="Pipeline stages around the planet with agent nodes at the stage of their current task"></svg>
-      </div>
-      <div class="globe-cap" id="g-cap">—</div>
-      <div class="globe-sub" id="g-sub">Agents sit at the stage of the job they are running; idle agents wait in the dock. Red dots = rejected.</div>
-    </div>
-    <div class="panel corner tel">
-      <h2>Pipeline <span class="tagx">experiments per stage</span></h2>
-      <div id="stagecounts"><div class="sk" style="height:200px"></div></div>
-      <div class="metric"><div class="k">Real account profit</div><div class="v na">ikke tilgængelig</div><div class="s">no real account, broker or live execution path exists</div></div>
-    </div>
+  <section class="money" aria-label="Saldo og profit">
+    <div class="mcard" id="m-bal"><div class="lab">Saldo (paper)</div><div class="big" id="bal">–</div><div class="sub" id="balsub"></div></div>
+    <div class="mcard pnl zero" id="m-pnl"><div class="lab" style="padding-left:6px">Total P&amp;L (paper)</div><div class="big" id="pnl" style="padding-left:6px">–</div><div class="sub" id="pnlsub" style="padding-left:6px"></div></div>
+    <div class="mcard" id="m-today"><div class="lab">I dag</div><div class="big" id="today">–</div><div class="sub" id="todaysub"></div></div>
+    <div class="mcard" id="m-strat"><div class="lab">Strategier der handler</div><div class="big" id="strat">–</div><div class="sub" id="stratsub"></div></div>
   </section>
 
+  <section class="status" id="status" aria-label="Status"></section>
+
+  <section class="hero">
+    <div class="panel corner"><h2>Hændelser <span class="tagx">nyeste først</span></h2><div class="feed" id="feed"><div class="sk" style="height:200px"></div></div></div>
+    <div class="globe-wrap">
+      <div class="stage" id="stage">
+        <canvas id="planet" aria-label="Roterende Mars"></canvas>
+        <svg id="orbits" viewBox="0 0 600 600" role="img" aria-label="Pipeline-trin omkring planeten med agenter ved trinnet for deres aktuelle opgave"></svg>
+      </div>
+      <div class="globe-cap" id="g-cap">—</div>
+      <div class="globe-sub">Lysende prik = agent i arbejde ved sit trin · røde prikker = afviste strategier</div>
+    </div>
+    <div class="panel corner"><h2>Pipeline <span class="tagx">strategier pr. trin</span></h2><div class="pl" id="pipe"></div>
+      <div class="note" id="flow-note"></div></div>
+  </section>
+
+  <section class="panel corner"><h2>Balancehistorik <span class="tagx">paper · trappekurve · USD</span></h2><div id="balchart"></div></section>
+
   <section class="panel corner" id="pipeline">
-    <h2>Experiments <span class="tagx" id="pl-note"></span></h2>
+    <h2>Strategier <span class="tagx" id="pl-note"></span></h2>
     <div class="flow" id="flow"></div>
     <div class="fsel" id="fsel"></div>
     <div class="exp-table scroll" id="exp-table"><div class="sk" style="height:200px"></div></div>
@@ -226,30 +293,34 @@ footer{font:11px var(--mono);color:var(--dim);text-align:center;padding-top:8px;
     <div class="pager" id="pager"></div>
   </section>
 
-  <section class="panel corner"><h2>Paper trading <span class="tagx">SIMULATED · step chart, no interpolation</span></h2><div id="paper"><div class="sk" style="height:120px"></div></div></section>
+  <section class="grid2">
+    <div class="panel"><h2>Agenter <span class="ctl"><button class="btn" id="f-pause">Pause</button><button class="btn" id="f-resume">Genoptag</button><button class="btn danger" id="f-stop">Stop</button></span></h2>
+      <div class="note" id="sup-note" style="margin-top:0"></div><div id="agents" class="scroll" style="max-height:440px"></div></div>
+    <div class="panel"><h2>Afviste strategier <span class="tagx" id="rej-n"></span></h2><div class="scroll" id="rejected" style="max-height:470px"></div></div>
+  </section>
 
   <section class="grid3">
-    <div class="panel"><h2>Result distribution <span class="tagx">all variants · trials ledger</span></h2><div id="ch-dist"></div></div>
-    <div class="panel"><h2>Validation estimates <span class="tagx">net mean/day · 95 % CI</span></h2><div id="ch-est"></div></div>
-    <div class="panel"><h2>Costs vs benchmark <span class="tagx">train window</span></h2><div id="ch-cost"></div></div>
+    <div class="panel"><h2>Resultatfordeling <span class="tagx">alle varianter</span></h2><div id="ch-dist"></div></div>
+    <div class="panel"><h2>Validering <span class="tagx">netto pr. dag · 95 % CI</span></h2><div id="ch-est"></div></div>
+    <div class="panel"><h2>Omkostninger vs benchmark <span class="tagx">train</span></h2><div id="ch-cost"></div></div>
   </section>
 
-  <section class="grid2">
-    <div class="panel"><h2>Rejected strategies <span class="tagx" id="rej-n"></span></h2><div class="scroll" id="rejected"></div></div>
-    <div class="panel"><h2>Job queue <span class="tagx" id="jobs-n"></span></h2><div class="tabs" id="jtabs"></div><div class="scroll" id="jobs" style="margin-top:8px"></div><div class="pager" id="jpager"></div></div>
-  </section>
+  <details class="more" id="more"><summary>Teknik: paper-detaljer, jobkø, worker-log, risiko og audit</summary>
+    <section class="panel" style="margin-bottom:14px"><h2>Paper pr. strategi <span class="tagx">simuleret</span></h2><div id="paper"></div></section>
+    <section class="grid2" style="margin-bottom:14px">
+      <div class="panel"><h2>Jobkø <span class="tagx" id="jobs-n"></span></h2><div class="tabs" id="jtabs"></div><div class="scroll" id="jobs" style="margin-top:8px"></div><div class="pager" id="jpager"></div></div>
+      <div class="panel"><h2>Worker-log <span class="tagx"><select id="logsel"></select></span></h2><div class="scroll" id="wlog"></div></div>
+    </section>
+    <section class="grid2" style="margin-bottom:14px">
+      <div class="panel"><h2>Risiko <span class="tagx">pauser · blokeringer · fail-closed</span></h2><div class="scroll" id="risk"></div></div>
+      <div class="panel"><h2>Audit trail <span class="crow" style="margin:0"><input id="kind" placeholder="filter: job, lifecycle, system…" size="22"></span></h2><div class="note" id="chainnote" style="margin-top:0"></div><div class="scroll" id="audit"></div></div>
+    </section>
+  </details>
 
-  <section class="grid2">
-    <div class="panel"><h2>Worker log <span class="tagx"><select id="logsel"></select></span></h2><div class="scroll" id="wlog"></div></div>
-    <div class="panel"><h2>Risk events <span class="tagx">pauses · blocks · fail-closed · resource holds</span></h2><div class="scroll" id="risk"></div></div>
-  </section>
-
-  <section class="panel"><h2>Audit trail <span class="crow" style="margin:0"><input id="kind" placeholder="filter: job, lifecycle, system, template…" size="30"></span></h2>
-    <div class="note" id="chainnote" style="margin-top:0"></div><div class="scroll" id="audit"></div></section>
-
-  <footer>All figures are read from lab.db at request time. Backtest (train), validation, holdout and paper are separate labels; none is a real-money result.<br>
-    <span id="foot"></span></footer>
+  <footer>Alle tal læses fra lab.db ved hver opdatering. Backtest, validering, holdout og paper er adskilt; intet er et resultat med rigtige penge.<br>
+    Rigtig konto: <b>ikke tilgængelig</b> — der findes ingen konto, broker eller live-ordrevej i systemet.<br><span id="foot"></span></footer>
 </div>
+<div class="found" id="found" role="status" aria-live="polite"><div class="h">NY STRATEGI FUNDET</div><div class="n" id="found-n"></div><div class="s" id="found-s"></div></div>
 <div class="drawer" id="drawer"><div class="dpanel" id="detail"></div></div>
 <script>
 "use strict";
@@ -262,7 +333,7 @@ const num = (v, d=2) => v == null || Number.isNaN(v) ? na() : Number(v).toLocale
 const pct = (v, d=2) => v == null || Number.isNaN(v) ? na() : (v*100).toFixed(d) + "%";
 const dur = s => { if (s == null) return NA; s = Math.max(0, Math.round(s));
   return s < 90 ? s+"s" : s < 5400 ? Math.round(s/60)+"m" : s < 172800 ? (s/3600).toFixed(1)+"h" : (s/86400).toFixed(1)+"d"; };
-const ago = ts => ts ? dur(Date.now()/1000 - ts) + " ago" : NA;
+const ago = ts => ts ? dur(Date.now()/1000 - ts) + " siden" : NA;
 const utc = ts => ts ? new Date(ts*1000).toISOString().replace("T"," ").slice(0,16) + " UTC" : NA;
 const badge = l => { const k = String(l||"").split(/[ (]/)[0]; return `<span class="badge b-${esc(k)}">${esc(l||"")}</span>`; };
 const stateChip = s => `<span class="state s-${esc(s)}">${esc(s)}</span>`;
@@ -367,18 +438,19 @@ const Planet = (() => {
 
 
 /* ---------------- orbit overlay: stages + agent nodes ---------------- */
+const DA = {DISCOVERED:"Opdaget", QUEUED:"I kø", RUNNING:"Kører", COST_CHECK:"Omkostninger", VALIDATION:"Validering",
+            PAPER_ELIGIBLE:"Klar til paper", PAPER_TRADING:"Handler (paper)", ACCEPTED:"Accepteret", REJECTED:"Afvist", PAUSED:"Pause"};
 const Orbits = (() => {
   const svg = $("#orbits");
-  const ANG = {}; STAGES.forEach((s, i) => ANG[s] = -162 + i * 36);          // ten stages, 36 degrees apart
+  const ANG = {}; STAGES.forEach((s, i) => ANG[s] = -162 + i * 36);
   const pos = (deg, r) => [300 + r*Math.cos(deg*Math.PI/180), 300 + r*Math.sin(deg*Math.PI/180)];
-  const DOCK = 90;                                                              // idle agents wait below the planet
-  let built = false, rejected = [];
+  let built = false;
   function build(){
-    let h = `<circle cx="300" cy="300" r="270" fill="none" stroke="#2a2f38"/>`;
-    for (let a = 0; a < 360; a += 10) { const [x1,y1] = pos(a, 270), [x2,y2] = pos(a, a % 30 ? 265 : 258);
+    let h = `<circle cx="300" cy="300" r="268" fill="none" stroke="#2a2f38"/>`;
+    for (let a = 0; a < 360; a += 10) { const [x1,y1] = pos(a, 268), [x2,y2] = pos(a, a % 30 ? 263 : 256);
       h += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#3a3f4a"/>`; }
-    for (let i = 0; i < 6; i++) { const [x1,y1] = pos(ANG[STAGES[i]], 236), [x2,y2] = pos(ANG[STAGES[i+1]], 236);
-      h += `<path d="M${x1},${y1} A236,236 0 0,1 ${x2},${y2}" fill="none" stroke="#3a2a22" stroke-width="1.4" id="arc-${i}"/>`; }
+    for (let i = 0; i < 6; i++) { const [x1,y1] = pos(ANG[STAGES[i]], 232), [x2,y2] = pos(ANG[STAGES[i+1]], 232);
+      h += `<path d="M${x1},${y1} A232,232 0 0,1 ${x2},${y2}" fill="none" stroke="#4a2c20" stroke-width="2"/>`; }
     h += `<g id="stagenodes"></g><g id="rejdots"></g><g id="agentnodes"></g><g id="pulses"></g>`;
     svg.innerHTML = h; built = true;
   }
@@ -386,97 +458,143 @@ const Orbits = (() => {
     if (!built) build();
     let h = "";
     STAGES.forEach(s => {
-      const n = counts[s] || 0, [x,y] = pos(ANG[s], 236), r = n ? Math.min(19, 10 + Math.sqrt(n)*2.4) : 8, col = STAGE_COL[s] || "#f07a3a";
-      h += `<g class="snode" data-stage="${s}" style="cursor:pointer"><title>${s}: ${n} experiment(s)</title><circle cx="${x}" cy="${y}" r="${r}" fill="${n ? col+"33" : "#101318"}" stroke="${n ? col : "#3a3f4a"}" stroke-width="1.4"/>
-        <text x="${x}" y="${y+1}" fill="${n ? "#ece7e2" : "#5f5b57"}" font-family="JetBrains Mono,monospace" font-size="11" font-weight="700" text-anchor="middle" dominant-baseline="middle">${n}</text>`;
-      const [lx,ly] = pos(ANG[s], 236 + r + 14);
-      h += `<text x="${lx}" y="${ly}" fill="#9a958f" font-family="JetBrains Mono,monospace" font-size="8" letter-spacing=".06em" text-anchor="middle" dominant-baseline="middle">${s.replace("_"," ")}</text></g>`;
+      const n = counts[s] || 0, [x,y] = pos(ANG[s], 232), r = n ? Math.min(21, 12 + Math.sqrt(n)*2.4) : 9, col = STAGE_COL[s] || "#f07a3a";
+      h += `<g class="snode" data-stage="${s}" style="cursor:pointer"><title>${DA[s]}: ${n}</title><circle cx="${x}" cy="${y}" r="${r}" fill="${n ? col+"33" : "#101318"}" stroke="${n ? col : "#3a3f4a"}" stroke-width="1.6"/>
+        <text x="${x}" y="${y+1}" fill="${n ? "#ece7e2" : "#5f5b57"}" font-family="JetBrains Mono,monospace" font-size="12" font-weight="700" text-anchor="middle" dominant-baseline="middle">${n}</text>`;
+      const [lx,ly] = pos(ANG[s], 232 + r + 15);
+      h += `<text x="${lx}" y="${ly}" fill="#b5afa8" font-family="JetBrains Mono,monospace" font-size="10" text-anchor="middle" dominant-baseline="middle">${DA[s]}</text></g>`;
     });
     svg.querySelector("#stagenodes").innerHTML = h;
     svg.querySelectorAll(".snode").forEach(g => g.onclick = () => { F.stage = F.stage === g.dataset.stage ? "" : g.dataset.stage; F.page = 1; loadExperiments(); $("#pipeline").scrollIntoView({behavior:"smooth"}); });
   }
   function rejectedRender(items){
-    rejected = items.slice(0, 30);
-    const [cx, cy] = pos(ANG.REJECTED, 236);
-    svg.querySelector("#rejdots").innerHTML = rejected.map((r, i) => {
-      const a = (i / Math.max(rejected.length, 1)) * Math.PI * 2, rr = 30 + (i % 3) * 7;
-      return `<circle class="rej" data-id="${esc(r.exp_id)}" cx="${cx + rr*Math.cos(a)}" cy="${cy + rr*Math.sin(a)}" r="3" fill="#ff5d5d" fill-opacity=".85" style="cursor:pointer"><title>${esc(r.exp_id)} — ${esc(r.reason || "no reason recorded")}</title></circle>`;
+    const [cx, cy] = pos(ANG.REJECTED, 232), list = items.slice(0, 30);
+    svg.querySelector("#rejdots").innerHTML = list.map((r, i) => {
+      const a = (i / Math.max(list.length, 1)) * Math.PI * 2, rr = 32 + (i % 3) * 7;
+      return `<circle class="rej" data-id="${esc(r.exp_id)}" cx="${cx + rr*Math.cos(a)}" cy="${cy + rr*Math.sin(a)}" r="3" fill="#ff5d5d" fill-opacity=".8" style="cursor:pointer"><title>${esc(r.exp_id)} — ${esc(r.reason || "ingen begrundelse")}</title></circle>`;
     }).join("");
   }
   function agentsRender(agents){
     if (!built) build();
-    const g = svg.querySelector("#agentnodes"), seen = new Set();
-    const byStage = {};
+    const g = svg.querySelector("#agentnodes"), seen = new Set(), byStage = {};
     agents.forEach(a => { const st = a.status === "running" && a.stage ? a.stage : "_dock"; (byStage[st] = byStage[st] || []).push(a); });
     Object.entries(byStage).forEach(([st, list]) => list.forEach((a, i) => {
       let x, y;
-      if (st === "_dock") { const span = Math.min(150, list.length * 13), ang = DOCK + (list.length > 1 ? -span/2 + span * i/(list.length-1) : 0); [x, y] = pos(ang, 196); }
-      else { const ang = ANG[st] + (i - (list.length-1)/2) * 7; [x, y] = pos(ang, 200); }
-      const col = a.status === "running" ? "#5fd39a" : a.status === "idle" ? "#7fb0ff" : (a.status === "blocked" || a.status === "queued") ? "#f4b860" : (a.status === "stale" || a.status === "error" || a.status === "failed") ? "#ff5d5d" : "#5f5b57";
+      if (st === "_dock") { const span = Math.min(120, list.length * 10), ang = 90 + (list.length > 1 ? -span/2 + span * i/(list.length-1) : 0); [x, y] = pos(ang, 192); }
+      else { [x, y] = pos(ANG[st] + (i - (list.length-1)/2) * 8, 196); }
+      const working = a.status === "running";
+      const col = working ? "#5fd39a" : a.status === "idle" ? "#7fb0ff" : (a.status === "blocked" || a.status === "queued") ? "#f4b860" : (a.status === "stale" || a.status === "error" || a.status === "failed") ? "#ff5d5d" : "#5f5b57";
       let node = g.querySelector(`[data-agent="${CSS.escape(a.agent)}"]`);
       if (!node) { node = document.createElementNS("http://www.w3.org/2000/svg", "g"); node.setAttribute("class", "gnode"); node.dataset.agent = a.agent;
-        node.style.cursor = "pointer"; node.addEventListener("click", () => { logAgent = a.agent; $("#logsel").value = a.agent; loadLog(); $("#wlog").scrollIntoView({behavior:"smooth"}); });
-        node.innerHTML = `<title></title><circle r="6" stroke-width="1.6"/><text y="-10" font-family="JetBrains Mono,monospace" font-size="8.5" text-anchor="middle"></text>`; g.appendChild(node); }
+        node.style.cursor = "pointer"; node.addEventListener("click", () => { logAgent = a.agent; $("#logsel").value = a.agent; $("#more").open = true; loadLog(); $("#wlog").scrollIntoView({behavior:"smooth"}); });
+        node.innerHTML = `<title></title><circle r="5" stroke-width="1.6"/><text y="-11" font-family="JetBrains Mono,monospace" font-size="10" font-weight="700" text-anchor="middle"></text>`; g.appendChild(node); }
       node.style.transform = `translate(${x}px, ${y}px)`;
-      const c = node.querySelector("circle"); c.setAttribute("fill", a.status === "offline" ? "none" : col); c.setAttribute("stroke", col);
-      const t = node.querySelector("text"); t.setAttribute("fill", col); t.textContent = a.agent;
+      const c = node.querySelector("circle"); c.setAttribute("fill", a.status === "offline" ? "none" : col); c.setAttribute("stroke", col); c.setAttribute("r", working ? 7 : 4.5);
+      const t = node.querySelector("text"); t.setAttribute("fill", col); t.textContent = working ? a.agent : "";      // only working agents are labelled
       node.querySelector("title").textContent = `${a.agent} · ${a.status}${a.current_job ? " · " + a.current_job : ""}`;
       seen.add(a.agent);
     }));
     g.querySelectorAll(".gnode").forEach(n => { if (!seen.has(n.dataset.agent)) n.remove(); });
   }
-  function pulse(stage, color){
-    if (reduce || !built || !ANG[stage]) return;
-    const [x, y] = pos(ANG[stage], 236), g = svg.querySelector("#pulses");
-    const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-    c.setAttribute("cx", x); c.setAttribute("cy", y); c.setAttribute("r", 10); c.setAttribute("fill", "none");
-    c.setAttribute("stroke", color); c.setAttribute("stroke-width", 2);
-    c.animate([{r:10, opacity:.95},{r:44, opacity:0}], {duration:1500, easing:"ease-out"}).onfinish = () => c.remove();
-    g.appendChild(c);
+  function pulse(stage, color, big){
+    if (reduce || !built || ANG[stage] == null) return;
+    const [x, y] = pos(ANG[stage], 232), g = svg.querySelector("#pulses");
+    const ring = (r0, r1, d) => { const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      c.setAttribute("cx", x); c.setAttribute("cy", y); c.setAttribute("r", r0); c.setAttribute("fill", "none");
+      c.setAttribute("stroke", color); c.setAttribute("stroke-width", big ? 3 : 2);
+      c.animate([{r:r0, opacity:.95},{r:r1, opacity:0}], {duration:d, delay:0, easing:"ease-out"}).onfinish = () => c.remove(); g.appendChild(c); };
+    ring(10, 46, 1500);
+    if (big) { setTimeout(() => ring(10, 90, 2200), 250); setTimeout(() => ring(10, 140, 2800), 600); }
   }
   return {stagesRender, agentsRender, rejectedRender, pulse};
 })();
 
-/* ---------------- KPI strip ---------------- */
-function kpi(k, v, s, cls=""){ return `<div class="kpi"><div class="k">${esc(k)}</div><div class="v ${cls}">${v}</div><div class="s">${s||"&nbsp;"}</div></div>`; }
-function renderKpis(k){
+/* ---------------- money box (like the old CopyBot dashboard) + status strip ---------------- */
+const usd = (v, sign) => v == null ? NA : (sign && v > 0 ? "+" : v < 0 ? "−" : "") + "$" + Math.abs(v).toLocaleString("en-US", {minimumFractionDigits:2, maximumFractionDigits:2});
+const shown = {};
+function animate(id, v, fmt){
+  const el = $("#" + id);
+  if (v == null) { el.innerHTML = `<span class="na" style="font-size:16px">${NA}</span>`; shown[id] = null; return; }
+  const from = shown[id] ?? v, t0 = performance.now(), d = reduce ? 0 : 900;
+  shown[id] = v;
+  const step = t => { const k = d ? Math.min(1, (t - t0) / d) : 1, e = 1 - Math.pow(1 - k, 3); el.textContent = fmt(from + (v - from) * e); if (k < 1) requestAnimationFrame(step); };
+  requestAnimationFrame(step);
+}
+let lastEquity = null;
+function renderMoney(b){
+  animate("bal", b.equity, v => usd(v));
+  $("#balsub").textContent = b.capital == null ? "ingen strategi handler endnu — starter, når den første består alle tests" : `startede på ${usd(b.capital)} · ${b.active} aktiv(e)`;
+  animate("pnl", b.pnl, v => usd(v, true));
+  $("#pnl").className = "big " + (b.pnl > 0 ? "pos" : b.pnl < 0 ? "neg" : "");
+  $("#m-pnl").className = "mcard pnl" + (b.pnl == null || b.pnl === 0 ? " zero" : b.pnl < 0 ? " neg" : "");
+  $("#pnlsub").textContent = b.pnl == null ? "simuleret · rigtig konto: ikke tilgængelig" : `${(b.pnl_pct*100).toFixed(2)}% · realiseret ${usd(b.realized, true)} · urealiseret ${usd(b.unrealized, true)}`;
+  animate("today", b.today, v => usd(v, true));
+  $("#today").className = "big " + (b.today > 0 ? "pos" : b.today < 0 ? "neg" : "");
+  $("#todaysub").textContent = b.capital == null ? "" : `${b.open_positions} åbne positioner`;
+  animate("strat", b.active, v => String(Math.round(v)));
+  $("#stratsub").textContent = `${b.closed_trades} lukkede handler` + (b.win_rate == null ? "" : ` · ${(b.win_rate*100).toFixed(0)}% vundet`);
+  if (lastEquity != null && b.equity != null && b.equity !== lastEquity) { const m = $("#m-bal"); m.classList.remove("glow"); void m.offsetWidth; m.classList.add("glow"); }
+  lastEquity = b.equity;
+  const h = b.history.map(p => [p.ts, p.equity]);
+  $("#balchart").innerHTML = !h.length ? `<div class="empty">Balancehistorik: ${NA} — ingen strategi handler på paper endnu.</div><div class="cap">Kilde: ${esc(b.source)}</div>`
+    : axisChart(1000, 210, {l:70,r:10,t:16,b:24}, [h[0][0], Math.max(h[h.length-1][0], h[0][0] + 3600)],
+        [Math.min(...h.map(p => p[1]), b.capital), Math.max(...h.map(p => p[1]), b.capital)],
+        (X, Y) => `<line x1="${X(h[0][0])}" x2="${X(h[h.length-1][0])}" y1="${Y(b.capital)}" y2="${Y(b.capital)}" stroke="#5f5b57" stroke-dasharray="3 3"/><path d="${stepPath(h, X, Y)}" fill="none" stroke="${b.pnl >= 0 ? "#5fd39a" : "#ff5d5d"}" stroke-width="2"/>`,
+        "tid (UTC)", "USD (simuleret)", day, v => "$" + num(v, 0)) + `<div class="cap">Samlet paper-saldo for alle strategier; værdien holdes til næste timemark (ingen interpolation). Stiplet linje = startkapital. Kilde: ${esc(b.source)}</div>`;
+}
+function st(k, v, cls=""){ return `<div class="st"><div class="k">${esc(k)}</div><div class="v ${cls}">${v}</div></div>`; }
+function renderStatus(k){
   K = k;
   const sup = k.supervisor, gb = b => b == null ? null : (b/1e9);
   $("#b-fail").classList.toggle("show", !!k.fail_closed);
-  const c = k.control, ctl = $("#b-ctl");
-  const msgs = []; if (c.paused) msgs.push("FLEET PAUSED by operator — no new jobs are claimed"); if (c.hold) msgs.push("RESOURCE HOLD — RAM or disk below limit, no new jobs"); if (c.stop) msgs.push("STOP REQUESTED — supervisor is shutting down");
-  ctl.textContent = msgs.join(" · "); ctl.classList.toggle("show", msgs.length > 0);
-  const g = k.gate_s7; $("#c-gate").innerHTML = `<span class="led ${g.open?"ok":"warn"}"></span>S7 gate ${g.open?"open":"closed"} · ${(g.covered_s/86400).toFixed(1)}/7 d`; $("#c-gate").title = g.reason;
+  const c = k.control, msgs = [];
+  if (c.paused) msgs.push("FLÅDEN ER SAT PÅ PAUSE — ingen nye jobs"); if (c.hold) msgs.push("RESSOURCESTOP — for lidt RAM eller disk"); if (c.stop) msgs.push("STOP ANMODET — supervisoren lukker ned");
+  $("#b-ctl").textContent = msgs.join(" · "); $("#b-ctl").classList.toggle("show", msgs.length > 0);
+  const g = k.gate_s7; $("#c-gate").innerHTML = `<span class="led ${g.open?"ok":"warn"}"></span>S7 ${g.open?"åben":"lukket"} · ${(g.covered_s/86400).toFixed(1)}/7 d`; $("#c-gate").title = g.reason;
   const ram = k.ram, disk = k.disk, data = k.data, lastData = Math.max(data.last_gateway_read_ts || 0, data.last_download_ts || 0) || null;
-  $("#kpis").innerHTML =
-      kpi("Supervisor", sup.alive ? "ONLINE" : "OFFLINE", sup.alive ? `beat ${dur(sup.age_s)} ago` : sup.last_run_ts ? `last run ${ago(sup.last_run_ts)}` : "never started", sup.alive ? "good" : "bad")
-    + kpi("Agents active", `${k.agents_active}/${k.agents_total}`, `${k.agents_running} running a job`, k.agents_active ? "good" : "")
-    + kpi("Queued jobs", num(k.queued_jobs, 0), `${k.jobs.queued} ready · ${k.jobs.blocked} waiting on deps`)
-    + kpi("Tests running", num(k.tests_running, 0), "backtest · cost · adversarial · validation", k.tests_running ? "hot" : "")
-    + kpi("Tests completed", num(k.tests_completed.variant_evaluations + k.tests_completed.validation_runs, 0), `${k.tests_completed.variant_evaluations} variants · ${k.tests_completed.validation_runs} validations`)
-    + kpi(`Tests / min (${Math.round(k.window_s/60)} min)`, num(k.tests_per_min, 2), `jobs/min ${num(k.jobs_per_min, 2)}`)
-    + kpi(`Errors · retries (${Math.round(k.window_s/60)} min)`, `${k.errors_window} · ${k.retries_window}`, `total ${k.errors_total} · ${k.retries_total}`, k.errors_window ? "bad" : "")
-    + kpi("Disk free", disk ? `${gb(disk.free).toFixed(0)} GB` : NA, disk ? `fail-closed below ${gb(disk.min_free).toFixed(0)} GB` : "", disk && !disk.free_ok ? "bad" : "")
-    + kpi("RAM free", ram ? `${gb(ram.free).toFixed(1)} GB` : NA, ram ? `of ${gb(ram.total).toFixed(0)} GB · hold below ${gb(k.ram_min_free).toFixed(1)} GB` : "not measurable on this OS", ram && ram.free < k.ram_min_free ? "bad" : ram ? "" : "na")
-    + kpi("Last data update", lastData ? ago(lastData) : NA, lastData ? utc(lastData) : "no market data read yet", lastData ? "" : "na");
-  $("#kpis").title = k.tests_per_min_basis;
+  $("#status").innerHTML =
+      st("Supervisor", sup.alive ? "KØRER" : "STOPPET", sup.alive ? "good" : "bad")
+    + st("Agenter aktive", `${k.agents_active}/${k.agents_total}`, k.agents_active ? "good" : "")
+    + st("Arbejder nu", num(k.agents_running, 0))
+    + st("Jobs i kø", num(k.queued_jobs, 0))
+    + st("Tests kørt", num(k.tests_completed.variant_evaluations + k.tests_completed.validation_runs, 0))
+    + st(`Tests/min (${Math.round(k.window_s/60)} m)`, num(k.tests_per_min, 1))
+    + st("Fejl · gentagelser", `${k.errors_window} · ${k.retries_window}`, k.errors_window ? "bad" : "")
+    + st("RAM fri", ram ? `${gb(ram.free).toFixed(1)} GB` : NA, ram && ram.free < k.ram_min_free ? "bad" : ram ? "" : "na")
+    + st("Data opdateret", lastData ? ago(lastData) : NA, lastData ? "" : "na");
+  $("#status").title = k.tests_per_min_basis;
   Planet.setActive(sup.alive);
-  $("#g-cap").innerHTML = sup.alive ? `<span style="color:var(--green)">● ACTIVE</span> · ${k.agents_running} agent(s) working` : `<span class="dim">○ STANDBY</span> · supervisor not running (start: py -m lab fleet)`;
+  $("#g-cap").innerHTML = sup.alive ? `<span style="color:var(--green)">● AKTIV</span> · ${k.agents_running} agent(er) arbejder` : `<span class="dim">○ STANDBY</span> · flåden kører ikke`;
+}
+const seenFeed = new Set(); let feedPrimed = false;
+function renderFeed(f){
+  const hhmm = ts => new Date(ts*1000).toISOString().slice(11,16);
+  $("#feed").innerHTML = f.items.length ? f.items.map(e => `<div class="fl${feedPrimed && !seenFeed.has(e.id) ? " new" : ""}"><span class="t">${hhmm(e.ts)}</span><span class="tg tg-${esc(e.tag)}">[${esc(e.tag)}]</span><span class="x">${esc(e.text)}</span></div>`).join("")
+    : `<div class="empty">Ingen hændelser endnu.</div>`;
+  f.items.filter(e => e.found && feedPrimed && !seenFeed.has(e.id)).slice(0, 1).forEach(e => celebrate(e.exp_id, e.text));
+  f.items.forEach(e => seenFeed.add(e.id)); feedPrimed = true;
+}
+function celebrate(eid, text){
+  $("#found-n").textContent = eid || "";
+  $("#found-s").textContent = (text || "") + " · saldoen opdateres i boksen øverst (simuleret)";
+  const el = $("#found"); el.classList.remove("show"); void el.offsetWidth; el.classList.add("show");
+  ["VALIDATION", "PAPER_ELIGIBLE", "PAPER_TRADING"].forEach((s, i) => setTimeout(() => Orbits.pulse(s, "#5fd39a", true), i * 300));
+  const m = $("#m-bal"); m.classList.remove("glow"); void m.offsetWidth; m.classList.add("glow");
 }
 
 /* ---------------- agents ---------------- */
 function renderAgents(a){
   A = a;
   const sup = a.supervisor;
-  $("#sup-note").textContent = sup.alive ? `Supervisor online · ${a.total} agents · ${a.running} running` : `Supervisor offline — agents shown as last reported. Manual start: py -m lab fleet`;
+  $("#sup-note").textContent = sup.alive ? `Supervisor kører · ${a.total} agenter · ${a.running} arbejder` : `Flåden kører ikke — agenter vises som senest rapporteret. Start: py -m lab fleet`;
   $("#agents").innerHTML = a.agents.length ? a.agents.map(x => `<div class="ag" data-agent="${esc(x.agent)}">
       <span class="n">${esc(x.agent)}</span><span>${stateChip(x.status)}</span>
       <span class="r">${esc(x.role)}</span>
       <span class="r">${x.current_job ? `▶ ${esc(x.current_job)} · ${dur(x.job_running_s)}` : esc(x.next_action || x.detail || "")}</span>
-      <span class="r">tasks ${x.tasks_done ?? 0} · errors ${x.errors ?? 0} · retries ${x.retries ?? 0} · beat ${dur(x.heartbeat_age_s)} ago${x.uptime_s != null ? ` · up ${dur(x.uptime_s)}` : ""}</span>
-      ${x.last_result ? `<span class="r" title="${esc(x.last_result)}">last: ${esc(x.last_result)}</span>` : ""}</div>`).join("")
-    : `<div class="empty">No agent has reported yet. Start the fleet with: py -m lab fleet</div>`;
-  $("#agents").querySelectorAll(".ag").forEach(n => n.onclick = () => { logAgent = n.dataset.agent; $("#logsel").value = logAgent; loadLog(); });
+      <span class="r">opgaver ${x.tasks_done ?? 0} · fejl ${x.errors ?? 0} · gentagelser ${x.retries ?? 0} · puls for ${dur(x.heartbeat_age_s)} siden</span>
+      ${x.last_result ? `<span class="r" title="${esc(x.last_result)}">sidst: ${esc(x.last_result)}</span>` : ""}</div>`).join("")
+    : `<div class="empty">Ingen agent har rapporteret endnu. Start flåden: py -m lab fleet</div>`;
+  $("#agents").querySelectorAll(".ag").forEach(n => n.onclick = () => { logAgent = n.dataset.agent; $("#logsel").value = logAgent; $("#more").open = true; loadLog(); });
   const opts = a.agents.map(x => x.agent);
   if ($("#logsel").options.length !== opts.length) { $("#logsel").innerHTML = opts.map(o => `<option>${esc(o)}</option>`).join(""); if (!logAgent && opts.length) logAgent = opts[0]; $("#logsel").value = logAgent; }
   Orbits.agentsRender(a.agents);
@@ -490,38 +608,42 @@ async function loadExperiments(){
   const x = await api("/api/v2/experiments?" + qs({stage:F.stage, market:F.market, strategy:F.strategy, worker:F.worker, status:F.status, since, page:F.page, size:25}));
   X = x; renderExperiments(all, x);
 }
+function renderPipe(c){
+  const max = Math.max(1, ...STAGES.map(s => c[s] || 0));
+  $("#pipe").innerHTML = STAGES.map(s => `<div class="pr" title="${DA[s]}"><span>${DA[s]}</span><span class="bar"><i style="width:${(c[s]||0)/max*100}%;background:${STAGE_COL[s] || "#f07a3a"}"></i></span><span class="n">${c[s]||0}</span></div>`).join("");
+  $("#flow-note").textContent = "Accepteret forbliver 0: der findes ingen accept til rigtige penge. 'Klar til paper' kræver en bestået forseglet holdout.";
+}
 function renderExperiments(all, x){
   const c = all.stage_counts;
   Orbits.stagesRender(c);
-  $("#stagecounts").innerHTML = STAGES.map(s => metric(s.replace("_"," "), num(c[s] || 0, 0), "", s === "REJECTED" ? "bad" : (c[s] && ["PAPER_TRADING","PAPER_ELIGIBLE"].includes(s)) ? "good" : "")).join("")
-    + `<div class="note">ACCEPTED stays 0: no lifecycle state grants acceptance for real money; PAPER_ELIGIBLE needs a passed sealed holdout.</div>`;
-  $("#flow").innerHTML = STAGES.map(s => `<div class="node ${c[s]?"":"zero"} ${F.stage===s?"sel":""}" data-stage="${s}"><div class="n">${c[s]||0}</div><div class="l">${s.replace("_"," ")}</div></div>`).join("");
+  renderPipe(c);
+  $("#flow").innerHTML = STAGES.map(s => `<div class="node ${c[s]?"":"zero"} ${F.stage===s?"sel":""}" data-stage="${s}"><div class="n">${c[s]||0}</div><div class="l">${DA[s]}</div></div>`).join("");
   $("#flow").querySelectorAll(".node").forEach(n => n.onclick = () => { F.stage = F.stage === n.dataset.stage ? "" : n.dataset.stage; F.page = 1; loadExperiments(); });
-  const f = all.filters, sel = (id, label, opts) => `<select data-f="${id}" aria-label="${label}"><option value="">${label}: all</option>${opts.map(o => `<option ${F[id]===o?"selected":""}>${esc(o)}</option>`).join("")}</select>`;
-  $("#fsel").innerHTML = sel("market","Market",f.markets) + sel("strategy","Strategy",f.strategies) + sel("worker","Worker",f.workers) + sel("status","Status",f.statuses)
-    + `<select data-f="since" aria-label="Time"><option value="">Time: all</option>${[[3600,"last hour"],[86400,"last 24 h"],[604800,"last 7 d"]].map(([v,l]) => `<option value="${v}" ${String(F.since)===String(v)?"selected":""}>${l}</option>`).join("")}</select>`
-    + (Object.values({...F, page:""}).some(Boolean) ? `<button class="btn" id="fclear">clear filters</button>` : "");
+  const f = all.filters, sel = (id, label, opts) => `<select data-f="${id}" aria-label="${label}"><option value="">${label}: alle</option>${opts.map(o => `<option ${F[id]===o?"selected":""}>${esc(o)}</option>`).join("")}</select>`;
+  $("#fsel").innerHTML = sel("market","Marked",f.markets) + sel("strategy","Strategi",f.strategies) + sel("worker","Agent",f.workers) + sel("status","Status",f.statuses)
+    + `<select data-f="since" aria-label="Tid"><option value="">Tid: alle</option>${[[3600,"sidste time"],[86400,"sidste døgn"],[604800,"sidste 7 dage"]].map(([v,l]) => `<option value="${v}" ${String(F.since)===String(v)?"selected":""}>${l}</option>`).join("")}</select>`
+    + (Object.values({...F, page:""}).some(Boolean) ? `<button class="btn" id="fclear">ryd filtre</button>` : "");
   $("#fsel").querySelectorAll("select").forEach(s => s.onchange = () => { F[s.dataset.f] = s.value; F.page = 1; loadExperiments(); });
   if ($("#fclear")) $("#fclear").onclick = () => { Object.assign(F, {stage:"", market:"", strategy:"", worker:"", status:"", since:"", page:1}); loadExperiments(); };
-  $("#pl-note").textContent = `${x.total} match · page ${x.page}/${x.pages} · click a row for the full record`;
+  $("#pl-note").textContent = `${x.total} fundet · side ${x.page}/${x.pages} · klik en række for alle detaljer`;
   const sh = v => v == null ? na() : num(v, 2);
   const ci = v => v && v.ci95 ? `[${pct(v.ci95[0],3)}, ${pct(v.ci95[1],3)}]` : na();
   $("#exp-table").innerHTML = table([
-    {h:"Experiment",f:e=>`<div style="font-weight:700">${esc(e.exp_id)}</div><div class="dim">${esc(e.template || e.mechanism || "")}</div>`},
-    {h:"Stage",f:e=>`<span class="badge" style="color:${STAGE_COL[e.stage]||"#f07a3a"}">${esc(e.stage || "—")}</span><div class="dim">${esc(e.phase || "")}</div>`},
-    {h:"Market",f:e=>esc(e.market)},
-    {h:"Train net Sharpe",num:1,f:e=>e.train ? sh(e.train.net_sharpe_ann) : na()},
-    {h:"Valid. net Sharpe",num:1,f:e=>e.validation ? sh(e.validation.net_sharpe_ann) : na()},
-    {h:"Valid. 95 % CI / day",f:e=>ci(e.validation)},
+    {h:"Strategi",f:e=>`<div style="font-weight:700">${esc(e.exp_id)}</div><div class="dim">${esc(e.template || e.mechanism || "")}</div>`},
+    {h:"Trin",f:e=>`<span class="badge" style="color:${STAGE_COL[e.stage]||"#f07a3a"}">${esc(DA[e.stage] || e.stage || "—")}</span><div class="dim">${esc(e.phase || "")}</div>`},
+    {h:"Marked",f:e=>esc(e.market)},
+    {h:"Train netto Sharpe",num:1,f:e=>e.train ? sh(e.train.net_sharpe_ann) : na()},
+    {h:"Valid. netto Sharpe",num:1,f:e=>e.validation ? sh(e.validation.net_sharpe_ann) : na()},
+    {h:"Valid. 95 % CI / dag",f:e=>ci(e.validation)},
     {h:"DSR",num:1,f:e=>e.dsr == null ? na() : num(e.dsr, 3)},
-    {h:"Worker",f:e=>esc(e.worker || "") || na()},
-    {h:"Verdict / next",f:e=>`${e.rejection_reason ? `<span class="flag">${esc(e.rejection_reason)}</span>` : esc(e.verdict || "")}<div class="dim">${esc(e.next_action || "")}</div>`}],
-    x.items, "No experiments match the filters.", e => `class="click" data-id="${esc(e.exp_id)}"`);
+    {h:"Agent",f:e=>esc(e.worker || "") || na()},
+    {h:"Dom / næste skridt",f:e=>`${e.rejection_reason ? `<span class="flag">${esc(e.rejection_reason)}</span>` : esc(e.verdict || "")}<div class="dim">${esc(e.next_action || "")}</div>`}],
+    x.items, "Ingen strategier matcher filtrene.", e => `class="click" data-id="${esc(e.exp_id)}"`);
   $("#exp-cards").innerHTML = x.items.length ? x.items.map(e => `<div class="ecard" data-id="${esc(e.exp_id)}"><div class="id">${esc(e.exp_id)}</div>
       <div class="row"><span class="badge" style="color:${STAGE_COL[e.stage]||"#f07a3a"}">${esc(e.stage||"—")}</span><span>${esc(e.market)}</span></div>
       <div class="row"><span>valid. Sharpe ${e.validation ? sh(e.validation.net_sharpe_ann) : NA}</span><span>DSR ${e.dsr == null ? NA : num(e.dsr,3)}</span></div>
       <div class="row"><span>${esc(e.rejection_reason || e.next_action || "")}</span></div></div>`).join("") : `<div class="empty">No experiments match the filters.</div>`;
-  $("#pager").innerHTML = `<button class="btn" id="pprev" ${x.page<=1?"disabled":""}>‹ prev</button><span>${x.page} / ${x.pages}</span><button class="btn" id="pnext" ${x.page>=x.pages?"disabled":""}>next ›</button>`;
+  $("#pager").innerHTML = `<button class="btn" id="pprev" ${x.page<=1?"disabled":""}>‹ forrige</button><span>${x.page} / ${x.pages}</span><button class="btn" id="pnext" ${x.page>=x.pages?"disabled":""}>næste ›</button>`;
   $("#pprev").onclick = () => { if (F.page > 1) { F.page--; loadExperiments(); } };
   $("#pnext").onclick = () => { if (F.page < x.pages) { F.page++; loadExperiments(); } };
 }
@@ -599,9 +721,9 @@ function renderCosts(c){
 }
 function renderRejected(r){
   Orbits.rejectedRender(r.items);
-  $("#rej-n").textContent = `${r.total} total · newest first`;
-  $("#rejected").innerHTML = table([{h:"Experiment",f:x=>`<b>${esc(x.exp_id)}</b><div class="dim">${esc(x.mechanism||"")}</div>`},{h:"When",f:x=>x.ts?ago(x.ts):na()},
-    {h:"Reason",f:x=>`<span class="flag">${esc(x.reason || NA)}</span>${x.pattern?`<div class="dim">pattern: ${esc(x.pattern)}</div>`:""}`}], r.items, "No rejected experiments.", x => `class="click" data-id="${esc(x.exp_id)}"`);
+  $("#rej-n").textContent = `${r.total} i alt · nyeste først`;
+  $("#rejected").innerHTML = table([{h:"Strategi",f:x=>`<b>${esc(x.exp_id)}</b><div class="dim">${esc(x.mechanism||"")}</div>`},{h:"Hvornår",f:x=>x.ts?ago(x.ts):na()},
+    {h:"Begrundelse",f:x=>`<span class="flag">${esc(x.reason || NA)}</span>${x.pattern?`<div class="dim">pattern: ${esc(x.pattern)}</div>`:""}`}], r.items, "Ingen afviste strategier.", x => `class="click" data-id="${esc(x.exp_id)}"`);
 }
 async function loadJobs(){
   const j = await api("/api/jobs?" + qs({status: jobTab, page: jobPage, size: 20}));
@@ -632,46 +754,48 @@ async function refreshAudit(){
   const a = await api("/api/audit?limit=120" + (kind ? "&kind=" + encodeURIComponent(kind) : ""));
   const broken = Object.entries(a.chains).filter(([, c]) => c.broken_at != null);
   const ok = !broken.length && a.triggers;
-  $("#c-chain").innerHTML = `<span class="led ${ok?"ok":"bad"}"></span>chain ${ok?"verified":"BROKEN"}`;
+  $("#c-chain").innerHTML = `<span class="led ${ok?"ok":"bad"}"></span>kæde ${ok?"verificeret":"BRUDT"}`;
   $("#chainnote").textContent = `Hash chains ${broken.length ? "BROKEN in " + broken.map(b => b[0]).join(", ") : "intact"} · append-only triggers ${a.triggers ? "present" : "MISSING"} · ${Object.values(a.chains).reduce((s, c) => s + c.rows, 0)} rows`;
   $("#audit").innerHTML = table([{h:"#",num:1,f:r=>r.id},{h:"When",f:r=>ago(r.ts)},{h:"Kind",f:r=>esc(r.kind)},{h:"Actor",f:r=>esc(r.actor)},
-    {h:"Experiment",f:r=>esc(r.exp_id)},{h:"Payload",f:r=>`<span class="dim">${esc(JSON.stringify(r.payload)).slice(0,200)}</span>`}], a.events, "No events.");
+    {h:"Strategi",f:r=>esc(r.exp_id)},{h:"Payload",f:r=>`<span class="dim">${esc(JSON.stringify(r.payload)).slice(0,200)}</span>`}], a.events, "No events.");
 }
 
 /* ---------------- refresh, live link, offline ---------------- */
 function setLink(state){
   link = state;
-  const map = {live:["ok live","LIVE STREAM"], polling:["warn","POLLING 10 s"], offline:["bad","OFFLINE"], connecting:["","CONNECTING"]};
+  const map = {live:["ok live","LIVE"], polling:["warn","OPDATERER HVERT 10. SEK."], offline:["bad","OFFLINE"], connecting:["","FORBINDER"]};
   const [cls, txt] = map[state]; $("#c-link").innerHTML = `<span class="led ${cls}"></span>${txt}`;
 }
 let fastBusy = false, slowAt = 0;
 async function refresh(full){
   if (fastBusy) return; fastBusy = true;
   try {
-    const [k, a] = await Promise.all([api("/api/kpis"), api("/api/agents")]);
-    renderKpis(k); renderAgents(a);
-    await loadExperiments(); await loadJobs();
+    const [k, a, b, f] = await Promise.all([api("/api/kpis"), api("/api/agents"), api("/api/balance"), api("/api/feed?limit=40")]);
+    renderStatus(k); renderAgents(a); renderMoney(b); renderFeed(f);
+    await loadExperiments();
     if (full || Date.now() - slowAt > 20000) {
       slowAt = Date.now();
       const [p, d, c, r] = await Promise.all(["/api/paper2", "/api/distribution", "/api/costs", "/api/rejected"].map(api));
       renderPaper(p); renderDist(d); renderCosts(c); renderRejected(r);
-      await Promise.all([loadLog(), loadRisk(), refreshAudit()]);
+      if ($("#more").open) await Promise.all([loadJobs(), loadLog(), loadRisk(), refreshAudit()]);
+      else await refreshAudit();
     }
-    lastOk = Date.now(); $("#b-off").classList.remove("show"); document.querySelectorAll(".kpi").forEach(n => n.classList.remove("stale"));
+    lastOk = Date.now(); $("#b-off").classList.remove("show"); document.querySelectorAll(".st,.mcard").forEach(n => n.classList.remove("stale"));
     const skew = Math.abs(Date.now()/1000 - k.now);
-    $("#foot").textContent = `Last refresh ${new Date().toISOString().slice(11,19)} UTC · event #${k.last_event_id}` + (skew > 60 ? ` · clock skew ${dur(skew)}` : "");
+    $("#foot").textContent = `Sidst opdateret ${new Date().toISOString().slice(11,19)} UTC · hændelse #${k.last_event_id}` + (skew > 60 ? ` · urforskel ${dur(skew)}` : "");
     if (link === "offline") setLink(es ? "live" : "polling");
   } catch (e) { showOffline(); }
   finally { fastBusy = false; }
 }
 function showOffline(){
   setLink("offline");
-  document.querySelectorAll(".kpi").forEach(n => n.classList.add("stale"));
+  document.querySelectorAll(".st,.mcard").forEach(n => n.classList.add("stale"));
   const b = $("#b-off"); b.classList.add("show");
-  b.textContent = lastOk ? `CONNECTION LOST — the lab server is not answering. Values are from ${dur((Date.now()-lastOk)/1000)} ago and are NOT live.` : "CANNOT REACH THE LAB SERVER — start it with: py -m lab web";
+  b.textContent = lastOk ? `FORBINDELSEN ER TABT — lab-serveren svarer ikke. Tallene er fra for ${dur((Date.now()-lastOk)/1000)} siden og er IKKE live.` : "KAN IKKE NÅ LAB-SERVEREN — start den med: py -m lab web";
 }
 let pending = null;
 function schedule(){ if (pending) return; pending = setTimeout(() => { pending = null; refresh(false); }, 600); }
+const TO_STAGE = {REJECTED:"REJECTED", SUPPRESSED:"REJECTED", REGISTERED:"QUEUED", SCREENING:"RUNNING", SCREEN_PASSED:"VALIDATION", VALIDATION:"VALIDATION", VALIDATED:"PAPER_ELIGIBLE", PAPER_TRADING:"PAPER_TRADING", PAUSED:"PAUSED"};
 function startStream(){
   if (!window.EventSource) { setLink("polling"); pollTimer = setInterval(() => refresh(false), 10000); return; }
   es = new EventSource("/api/stream");
@@ -679,13 +803,13 @@ function startStream(){
   es.onmessage = ev => { const d = JSON.parse(ev.data);
     if (!d.first) (d.new_events || []).forEach(e => {
       if (e.stage && e.kind.startsWith("job.")) Orbits.pulse(e.stage, e.kind === "job.failed" || e.kind === "job.timeout" ? "#ff5d5d" : e.kind === "job.retry" ? "#f4b860" : e.kind === "job.done" ? "#5fd39a" : "#f07a3a");
-      if (e.kind === "lifecycle.transition" && e.to) Orbits.pulse({REJECTED:"REJECTED", SUPPRESSED:"REJECTED", REGISTERED:"QUEUED", SCREENING:"RUNNING", SCREEN_PASSED:"VALIDATION", VALIDATED:"PAPER_ELIGIBLE", PAPER_TRADING:"PAPER_TRADING", PAUSED:"PAUSED"}[e.to], e.to === "REJECTED" ? "#ff5d5d" : "#f07a3a");
+      if (e.kind === "lifecycle.transition" && e.to) Orbits.pulse(TO_STAGE[e.to], e.to === "REJECTED" ? "#ff5d5d" : "#f07a3a");
       if (e.kind === "candidate.discovered") Orbits.pulse("DISCOVERED", "#b39cff");
     });
     schedule(); };
   es.onerror = () => { if (es.readyState === 2) { es = null; setLink("polling"); if (!pollTimer) pollTimer = setInterval(() => refresh(false), 10000); } else { showOffline(); } };
   setInterval(() => { if (lastOk && Date.now() - lastOk > 45000) showOffline(); }, 5000);
-  setInterval(() => refresh(false), 15000);                                   // heartbeat ages keep moving without events
+  setInterval(() => refresh(false), 15000);
 }
 
 /* ---------------- detail drawer & controls ---------------- */
@@ -741,11 +865,12 @@ async function openDetail(id){
     try { await control("/api/control/pause", {exp_id:d.exp_id, reason}); msg("Paused."); refresh(true); } catch (err) { msg("Refused: " + err.message); } };
 }
 async function fleet(action){
-  const reason = prompt(`Reason to ${action} the research fleet (≥ 10 characters)`); if (!reason) return;
+  const reason = prompt(`Begrundelse for at ${({pause:"sætte flåden på pause",resume:"genoptage flåden",stop:"stoppe flåden"})[action]} (mindst 10 tegn)`); if (!reason) return;
   try { const r = await control("/api/control/fleet", {action, reason}); if (!r.changed) alert(`Already ${action === "stop" ? "stopping" : action + "d"} — nothing changed.`); refresh(true); }
   catch (err) { alert("Refused: " + err.message); }
 }
 $("#f-pause").onclick = () => fleet("pause"); $("#f-resume").onclick = () => fleet("resume"); $("#f-stop").onclick = () => fleet("stop");
+$("#more").addEventListener("toggle", () => { if ($("#more").open) Promise.all([loadJobs(), loadLog(), loadRisk()]).catch(() => showOffline()); });
 document.addEventListener("click", ev => { const el = ev.target.closest("[data-id]"); if (el) { ev.preventDefault(); openDetail(el.dataset.id).catch(() => showOffline()); } });
 $("#drawer").addEventListener("click", ev => { if (ev.target.id === "drawer") $("#drawer").classList.remove("open"); });
 addEventListener("keydown", ev => { if (ev.key === "Escape") $("#drawer").classList.remove("open"); });
