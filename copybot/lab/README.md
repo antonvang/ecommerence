@@ -108,7 +108,19 @@ Jobs are persistent and keyed by a deterministic id, so enqueueing twice does no
 - **Long jobs.** The agent extends the lease up to the job timeout. After that the lease expires and the queue retries the job.
 - **Restart.** At supervisor start, `recover()` turns leases left by a dead process into retries.
 
-### Protocol (`lab/engine/catalogue.py`, PROTOCOL v1)
+### Protocol v2 (current; `research/PROTOCOL_V2.md`, experiment ids `_p2`)
+
+v2 keeps v1 below and adds:
+- a train gate: the selected variant must beat buy-and-hold net Sharpe on train;
+- a pre-validation gate on train: exact look-ahead and poison tests, data quality, and placebo p < 0.10;
+- batch-level DSR: instances registered in one strategy pass form a batch (`batch.registered` event with a trials
+  cutoff); no member validates before every member finished its cost step; the DSR trial set is every trial up to the
+  cutoff plus the batch's own trials, so it does not depend on run order;
+- validation files are read for the first time inside the validation step; their quality is a validation gate.
+
+`_p1` experiments keep their recorded v1 results.
+
+### Protocol v1 (`_p1` experiments)
 
 | Window | Period | Use |
 |---|---|---|

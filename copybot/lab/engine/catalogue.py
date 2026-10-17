@@ -14,7 +14,7 @@ import statistics
 from datetime import datetime, timezone
 
 DAY, HOUR = 86400, 3600
-PROTOCOL_VERSION = 1
+PROTOCOL_VERSION = 2              # research/PROTOCOL_V2.md; v1 experiments (_p1) keep their recorded v1 results
 
 # documented cost model (per unit of turnover, per side); see lab/README.md
 COSTS = {"taker_fee": 0.0005,      # Binance USD-M VIP0 taker 0.05 % (published schedule; not re-verified this session)
@@ -23,8 +23,11 @@ COSTS = {"taker_fee": 0.0005,      # Binance USD-M VIP0 taker 0.05 % (published 
          "funding": "Binance settled funding rates applied to open positions at each settlement (data)"}
 COST_HIGH_MULT = 2.0
 
-PROTOCOL = {
-    "version": PROTOCOL_VERSION,
+PLACEBO_P_MAX = 0.10             # v2 pre-validation gate
+DSR_MIN = 0.95
+
+PROTOCOL_V1 = {
+    "version": 1,
     "selection": "best net Sharpe on TRAIN (2023-01..2023-08) among the fixed grid; reject if no variant has net Sharpe > 0",
     "validation": ("frozen variant on VALIDATION (2023-09..2023-12): pass requires net mean daily > 0, one-sided 90 % "
                    "block-bootstrap lower bound > 0 (5-day blocks, 2,000 draws, fixed seed), net Sharpe above the "
@@ -35,6 +38,24 @@ PROTOCOL = {
                 "bound > 0 and net Sharpe above buy-and-hold; otherwise REJECTED"),
     "paper": "only VALIDATED experiments, only after a human approval; simulated orders only",
 }
+
+PROTOCOL_V2 = {
+    **PROTOCOL_V1,
+    "version": 2,
+    "spec": "research/PROTOCOL_V2.md",
+    "selection": ("best net Sharpe on TRAIN (2023-01..2023-08) among the fixed grid; train gate: the selected variant "
+                  "must have net Sharpe > 0 AND above the buy-and-hold benchmark's train net Sharpe, else REJECTED "
+                  "without reading validation data"),
+    "pre_validation": ("on TRAIN before any validation read: exact truncation and poison tests, data quality, and a "
+                       "block-shuffled placebo (24-bar blocks, 60 draws, seed 17) with p < 0.10, else REJECTED"),
+    "validation": ("frozen variant on VALIDATION (2023-09..2023-12): pass requires net mean daily > 0, one-sided 90 % "
+                   "block-bootstrap lower bound > 0 (5-day blocks, 2,000 draws, seed 7), net Sharpe above the "
+                   "buy-and-hold benchmark, net total > 0 at 2x costs, deflated Sharpe probability >= 0.95 over the "
+                   "batch trial set (all trials up to the batch cutoff plus the batch's own trials; validation waits "
+                   "until every batch member finished its cost step)"),
+}
+PROTOCOLS = {1: PROTOCOL_V1, 2: PROTOCOL_V2}
+PROTOCOL = PROTOCOLS[PROTOCOL_VERSION]
 
 
 def _ret(bars, i):
@@ -177,5 +198,5 @@ HORIZON = {"vol_managed_long": "days", "day_of_week": "days", "hour_of_day": "ho
            "daily_reversal": "days", "donchian_trend": "days"}
 
 
-def exp_id(template):
-    return f"E_{template}_p{PROTOCOL_VERSION}"
+def exp_id(template, version=PROTOCOL_VERSION):
+    return f"E_{template}_p{version}"

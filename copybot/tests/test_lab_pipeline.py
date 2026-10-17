@@ -120,7 +120,7 @@ class Env(unittest.TestCase):
 class Pipeline(Env):
     def test_registration_needs_human_template_approval(self):
         pipeline.discover_catalogue(self.db)
-        eid = "E_day_of_week_p1"
+        eid = "E_day_of_week_p2"
         self.assertEqual(lifecycle.state(self.db, eid), "DISCOVERED")
         self.assertFalse(pipeline.register(self.db, eid))                        # no approval yet
         with self.assertRaises(templates.TemplateError):
@@ -137,26 +137,29 @@ class Pipeline(Env):
 
     def test_full_pipeline_pass_and_reject(self):
         pipeline.discover_catalogue(self.db)
-        self.approve("day_of_week", "hour_of_day")
-        fleet.strategy_pass(self.db)
         ag = [a for a in fleet.agents(self.db_path) if a.kinds]
+        self.approve("day_of_week")                          # batch 1: the planted weekend effect
+        fleet.strategy_pass(self.db)
+        self.drain(ag)
+        self.approve("hour_of_day")                          # batch 2: pure noise
+        fleet.strategy_pass(self.db)
         c = self.drain(ag)
         self.assertEqual(c["failed"], 0, c)
         self.assertEqual(c["done"], 2 * len(pipeline.STEPS))
-        self.assertEqual(lifecycle.state(self.db, "E_day_of_week_p1"), "SCREEN_PASSED")
-        self.assertEqual(lifecycle.state(self.db, "E_hour_of_day_p1"), "REJECTED")
+        self.assertEqual(lifecycle.state(self.db, "E_day_of_week_p2"), "SCREEN_PASSED")
+        self.assertEqual(lifecycle.state(self.db, "E_hour_of_day_p2"), "REJECTED")
         # every variant is in the trials ledger (multiple-testing record)
         self.assertEqual(self.db.one("SELECT COUNT(*) FROM trials")[0], 4)
         # the train/validation reads went through the gateway in SCREENING; nothing from the holdout
         splits = {r[0] for r in self.db.q("SELECT DISTINCT split FROM datasets")}
         self.assertEqual(splits, {"dev", "validation"})
-        val = pipeline.load_artifact("E_day_of_week_p1", "validate")
+        val = pipeline.load_artifact("E_day_of_week_p2", "validate")
         self.assertTrue(all(val["gates"].values()), val["gates"])
-        self.assertTrue(os.path.exists(os.path.join(self.tmp, "reports", "E_day_of_week_p1.md")))
+        self.assertTrue(os.path.exists(os.path.join(self.tmp, "reports", "E_day_of_week_p2.md")))
         # holdout: no job without a human-approved VALIDATION transition, and the handler refuses
         self.assertEqual(pipeline.enqueue_holdouts(self.db), 0)
         with self.assertRaises(pipeline.StepError):
-            pipeline.step_holdout(self.db, {"exp_id": "E_day_of_week_p1"}, "t")
+            pipeline.step_holdout(self.db, {"exp_id": "E_day_of_week_p2"}, "t")
 
     def test_reserved_window_refused(self):
         with mock.patch.dict(data.SPLITS, {"late": ((2025, 1), (2025, 2))}):
@@ -184,16 +187,16 @@ class Pipeline(Env):
         with boom:
             a = [x for x in fleet.agents(self.db_path) if x.name == "data-1"][0]
             a(self.db)
-            j = jobs.get(self.db, "data|E_day_of_week_p1")
+            j = jobs.get(self.db, "data|E_day_of_week_p2")
             self.assertEqual(j["status"], "queued")                   # retry with backoff
             self.assertGreater(j["next_run"], time.time())
             self.db.con.execute("UPDATE jobs SET next_run=0")
             a(self.db)
             self.db.con.execute("UPDATE jobs SET next_run=0")
             a(self.db)
-        self.assertEqual(jobs.get(self.db, "data|E_day_of_week_p1")["status"], "failed")
+        self.assertEqual(jobs.get(self.db, "data|E_day_of_week_p2")["status"], "failed")
         jobs.claim(self.db, "x", ["backtest"])                          # triggers dependency resolution
-        self.assertEqual(jobs.get(self.db, "backtest|E_day_of_week_p1")["status"], "cancelled")
+        self.assertEqual(jobs.get(self.db, "backtest|E_day_of_week_p2")["status"], "cancelled")
         hb = self.db.one("SELECT errors, retries FROM heartbeats WHERE worker='data-1'")
         self.assertEqual((hb["errors"], hb["retries"]), (3, 2))
 
@@ -224,6 +227,89 @@ class FamiliesAreCausal(unittest.TestCase):
                     self.assertEqual(full[:cut + 1], got[:cut + 1], f"{name} {params} looks ahead (cut {cut})")
 
 
+class ProtocolV2(Env):
+    """research/PROTOCOL_V2.md: train gate, pre-validation gate, batch-level (order-independent) DSR."""
+
+    def _val_reads(self, eid):
+        return self.db.one("SELECT COUNT(*) FROM datasets WHERE exp_id=? AND split='validation'", eid)[0]
+
+    def test_batch_barrier_and_order_independent_dsr(self):
+        pipeline.discover_catalogue(self.db)
+        self.approve("day_of_week", "hour_of_day")
+        fleet.strategy_pass(self.db)
+        b = pipeline.batch_of(self.db, "E_day_of_week_p2")
+        self.assertEqual(b["exp_ids"], ["E_day_of_week_p2", "E_hour_of_day_p2"])
+        self.assertIn("cost|E_hour_of_day_p2", jobs.get(self.db, "validate|E_day_of_week_p2")["depends_on"])
+        # run day_of_week as far as it can go first: it must stop before validation until hour_of_day's cost is done
+        ag = {a.name: a for a in fleet.agents(self.db_path)}
+        for _ in range(10):
+            for n in ("data-1", "backtest-1", "cost-1", "adversarial-1", "validation-1"):
+                job = jobs.claim(self.db, n, ag[n].kinds)
+                if job and job["exp_id"] != "E_day_of_week_p2":
+                    self.db.con.execute("UPDATE jobs SET status='queued', lease_owner=NULL, attempts=attempts-1 "
+                                        "WHERE job_id=?", (job["job_id"],))          # hold the other member back
+                elif job:
+                    ag[n]._run(self.db, job) if ag[n].counters else (ag[n]._load_counters(self.db),
+                                                                      ag[n]._run(self.db, job))
+        self.assertEqual(jobs.get(self.db, "validate|E_day_of_week_p2")["status"], "blocked")
+        self.assertEqual(self._val_reads("E_day_of_week_p2"), 0)
+        c = self.drain([a for a in fleet.agents(self.db_path) if a.kinds])
+        self.assertEqual(c["failed"], 0, c)
+        val = pipeline.load_artifact("E_day_of_week_p2", "validate")
+        self.assertEqual(val["trials_counted"], 4)                    # 2 batch members x 2 variants, nothing earlier
+        # a later batch adds trials; the first batch's trial set does not change
+        self.approve("vol_managed_long")
+        fleet.strategy_pass(self.db)
+        self.drain([a for a in fleet.agents(self.db_path) if a.kinds])
+        spec = json.loads(registry.latest(self.db, "E_day_of_week_p2")["spec_json"])
+        self.assertEqual(len(pipeline.dsr_trials(self.db, "E_day_of_week_p2", spec)), 4)
+        later = pipeline.batch_of(self.db, "E_vol_managed_long_p2")
+        self.assertEqual(later["trial_cutoff_id"], 4)
+        self.assertEqual(len(pipeline.dsr_trials(self.db, "E_vol_managed_long_p2",
+                                                 json.loads(registry.latest(self.db, "E_vol_managed_long_p2")
+                                                            ["spec_json"]))), 6)
+
+    def test_train_gate_rejects_without_reading_validation(self):
+        pipeline.discover_catalogue(self.db)
+        self.approve("day_of_week")
+        fleet.strategy_pass(self.db)
+        real = pipeline._benchmark
+
+        def strong_benchmark(*a, **k):
+            m = real(*a, **k)
+            m["net_sharpe_ann"] = 99.0
+            return m
+        with mock.patch.object(pipeline, "_benchmark", strong_benchmark):
+            self.drain([a for a in fleet.agents(self.db_path) if a.kinds])
+        eid = "E_day_of_week_p2"
+        self.assertEqual(lifecycle.state(self.db, eid), "REJECTED")
+        self.assertEqual(self._val_reads(eid), 0)
+        r = self.db.one("SELECT verdict FROM results WHERE exp_id=?", eid)["verdict"]
+        self.assertTrue(r.startswith("REJECTED at train gate"), r)
+        self.assertIn("buy-and-hold", r)
+
+    def test_placebo_gate_rejects_before_validation(self):
+        pipeline.discover_catalogue(self.db)
+        self.approve("day_of_week")
+        fleet.strategy_pass(self.db)
+        fake = lambda *a, **k: {"actual": 1.0, "p": 0.5, "n": 5, "placebo_mean": 1.2}  # noqa: E731
+        with mock.patch.object(pipeline.adversarial, "placebo", fake):
+            self.drain([a for a in fleet.agents(self.db_path) if a.kinds])
+        eid = "E_day_of_week_p2"
+        self.assertEqual(lifecycle.state(self.db, eid), "REJECTED")
+        self.assertEqual(self._val_reads(eid), 0)
+        r = self.db.one("SELECT verdict FROM results WHERE exp_id=?", eid)["verdict"]
+        self.assertIn("REJECTED before validation", r)
+        self.assertIn("placebo p < 0.1", r)
+
+    def test_v1_specs_keep_v1_dsr_rule(self):
+        self.db.append("trials", exp_id="X", ts=1, variant=0, split="train", sharpe_daily=0.1, n_days=10,
+                       net_total=0.0, params={})
+        self.assertEqual(len(pipeline.dsr_trials(self.db, "any", {"protocol_version": 1})), 1)
+        with self.assertRaises(pipeline.StepError):
+            pipeline.dsr_trials(self.db, "unbatched", {"protocol_version": 2})
+
+
 class Control(Env):
     def test_pause_hold_and_stop_block_claims(self):
         pipeline.discover_catalogue(self.db)
@@ -241,7 +327,7 @@ class Control(Env):
         self.assertEqual(jobs.counts(self.db)["done"], 0)
         control.update_hold(self.db, "t", {"ok": True, "disk": {"free": 10 ** 12}, "ram": {"free": 10 ** 10}})
         a(self.db)
-        self.assertEqual(jobs.get(self.db, "data|E_day_of_week_p1")["status"], "done")
+        self.assertEqual(jobs.get(self.db, "data|E_day_of_week_p2")["status"], "done")
 
     def test_resource_limits(self):
         r = control.resources()

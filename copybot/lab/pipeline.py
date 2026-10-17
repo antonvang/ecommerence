@@ -76,19 +76,45 @@ def template_spec(t):
                          "reserved_from": "2025-01-01 (never read)"},
             "grid": tpl["grid"], "methodology": catalogue.PROTOCOL, "baseline": "equal-weight buy-and-hold of the same "
             "8 perpetuals with the same costs and funding", "costs": catalogue.COSTS,
-            "acceptance": catalogue.PROTOCOL["validation"], "rejection": "any validation, cost or adversarial gate fails",
+            "acceptance": catalogue.PROTOCOL["validation"],
+            "rejection": "train gate, pre-validation gate or any validation gate fails (research/PROTOCOL_V2.md)",
             "alpha": ALPHA_PER_EXPERIMENT, "code": ENGINE_CODE, "seed": SEED,
             "protocol_version": catalogue.PROTOCOL_VERSION, "label": "EXPLORATORY until a sealed holdout passes"}
 
 
 def register(db, eid, actor="strategy-1"):
-    """Attach the full spec as a new version and register it through the approved-template path."""
-    v = registry.latest(db, eid)
-    t = json.loads(v["spec_json"] or "{}").get("template")
+    """Register one instance as a batch of one (see register_batch)."""
+    return bool(register_batch(db, [eid], actor))
+
+
+def _template(db, eid):
+    t = json.loads(registry.latest(db, eid)["spec_json"] or "{}").get("template")
     if not t:
         raise StepError(f"{eid} is not a catalogue instance")
-    if templates.approval(db, t) is None:
-        return False
+    return t
+
+
+def register_batch(db, eids, actor="strategy-1"):
+    """PROTOCOL v2 batch: register every approved instance in `eids` together. Logs `batch.registered` with the
+    trials-ledger cutoff, then queues the jobs so that no member validates before every member finished its cost step.
+    Instances without a valid template approval are skipped. Returns the registered ids."""
+    ok = sorted(e for e in eids if templates.approval(db, _template(db, e)) is not None)
+    if not ok:
+        return []
+    for eid in ok:
+        _register_one(db, eid, actor)
+    cutoff = db.one("SELECT COALESCE(MAX(id),0) FROM trials")[0]
+    batch = "B-" + hashlib.sha256("|".join(ok).encode()).hexdigest()[:12]
+    db.event("batch.registered", f"system:{actor}", None, {"batch": batch, "exp_ids": ok, "trial_cutoff_id": cutoff,
+                                                          "protocol_version": catalogue.PROTOCOL_VERSION})
+    for eid in ok:
+        enqueue_pipeline(db, eid, actor, batch_members=ok)
+    return ok
+
+
+def _register_one(db, eid, actor):
+    v = registry.latest(db, eid)
+    t = _template(db, eid)
     if v["version"] == 1:
         commit = registry.last_commit(templates.CATALOGUE)
         with db.tx():
@@ -100,17 +126,44 @@ def register(db, eid, actor="strategy-1"):
                       note="exploratory screening")
             db.event("exp.version_added", actor, eid, {"version": 2, "template": t})
     templates.register_transition(db, eid, t, f"system:{actor}")
-    enqueue_pipeline(db, eid, actor)
-    return True
 
 
-def enqueue_pipeline(db, eid, actor="strategy-1"):
+def enqueue_pipeline(db, eid, actor="strategy-1", batch_members=()):
+    """Chain the steps. Under v2 the validate step also waits for the cost step of every batch member."""
     prio = 20 + list(catalogue.TEMPLATES).index(json.loads(registry.latest(db, eid)["spec_json"])["template"])
     prev = []
     for s in STEPS:
-        jobs.enqueue(db, f"{s}|{eid}", s, eid, {"exp_id": eid}, priority=prio, depends_on=prev,
+        deps = list(prev)
+        if s == "validate":
+            deps += [f"cost|{m}" for m in batch_members if m != eid]
+        jobs.enqueue(db, f"{s}|{eid}", s, eid, {"exp_id": eid}, priority=prio, depends_on=deps,
                      timeout_s=900 if s in ("backtest", "adversarial", "validate") else 300, actor=f"system:{actor}")
         prev = [f"{s}|{eid}"]
+
+
+def _v2(spec):
+    return (spec.get("protocol_version") or 1) >= 2
+
+
+def batch_of(db, eid):
+    """The batch.registered payload that contains eid, or None (v1 experiments have no batch)."""
+    for r in db.q("SELECT payload FROM events WHERE kind='batch.registered' ORDER BY id DESC"):
+        p = json.loads(r["payload"])
+        if eid in p["exp_ids"]:
+            return p
+    return None
+
+
+def dsr_trials(db, eid, spec):
+    """v1: every trial recorded so far. v2: trials up to the batch cutoff plus the batch's own trials."""
+    if not _v2(spec):
+        return [r[0] for r in db.q("SELECT sharpe_daily FROM trials WHERE sharpe_daily IS NOT NULL")]
+    b = batch_of(db, eid)
+    if b is None:
+        raise StepError(f"{eid} has no registered batch (PROTOCOL v2 requires one)")
+    q = (f"SELECT sharpe_daily FROM trials WHERE sharpe_daily IS NOT NULL AND (id<=? OR exp_id IN "
+         f"({','.join('?' * len(b['exp_ids']))})) ORDER BY id")
+    return [r[0] for r in db.q(q, b["trial_cutoff_id"], *b["exp_ids"])]
 
 
 # ---------- helpers ----------
@@ -169,7 +222,8 @@ def step_data(db, job, worker):
     if lifecycle.state(db, eid) == "REGISTERED":
         lifecycle.auto_transition(db, eid, "SCREENING", f"system:{worker}", "screening starts: data fetch and checks")
     report = {}
-    for split in ("train", "validation"):
+    spec = _spec(db, eid)
+    for split in (("train",) if _v2(spec) else ("train", "validation")):     # v2: validation is read only to validate
         per_sym = _files(db, eid, split, worker)
         bars, _, dups = _load(per_sym, split)
         report[split] = {s: data.quality(bars[s], split, dups[s]) for s in bars}
@@ -207,9 +261,16 @@ def step_cost(db, job, worker):
         results.append({"variant": v["variant"], "params": v["params"], "net": _strip(m), "net_2x_costs": _strip(hi)})
     bench = _strip(_benchmark(bars, funding, spec["costs"]))
     best = max(results, key=lambda r: r["net"]["net_sharpe_ann"] if r["net"]["net_sharpe_ann"] is not None else -9e9)
-    early = (best["net"]["net_sharpe_ann"] or -1) <= 0
+    sel_sr = best["net"]["net_sharpe_ann"]
+    early, reasons = (sel_sr or -1) <= 0, []
+    if early:
+        reasons.append("train net Sharpe > 0")
+    if _v2(spec) and (sel_sr is None or bench["net_sharpe_ann"] is None or sel_sr <= bench["net_sharpe_ann"]):
+        early = True
+        reasons.append("train net Sharpe > buy-and-hold train net Sharpe")
     art = save_artifact(eid, "cost", {"variants": results, "benchmark": bench, "selected": best["variant"],
-                                      "rejected_early": early, "cost_model": spec["costs"]})
+                                      "rejected_early": early, "early_reasons": reasons, "cost_model": spec["costs"],
+                                      "protocol_version": spec.get("protocol_version") or 1})
     return {"selected": best["variant"], "train_net_sharpe": best["net"]["net_sharpe_ann"], "rejected_early": early,
             "artifact": art, "tests": len(results)}
 
@@ -234,8 +295,16 @@ def step_adversarial(db, job, worker):
            "placebo": adversarial.placebo(bars, v["positions"], funding, spec["costs"]),
            "neighbours_net_sharpe": others}
     res["ok"] = all(x["ok"] for x in trunc.values()) and all(x["ok"] for x in poison.values()) and dq["ok"]
+    if _v2(spec):
+        pp = res["placebo"]["p"]
+        exact = all(x["ok"] for x in trunc.values()) and all(x["ok"] for x in poison.values())
+        checks = (("exact look-ahead and poison tests", exact), ("data quality", dq["ok"]),
+                  (f"train placebo p < {catalogue.PLACEBO_P_MAX}", pp is not None and pp < catalogue.PLACEBO_P_MAX))
+        res["pre_validation_failed"] = [k for k, ok in checks if not ok]
+        res["pre_validation_ok"] = not res["pre_validation_failed"]
     art = save_artifact(eid, "adversarial", res)
-    return {"ok": res["ok"], "placebo_p": res["placebo"]["p"], "artifact": art}
+    return {"ok": res["ok"], "placebo_p": res["placebo"]["p"], "pre_validation_ok": res.get("pre_validation_ok"),
+            "artifact": art}
 
 
 def step_validate(db, job, worker):
@@ -243,26 +312,33 @@ def step_validate(db, job, worker):
     spec = _spec(db, eid)
     cost, adv = load_artifact(eid, "cost"), load_artifact(eid, "adversarial")
     if cost["rejected_early"]:
-        art = save_artifact(eid, "validate", {"skipped": "rejected at cost check"})
+        art = save_artifact(eid, "validate", {"skipped": "rejected at the train gate"})
         return {"skipped": True, "artifact": art}
+    if _v2(spec) and not adv.get("pre_validation_ok"):
+        art = save_artifact(eid, "validate", {"skipped": "rejected before validation: "
+                                                         + ", ".join(adv.get("pre_validation_failed") or [])})
+        return {"skipped": True, "artifact": art}                           # validation data is never read
     v = load_artifact(eid, "backtest")["variants"][cost["selected"]]
-    bars, funding, _ = _load(_files(db, eid, "validation", worker), "validation")
+    bars, funding, dups = _load(_files(db, eid, "validation", worker), "validation")
+    vq = {s: data.quality(bars[s], "validation", dups[s]) for s in bars}
     pos = _positions(spec["template"], bars, funding, v["params"], v["fit"])      # frozen params and train fit
     m = _evaluate(bars, funding, pos, spec["costs"])
     hi = _evaluate(bars, funding, pos, spec["costs"], catalogue.COST_HIGH_MULT)
     bench = _benchmark(bars, funding, spec["costs"])
-    trials = [r[0] for r in db.q("SELECT sharpe_daily FROM trials WHERE sharpe_daily IS NOT NULL")]
+    trials = dsr_trials(db, eid, spec)
     sr_d = (m["net_mean_daily"] / m["net_sd_daily"]) if m.get("net_sd_daily") else None
     dsr = backtest.deflated_sharpe(sr_d, trials, m["days"])
     gates = {"net_mean_daily > 0": (m["net_mean_daily"] or 0) > 0,
              "one-sided 90% lower bound > 0": (m["lb_one_sided"] or -1) > 0,
              "net Sharpe > buy-and-hold": (m["net_sharpe_ann"] or -9e9) > (bench["net_sharpe_ann"] or -9e9),
              "net total > 0 at 2x costs": hi["net_total"] > 0,
-             "deflated Sharpe probability >= 0.95": (dsr or 0) >= 0.95,
+             "deflated Sharpe probability >= 0.95": (dsr or 0) >= catalogue.DSR_MIN,
              "adversarial checks pass": bool(adv.get("ok"))}
+    if _v2(spec):
+        gates["validation data quality"] = all(q["ok"] for q in vq.values())
     art = save_artifact(eid, "validate", {"metrics": _strip(m), "metrics_2x_costs": _strip(hi),
                                           "benchmark": _strip(bench), "dsr": dsr, "trials_counted": len(trials),
-                                          "gates": gates, "daily_net": m["daily_net"]})
+                                          "gates": gates, "daily_net": m["daily_net"], "validation_quality": vq})
     return {"passed": all(gates.values()), "artifact": art, "tests": 1}
 
 
@@ -271,10 +347,17 @@ def step_report(db, job, worker):
     spec = _spec(db, eid)
     cost, adv, val = load_artifact(eid, "cost"), load_artifact(eid, "adversarial"), load_artifact(eid, "validate")
     sel = next(r for r in cost["variants"] if r["variant"] == cost["selected"])
-    if cost["rejected_early"]:
+    if cost["rejected_early"] and _v2(spec):
+        failed = cost.get("early_reasons") or ["train gate"]
+        verdict = (f"REJECTED at train gate: selected train net Sharpe {sel['net']['net_sharpe_ann'] or 0:.2f}, "
+                   f"buy-and-hold {cost['benchmark']['net_sharpe_ann'] or 0:.2f}; failed {', '.join(failed)}")
+    elif cost["rejected_early"]:
         verdict = (f"REJECTED at cost check: best train net Sharpe {sel['net']['net_sharpe_ann']:.2f} <= 0 "
                    f"(gross Sharpe {sel['net']['gross_sharpe_ann'] or 0:.2f})")
         failed = ["train net Sharpe > 0"]
+    elif _v2(spec) and not adv.get("pre_validation_ok"):
+        failed = adv.get("pre_validation_failed") or ["pre-validation gate"]
+        verdict = f"REJECTED before validation (no validation data read): failed {', '.join(failed)}"
     else:
         failed = [k for k, ok in val["gates"].items() if not ok]
         verdict = ("PASS (screen): all validation gates passed; eligible for a human-approved sealed holdout"
@@ -285,7 +368,9 @@ def step_report(db, job, worker):
                "validation": val.get("metrics"), "validation_benchmark": val.get("benchmark"),
                "dsr": val.get("dsr"), "gates": val.get("gates"), "failed": failed,
                "placebo": adv.get("placebo"), "delayed_one_bar": adv.get("delayed_one_bar"),
-               "cost_model": spec["costs"], "label": "EXPLORATORY", "returns_basis": "sum of hourly simple returns"}
+               "cost_model": spec["costs"], "label": "EXPLORATORY", "returns_basis": "sum of hourly simple returns",
+               "protocol_version": spec.get("protocol_version") or 1, "dsr_trials": val.get("trials_counted"),
+               "batch": (batch_of(db, eid) or {}).get("batch")}
     rid = registry.record_result(db, eid, "EXPLORATORY", verdict, metrics, {"artifacts": files}, f"system:{worker}")
     ev = {"result_id": rid}
     to = "SCREEN_PASSED" if verdict.startswith("PASS") else "REJECTED"

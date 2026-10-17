@@ -192,11 +192,8 @@ def _summary(res):
 def strategy_pass(db):
     """Register DISCOVERED catalogue instances whose template has a valid human approval; queue approved holdouts."""
     from lab import registry
-    registered = []
-    for x in registry.status(db):
-        if x["state"] == "DISCOVERED" and x["exp_id"].startswith("E_"):
-            if pipeline.register(db, x["exp_id"], "strategy-1"):
-                registered.append(x["exp_id"])
+    found = [x["exp_id"] for x in registry.status(db) if x["state"] == "DISCOVERED" and x["exp_id"].startswith("E_")]
+    registered = pipeline.register_batch(db, found, "strategy-1") if found else []     # one batch per pass (v2)
     return {"registered": registered, "holdouts_queued": pipeline.enqueue_holdouts(db)}
 
 
