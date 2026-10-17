@@ -75,3 +75,17 @@ PROTOCOL v2 would:
 - require the selected train variant to beat buy-and-hold net Sharpe on train, and a placebo p < 0.10, before validation.
 
 v1 results stay as recorded. A v2 run would be new experiments (`_p2`) with new approvals.
+
+## PROTOCOL v2 run (2026-10-17, 13:17 UTC)
+
+- **Approval.** The user asked for the approval code for `vol_managed_long` under v2. The first code (12:42 UTC) expired unconfirmed, and the watcher stopped the fleet. A second code was issued at 13:07 UTC. At the user's explicit chat instruction, Claude ran `confirm-template` at 13:17:08 UTC. An `approval.note` event by `agent:claude` records this.
+- **Discovery.** The catalogue agent discovered `E_vol_managed_long_p2`. The graveyard suppressed the other five `_p2` instances (day_of_week, hour_of_day, funding_contrarian, daily_reversal, donchian_trend), as stated in advance in PROTOCOL_V2.md.
+- **Batch.** `B-d3555a7194bf` = [`E_vol_managed_long_p2`], trial cutoff id 10.
+- **Result.** **REJECTED at train gate.**
+  - Selected variant (7-day lookback): train net Sharpe 0.0095, against buy-and-hold at 0.415.
+  - Both variants' trial Sharpes reproduce the v1 values bit for bit (0.000498 and −0.040738 per day).
+  - Adversarial and validation steps were skipped. Validation data reads for p2: **0** (train reads: 128).
+- **Prediction.** It matched the prediction committed before the run (PROTOCOL_V2.md, "What this implies right now").
+- **Shutdown.** The watcher requested a graceful stop at 13:17:31 UTC, once all 6 jobs were done.
+
+`E_vol_managed_long_p1` keeps its recorded v1 status (SCREEN_PASSED). Under v2 the same strategy does not pass the train gate. Whether to retire or withdraw p1 instead of spending the sealed 2024 holdout on it is the user's decision.
