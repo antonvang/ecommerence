@@ -27,7 +27,7 @@ running processes on 17.10.2026. The design keeps three non-negotiables:
 | Live paper side tests | `funding.py`, `sniper.py` | Own SQLite files (`funding.db`, `sniper.db`), background threads, x·y = k buy/sell, Hyperliquid info client |
 | Dashboard | `server.py`, `report.py`, `dashboard.html` | `ThreadingHTTPServer` on 127.0.0.1 with port fallback and `/api/state` (JSON); a 512-line single-page HTML polling every 3 s; `report.research_state()` already lists experiments and verdicts from `data/research/results/*.json` |
 | Research | `research/{launch_data, simulate, experiment(_v2), arb, carry, tsmom, pmcal, pm_lp, prelim, m3, …}.py` | Per-experiment fetch → cache (SHA-256 manifests in carry, tsmom, pmcal) → dev → freeze → holdout. Holdout seals: `frozen()` / `frozen_committed()` / `committed_values()` (git-tracked + clean). Fetch-before-freeze refusal (pmcal, pm_lp). Statistics: `block_lb`, `cluster_lb`, `day_lb`, `n_req`, `psr`. The `Maker` simulator in `pm_lp.py`, with a trade-through fill rule, inventory limits and resolution. |
-| Records | `research/*.md` | 9 binding specs, 5 frozen files, 7 RESULTS, 2 proposals, 3 prelim/mission reports, `STRATEGIC_CANDIDATES.json` (machine-readable register for one review) |
+| Records | `research/*.md` (26 files) | 4 binding spec files + `HYPOTHESES.md` (launch, smart, arb), 3 frozen files, 6 RESULTS files, proposals, prelim/mission reports, `STRATEGIC_CANDIDATES.json` (machine-readable register for one review) |
 | Monitoring | `daily_check.py` + scheduled task `copybot-daglig-status` (09:00) | A daily read of the paper, funding and sniper databases |
 
 ### 1.3 Weaknesses the engine must fix
