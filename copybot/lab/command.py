@@ -480,6 +480,13 @@ TEMPLATE_DA = {
     "xs_max_lottery": ("Anti-lotteri", "Sælger mønter med vilde hop og køber de rolige"),
     "xs_low_volatility": ("Lav uro", "Køber de roligste mønter og sælger de mest urolige"),
     "xs_betting_against_beta": ("Lav markedsfølsomhed", "Køber mønter, der følger markedet mindst, og sælger dem, der følger mest"),
+    "xs_illiquidity": ("Illikvid-præmie", "Køber de mindst handlede mønter og sælger de mest handlede (30 mønter)"),
+    "xs_high_volume": ("Volumen-spring", "Køber mønter med usædvanligt meget handel og sælger dem med usædvanligt lidt (30 mønter)"),
+    "xs_downside_beta": ("Nedturs-risiko", "Køber mønter, der falder mest med markedet på dårlige dage, og sælger de mest stabile (30 mønter)"),
+    "xs_coskewness": ("Skævheds-præmie", "Køber mønter, der giver porteføljen flere store fald, og sælger det modsatte (30 mønter)"),
+    "xs_near_high": ("Tæt på toppen", "Køber mønter tæt på deres seneste top og sælger dem langt under (30 mønter)"),
+    "turn_of_month": ("Månedsskifte", "Er kun med i dagene omkring månedsskiftet (30 mønter)"),
+    "btc_lead_lag": ("Følg Bitcoin", "Efter et stort Bitcoin-hop handles de andre mønter samme vej næste dag (30 mønter)"),
 }
 LEGACY_DA = {
     "L01_copy_kol": "Kopiér kendte wallets", "L02_self_found_traders": "Kopiér selvfundne tradere",

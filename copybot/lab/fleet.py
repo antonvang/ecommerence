@@ -24,9 +24,42 @@ from lab.risk import Risk
 from lab.supervisor import Worker
 
 HEAVY = {"backtest", "cost", "adversarial", "validate", "holdout"}
-HEAVY_SLOTS = 2
+# Heavy steps run in worker processes (Python threads cannot use several cores at once). One slot per process;
+# two cores stay free for the supervisor, agents, dashboard and the rest of the PC. LAB_SLOTS overrides,
+# LAB_THREADS=1 runs heavy steps in-thread (used by tests that patch module state).
+HEAVY_SLOTS = int(os.environ.get("LAB_SLOTS") or max(2, (os.cpu_count() or 4) - 2))
+PROCESSES = os.environ.get("LAB_THREADS") != "1"
 LEASE_EVERY = 15
 _slots = threading.BoundedSemaphore(HEAVY_SLOTS)
+_pool, _pool_lock = None, threading.Lock()
+
+
+def _get_pool():
+    global _pool
+    with _pool_lock:
+        if _pool is None:
+            from concurrent.futures import ProcessPoolExecutor
+            _pool = ProcessPoolExecutor(max_workers=HEAVY_SLOTS)
+        return _pool
+
+
+def _overrides():
+    from lab.engine import data as mdata
+    return {"ARTIFACTS": pipeline.ARTIFACTS, "REPORTS": pipeline.REPORTS, "PLACEBO_N": pipeline.PLACEBO_N,
+            "CACHE": mdata.CACHE}
+
+
+def _child(kind, db_path, job, worker, overrides):
+    """Runs in a worker process: same handler, own DB connection, same paths as the parent."""
+    from lab.engine import data as mdata
+    pipeline.ARTIFACTS, pipeline.REPORTS = overrides["ARTIFACTS"], overrides["REPORTS"]
+    pipeline.PLACEBO_N, mdata.CACHE = overrides["PLACEBO_N"], overrides["CACHE"]
+    db = DB(db_path)
+    try:
+        res = pipeline.HANDLERS[kind](db, job, worker)
+        return {**res, "pid": os.getpid()} if isinstance(res, dict) else res
+    finally:
+        db.close()
 
 
 def _beat(db, name, role, status, **f):
@@ -139,7 +172,10 @@ class Agent:
         keeper.start()
         t0 = time.time()
         try:
-            res = pipeline.HANDLERS[job["kind"]](db, job, self.name)
+            if self.heavy and PROCESSES and self.db_path:
+                res = _get_pool().submit(_child, job["kind"], self.db_path, job, self.name, _overrides()).result()
+            else:
+                res = pipeline.HANDLERS[job["kind"]](db, job, self.name)
             stop.set()
             keeper.join(5)
             if jobs.complete(db, jid, self.name, res):
@@ -241,8 +277,13 @@ ROSTER = (
     ("backtest-1", "Backtest agent: grid positions on the train window", ("backtest",), None, None, True),
     ("backtest-2", "Backtest agent: grid positions on the train window", ("backtest",), None, None, True),
     ("cost-1", "Cost agent: net results, 2x cost stress, trials ledger, selection", ("cost",), None, None, True),
+    ("cost-2", "Cost agent: net results, 2x cost stress, trials ledger, selection", ("cost",), None, None, True),
     ("adversarial-1", "Adversarial agent: look-ahead, poison, delay, placebo", ("adversarial",), None, None, True),
+    ("adversarial-2", "Adversarial agent: look-ahead, poison, delay, placebo", ("adversarial",), None, None, True),
+    ("adversarial-3", "Adversarial agent: look-ahead, poison, delay, placebo", ("adversarial",), None, None, True),
     ("validation-1", "Validation agent: frozen variant on validation; sealed holdout after approval",
+     ("validate", "holdout"), None, None, True),
+    ("validation-2", "Validation agent: frozen variant on validation; sealed holdout after approval",
      ("validate", "holdout"), None, None, True),
     ("report-1", "Reporting agent: results, lifecycle verdicts, markdown reports", ("report",), None, None, False),
     ("paper-1", "Paper execution agent: simulated orders for PAPER_TRADING experiments only", None, paper_pass, 60,

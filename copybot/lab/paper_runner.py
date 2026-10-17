@@ -36,13 +36,14 @@ def fetch_market(sym, now, get=_get):
     """Closed 1h bars [(open_ts, open, close)], settled funding {ts: rate} and a Book."""
     kl = get(f"/fapi/v1/klines?symbol={sym}&interval=1h&limit=1000")
     bars = [(int(k[0]) // 1000, float(k[1]), float(k[4])) for k in kl if int(k[6]) // 1000 < now]
+    volume = {int(k[0]) // 1000: float(k[7]) for k in kl if int(k[6]) // 1000 < now and len(k) > 7}
     fr = get(f"/fapi/v1/fundingRate?symbol={sym}&limit=200")
     funding = {int(f["fundingTime"]) // 1000 // HOUR * HOUR: float(f["fundingRate"]) for f in fr
                if int(f["fundingTime"]) // 1000 < now}
     d = get(f"/fapi/v1/depth?symbol={sym}&limit=20")
     book = Book(ts=now, bids=tuple((float(p), float(q)) for p, q in d["bids"]),
                 asks=tuple((float(p), float(q)) for p, q in d["asks"]))
-    return bars, funding, book
+    return bars, funding, book, volume
 
 
 def cost_model():
@@ -73,12 +74,12 @@ def run_one(db, eid, get, now):
     hour = int(now) // HOUR * HOUR
     market = {}
     try:
-        for s in data.UNIVERSE:
+        for s in catalogue.universe(spec["template"]):
             market[s] = fetch_market(s, now, get)
     except Exception as e:
         risk.pause(eid, "data_fetch", None, None, f"public market data fetch failed: {e!r}"[:300], eng.cancel_entries)
         return {"status": "paused", "reason": "data fetch failed"}
-    for s, (bars, _, book) in market.items():
+    for s, (bars, _, book, _) in market.items():
         if not bars or now - (bars[-1][0] + HOUR) > MAX_BAR_AGE or book.crossed():
             risk.pause(eid, "data_stale", None, MAX_BAR_AGE, f"{s}: stale bars or invalid book", eng.cancel_entries)
             return {"status": "paused", "reason": f"{s} data stale or invalid"}
@@ -88,11 +89,15 @@ def run_one(db, eid, get, now):
     tpl = catalogue.TEMPLATES[spec["template"]]
     fam = tpl["family"]
     nxt = {s: m[0] + [(m[0][-1][0] + HOUR, m[0][-1][2], m[0][-1][2])] for s, m in market.items()}   # prices unused
-    xs = fam(nxt, {s: m[1] for s, m in market.items()}, variant["params"]) if tpl.get("cross_sectional") else None
+    vol = {s: m[3] for s, m in market.items()} if tpl.get("needs_volume") else None
+    xs = None
+    if tpl.get("cross_sectional"):
+        fund = {s: m[1] for s, m in market.items()}
+        xs = fam(nxt, fund, variant["params"], None, vol) if vol is not None else fam(nxt, fund, variant["params"])
     orders = []
-    for s, (bars, funding, book) in market.items():
+    for s, (bars, funding, book, _) in market.items():
         target_pos = xs[s][-1] if xs else fam(nxt[s], funding, variant["params"], (variant["fit"] or {}).get(s))[-1]
-        target_qty = target_pos * (equity / len(data.UNIVERSE)) / marks[s]
+        target_qty = target_pos * (equity / len(market)) / marks[s]
         cur = eng.ledger(eid)["positions"].get(s, 0.0)
         delta = target_qty - cur
         if abs(delta) * marks[s] < MIN_NOTIONAL:

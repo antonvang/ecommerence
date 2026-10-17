@@ -23,6 +23,8 @@ REPORTS = os.path.join(HERE, "data", "lab", "reports")
 STEPS = ("data", "backtest", "cost", "adversarial", "validate", "report")
 ALPHA_PER_EXPERIMENT = 0.005
 SEED = 7
+PLACEBO_N = 60
+DOWNLOAD_THREADS = 8
 ENGINE_CODE = ["lab/engine/catalogue.py", "lab/engine/backtest.py", "lab/engine/adversarial.py", "lab/engine/data.py",
                "lab/pipeline.py"]
 
@@ -55,7 +57,7 @@ def discover_catalogue(db, actor="discovery-catalogue"):
         eid = catalogue.exp_id(t)
         if db.one("SELECT 1 FROM experiments WHERE exp_id=?", eid):
             continue
-        st, dup = registry.discover(db, eid, tpl["hypothesis"], tpl["mechanism_tag"], catalogue.INSTRUMENT_FAMILY,
+        st, dup = registry.discover(db, eid, tpl["hypothesis"], tpl["mechanism_tag"], catalogue.instrument_family(t),
                                     catalogue.HORIZON[t], "taker", "lab/engine/catalogue.py", actor,
                                     extra={"template": t, "title": t.replace("_", " "), "discovered_by": actor,
                                            "reason": tpl["rationale"], "evidence": tpl["evidence"],
@@ -68,8 +70,9 @@ def template_spec(t):
     tpl = catalogue.TEMPLATES[t]
     return {"template": t, "title": t.replace("_", " "), "hypothesis": tpl["hypothesis"], "mechanism": tpl["rationale"],
             "mechanism_tag": tpl["mechanism_tag"], "evidence": tpl["evidence"],
-            "sources": ["lab/engine/catalogue.py"] + tpl["evidence"], "instrument": catalogue.INSTRUMENT_FAMILY,
-            "universe": list(data.UNIVERSE), "timeframe": "1h", "horizon": catalogue.HORIZON[t], "execution": "taker",
+            "sources": ["lab/engine/catalogue.py"] + tpl["evidence"], "instrument": catalogue.instrument_family(t),
+            "universe": list(catalogue.universe(t)), "min_symbols": catalogue.min_symbols(t), "timeframe": "1h",
+            "horizon": catalogue.HORIZON[t], "execution": "taker",
             "long_only": tpl["long_only"],
             "datasets": {"source": "https://data.binance.vision (futures/um monthly klines 1h + fundingRate)",
                          "splits": {k: [f"{a[0]}-{a[1]:02d}", f"{b[0]}-{b[1]:02d}"] for k, (a, b) in data.SPLITS.items()},
@@ -171,11 +174,14 @@ def _spec(db, eid):
     return json.loads(registry.latest(db, eid)["spec_json"])
 
 
-def _files(db, eid, split, worker):
-    """Download/reuse the split's files and record the read through the gateway (state rules apply)."""
+def _files(db, eid, split, worker, symbols=None):
+    """Download/reuse the split's files (parallel threads) and record the read through the gateway (state rules apply)."""
+    from concurrent.futures import ThreadPoolExecutor
+    symbols = symbols or catalogue.universe(_spec(db, eid)["template"])
+    with ThreadPoolExecutor(DOWNLOAD_THREADS) as ex:
+        got = list(ex.map(lambda s: (s, data.files_for(s, split)), symbols))
     per_sym, all_files = {}, []
-    for s in data.UNIVERSE:
-        f = data.files_for(s, split)
+    for s, f in got:
         per_sym[s] = f
         all_files += f["klines"] + f["funding"]
     Gateway(db, f"system:{worker}").access(eid, data.GATEWAY_SPLIT[split],
@@ -192,10 +198,34 @@ def _load(per_sym, split):
     return bars, funding, dups
 
 
-def _positions(t, bars, funding, params, fit):
+def _market(db, eid, split, worker, spec, exclude=()):
+    """Bars, funding, duplicates and (when the template needs it) hourly quote volume of the experiment's universe,
+    without the symbols excluded by the data rule."""
+    per_sym = _files(db, eid, split, worker, catalogue.universe(spec["template"]))
+    bars, funding, dups = _load(per_sym, split)
+    vol = ({s: data.load_volume(per_sym[s], split) for s in per_sym}
+           if catalogue.TEMPLATES[spec["template"]].get("needs_volume") else None)
+    for s in exclude:
+        for d in (bars, funding, dups) + ((vol,) if vol is not None else ()):
+            d.pop(s, None)
+    return bars, funding, dups, vol
+
+
+def _train(db, eid, worker, spec):
+    excluded = (load_artifact(eid, "data").get("excluded") or {}).get("train", [])
+    return _market(db, eid, "train", worker, spec, excluded)
+
+
+def _quality(bars, split, dups, t):
+    q = {s: data.quality(bars[s], split, dups[s]) for s in bars}
+    excluded = sorted(s for s, x in q.items() if not x["ok"])
+    return q, excluded, len(q) - len(excluded) >= catalogue.min_symbols(t)
+
+
+def _positions(t, bars, funding, params, fit, vol=None):
     fam = catalogue.TEMPLATES[t]["family"]
     if catalogue.TEMPLATES[t].get("cross_sectional"):
-        return fam(bars, funding, params, None)
+        return fam(bars, funding, params, None, vol) if vol is not None else fam(bars, funding, params, None)
     return {s: fam(bars[s], funding[s], params, fit.get(s) if fit else None) for s in bars}
 
 
@@ -223,25 +253,27 @@ def step_data(db, job, worker):
     eid = job["exp_id"]
     if lifecycle.state(db, eid) == "REGISTERED":
         lifecycle.auto_transition(db, eid, "SCREENING", f"system:{worker}", "screening starts: data fetch and checks")
-    report = {}
+    report, excluded, oks = {}, {}, []
     spec = _spec(db, eid)
     for split in (("train",) if _v2(spec) else ("train", "validation")):     # v2: validation is read only to validate
-        per_sym = _files(db, eid, split, worker)
-        bars, _, dups = _load(per_sym, split)
-        report[split] = {s: data.quality(bars[s], split, dups[s]) for s in bars}
-    ok = all(q["ok"] for sp in report.values() for q in sp.values())
-    art = save_artifact(eid, "data", {"quality": report, "ok": ok})
-    return {"ok": ok, "artifact": art, "symbols": len(data.UNIVERSE)}
+        bars, _, dups, _ = _market(db, eid, split, worker, spec)
+        report[split], excluded[split], ok_split = _quality(bars, split, dups, spec["template"])
+        oks.append(ok_split)
+    ok = all(oks)
+    art = save_artifact(eid, "data", {"quality": report, "ok": ok, "excluded": excluded,
+                                      "min_symbols": catalogue.min_symbols(spec["template"])})
+    return {"ok": ok, "artifact": art, "symbols": len(catalogue.universe(spec["template"])),
+            "excluded": sum(len(v) for v in excluded.values())}
 
 
 def step_backtest(db, job, worker):
     eid = job["exp_id"]
     spec = _spec(db, eid)
-    bars, funding, _ = _load(_files(db, eid, "train", worker), "train")
+    bars, funding, _, vol = _train(db, eid, worker, spec)
     out = []
     for k, params in enumerate(spec["grid"]):
         fit = _fit(spec["template"], bars, params)
-        pos = _positions(spec["template"], bars, funding, params, fit)
+        pos = _positions(spec["template"], bars, funding, params, fit, vol)
         out.append({"variant": k, "params": params, "fit": fit,
                     "positions": {s: [round(x, 6) for x in p] for s, p in pos.items()}})
     art = save_artifact(eid, "backtest", {"split": "train", "variants": out})
@@ -251,7 +283,7 @@ def step_backtest(db, job, worker):
 def step_cost(db, job, worker):
     eid = job["exp_id"]
     spec = _spec(db, eid)
-    bars, funding, _ = _load(_files(db, eid, "train", worker), "train")
+    bars, funding, _, _ = _train(db, eid, worker, spec)
     bt = load_artifact(eid, "backtest")
     results = []
     for v in bt["variants"]:
@@ -285,11 +317,11 @@ def step_adversarial(db, job, worker):
         art = save_artifact(eid, "adversarial", {"skipped": "rejected at cost check"})
         return {"skipped": True, "artifact": art}
     t, v = spec["template"], load_artifact(eid, "backtest")["variants"][cost["selected"]]
-    bars, funding, _ = _load(_files(db, eid, "train", worker), "train")
+    bars, funding, _, vol = _train(db, eid, worker, spec)
     fam = catalogue.TEMPLATES[t]["family"]
     if catalogue.TEMPLATES[t].get("cross_sectional"):
-        trunc = {"ALL": adversarial.truncation_test_xs(fam, bars, funding, v["params"], 20)}
-        poison = {"ALL": adversarial.poison_test_xs(fam, bars, funding, v["params"])}
+        trunc = {"ALL": adversarial.truncation_test_xs(fam, bars, funding, v["params"], 20, volume_by=vol)}
+        poison = {"ALL": adversarial.poison_test_xs(fam, bars, funding, v["params"], volume_by=vol)}
     else:
         trunc = {s: adversarial.truncation_test(fam, bars[s], funding[s], v["params"], (v["fit"] or {}).get(s), 20)
                  for s in bars}
@@ -299,7 +331,7 @@ def step_adversarial(db, job, worker):
     others = [r["net"]["net_sharpe_ann"] for r in cost["variants"] if r["variant"] != cost["selected"]]
     res = {"truncation": trunc, "poison": poison, "data_ok": dq["ok"],
            "delayed_one_bar": _strip(adversarial.delayed(bars, v["positions"], funding, spec["costs"])),
-           "placebo": adversarial.placebo(bars, v["positions"], funding, spec["costs"]),
+           "placebo": adversarial.placebo(bars, v["positions"], funding, spec["costs"], n=PLACEBO_N),
            "neighbours_net_sharpe": others}
     res["ok"] = all(x["ok"] for x in trunc.values()) and all(x["ok"] for x in poison.values()) and dq["ok"]
     if _v2(spec):
@@ -326,9 +358,13 @@ def step_validate(db, job, worker):
                                                          + ", ".join(adv.get("pre_validation_failed") or [])})
         return {"skipped": True, "artifact": art}                           # validation data is never read
     v = load_artifact(eid, "backtest")["variants"][cost["selected"]]
-    bars, funding, dups = _load(_files(db, eid, "validation", worker), "validation")
-    vq = {s: data.quality(bars[s], "validation", dups[s]) for s in bars}
-    pos = _positions(spec["template"], bars, funding, v["params"], v["fit"])      # frozen params and train fit
+    bars, funding, dups, vol = _market(db, eid, "validation", worker, spec)
+    vq, v_excluded, v_enough = _quality(bars, "validation", dups, spec["template"])
+    for s in v_excluded:
+        bars.pop(s), funding.pop(s)
+        if vol is not None:
+            vol.pop(s, None)
+    pos = _positions(spec["template"], bars, funding, v["params"], v["fit"], vol)  # frozen params and train fit
     m = _evaluate(bars, funding, pos, spec["costs"])
     hi = _evaluate(bars, funding, pos, spec["costs"], catalogue.COST_HIGH_MULT)
     bench = _benchmark(bars, funding, spec["costs"])
@@ -342,10 +378,11 @@ def step_validate(db, job, worker):
              "deflated Sharpe probability >= 0.95": (dsr or 0) >= catalogue.DSR_MIN,
              "adversarial checks pass": bool(adv.get("ok"))}
     if _v2(spec):
-        gates["validation data quality"] = all(q["ok"] for q in vq.values())
+        gates["validation data quality"] = v_enough
     art = save_artifact(eid, "validate", {"metrics": _strip(m), "metrics_2x_costs": _strip(hi),
                                           "benchmark": _strip(bench), "dsr": dsr, "trials_counted": len(trials),
-                                          "gates": gates, "daily_net": m["daily_net"], "validation_quality": vq})
+                                          "gates": gates, "daily_net": m["daily_net"], "validation_quality": vq,
+                                          "validation_excluded": v_excluded})
     return {"passed": all(gates.values()), "artifact": art, "tests": 1}
 
 
@@ -417,8 +454,13 @@ def step_holdout(db, job, worker):
     spec = _spec(db, eid)
     cost = load_artifact(eid, "cost")
     v = load_artifact(eid, "backtest")["variants"][cost["selected"]]
-    bars, funding, _ = _load(_files(db, eid, "holdout", worker), "holdout")
-    pos = _positions(spec["template"], bars, funding, v["params"], v["fit"])
+    bars, funding, dups, vol = _market(db, eid, "holdout", worker, spec)
+    _, h_excluded, _ = _quality(bars, "holdout", dups, spec["template"])
+    for s in h_excluded:
+        bars.pop(s), funding.pop(s)
+        if vol is not None:
+            vol.pop(s, None)
+    pos = _positions(spec["template"], bars, funding, v["params"], v["fit"], vol)
     m = _evaluate(bars, funding, pos, spec["costs"], lb_q=0.05)
     bench = _benchmark(bars, funding, spec["costs"])
     gates = {"net_mean_daily > 0": (m["net_mean_daily"] or 0) > 0, "one-sided 95% lower bound > 0": (m["lb_one_sided"] or -1) > 0,

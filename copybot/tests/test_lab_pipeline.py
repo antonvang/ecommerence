@@ -86,7 +86,9 @@ class Env(unittest.TestCase):
                         mock.patch.object(registry, "last_commit", lambda path: "c0ffee"),
                         mock.patch.object(registry, "blob_at", lambda c, p: "blob-test"),
                         mock.patch.object(data, "_fetch", self._no_network),
-                        mock.patch.object(pipeline.adversarial, "placebo", functools.partial(_PLACEBO, n=5))]
+                        mock.patch.object(pipeline.adversarial, "placebo", functools.partial(_PLACEBO, n=5)),
+                        mock.patch.object(pipeline, "PLACEBO_N", 5),
+                        mock.patch.object(fleet, "PROCESSES", False)]          # tests patch module state
         for p in self.patches:
             p.start()
 
@@ -230,29 +232,48 @@ class FamiliesAreCausal(unittest.TestCase):
 
 
     def test_cross_sectional_families_ignore_the_future(self):
+        """Every cross-sectional family, on its own universe (8 or 30 symbols), with volume where it needs it."""
         from lab.engine import catalogue
-        rng = random.Random(2)
         t0 = int(datetime(2023, 1, 2, tzinfo=timezone.utc).timestamp())          # a Monday
-        bars_by, funding_by = {}, {}
-        for j, s in enumerate(data.UNIVERSE):
-            px, b = 100.0, []
-            for k in range(24 * 140):
-                o = px
-                px *= 1 + rng.gauss(0.0001 * (j - 3), 0.004 + 0.001 * j)
-                b.append((t0 + k * HOUR, o, px))
-            bars_by[s] = b
-            funding_by[s] = {t0 + k * 8 * HOUR: rng.gauss(0.0001, 0.0003) for k in range(3 * 140)}
+        n = 24 * 200
+        cache = {}
+
+        def market(symbols):
+            key = tuple(symbols)
+            if key not in cache:
+                rng = random.Random(2)
+                bars_by, funding_by, vol_by = {}, {}, {}
+                for j, s in enumerate(symbols):
+                    px, b, v = 100.0, [], {}
+                    for k in range(n):
+                        o = px
+                        px *= 1 + rng.gauss(0.00005 * ((j % 7) - 3), 0.003 + 0.0006 * (j % 9))
+                        b.append((t0 + k * HOUR, o, px))
+                        v[t0 + k * HOUR] = 1e6 * (1 + j) * (1 + 0.5 * rng.random()) * (3 if (k // 24) % 23 == j % 23 else 1)
+                    bars_by[s], vol_by[s] = b, v
+                    funding_by[s] = {t0 + k * 8 * HOUR: rng.gauss(0.0001, 0.0003) for k in range(n // 8)}
+                cache[key] = (bars_by, funding_by, vol_by)
+            return cache[key]
+
+        def call(tpl, bars_by, funding_by, params, vol_by):
+            if tpl.get("needs_volume"):
+                return tpl["family"](bars_by, funding_by, params, None, vol_by)
+            return tpl["family"](bars_by, funding_by, params)
+
         for name, tpl in catalogue.TEMPLATES.items():
             if not tpl.get("cross_sectional"):
                 continue
+            bars_by, funding_by, vol_by = market(catalogue.universe(name))
+            ref = catalogue.universe(name)[0]
             for params in tpl["grid"]:
-                full = tpl["family"](bars_by, funding_by, params)
-                self.assertTrue(any(full[s][-1] for s in full), f"{name} {params} never takes a position")
-                for cut_i in (24 * 7, 24 * 60, 24 * 61 + 5, 24 * 120):
-                    cut = bars_by[data.UNIVERSE[0]][cut_i][0]
+                full = call(tpl, bars_by, funding_by, params, vol_by)
+                self.assertTrue(any(any(full[s]) for s in full), f"{name} {params} never takes a position")
+                for cut_i in (24 * 7, 24 * 60, 24 * 61 + 5, 24 * 130):
+                    cut = bars_by[ref][cut_i][0]
                     pb = {s: [(ts, o, c) if ts <= cut else (ts, o * 1000, c * 1000) for ts, o, c in b]
                           for s, b in bars_by.items()}
-                    got = tpl["family"](pb, funding_by, params)
+                    pv = {s: {k: (q if k <= cut else q * 1000) for k, q in v.items()} for s, v in vol_by.items()}
+                    got = call(tpl, pb, funding_by, params, pv)
                     for s in bars_by:
                         self.assertEqual(full[s][:cut_i + 1], got[s][:cut_i + 1],
                                          f"{name} {params} looks ahead on {s} (cut {cut_i})")
@@ -369,7 +390,8 @@ class Control(Env):
             self.assertEqual(control.resources()["ok"], control.ops.disk()["free_ok"])
 
     def test_supervised_fleet_runs_in_parallel_and_stops_on_request(self):
-        """Real supervisor threads: job agents + strategy agent; a stop request ends the run gracefully."""
+        """Real supervisor threads, heavy steps in worker processes; a stop request ends the run gracefully."""
+        fleet.PROCESSES = True                                       # restored by the patch in tearDown
         pipeline.discover_catalogue(self.db)
         self.approve("day_of_week", "hour_of_day", "vol_managed_long")
         ws = [w for w in fleet.workers(self.db_path) if w.name not in ("discovery-scanner", "paper-1", "risk-1",
@@ -392,6 +414,10 @@ class Control(Env):
         starts = self.db.q("SELECT payload FROM events WHERE kind='job.started'")
         ids = [json.loads(r[0])["job_id"] for r in starts]
         self.assertEqual(len(ids), len(set(ids)))                       # no job processed twice
+        pids = {json.loads(r[0]).get("pid") for r in self.db.q("SELECT result FROM jobs WHERE kind IN "
+                                                              "('backtest','cost','adversarial','validate')")}
+        self.assertNotIn(None, pids)                                    # every heavy step ran in a worker process
+        self.assertNotIn(os.getpid(), pids)
         roles = {r[0] for r in self.db.q("SELECT role FROM heartbeats WHERE role IS NOT NULL")}
         self.assertGreaterEqual(len(roles), 6)
         self.assertTrue(self.db.one("SELECT 1 FROM events WHERE kind='system.stopped'"))

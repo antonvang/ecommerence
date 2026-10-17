@@ -177,14 +177,15 @@ def _daily_returns(close, T, days):
     return out
 
 
-def _xs(bars_by, funding_by, p, score, long_low):
+def _xs(bars_by, funding_by, p, score, long_low, volume_by=None):
     close = {s: {ts: c for ts, _, c in b} for s, b in bars_by.items()}
+    ctx = {"dv": _daily_dollar_volume(volume_by)} if volume_by else {}
     times = sorted({ts for b in bars_by.values() for ts, _, _ in b if _is_monday_midnight(ts)})
     k, weights = p["k"], {}
     for T in times:
         sc = {}
         for s in bars_by:
-            v = score(close, s, T, p)
+            v = score(close, s, T, p, ctx)
             if v is not None:
                 sc[s] = v
         w = {s: 0.0 for s in bars_by}
@@ -208,16 +209,16 @@ def _xs(bars_by, funding_by, p, score, long_low):
     return out
 
 
-def _score_momentum(close, s, T, p):
+def _score_momentum(close, s, T, p, ctx=None):
     return _ret_over(close[s], T - HOUR, T - HOUR - p["lookback_days"] * DAY)
 
 
-def _score_max(close, s, T, p):
+def _score_max(close, s, T, p, ctx=None):
     r = _daily_returns(close[s], T, p["window_days"])
     return max(r) if r else None
 
 
-def _score_vol(close, s, T, p):
+def _score_vol(close, s, T, p, ctx=None):
     c, rs = close[s], []
     for h in range(p["lookback_days"] * 24):
         r = _ret_over(c, T - HOUR - h * HOUR, T - 2 * HOUR - h * HOUR)
@@ -227,7 +228,7 @@ def _score_vol(close, s, T, p):
     return statistics.pstdev(rs)
 
 
-def _score_beta(close, s, T, p):
+def _score_beta(close, s, T, p, ctx=None):
     own = _daily_returns(close[s], T, p["lookback_days"])
     others = [_daily_returns(close[x], T, p["lookback_days"]) for x in close]
     if own is None or any(o is None for o in others):
@@ -240,22 +241,148 @@ def _score_beta(close, s, T, p):
     return sum((a - mo) * (b - mm) for a, b in zip(own, mkt)) / len(own) / var
 
 
-def xs_momentum(bars_by, funding_by, p, fit=None):
+def _daily_dollar_volume(volume_by):
+    """{symbol: {UTC day start ts: summed hourly quote volume}}."""
+    out = {}
+    for s, v in (volume_by or {}).items():
+        d = {}
+        for ts, q in v.items():
+            k = ts - ts % DAY
+            d[k] = d.get(k, 0.0) + q
+        out[s] = d
+    return out
+
+
+def _market_daily(close, T, days):
+    """Equal-weight market daily returns over `days` days before T, or None when any symbol lacks data."""
+    per = [_daily_returns(c, T, days) for c in close.values()]
+    if any(r is None for r in per):
+        return None, None
+    return per, [sum(r[d] for r in per) / len(per) for d in range(days)]
+
+
+def _score_illiquidity(close, s, T, p, ctx):
+    r = _daily_returns(close[s], T, p["lookback_days"])
+    dv = ctx["dv"].get(s, {})
+    vols = [dv.get(T - (d + 1) * DAY) for d in range(p["lookback_days"])]
+    if r is None or any(not v for v in vols):
+        return None
+    return statistics.fmean(abs(a) / v for a, v in zip(r, vols))
+
+
+def _score_high_volume(close, s, T, p, ctx):
+    dv, f = ctx["dv"].get(s, {}), p["formation_days"]
+    recent = [dv.get(T - (d + 1) * DAY) for d in range(f)]
+    before = [dv.get(T - (d + 1) * DAY) for d in range(f, f + 49)]
+    if any(v is None for v in recent + before) or not sum(before):
+        return None
+    return statistics.fmean(recent) / statistics.fmean(before)
+
+
+def _score_downside_beta(close, s, T, p, ctx=None):
+    own = _daily_returns(close[s], T, p["lookback_days"])
+    _, mkt = _market_daily(close, T, p["lookback_days"])
+    if own is None or mkt is None:
+        return None
+    mu = statistics.fmean(mkt)
+    idx = [i for i, m in enumerate(mkt) if m < mu]
+    if len(idx) < 5:
+        return None
+    o, m = [own[i] for i in idx], [mkt[i] for i in idx]
+    var = statistics.pvariance(m)
+    if var <= 0:
+        return None
+    mo, mm = statistics.fmean(o), statistics.fmean(m)
+    return sum((a - mo) * (b - mm) for a, b in zip(o, m)) / len(o) / var
+
+
+def _score_coskewness(close, s, T, p, ctx=None):
+    own = _daily_returns(close[s], T, p["lookback_days"])
+    _, mkt = _market_daily(close, T, p["lookback_days"])
+    if own is None or mkt is None:
+        return None
+    mi, mm = statistics.fmean(own), statistics.fmean(mkt)
+    si, sm2 = statistics.pstdev(own), statistics.fmean((b - mm) ** 2 for b in mkt)
+    if si <= 0 or sm2 <= 0:
+        return None
+    return statistics.fmean((a - mi) * (b - mm) ** 2 for a, b in zip(own, mkt)) / (si * sm2)
+
+
+def _score_near_high(close, s, T, p, ctx=None):
+    c, last = close[s], close[s].get(T - HOUR)
+    hist = [c.get(T - HOUR - h * HOUR) for h in range(p["lookback_days"] * 24)]
+    if last is None or any(v is None for v in hist):
+        return None
+    return last / max(hist)
+
+
+def xs_illiquidity(bars_by, funding_by, p, fit=None, volume_by=None):
+    """Long the k most illiquid, short the k most liquid coins by Amihud ILLIQ (Amihud 2002)."""
+    return _xs(bars_by, funding_by, p, _score_illiquidity, long_low=False, volume_by=volume_by)
+
+
+def xs_high_volume(bars_by, funding_by, p, fit=None, volume_by=None):
+    """Long the k coins with the largest abnormal dollar volume, short the k smallest (Gervais et al. 2001)."""
+    return _xs(bars_by, funding_by, p, _score_high_volume, long_low=False, volume_by=volume_by)
+
+
+def xs_downside_beta(bars_by, funding_by, p, fit=None, volume_by=None):
+    """Long the k highest downside-beta coins, short the k lowest (Ang, Chen & Xing 2006)."""
+    return _xs(bars_by, funding_by, p, _score_downside_beta, long_low=False)
+
+
+def xs_coskewness(bars_by, funding_by, p, fit=None, volume_by=None):
+    """Long the k most negatively coskewed coins, short the k most positive (Harvey & Siddique 2000)."""
+    return _xs(bars_by, funding_by, p, _score_coskewness, long_low=True)
+
+
+def xs_near_high(bars_by, funding_by, p, fit=None, volume_by=None):
+    """Long the k coins nearest their L-day high, short the k furthest (George & Hwang 2004, adapted window)."""
+    return _xs(bars_by, funding_by, p, _score_near_high, long_low=False)
+
+
+def turn_of_month(bars, funding, p, fit=None):
+    """Long from 00:00 UTC of the last B days of a month through the first A days of the next (Lakonishok & Smidt 1988)."""
+    out = []
+    for ts, _, _ in bars:
+        d = datetime.fromtimestamp(ts, timezone.utc)
+        nxt = datetime(d.year + (d.month == 12), 1 if d.month == 12 else d.month + 1, 1, tzinfo=timezone.utc)
+        days_left = (nxt - d.replace(hour=0, minute=0, second=0, microsecond=0)).days     # 1 on the last day
+        out.append(1.0 if (d.day <= p["days_after"] or days_left <= p["days_before"]) else 0.0)
+    return out
+
+
+def btc_lead_lag(bars_by, funding_by, p, fit=None, volume_by=None):
+    """Daily: BTC's previous-day return beyond +-x sets the next day's position in every other coin (Hou 2007, adapted)."""
+    btc = {ts: c for ts, _, c in bars_by.get("BTCUSDT", [])}
+    out = {}
+    for s, b in bars_by.items():
+        pos, cur = [], 0.0
+        for ts, _, _ in b:
+            if ts % DAY == 0:
+                r = _ret_over(btc, ts - HOUR, ts - HOUR - DAY)
+                cur = 0.0 if (s == "BTCUSDT" or r is None) else (1.0 if r > p["x"] else (-1.0 if r < -p["x"] else 0.0))
+            pos.append(cur)
+        out[s] = pos
+    return out
+
+
+def xs_momentum(bars_by, funding_by, p, fit=None, volume_by=None):
     """Long the k strongest, short the k weakest over the lookback (Liu, Tsyvinski & Wu 2022)."""
     return _xs(bars_by, funding_by, p, _score_momentum, long_low=False)
 
 
-def xs_max_lottery(bars_by, funding_by, p, fit=None):
+def xs_max_lottery(bars_by, funding_by, p, fit=None, volume_by=None):
     """Short the k coins with the highest maximum daily return, long the k lowest (Bali, Cakici & Whitelaw 2011)."""
     return _xs(bars_by, funding_by, p, _score_max, long_low=True)
 
 
-def xs_low_volatility(bars_by, funding_by, p, fit=None):
+def xs_low_volatility(bars_by, funding_by, p, fit=None, volume_by=None):
     """Long the k least volatile, short the k most volatile (Ang, Hodrick, Xing & Zhang 2006)."""
     return _xs(bars_by, funding_by, p, _score_vol, long_low=True)
 
 
-def xs_betting_against_beta(bars_by, funding_by, p, fit=None):
+def xs_betting_against_beta(bars_by, funding_by, p, fit=None, volume_by=None):
     """Long the k lowest-beta, short the k highest-beta coins vs the equal-weight 8-coin market (Frazzini & Pedersen 2014)."""
     return _xs(bars_by, funding_by, p, _score_beta, long_low=True)
 
@@ -321,12 +448,77 @@ TEMPLATES = {
         "hypothesis": "Low-beta coins outperform high-beta coins relative to their market exposure.",
         "rationale": "Funding-constrained investors tilt to high-beta assets instead of using leverage, flattening the security market line.",
         "evidence": ["Frazzini & Pedersen 2014, Journal of Financial Economics, https://doi.org/10.1016/j.jfineco.2013.10.005 (equities)"]},
+    # ---- amendment 3: 30-perp universe ----
+    "xs_illiquidity": {
+        "family": xs_illiquidity, "cross_sectional": True, "needs_volume": True, "universe": "30",
+        "mechanism_tag": "illiquidity_premium", "long_only": False,
+        "grid": [{"lookback_days": 28, "k": 5}, {"lookback_days": 56, "k": 5}],
+        "hypothesis": "Illiquid coins (high Amihud ILLIQ) earn a premium over liquid coins, net of costs.",
+        "rationale": "Investors demand compensation for holding assets that are costly to trade.",
+        "evidence": ["Amihud 2002, Journal of Financial Markets, https://doi.org/10.1016/S1386-4181(01)00024-6 (equities)"]},
+    "xs_high_volume": {
+        "family": xs_high_volume, "cross_sectional": True, "needs_volume": True, "universe": "30",
+        "mechanism_tag": "high_volume_return_premium", "long_only": False,
+        "grid": [{"formation_days": 7, "k": 5}, {"formation_days": 14, "k": 5}],
+        "hypothesis": "Coins with unusually high recent trading volume outperform coins with unusually low volume.",
+        "rationale": "A volume shock raises a coin's visibility, which increases later demand.",
+        "evidence": ["Gervais, Kaniel & Mingelgrin 2001, Journal of Finance, https://doi.org/10.1111/0022-1082.00349 (equities)"]},
+    "xs_downside_beta": {
+        "family": xs_downside_beta, "cross_sectional": True, "universe": "30",
+        "mechanism_tag": "downside_risk_premium", "long_only": False,
+        "grid": [{"lookback_days": 56, "k": 5}, {"lookback_days": 112, "k": 5}],
+        "hypothesis": "Coins that move most with the market on down days earn a premium.",
+        "rationale": "Investors dislike assets that crash with the market and require compensation to hold them.",
+        "evidence": ["Ang, Chen & Xing 2006, Review of Financial Studies, https://doi.org/10.1093/rfs/hhj035 (equities)"]},
+    "xs_coskewness": {
+        "family": xs_coskewness, "cross_sectional": True, "universe": "30",
+        "mechanism_tag": "coskewness_premium", "long_only": False,
+        "grid": [{"lookback_days": 56, "k": 5}, {"lookback_days": 112, "k": 5}],
+        "hypothesis": "Coins with negative coskewness with the market outperform coins with positive coskewness.",
+        "rationale": "Assets that add negative skew to a portfolio must offer higher expected returns.",
+        "evidence": ["Harvey & Siddique 2000, Journal of Finance, https://doi.org/10.1111/0022-1082.00247 (equities)"]},
+    "xs_near_high": {
+        "family": xs_near_high, "cross_sectional": True, "universe": "30",
+        "mechanism_tag": "anchoring_to_high", "long_only": False,
+        "grid": [{"lookback_days": 60, "k": 5}, {"lookback_days": 120, "k": 5}],
+        "hypothesis": "Coins trading near their recent high outperform coins far below it.",
+        "rationale": "Traders anchor on the recent high and under-react to good news near it.",
+        "evidence": ["George & Hwang 2004, Journal of Finance, https://doi.org/10.1111/j.1540-6261.2004.00695.x (equities; window adapted)"]},
+    "turn_of_month": {
+        "family": turn_of_month, "universe": "30", "mechanism_tag": "calendar_turn_of_month", "long_only": True,
+        "grid": [{"days_before": 1, "days_after": 3}, {"days_before": 2, "days_after": 4}],
+        "hypothesis": "Crypto returns around the turn of the month are high enough that holding only then beats buy-and-hold.",
+        "rationale": "Month-end flows (salaries, fund rebalancing, contract rolls) concentrate buying around the month turn.",
+        "evidence": ["Lakonishok & Smidt 1988, Review of Financial Studies, https://doi.org/10.1093/rfs/1.4.403 (equities)"]},
+    "btc_lead_lag": {
+        "family": btc_lead_lag, "cross_sectional": True, "universe": "30", "mechanism_tag": "lead_lag_diffusion",
+        "long_only": False, "grid": [{"x": 0.02}, {"x": 0.04}],
+        "hypothesis": "Large BTC moves are followed by same-direction moves in other coins the next day.",
+        "rationale": "Information is priced first in the leader and diffuses slowly to followers.",
+        "evidence": ["Hou 2007, Review of Financial Studies, https://doi.org/10.1093/revfin/hhm003 (equities; adapted to BTC as leader)"]},
 }
 
 INSTRUMENT_FAMILY = "binance_usdm_perps_8alt"
+INSTRUMENT_FAMILY_30 = "binance_usdm_perps_30"
+MIN_SYMBOLS_30 = 24                     # amendment 3: experiment continues only with >= 24 quality-checked symbols
+
+
+def universe(template):
+    from lab.engine import data
+    return data.UNIVERSE_30 if TEMPLATES[template].get("universe") == "30" else data.UNIVERSE
+
+
+def instrument_family(template):
+    return INSTRUMENT_FAMILY_30 if TEMPLATES[template].get("universe") == "30" else INSTRUMENT_FAMILY
+
+
+def min_symbols(template):
+    return MIN_SYMBOLS_30 if TEMPLATES[template].get("universe") == "30" else len(universe(template))
 HORIZON = {"vol_managed_long": "days", "day_of_week": "days", "hour_of_day": "hours", "funding_contrarian": "hours",
            "daily_reversal": "days", "donchian_trend": "days", "xs_momentum": "weeks", "xs_max_lottery": "weeks",
-           "xs_low_volatility": "weeks", "xs_betting_against_beta": "weeks"}
+           "xs_low_volatility": "weeks", "xs_betting_against_beta": "weeks", "xs_illiquidity": "weeks",
+           "xs_high_volume": "weeks", "xs_downside_beta": "weeks", "xs_coskewness": "weeks", "xs_near_high": "weeks",
+           "turn_of_month": "days", "btc_lead_lag": "days"}
 
 
 def exp_id(template, version=PROTOCOL_VERSION):

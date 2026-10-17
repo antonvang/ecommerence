@@ -21,6 +21,9 @@ from datetime import datetime, timezone
 from lab.db import HERE
 
 UNIVERSE = ("BNBUSDT", "XRPUSDT", "DOGEUSDT", "ADAUSDT", "LINKUSDT", "LTCUSDT", "AVAXUSDT", "DOTUSDT")
+# research/PROTOCOL_V2.md amendment 3: first 30 of the ordered candidate list with every monthly file (HEAD check only)
+UNIVERSE_30 = tuple(c + "USDT" for c in ("BTC ETH BNB XRP SOL ADA DOGE TRX DOT LINK AVAX LTC BCH ATOM ETC XLM NEAR FIL "
+                                         "UNI AAVE ALGO VET ICP EOS XTZ THETA AXS SAND MANA APE").split())
 SPLITS = {"train": ((2023, 1), (2023, 8)), "validation": ((2023, 9), (2023, 12)), "holdout": ((2024, 1), (2024, 12))}
 GATEWAY_SPLIT = {"train": "dev", "validation": "validation", "holdout": "holdout"}
 RESERVED_FROM = datetime(2025, 1, 1, tzinfo=timezone.utc).timestamp()
@@ -121,6 +124,20 @@ def load(paths, split):
             if a <= ts <= b:
                 funding[ts - ts % HOUR] = float(r[2])
     return bars, funding, dup
+
+
+def load_volume(paths, split):
+    """Hourly quote-asset volume {bar open ts: volume} (kline column 8) clipped to the split window."""
+    a, b = window(split)
+    out = {}
+    for p in sorted(paths["klines"]):
+        for r in _rows(p):
+            ts = int(r[0]) // 1000
+            if ts > 10 ** 11:
+                ts //= 1000
+            if a <= ts <= b and len(r) > 7:
+                out.setdefault(ts, float(r[7]))
+    return out
 
 
 def quality(bars, split, duplicates=0):

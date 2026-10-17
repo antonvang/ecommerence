@@ -39,9 +39,13 @@ def poison_test(family, bars, funding, params, fit=None, seed=13):
     return {"cut_index": i, "mismatches": diff, "ok": diff == 0}
 
 
-def truncation_test_xs(family, bars_by, funding_by, params, samples=20, seed=11):
+def _call(family, bars_by, funding_by, params, volume_by):
+    return family(bars_by, funding_by, params, None, volume_by) if volume_by is not None else family(bars_by, funding_by, params)
+
+
+def truncation_test_xs(family, bars_by, funding_by, params, samples=20, seed=11, volume_by=None):
     """Cross-sectional: cut every symbol at the same timestamp; positions up to the cut must not change."""
-    full = family(bars_by, funding_by, params)
+    full = _call(family, bars_by, funding_by, params, volume_by)
     ref = min(bars_by, key=lambda s: len(bars_by[s]))
     rng = random.Random(seed)
     n = len(bars_by[ref])
@@ -49,8 +53,9 @@ def truncation_test_xs(family, bars_by, funding_by, params, samples=20, seed=11)
     bad = 0
     for i in cuts:
         cut = bars_by[ref][i][0]
-        part = family({s: [x for x in b if x[0] <= cut] for s, b in bars_by.items()},
-                      {s: {k: v for k, v in f.items() if k <= cut} for s, f in funding_by.items()}, params)
+        part = _call(family, {s: [x for x in b if x[0] <= cut] for s, b in bars_by.items()},
+                     {s: {k: v for k, v in f.items() if k <= cut} for s, f in funding_by.items()}, params,
+                     {s: {k: q for k, q in v.items() if k <= cut} for s, v in volume_by.items()} if volume_by else None)
         for s, b in bars_by.items():
             m = sum(1 for x in b if x[0] <= cut)
             if any(abs(part[s][j] - full[s][j]) > 1e-12 for j in range(m)):
@@ -59,7 +64,7 @@ def truncation_test_xs(family, bars_by, funding_by, params, samples=20, seed=11)
     return {"checked": len(cuts), "mismatches": bad, "ok": bad == 0}
 
 
-def poison_test_xs(family, bars_by, funding_by, params, seed=13):
+def poison_test_xs(family, bars_by, funding_by, params, seed=13, volume_by=None):
     """Cross-sectional: multiply every symbol's prices after a common cut by 1000; earlier positions must not change."""
     ref = min(bars_by, key=lambda s: len(bars_by[s]))
     if len(bars_by[ref]) < 10:
@@ -69,7 +74,8 @@ def poison_test_xs(family, bars_by, funding_by, params, seed=13):
     cut = bars_by[ref][i][0]
     pb = {s: [(ts, o, c) if ts <= cut else (ts, o * 1000, c * 1000) for ts, o, c in b] for s, b in bars_by.items()}
     pf = {s: {k: (v if k <= cut else 1.0) for k, v in f.items()} for s, f in funding_by.items()}
-    a, b2 = family(bars_by, funding_by, params), family(pb, pf, params)
+    pv = {s: {k: (q if k <= cut else q * 1000) for k, q in v.items()} for s, v in volume_by.items()} if volume_by else None
+    a, b2 = _call(family, bars_by, funding_by, params, volume_by), _call(family, pb, pf, params, pv)
     diff = sum(1 for s, b in bars_by.items() for j, x in enumerate(b) if x[0] <= cut and abs(a[s][j] - b2[s][j]) > 1e-12)
     return {"cut_ts": cut, "mismatches": diff, "ok": diff == 0}
 
