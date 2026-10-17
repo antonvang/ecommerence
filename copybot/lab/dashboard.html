@@ -276,7 +276,7 @@ details.more[open]>summary{margin-bottom:12px}
         <svg id="orbits" viewBox="0 0 600 600" role="img" aria-label="Pipeline-trin omkring planeten med agenter ved trinnet for deres aktuelle opgave"></svg>
       </div>
       <div class="globe-cap" id="g-cap">—</div>
-      <div class="globe-sub">Lysende prik = agent i arbejde ved sit trin · røde prikker = afviste strategier</div>
+      <div class="globe-sub">Grøn prik = agent i arbejde ved sit trin · røde prikker = afviste strategier · ledige agenter står i agentlisten</div>
     </div>
     <div class="panel corner"><h2>Pipeline <span class="tagx">strategier pr. trin</span></h2><div class="pl" id="pipe"></div>
       <div class="note" id="flow-note"></div></div>
@@ -477,11 +477,10 @@ const Orbits = (() => {
   function agentsRender(agents){
     if (!built) build();
     const g = svg.querySelector("#agentnodes"), seen = new Set(), byStage = {};
-    agents.forEach(a => { const st = a.status === "running" && a.stage ? a.stage : "_dock"; (byStage[st] = byStage[st] || []).push(a); });
+    agents.filter(a => a.status === "running" && a.stage).forEach(a => { (byStage[a.stage] = byStage[a.stage] || []).push(a); });
     Object.entries(byStage).forEach(([st, list]) => list.forEach((a, i) => {
       let x, y;
-      if (st === "_dock") { const span = Math.min(120, list.length * 10), ang = 90 + (list.length > 1 ? -span/2 + span * i/(list.length-1) : 0); [x, y] = pos(ang, 192); }
-      else { [x, y] = pos(ANG[st] + (i - (list.length-1)/2) * 8, 196); }
+      [x, y] = pos(ANG[st] + (i - (list.length-1)/2) * 9, 196);
       const working = a.status === "running";
       const col = working ? "#5fd39a" : a.status === "idle" ? "#7fb0ff" : (a.status === "blocked" || a.status === "queued") ? "#f4b860" : (a.status === "stale" || a.status === "error" || a.status === "failed") ? "#ff5d5d" : "#5f5b57";
       let node = g.querySelector(`[data-agent="${CSS.escape(a.agent)}"]`);
@@ -569,7 +568,7 @@ function renderStatus(k){
 const seenFeed = new Set(); let feedPrimed = false;
 function renderFeed(f){
   const hhmm = ts => new Date(ts*1000).toISOString().slice(11,16);
-  $("#feed").innerHTML = f.items.length ? f.items.map(e => `<div class="fl${feedPrimed && !seenFeed.has(e.id) ? " new" : ""}"><span class="t">${hhmm(e.ts)}</span><span class="tg tg-${esc(e.tag)}">[${esc(e.tag)}]</span><span class="x">${esc(e.text)}</span></div>`).join("")
+  $("#feed").innerHTML = f.items.length ? f.items.map(e => `<div class="fl${feedPrimed && !seenFeed.has(e.id) ? " new" : ""}"><span class="t">${hhmm(e.ts)}</span><span class="tg tg-${esc(e.tag)}">[${esc(e.tag)}]</span><span class="x" title="${esc(e.detail || e.text)}">${esc(e.text)}</span></div>`).join("")
     : `<div class="empty">Ingen hændelser endnu.</div>`;
   f.items.filter(e => e.found && feedPrimed && !seenFeed.has(e.id)).slice(0, 1).forEach(e => celebrate(e.exp_id, e.text));
   f.items.forEach(e => seenFeed.add(e.id)); feedPrimed = true;
@@ -880,8 +879,9 @@ $("#clearfc").onclick = async () => { const reason = prompt("Why is it safe to c
   try { await control("/api/control/clear-fail-closed", {reason}); refresh(true); } catch (err) { alert("Refused: " + err.message); } };
 setInterval(() => { $("#clock").textContent = new Date().toISOString().slice(11,19) + " UTC"; }, 1000);
 
-Planet.start();
-refresh(true).then(startStream);
+const SNAPSHOT = new URLSearchParams(location.search).has("snapshot");   // static render for screenshots: no live stream
+refresh(true).then(() => { if (!SNAPSHOT) startStream(); });
+setTimeout(() => Planet.start(), 50);
 </script>
 </body>
 </html>

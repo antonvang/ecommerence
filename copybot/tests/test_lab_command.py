@@ -209,6 +209,15 @@ class Gate(unittest.TestCase):
         self.assertIn("gate --require", src)                              # installer is gated on the S7 check
 
 
+class FeedText(unittest.TestCase):
+    def test_short_danish_reasons(self):
+        self.assertEqual(command.short_reason("REJECTED at validation: failed a, b, c"),
+                         "afvist ved validering (3 krav ikke opfyldt)")
+        self.assertIn("train-gaten", command.short_reason("REJECTED at train gate: selected ..."))
+        self.assertIn("allerede afvist", command.short_reason("matches rejected experiment(s) L14"))
+        self.assertEqual(command.short_reason("something else"), "something else")
+
+
 class StopState(unittest.TestCase):
     def test_stop_is_pending_only_until_the_supervisor_stopped(self):
         db = DB(":memory:")

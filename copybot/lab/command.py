@@ -399,6 +399,22 @@ TAG_OF_STATE = {"SCREEN_PASSED": "BESTÅET", "VALIDATED": "GODKENDT", "PAPER_TRA
 FOUND_STATES = ("SCREEN_PASSED", "VALIDATED", "PAPER_TRADING")
 
 
+def short_reason(reason):
+    """Short Danish summary of a verdict for the feed (the full text stays available as `detail`)."""
+    r = reason or ""
+    n = len([x for x in r.split("failed", 1)[-1].split(",") if x.strip()]) if "failed" in r else 0
+    for key, da in (("at train gate", "afvist ved train-gaten (slog ikke buy-and-hold på train)"),
+                    ("before validation", "afvist før validering (placebo/look-ahead)"),
+                    ("at cost check", "afvist ved omkostningstjek (taber efter omkostninger)"),
+                    ("at validation", f"afvist ved validering ({n} krav ikke opfyldt)" if n else "afvist ved validering"),
+                    ("FAIL (holdout)", "afvist i forseglet holdout"), ("FAIL (paper", "afvist efter paper-gennemgang"),
+                    ("matches rejected", "sorteret fra: samme idé er allerede afvist"),
+                    ("circuit breaker", "sat på pause af risikostyring")):
+        if key in r:
+            return da
+    return r[:120]
+
+
 def feed(db, limit=40):
     kinds = ("candidate.discovered", "lifecycle.transition", "batch.registered", "template.approved", "paper.order",
              "job.failed", "system.running", "system.stopped", "system.paused", "system.resumed",
@@ -414,9 +430,9 @@ def feed(db, limit=40):
             e.update(tag="IDÉ", text=f"{r['exp_id']} foreslået som ny hypotese")
         elif k == "lifecycle.transition":
             to = p.get("to")
-            e.update(tag=TAG_OF_STATE.get(to, "STATUS"), found=to in FOUND_STATES,
-                     text=f"{r['exp_id']} {STAGE_DA.get(to, to)}"
-                     + (f": {p.get('reason', '')[:140]}" if to in ("REJECTED", "PAUSED", "SUPPRESSED") else ""))
+            short = short_reason(p.get("reason")) if to in ("REJECTED", "PAUSED", "SUPPRESSED") else None
+            e.update(tag=TAG_OF_STATE.get(to, "STATUS"), found=to in FOUND_STATES, detail=p.get("reason"),
+                     text=f"{r['exp_id']}: {short}" if short else f"{r['exp_id']} {STAGE_DA.get(to, to)}")
         elif k == "batch.registered":
             e.update(tag="TEST", text=f"Test-batch startet med {len(p.get('exp_ids', []))} strategi(er)")
         elif k == "template.approved":

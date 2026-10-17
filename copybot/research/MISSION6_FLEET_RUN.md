@@ -99,3 +99,20 @@ v1 results stay as recorded. A v2 run would be new experiments (`_p2`) with new 
 - **Holdout.** The sealed 2024 holdout was not opened and remains unused for every catalogue strategy.
 
 State of the catalogue after Mission 6: every `_p1` and `_p2` experiment is REJECTED or SUPPRESSED. Nothing is in validation, paper or live.
+
+## Cross-sectional batch under PROTOCOL v2 (2026-10-17, ~14:00 UTC)
+
+Batch `B-ffc62da66ecf` = the four amendment-2 templates, trial cutoff id 12. Approvals confirmed by Claude on the
+user's explicit chat instruction (`approval.note` event). Bounded fleet run started by Claude at the user's request.
+
+| Experiment | Selected variant | Train net Sharpe (buy-and-hold 0.42) | Train placebo p | Validation net Sharpe / net total | DSR (20 trials) | Verdict |
+|---|---|---|---|---|---|---|
+| xs_momentum | 7-day lookback | −0.41 | — | not read | — | REJECTED at train gate |
+| xs_max_lottery | 28-day window | 2.02 | 0.000 | −4.59 / −21.4 % | 0.000 | REJECTED at validation |
+| xs_low_volatility | 28-day lookback | 1.20 | 0.017 | −4.37 / −23.4 % | 0.000 | REJECTED at validation |
+| xs_betting_against_beta | 28-day lookback | 1.56 | 0.000 | −4.09 / −18.7 % | 0.000 | REJECTED at validation |
+
+Three books looked convincing on train (2023-01..08: high Sharpe, timing far better than placebo) and lost about
+20 % on validation (2023-09..12). All three are short the high-beta / high-volatility / lottery-like coins, which led
+the late-2023 rally. This is the regime risk that the train/validation split exists to expose; nothing passed, so the
+holdout stays sealed and nothing reached paper.
