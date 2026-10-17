@@ -74,6 +74,14 @@ class Scanner(unittest.TestCase):
     def scan(self, world, n, names=None):
         return [scanner.run(self.db, names, world.get, world.post, now=DAY * (100 + i)) for i in range(n)]
 
+    def test_persistence_needs_scans_in_different_hours(self):
+        w = World(gap=0.006)
+        for k in range(3):                                             # three scans within the same hour
+            s = scanner.run(self.db, ["pricing_constraint"], w.get, w.post, now=DAY * 50 + 60 * k)
+        self.assertEqual((s["created"], s["waiting_persistence"]), ([], 1))
+        s = scanner.run(self.db, ["pricing_constraint"], w.get, w.post, now=DAY * 50 + 3600)
+        self.assertEqual(len(s["created"]), 1)
+
     def test_quiet_market_gives_observations_but_no_candidates(self):
         s = self.scan(World(competition=1e9), 1)[0]
         self.assertGreater(s["observations"], 0)

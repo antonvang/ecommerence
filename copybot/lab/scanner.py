@@ -24,7 +24,8 @@ from lab import registry
 from lab.lifecycle import state
 from lab.registry import fingerprint
 
-PERSIST = 2
+PERSIST = 2                        # flagged in >= 2 scans that lie in different clock hours
+PERSIST_BUCKET = 3600
 VERSION = {"venue_subsidy": 1, "pricing_constraint": 2}   # persistence only counts observations of the same version
 GAP_IDENTITY_MAX = 0.03            # larger gaps are treated as an instrument-identity mismatch, never as an opportunity
 SUBSIDY_YIELD_DAY = 0.005          # 0.5 %/day gross reward yield (median of the sample) flags a subsidy class
@@ -239,9 +240,9 @@ DETECTORS = {"venue_subsidy": venue_subsidy, "pricing_constraint": pricing_const
 
 # ---------- scanner ----------
 def persisted(db, p, now):
-    """Distinct scan timestamps (including now) with a flagged observation for this detector/metric(/instrument)."""
-    q = "SELECT COUNT(DISTINCT ts) FROM observations WHERE detector=? AND metric=? AND flagged=1"
-    args = [p["detector"], p["metric"]]
+    """Distinct clock hours (including now) with a flagged observation for this detector/metric(/instrument)."""
+    q = "SELECT COUNT(DISTINCT ts / ?) FROM observations WHERE detector=? AND metric=? AND flagged=1"
+    args = [PERSIST_BUCKET, p["detector"], p["metric"]]
     if p["instrument_key"]:
         q += " AND instrument=?"
         args.append(p["instrument_key"])
