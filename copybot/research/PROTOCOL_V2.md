@@ -88,3 +88,46 @@ Rebalance Mondays 00:00 UTC; long k = 2 / short k = 2 of the 8 perps; each grid 
 Stated in advance: these are market-neutral long/short books. The validation gate "net Sharpe above buy-and-hold"
 compares them with buy-and-hold in the 2023-09..12 rally (buy-and-hold net Sharpe 4.07), which a market-neutral book
 will rarely beat. The gate is locked and is not adjusted.
+
+## Amendment 3 (2026-10-17): 30-perp universe and seven new hypotheses — registered before any of their data is read
+
+### Universe rule (applied once, outcome recorded here)
+
+Ordered candidate list, by general prominence and chosen without looking at any 2023-2024 price data:
+BTC ETH BNB XRP SOL ADA DOGE TRX DOT LINK AVAX LTC BCH ATOM ETC XLM NEAR FIL UNI AAVE ALGO VET ICP EOS XTZ THETA AXS
+SAND MANA APE CRV SNX COMP (all `<COIN>USDT` Binance USD-M perpetuals).
+Rule: take the first 30 that have monthly 1h-kline **and** funding files for every month 2023-01..2024-12 on
+data.binance.vision, checked with HTTP HEAD requests only (no file content read). Outcome 2026-10-17: all 33 had every
+file, so the universe is the first 30: **BTC … APE** in the order above (CRV, SNX, COMP not used).
+
+Data rule for this universe: a symbol that fails the quality check of a window (coverage >= 99 %, no duplicates,
+monotonic timestamps) is excluded from that experiment for that window before any return is computed; the experiment
+continues only if at least 24 of the 30 symbols remain, otherwise the data gate fails. Daily dollar volume = sum of the
+hourly quote-asset volume (kline column 8) of the 24 bars of a UTC day.
+
+### Templates (all PROTOCOL v2 gates unchanged; two fixed variants each; benchmark = equal-weight buy-and-hold of
+the same 30 perps with the same costs)
+
+Cross-sectional books rebalance every Monday 00:00 UTC, using only bars that closed at or before that time; long the
+top k = 5 scores and short the bottom k = 5 (or the reverse where stated); positions +1/−1 per symbol, equal-weighted
+across the 30 symbols (gross exposure 1/3, net 0).
+
+| Template | Mechanism tag | Signal (score) | Long | Grid | Source (DOI verified via Crossref) |
+|---|---|---|---|---|---|
+| xs_illiquidity | illiquidity_premium | Amihud ILLIQ = mean of \|daily return\| / daily dollar volume over L days | most illiquid | L = 28 / 56 | Amihud 2002, J. Financial Markets, 10.1016/S1386-4181(01)00024-6 |
+| xs_high_volume | high_volume_return_premium | mean daily dollar volume over the last F days / mean over the 49 days before | highest | F = 7 / 14 | Gervais, Kaniel & Mingelgrin 2001, J. Finance, 10.1111/0022-1082.00349 |
+| xs_downside_beta | downside_risk_premium | beta to the equal-weight 30-coin market, using only days when the market return is below its L-day mean | highest | L = 56 / 112 | Ang, Chen & Xing 2006, RFS, 10.1093/rfs/hhj035 |
+| xs_coskewness | coskewness_premium | standardized coskewness E[(ri−μi)(rm−μm)²] / (σi σm²) over L days | most negative | L = 56 / 112 | Harvey & Siddique 2000, J. Finance, 10.1111/0022-1082.00247 |
+| xs_near_high | anchoring_to_high | last close / highest hourly close over L days (52 weeks is impossible inside the 8-month train window: stated adaptation) | nearest the high | L = 60 / 120 | George & Hwang 2004, J. Finance, 10.1111/j.1540-6261.2004.00695.x |
+| turn_of_month | calendar_turn_of_month | calendar: long every symbol from 00:00 UTC of the last B days of a month through the end of the first A days of the next month, else flat | — | (B, A) = (1, 3) / (2, 4) | Lakonishok & Smidt 1988, RFS, 10.1093/rfs/1.4.403 |
+| btc_lead_lag | lead_lag_diffusion | daily at 00:00 UTC: BTC's previous-day return r; r > x → long the other 29 for the day, r < −x → short them, else flat; BTC itself flat | — | x = 2 % / 4 % | Hou 2007, Review of Financial Studies, 10.1093/revfin/hhm003 (adaptation: daily, BTC as the leader) |
+
+Stated in advance: `turn_of_month` is a calendar effect like the rejected day-of-week idea, but a different mechanism
+(month-end flows); `xs_near_high` is related to the rejected cross-sectional momentum, but George & Hwang show it is a
+distinct anchoring effect. Both are therefore registered as new mechanisms; if either is rejected, its tag joins the
+graveyard like any other.
+
+### Infrastructure (no effect on any rule)
+
+Heavy pipeline steps run in a pool of worker processes so all CPU cores are used; downloads run in parallel threads.
+Results are identical to the single-process run (same code, same seeds).
