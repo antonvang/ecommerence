@@ -57,9 +57,12 @@ def _peak_bytes():
                 _fields_ = [("cb", c_ulong), ("faults", c_ulong), ("peak_ws", c_size_t), ("ws", c_size_t),
                             ("a", c_size_t), ("b", c_size_t), ("c", c_size_t), ("d", c_size_t),
                             ("pagefile", c_size_t), ("peak_pagefile", c_size_t)]
+            k32 = ctypes.windll.kernel32
+            k32.GetCurrentProcess.restype = ctypes.c_void_p            # 64-bit handle: never let ctypes truncate it
+            k32.K32GetProcessMemoryInfo.argtypes = [ctypes.c_void_p, ctypes.POINTER(PMC), c_ulong]
             m = PMC()
             m.cb = ctypes.sizeof(PMC)
-            ok = ctypes.windll.psapi.GetProcessMemoryInfo(ctypes.windll.kernel32.GetCurrentProcess(), ctypes.byref(m), m.cb)
+            ok = k32.K32GetProcessMemoryInfo(k32.GetCurrentProcess(), ctypes.byref(m), m.cb)
             return m.peak_ws if ok else None
         import resource
         return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss * 1024
