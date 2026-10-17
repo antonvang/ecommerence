@@ -13,6 +13,7 @@
   python -m lab candidates                                                 (discovered, suppressed, covered, seen again)
   python -m lab supervise [--duration S] [--worker module:factory ...] [--no-default]   (manual start only)
   python -m lab health                                                     (heartbeats, FAIL_CLOSED, pauses, warm-up)
+  python -m lab web [--port 8770] [--duration S]                           (dashboard on 127.0.0.1; manual start only)
 """
 from __future__ import annotations
 
@@ -58,8 +59,12 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
     sv = sub.add_parser("supervise"); sv.add_argument("--duration", type=float)
     sv.add_argument("--worker", action="append", default=[]); sv.add_argument("--no-default", action="store_true")
     sub.add_parser("health")
+    wb = sub.add_parser("web"); wb.add_argument("--port", type=int, default=8770); wb.add_argument("--duration", type=float)
     args = ap.parse_args(argv)
     db_path = args.db or db_path
+    if args.cmd == "web":
+        from lab import web
+        return web.run(args.db or db_path, args.port, args.duration, out)
     if args.cmd == "supervise":       # opens its own connections; holds the single-instance lock
         from lab import supervisor
         specs = ([] if args.no_default else list(supervisor.DEFAULT_WORKERS)) + args.worker

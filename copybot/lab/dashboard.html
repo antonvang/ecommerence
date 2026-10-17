@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Research Lab</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%235245c6'/%3E%3Cpath d='M9 4h6M10 4v6l-4 8a2 2 0 0 0 2 3h8a2 2 0 0 0 2-3l-4-8V4' fill='none' stroke='white' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#f5f6fb; --card:#ffffff; --line:#e3e6f0; --text:#151a33; --mute:#5c6385; --dim:#9aa0bf;
+  --accent:#5245c6; --green:#14805a; --red:#c2283a; --amber:#a86a00; --blue:#2a5bd7;
+  --chip:#eef0fa; --shadow:0 1px 2px #0000000d,0 6px 20px #1a1f4a0f;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --sans:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0a0d22; --card:#11163a; --line:#252c5c; --text:#eef0ff; --mute:#9aa0c8; --dim:#5d648f;
+    --accent:#8b7bff; --green:#5fe0a8; --red:#ff6b7a; --amber:#f5c35c; --blue:#7aa7ff; --chip:#1a2050;
+    --shadow:0 1px 0 #ffffff0d inset,0 10px 30px #00000040;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0a0d22; --card:#11163a; --line:#252c5c; --text:#eef0ff; --mute:#9aa0c8; --dim:#5d648f;
+  --accent:#8b7bff; --green:#5fe0a8; --red:#ff6b7a; --amber:#f5c35c; --blue:#7aa7ff; --chip:#1a2050;
+  --shadow:0 1px 0 #ffffff0d inset,0 10px 30px #00000040;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--text);font:14px/1.45 var(--sans);padding:20px 16px 48px}
+.wrap{max-width:1280px;margin:0 auto;display:grid;gap:14px}
+header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+h1{font-size:26px;margin:0;letter-spacing:-.02em}
+.tag{color:var(--mute);font-size:12px}
+.pills{display:flex;flex-wrap:wrap;gap:8px}
+.pill{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:6px 12px;font:12px var(--mono);display:flex;gap:6px;align-items:center}
+.pill.paper{border-color:var(--accent);color:var(--accent);font-weight:700}
+.pill.bad{border-color:var(--red);color:var(--red);font-weight:700}
+.pill.good{color:var(--green)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--dim)} .dot.ok{background:var(--green)} .dot.err{background:var(--red)}
+.banner{display:none;border:1px solid var(--red);background:color-mix(in srgb,var(--red) 10%,var(--card));color:var(--red);border-radius:12px;padding:12px 16px;font-weight:700}
+.banner button{margin-left:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;box-shadow:var(--shadow);min-width:0}
+.card h2{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);margin:0 0 10px;display:flex;justify-content:space-between;gap:8px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.kpi .v{font:800 26px var(--mono);margin-top:2px}
+.kpi .l{font-size:11px;color:var(--mute);text-transform:uppercase;letter-spacing:.1em}
+.kpi .s{font-size:11px;color:var(--dim)}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:860px){.grid2{grid-template-columns:minmax(0,1fr)}}
+.pipeline{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(170px,1fr);gap:10px;overflow-x:auto;padding-bottom:4px}
+.col{background:var(--chip);border-radius:10px;padding:8px;min-height:60px;max-height:340px;overflow:auto}
+.pipeline{align-items:start}
+.col h3{margin:0 0 6px;font:700 11px var(--mono);color:var(--mute);display:flex;justify-content:space-between}
+.exp{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:7px 8px;margin-bottom:6px;cursor:pointer;font-size:12px}
+.exp:hover{border-color:var(--accent)}
+.exp .id{font:700 11px var(--mono);word-break:break-all}
+.exp .m{color:var(--mute);font-size:11px;margin-top:2px}
+.badge{display:inline-block;border-radius:6px;padding:1px 6px;font:700 10px var(--mono);letter-spacing:.04em;border:1px solid currentColor;white-space:nowrap}
+.b-REJECTED,.b-SUPPRESSED{color:var(--red)} .b-EXTERNAL{color:var(--blue)} .b-CANDIDATE,.b-REGISTERED{color:var(--accent)}
+.b-EXPLORATORY,.b-VALIDATION{color:var(--amber)} .b-VALIDATED,.b-PAPER{color:var(--green)} .b-RETIRED,.b-WITHDRAWN{color:var(--mute)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;color:var(--mute);font-weight:600;border-bottom:1px solid var(--line);padding:6px 6px}
+td{border-bottom:1px solid var(--line);padding:6px;vertical-align:top;word-break:break-word}
+td.num,th.num{text-align:right;font-family:var(--mono)}
+.flag{color:var(--red);font-weight:700}
+.empty{color:var(--mute);font-style:italic;padding:8px 0}
+.scroll{max-height:360px;overflow:auto}
+.mono{font-family:var(--mono)}
+.muted{color:var(--mute)}
+input,select,textarea,button{font:inherit;color:inherit;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:6px 10px}
+button{cursor:pointer;font-weight:600} button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+button.danger{border-color:var(--red);color:var(--red)}
+.drawer{position:fixed;inset:0;background:#0007;display:none;z-index:10}
+.drawer.open{display:block}
+.panel{position:absolute;right:0;top:0;bottom:0;width:min(720px,100%);background:var(--bg);overflow:auto;padding:18px 16px;border-left:1px solid var(--line)}
+.panel h2{margin:0 0 4px;font:800 18px var(--mono);word-break:break-all}
+pre{background:var(--chip);border-radius:8px;padding:10px;overflow:auto;font:11px/1.4 var(--mono);white-space:pre-wrap;word-break:break-word}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:6px 0}
+.note{font-size:11px;color:var(--mute)}
+.spark{width:100%;height:70px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tabs button.on{border-color:var(--accent);color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Research Lab</h1>
+      <div class="tag">Pre-registered experiments · sealed holdouts · simulated paper trading</div>
+    </div>
+    <div class="pills">
+      <span class="pill paper">PAPER ONLY — no real orders</span>
+      <span class="pill" id="p-chain"><span class="dot"></span>chain</span>
+      <span class="pill" id="p-workers"><span class="dot"></span>workers</span>
+      <span class="pill" id="p-scan">last scan —</span>
+      <button class="pill" id="theme" title="Toggle light/dark">◐</button>
+    </div>
+  </header>
+
+  <div class="banner" id="fc">LAB IS FAIL_CLOSED — no simulated entries until a human clears it.
+    <button class="danger" id="clearfc">Clear (with reason)…</button></div>
+
+  <section class="kpis" id="kpis"></section>
+
+  <section class="card"><h2>Pipeline <span class="muted" id="pipe-n"></span></h2><div class="pipeline" id="pipeline"></div></section>
+
+  <div class="grid2">
+    <section class="card"><h2>Candidates <span class="muted">discovered, not evaluated</span></h2><div id="cands"></div></section>
+    <section class="card"><h2>Last scan <span class="muted" id="scan-ts"></span></h2><div class="scroll" id="scan"></div></section>
+  </div>
+
+  <section class="card"><h2>Paper trading <span class="muted">simulated — never realised profit</span></h2><div id="paper"></div></section>
+
+  <div class="grid2">
+    <section class="card"><h2>Risk events</h2><div class="scroll" id="risk"></div></section>
+    <section class="card"><h2>Data quality</h2><div class="scroll" id="data"></div></section>
+  </div>
+
+  <section class="card"><h2>Finished experiments <span class="muted">every rejection with its reason</span></h2><div class="scroll" id="finished"></div></section>
+
+  <section class="card"><h2>Audit log <span class="row" style="margin:0"><input id="kind" placeholder="filter kind, e.g. lifecycle" size="22"></span></h2>
+    <div class="note" id="chainnote"></div><div class="scroll" id="audit"></div></section>
+</div>
+
+<div class="drawer" id="drawer"><div class="panel" id="detail"></div></div>
+
+<script>
+const TOKEN = "__LAB_TOKEN__";
+const $ = s => document.querySelector(s);
+const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmt = (v, d=2) => v == null ? "—" : (typeof v === "number" ? v.toLocaleString(undefined,{maximumFractionDigits:d}) : esc(v));
+const ago = ts => ts ? (s => s < 120 ? s+"s" : s < 7200 ? Math.round(s/60)+"m" : s < 172800 ? Math.round(s/3600)+"h" : Math.round(s/86400)+"d")(Math.max(0, Math.round(Date.now()/1000 - ts))) + " ago" : "—";
+const badge = l => { const k = String(l||"").split(" ")[0]; return `<span class="badge b-${esc(k)}">${esc(l||"")}</span>`; };
+const STATES = ["DISCOVERED","SUPPRESSED","REGISTERED","SCREENING","SCREEN_PASSED","VALIDATION","VALIDATED","PAPER_TRADING","PAUSED","EXTERNAL","REJECTED","RETIRED","WITHDRAWN"];
+async function api(p){ const r = await fetch(p,{cache:"no-store"}); return r.json(); }
+async function control(p, body){
+  const r = await fetch(p,{method:"POST",headers:{"Content-Type":"application/json","X-Lab-Token":TOKEN},body:JSON.stringify(body)});
+  const j = await r.json(); if (!r.ok) throw new Error(j.error || r.status); return j;
+}
+function table(cols, rows, empty){
+  if (!rows.length) return `<div class="empty">${esc(empty)}</div>`;
+  return `<table><thead><tr>${cols.map(c=>`<th class="${c.num?"num":""}">${esc(c.h)}</th>`).join("")}</tr></thead><tbody>${
+    rows.map(r=>`<tr>${cols.map(c=>`<td class="${c.num?"num":""}">${c.f(r)}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+}
+function spark(points){
+  if (points.length < 2) return `<div class="note">${points.length} equity point(s) — curve appears after two marks</div>`;
+  const v = points.map(p=>p.equity), lo = Math.min(...v), hi = Math.max(...v), w = 600, h = 70;
+  const xy = v.map((y,i)=>`${(i/(v.length-1)*w).toFixed(1)},${(h-4-(hi===lo?.5:(y-lo)/(hi-lo))*(h-8)).toFixed(1)}`).join(" ");
+  return `<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><polyline fill="none" stroke="var(--accent)" stroke-width="2" points="${xy}"/></svg>`;
+}
+
+async function refresh(){
+  const [ov, ex, ca, pa, rk, dq] = await Promise.all(["/api/overview","/api/experiments","/api/candidates","/api/paper","/api/risk","/api/data"].map(api));
+  // header
+  $("#p-chain").innerHTML = `<span class="dot ${ov.chain_ok?"ok":"err"}"></span>chain ${ov.chain_ok?"verified":"BROKEN"}`;
+  const stale = ov.heartbeats.filter(h=>h.age_s>300 || !h.ok);
+  const newest = ov.heartbeats.reduce((m,h)=>Math.max(m,h.ts),0);
+  $("#p-workers").innerHTML = !ov.heartbeats.length ? `<span class="dot"></span>supervisor never run`
+    : stale.length === ov.heartbeats.length ? `<span class="dot"></span>supervisor not running (last beat ${ago(newest)})`
+    : `<span class="dot ${stale.length?"err":"ok"}"></span>${ov.heartbeats.length} worker(s), ${stale.length} stale/err`;
+  $("#p-scan").textContent = "last scan " + ago(ov.last_scan_ts);
+  $("#fc").style.display = ov.fail_closed ? "block" : "none";
+  // kpis
+  const k = (l,v,s)=>`<div class="card kpi"><div class="l">${esc(l)}</div><div class="v">${v}</div><div class="s">${esc(s||"")}</div></div>`;
+  $("#kpis").innerHTML = k("Experiments", fmt(ov.experiments,0), "in the registry") + k("Rejected", fmt(ov.rejected,0), `${fmt(ov.finished,0)} finished in total`)
+    + k("Candidates", fmt((ov.pipeline.DISCOVERED||0),0), `${fmt(ov.pipeline.SUPPRESSED||0,0)} suppressed by the graveyard`)
+    + k("Paper strategies", fmt((ov.pipeline.PAPER_TRADING||0)+(ov.pipeline.PAUSED||0),0), `${fmt(ov.pipeline.PAUSED||0,0)} paused`)
+    + k("External studies", fmt(ov.pipeline.EXTERNAL||0,0), "mirrored, never changed") + k("α spent", fmt(ov.alpha_spent,4), "programme ledger");
+  // pipeline
+  const by = {}; ex.forEach(e=>(by[e.state]=by[e.state]||[]).push(e));
+  $("#pipe-n").textContent = `${ex.length} experiments`;
+  $("#pipeline").innerHTML = STATES.filter(s=>by[s]).map(s=>`<div class="col"><h3><span>${esc(s)}</span><span>${by[s].length}</span></h3>${
+    by[s].map(e=>`<div class="exp" data-id="${esc(e.exp_id)}"><div class="id">${esc(e.exp_id)}</div><div>${badge(e.display_label)}</div><div class="m">${esc(e.mechanism||"")}</div></div>`).join("")}</div>`).join("");
+  // candidates
+  $("#cands").innerHTML = table([
+    {h:"Candidate",f:r=>`<a href="#" class="mono" data-id="${esc(r.exp_id)}">${esc(r.exp_id)}</a>`},
+    {h:"State",f:r=>badge(r.display_label)},{h:"Detector",f:r=>esc(r.detector)},
+    {h:"Why",f:r=>esc(r.reason || r.hypothesis)+(r.state==="SUPPRESSED"?`<div class="note">${esc(r.last_reason)}</div>`:"")}], ca.candidates, "No candidates yet.")
+    + `<div class="note" style="margin-top:8px">Deduplication: ${ca.dedupe_events.slice(0,6).map(e=>`${esc(e.kind.replace("candidate.",""))} ${esc(e.exp_id||"")}`).join(" · ") || "none"}</div>`;
+  $("#scan-ts").textContent = ago(ca.last_scan_ts);
+  $("#scan").innerHTML = table([{h:"Detector",f:r=>esc(r.detector)},{h:"Metric",f:r=>esc(r.metric)},{h:"Instrument",f:r=>esc(r.instrument)},
+    {h:"Value",num:1,f:r=>`<span class="${r.flagged?"flag":""}">${fmt(r.value,4)}${r.flagged?" ⚑":""}</span>`}], ca.last_scan, "No scan recorded.");
+  // paper
+  $("#paper").innerHTML = pa.strategies.length ? pa.strategies.map(s=>`<div class="card" style="margin-bottom:10px">
+      <div class="row"><b class="mono">${esc(s.exp_id)}</b>${badge(s.state==="PAUSED"?"PAPER (simulated, paused)":"PAPER (simulated)")}${s.warming?'<span class="badge b-EXPLORATORY">warming up</span>':""}</div>
+      ${spark(s.equity)}
+      <div class="kpis">${k("Sim. equity", fmt(s.equity.length?s.equity[s.equity.length-1].equity:s.capital), `capital ${fmt(s.capital)}`)}
+        ${k("Drawdown", s.equity.length?fmt(100*s.equity[s.equity.length-1].drawdown)+"%":"—","from peak")}
+        ${k("Closed trades", fmt(s.trades,0), `net ${fmt(s.net_closed_pnl)} (simulated)`)}
+        ${k("Streak", `${s.streak.wins}W / ${s.streak.losses}L`, "consecutive, latest first")}
+        ${k("Fees + slippage", fmt(s.costs.reduce((a,c)=>a+c.fees+c.slip,0)), s.costs.map(c=>`${c.liquidity}: ${c.n} fills`).join(", "))}
+        ${k("Open orders", fmt(s.open_orders,0), "resting maker orders")}</div></div>`).join("")
+    : `<div class="empty">No strategy is in paper trading. Nothing has been promoted — promotions need a human approval and a validated holdout.</div>`;
+  // risk
+  $("#risk").innerHTML = (rk.paused.length?`<div class="note">Paused: ${rk.paused.map(p=>`${esc(p.exp_id)} — resume requires ${esc(p.resume_requires)}`).join("; ")}</div>`:"")
+    + table([{h:"When",f:r=>ago(r.ts)},{h:"Strategy",f:r=>esc(r.exp_id)},{h:"Rule",f:r=>esc(r.rule)},{h:"Action",f:r=>`<b>${esc(r.action)}</b>`},
+      {h:"Value / limit",num:1,f:r=>`${fmt(r.value,4)} / ${fmt(r.threshold,4)}`},{h:"Detail",f:r=>esc(r.detail)}], rk.events, "No risk events.");
+  // data
+  $("#data").innerHTML = table([{h:"Detector",f:r=>esc(r.detector)},{h:"Last",f:r=>ago(r.last_ts)},{h:"Obs.",num:1,f:r=>fmt(r.n,0)},
+      {h:"Flagged",num:1,f:r=>fmt(r.flagged,0)},{h:"Errors",num:1,f:r=>`<span class="${r.errors?"flag":""}">${fmt(r.errors,0)}</span>`}], dq.detectors, "No scans yet.")
+    + `<div class="note" style="margin-top:8px">${fmt(dq.datasets.length,0)} dataset reads recorded · ${fmt(dq.data_blocks.length,0)} data blocks · ${fmt(dq.refused_reads.length,0)} refused reads</div>`
+    + table([{h:"Experiment",f:r=>esc(r.exp_id)},{h:"Split",f:r=>esc(r.split)},{h:"Purpose",f:r=>esc(r.purpose)},{h:"SHA-256",f:r=>`<span class="mono">${esc(String(r.sha256).slice(0,12))}</span>`},{h:"File",f:r=>esc(r.path)}], dq.datasets.slice(0,12), "");
+  // finished
+  const fin = ex.filter(e=>["REJECTED","RETIRED","WITHDRAWN"].includes(e.state));
+  $("#finished").innerHTML = table([{h:"Experiment",f:r=>`<a href="#" class="mono" data-id="${esc(r.exp_id)}">${esc(r.exp_id)}</a>`},{h:"Label",f:r=>badge(r.label||r.display_label)},
+    {h:"State",f:r=>badge(r.state)},{h:"Mechanism",f:r=>esc(r.mechanism)},{h:"Verdict",f:r=>esc(r.verdict)}], fin, "None.");
+  await refreshAudit();
+}
+async function refreshAudit(){
+  const kind = $("#kind").value.trim();
+  const a = await api("/api/audit?limit=120" + (kind?"&kind="+encodeURIComponent(kind):""));
+  const broken = Object.entries(a.chains).filter(([t,c])=>c.broken_at!=null);
+  $("#chainnote").textContent = `Hash chains: ${broken.length?"BROKEN in "+broken.map(b=>b[0]).join(", "):"all intact"} · append-only triggers ${a.triggers?"present":"MISSING"} · ${Object.values(a.chains).reduce((s,c)=>s+c.rows,0)} rows`;
+  $("#audit").innerHTML = table([{h:"#",num:1,f:r=>r.id},{h:"When",f:r=>ago(r.ts)},{h:"Kind",f:r=>`<span class="mono">${esc(r.kind)}</span>`},{h:"Actor",f:r=>esc(r.actor)},
+    {h:"Experiment",f:r=>esc(r.exp_id)},{h:"Payload",f:r=>`<span class="mono">${esc(JSON.stringify(r.payload)).slice(0,220)}</span>`}], a.events, "No events.");
+}
+
+async function openDetail(id){
+  const d = await api("/api/experiment/"+encodeURIComponent(id));
+  const v = d.versions[d.versions.length-1];
+  const nexts = {DISCOVERED:["REGISTERED","WITHDRAWN"],SUPPRESSED:["DISCOVERED"],REGISTERED:["WITHDRAWN"],SCREEN_PASSED:["VALIDATION","REJECTED"],
+                 VALIDATED:["PAPER_TRADING","RETIRED"],PAPER_TRADING:["RETIRED"],PAUSED:["PAPER_TRADING"],EXTERNAL:["REJECTED","RETIRED"]}[d.state] || [];
+  $("#detail").innerHTML = `<div class="row" style="justify-content:space-between"><h2>${esc(d.exp_id)}</h2><button id="close">Close</button></div>
+    <div class="row">${badge(d.display_label)} <span class="muted">state ${esc(d.state)} · version ${esc(v.version)} · mechanism ${esc(v.mechanism_tag)}</span></div>
+    <h3>Specification</h3><pre>${esc(JSON.stringify(v.spec_json,null,1))}</pre>
+    <div class="note">spec ${esc(v.spec_path||"—")} @ ${esc((v.spec_commit||"—").slice(0,10))} · code ${esc((v.code_hash||"—").slice(0,10))}</div>
+    <h3>Results</h3>${table([{h:"#",f:r=>r.id},{h:"Label",f:r=>badge(r.label)},{h:"Verdict",f:r=>esc(r.verdict)+(r.supersedes?` <span class="note">(supersedes #${esc(r.supersedes)})</span>`:"")}], d.results, "No results.")}
+    <h3>Lifecycle</h3>${table([{h:"When",f:r=>ago(r.ts)},{h:"From → to",f:r=>`${esc(r.from_state||"∅")} → <b>${esc(r.to_state)}</b>`},{h:"Actor",f:r=>esc(r.actor)},{h:"Reason",f:r=>esc(r.reason)}], d.transitions, "")}
+    <h3>Data read through the gateway</h3>${table([{h:"Split",f:r=>esc(r.split)},{h:"Purpose",f:r=>esc(r.purpose)},{h:"SHA-256",f:r=>`<span class="mono">${esc(String(r.sha256).slice(0,16))}</span>`},{h:"File",f:r=>esc(r.path)}], d.datasets, "None.")}
+    <h3>Controls</h3>
+    ${nexts.length ? `<div class="row"><select id="to">${nexts.map(s=>`<option>${esc(s)}</option>`).join("")}</select>
+      <input id="reason" placeholder="reason (≥ 10 chars)" size="30"></div>
+      <div class="row"><input id="committed" placeholder="committed evidence files, comma-separated (needed for VALIDATION / resume)" size="60"></div>
+      <div class="row"><button class="primary" id="approve">Request approval code</button><input id="code" placeholder="code" size="8"><button id="confirm">Confirm</button></div>` : `<div class="note">No human transition is available from ${esc(d.state)}.</div>`}
+    ${d.state==="PAPER_TRADING" ? `<div class="row"><button class="danger" id="pause">Pause (risk-reducing)</button></div>` : ""}
+    <div class="note" id="cmsg">Approvals follow the same two-step rule as the CLI: a one-time code, valid 15 minutes. Promotions are never automatic.</div>`;
+  $("#drawer").classList.add("open");
+  $("#close").onclick = () => $("#drawer").classList.remove("open");
+  const msg = t => { $("#cmsg").textContent = t; };
+  if ($("#approve")) $("#approve").onclick = async () => { try {
+      const files = $("#committed").value.split(",").map(s=>s.trim()).filter(Boolean);
+      const r = await control("/api/control/approve",{exp_id:d.exp_id,to:$("#to").value,reason:$("#reason").value,committed:files});
+      $("#code").value = r.code; msg(`Approval code issued (expires in ${Math.round(r.expires_in_s/60)} min). Press Confirm to execute.`);
+    } catch(e){ msg("Refused: "+e.message); } };
+  if ($("#confirm")) $("#confirm").onclick = async () => { try {
+      const r = await control("/api/control/confirm",{code:$("#code").value.trim()}); msg(`${r.exp_id} → ${r.state}`); refresh();
+    } catch(e){ msg("Refused: "+e.message); } };
+  if ($("#pause")) $("#pause").onclick = async () => { const reason = prompt("Reason for pausing (≥ 10 characters)"); if (!reason) return;
+    try { await control("/api/control/pause",{exp_id:d.exp_id,reason}); msg("Paused."); refresh(); } catch(e){ msg("Refused: "+e.message); } };
+}
+document.addEventListener("click", e => { const el = e.target.closest("[data-id]"); if (el){ e.preventDefault(); openDetail(el.dataset.id); } });
+$("#drawer").addEventListener("click", e => { if (e.target.id==="drawer") $("#drawer").classList.remove("open"); });
+$("#kind").addEventListener("change", refreshAudit);
+$("#clearfc").onclick = async () => { const reason = prompt("Why is it safe to clear FAIL_CLOSED? (≥ 10 characters)"); if (!reason) return;
+  try { await control("/api/control/clear-fail-closed",{reason}); refresh(); } catch(e){ alert("Refused: "+e.message); } };
+$("#theme").onclick = () => { const r = document.documentElement; const dark = r.dataset.theme ? r.dataset.theme==="dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  r.dataset.theme = dark ? "light" : "dark"; try { localStorage.setItem("lab-theme", r.dataset.theme); } catch(_){} };
+try { const t = localStorage.getItem("lab-theme"); if (t) document.documentElement.dataset.theme = t; } catch(_){}
+refresh().catch(e => console.error(e)); setInterval(() => refresh().catch(()=>{}), 10000);
+</script>
+</body>
+</html>
