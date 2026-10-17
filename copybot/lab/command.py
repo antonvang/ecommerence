@@ -20,9 +20,10 @@ from lab.risk import Risk
 PIPE = ("DISCOVERED", "QUEUED", "RUNNING", "COST_CHECK", "VALIDATION", "PAPER_ELIGIBLE", "PAPER_TRADING", "ACCEPTED",
         "REJECTED", "PAUSED")
 STAGE_OF_KIND = {"data": "RUNNING", "backtest": "RUNNING", "cost": "COST_CHECK", "adversarial": "VALIDATION",
-                 "validate": "VALIDATION", "report": "VALIDATION", "holdout": "VALIDATION"}
+                 "validate": "VALIDATION", "report": "VALIDATION", "holdout": "VALIDATION", "observe": "VALIDATION"}
 STAGE_OF_STATE = {"DISCOVERED": "DISCOVERED", "REGISTERED": "QUEUED", "SCREENING": "RUNNING",
                   "SCREEN_PASSED": "VALIDATION", "VALIDATION": "VALIDATION", "VALIDATED": "PAPER_ELIGIBLE",
+                  "OBSERVATION": "VALIDATION",
                   "PAPER_TRADING": "PAPER_TRADING", "PAUSED": "PAUSED", "REJECTED": "REJECTED",
                   "SUPPRESSED": "REJECTED", "WITHDRAWN": "REJECTED", "RETIRED": None, "EXTERNAL": None}
 WAITING_HUMAN = {"DISCOVERED": "template approval (human) before registration",
@@ -401,9 +402,10 @@ def balance(db, now=None):
 
 STAGE_DA = {"DISCOVERED": "opdaget", "SUPPRESSED": "sorteret fra", "REGISTERED": "registreret", "SCREENING": "testes",
             "SCREEN_PASSED": "bestod screening", "VALIDATION": "holdout åbnet", "VALIDATED": "bestod holdout",
+            "OBSERVATION": "sat til observation på nye data (simuleret)",
             "PAPER_TRADING": "handler nu (paper)", "PAUSED": "sat på pause", "REJECTED": "afvist",
             "RETIRED": "pensioneret", "WITHDRAWN": "trukket tilbage"}
-TAG_OF_STATE = {"SCREEN_PASSED": "BESTÅET", "VALIDATED": "GODKENDT", "PAPER_TRADING": "HANDLER", "REJECTED": "AFVIST",
+TAG_OF_STATE = {"OBSERVATION": "OBSERVERES", "SCREEN_PASSED": "BESTÅET", "VALIDATED": "GODKENDT", "PAPER_TRADING": "HANDLER", "REJECTED": "AFVIST",
                 "PAUSED": "PAUSE", "VALIDATION": "HOLDOUT", "SCREENING": "TEST", "REGISTERED": "TEST",
                 "SUPPRESSED": "SORTERET"}
 FOUND_STATES = ("SCREEN_PASSED", "VALIDATED", "PAPER_TRADING")
@@ -499,6 +501,9 @@ TEMPLATE_DA = {
     "vrp_timing": ("Frygtpræmie", "Holder BTC og ETH, når optionsmarkedet betaler ekstra for beskyttelse"),
     "stablecoin_flow": ("Stablecoin-tilførsel", "Holder markedet, når der kommer flere stablecoins i omløb"),
     "btc_volume_share": ("Bitcoin-dominans (volumen)", "Køber BTC mod resten, når Bitcoins andel af handlen stiger, og omvendt"),
+    "real_rate_filter": ("Realrente-filter", "Holder markedet, når de reale renter falder eller står stille, og går ud, når de stiger"),
+    "supply_dilution": ("Udvanding", "Køber mønter med få nye tokens og sælger dem med mange (16 mønter)"),
+    "mvrv_value": ("Værdi på kæden (MVRV)", "Køber mønter tæt på ejernes gennemsnitspris og sælger dem med store papirgevinster (16 mønter)"),
     "taker_pressure": ("Købspres", "Køber mønter med usædvanligt aggressive køb og sælger dem med det modsatte"),
 }
 LEGACY_DA = {
@@ -536,6 +541,7 @@ def plain(db, eid):
 STATE_PLAIN = {"DISCOVERED": "Ny idé", "SUPPRESSED": "Sorteret fra (prøvet før)", "REGISTERED": "Står i kø",
                "SCREENING": "Testes nu", "SCREEN_PASSED": "Bestod første test — venter på din godkendelse",
                "VALIDATION": "Slut-test kører", "VALIDATED": "Bestod alle tests — venter på din godkendelse",
+               "OBSERVATION": "Observeres på nye data (simuleret) — afgøres automatisk, når perioden er slut",
                "PAPER_TRADING": "Handler (simuleret)", "PAUSED": "Sat på pause", "REJECTED": "Afvist",
                "RETIRED": "Afsluttet", "WITHDRAWN": "Trukket tilbage", "EXTERNAL": "Ekstern undersøgelse"}
 NEEDS_YOU = {"SCREEN_PASSED": ("VALIDATION", "Start slut-testen på 2024-data (kan kun gøres én gang)"),

@@ -29,7 +29,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_PORT = 8770
 LABEL_OF_STATE = {"DISCOVERED": "CANDIDATE", "SUPPRESSED": "SUPPRESSED", "REGISTERED": "REGISTERED",
                   "SCREENING": "EXPLORATORY", "SCREEN_PASSED": "EXPLORATORY", "VALIDATION": "VALIDATION",
-                  "VALIDATED": "VALIDATED", "PAPER_TRADING": "PAPER (simulated)", "PAUSED": "PAPER (simulated, paused)",
+                  "VALIDATED": "VALIDATED", "PAPER_TRADING": "PAPER (simulated)", "PAUSED": "PAPER (simulated, paused)", "OBSERVATION": "OBSERVATION (forward test)",
                   "REJECTED": "REJECTED", "RETIRED": "RETIRED", "WITHDRAWN": "WITHDRAWN", "EXTERNAL": "EXTERNAL"}
 
 

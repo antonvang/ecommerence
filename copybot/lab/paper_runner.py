@@ -66,7 +66,7 @@ def run(db, get=_get, now=None):
 def run_one(db, eid, get, now):
     eng, risk = PaperEngine(db, lambda: now), Risk(db, lambda: now)
     spec = json.loads(registry.latest(db, eid)["spec_json"])
-    if set(catalogue.TEMPLATES[spec["template"]].get("needs") or []) & {"metrics", "dvol", "stable", "taker"}:
+    if set(catalogue.TEMPLATES[spec["template"]].get("needs") or []) & {"metrics", "dvol", "stable", "taker", "rates", "cm"}:
         if not db.one("SELECT 1 FROM events WHERE kind='paper.unsupported' AND exp_id=?", eid):
             db.event("paper.unsupported", "agent:paper-1", eid, {"reason": "live inputs for this template are not "
                                                                             "built yet (research/PROTOCOL_V3.md section 7)"})

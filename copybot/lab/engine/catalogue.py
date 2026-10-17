@@ -576,6 +576,51 @@ def btc_volume_share(bars_by, funding_by, p, fit=None, volume_by=None, extra=Non
     return _apply(bars_by, weights)
 
 
+# ---------- PROTOCOL v3 amendment 2 families ----------
+def real_rate_filter(bars_by, funding_by, p, fit=None, volume_by=None, extra=None):
+    """Hold the universe while the 10-year real yield is flat or falling (Bernanke & Kuttner 2005)."""
+    obs = sorted(((extra or {}).get("rates") or {}).items())
+    n, weights, j = p["n"], {}, 0
+    usable = []
+    for T in _midnights(bars_by):
+        while j < len(obs) and obs[j][0] <= T - 2 * DAY:       # an observation for day D is used from D + 2 days
+            usable.append(obs[j][1])
+            j += 1
+        cur = (1.0 if usable[-1] - usable[-1 - n] <= 0 else 0.0) if len(usable) >= n + 1 else 0.0
+        weights[T] = {s: cur for s in bars_by}
+    return _apply(bars_by, weights)
+
+
+def _cm(ctx, metric, s, day):
+    return (((ctx["extra"].get("cm") or {}).get(metric) or {}).get(s) or {}).get(day)
+
+
+def _score_dilution(close, s, T, p, ctx):
+    now, then = _cm(ctx, "SplyCur", s, T - DAY), _cm(ctx, "SplyCur", s, T - (p["lookback_days"] + 1) * DAY)
+    return (now / then - 1) if (now and then) else None
+
+
+def _score_mvrv(close, s, T, p, ctx):
+    now = _cm(ctx, "CapMVRVCur", s, T - DAY)
+    if now is None:
+        return None
+    if p["mode"] == "level":
+        return now
+    hist = [_cm(ctx, "CapMVRVCur", s, T - (k + 1) * DAY) for k in range(1, 91)]
+    hist = [h for h in hist if h is not None]
+    return (now / statistics.fmean(hist)) if len(hist) >= 85 and statistics.fmean(hist) > 0 else None
+
+
+def supply_dilution(bars_by, funding_by, p, fit=None, volume_by=None, extra=None):
+    """Long the least diluting coins, short the most diluting (Pontiff & Woodgate 2008)."""
+    return _xs(bars_by, funding_by, p, _score_dilution, long_low=True, extra=extra)
+
+
+def mvrv_value(bars_by, funding_by, p, fit=None, volume_by=None, extra=None):
+    """Long coins trading near or below holders' cost basis, short those with the largest paper gains (value)."""
+    return _xs(bars_by, funding_by, p, _score_mvrv, long_low=True, extra=extra)
+
+
 def xs_momentum(bars_by, funding_by, p, fit=None, volume_by=None):
     """Long the k strongest, short the k weakest over the lookback (Liu, Tsyvinski & Wu 2022)."""
     return _xs(bars_by, funding_by, p, _score_momentum, long_low=False)
@@ -762,6 +807,29 @@ TEMPLATES = {
         "hypothesis": "Coins with unusually aggressive buying over a week keep outperforming the next week.",
         "rationale": "Order imbalance reflects informed or persistent demand that prices absorb gradually.",
         "evidence": ["Chordia & Subrahmanyam 2004, Journal of Financial Economics, https://doi.org/10.1016/S0304-405X(03)00175-2 (equities)"]},
+    # ---- PROTOCOL v3 amendment 2 (observation test applies) ----
+    "real_rate_filter": {
+        "family": real_rate_filter, "cross_sectional": True, "protocol": 3, "universe": "30v3", "needs": ["rates"],
+        "observation": True, "mechanism_tag": "real_rate_timing", "long_only": True,
+        "grid": [{"n": 20}, {"n": 60}],
+        "hypothesis": "Crypto earns more while US real interest rates are flat or falling than while they rise.",
+        "rationale": "Rising real rates lower the value of distant payoffs and pull money out of risky assets.",
+        "evidence": ["Bernanke & Kuttner 2005, Journal of Finance, https://doi.org/10.1111/j.1540-6261.2005.00760.x (equities)"]},
+    "supply_dilution": {
+        "family": supply_dilution, "cross_sectional": True, "protocol": 3, "universe": "cm16", "needs": ["cm"],
+        "cm_metrics": ["SplyCur"], "observation": True, "mechanism_tag": "supply_dilution", "long_only": False,
+        "grid": [{"lookback_days": 30, "k": 3}, {"lookback_days": 90, "k": 3}],
+        "hypothesis": "Coins issuing few new tokens outperform coins issuing many.",
+        "rationale": "New tokens (emissions, unlocks) are often sold, creating persistent selling pressure.",
+        "evidence": ["Pontiff & Woodgate 2008, Journal of Finance, https://doi.org/10.1111/j.1540-6261.2008.01335.x (equities)"]},
+    "mvrv_value": {
+        "family": mvrv_value, "cross_sectional": True, "protocol": 3, "universe": "cm16", "needs": ["cm"],
+        "cm_metrics": ["CapMVRVCur"], "observation": True, "mechanism_tag": "onchain_value_mvrv", "long_only": False,
+        "grid": [{"mode": "level", "k": 3}, {"mode": "relative", "k": 3}],
+        "hypothesis": "Coins whose price is near holders' average cost basis outperform coins with large paper gains.",
+        "rationale": "Large unrealised gains invite profit taking; low MVRV means most sellers are already out (value).",
+        "evidence": ["Asness, Moskowitz & Pedersen 2013, Journal of Finance, https://doi.org/10.1111/jofi.12021",
+                     "Campbell & Shiller 1988, Review of Financial Studies, https://doi.org/10.1093/rfs/1.3.195"]},
 }
 
 INSTRUMENT_FAMILY = "binance_usdm_perps_8alt"
@@ -772,17 +840,20 @@ MIN_SYMBOLS_30 = 24                     # amendment 3: experiment continues only
 def universe(template):
     from lab.engine import data
     u = TEMPLATES[template].get("universe")
-    return {"30": data.UNIVERSE_30, "30v3": data.UNIVERSE_30_V3, "btceth": ("BTCUSDT", "ETHUSDT")}.get(u, data.UNIVERSE)
+    return {"30": data.UNIVERSE_30, "30v3": data.UNIVERSE_30_V3, "btceth": ("BTCUSDT", "ETHUSDT"),
+            "cm16": data.UNIVERSE_CM16}.get(u, data.UNIVERSE)
 
 
 def instrument_family(template):
     u = TEMPLATES[template].get("universe")
-    return {"30": INSTRUMENT_FAMILY_30, "30v3": "binance_usdm_perps_30v3", "btceth": "binance_usdm_btc_eth"}.get(
-        u, INSTRUMENT_FAMILY)
+    return {"30": INSTRUMENT_FAMILY_30, "30v3": "binance_usdm_perps_30v3", "btceth": "binance_usdm_btc_eth",
+            "cm16": "binance_usdm_cm16"}.get(u, INSTRUMENT_FAMILY)
 
 
 def min_symbols(template):
     u = TEMPLATES[template].get("universe")
+    if u == "cm16":
+        return 12
     return MIN_SYMBOLS_30 if u in ("30", "30v3") else len(universe(template))
 
 
@@ -794,7 +865,8 @@ HORIZON = {"vol_managed_long": "days", "day_of_week": "days", "hour_of_day": "ho
            "xs_high_volume": "weeks", "xs_downside_beta": "weeks", "xs_coskewness": "weeks", "xs_near_high": "weeks",
            "turn_of_month": "days", "btc_lead_lag": "days", "oi_growth": "weeks", "oi_confirmed_return": "weeks",
            "smart_vs_crowd": "weeks", "leverage_cycle": "days", "vrp_timing": "days", "stablecoin_flow": "days",
-           "btc_volume_share": "days", "taker_pressure": "weeks"}
+           "btc_volume_share": "days", "taker_pressure": "weeks", "real_rate_filter": "days",
+           "supply_dilution": "weeks", "mvrv_value": "weeks"}
 
 
 def exp_id(template, version=None):

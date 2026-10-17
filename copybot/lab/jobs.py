@@ -49,7 +49,7 @@ def get(db, job_id):
 
 
 def enqueue(db, job_id, kind, exp_id=None, payload=None, priority=50, depends_on=(), max_attempts=3, timeout_s=300,
-            actor="system:queue", now=None):
+            actor="system:queue", now=None, not_before=0):
     """Idempotent: returns (job, created)."""
     now = now or time.time()
     init(db)
@@ -60,7 +60,7 @@ def enqueue(db, job_id, kind, exp_id=None, payload=None, priority=50, depends_on
         status = "blocked" if depends_on else "queued"
         db.con.execute("INSERT INTO jobs(job_id, kind, exp_id, priority, status, max_attempts, timeout_s, next_run, "
                        "depends_on, payload, created_ts, updated_ts) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",
-                       (job_id, kind, exp_id, priority, status, max_attempts, timeout_s, 0,
+                       (job_id, kind, exp_id, priority, status, max_attempts, timeout_s, not_before,
                         json.dumps(list(depends_on)), json.dumps(payload or {}), now, now))
         db.event("job.enqueued", actor, exp_id, {"job_id": job_id, "kind": kind, "priority": priority,
                                                   "depends_on": list(depends_on)})

@@ -40,7 +40,7 @@ def poison_test(family, bars, funding, params, fit=None, seed=13):
 
 
 HOUR, DAY = 3600, 86400
-BUNDLE_KEYS = {"volume", "taker", "metrics", "dvol", "stable"}
+BUNDLE_KEYS = {"volume", "taker", "metrics", "dvol", "stable", "rates", "cm"}
 
 
 def _is_bundle(x):
@@ -72,8 +72,10 @@ def cut_bundle(b, cut, poison=False):
             out[k] = {s: hourly(x) for s, x in v.items()}
         elif k in ("metrics", "dvol"):
             out[k] = {s: daily(x) for s, x in v.items()}
-        elif k == "stable":
+        elif k in ("stable", "rates"):
             out[k] = daily(v)
+        elif k == "cm":
+            out[k] = {m: {s: daily(x) for s, x in per.items()} for m, per in v.items()}
     return out
 
 

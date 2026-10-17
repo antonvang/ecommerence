@@ -30,6 +30,11 @@ UNIVERSE_30 = tuple(c + "USDT" for c in ("BTC ETH BNB XRP SOL ADA DOGE TRX DOT L
 UNIVERSE_30_V3 = tuple(c + "USDT" for c in ("BTC ETH BNB XRP SOL ADA DOGE TRX DOT LINK AVAX LTC BCH ATOM ETC XLM NEAR "
                                             "FIL UNI AAVE ALGO VET EOS XTZ THETA AXS SAND MANA CRV SNX").split())
 HOLDOUT_SEEN = ("BTCUSDT", "ETHUSDT", "SOLUSDT")
+# PROTOCOL v3 amendment 2: coins with daily CoinMetrics community SplyCur and CapMVRVCur for 2022-2024 (catalog check)
+UNIVERSE_CM16 = tuple(c + "USDT" for c in "XRP ADA DOGE LINK LTC BCH ETC XLM UNI AAVE ALGO MANA CRV SNX BTC ETH".split())
+FORWARD_MIN = datetime(2026, 11, 1, tzinfo=timezone.utc).timestamp()   # earliest forward window start (amendment 2)
+FORWARD_LAG_S = 7 * 86400                                              # monthly files are published after month end
+CLOCK = time.time                                                      # replaceable in tests (forward-window guard)
 SPLITS = {"train": ((2023, 1), (2023, 8)), "validation": ((2023, 9), (2023, 12)), "holdout": ((2024, 1), (2024, 12)),
           "train3": ((2022, 1), (2023, 6)), "validation3": ((2023, 7), (2023, 12))}
 GATEWAY_SPLIT = {"train": "dev", "validation": "validation", "holdout": "holdout", "train3": "dev",
@@ -54,12 +59,36 @@ def months(split):
     return out
 
 
-def window(split):
+def window(split, now=None):
     (y0, m0), (y1, m1) = SPLITS[split]
     a = datetime(y0, m0, 1, tzinfo=timezone.utc).timestamp()
     b = datetime(y1 + (m1 == 12), 1 if m1 == 12 else m1 + 1, 1, tzinfo=timezone.utc).timestamp()
-    if b > RESERVED_FROM:
+    if split.startswith("fwd"):
+        # forward observation windows (amendment 2): only new data, and only once the window is over
+        if a < FORWARD_MIN:
+            raise ReservedData("forward windows start on or after 2026-11-01; earlier 2025+ data stays reserved")
+        if (now or CLOCK()) < b + FORWARD_LAG_S:
+            raise ReservedData("forward window has not ended (plus publication lag); its data may not be read yet")
+    elif b > RESERVED_FROM:
         raise ReservedData("windows on or after 2025-01-01 are reserved")
+    return int(a), int(b) - 1
+
+
+def forward_split(start_ts, months=6):
+    """Register (idempotently) a forward window of whole calendar months starting at the month of start_ts."""
+    d = datetime.fromtimestamp(start_ts, timezone.utc)
+    y1, m1 = d.year + (d.month + months - 2) // 12, (d.month + months - 2) % 12 + 1
+    name = f"fwd{d.year}{d.month:02d}"
+    SPLITS[name] = ((d.year, d.month), (y1, m1))
+    GATEWAY_SPLIT[name] = "forward"
+    return name
+
+
+def window_bounds(split):
+    """Window start/end without the read guards (for scheduling and display only; reads always go through window())."""
+    (y0, m0), (y1, m1) = SPLITS[split]
+    a = datetime(y0, m0, 1, tzinfo=timezone.utc).timestamp()
+    b = datetime(y1 + (m1 == 12), 1 if m1 == 12 else m1 + 1, 1, tzinfo=timezone.utc).timestamp()
     return int(a), int(b) - 1
 
 
@@ -300,6 +329,68 @@ def stable_for(split, get=None):
                   f, sort_keys=True)
     os.replace(out + ".part", out)
     return out
+
+
+def fred_for(series, split, get=None):
+    """FRED daily series via the keyless graph CSV, requested only for the window (cosd/coed)."""
+    import json
+    a, b = window(split)
+    out = os.path.join(CACHE, "fred", f"{series}-{split}.json")
+    if os.path.exists(out):
+        return out
+    d0 = datetime.fromtimestamp(a, timezone.utc).strftime("%Y-%m-%d")
+    d1 = datetime.fromtimestamp(b, timezone.utc).strftime("%Y-%m-%d")
+    url = f"https://fred.stlouisfed.org/graph/fredgraph.csv?id={series}&cosd={d0}&coed={d1}"
+    raw = get(url) if get else urllib.request.urlopen(
+        urllib.request.Request(url, headers={"User-Agent": "copybot-research/1.0"}), timeout=120).read()
+    days = {}
+    for r in csv.reader(io.StringIO(raw.decode("utf-8"))):
+        if len(r) < 2 or not r[0][:1].isdigit() or r[1] in ("", "."):
+            continue
+        ts = int(datetime.strptime(r[0], "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp())
+        if a <= ts <= b:
+            days[str(ts)] = float(r[1])
+    os.makedirs(os.path.dirname(out), exist_ok=True)
+    with open(out + ".part", "w", encoding="utf-8") as f:
+        json.dump({"series": series, "split": split, "days": days, "source": url}, f, sort_keys=True)
+    os.replace(out + ".part", out)
+    return out
+
+
+def cm_for(metric, split, symbols, get=None):
+    """CoinMetrics community daily metric for the symbols, requested only for the window (paged)."""
+    import json
+    a, b = window(split)
+    out = os.path.join(CACHE, "coinmetrics", f"{metric}-{split}.json")
+    if os.path.exists(out):
+        return out
+    assets = ",".join(s.replace("USDT", "").lower() for s in symbols)
+    d0 = datetime.fromtimestamp(a, timezone.utc).strftime("%Y-%m-%d")
+    d1 = datetime.fromtimestamp(b, timezone.utc).strftime("%Y-%m-%d")
+    url = (f"https://community-api.coinmetrics.io/v4/timeseries/asset-metrics?assets={assets}&metrics={metric}"
+           f"&frequency=1d&start_time={d0}&end_time={d1}&page_size=10000")
+    per = {}
+    for _ in range(200):
+        res = _get_json(url, get)
+        for row in res.get("data") or []:
+            ts = int(datetime.strptime(row["time"][:10], "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp())
+            if a <= ts <= b and row.get(metric) not in (None, ""):
+                per.setdefault(row["asset"].upper() + "USDT", {})[str(ts)] = float(row[metric])
+        url = res.get("next_page_url")
+        if not url:
+            break
+    os.makedirs(os.path.dirname(out), exist_ok=True)
+    with open(out + ".part", "w", encoding="utf-8") as f:
+        json.dump({"metric": metric, "split": split, "days": per, "source": "community-api.coinmetrics.io"}, f,
+                  sort_keys=True)
+    os.replace(out + ".part", out)
+    return out
+
+
+def load_cm(path):
+    import json
+    with open(path, encoding="utf-8") as f:
+        return {s: {int(k): v for k, v in d.items()} for s, d in json.load(f)["days"].items()}
 
 
 def load_days(path):

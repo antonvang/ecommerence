@@ -10,7 +10,8 @@ import time
 from lab.db import HERE, canonical
 
 STATES = ("DISCOVERED", "SUPPRESSED", "REGISTERED", "WITHDRAWN", "SCREENING", "SCREEN_PASSED", "VALIDATION",
-          "VALIDATED", "PAPER_TRADING", "PAUSED", "REJECTED", "RETIRED", "EXTERNAL")
+          "VALIDATED", "PAPER_TRADING", "PAUSED", "REJECTED", "RETIRED", "EXTERNAL",
+          "OBSERVATION")   # research/PROTOCOL_V3.md amendment 2: forward test on new, unseen data
 FINAL = {"REJECTED", "RETIRED", "WITHDRAWN"}
 
 # (from, to) -> who may perform it. 'auto' = the engine (downward/sideways only); 'human' = approval code required.
@@ -23,6 +24,9 @@ EDGES = {
     ("REGISTERED", "WITHDRAWN"): "human",
     ("SCREENING", "REJECTED"): "auto",
     ("SCREENING", "SCREEN_PASSED"): "auto",
+    ("SCREENING", "OBSERVATION"): "auto",            # passed everything except the luck check (amendment 2)
+    ("OBSERVATION", "SCREEN_PASSED"): "auto",        # forward test passed
+    ("OBSERVATION", "REJECTED"): "auto",             # forward test failed
     ("SCREEN_PASSED", "VALIDATION"): "human",
     ("SCREEN_PASSED", "REJECTED"): "human",
     ("VALIDATION", "REJECTED"): "auto",

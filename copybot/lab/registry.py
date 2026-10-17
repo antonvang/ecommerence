@@ -173,7 +173,8 @@ def status(db):
 
 
 GATE_EDGES = {("SCREENING", "SCREEN_PASSED"), ("SCREENING", "REJECTED"), ("VALIDATION", "VALIDATED"),
-              ("VALIDATION", "REJECTED"), ("PAPER_TRADING", "REJECTED"), ("PAUSED", "REJECTED")}
+              ("VALIDATION", "REJECTED"), ("PAPER_TRADING", "REJECTED"), ("PAUSED", "REJECTED"),
+              ("SCREENING", "OBSERVATION"), ("OBSERVATION", "SCREEN_PASSED"), ("OBSERVATION", "REJECTED")}
 
 
 def make_result_guard(evidence):
@@ -190,4 +191,6 @@ def make_result_guard(evidence):
             raise LifecycleError("a pass transition must cite a result whose verdict starts with PASS")
         if to == "REJECTED" and passed:
             raise LifecycleError("a rejection cannot cite a PASS result")
+        if to == "OBSERVATION" and not (r["verdict"] or "").upper().startswith("OBSERVE"):
+            raise LifecycleError("entering OBSERVATION must cite a result whose verdict starts with OBSERVE")
     return guard

@@ -68,8 +68,9 @@ class Gateway:
             if st not in FINAL or split not in ("dev", "validation"):
                 self._refuse(exp_id, split, "reproduction is limited to dev/validation of finished experiments", rel)
         elif purpose == "evaluate":
-            need = {"dev": "SCREENING", "validation": "SCREENING", "holdout": "VALIDATION", "forward": "PAPER_TRADING"}
-            if st != need[split]:
+            need = {"dev": ("SCREENING",), "validation": ("SCREENING",), "holdout": ("VALIDATION",),
+                    "forward": ("PAPER_TRADING", "OBSERVATION")}
+            if st not in need[split]:
                 self._refuse(exp_id, split, f"{split} data needs state {need[split]}, experiment is {st}", rel)
         else:
             self._refuse(exp_id, split, f"unknown purpose {purpose}", rel)

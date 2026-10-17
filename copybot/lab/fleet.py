@@ -23,7 +23,7 @@ from lab.db import DB
 from lab.risk import Risk
 from lab.supervisor import Worker
 
-HEAVY = {"backtest", "cost", "adversarial", "validate", "holdout"}
+HEAVY = {"backtest", "cost", "adversarial", "validate", "holdout", "observe"}
 # Heavy steps run in worker processes (Python threads cannot use several cores at once). One slot per process;
 # two cores stay free for the supervisor, agents, dashboard and the rest of the PC. LAB_SLOTS overrides,
 # LAB_THREADS=1 runs heavy steps in-thread (used by tests that patch module state).
@@ -333,10 +333,10 @@ ROSTER = (
     ("adversarial-1", "Adversarial agent: look-ahead, poison, delay, placebo", ("adversarial",), None, None, True),
     ("adversarial-2", "Adversarial agent: look-ahead, poison, delay, placebo", ("adversarial",), None, None, True),
     ("adversarial-3", "Adversarial agent: look-ahead, poison, delay, placebo", ("adversarial",), None, None, True),
-    ("validation-1", "Validation agent: frozen variant on validation; sealed holdout after approval",
-     ("validate", "holdout"), None, None, True),
-    ("validation-2", "Validation agent: frozen variant on validation; sealed holdout after approval",
-     ("validate", "holdout"), None, None, True),
+    ("validation-1", "Validation agent: frozen variant on validation; forward test; sealed holdout after approval",
+     ("validate", "holdout", "observe"), None, None, True),
+    ("validation-2", "Validation agent: frozen variant on validation; forward test; sealed holdout after approval",
+     ("validate", "holdout", "observe"), None, None, True),
     ("report-1", "Reporting agent: results, lifecycle verdicts, markdown reports", ("report",), None, None, False),
     ("paper-1", "Paper execution agent: simulated orders for PAPER_TRADING experiments only", None, paper_pass, 60,
      False),

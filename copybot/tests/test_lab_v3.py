@@ -54,7 +54,23 @@ def synthetic(symbols, t0, days, seed=5):
     for d in range(days):
         sup *= 1 + 0.002 * math.sin(d / 11) + rng.gauss(0, 0.0005)
         stable[t0 + d * DAY] = sup
-    return bars, funding, {"volume": vol, "taker": tak, "metrics": met, "dvol": dvol, "stable": stable}
+    rates, r = {}, 0.5
+    for d in range(days):
+        day = t0 + d * DAY
+        r += 0.02 * math.sin(d / 23) + rng.gauss(0, 0.01)
+        if datetime.fromtimestamp(day, timezone.utc).weekday() < 5:
+            rates[day] = r
+    cm = {"SplyCur": {}, "CapMVRVCur": {}}
+    for j, s in enumerate(symbols):
+        sup, mv = 1e9 * (1 + j), 1.0 + 0.1 * j
+        cm["SplyCur"][s], cm["CapMVRVCur"][s] = {}, {}
+        for d in range(days):
+            sup *= 1 + 0.0002 * (j % 6) + rng.gauss(0, 0.0001)
+            mv = max(0.2, mv * (1 + rng.gauss(0, 0.02)))
+            cm["SplyCur"][s][t0 + d * DAY] = sup
+            cm["CapMVRVCur"][s][t0 + d * DAY] = mv
+    return bars, funding, {"volume": vol, "taker": tak, "metrics": met, "dvol": dvol, "stable": stable,
+                           "rates": rates, "cm": cm}
 
 
 class Families(unittest.TestCase):
@@ -99,6 +115,85 @@ class Families(unittest.TestCase):
                 out[s] = [1.0 if st.get(ts - ts % DAY, 0) > st.get(ts - ts % DAY - DAY, 0) else 0.0 for ts, _, _ in rows]
             return out
         self.assertFalse(adversarial.poison_test_xs(leaky, bars, funding, {}, volume_by=bundle)["ok"])
+
+
+class Observation(unittest.TestCase):
+    """research/PROTOCOL_V3.md amendment 2: forward test for ideas that pass everything except the luck check."""
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp(prefix="labobs")
+        self.db = DB(os.path.join(self.tmp, "lab.db"))
+        self.p = [mock.patch.object(pipeline, "ARTIFACTS", os.path.join(self.tmp, "artifacts")),
+                  mock.patch.object(pipeline, "REPORTS", os.path.join(self.tmp, "reports"))]
+        for x in self.p:
+            x.start()
+
+    def tearDown(self):
+        for x in self.p:
+            x.stop()
+        self.db.close()
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def _screened(self, eid, template, gates, observation=True):
+        spec = {**pipeline.template_spec(template), "observation_test": observation}
+        self.db.append("experiments", exp_id=eid, version=1, created_ts=0, mechanism_tag="m", fingerprint=eid,
+                       spec_json=spec)
+        self.db.append("transitions", exp_id=eid, ts=0, from_state=None, to_state="SCREENING", actor="fixture",
+                       reason="fixture: screening done")
+        net = {"net_sharpe_ann": 1.0, "gross_sharpe_ann": 1.1, "net_total": 0.1}
+        pipeline.save_artifact(eid, "cost", {"variants": [{"variant": 0, "params": {}, "net": net, "net_2x_costs": net}],
+                                             "benchmark": {"net_sharpe_ann": 0.5}, "selected": 0,
+                                             "rejected_early": False})
+        pipeline.save_artifact(eid, "adversarial", {"ok": True, "pre_validation_ok": True, "placebo": {"p": 0.01}})
+        pipeline.save_artifact(eid, "validate", {"metrics": net, "benchmark": net, "dsr": 0.4, "gates": gates})
+
+    def test_only_the_luck_check_failing_leads_to_observation_with_a_scheduled_forward_test(self):
+        gates = {"net_mean_daily > 0": True, "one-sided 90% lower bound > 0": True, "net Sharpe > buy-and-hold": True,
+                 "net total > 0 at 2x costs": True, "deflated Sharpe probability >= 0.95": False,
+                 "adversarial checks pass": True, "validation data quality": True}
+        self._screened("E_obs_a", "real_rate_filter", gates)
+        r = pipeline.step_report(self.db, {"exp_id": "E_obs_a"}, "report-1")
+        self.assertEqual(r["state"], "OBSERVATION")
+        self.assertTrue(r["verdict"].startswith("OBSERVE"))
+        ev = json.loads(self.db.one("SELECT payload FROM events WHERE kind='observation.started'")[0])
+        self.assertGreaterEqual(ev["start"], data.FORWARD_MIN)
+        j = jobs.get(self.db, "observe|E_obs_a")
+        self.assertEqual(j["status"], "queued")
+        self.assertEqual(j["next_run"], ev["end"] + data.FORWARD_LAG_S)            # not claimable before
+        self.assertIsNone(jobs.claim(self.db, "validation-1", ["observe"]))
+        # an idea that also fails another gate is rejected, and one without the observation flag is rejected too
+        gates2 = dict(gates, **{"net Sharpe > buy-and-hold": False})
+        self._screened("E_obs_b", "real_rate_filter", gates2)
+        self.assertEqual(pipeline.step_report(self.db, {"exp_id": "E_obs_b"}, "report-1")["state"], "REJECTED")
+        self._screened("E_obs_c", "real_rate_filter", gates, observation=False)
+        self.assertEqual(pipeline.step_report(self.db, {"exp_id": "E_obs_c"}, "report-1")["state"], "REJECTED")
+
+    def test_the_forward_window_cannot_be_read_before_it_ends(self):
+        split = data.forward_split(data.FORWARD_MIN)
+        a, b = data.window_bounds(split)
+        with self.assertRaises(data.ReservedData):
+            data.window(split, now=b)                                         # ended, but not past the lag
+        self.assertEqual(data.window(split, now=b + data.FORWARD_LAG_S + 1), (a, b))
+        with self.assertRaises(data.ReservedData):                           # 2025 stays reserved
+            data.window(data.forward_split(int(datetime(2025, 6, 1, tzinfo=timezone.utc).timestamp())), now=2e9)
+
+    def test_gateway_allows_forward_reads_only_in_observation_or_paper(self):
+        from lab.data import AccessRefused, Gateway
+        f = os.path.join(self.tmp, "x.bin")
+        with open(f, "wb") as fh:
+            fh.write(b"x")
+        for st, ok in (("SCREENING", False), ("OBSERVATION", True)):
+            eid = f"E_gw_{st}"
+            self.db.append("experiments", exp_id=eid, version=1, created_ts=0, mechanism_tag="m", fingerprint=eid,
+                           spec_json={})
+            self.db.append("transitions", exp_id=eid, ts=0, from_state=None, to_state=st, actor="fixture",
+                           reason="fixture: gateway rule test")
+            g = Gateway(self.db, "system:t")
+            if ok:
+                g.access(eid, "forward", [f], (1, 2), "test", "evaluate", "c")
+            else:
+                with self.assertRaises(AccessRefused):
+                    g.access(eid, "forward", [f], (1, 2), "test", "evaluate", "c")
 
 
 class Parsers(unittest.TestCase):
@@ -164,6 +259,33 @@ class Parsers(unittest.TestCase):
         self.assertLessEqual(max(days), b)
         with open(path, encoding="utf-8") as f:
             self.assertNotIn(str(reserved - DAY), f.read())                     # nothing from 2025 is stored
+
+    def test_fred_and_coinmetrics_requests_are_bounded_to_the_window(self):
+        a, b = data.window("validation3")
+        urls = []
+
+        def fred(url):
+            urls.append(url)
+            return ("observation_date,DFII10\n2023-07-03,1.6\n2023-07-04,.\n2023-07-05,1.7\n2024-02-01,9.9\n").encode()
+        days = data.load_days(data.fred_for("DFII10", "validation3", get=fred))
+        self.assertIn("cosd=2023-07-01", urls[0])
+        self.assertIn("coed=2023-12-31", urls[0])
+        self.assertEqual(sorted(days.values()), [1.6, 1.7])                    # '.' skipped, 2024 row dropped
+
+        pages = []
+
+        def cmget(url):
+            pages.append(url)
+            if len(pages) == 1:
+                return json.dumps({"data": [{"asset": "ada", "time": "2023-07-01T00:00:00.000000000Z", "SplyCur": "5"}],
+                                   "next_page_url": "https://next"}).encode()
+            return json.dumps({"data": [{"asset": "ada", "time": "2023-07-02T00:00:00.000000000Z", "SplyCur": "6"},
+                                        {"asset": "ada", "time": "2025-01-02T00:00:00.000000000Z", "SplyCur": "99"}]}).encode()
+        with mock.patch.object(data, "_get_json", lambda url, get=None: json.loads(cmget(url))):
+            per = data.load_cm(data.cm_for("SplyCur", "validation3", ["ADAUSDT"]))
+        self.assertIn("start_time=2023-07-01", pages[0])
+        self.assertIn("end_time=2023-12-31", pages[0])
+        self.assertEqual(sorted(per["ADAUSDT"].values()), [5.0, 6.0])
 
     def test_reserved_windows_are_refused(self):
         with mock.patch.dict(data.SPLITS, {"late": ((2025, 1), (2025, 2))}):
@@ -253,6 +375,7 @@ class EndToEnd(unittest.TestCase):
                         mock.patch.object(pipeline, "REPORTS", os.path.join(self.tmp, "reports")),
                         mock.patch.object(pipeline, "PLACEBO_N", 5),
                         mock.patch.object(fleet, "PROCESSES", False),
+                        mock.patch.object(fleet.control, "ram", lambda: {"total": 16e9, "free": 8e9, "load_pct": 50}),
                         mock.patch.object(templates, "catalogue_blob", lambda: "blob-test"),
                         mock.patch.object(registry, "last_commit", lambda path: "c0ffee"),
                         mock.patch.object(registry, "blob_at", lambda c, p: "blob-test")]
@@ -316,6 +439,76 @@ class EndToEnd(unittest.TestCase):
         self.assertEqual(r["results"][eid]["status"], "unsupported")
         self.assertIsNone(self.db.one("SELECT 1 FROM events WHERE kind='paper.started'"))   # no ledger opened
         self.assertEqual(self.db.one("SELECT COUNT(*) FROM sim_orders")[0], 0)
+
+
+class ForwardEvaluation(unittest.TestCase):
+    """step_observe end to end on a synthetic 2026-27 market: refused before the window ends, decided after it."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.market = tempfile.mkdtemp(prefix="labfwd")
+        write_market(cls.market, data.UNIVERSE_30_V3, years=(2026, 2027))
+        cls.split = data.forward_split(data.FORWARD_MIN)
+        a, b = data.window_bounds(cls.split)
+        os.makedirs(os.path.join(cls.market, "fred"), exist_ok=True)
+        rates = {str(d): 1.5 - 0.002 * ((d - a) // DAY) for d in range(a, b, DAY)
+                 if datetime.fromtimestamp(d, timezone.utc).weekday() < 5}
+        _dump(os.path.join(cls.market, "fred", f"DFII10-{cls.split}.json"), {"days": rates})
+
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(cls.market, ignore_errors=True)
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp(prefix="labfwde")
+        self.db = DB(os.path.join(self.tmp, "lab.db"))
+        a, b = data.window_bounds(self.split)
+        self.after = b + data.FORWARD_LAG_S + 1
+        self.patches = [mock.patch.object(data, "CACHE", self.market),
+                        mock.patch.object(data, "_fetch", lambda url, path, get=None: path if os.path.exists(path) else None),
+                        mock.patch.object(pipeline, "ARTIFACTS", os.path.join(self.tmp, "artifacts")),
+                        mock.patch.object(pipeline, "REPORTS", os.path.join(self.tmp, "reports")),
+                        mock.patch.object(registry, "last_commit", lambda path: "c0ffee"),
+                        mock.patch.object(registry, "blob_at", lambda c, p: "blob-test")]
+        for x in self.patches:
+            x.start()
+        eid = self.eid = "E_real_rate_filter_p3"
+        self.db.append("experiments", exp_id=eid, version=1, created_ts=0, mechanism_tag="real_rate_timing",
+                       fingerprint="f", spec_json={**pipeline.template_spec("real_rate_filter")})
+        self.db.append("transitions", exp_id=eid, ts=0, from_state=None, to_state="OBSERVATION", actor="fixture",
+                       reason="fixture: entered observation")
+        self.db.event("observation.started", "system:t", eid, {"window": self.split, "start": a, "end": b})
+        pipeline.save_artifact(eid, "cost", {"selected": 0})
+        pipeline.save_artifact(eid, "backtest", {"variants": [{"variant": 0, "params": {"n": 20}, "fit": None,
+                                                               "positions": {}}]})
+        self.job = {"exp_id": eid, "payload": {"start": a, "months": 6}}
+
+    def tearDown(self):
+        for x in self.patches:
+            x.stop()
+        self.db.close()
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def test_refused_before_the_window_ends(self):
+        with mock.patch.object(data, "CLOCK", lambda: self.after - data.FORWARD_LAG_S):
+            with self.assertRaises(data.ReservedData):
+                pipeline.step_observe(self.db, self.job, "validation-1")
+        self.assertEqual(lifecycle.state(self.db, self.eid), "OBSERVATION")
+        self.assertIsNone(self.db.one("SELECT 1 FROM datasets"))                 # nothing was read
+
+    def test_decided_after_the_window_with_a_recorded_result(self):
+        with mock.patch.object(data, "CLOCK", lambda: self.after):
+            r = pipeline.step_observe(self.db, self.job, "validation-1")
+        self.assertIn(r["state"], ("SCREEN_PASSED", "REJECTED"))
+        self.assertEqual(lifecycle.state(self.db, self.eid), r["state"])
+        res = self.db.one("SELECT label, verdict, metrics FROM results WHERE exp_id=?", self.eid)
+        self.assertEqual(res["label"], "VALIDATION")
+        self.assertTrue(res["verdict"].startswith(("PASS (forward test)", "FAIL (forward test)")))
+        self.assertEqual(json.loads(res["metrics"])["cohort"], 1)
+        splits = {x[0] for x in self.db.q("SELECT DISTINCT split FROM datasets")}
+        self.assertEqual(splits, {"forward"})
+        a, b = data.window_bounds(self.split)
+        self.assertEqual(self.db.one("SELECT MIN(window_start), MAX(window_end) FROM datasets")[:], (a, b))
 
 
 if __name__ == "__main__":

@@ -12,6 +12,7 @@ import json
 import os
 import statistics
 import time
+from datetime import datetime, timezone
 
 from lab import jobs, lifecycle, registry, templates
 from lab.data import Gateway
@@ -96,7 +97,8 @@ def template_spec(t):
             "rejection": "train gate, pre-validation gate or any validation gate fails ("
                          + catalogue.PROTOCOLS[proto].get("spec", "research/PROTOCOL_V2.md") + ")",
             "alpha": ALPHA_PER_EXPERIMENT, "code": ENGINE_CODE, "seed": SEED,
-            "protocol_version": proto, "label": "EXPLORATORY until a sealed holdout passes"}
+            "protocol_version": proto, "observation_test": bool(tpl.get("observation")),
+            "label": "EXPLORATORY until a sealed holdout passes"}
 
 
 def register(db, eid, actor="strategy-1"):
@@ -219,14 +221,14 @@ V3_SPLITS = {"train": "train3", "validation": "validation3", "holdout": "holdout
 
 def _sp(spec, split):
     """Logical split -> data window of the experiment's protocol (v3 uses longer windows)."""
-    return V3_SPLITS[split] if (spec.get("protocol_version") or 1) >= 3 else split
+    return V3_SPLITS.get(split, split) if (spec.get("protocol_version") or 1) >= 3 else split
 
 
 def _code_hash():
     return registry.blob_at(registry.last_commit(templates.CATALOGUE), templates.CATALOGUE)
 
 
-def _extra(db, eid, split, worker, symbols, per_sym, needs):
+def _extra(db, eid, split, worker, symbols, per_sym, needs, tpl=None):
     """PROTOCOL v3 data bundle: hourly volume/taker, daily metrics, DVOL, stablecoins; reads go through the gateway."""
     from concurrent.futures import ThreadPoolExecutor
     gw, win, b = Gateway(db, f"system:{worker}"), data.window(split), {}
@@ -245,6 +247,17 @@ def _extra(db, eid, split, worker, symbols, per_sym, needs):
         gw.access(eid, data.GATEWAY_SPLIT[split], list(paths.values()), win, "https://www.deribit.com/api/v2/public",
                   "evaluate", _code_hash())
         b["dvol"] = {c: data.load_days(p) for c, p in paths.items()}
+    if "rates" in needs:
+        p = data.fred_for("DFII10", split)
+        gw.access(eid, data.GATEWAY_SPLIT[split], [p], win, "https://fred.stlouisfed.org", "evaluate", _code_hash())
+        b["rates"] = data.load_days(p)
+    if "cm" in needs:
+        b["cm"] = {}
+        for metric in (tpl or {}).get("cm_metrics", []):
+            p = data.cm_for(metric, split, symbols)
+            gw.access(eid, data.GATEWAY_SPLIT[split], [p], win, "https://community-api.coinmetrics.io", "evaluate",
+                      _code_hash())
+            b["cm"][metric] = data.load_cm(p)
     if "stable" in needs:
         p = data.stable_for(split)
         gw.access(eid, data.GATEWAY_SPLIT[split], [p], win, "https://stablecoins.llama.fi", "evaluate", _code_hash())
@@ -263,7 +276,7 @@ def _market(db, eid, split, worker, spec, exclude=()):
     if tpl.get("needs_volume"):
         vol = {s: data.load_volume(per_sym[s], split) for s in per_sym}
     elif tpl.get("needs"):
-        vol = _extra(db, eid, split, worker, symbols, per_sym, tpl["needs"])
+        vol = _extra(db, eid, split, worker, symbols, per_sym, tpl["needs"], tpl)
     else:
         vol = None
     for s in exclude:
@@ -274,6 +287,8 @@ def _market(db, eid, split, worker, spec, exclude=()):
         elif vol is not None:
             for k in ("volume", "taker", "metrics"):
                 (vol.get(k) or {}).pop(s, None)
+            for per in (vol.get("cm") or {}).values():
+                per.pop(s, None)
     return bars, funding, dups, vol
 
 
@@ -283,6 +298,8 @@ def _train(db, eid, worker, spec):
 
 
 METRICS_MIN_COVERAGE, SERIES_MIN_COVERAGE = 0.95, 0.95
+DAY_S = 86400
+OBSERVATION_MONTHS = 6
 
 
 def _quality(bars, split, dups, spec, bundle=None):
@@ -303,6 +320,15 @@ def _quality(bars, split, dups, spec, bundle=None):
                 series_ok = series_ok and data.coverage(days, split) >= SERIES_MIN_COVERAGE
         if "stable" in bundle:
             series_ok = series_ok and data.coverage(bundle["stable"], split) >= SERIES_MIN_COVERAGE
+        if "rates" in bundle:                          # business-day series: >= 90 % of weekdays
+            a, b = data.window(split)
+            weekdays = [d for d in range(a, b + 1, DAY_S) if datetime.fromtimestamp(d, timezone.utc).weekday() < 5]
+            series_ok = series_ok and len([d for d in weekdays if d in bundle["rates"]]) >= 0.9 * len(weekdays)
+        for metric, per in (bundle.get("cm") or {}).items():
+            for s in q:
+                cov = data.coverage(per.get(s) or {}, split)
+                q[s][f"{metric}_coverage"] = cov
+                q[s]["ok"] = q[s]["ok"] and cov >= METRICS_MIN_COVERAGE
     excluded = sorted(s for s, x in q.items() if not x["ok"])
     return q, excluded, series_ok and len(q) - len(excluded) >= catalogue.min_symbols(t)
 
@@ -499,6 +525,11 @@ def step_report(db, job, worker):
         failed = [k for k, ok in val["gates"].items() if not ok]
         verdict = ("PASS (screen): all validation gates passed; eligible for a human-approved sealed holdout"
                    if not failed else f"REJECTED at validation: failed {', '.join(failed)}")
+        if spec.get("observation_test") and failed == ["deflated Sharpe probability >= 0.95"]:
+            start = _next_month(time.time())
+            verdict = (f"OBSERVE (forward test): passed every validation gate except the luck check (DSR "
+                       f"{val.get('dsr') or 0:.3f}); forward window {_ymd(start)} + {OBSERVATION_MONTHS} months "
+                       f"(research/PROTOCOL_V3.md amendment 2)")
     files = {s: f"data/lab/artifacts/{eid}/{s}.json" for s in STEPS if s != "report"}
     metrics = {"template": spec["template"], "selected_params": sel["params"], "train": sel["net"],
                "train_2x_costs": sel["net_2x_costs"], "train_benchmark": cost["benchmark"],
@@ -510,13 +541,79 @@ def step_report(db, job, worker):
                "batch": (batch_of(db, eid) or {}).get("batch")}
     rid = registry.record_result(db, eid, "EXPLORATORY", verdict, metrics, {"artifacts": files}, f"system:{worker}")
     ev = {"result_id": rid}
-    to = "SCREEN_PASSED" if verdict.startswith("PASS") else "REJECTED"
+    to = "SCREEN_PASSED" if verdict.startswith("PASS") else ("OBSERVATION" if verdict.startswith("OBSERVE") else "REJECTED")
     lifecycle.auto_transition(db, eid, to, f"system:{worker}", verdict[:300], ev,
                               guards=(registry.make_result_guard(ev),))
+    if to == "OBSERVATION":
+        start = _next_month(time.time())
+        split = data.forward_split(start, OBSERVATION_MONTHS)
+        a, b = data.window_bounds(split)
+        db.event("observation.started", f"system:{worker}", eid, {"window": split, "start": a, "end": b,
+                                                                   "result_id": rid})
+        jobs.enqueue(db, f"observe|{eid}", "observe", eid, {"start": a, "months": OBSERVATION_MONTHS}, priority=5,
+                     max_attempts=3, timeout_s=1800, actor=f"system:{worker}", not_before=b + data.FORWARD_LAG_S)
     os.makedirs(REPORTS, exist_ok=True)
     with open(os.path.join(REPORTS, f"{eid}.md"), "w", encoding="utf-8") as f:
         f.write(render_report(eid, spec, verdict, metrics))
     return {"verdict": verdict, "result_id": rid, "state": to}
+
+
+def _next_month(ts):
+    d = datetime.fromtimestamp(ts, timezone.utc)
+    return int(datetime(d.year + (d.month == 12), 1 if d.month == 12 else d.month + 1, 1, tzinfo=timezone.utc).timestamp())
+
+
+def _ymd(ts):
+    return datetime.fromtimestamp(ts, timezone.utc).strftime("%Y-%m-%d")
+
+
+def step_observe(db, job, worker):
+    """Forward test on new, unseen data (amendment 2). The data window cannot be read before it has ended."""
+    eid = job["exp_id"]
+    if lifecycle.state(db, eid) != "OBSERVATION":
+        raise StepError("forward test requires lifecycle OBSERVATION")
+    pl = job["payload"]
+    split = data.forward_split(pl["start"], pl.get("months", OBSERVATION_MONTHS))
+    spec = _spec(db, eid)
+    cost = load_artifact(eid, "cost")
+    v = load_artifact(eid, "backtest")["variants"][cost["selected"]]
+    bars, funding, dups, vol = _market(db, eid, split, worker, spec)      # data.window() refuses unfinished windows
+    q, excluded, enough = _quality(bars, split, dups, spec, vol)
+    _drop(bars, funding, vol, excluded, spec)
+    pos = _positions(spec["template"], bars, funding, v["params"], v["fit"], vol)
+    m = _evaluate(bars, funding, pos, spec["costs"])
+    hi = _evaluate(bars, funding, pos, spec["costs"], catalogue.COST_HIGH_MULT)
+    bench = _benchmark(bars, funding, spec["costs"])
+    a, _ = data.window_bounds(split)
+    cohort = 0
+    for r in db.q("SELECT ts, payload FROM events WHERE kind='observation.started'"):
+        p = json.loads(r["payload"])
+        if p.get("window") == split and r["ts"] < a:
+            cohort += 1
+    need = 1 - 0.05 / max(1, cohort)
+    sr_d = (m["net_mean_daily"] / m["net_sd_daily"]) if m.get("net_sd_daily") else None
+    prob = backtest.psr(sr_d, m["days"])
+    gates = {"net_mean_daily > 0": (m["net_mean_daily"] or 0) > 0,
+             "one-sided 90% lower bound > 0": (m["lb_one_sided"] or -1) > 0,
+             "net Sharpe > buy-and-hold": (m["net_sharpe_ann"] or -9e9) > (bench["net_sharpe_ann"] or -9e9),
+             "net total > 0 at 2x costs": hi["net_total"] > 0,
+             f"forward luck check PSR >= {need:.4f}": (prob or 0) >= need,
+             "forward data quality": enough}
+    failed = [k for k, ok in gates.items() if not ok]
+    verdict = ("PASS (forward test): every gate passed on new, unseen data; eligible for the human-approved steps"
+               if not failed else f"FAIL (forward test): failed {', '.join(failed)}")
+    art = save_artifact(eid, "observe", {"window": split, "metrics": _strip(m), "metrics_2x_costs": _strip(hi),
+                                         "benchmark": _strip(bench), "psr": prob, "cohort": cohort, "gates": gates,
+                                         "quality": q, "excluded": excluded, "daily_net": m["daily_net"]})
+    rid = registry.record_result(db, eid, "VALIDATION", verdict, {"forward": _strip(m), "benchmark": _strip(bench),
+                                                                  "psr": prob, "cohort": cohort, "gates": gates,
+                                                                  "window": split}, {"artifacts": [art]},
+                                 f"system:{worker}")
+    ev = {"result_id": rid}
+    to = "SCREEN_PASSED" if verdict.startswith("PASS") else "REJECTED"
+    lifecycle.auto_transition(db, eid, to, f"system:{worker}", verdict[:300], ev,
+                              guards=(registry.make_result_guard(ev),))
+    return {"verdict": verdict, "result_id": rid, "state": to, "tests": 1}
 
 
 def render_report(eid, spec, verdict, m):
@@ -551,6 +648,8 @@ def _drop(bars, funding, vol, symbols, spec):
         elif vol is not None:
             for k in ("volume", "taker", "metrics"):
                 (vol.get(k) or {}).pop(s, None)
+            for per in (vol.get("cm") or {}).values():
+                per.pop(s, None)
 
 
 def step_holdout(db, job, worker):
@@ -566,7 +665,7 @@ def step_holdout(db, job, worker):
     v = load_artifact(eid, "backtest")["variants"][cost["selected"]]
     bars, funding, dups, vol = _market(db, eid, "holdout", worker, spec)
     _, h_excluded, _ = _quality(bars, "holdout", dups, spec, vol)
-    if catalogue.TEMPLATES[spec["template"]].get("universe") in ("30", "30v3"):
+    if catalogue.TEMPLATES[spec["template"]].get("universe") in ("30", "30v3", "cm16"):
         h_excluded = sorted(set(h_excluded) | set(data.HOLDOUT_SEEN))
     _drop(bars, funding, vol, h_excluded, spec)
     pos = _positions(spec["template"], bars, funding, v["params"], v["fit"], vol)
@@ -589,7 +688,7 @@ def step_holdout(db, job, worker):
 
 
 HANDLERS = {"data": step_data, "backtest": step_backtest, "cost": step_cost, "adversarial": step_adversarial,
-            "validate": step_validate, "report": step_report, "holdout": step_holdout}
+            "validate": step_validate, "report": step_report, "holdout": step_holdout, "observe": step_observe}
 
 
 def enqueue_holdouts(db, actor="strategy-1"):

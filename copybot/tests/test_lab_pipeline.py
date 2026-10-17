@@ -88,7 +88,8 @@ class Env(unittest.TestCase):
                         mock.patch.object(data, "_fetch", self._no_network),
                         mock.patch.object(pipeline.adversarial, "placebo", functools.partial(_PLACEBO, n=5)),
                         mock.patch.object(pipeline, "PLACEBO_N", 5),
-                        mock.patch.object(fleet, "PROCESSES", False)]          # tests patch module state
+                        mock.patch.object(fleet, "PROCESSES", False),          # tests patch module state
+                        mock.patch.object(fleet.control, "ram", lambda: {"total": 16e9, "free": 8e9, "load_pct": 50})]
         for p in self.patches:
             p.start()
 

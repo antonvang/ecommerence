@@ -127,6 +127,14 @@ def metrics(rows, seed=7, lb_q=0.10):
         "daily_net": net_d}
 
 
+def psr(sr, n_obs, benchmark=0.0, skew=0.0, kurt=3.0):
+    """Probabilistic Sharpe ratio: probability that the true per-period Sharpe exceeds `benchmark`."""
+    if sr is None or n_obs < 3:
+        return None
+    den = math.sqrt(max(1e-12, 1 - skew * sr + (kurt - 1) / 4 * sr ** 2))
+    return statistics.NormalDist().cdf((sr - benchmark) * math.sqrt(n_obs - 1) / den)
+
+
 def deflated_sharpe(sr, sr_trials, n_obs, skew=0.0, kurt=3.0):
     """Probability that the (per-period) Sharpe `sr` exceeds the expected maximum of `len(sr_trials)` independent trials
     (Bailey & Lopez de Prado 2014). Returns None when it cannot be computed."""
