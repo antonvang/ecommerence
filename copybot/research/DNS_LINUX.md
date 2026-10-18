@@ -73,7 +73,12 @@ and no `dns-options`. The servers, in order: `192.168.1.3`, `8.8.8.8`, `185.222.
    - glibc reloads `/etc/resolv.conf` when it changes, so already running processes are covered as well.
    - Undo: `nmcli connection modify "Wired connection 1" ipv4.dns-options ""`, then the same `reapply`.
    - Afterwards check the snapshot spacing with `python3 -m lab watch --once` and the pm_lp database.
-3. **Root cause, on the network (your decision).** Repair the DNS service on 192.168.1.3, or stop the router from
+3. **Root cause, on the network (your decision).** 192.168.1.3 is the Synology NAS (`NAS.local`, DSM on ports
+   5000/5001), an ad-filtering DNS (`doubleclick.net` → `0.0.0.0`). The router (192.168.1.1) is a Synology SRM.
+   - Measured 2026-10-18 with `dig +tries=1`: at 1 query/s 0/60 lost (same name) and 0/60 lost (uncached names);
+     back-to-back 2/60 lost. The loss depends on the query rate, which points to a per-client rate limit in the
+     NAS's DNS service rather than a faulty device. Raising or switching off that limit (needs a DSM login) is
+     the likely fix. Repair the DNS service on 192.168.1.3, or stop the router from
    handing it out first via DHCP.
    - Check afterwards with `python3 research/dns_diag.py`: 192.168.1.3 should show 0 lost queries.
 4. **Not recommended now.** A local caching resolver (systemd-resolved, dnsmasq). It is a larger change to the host's
