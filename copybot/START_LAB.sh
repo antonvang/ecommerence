@@ -8,6 +8,9 @@ cd "$(dirname "$0")"
 
 PY=python3
 export PYTHONUNBUFFERED=1          # supervisor and fleet messages reach the log at once, also before a crash
+# DNS: the first resolver (192.168.1.3) drops ~4-5 % of queries; glibc then waits 5 s. Wait 1 s instead
+# (per process, no system change; remove this line to undo). research/DNS_LINUX.md
+export RES_OPTIONS="${RES_OPTIONS:-timeout:1 attempts:2}"
 PORT="${LAB_PORT:-8770}"
 now() { date -u +%FT%TZ; }
 command -v "$PY" >/dev/null || { echo "Python 3 mangler: sudo apt install python3"; exit 1; }

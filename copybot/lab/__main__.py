@@ -81,11 +81,16 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
         sp = sub.add_parser(c); sp.add_argument("exp"); sp.add_argument("--reason", required=True)
     rt = sub.add_parser("revoke-template"); rt.add_argument("template"); rt.add_argument("--reason", required=True)
     ex = sub.add_parser("export-db"); ex.add_argument("target")
+    wt = sub.add_parser("watch"); wt.add_argument("--once", action="store_true")
+    wt.add_argument("--interval", type=float, default=30.0); wt.add_argument("--port", type=int, default=8770)
     pf = sub.add_parser("preflight"); pf.add_argument("--port", type=int, default=8770)
     pf.add_argument("--dashboard-running", action="store_true", help="only check whether the dashboard answers")
     wb = sub.add_parser("web"); wb.add_argument("--port", type=int, default=8770); wb.add_argument("--duration", type=float)
     args = ap.parse_args(argv)
     db_path = args.db or db_path
+    if args.cmd == "watch":           # independent read-only watcher of lab + pm_lp collector (lab/watch.py)
+        from lab import watch
+        return watch.main(db_path, args.port, args.once, args.interval, out)
     if args.cmd == "preflight":       # read-only startup checks (START_LAB.sh)
         from lab import preflight
         if args.dashboard_running:

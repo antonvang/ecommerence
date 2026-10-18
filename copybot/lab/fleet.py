@@ -180,11 +180,12 @@ class Agent:
             return
         self.beat(db, "running", detail=f"{self.role} pass", current_job=f"{self.name}:periodic", current_exp=None,
                   next_action="finish pass")
+        t0 = time.time()
         try:
             res = self.fn(db)
             self.counters["tasks_done"] += 1
             summary = _summary(res)
-            self.log("periodic.done", result=summary)
+            self.log("periodic.done", result=summary, seconds=round(time.time() - t0, 2))
             self.next_periodic = time.time() + self.every
             if self.failing:
                 db.event("agent.recovered", f"agent:{self.name}", None, {"agent": self.name, "after": self.failing})
@@ -194,7 +195,8 @@ class Agent:
         except Exception as e:
             self.counters["errors"] += 1
             self.next_periodic = time.time() + min(self.every, 60)
-            self.log("periodic.error", error=repr(e), trace=traceback.format_exc()[-1500:])
+            self.log("periodic.error", error=repr(e), seconds=round(time.time() - t0, 2),
+                     trace=traceback.format_exc()[-1500:])
             if self.failing != repr(e)[:300]:                    # a changed or new failure is recorded once
                 db.event("agent.error", f"agent:{self.name}", None, {"agent": self.name, "error": repr(e)[:300]})
             self.failing = repr(e)[:300]

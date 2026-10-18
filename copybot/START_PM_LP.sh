@@ -9,6 +9,9 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 PY=python3
+# DNS: the first resolver (192.168.1.3) drops ~4-5 % of queries; glibc then waits 5 s. Wait 1 s instead
+# (per process, no system change; remove this line to undo). research/DNS_LINUX.md
+export RES_OPTIONS="${RES_OPTIONS:-timeout:1 attempts:2}"
 DB=data/research/pm_lp/pm_lp.db
 if [ ! -f "$DB" ]; then
   echo "$DB mangler. Den eksisterende database skal flyttes hertil (PM_LP_SPEC amendment 3); ingen ny start." >&2

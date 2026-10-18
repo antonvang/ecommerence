@@ -23,6 +23,7 @@ EXTERNAL_FILES = {
     "X01_pm_lp_v1": ("pm_lp_v1 collector", ("data/research/pm_lp/pm_lp.db-wal", "data/research/pm_lp/pm_lp.db")),
     "X02_copybot_paper": ("copy-bot paper process", ("data/paper.db-wal", "data/paper.db")),
     "X03_funding_live_v0": ("funding live paper test", ("data/funding.db-wal", "data/funding.db")),
+    "W_watch": ("uafhængig overvågning (lab watch)", ("data/lab/watch.heartbeat",)),
 }
 
 
