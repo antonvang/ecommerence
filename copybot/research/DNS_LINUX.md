@@ -57,18 +57,21 @@ and no `dns-options`. The servers, in order: `192.168.1.3`, `8.8.8.8`, `185.222.
      at the next start of each process.
    - Undo: delete the `export RES_OPTIONS=...` line and restart that process.
    - The running collector keeps its 300 s in-process lookup cache and is not restarted for this.
-2. **Needs your approval and `sudo`: system-wide, reversible.** It makes every program on the host wait 1 s instead
-   of 5 s. Not tested on the host yet.
+2. **Done 2026-10-18 with the user's approval: system-wide, reversible.** It makes every program on the host wait 1 s
+   instead of 5 s.
 
    ```
-   sudo nmcli connection modify "Wired connection 1" ipv4.dns-options "timeout:1,attempts:2"
-   sudo nmcli device reapply eno1        # applies to the active connection without taking it down
+   nmcli connection modify "Wired connection 1" ipv4.dns-options "timeout:1,attempts:2"
+   nmcli device reapply eno1             # applies to the active connection without taking it down
    grep options /etc/resolv.conf         # expect: options timeout:1 attempts:2
    ```
 
-   - If `reapply` does not update `/etc/resolv.conf`, use `sudo nmcli connection up "Wired connection 1"` instead.
-     The network then blinks for a few seconds, which leaves a short pm_lp gap.
-   - Undo: `sudo nmcli connection modify "Wired connection 1" ipv4.dns-options ""`, then the same `reapply`.
+   - `sudo` was not needed: polkit grants the logged-in desktop user `settings.modify.system` and `network-control`.
+   - `reapply` updated `/etc/resolv.conf` at once, with no network gap.
+   - Measured afterwards (`research/dns_diag.py 120`, `RES_OPTIONS` unset): 192.168.1.3 still loses 5–6/120
+     queries, but getaddrinfo AF_UNSPEC takes 11.7 s per 120 lookups (was 56.2 s), max 1.17 s (was ~5 s).
+   - glibc reloads `/etc/resolv.conf` when it changes, so already running processes are covered as well.
+   - Undo: `nmcli connection modify "Wired connection 1" ipv4.dns-options ""`, then the same `reapply`.
    - Afterwards check the snapshot spacing with `python3 -m lab watch --once` and the pm_lp database.
 3. **Root cause, on the network (your decision).** Repair the DNS service on 192.168.1.3, or stop the router from
    handing it out first via DHCP.
