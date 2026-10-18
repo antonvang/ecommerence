@@ -161,7 +161,9 @@ def _progress(con_path, now, sup):
         started = con.execute("SELECT MAX(ts) FROM events WHERE kind='system.running'").fetchone()[0] or now
         if now - started < 2 * 3600:
             return (None, "not judged (fleet up less than 2 h)")
-        last = con.execute("SELECT MAX(ts) FROM events WHERE kind='job.done'").fetchone()[0]
+        last = con.execute("SELECT MAX(ts) FROM events WHERE kind='job.done' AND COALESCE(json_extract(payload, "
+                           "'$.kind'), '') NOT IN ('diagnose', 'scan_digest', 'scan_dossier')").fetchone()[0]
+        # (non-decisional side jobs run daily; they must not hide an idle hypothesis pipeline)
         try:
             runnable, running = con.execute("SELECT COALESCE(SUM(status='queued' AND next_run<=?), 0), "
                                             "COALESCE(SUM(status='running'), 0) FROM jobs", (now,)).fetchone()
@@ -201,8 +203,38 @@ def _active_ledgers(con):
     return out
 
 
+class _ReadOnly:
+    """The two read calls lab read models use (db.q / db.one), over the watcher's read-only connection."""
+    def __init__(self, con):
+        self.con = con
+
+    def q(self, sql, *a):
+        return self.con.execute(sql, a).fetchall()
+
+    def one(self, sql, *a):
+        return self.con.execute(sql, a).fetchone()
+
+
+def _edge_note(con, active, now):
+    """Non-decisional (amendment 9 section 4): ledgers live >= 14 full days whose daily net is more than 3 standard
+    errors below the validation expectation. Only mentioned in the detail; never makes the component fail."""
+    from lab import command
+    db, low = _ReadOnly(con), []
+    for led in active:
+        try:
+            if command.edge(db, led, now, expectation=False)["days"] < command.EDGE_WATCH_DAYS:
+                continue                                  # no validate.json read before 14 days
+            z = command.edge(db, led, now)["z"]
+        except Exception:
+            continue
+        if z is not None and z < command.EDGE_WATCH_Z:
+            low.append(f"{led} z={z:.1f}")
+    return f"; edge below expectation (non-decisional, decides nothing): {', '.join(low)}" if low else ""
+
+
 def _paper(con_path, now, sup):
-    """Is every active simulated ledger marked hourly, and is none of them paused for more than a day?"""
+    """Is every active simulated ledger marked hourly, and is none of them paused for more than a day? Ledgers far
+    below their validation expectation are mentioned, never judged (amendment 9 section 4)."""
     if not sup or sup.get("status") != "running":
         return (None, "not judged (fleet down)")
     con = _ro(con_path)
@@ -222,13 +254,18 @@ def _paper(con_path, now, sup):
                             "ORDER BY id DESC LIMIT 1", (led,)).fetchone()
             if r and r[0] == "PAUSE":
                 (long_paused if now - r[1] > PAPER_PAUSE_MAX_S else paused).append(led)
+        try:
+            note = _edge_note(con, active, now)
+        except Exception:                                 # the note must never change the paper verdict
+            note = ""
     finally:
         con.close()
     if stale or long_paused:
         why = ([f"not marked for over {PAPER_MARK_MAX_S // 3600:.1f} h: {', '.join(stale)}"] if stale else []) + \
               ([f"paused for over a day: {', '.join(long_paused)}"] if long_paused else [])
-        return (False, "; ".join(why)[:300])
-    return (True, f"{len(active)} active ledgers marked hourly" + (f"; paused: {', '.join(paused)}" if paused else ""))
+        return (False, ("; ".join(why) + note)[:300])
+    return (True, f"{len(active)} active ledgers marked hourly" + (f"; paused: {', '.join(paused)}" if paused else "")
+            + note)
 
 
 def check_collector(pm_db, now):

@@ -179,6 +179,9 @@ body{font-size:14px}
 .money{display:grid;grid-template-columns:1.3fr 1.3fr 1fr 1fr;gap:12px}
 @media (max-width:1000px){.money{grid-template-columns:1fr 1fr}}
 @media (max-width:520px){.money{grid-template-columns:1fr}}
+.money.sim{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media (max-width:1000px){.money.sim{grid-template-columns:1fr}}
+.money.sim .simcap{grid-column:1/-1;font:700 11px var(--mono);letter-spacing:.16em;color:var(--violet)}
 .mcard{position:relative;border:1px solid var(--line);border-radius:16px;padding:16px 18px;background:linear-gradient(180deg,#14181fee,#0f1217ee);overflow:hidden;min-width:0}
 .mcard .lab{font:700 11px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--mute)}
 .mcard .big{font:700 36px/1.15 var(--mono);font-variant-numeric:tabular-nums;margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -273,6 +276,12 @@ details.more[open]>summary{margin-bottom:12px}
     <div class="mcard pnl zero" id="m-pnl"><div class="lab" style="padding-left:6px">Total P&amp;L (paper)</div><div class="big" id="pnl" style="padding-left:6px">–</div><div class="sub" id="pnlsub" style="padding-left:6px"></div></div>
     <div class="mcard" id="m-today"><div class="lab">I dag</div><div class="big" id="today">–</div><div class="sub" id="todaysub"></div></div>
     <div class="mcard" id="m-strat"><div class="lab">Strategier der handler</div><div class="big" id="strat">–</div><div class="sub" id="stratsub"></div></div>
+  </section>
+  <section class="money sim" aria-label="Simuleret samlet (ikke godkendt)">
+    <div class="simcap" id="simcap">SIMULERET SAMLET (ikke godkendt)</div>
+    <div class="mcard" id="m-fwd"><div class="lab">Fremadtest-saldo</div><div class="big" id="fwd">–</div><div class="sub" id="fwdsub"></div></div>
+    <div class="mcard" id="m-comb"><div class="lab">Samlet simuleret værdi</div><div class="big" id="comb">–</div><div class="sub" id="combsub"></div></div>
+    <div class="mcard pnl zero" id="m-combpnl"><div class="lab" style="padding-left:6px">Samlet simuleret P&amp;L</div><div class="big" id="combpnl" style="padding-left:6px">–</div><div class="sub" id="combpnlsub" style="padding-left:6px"></div></div>
   </section>
 
   <section class="status" id="status" aria-label="Status"></section>
@@ -537,18 +546,18 @@ function animate(id, v, fmt){
 let lastEquity = null;
 function renderMoney(b){
   animate("bal", b.equity, v => usd(v));
-  const fwd = b.forward ? ` · ${b.forward} fremadtest udenfor saldoen ${usd(b.forward_pnl, true)}` : "";
-  $("#balsub").textContent = (b.capital == null ? "ingen strategi handler endnu — starter, når den første består alle tests" : `startede på ${usd(b.capital)} · ${b.active} aktiv(e)` + (b.shadow ? ` · heraf ${b.shadow} skyggehandel (simuleret, ikke godkendt)` : "")) + fwd;
-  $("#balsub").title = b.forward ? `Fremadtest (simuleret, ikke godkendt, ekskl. funding): ${b.forward_running} kører, ${b.forward_paused} på pause, ${b.forward_open_positions} åbne positioner. Tæller ikke i saldoen.` : "";
+  $("#balsub").textContent = b.capital == null ? "ingen strategi handler endnu — starter, når den første består alle tests" : `startede på ${usd(b.capital)} · ${b.active} aktiv(e)` + (b.shadow ? ` · heraf ${b.shadow} skyggehandel (simuleret, ikke godkendt)` : "");
   animate("pnl", b.pnl, v => usd(v, true));
   $("#pnl").className = "big " + (b.pnl > 0 ? "pos" : b.pnl < 0 ? "neg" : "");
   $("#m-pnl").className = "mcard pnl" + (b.pnl == null || b.pnl === 0 ? " zero" : b.pnl < 0 ? " neg" : "");
-  $("#pnlsub").textContent = b.pnl == null ? "simuleret · rigtig konto: ikke tilgængelig" : `${(b.pnl_pct*100).toFixed(2)}% · realiseret ${usd(b.realized, true)} · urealiseret ${usd(b.unrealized, true)}`;
+  $("#pnlsub").textContent = b.pnl == null ? "simuleret · rigtig konto: ikke tilgængelig" : `${(b.pnl_pct*100).toFixed(2)}% · realiseret ${usd(b.realized, true)} · urealiseret ${usd(b.unrealized, true)}` + (b.funding_t0 ? ` · inkl. funding fra ${utc(b.funding_t0)} (${usd(b.funding || 0, true)})` : " · ekskl. funding (bogføres fra første afregning efter deploy)");
   animate("today", b.today, v => usd(v, true));
   $("#today").className = "big " + (b.today > 0 ? "pos" : b.today < 0 ? "neg" : "");
   $("#todaysub").textContent = b.capital == null ? "" : `${b.open_positions} åbne positioner`;
   animate("strat", b.active, v => String(Math.round(v)));
-  $("#stratsub").textContent = `${b.closed_trades} lukkede handler` + (b.win_rate == null ? "" : ` · ${(b.win_rate*100).toFixed(0)}% vundet`) + (b.shadow ? " · skyggehandel tæller ikke som godkendt" : "") + (b.forward ? ` · ${b.forward_running} fremadtest kører (ikke godkendt)` : "");
+  const f = b.forward || {}, c = b.combined || {}, r = b.reconciliation || {};
+  $("#stratsub").textContent = `${b.trading ?? 0} handler · ${b.paused ?? 0} på pause` + (f.ledgers ? ` · fremadtest: ${f.running} handler, ${f.paused} på pause (ikke godkendt)` : "") + ` · ${b.closed_trades} lukkede handler` + (b.win_rate == null ? "" : ` · ${(b.win_rate*100).toFixed(0)}% vundet`) + (b.shadow ? " · skyggehandel tæller ikke som godkendt" : "");
+  renderSim(b, f, c, r);
   if (lastEquity != null && b.equity != null && b.equity !== lastEquity) { const m = $("#m-bal"); m.classList.remove("glow"); void m.offsetWidth; m.classList.add("glow"); }
   lastEquity = b.equity;
   const h = b.history.map(p => [p.ts, p.equity]);
@@ -557,6 +566,21 @@ function renderMoney(b){
         [Math.min(...h.map(p => p[1]), b.capital), Math.max(...h.map(p => p[1]), b.capital)],
         (X, Y) => `<line x1="${X(h[0][0])}" x2="${X(h[h.length-1][0])}" y1="${Y(b.capital)}" y2="${Y(b.capital)}" stroke="#5f5b57" stroke-dasharray="3 3"/><path d="${stepPath(h, X, Y)}" fill="none" stroke="${b.pnl >= 0 ? "#5fd39a" : "#ff5d5d"}" stroke-width="2"/>`,
         "tid (UTC)", "USD (simuleret)", day, v => "$" + num(v, 0)) + `<div class="cap">Samlet paper-saldo for alle strategier; værdien holdes til næste timemark (ingen interpolation). Stiplet linje = startkapital. Kilde: ${esc(b.source)}</div>`;
+}
+function renderSim(b, f, c, r){
+  const tf = b.funding_t0 ? ` · inkl. funding fra ${utc(b.funding_t0)}` : " · funding bogføres fra T_F";
+  $("#simcap").textContent = "SIMULERET SAMLET (ikke godkendt)" + tf + (r.ok === false ? " · AFSTEMNING AFVIGER" : r.ok ? " · afstemt" : "");
+  $("#simcap").title = r.ok === false ? r.problems.join("\n") : `${r.checks || 0} kontroller (tolerance ${r.tolerance}): pr. konto, formel = sum, fremadtest = sum, samlet = formel + fremadtest, gebyrer og funding = tabellerne`;
+  animate("fwd", f.ledgers ? f.equity : null, v => usd(v));
+  $("#fwdsub").textContent = f.ledgers ? `start ${usd(f.capital)} · P&L ${usd(f.pnl, true)} · ${f.running} handler, ${f.paused} på pause · ${f.open_positions} åbne positioner` : "ingen fremadtest-konti";
+  $("#fwdsub").title = "Fremadtest (simuleret, ikke godkendt). Tæller ikke i den formelle saldo.";
+  animate("comb", c.equity, v => usd(v));
+  $("#combsub").textContent = c.equity == null ? "" : `formel ${usd(b.equity ?? 0)} + fremadtest ${usd(f.equity ?? 0)} · start ${usd(c.capital)}`;
+  animate("combpnl", c.pnl, v => usd(v, true));
+  $("#combpnl").className = "big " + (c.pnl > 0 ? "pos" : c.pnl < 0 ? "neg" : "");
+  $("#m-combpnl").className = "mcard pnl" + (c.pnl == null || c.pnl === 0 ? " zero" : c.pnl < 0 ? " neg" : "");
+  $("#combpnlsub").textContent = c.pnl == null ? "" : `realiseret ${usd(c.realized, true)} / urealiseret ${usd(c.unrealized, true)} / gebyrer ${usd(-c.fees, true)} / funding ${usd(c.funding, true)}`;
+  $("#combpnlsub").title = "Realiseret indeholder gebyrer og funding; de vises også hver for sig.";
 }
 function st(k, v, cls=""){ return `<div class="st"><div class="k">${esc(k)}</div><div class="v ${cls}">${v}</div></div>`; }
 function renderStatus(k){
@@ -567,10 +591,10 @@ function renderStatus(k){
   if (c.paused) msgs.push("FLÅDEN ER SAT PÅ PAUSE — ingen nye jobs"); if (c.hold) msgs.push("RESSOURCESTOP — for lidt RAM eller disk"); if (c.stop) msgs.push("STOP ANMODET — supervisoren lukker ned");
   $("#b-ctl").textContent = msgs.join(" · "); $("#b-ctl").classList.toggle("show", msgs.length > 0);
   const g = k.gate_s7; $("#c-gate").innerHTML = `<span class="led ${g.open?"ok":"warn"}"></span>S7 ${g.open?"åben":"lukket"} · ${(g.covered_s/86400).toFixed(1)}/7 d`; $("#c-gate").title = g.reason;
-  const ram = k.ram, disk = k.disk, data = k.data, lastData = Math.max(data.last_gateway_read_ts || 0, data.last_download_ts || 0) || null;
+  const ram = k.ram, disk = k.disk, data = k.data, lastData = data.newest_ts || Math.max(data.last_gateway_read_ts || 0, data.last_download_ts || 0) || null;
   $("#status").innerHTML =
       st("Supervisor", sup.alive ? "KØRER" : "STOPPET", sup.alive ? "good" : "bad")
-    + st("Agenter aktive", `${k.agents_active}/${k.agents_total}`, k.agents_active ? "good" : "")
+    + st("Agenter aktive", `${k.agents_active}/${k.agents_total}` + (k.agents_with_output_24h == null ? "" : ` · ${k.agents_with_output_24h} med output 24 t`), k.agents_active ? "good" : "")
     + st("Arbejder nu", num(k.agents_running, 0))
     + st("Jobs i kø", num(k.queued_jobs, 0))
     + st("Tests kørt", num(k.tests_completed.variant_evaluations + k.tests_completed.validation_runs, 0))
@@ -578,7 +602,8 @@ function renderStatus(k){
     + st("Fejl · gentagelser", `${k.errors_window} · ${k.retries_window}`, k.errors_window ? "bad" : "")
     + st("RAM fri", ram ? `${gb(ram.free).toFixed(1)} GB` : NA, ram && ram.free < k.ram_min_free ? "bad" : ram ? "" : "na")
     + st("Data opdateret", lastData ? ago(lastData) : NA, lastData ? "" : "na");
-  $("#status").title = k.tests_per_min_basis;
+  const at = ts => ts ? utc(ts) : NA;
+  $("#status").title = k.tests_per_min_basis + ` · Data opdateret = nyeste af forskningsdata (læst ${at(data.last_gateway_read_ts)}, hentet ${at(data.last_download_ts)}), søgning ${at(data.last_scan_ts)} og paper-mark ${at(data.last_mark_ts)}`;
   Planet.setActive(sup.alive);
   const rs = k.research || {};
   const srch = rs.last_scan_ts ? ` · søgning ${ago(rs.last_scan_ts)} · ${rs.scans_24h} i døgnet` : "";
@@ -728,9 +753,16 @@ function renderPaper(p){
     return `<div class="panel" style="background:var(--panel2);margin-bottom:10px"><div class="crow" style="justify-content:space-between"><b class="mono">${esc(s.name || s.exp_id)}</b><span>${(s.shadow || s.forward) ? `<span class="badge" style="color:${s.forward ? "var(--violet)" : "var(--amber)"}">${esc(s.label)}</span>` : badge(s.label)} ${s.paused?badge("PAUSED"):""} ${s.forward && !s.active ? badge("STOPPET") : ""} ${s.warming?badge("warming up"):""}</span></div>
       <div class="grid2"><div>${chart}<div class="cap">Equity step chart (value held until the next hourly mark; no interpolation) · ${eq.length} marks · ${eq.length ? utc(eq[0].ts) + " → " + utc(eq[eq.length-1].ts) : ""} · source sim_equity</div></div>
       <div>${ddc}<div class="cap">Drawdown from running peak · source sim_equity</div></div></div>
-      <div class="grid3">${metric("Realised P&L (sim.)", num(s.realized), "closed trades and fees, USD")}${metric("Unrealised P&L (sim.)", num(s.unrealized), "open positions at the last mark, USD")}${metric("Total P&L (sim.)", num(s.total_pnl), `capital ${num(s.capital,0)} USD`)}</div>
-      <div class="grid3">${metric("Max / daily drawdown", `${pct(s.max_drawdown)} / ${pct(s.daily_drawdown)}`, "from sim_equity")}${metric("Orders · fills · rejected", `${s.orders} · ${s.fills} · ${s.rejected_orders}`, `${s.open_positions} open positions · ${s.closed_trades} closed trades`)}${metric("Reconciliation", s.reconciliation.ok ? "OK" : "MISMATCH", s.reconciliation.ok ? "orders = fills + cancels" : esc(s.reconciliation.problems.join("; ")), s.reconciliation.ok ? "good" : "bad")}</div></div>`;
+      <div class="grid3">${metric("Realised P&L (sim.)", num(s.realized), `closed trades, fees and funding, USD · gebyrer ${num(s.fees)} · funding ${num(s.funding)}`)}${metric("Unrealised P&L (sim.)", num(s.unrealized), "open positions at the last mark, USD")}${metric("Total P&L (sim.)", num(s.total_pnl), `capital ${num(s.capital,0)} USD`)}</div>
+      <div class="grid3">${metric("Max / daily drawdown", `${pct(s.max_drawdown)} / ${pct(s.daily_drawdown)}`, "from sim_equity")}${metric("Orders · fills · rejected", `${s.orders} · ${s.fills} · ${s.rejected_orders}`, `${s.open_positions} open positions · ${s.closed_trades} closed trades`)}${metric("Reconciliation", s.reconciliation.ok ? "OK" : "MISMATCH", s.reconciliation.ok ? "orders = fills + cancels · kontant = start + fills − gebyrer + funding" : esc(s.reconciliation.problems.join("; ")), s.reconciliation.ok ? "good" : "bad")}</div>
+      ${edgeRow(s.edge)}</div>`;
   }).join("") + `<div class="cap">Source: ${esc(p.source)}</div>`;
+}
+function edgeRow(e){
+  if (!e) return "";
+  const z = e.z != null ? e.z.toFixed(2) : `<span class="na">${e.expectation ? "z fra 2 hele dage" : "ingen forventning"}</span>`;
+  const exp = e.expectation ? `forventning ${(e.expectation.mean*100).toFixed(3)}% ± ${(e.expectation.sd*100).toFixed(3)}% pr. dag (validate.json, ${e.expectation.days} dage)` : esc(e.no_expectation || "ingen forventning");
+  return `<div class="grid3">${metric("Dage live", num(e.days_live, 1), `${e.days} hele døgn målt (dagslukning til dagslukning)`)}${metric("Netto pr. dag (sim.)", e.net_per_day == null ? `<span class="na">${NA}</span>` : num(e.net_per_day), (e.net_per_day_pct == null ? "" : `${(e.net_per_day_pct*100).toFixed(3)}% · `) + "efter omkostninger, inkl. funding fra T_F")}${metric("Edge mod validering (z)", z, exp + " · ikke-afgørende: afgør intet")}</div>`;
 }
 function renderDist(d){
   const t = d.trials.filter(x => x.sharpe_ann != null);

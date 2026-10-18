@@ -7,6 +7,8 @@ the target exposure for the hour that is starting; the paper engine walks the pu
 
 Idempotency: order ids are `<exp>|<hour_ts>|<symbol>`, so a repeated pass in the same hour cannot trade twice.
 Data problems (stale bars, empty or crossed book, fetch failure) pause the experiment through the risk module.
+Funding (research/PROTOCOL_V3.md amendment 9 section 2): from T_F (paper.funding_started, written by the first pass
+that books funding) every processed ledger - trading, paused or closing - books the settled funding of its positions.
 """
 from __future__ import annotations
 
@@ -32,7 +34,7 @@ def _get(path):
         return json.loads(r.read())
 
 
-_HOURLY = {}        # symbol -> (hour, bars, funding, volume): closed bars and settled funding change once an hour
+_HOURLY = {}        # symbol -> (hour, bars, funding, volume, opens): bars and settled funding change once an hour
 _CM_HOURLY = {}     # (metrics, symbols) -> (hour, values): CoinMetrics daily values, re-read once an hour
 
 
@@ -42,23 +44,33 @@ def fetch_book(sym, now, get=_get):
                 asks=tuple((float(p), float(q)) for p, q in d["asks"]))
 
 
-def fetch_market(sym, now, get=_get, cache=None, books=None):
-    """Closed 1h bars [(open_ts, open, close)], settled funding {ts: rate}, a Book and hourly quote volume.
-    With a cache, bars and funding are fetched once per clock hour, as soon as the bar that closed at the top of the
-    hour is published (they cannot change before the next close); the book is read on every call."""
+def hourly(sym, now, get=_get, cache=None):
+    """Closed 1h bars [(open_ts, open, close)], settled funding {ts: rate}, hourly quote volume and the open of every
+    bar that has started {open_ts: open} (the in-progress bar's open is final; amendment 9 section 2 prices funding at
+    the open of the bar starting at the settlement). With a cache, fetched once per clock hour, as soon as the bar
+    that closed at the top of the hour is published (nothing here can change before the next close)."""
     hour = int(now) // HOUR * HOUR
     hit = cache.get(sym) if cache is not None else None
     if hit and hit[0] == hour:
-        bars, funding, volume = hit[1:]
-    else:
-        kl = get(f"/fapi/v1/klines?symbol={sym}&interval=1h&limit=1000")
-        bars = [(int(k[0]) // 1000, float(k[1]), float(k[4])) for k in kl if int(k[6]) // 1000 < now]
-        volume = {int(k[0]) // 1000: float(k[7]) for k in kl if int(k[6]) // 1000 < now and len(k) > 7}
-        fr = get(f"/fapi/v1/fundingRate?symbol={sym}&limit=200")
-        funding = {int(f["fundingTime"]) // 1000 // HOUR * HOUR: float(f["fundingRate"]) for f in fr
-                   if int(f["fundingTime"]) // 1000 < now}
-        if cache is not None and bars and bars[-1][0] + HOUR == hour:     # the latest closed bar is in
-            cache[sym] = (hour, bars, funding, volume)
+        return hit[1:]
+    kl = get(f"/fapi/v1/klines?symbol={sym}&interval=1h&limit=1000")
+    bars = [(int(k[0]) // 1000, float(k[1]), float(k[4])) for k in kl if int(k[6]) // 1000 < now]
+    volume = {int(k[0]) // 1000: float(k[7]) for k in kl if int(k[6]) // 1000 < now and len(k) > 7}
+    opens = {int(k[0]) // 1000: float(k[1]) for k in kl if int(k[0]) // 1000 <= now}
+    fr = get(f"/fapi/v1/fundingRate?symbol={sym}&limit=200")
+    funding = {int(f["fundingTime"]) // 1000 // HOUR * HOUR: float(f["fundingRate"]) for f in fr
+               if int(f["fundingTime"]) // 1000 < now}
+    if cache is not None and bars and bars[-1][0] + HOUR == hour:     # the latest closed bar is in
+        cache[sym] = (hour, bars, funding, volume, opens)
+    return bars, funding, volume, opens
+
+
+def fetch_market(sym, now, get=_get, cache=None, books=None, opens=None):
+    """Closed 1h bars [(open_ts, open, close)], settled funding {ts: rate}, a Book and hourly quote volume (bars and
+    funding through `hourly`, the book on every call). opens: if given, receives {sym: bar opens}."""
+    bars, funding, volume, op = hourly(sym, now, get, cache)
+    if opens is not None:
+        opens[sym] = op
     book = books.get(sym) if books is not None else None
     if book is None:                                   # one book per symbol per pass for every ledger
         book = fetch_book(sym, now, get)
@@ -139,10 +151,51 @@ def closing_ledgers(db):
     return out
 
 
-def close_ledger(db, led, base, get, now, books=None):
+def funding_start(db, now):
+    """T_F (amendment 9 section 2): written once, by the first pass that books funding; settlements after it count."""
+    from lab.paper import funding_t0
+    t = funding_t0(db)
+    if t is None:
+        t = int(now)
+        db.event("paper.funding_started", "agent:paper-1", None,
+                 {"t_f": t, "rule": "research/PROTOCOL_V3.md amendment 9 section 2: settled funding of open positions "
+                                    "is booked in every simulated paper ledger from T_F", "simulated": True})
+    return t
+
+
+def book_funding(db, eng, led, now, data):
+    """Book the ledger's settled funding after T_F. data(symbols) -> {sym: (funding, opens)}; only symbols that can
+    owe or receive a settlement are asked for (so an idle ledger causes no fetch)."""
+    t_f = funding_start(db, now)
+    due = eng.funding_due(led, t_f)
+    return eng.book_funding(led, data(due), t_f) if due else []
+
+
+def _cached_funding(get, now, cache):
+    """Funding data for ledgers outside run_one (paused, closing): through the shared hourly cache only, so bars and
+    funding are still read at most once per hour per symbol for all ledgers (amendment 7 section 7)."""
+    def data(syms):
+        out = {}
+        for s in syms:
+            _, funding, _, opens = hourly(s, now, get, cache)
+            out[s] = (funding, opens)
+        return out
+    return data
+
+
+def _funding_guarded(db, eng, led, get, now, cache):
+    try:
+        return len(book_funding(db, eng, led, now, _cached_funding(get, now, cache)))
+    except Exception as e:                              # no funding data this pass: the next pass books it
+        return f"funding unavailable: {e!r}"[:120]
+
+
+def close_ledger(db, led, base, get, now, books=None, cache=None):
     """Reduce-only close of a ledger that may no longer trade. One close order per symbol per hour, each walking a
-    book read just before it; no bars or funding are needed (amendment 7 section 7). Marked once an hour."""
+    book read just before it. Funding of the held positions is still booked (amendment 9 section 2), with bars and
+    funding only through the shared hourly cache (amendment 7 section 7). Marked once an hour."""
     eng, hour = PaperEngine(db, lambda: now), int(now) // HOUR * HOUR
+    funding = _funding_guarded(db, eng, led, get, now, cache)
     orders = []
     for s, q in eng.ledger(led)["positions"].items():
         oid = f"{led}|close|{hour}|{s}"
@@ -164,7 +217,7 @@ def close_ledger(db, led, base, get, now, books=None):
         marked = _mark_hourly(db, eng, led, get, now, books)
     except Exception:
         marked = False                                  # no mark price this pass; the next pass tries again
-    return {"status": "closing", "orders": orders, "marked": marked}
+    return {"status": "closing", "orders": orders, "marked": marked, "funding": funding}
 
 
 def held_experiments(db):
@@ -189,14 +242,17 @@ def _mark_hourly(db, eng, ledger, get, now, books=None):
     return True
 
 
-def mark_only(db, ledger, get, now, books=None):
-    """Amendment 4 section 7: under a pause nothing new is opened; the positions are kept and marked once an hour."""
+def mark_only(db, ledger, get, now, books=None, cache=None):
+    """Amendment 4 section 7: under a pause nothing new is opened; the positions are kept and marked once an hour.
+    Their settled funding is still booked (amendment 9 section 2), with data only through the shared hourly cache."""
     eng = PaperEngine(db, lambda: now)
+    funding = _funding_guarded(db, eng, ledger, get, now, cache)
     try:
         marked = _mark_hourly(db, eng, ledger, get, now, books)
     except Exception as e:
-        return {"status": "paused", "marked": False, "reason": f"no mark prices: {e!r}"[:200]}
-    return {"status": "paused", "marked": marked, "positions": len(eng.ledger(ledger)["positions"])}
+        return {"status": "paused", "marked": False, "reason": f"no mark prices: {e!r}"[:200], "funding": funding}
+    return {"status": "paused", "marked": marked, "positions": len(eng.ledger(ledger)["positions"]),
+            "funding": funding}
 
 
 def _guarded(db, ledger, fn):
@@ -220,7 +276,7 @@ def run(db, get=_get, now=None, cm_get=_cm_get, cache=None, cm_cache=None):
     now = now or time.time()
     out = {}
     for led, base in closing_ledgers(db):              # reduce-only: allowed even without a supervisor or FAIL_CLOSED
-        out[led] = _guarded(db, led, lambda: close_ledger(db, led, base, get, now, books))
+        out[led] = _guarded(db, led, lambda: close_ledger(db, led, base, get, now, books, cache))
     if not promotion.supervisor_ok(db, now):
         return {"experiments": len(out), "results": out, "simulated": True, "blocked": "supervisor state unknown"}
     for eid in paper_experiments(db):
@@ -235,7 +291,7 @@ def run(db, get=_get, now=None, cm_get=_cm_get, cache=None, cm_cache=None):
                                                      cm_cache=cm_cache, books=books))
     for eid in held_experiments(db):                   # paused: positions kept and marked, nothing new
         if eid not in out:                             # (not one a breaker paused in this very pass)
-            out[eid] = _guarded(db, eid, lambda: mark_only(db, eid, get, now, books))
+            out[eid] = _guarded(db, eid, lambda: mark_only(db, eid, get, now, books, cache))
     for eid in shadow_experiments(db):                 # amendment 3: simulated, separate ledger, no effect on tests
         out["SHADOW_" + eid] = _guarded(db, "SHADOW_" + eid,
                                         lambda: run_one(db, eid, get, now, ledger="SHADOW_" + eid, cm_get=cm_get,
@@ -262,7 +318,7 @@ def run_one(db, eid, get, now, ledger=None, cm_get=_cm_get, cache=None, cm_cache
     if risk.fail_closed():
         return {"status": "fail_closed"}
     if risk.paused(L):
-        return mark_only(db, L, get, now, books)       # amendment 4 section 7: kept and marked, nothing new
+        return mark_only(db, L, get, now, books, cache)   # amendment 4 section 7: kept and marked, nothing new
     try:
         variant = pipeline.frozen_variant(db, eid)                    # fail closed: no orders on unverified rules
     except pipeline.ArtifactError as e:
@@ -271,10 +327,10 @@ def run_one(db, eid, get, now, ledger=None, cm_get=_cm_get, cache=None, cm_cache
             db.event("paper.blocked", "agent:paper-1", L, {"reason": str(e), "orders": "none"})
         return {"status": "blocked", "reason": str(e)}
     hour = int(now) // HOUR * HOUR
-    market = {}
+    market, opens = {}, {}
     try:
         for s in catalogue.universe(spec["template"]):
-            market[s] = fetch_market(s, now, get, cache, books)
+            market[s] = fetch_market(s, now, get, cache, books, opens)
     except Exception as e:
         risk.pause(L, "data_fetch", None, None, f"public market data fetch failed: {e!r}"[:300], eng.cancel_entries)
         return {"status": "paused", "reason": "data fetch failed"}
@@ -298,6 +354,9 @@ def run_one(db, eid, get, now, ledger=None, cm_get=_cm_get, cache=None, cm_cache
             risk.pause(L, "data_stale", None, MAX_BAR_AGE, f"{s}: stale bars or invalid book", eng.cancel_entries)
             return {"status": "paused", "reason": f"{s} data stale or invalid"}
         risk.observe_book(L, book)
+    fetch_more = _cached_funding(get, now, cache)       # a held symbol outside the universe (none today)
+    funded = book_funding(db, eng, L, now, lambda syms: {**fetch_more([s for s in syms if s not in market]),
+                                                         **{s: (market[s][1], opens[s]) for s in syms if s in market}})
     marks = {s: m[2].mid() for s, m in market.items()}
     equity = eng.pnl(L, marks)["equity"]
     fam = tpl["family"]
@@ -335,5 +394,5 @@ def run_one(db, eid, get, now, ledger=None, cm_get=_cm_get, cache=None, cm_cache
     rec = eng.reconcile(L)
     if not rec["ok"]:
         risk.trip_fail_closed("reconciliation", f"{L}: {rec['problems']}"[:500])
-    return {"status": "ok", "orders": orders, "pnl": eng.pnl(L, marks), "reconciled": rec["ok"]}
+    return {"status": "ok", "orders": orders, "pnl": eng.pnl(L, marks), "reconciled": rec["ok"], "funding": len(funded)}
 

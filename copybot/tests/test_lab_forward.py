@@ -102,8 +102,9 @@ class Trading(Base):
         self.assertEqual({t: self.count(t) for t in before}, before)              # no formal record touched
         self.assertEqual(lifecycle.state(self.db, A), "REJECTED")                # nothing revived
         b = command.balance(self.db)
-        self.assertEqual((b["forward"], b["strategies"], b["capital"]), (2, 0, None))
-        self.assertEqual(b["forward_capital"], 2 * paper_runner.CAPITAL)
+        self.assertEqual((b["forward"]["ledgers"], b["strategies"], b["capital"]), (2, 0, None))
+        self.assertEqual(b["forward"]["capital"], 2 * paper_runner.CAPITAL)
+        self.assertEqual(b["combined"]["capital"], 2 * paper_runner.CAPITAL)        # amendment 9: shown apart
         v = {s["exp_id"]: s for s in command.paper_view(self.db)["strategies"]}
         self.assertTrue(v["FWD_" + A]["forward"])
         self.assertIn("ikke godkendt", v["FWD_" + A]["label"])
@@ -133,8 +134,10 @@ class ReviewFixes(Base):
 
     def test_closing_reads_only_books_once_an_hour_and_marks(self):
         self.cli("forward-start", "--reason", "user approved forward tests on 2026-10-18")
-        paper_runner.run(self.db, feed(SAT), SAT)
-        held = sum(len(PaperEngine(self.db).ledger("FWD_" + e)["positions"]) for e in (A, B))
+        cache = {}                                                                 # the live runner's shared cache
+        paper_runner.run(self.db, feed(SAT), SAT, cache=cache)
+        pos = [PaperEngine(self.db).ledger("FWD_" + e)["positions"] for e in (A, B)]
+        held, symbols = sum(len(p) for p in pos), {s for p in pos for s in p}
         self.cli("forward-stop", "--reason", "user stopped the forward tests")
         n = collections.Counter()
         g = feed(SAT + HOUR)
@@ -142,13 +145,15 @@ class ReviewFixes(Base):
         def counted(path):
             n["depth" if "depth" in path else "bars/funding"] += 1
             return g(path)
-        paper_runner.run(self.db, counted, SAT + HOUR)
-        self.assertEqual((n["bars/funding"], n["depth"]), (0, held))              # one fresh book per close order
+        paper_runner.run(self.db, counted, SAT + HOUR, cache=cache)
+        self.assertEqual(n["depth"], held)                                          # one fresh book per close order
+        self.assertEqual(n["bars/funding"], 2 * len(symbols))   # amendment 9: funding data once per symbol and hour
         closings = self.count("events WHERE kind='paper.closing'")
         self.assertEqual(self.count("sim_equity WHERE ts>=?".replace("?", str(int(SAT + HOUR) // HOUR * HOUR))), 2)
-        paper_runner.run(self.db, counted, SAT + HOUR + 60)                        # same hour: nothing to send
+        paper_runner.run(self.db, counted, SAT + HOUR + 60, cache=cache)          # same hour: nothing to send
         self.assertEqual(self.count("events WHERE kind='paper.closing'"), closings)
         self.assertEqual(n["depth"], held)
+        self.assertEqual(n["bars/funding"], 2 * len(symbols))
 
     def test_a_resume_is_refused_while_the_drawdown_breaker_would_trip_again(self):
         led = "FWD_" + A

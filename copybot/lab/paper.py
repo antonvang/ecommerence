@@ -7,10 +7,13 @@
 - Maker orders rest at a limit and fill only on trade-through prints (optionally at-price), at the limit, paying the
   maker fee (negative = rebate).
 - Idempotency: deterministic order ids and fill ids under UNIQUE indexes; a replay after a crash cannot duplicate.
+- Funding (research/PROTOCOL_V3.md amendment 9 section 2): settled funding of held positions after T_F is booked as an
+  append-only cash flow (sim_funding, one row per ledger, instrument and settlement) and is part of cash and P&L.
 - Every figure produced here is simulated and labelled as such.
 """
 from __future__ import annotations
 
+import json
 import sqlite3
 import time
 from dataclasses import asdict, dataclass
@@ -19,7 +22,29 @@ from lab import lifecycle
 from lab.risk import Risk
 
 SIMULATED = True
+HOUR = 3600
 SHADOW = "SHADOW_"          # research/PROTOCOL_V3.md amendment 3: shadow ledgers for observation candidates
+
+
+def funding_t0(db):
+    """T_F (amendment 9 section 2): the runner's clock when it first booked funding (first paper.funding_started);
+    None before. Settlements at or before T_F are never booked."""
+    r = db.one("SELECT ts, payload FROM events WHERE kind='paper.funding_started' ORDER BY id LIMIT 1")
+    if r is None:
+        return None
+    return int((json.loads(r["payload"] or "{}") or {}).get("t_f") or r["ts"])
+
+
+def held_before(fills, points):
+    """{(instrument, ts): signed position held just before ts} from fills (rows with ts, instrument, side, qty)."""
+    fs, out, pos, i = sorted(fills, key=lambda f: f["ts"]), {}, {}, 0
+    for inst, t in sorted(points, key=lambda p: p[1]):
+        while i < len(fs) and fs[i]["ts"] < t:
+            f = fs[i]
+            pos[f["instrument"]] = pos.get(f["instrument"], 0.0) + (f["qty"] if f["side"] == "buy" else -f["qty"])
+            i += 1
+        out[(inst, t)] = pos.get(inst, 0.0)
+    return out
 
 
 def shadow_base(ledger):
@@ -131,14 +156,19 @@ class PaperEngine:
         p = json.loads(r["payload"])
         return p["capital"], CostModel(**p["costs"])
 
-    def ledger(self, exp_id):
-        """Cash, positions and completed round trips (close_ts, pnl incl. fees), all derived from fills."""
+    def ledger(self, exp_id, until=None):
+        """Cash, positions and completed round trips (close_ts, pnl incl. fees), all derived from fills and booked
+        funding (cash includes funding). realized = closed P&L + fees + funding, from the trades themselves.
+        until: the ledger as it stood at that time (fills and funding booked at or before it)."""
         capital, _ = self.config(exp_id)
-        cash, pos, basis, realized, trades = capital, {}, {}, {}, []
-        for f in self.db.q("SELECT * FROM sim_fills WHERE exp_id=? ORDER BY id", exp_id):
+        cash, pos, basis, realized, trades, fees = capital, {}, {}, {}, [], 0.0
+        cut = " AND ts<=?" if until is not None else ""
+        args = (exp_id,) + ((int(until),) if until is not None else ())
+        for f in self.db.q(f"SELECT * FROM sim_fills WHERE exp_id=?{cut} ORDER BY id", *args):
             inst, sgn = f["instrument"], (1 if f["side"] == "buy" else -1)
             q, px, fee = f["qty"], f["px"], f["fee"]
             cash -= sgn * px * q + fee
+            fees += fee
             p0 = pos.get(inst, 0.0)
             realized[inst] = realized.get(inst, 0.0) - fee
             if p0 == 0 or (p0 > 0) == (sgn > 0):                     # opening / adding
@@ -156,20 +186,94 @@ class PaperEngine:
                     trades.append((f["ts"], realized[inst]))
                     realized[inst] = 0.0
                     basis[inst] = px
+        funding = self.db.one(f"SELECT COALESCE(SUM(amount), 0) FROM sim_funding WHERE exp_id=?{cut}", *args)[0]
+        cash += funding
         return {"cash": cash, "positions": {k: v for k, v in pos.items() if v}, "trades": trades,
-                "basis": {k: basis[k] for k, v in pos.items() if v}, "capital": capital, "simulated": True}
+                "basis": {k: basis[k] for k, v in pos.items() if v}, "capital": capital, "fees": fees,
+                "funding": funding, "realized": sum(p for _, p in trades) + sum(realized.values()) + funding,
+                "simulated": True}
 
     def pnl(self, exp_id, marks):
         """Simulated P&L split: unrealized = open positions marked to `marks` vs their cost basis; realized = the rest
-        (closed trades and fees). Total = equity - capital."""
+        (closed trades, fees and booked funding). Total = equity - capital."""
         led = self.ledger(exp_id)
         equity = led["cash"] + sum(q * marks[i] for i, q in led["positions"].items())
         unreal = sum(q * (marks[i] - led["basis"][i]) for i, q in led["positions"].items())
         total = equity - led["capital"]
-        return {"equity": equity, "total": total, "unrealized": unreal, "realized": total - unreal, "simulated": True}
+        return {"equity": equity, "total": total, "unrealized": unreal, "realized": total - unreal,
+                "funding": led["funding"], "simulated": True}
+
+    # ---------- funding (amendment 9 section 2) ----------
+    def _fills(self, exp_id):
+        return self.db.q("SELECT ts, instrument, side, qty FROM sim_fills WHERE exp_id=? ORDER BY ts, id", exp_id)
+
+    def funding_due(self, exp_id, t_f):
+        """Instruments that may have a settlement to book: held at some time after the later of T_F and their last
+        booked settlement, with a full hour inside (since, now] (Binance settles on the hour). Bounds the data fetch."""
+        now, fills, last_fill = int(self.now()), self._fills(exp_id), {}
+        for f in fills:                                               # ordered by ts
+            last_fill[f["instrument"]] = f["ts"]
+        booked = {r[0]: r[1] for r in self.db.q("SELECT instrument, MAX(settle_ts) FROM sim_funding WHERE exp_id=? "
+                                                "GROUP BY instrument", exp_id)}
+        since = {i: max(t_f, booked.get(i) or t_f) for i in last_fill}
+        since = {i: t for i, t in since.items() if now // HOUR * HOUR > t}     # a settlement time in (since, now]
+        held = held_before(fills, [(i, t + 1) for i, t in since.items()])
+        return sorted(i for i, t in since.items() if abs(held[(i, t + 1)]) > 1e-12 or last_fill[i] > t)
+
+    def book_funding(self, exp_id, data, t_f):
+        """Book each settled funding of an instrument held at the settlement, after T_F and after the ledger's last
+        booked settlement of that instrument: amount = -qty * price * rate (a long pays a positive rate, a short
+        receives it), qty = the position just before the settlement, price = open of the 1h bar starting at it.
+        data: {instrument: (funding {settle_ts: rate}, opens {bar_open_ts: open})}. A settlement whose bar is not
+        out yet waits (in order) for a later pass; a replay cannot book twice (UNIQUE exp_id, instrument, settle_ts)."""
+        now, fills, out = int(self.now()), None, []
+        for inst, (funding, opens) in sorted(data.items()):
+            last = self.db.one("SELECT MAX(settle_ts) FROM sim_funding WHERE exp_id=? AND instrument=?", exp_id, inst)[0]
+            since = max(t_f, last if last is not None else t_f)
+            for st in sorted(t for t in funding if since < t <= now):
+                if fills is None:
+                    fills = self._fills(exp_id)
+                qty = held_before(fills, [(inst, st)])[(inst, st)]
+                if abs(qty) < 1e-12:
+                    continue                                          # flat then: nothing to book, never blocks
+                if st not in opens:
+                    if opens and st < min(opens):                     # older than the fetched bars: unpriceable
+                        self._funding_gap(exp_id, inst, st)
+                        continue
+                    break                                             # its bar is not out yet: wait, in order
+                rate, px = funding[st], opens[st]
+                try:
+                    with self.db.tx():
+                        self.db.append("sim_funding", exp_id=exp_id, ts=now, settle_ts=st, instrument=inst, qty=qty,
+                                       rate=rate, price=px, amount=-qty * px * rate)
+                except sqlite3.IntegrityError:
+                    continue                                          # already booked
+                out.append({"instrument": inst, "settle_ts": st, "qty": qty, "rate": rate, "amount": -qty * px * rate})
+        return out
+
+    def _funding_gap(self, exp_id, inst, st):
+        """A held settlement older than the fetched bars cannot be priced: recorded once, then skipped."""
+        if not self.db.one("SELECT 1 FROM events WHERE kind='paper.funding_gap' AND exp_id=? AND payload LIKE ?",
+                           exp_id, f'%"instrument":"{inst}"%"settle_ts":{st}%'):
+            self.db.event("paper.funding_gap", "agent:paper-1", exp_id, {"instrument": inst, "settle_ts": st,
+                                                                         "reason": "no price bar left for it"})
 
     def reconcile(self, exp_id):
-        """Orders vs fills vs cancels vs positions. Any problem is returned (the caller fails the lab closed)."""
+        """The checks below on ONE read snapshot: a fill or funding row committed by another connection between two
+        reads must never look like a mismatch (that would fail the whole lab closed)."""
+        own = not self.db.con.in_transaction
+        if own:
+            self.db.con.execute("BEGIN")
+        try:
+            return self._reconcile(exp_id)
+        finally:
+            if own:
+                self.db.con.execute("COMMIT")
+
+    def _reconcile(self, exp_id):
+        """Orders vs fills vs cancels vs positions, and cash = capital + fill cash flows - fees + funding (amendment 9
+        section 2) with every funding row checked against the fills. Any problem is returned (the caller fails the lab
+        closed)."""
         problems = []
         for o in self.db.q("SELECT * FROM sim_orders WHERE exp_id=?", exp_id):
             fills = self.db.q("SELECT * FROM sim_fills WHERE order_id=?", o["order_id"])
@@ -186,7 +290,33 @@ class PaperEngine:
                              "(SELECT 1 FROM sim_orders o WHERE o.order_id=f.order_id)", exp_id)[0]
         if orphan:
             problems.append(f"{orphan} fills without an order")
-        return {"ok": not problems, "problems": problems}
+        fills = self.db.q("SELECT ts, instrument, side, qty, px, fee FROM sim_fills WHERE exp_id=? ORDER BY ts, id",
+                          exp_id)
+        fund = self.db.q("SELECT settle_ts, instrument, qty, rate, price, amount FROM sim_funding WHERE exp_id=? "
+                         "ORDER BY settle_ts, id", exp_id)
+        t_f = funding_t0(self.db) if fund else None
+        held = held_before(fills, [(r["instrument"], r["settle_ts"]) for r in fund])
+        for r in fund:
+            where = f"funding {r['instrument']}@{r['settle_ts']}"
+            if t_f is None or r["settle_ts"] <= t_f:
+                problems.append(f"{where} is not after T_F")
+            want = held[(r["instrument"], r["settle_ts"])]
+            if abs(r["qty"] - want) > 1e-9 * max(1.0, abs(want)):
+                problems.append(f"{where}: qty {r['qty']} is not the position held before the settlement ({want})")
+            if abs(r["amount"] + r["qty"] * r["price"] * r["rate"]) > 1e-9 * max(1.0, abs(r["amount"])):
+                problems.append(f"{where}: amount is not -qty * price * rate")
+        cash = None
+        if self.db.one("SELECT 1 FROM events WHERE kind='paper.started' AND exp_id=?", exp_id):
+            capital, _ = self.config(exp_id)
+            flows = sum((f["px"] * f["qty"]) * (-1 if f["side"] == "buy" else 1) for f in fills)
+            fees, funding = sum(f["fee"] for f in fills), sum(r["amount"] for r in fund)
+            cash = {"capital": capital, "fill_flows": flows, "fees": fees, "funding": funding,
+                    "cash": capital + flows - fees + funding}
+            if abs(cash["cash"] - self.ledger(exp_id)["cash"]) > 1e-6:
+                problems.append("cash is not capital + fill cash flows - fees + funding")
+        elif fills or fund:
+            problems.append("fills or funding without a started ledger")
+        return {"ok": not problems, "problems": problems, "cash": cash}
 
     def open_orders(self, exp_id=None, instrument=None):
         q = ("SELECT o.* FROM sim_orders o WHERE o.style='maker' AND NOT EXISTS (SELECT 1 FROM sim_cancels c "

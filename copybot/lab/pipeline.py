@@ -798,7 +798,12 @@ def enqueue_diagnostics(db, actor="strategy-1"):
 
 HANDLERS = {"data": step_data, "backtest": step_backtest, "cost": step_cost, "adversarial": step_adversarial,
             "validate": step_validate, "report": step_report, "holdout": step_holdout, "observe": step_observe,
-            "diagnose": step_diagnose}
+            "diagnose": step_diagnose,
+            # PROTOCOL_V3 amendment 9 section 3; lab/scanresearch.py imports this module, so it is resolved per call
+            "scan_digest": lambda db, job, worker: __import__("lab.scanresearch", fromlist=["step_digest"])
+            .step_digest(db, job, worker),
+            "scan_dossier": lambda db, job, worker: __import__("lab.scanresearch", fromlist=["step_dossier"])
+            .step_dossier(db, job, worker)}
 
 
 def enqueue_holdouts(db, actor="strategy-1"):

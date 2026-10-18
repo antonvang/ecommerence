@@ -28,6 +28,7 @@ TABLES = {
                   "liquidity", "mid", "book_ts"),
     "sim_cancels": ("order_id", "exp_id", "ts", "reason"),
     "sim_equity": ("exp_id", "ts", "equity", "cash", "exposure", "peak", "drawdown"),
+    "sim_funding": ("exp_id", "ts", "settle_ts", "instrument", "qty", "rate", "price", "amount"),   # amendment 9 s. 2
     "risk_events": ("exp_id", "ts", "rule", "value", "threshold", "action", "detail", "actor"),
     "datasets": ("exp_id", "split", "source", "path", "window_start", "window_end", "ts", "sha256", "size", "purpose",
                  "code_hash"),
@@ -55,6 +56,7 @@ CREATE INDEX IF NOT EXISTS observations_det ON observations(detector, metric, in
 CREATE INDEX IF NOT EXISTS events_kind ON events(kind, actor, ts);
 CREATE INDEX IF NOT EXISTS sim_fills_order ON sim_fills(order_id);
 CREATE INDEX IF NOT EXISTS sim_equity_ts ON sim_equity(exp_id, ts);
+CREATE UNIQUE INDEX IF NOT EXISTS sim_funding_key ON sim_funding(exp_id, instrument, settle_ts);
 """
 
 
