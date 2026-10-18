@@ -202,3 +202,27 @@ fejler data-gaten for idéen. Et symbol med under 95 % CoinMetrics-dækning udel
 - **Godkendelse.** `real_rate_filter`, `supply_dilution` og `mvrv_value` er godkendt til test. Claude bekræftede på brugerens instruks, hvilket er logget som `approval.note`.
 - **Registrering.** De tre er registreret som én batch `B-e794bc210975` (cutoff for forsøg 50) med `observation_test` slået til.
 - **Data.** Der er ikke læst nogen data. Jobbene står i køen og kører, når flåden startes.
+
+### Resultat for batch `B-e794bc210975` (kørt 2026-10-18, 08:3x–08:52 UTC; registreret automatisk)
+
+- **Kørsel:** 18 jobs, 0 fejl.
+- **Data:** ingen symboler udelukket. FRED og CoinMetrics blev læst gennem gatewayen, kun for vinduerne.
+- **RAM:** flåden holdt pause for RAM fire gange (sikkerhedsgrænsen virkede som tiltænkt).
+
+| Idé | Valgt variant | Træning netto-Sharpe (købe-og-holde) | Placebo p | Validering netto-Sharpe / netto / max drawdown (købe-og-holde Sharpe) | Held-tjek | Afgørelse |
+|---|---|---|---|---|---|---|
+| Realrente-filter | n = 60 | 1,30 (−0,52) | 0,000 | 1,29 / +10,8 % / 5,9 % (2,02) | 0,080 | REJECTED: under købe-og-holde, nedre grænse ≤ 0, held-tjek |
+| Udvanding | 30 dage | −0,57 (−0,35) | — | ikke læst | — | REJECTED i første test |
+| Værdi på kæden (MVRV) | niveau | 1,03 (−0,35) | 0,000 | **2,48 / +9,7 % / 3,0 % (1,44)** | 0,287 | **OBSERVATION**: bestod alle krav undtagen held-tjekket |
+
+**MVRV er det første eksperiment, der har bestået alle andre krav:**
+- slog købe-og-holde både i træning og validering;
+- positivt efter dobbelte omkostninger;
+- nedre usikkerhedsgrænse over 0;
+- klart bedre end placebo.
+
+Held-tjekket på 0,287 er langt under 0,95. Efter ændring 2 betyder det:
+- **Observationsvindue:** strategien observeres nu på helt nye data, **2026-11-01 – 2027-04-30**.
+- **Evaluering:** den kører automatisk tidligst **2027-05-07** (jobbet `observe|E_mvrv_value_p3` står i køen), når flåden kører.
+- **Ingen tidlig læsning:** data fra vinduet kan ikke læses før.
+- **Holdt tilbage:** intet er sendt til simuleret handel, og 2024-slut-testen er ikke åbnet.
