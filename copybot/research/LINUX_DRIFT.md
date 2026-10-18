@@ -48,8 +48,19 @@ afprøvet på denne maskine.
   forsvinder, fx efter en genstart.
 - Før det, kl. 12:44 UTC, var der ingen blokering. Der var kun "delay"-inhibitorer, `IdleAction=ignore`, og kernen
   havde talt 0 dvaler siden opstart.
-- XFCE står på standard bortset fra tænd/sluk-knappen ("spørg"). Standard for "dvale ved inaktivitet" er ikke
-  aflæst; med blokeringen er det ligegyldigt.
+- XFCE er sat eksplicit 2026-10-18 (uden sudo, i brugerens xfconf):
+  - Strømstyringen går aldrig i dvale ved inaktivitet (`inactivity-on-ac` og `inactivity-on-battery` = 14 =
+    "aldrig").
+  - Dvale- og dvaletilstandsknapperne gør intet (`sleep-button-action`, `hibernate-button-action` = 0).
+  - Tænd/sluk-knappen spørger stadig (3).
+  - Log-ud-dialogen viser ikke længere Dvale og Dvaletilstand (`xfce4-session /shutdown/ShowSuspend`,
+    `ShowHibernate` = false).
+  - Fortryd: `xfconf-query -c <kanal> -p <egenskab> -r`.
+- Varig blokering for hele systemet, også efter genstart og før log-ind, kræver sudo (ikke kørt):
+  `sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target suspend-then-hibernate.target`.
+  Fortryd med `unmask`.
+- Strømsvigt kan ingen indstilling i styresystemet forhindre. BIOS-indstillingen "After Power Loss: Power On" får
+  maskinen til at tænde igen bagefter, men intet starter af sig selv før S7.
 - XFCE's egen inhibit-grænseflade (som videoafspillere bruger) blev afprøvet. Den laver **ikke** en logind-blokering
   og stopper derfor ikke dvale fra menuen. Den bruges ikke.
 
