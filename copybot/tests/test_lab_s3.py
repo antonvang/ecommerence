@@ -72,7 +72,8 @@ class Scanner(unittest.TestCase):
         self.db.close()
 
     def scan(self, world, n, names=None):
-        return [scanner.run(self.db, names, world.get, world.post, now=DAY * (100 + i)) for i in range(n)]
+        """n scans one clock hour apart (persistence counts distinct hours within 24 h, PROTOCOL_V3 amendment 5)."""
+        return [scanner.run(self.db, names, world.get, world.post, now=DAY * 100 + 3600 * i) for i in range(n)]
 
     def test_persistence_needs_scans_in_different_hours(self):
         w = World(gap=0.006)
@@ -138,7 +139,8 @@ class Scanner(unittest.TestCase):
             p = os.path.join(tmp, "lab.db")
             db = DB(p)
             for i in range(2):
-                scanner.run(db, ["pricing_constraint"], World(gap=0.006).get, World(gap=0.006).post, now=DAY * (5 + i))
+                scanner.run(db, ["pricing_constraint"], World(gap=0.006).get, World(gap=0.006).post,
+                            now=DAY * 5 + 3600 * i)                  # two clock hours within 24 h (amendment 5)
             db.close()
             lines = []
             self.assertEqual(cli(["candidates"], p, lines.append), 0)

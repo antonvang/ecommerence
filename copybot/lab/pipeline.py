@@ -701,15 +701,18 @@ def step_holdout(db, job, worker):
                         "(research/PROTOCOL_V3.md amendment 1)")
     v = frozen_variant(db, eid)                                          # verified against the recorded hashes
     bars, funding, dups, vol = _market(db, eid, "holdout", worker, spec)
-    _, h_excluded, _ = _quality(bars, "holdout", dups, spec, vol)
+    hq, h_excluded, h_enough = _quality(bars, "holdout", dups, spec, vol)
     if catalogue.TEMPLATES[spec["template"]].get("universe") in ("30", "30v3", "cm16"):
         h_excluded = sorted(set(h_excluded) | set(data.HOLDOUT_SEEN))
+    h_left = [s for s in hq if s not in h_excluded]
+    h_enough = bool(h_enough) and len(h_left) >= catalogue.min_symbols(spec["template"])   # amendment 5 (stricter)
     _drop(bars, funding, vol, h_excluded, spec)
     pos = _positions(spec["template"], bars, funding, v["params"], v["fit"], vol)
     m = _evaluate(bars, funding, pos, spec["costs"], lb_q=0.05)
     bench = _benchmark(bars, funding, spec["costs"])
     gates = {"net_mean_daily > 0": (m["net_mean_daily"] or 0) > 0, "one-sided 95% lower bound > 0": (m["lb_one_sided"] or -1) > 0,
-             "net Sharpe > buy-and-hold": (m["net_sharpe_ann"] or -9e9) > (bench["net_sharpe_ann"] or -9e9)}
+             "net Sharpe > buy-and-hold": (m["net_sharpe_ann"] or -9e9) > (bench["net_sharpe_ann"] or -9e9),
+             "holdout data quality (min symbols)": h_enough}
     passed = all(gates.values())
     verdict = "PASS (holdout): paper-eligible after a human approval" if passed else \
         f"FAIL (holdout): failed {', '.join(k for k, ok in gates.items() if not ok)}"
@@ -724,8 +727,51 @@ def step_holdout(db, job, worker):
     return {"verdict": verdict}
 
 
+def step_diagnose(db, job, worker):
+    """Non-decisional diagnostics of a finished experiment (PROTOCOL_V3 amendment 5): reads only its recorded,
+    hash-verified validate.json; writes artifacts/_diagnostic/<exp>/diagnose.json and a research.diagnostic event."""
+    from lab import diagnose
+    eid = job["exp_id"]
+    st = lifecycle.state(db, eid)
+    if st not in lifecycle.FINAL:
+        raise StepError(f"diagnostics are for finished experiments only; {eid} is {st}")
+    val = frozen_artifact(db, eid, "validate")
+    s = diagnose.series(val.get("daily_net") or [])
+    lessons, failed = diagnose.lessons(s, val.get("gates"))
+    verdict = db.one("SELECT verdict FROM results WHERE exp_id=? ORDER BY id DESC LIMIT 1", eid)
+    out = {"exp_id": eid, "state": st, "verdict": verdict[0] if verdict else None, "series": s, "lessons": lessons,
+           "failed_gates": failed, "source": "validate.json (hash-verified)", "decisional": False,
+           "rules": {"best_days": diagnose.BEST_DAYS, "concentrated": diagnose.CONCENTRATED,
+                     "low_activity": diagnose.LOW_ACTIVITY}}
+    art = save_artifact(os.path.join("_diagnostic", eid), "diagnose", out)
+    db.event("research.diagnostic", f"system:{worker}", eid, {"lessons": lessons, "failed_gates": failed,
+                                                             "artifact_sha256": art["sha256"], "n_days": s.get("n")})
+    return {"lessons": lessons, "artifact": art}
+
+
+def enqueue_diagnostics(db, actor="strategy-1"):
+    """Every finished catalogue experiment with a recorded validation series gets exactly one diagnose job."""
+    jobs.init(db)
+    n = 0
+    for x in registry.status(db):
+        eid = x["exp_id"]
+        if not (x["state"] in lifecycle.FINAL and eid.startswith("E_")):
+            continue
+        if db.one("SELECT 1 FROM jobs WHERE job_id=?", f"diagnose|{eid}"):
+            continue
+        v = db.one("SELECT result FROM jobs WHERE job_id=?", f"validate|{eid}")
+        if v and '"skipped"' in (v["result"] or ""):
+            continue                                  # rejected before validation: no series to learn from
+        if recorded_sha(db, eid, "validate"):
+            _, created = jobs.enqueue(db, f"diagnose|{eid}", "diagnose", eid, {}, priority=60, max_attempts=2,
+                                      timeout_s=120, actor=f"system:{actor}")
+            n += created
+    return n
+
+
 HANDLERS = {"data": step_data, "backtest": step_backtest, "cost": step_cost, "adversarial": step_adversarial,
-            "validate": step_validate, "report": step_report, "holdout": step_holdout, "observe": step_observe}
+            "validate": step_validate, "report": step_report, "holdout": step_holdout, "observe": step_observe,
+            "diagnose": step_diagnose}
 
 
 def enqueue_holdouts(db, actor="strategy-1"):

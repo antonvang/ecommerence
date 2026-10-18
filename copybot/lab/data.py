@@ -53,7 +53,7 @@ class Gateway:
 
     def access(self, exp_id, split, paths, window, source, purpose="evaluate", code_hash=None, expected=None):
         """Authorise, hash and record a read. Returns {path: sha256}. `expected` maps path -> required sha256."""
-        rel = [os.path.relpath(os.path.abspath(p), HERE) for p in paths]
+        rel = [os.path.relpath(os.path.abspath(p), HERE).replace("\\", "/") for p in paths]   # one form on every OS
         st = state(self.db, exp_id)
         if st is None:
             self._refuse(exp_id, split, "unknown experiment", rel)
@@ -82,8 +82,8 @@ class Gateway:
             s = sha256_file(p)
             if expected and expected.get(p) not in (None, s):
                 self._refuse(exp_id, split, f"{r} does not match its recorded hash", rel)
-            prev = self.db.one("SELECT sha256 FROM datasets WHERE exp_id=? AND split=? AND path=? ORDER BY id DESC "
-                               "LIMIT 1", exp_id, split, r)
+            prev = self.db.one("SELECT sha256 FROM datasets WHERE exp_id=? AND split=? AND path IN (?, ?) ORDER BY id "
+                               "DESC LIMIT 1", exp_id, split, r, r.replace("/", "\\"))   # also rows read on Windows
             if prev and prev["sha256"] != s:
                 self._refuse(exp_id, split, f"{r} changed since it was first read", rel)
             shas[p] = s
@@ -100,8 +100,8 @@ class Gateway:
         now = int(time.time())
         with self.db.tx():
             for p, r in zip(paths, rel):
-                if not self.db.one("SELECT 1 FROM datasets WHERE exp_id=? AND split=? AND path=? AND sha256=?",
-                                   exp_id, split, r, shas[p]):
+                if not self.db.one("SELECT 1 FROM datasets WHERE exp_id=? AND split=? AND path IN (?, ?) AND sha256=?",
+                                   exp_id, split, r, r.replace("/", "\\"), shas[p]):
                     self.db.append("datasets", exp_id=exp_id, split=split, source=source, path=r,
                                    window_start=window[0], window_end=window[1], ts=now, sha256=shas[p],
                                    size=os.path.getsize(p), purpose=purpose, code_hash=code_hash)

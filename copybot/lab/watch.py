@@ -33,6 +33,8 @@ HOLD_ALERT_S = 30 * 60         # a resource hold longer than this is an outage o
 COLLECTOR_STALE_S = 300        # a snapshot round every ~61 s while quoting
 STATUS_STALE_S = 7 * 3600      # resolution tracking only: status polls every 6 h
 REMIND_S = 3600
+REMIND_OVERRIDE = {"progress": 24 * 3600}   # idleness is reported once a day, not every hour
+IDLE_ALERT_S = 6 * 3600       # no finished job for this long while the fleet has run >= 2 h and nothing is runnable
 SLEEP_JUMP_S = 5               # CLOCK_BOOTTIME - CLOCK_MONOTONIC grows only while the host is suspended or hibernated
 PM_DB = os.path.join(HERE, "data", "research", "pm_lp", "pm_lp.db")
 STATUS_FILE = os.path.join(HERE, "data", "lab", "watch_status.json")
@@ -114,6 +116,10 @@ def check_lab(db_path, now):
         out["lab_state"] = (True, "paused by the operator (not an outage)")
     else:
         out["lab_state"] = (True, "not FAIL_CLOSED, no long resource hold")
+    try:
+        out["progress"] = _progress(con_path=db_path, now=now, sup=rows.get("supervisor"))
+    except Exception as e:                            # the progress probe must never break the liveness checks
+        out["progress"] = (None, f"not judged: progress check failed {e!r}"[:200])
     sup = rows.get("supervisor")
     if sup is None:
         out["lab"] = (False, "no supervisor heartbeat recorded")
@@ -136,6 +142,32 @@ def check_lab(db_path, now):
         else:
             out[f"agent:{name}"] = (True, r.get("status") or "ok")
     return out
+
+
+def _progress(con_path, now, sup):
+    """Is research being done? Not judged while the fleet is down or younger than 2 h."""
+    if not sup or sup.get("status") != "running":
+        return (None, "not judged (fleet down)")
+    con = _ro(con_path)
+    if con is None:
+        return (None, "not judged: no lab database")
+    try:
+        started = con.execute("SELECT MAX(ts) FROM events WHERE kind='system.running'").fetchone()[0] or now
+        if now - started < 2 * 3600:
+            return (None, "not judged (fleet up less than 2 h)")
+        last = con.execute("SELECT MAX(ts) FROM events WHERE kind='job.done'").fetchone()[0]
+        try:
+            runnable, running = con.execute("SELECT COALESCE(SUM(status='queued' AND next_run<=?), 0), "
+                                            "COALESCE(SUM(status='running'), 0) FROM jobs", (now,)).fetchone()
+        except sqlite3.OperationalError:                 # no jobs table yet: nothing was ever queued
+            runnable = running = 0
+    finally:
+        con.close()
+    done = "no job finished yet" if last is None else f"last finished job {int((now - last) // 60)} min ago"
+    if runnable == 0 and running == 0 and (last is None or now - last > IDLE_ALERT_S):
+        return (False, f"no research work: {done} and nothing runnable or running "
+                       "(see research.idle_reason in /api/kpis)")
+    return (True, f"{done}, {running} running, {runnable} runnable")
 
 
 def check_collector(pm_db, now):
@@ -318,7 +350,7 @@ class Watcher:
             elif not prev["ok"] and r["ok"]:
                 self._alert("recovered", comp, f"{r['detail']} (was down {int(now - prev['since'])} s)", now)
                 self.state[comp] = {"ok": True, "since": now, "last_alert": 0.0}
-            elif not r["ok"] and now - prev.get("last_alert", 0) >= REMIND_S:
+            elif not r["ok"] and now - prev.get("last_alert", 0) >= REMIND_OVERRIDE.get(comp, REMIND_S):
                 self._alert("still_down", comp, f"{r['detail']} (down {int(now - prev['since'])} s)", now)
                 prev["last_alert"] = now
             self.state[comp]["detail"] = r["detail"]
@@ -339,7 +371,7 @@ class Watcher:
 def summary(res):
     """Lines for --once: lab-level components, then agents (only the bad or unknown ones are listed)."""
     lines = []
-    for k in ("lab", "lab_state", "dashboard", "collector", "awake"):
+    for k in ("lab", "lab_state", "progress", "dashboard", "collector", "awake"):
         if k in res:
             ok = res[k]["ok"]
             lines.append(f"  [{'OK ' if ok else '?? ' if ok is None else 'NO '}] {k}: {res[k]['detail']}")
@@ -360,7 +392,8 @@ def main(db_path=DEFAULT_DB, port=8770, once=False, interval=30.0, out=print):
         res = check(db_path, PM_DB, port)
         for line in summary(res):
             out(line)
-        return 0 if all(r["ok"] for r in res.values() if r["ok"] is not None) and res["lab"]["ok"] else 1
+        return 0 if all(r["ok"] for k, r in res.items() if r["ok"] is not None and k != "progress") \
+            and res["lab"]["ok"] else 1                   # an idle lab is reported, but it is not an outage
     from lab.supervisor import AlreadyRunning, acquire_lock, release_lock
     try:
         lock = acquire_lock(LOCK_FILE)

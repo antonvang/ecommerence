@@ -330,7 +330,7 @@ def strategy_pass(db):
     from lab import promotion
     decisions = [d for d in promotion.step(db) if d.get("applicable")]                 # amendment 4: one decision path
     return {"registered": registered, "promotions": [(d["exp_id"], d["to"], d["allowed"]) for d in decisions],
-            "holdouts_queued": pipeline.enqueue_holdouts(db)}
+            "holdouts_queued": pipeline.enqueue_holdouts(db), "diagnostics_queued": pipeline.enqueue_diagnostics(db)}
 
 
 def external_watch(db, now=None):
@@ -418,7 +418,8 @@ ROSTER = (
      ("validate", "holdout", "observe"), None, None, True),
     ("validation-2", "Validation agent: frozen variant on validation; forward test; sealed holdout after approval",
      ("validate", "holdout", "observe"), None, None, True),
-    ("report-1", "Reporting agent: results, lifecycle verdicts, markdown reports", ("report",), None, None, False),
+    ("report-1", "Reporting agent: results, lifecycle verdicts, markdown reports; diagnostics of finished experiments",
+     ("report", "diagnose"), None, None, False),
     ("paper-1", "Paper execution agent: simulated orders for PAPER_TRADING experiments only", None, paper_pass, 60,
      False),
     ("risk-1", "Risk supervisor agent: RAM/disk holds, paper reconciliation", None, None, 15, False),

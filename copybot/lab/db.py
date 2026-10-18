@@ -52,6 +52,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS sim_cancels_oid ON sim_cancels(order_id);
 CREATE INDEX IF NOT EXISTS sim_fills_exp ON sim_fills(exp_id, id);
 CREATE INDEX IF NOT EXISTS risk_exp ON risk_events(exp_id, id);
 CREATE INDEX IF NOT EXISTS observations_det ON observations(detector, metric, instrument, ts);
+CREATE INDEX IF NOT EXISTS events_kind ON events(kind, actor, ts);
 """
 
 

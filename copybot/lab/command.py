@@ -21,6 +21,7 @@ PIPE = ("DISCOVERED", "QUEUED", "RUNNING", "COST_CHECK", "VALIDATION", "PAPER_EL
         "REJECTED", "PAUSED")
 STAGE_OF_KIND = {"data": "RUNNING", "backtest": "RUNNING", "cost": "COST_CHECK", "adversarial": "VALIDATION",
                  "validate": "VALIDATION", "report": "VALIDATION", "holdout": "VALIDATION", "observe": "VALIDATION"}
+NON_STAGE_KINDS = ("diagnose",)   # runs on finished experiments, decides nothing: never moves one on the orbit
 STAGE_OF_STATE = {"DISCOVERED": "DISCOVERED", "REGISTERED": "QUEUED", "SCREENING": "RUNNING",
                   "SCREEN_PASSED": "VALIDATION", "VALIDATION": "VALIDATION", "VALIDATED": "PAPER_ELIGIBLE",
                   "OBSERVATION": "VALIDATION",
@@ -53,7 +54,7 @@ def job_state(db, eid):
     """(stage, phase, job) for a catalogue experiment from its jobs: the running job, else the next pending one."""
     jobs.init(db)
     js = [dict(r) for r in db.q("SELECT job_id, kind, status, lease_owner, attempts, error, started_ts, updated_ts "
-                                "FROM jobs WHERE exp_id=? ORDER BY created_ts", eid)]
+                                "FROM jobs WHERE exp_id=? ORDER BY created_ts", eid) if r["kind"] not in NON_STAGE_KINDS]
     run = next((j for j in js if j["status"] == "running"), None)
     if run:
         return STAGE_OF_KIND.get(run["kind"], "RUNNING"), "running", run
@@ -76,7 +77,10 @@ def agents(db, now=None):
     now = now or time.time()
     wk = mission.workers(db, now)
     rows = {r["worker"]: dict(r) for r in db.q("SELECT * FROM heartbeats")}
-    from lab.fleet import ROLES
+    from lab.fleet import ROLES, ROSTER
+    kinds_of = {name: k for name, _r, k, *_ in ROSTER}
+    run = jobs.runnable(db, now)
+    exhausted = not _untested_templates(db)
     out, retired = [], []
     for w in wk["workers"]:
         r = rows.get(w["worker"], {})
@@ -92,6 +96,15 @@ def agents(db, now=None):
             st = "idle"
         job = jobs.get(db, r["current_job"]) if r.get("current_job") and "|" in (r.get("current_job") or "") else None
         kind = job["kind"] if job else None
+        kinds = kinds_of.get(w["worker"]) or ()
+        run_done = db.one("SELECT COUNT(*) FROM events WHERE kind='job.done' AND actor=? AND ts>=?", w["worker"],
+                          int(r.get("started_ts") or 0))[0] if kinds else None
+        work = None
+        if kinds and st == "idle":
+            n = sum(run["by_kind"].get(k, 0) for k in kinds)
+            work = (f"{n} runnable {'/'.join(kinds)} job(s) waiting" if n else
+                    f"no work: no runnable {'/'.join(kinds)} job" + (" (catalogue exhausted, see research.idle_reason)"
+                                                                       if exhausted and not run["total"] else ""))
         out.append({"agent": w["worker"], "role": r.get("role") or "built-in supervisor worker", "status": st,
                     "raw_status": raw, "current_job": r.get("current_job") if st == "running" else None,
                     "current_exp": r.get("current_exp") if st == "running" else None,
@@ -102,11 +115,12 @@ def agents(db, now=None):
                     "tasks_done": r.get("tasks_done"), "errors": r.get("errors"), "retries": r.get("retries"),
                     "last_result": r.get("last_result"), "next_action": r.get("next_action"), "detail": r.get("detail"),
                     "last_ok_ts": r.get("last_ok_ts"), "last_error": r.get("last_error"),
-                    "last_error_ts": r.get("last_error_ts"),
-                    "pid": r.get("pid")})
+                    "last_error_ts": r.get("last_error_ts"), "kinds": list(kinds), "jobs_done_this_run": run_done,
+                    "work": work, "pid": r.get("pid")})
     return {"supervisor": wk["supervisor"], "agents": out, "total": len(out), "retired": retired,
             "active": sum(1 for a in out if a["status"] in ("running", "idle", "queued", "blocked")),
-            "running": sum(1 for a in out if a["status"] == "running")}
+            "running": sum(1 for a in out if a["status"] == "running"),
+            "job_agents_without_work": sum(1 for a in out if (a["work"] or "").startswith("no work"))}
 
 
 def agent_log(db, name, limit=50):
@@ -163,7 +177,43 @@ def kpis(db, window_s=900, now=None):
         "retries_total": db.one("SELECT COUNT(*) FROM events WHERE kind IN ('job.retry','job.timeout')")[0],
         "disk": res["disk"], "ram": res["ram"], "ram_min_free": res["ram_min_free"], "resources_ok": res["ok"],
         "data": last_data_update(db), "gate_s7": s7_gate(db, now), "real_account_profit": REAL_ACCOUNT,
+        "research": research_progress(db, now),
         "last_event_id": db.one("SELECT COALESCE(MAX(id),0) FROM events")[0]}
+
+
+def _untested_templates(db):
+    from lab.engine import catalogue
+    known = {r[0] for r in db.q("SELECT DISTINCT exp_id FROM experiments")}
+    return [t for t in catalogue.TEMPLATES if catalogue.exp_id(t) not in known]
+
+
+def research_progress(db, now=None):
+    """Is the lab doing research? Last finished job, last verdict, runnable work, and why it is idle."""
+    from lab.engine import catalogue
+    now = now or time.time()
+    run = jobs.runnable(db, now)
+    busy = {r["status"]: r["n"] for r in db.q("SELECT status, COUNT(*) n FROM jobs WHERE status IN "
+                                              "('running', 'blocked') GROUP BY status")}
+    last_done = db.one("SELECT MAX(ts) FROM events WHERE kind='job.done'")[0]
+    last_verdict = db.one("SELECT MAX(ts) FROM results")[0]
+    last_exp = db.one("SELECT MAX(created_ts) FROM experiments WHERE substr(exp_id, 1, 2)='E_'")[0]
+    untested = _untested_templates(db)
+    reasons = []
+    if not run["total"] and not busy.get("running"):
+        reasons.append("no runnable or running job" + (f" ({busy['blocked']} blocked on dependencies)"
+                                                        if busy.get("blocked") else ""))
+        if not untested:
+            reasons.append(f"catalogue exhausted: all {len(catalogue.TEMPLATES)} templates have an experiment")
+        if run["next_due_ts"]:
+            reasons.append(f"next queued job due {time.strftime('%Y-%m-%d', time.gmtime(run['next_due_ts']))}")
+    return {"runnable_jobs": run["total"], "runnable_by_kind": run["by_kind"], "next_job_due_ts": run["next_due_ts"],
+            "running_jobs": busy.get("running", 0), "blocked_jobs": busy.get("blocked", 0),
+            "last_job_done_ts": last_done, "last_job_done_age_s": (now - last_done) if last_done else None,
+            "last_verdict_ts": last_verdict, "last_verdict_age_s": (now - last_verdict) if last_verdict else None,
+            "last_new_experiment_ts": last_exp, "untested_templates": untested,
+            "idle_reason": "; ".join(reasons) or None,
+            "market_events_24h": db.one("SELECT COUNT(*) FROM events WHERE kind='market.event' AND ts>=?",
+                                        int(now - 86400))[0]}
 
 
 # ---------- experiments ----------
@@ -437,8 +487,9 @@ def short_reason(reason):
 def feed(db, limit=40):
     kinds = ("candidate.discovered", "lifecycle.transition", "batch.registered", "template.approved", "paper.order",
              "job.failed", "system.running", "system.stopped", "system.stop_forced", "system.paused", "system.resumed",
-             "system.resource_hold", "risk.event", "agent.error", "agent.recovered", "external.stale",
-             "external.recovered")
+             "system.resource_hold", "risk.pause", "risk.fail_closed", "risk.clear", "agent.error",
+             "agent.recovered", "external.stale", "external.recovered", "job.timeout", "market.event",
+             "research.diagnostic")
     rows = db.q(f"SELECT id, ts, kind, actor, exp_id, payload FROM events WHERE kind IN ({','.join('?' * len(kinds))}) "
                 f"ORDER BY id DESC LIMIT ?", *kinds, int(limit))
     out = []
@@ -489,6 +540,18 @@ def feed(db, limit=40):
                                       f"min — tjek at den kører", detail=r["exp_id"])
         elif k == "external.recovered":
             e.update(tag="OK", text=f"{p.get('label')} skriver data igen")
+        elif k == "market.event":
+            key = p.get("key") or {}
+            what = f"{key.get('metric')} {key.get('instrument') or key.get('source') or ''}".strip()
+            e.update(tag="UNDERSØG" if p.get("decision") == "INVESTIGATE" else "INGEN HANDLING",
+                     text=f"Marked: {what} - {p.get('why')}"[:220], detail=p.get("decision"),
+                     priority=p.get("priority"))
+        elif k == "research.diagnostic":
+            e.update(tag="LÆRDOM", text=f"{nm}: " + "; ".join(p.get("lessons") or [])[:200])
+        elif k in ("risk.pause", "risk.fail_closed", "risk.clear"):
+            e.update(tag="RISIKO", text=f"Risiko: {k.split('.')[1]} - {p.get('rule')}: {p.get('detail')}"[:220])
+        elif k == "job.timeout":
+            e.update(tag="FEJL", text=f"Et job tog for lang tid: {p.get('job_id')}")
         else:
             e.update(tag=k.upper(), text=k)
         out.append(e)

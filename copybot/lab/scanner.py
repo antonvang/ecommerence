@@ -24,8 +24,11 @@ from lab import registry
 from lab.lifecycle import state
 from lab.registry import fingerprint
 
-PERSIST = 2                        # flagged in >= 2 scans that lie in different clock hours
+PERSIST = 2                        # flagged in >= 2 scans that lie in different clock hours ...
 PERSIST_BUCKET = 3600
+PERSIST_WINDOW = 24 * 3600         # ... within the last 24 h (PROTOCOL_V3 amendment 5)
+EVENT_DEDUP_S = 6 * 3600           # one market.event per detector/metric/instrument/decision per 6 h
+GRAVEYARD = ("REJECTED", "WITHDRAWN", "SUPPRESSED")
 VERSION = {"venue_subsidy": 1, "pricing_constraint": 2}   # persistence only counts observations of the same version
 GAP_IDENTITY_MAX = 0.03            # larger gaps are treated as an instrument-identity mismatch, never as an opportunity
 SUBSIDY_YIELD_DAY = 0.005          # 0.5 %/day gross reward yield (median of the sample) flags a subsidy class
@@ -240,21 +243,69 @@ DETECTORS = {"venue_subsidy": venue_subsidy, "pricing_constraint": pricing_const
 
 # ---------- scanner ----------
 def persisted(db, p, now):
-    """Distinct clock hours (including now) with a flagged observation for this detector/metric(/instrument)."""
-    q = "SELECT COUNT(DISTINCT ts / ?) FROM observations WHERE detector=? AND metric=? AND flagged=1"
-    args = [PERSIST_BUCKET, p["detector"], p["metric"]]
+    """Distinct clock hours within the last 24 h (including now) with a flagged observation for this
+    detector/metric and, when the proposal names one, the same instrument (amendment 5)."""
+    q = "SELECT COUNT(DISTINCT ts / ?) FROM observations WHERE detector=? AND metric=? AND flagged=1 AND ts > ?"
+    args = [PERSIST_BUCKET, p["detector"], p["metric"], now - PERSIST_WINDOW]
     if p["instrument_key"]:
         q += " AND instrument=?"
         args.append(p["instrument_key"])
     return db.one(q, *args)[0]
 
 
+def market_event(db, now, key, decision, why, magnitude=None, persistence=None, quality=None, exp_id=None,
+                 source=None):
+    """Record what the scanner saw and what it decided (amendment 5: a record, never a trade or a gate).
+    Deduplicated: the same key and decision is written at most once per EVENT_DEDUP_S. Returns True if written."""
+    k = json.dumps(key, sort_keys=True)
+    for r in db.q("SELECT exp_id, payload FROM events WHERE kind='market.event' AND json_extract(payload, '$.scan_ts') "
+                  "> ? ORDER BY id DESC", now - EVENT_DEDUP_S):        # the scan's clock, the same one as `now`
+        p = json.loads(r["payload"])
+        if json.dumps(p.get("key"), sort_keys=True) != k:
+            continue
+        same = (p.get("decision") == decision and r["exp_id"] == exp_id
+                and str(p.get("why")).split(":")[0] == str(why).split(":")[0])
+        if same:
+            return False                  # the newest record for this key already says this: nothing new to record
+        break                             # the decision, the experiment or the reason changed: record it now
+    priority = round(min(5.0, magnitude), 2) if (decision == "INVESTIGATE" and magnitude) else 0.0
+    db.event("market.event", ACTOR, exp_id, {"key": key, "decision": decision, "why": why, "priority": priority,
+                                             "magnitude": magnitude, "persistence_hours_24h": persistence,
+                                             "data_quality": quality, "source": source, "scan_ts": now})
+    return True
+
+
+def _magnitude(observations, p):
+    """Largest flagged |value|/threshold for this proposal's metric (and instrument) in this scan (gaps and premiums
+    can be negative; the size of the deviation is what matters)."""
+    m = [abs(o["value"]) / abs(o["threshold"]) for o in observations
+         if o["flagged"] and o["metric"] == p["metric"] and o["threshold"] and o["value"] is not None
+         and (not p["instrument_key"] or o["instrument"] == p["instrument_key"])]
+    return round(max(m), 3) if m else None
+
+
 def run(db, names=None, get=http_get, post=http_post, now=None):
     now = int(now or time.time())
     summary = {"observations": 0, "flagged": 0, "proposals": 0, "waiting_persistence": 0, "created": [],
-               "suppressed": [], "covered": [], "seen_again": [], "errors": []}
+               "suppressed": [], "covered": [], "seen_again": [], "errors": [], "market_events": 0,
+               "investigate": 0, "no_action": 0}
+
+    def decide(p, decision, why, observations, quality, exp_id=None):
+        key = {"detector": p["detector"], "metric": p["metric"], "instrument": p["instrument_key"] or p["instrument"]}
+        if market_event(db, now, key, decision, why, _magnitude(observations, p), persisted(db, p, now), quality,
+                        exp_id, p["source"]):
+            summary["market_events"] += 1
+        summary["investigate" if decision == "INVESTIGATE" else "no_action"] += 1
+
     for name in names or DETECTORS:
         observations, proposals = DETECTORS[name](get, post, now)
+        errors = [o for o in observations if o["metric"] == "error"]
+        quality = {"observations": len(observations), "errors": len(errors)}
+        for o in errors:                              # an unstable data source is an event of its own
+            if market_event(db, now, {"detector": vname(name), "source": o["source"], "metric": "error"}, "NO_ACTION",
+                            f"data source failed: {str(o['payload'].get('error'))[:160]}", quality=quality,
+                            source=o["source"]):
+                summary["market_events"] += 1
         with db.tx():
             for o in observations:
                 db.append("observations", ts=now, **o)
@@ -267,23 +318,31 @@ def run(db, names=None, get=http_get, post=http_post, now=None):
             if persisted(db, p, now) < PERSIST:
                 summary["waiting_persistence"] += 1
                 db.event("candidate.pending_persistence", ACTOR, None, {k: p[k] for k in ("detector", "metric", "mechanism_tag")})
+                decide(p, "NO_ACTION", f"waiting for persistence: flagged in {persisted(db, p, now)} of the required "
+                       f"{PERSIST} clock hours within 24 h", observations, quality)
                 continue
             fp = fingerprint(p["mechanism_tag"], p["instrument"], p["horizon"], p["execution"])
             existing = db.one("SELECT exp_id FROM experiments WHERE fingerprint=? LIMIT 1", fp)
             if existing:
-                if state(db, existing["exp_id"]) in ("REJECTED", "WITHDRAWN"):
+                st0 = state(db, existing["exp_id"])
+                if st0 in GRAVEYARD:
                     db.event("candidate.suppressed", ACTOR, existing["exp_id"],
                              {"reason": p["reason"], "scan_ts": now, "graveyard": existing["exp_id"]})
                     summary["suppressed"].append(existing["exp_id"])
+                    decide(p, "NO_ACTION", f"graveyard: {existing['exp_id']} is {st0}", observations, quality,
+                           existing["exp_id"])
                 else:
                     db.event("candidate.seen_again", ACTOR, existing["exp_id"], {"reason": p["reason"], "scan_ts": now})
                     summary["seen_again"].append(existing["exp_id"])
+                    decide(p, "NO_ACTION", f"already registered: {existing['exp_id']} is {st0}", observations,
+                           quality, existing["exp_id"])           # amendment 5: covered, INVESTIGATE is for new ones
                 continue
             cover = registry.covering(db, p["mechanism_tag"], p["execution"], fp)
             if cover:
                 db.event("candidate.covered", ACTOR, cover[0], {"mechanism": p["mechanism_tag"], "reason": p["reason"],
                                                                 "scan_ts": now})
                 summary["covered"].append(cover[0])
+                decide(p, "NO_ACTION", f"covered by active experiment {cover[0]}", observations, quality, cover[0])
                 continue
             exp_id = "C_" + fp[:10]
             st, dup = registry.discover(db, exp_id, p["hypothesis"], p["mechanism_tag"], p["instrument"], p["horizon"],
@@ -292,5 +351,10 @@ def run(db, names=None, get=http_get, post=http_post, now=None):
                                                "data_requirements": p["data_requirements"], "scan_ts": now,
                                                "label": "CANDIDATE (not evaluated)"})
             (summary["suppressed"] if st == "SUPPRESSED" else summary["created"]).append(exp_id)
+            if st == "SUPPRESSED":
+                decide(p, "NO_ACTION", f"graveyard match {dup}: suppressed as {exp_id}", observations, quality, exp_id)
+            else:
+                decide(p, "INVESTIGATE", f"new candidate {exp_id}; a test needs a pre-registered forward template",
+                       observations, quality, exp_id)
     db.event("scan.finished", ACTOR, None, {k: v for k, v in summary.items()})
     return summary

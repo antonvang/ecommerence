@@ -175,6 +175,16 @@ def recover(db, now=None):
     return n
 
 
+def runnable(db, now=None):
+    """Queued jobs whose time has come, per kind, and when the next queued job becomes due."""
+    now = now or time.time()
+    init(db)
+    by = {r["kind"]: r["n"] for r in db.q("SELECT kind, COUNT(*) n FROM jobs WHERE status='queued' AND next_run<=? "
+                                          "GROUP BY kind", now)}
+    nxt = db.one("SELECT MIN(next_run) FROM jobs WHERE status='queued' AND next_run>?", now)[0]
+    return {"by_kind": by, "total": sum(by.values()), "next_due_ts": nxt}
+
+
 def counts(db):
     init(db)
     out = {s: 0 for s in STATUSES}
