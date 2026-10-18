@@ -18,9 +18,14 @@ afprøvet på denne maskine.
   - Flåden holder op med at tage nye jobs. Tunge jobs, der kører i jobprocesser, afbrydes: poolen lukkes
     (`cancel_futures`), og jobprocesserne dræbes. `system.stopped` skrives, før der ventes på tråde, og der ventes
     højst 10 s i alt. Et stop tager derfor sekunder, ikke op til 3 minutter.
-  - Et afbrudt job står som `running` og køres igen efter næste start (`jobs.recover`). Det tæller ikke som
-    `job.failed` eller `worker.failed`, men forsøget tæller med i jobbets maks. 3 forsøg.
+  - Et afbrudt job lægges straks tilbage i køen (`job.interrupted`) og får sit forsøg tilbage (PROTOCOL_V3
+    ændring 6). Det tæller ikke som fejl: ingen `job.timeout`, `job.retry`, `job.failed` eller `worker.failed`. Det
+    gælder også ved nedlukning af pc'en, hvor jobprocessen dør først. Kan det ikke skrives, kører `jobs.recover`
+    jobbet igen efter næste start.
   - Under stoppet genstartes ingen workers (ingen falsk `worker.restarted`).
+- **Låst database.** Holder en anden proces databasens skrivelås i over 30 s (fx en `sqlite3`-skal), venter flåden
+  den ud i stedet for at stoppe. Bagefter skrives `system.db_busy` med varigheden. Før ændring 6 stoppede flåden
+  med exit 1.
 - **Frossen eller hængt flåde.** `lab stop` venter ikke på den.
   - Flåden regnes kun for hængt, når processen står i tilstand T (frosset), eller når dens heartbeat er over 30 s
     gammelt. Så melder `lab stop` det straks med pid og procestilstand (exit 3).

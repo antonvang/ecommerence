@@ -447,12 +447,14 @@ def step_cost(db, job, worker):
     bars, funding, _, _ = _train(db, eid, worker, spec)
     bt = load_artifact(eid, "backtest")
     results = []
+    seen = {r["variant"] for r in db.q("SELECT variant FROM trials WHERE exp_id=? AND split='train'", eid)}
     for v in bt["variants"]:
         m = _evaluate(bars, funding, v["positions"], spec["costs"])
         hi = _evaluate(bars, funding, v["positions"], spec["costs"], catalogue.COST_HIGH_MULT)
         sr_d = (m["net_mean_daily"] / m["net_sd_daily"]) if m.get("net_sd_daily") else None
-        db.append("trials", exp_id=eid, ts=int(time.time()), variant=v["variant"], split="train", sharpe_daily=sr_d,
-                  n_days=m["days"], net_total=m["net_total"], params=v["params"])
+        if v["variant"] not in seen:            # a re-run after an interrupted stop is the same trial (amendment 6)
+            db.append("trials", exp_id=eid, ts=int(time.time()), variant=v["variant"], split="train",
+                      sharpe_daily=sr_d, n_days=m["days"], net_total=m["net_total"], params=v["params"])
         results.append({"variant": v["variant"], "params": v["params"], "net": _strip(m), "net_2x_costs": _strip(hi)})
     bench = _strip(_benchmark(bars, funding, spec["costs"]))
     best = max(results, key=lambda r: r["net"]["net_sharpe_ann"] if r["net"]["net_sharpe_ann"] is not None else -9e9)

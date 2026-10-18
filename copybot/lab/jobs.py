@@ -149,6 +149,21 @@ def fail(db, job_id, worker_id, error, now=None, retryable=True):
         return "failed"
 
 
+def release(db, job_id, worker_id, reason, now=None):
+    """A job interrupted by a planned stop goes back to the queue at once and gets its attempt back: an interruption
+    is not an error (event job.interrupted, never job.timeout or job.failed). Only the lease owner can."""
+    now = now or time.time()
+    with db.tx():
+        j = get(db, job_id)
+        if not j or j["status"] != "running" or j["lease_owner"] != worker_id:
+            return False
+        db.con.execute("UPDATE jobs SET status='queued', attempts=MAX(attempts - 1, 0), next_run=?, lease_owner=NULL, "
+                       "lease_until=NULL, updated_ts=? WHERE job_id=?", (now, now, job_id))
+        db.event("job.interrupted", worker_id, j["exp_id"], {"job_id": job_id, "kind": j["kind"],
+                                                             "reason": str(reason)[:200]})
+    return True
+
+
 def _expire(db, now):
     for r in db.q("SELECT job_id, lease_owner, attempts, max_attempts, exp_id FROM jobs WHERE status='running' AND "
                   "lease_until<?", now):

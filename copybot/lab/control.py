@@ -116,7 +116,7 @@ def write_lock_holder(db_path):
                 p = line.split()
                 if len(p) >= 8 and p[1] == "POSIX" and p[3] == "WRITE" and p[5] == key and p[6] == "120":
                     return int(p[4])
-    except (OSError, ValueError):
+    except (OSError, ValueError, AttributeError):    # AttributeError: no os.major (Windows)
         pass
     return None
 

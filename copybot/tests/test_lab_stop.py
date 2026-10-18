@@ -270,13 +270,13 @@ class SupervisorSigterm(unittest.TestCase):
         db = DB(self.path)
         try:
             kinds = [r["kind"] for r in db.q("SELECT kind FROM events ORDER BY id")]
-            for k in ("worker.failed", "worker.restarted", "job.failed", "job.retry"):
+            for k in ("worker.failed", "worker.restarted", "job.failed", "job.retry", "job.timeout"):
                 self.assertNotIn(k, kinds)
             self.assertIn("system.stopped", kinds)
-            self.assertEqual(jobs.get(db, "slow|1")["status"], "running")      # left for recovery, not failed
-            self.assertEqual(jobs.recover(db, time.time()), 1)
+            self.assertIn("job.interrupted", kinds)                          # amendment 6: not an error
             j = jobs.get(db, "slow|1")
-            self.assertEqual((j["status"], j["attempts"]), ("queued", 1))
+            self.assertEqual((j["status"], j["attempts"]), ("queued", 0))      # back in the queue, attempt kept
+            self.assertEqual(jobs.recover(db, time.time()), 0)
         finally:
             db.close()
 

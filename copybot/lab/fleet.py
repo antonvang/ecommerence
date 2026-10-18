@@ -49,10 +49,22 @@ def _get_pool():
         return _pool
 
 
+def _reset_pool(broken):
+    """A job process died outside a stop (OOM killer, kill): that executor refuses all further work, so the next
+    heavy job gets a fresh one. Only the broken pool is replaced (another job may already have made a new one)."""
+    global _pool
+    with _pool_lock:
+        if _pool is not broken:
+            return
+        _pool = None
+    broken.shutdown(wait=False, cancel_futures=True)
+
+
 def shutdown():
     """Supervisor on_stop hook: claim nothing new, cancel queued pool work and kill running job processes (Python
-    would otherwise wait for them at exit). Their jobs stay `running`; jobs.recover re-runs them after the next start,
-    and nothing is recorded as a failure."""
+    would otherwise wait for them at exit). Each interrupted job is put back in the queue by its agent (jobs.release:
+    job.interrupted, the attempt is not used up); if that cannot be written, jobs.recover re-runs it after the next
+    start. Nothing is recorded as a failure."""
     global _pool
     STOPPING.set()
     with _pool_lock:
@@ -68,6 +80,9 @@ def shutdown():
         p.join(2)
 
 
+STOP_GRACE_S = 3                         # a job process killed with the whole process group (PC shutdown) dies
+                                         # before the supervisor sets STOPPING; wait this long before calling it
+                                         # a failure
 JOB_RAM_DEFAULT = 400 * 2 ** 20          # used until worker processes have reported a measured peak
 
 
@@ -261,9 +276,11 @@ class Agent:
         keeper = threading.Thread(target=self._keep_lease, args=(job, stop), daemon=True, name=f"lease-{self.name}")
         keeper.start()
         t0 = time.time()
+        pool = None
         try:
             if self.heavy and PROCESSES and self.db_path:
-                res = _get_pool().submit(_child, job["kind"], self.db_path, job, self.name, _overrides()).result()
+                pool = _get_pool()
+                res = pool.submit(_child, job["kind"], self.db_path, job, self.name, _overrides()).result()
             else:
                 res = pipeline.HANDLERS[job["kind"]](db, job, self.name)
             stop.set()
@@ -280,11 +297,19 @@ class Agent:
         except Exception as e:
             stop.set()
             keeper.join(5)
-            if STOPPING.is_set():                       # shutdown killed the job: left for jobs.recover, not a failure
-                self.log("job.interrupted", job=jid, exp=eid, seconds=round(time.time() - t0, 2), error=repr(e))
+            broken = type(e).__name__ == "BrokenProcessPool"
+            if STOPPING.is_set() or (broken and STOPPING.wait(STOP_GRACE_S)):   # a stop killed it: not a failure
+                try:
+                    requeued = jobs.release(db, jid, self.name, f"interrupted by shutdown: {e!r}")
+                except Exception:                       # database busy at shutdown: jobs.recover re-runs it later
+                    requeued = False
+                self.log("job.interrupted", job=jid, exp=eid, seconds=round(time.time() - t0, 2), error=repr(e),
+                         requeued=requeued)
                 self.beat(db, "stopped", detail="interrupted by shutdown; re-run after the next start",
                           current_job=None, current_exp=None, next_action="none (stopping)")
                 return
+            if broken and pool is not None:
+                _reset_pool(pool)
             retryable = not isinstance(e, (lifecycle.LifecycleError, pipeline.StepError, KeyError))
             outcome = jobs.fail(db, jid, self.name, repr(e), retryable=retryable)
             self.counters["errors"] += 1

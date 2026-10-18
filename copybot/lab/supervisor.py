@@ -14,6 +14,7 @@ from __future__ import annotations
 import importlib
 import os
 import signal
+import sqlite3
 import threading
 import time
 
@@ -129,6 +130,11 @@ def recover(db, risk, stale_after=60, now=time.time, check_evidence=True):
     return True, report
 
 
+def _busy(e):
+    """SQLite gave up waiting for another connection's lock (busy timeout)."""
+    return isinstance(e, sqlite3.OperationalError) and ("locked" in str(e) or "busy" in str(e))
+
+
 class Supervisor:
     def __init__(self, db_path=DEFAULT_DB, workers=(), now=time.time, sleep=time.sleep, log=print,
                  check_evidence=True, on_stop=()):
@@ -139,6 +145,7 @@ class Supervisor:
         self.db = None
         self.log_dir = os.path.join(os.path.dirname(os.path.abspath(db_path)), "logs")
         self.last_alive = self.last_disk = 0.0
+        self.busy_since = None                  # start of a stretch where the database stayed locked > timeout
 
     # ---------- workers ----------
     def beat(self, db, name, ok, detail, status, stale_after, interval):
@@ -152,17 +159,25 @@ class Supervisor:
         db = DB(self.db_path)
         try:
             while not self.stop.is_set():
-                if not w.beats_itself:
-                    self.beat(db, w.name, 1, "working", "running", w.stale_after, w.interval)
                 try:
+                    if not w.beats_itself:
+                        self.beat(db, w.name, 1, "working", "running", w.stale_after, w.interval)
                     w.fn(db)
                     ok, detail = 1, "ok"
                 except Exception as e:
+                    if _busy(e):                              # another process holds the write lock: not a
+                        ops.log_json("supervisor", "worker.db_busy", self.log_dir, worker=w.name, error=repr(e))
+                        self.stop.wait(w.interval)            # fault of this worker; wait it out, never crash
+                        continue
                     db.event("worker.error", ACTOR, None, {"worker": w.name, "error": repr(e)})
                     ops.log_json("supervisor", "worker.error", self.log_dir, worker=w.name, error=repr(e))
                     ok, detail = 0, repr(e)[:200]
                 if not w.beats_itself or not ok:
-                    self.beat(db, w.name, ok, detail, "idle" if ok else "error", w.stale_after, w.interval)
+                    try:
+                        self.beat(db, w.name, ok, detail, "idle" if ok else "error", w.stale_after, w.interval)
+                    except sqlite3.OperationalError as e:
+                        if not _busy(e):
+                            raise
                 if not ok:
                     return                                            # crashed: the supervisor decides on restart
                 self.stop.wait(w.interval)
@@ -187,6 +202,21 @@ class Supervisor:
                 self.db.event("system.disk_low", ACTOR, None, d)
                 ops.log_json("supervisor", "disk_low", self.log_dir, **d)
                 Risk(self.db, self.now).trip_fail_closed("disk_low", f"free {d['free']} bytes < {d['min_free']}")
+
+    def _db_busy(self, e):
+        """Another process held the write lock longer than the busy timeout. Wait it out; record it afterwards.
+        Any other database error is not ours to swallow."""
+        if not _busy(e):
+            raise e
+        if self.busy_since is None:
+            self.busy_since = self.now()
+            self.log(f"database busy (another process holds the write lock): {e!r}; waiting")
+            ops.log_json("supervisor", "db_busy", self.log_dir, error=repr(e))
+
+    def _db_free(self):
+        if self.busy_since is not None:
+            self.db.event("system.db_busy", ACTOR, None, {"seconds": round(self.now() - self.busy_since, 1)})
+            self.busy_since = None
 
     def check(self):
         """One supervision pass: restart dead or stale workers with exponential backoff; give up after too many."""
@@ -234,23 +264,30 @@ class Supervisor:
             ops.log_json("supervisor", "startup", self.log_dir, ok=ok, report=report, pid=os.getpid())
             if not ok:
                 return 2
+            from lab import control, jobs
+            requeued = jobs.recover(self.db, self.now())     # before any worker can claim: only dead leases expire
             for w in self.workers:
                 self._start(w)
             self.db.event("system.running", ACTOR, None, {"workers": [w.name for w in self.workers], "pid": os.getpid()})
             t0 = self.now()
-            from lab import control, jobs
-            requeued = jobs.recover(self.db, self.now())
             if requeued:
                 self.log(f"recovered {requeued} job(s) left running by a previous process")
             while not self.stop.is_set() and (duration is None or self.now() - t0 < duration):
-                if control.state(self.db)["stop"]:
-                    self.log("stop requested: shutting down gracefully")
-                    break
-                self.housekeeping()
+                try:
+                    if control.state(self.db)["stop"]:
+                        self.log("stop requested: shutting down gracefully")
+                        break
+                    self.housekeeping()
+                    self._db_free()
+                except sqlite3.OperationalError as e:      # never die of a lock held by someone else
+                    self._db_busy(e)
                 self.sleep(1.0)
                 if self.stop.is_set():                # SIGTERM during the sleep: the workers are stopping, not dead
                     break
-                self.check()
+                try:
+                    self.check()
+                except sqlite3.OperationalError as e:
+                    self._db_busy(e)
             return 0
         finally:
             self.stop.set()
@@ -259,14 +296,21 @@ class Supervisor:
                     fn()
                 except Exception as e:
                     self.log(f"on_stop {getattr(fn, '__name__', fn)} failed: {e!r}")
-            self.db.event("system.stopped", ACTOR, None, {"pid": os.getpid()})     # before any long wait
-            self.beat(self.db, SUPERVISOR_BEAT, 1, "stopped cleanly", "stopped", 30, 1.0)
+            try:
+                self.db.event("system.stopped", ACTOR, None, {"pid": os.getpid()})     # before any long wait
+                self.beat(self.db, SUPERVISOR_BEAT, 1, "stopped cleanly", "stopped", 30, 1.0)
+            except sqlite3.OperationalError as e:
+                self.log(f"system.stopped could not be recorded (database busy): {e!r}")
+                ops.log_json("supervisor", "stop_unrecorded", self.log_dir, error=repr(e))
             end = time.monotonic() + JOIN_S
             for w in self.workers:
                 if w.thread is not None:
                     w.thread.join(timeout=max(0.0, end - time.monotonic()))
-            for w in self.workers:
-                self.db.con.execute("UPDATE heartbeats SET status='stopped' WHERE worker=?", (w.name,))
+            try:
+                for w in self.workers:
+                    self.db.con.execute("UPDATE heartbeats SET status='stopped' WHERE worker=?", (w.name,))
+            except sqlite3.OperationalError:
+                pass                                              # rows show the last beat; the lock is released
             ops.log_json("supervisor", "stopped", self.log_dir, pid=os.getpid())
             self.db.close()
             release_lock(lock)
