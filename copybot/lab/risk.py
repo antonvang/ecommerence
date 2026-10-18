@@ -73,8 +73,22 @@ class Risk:
                       {"rule": rule, "value": value, "threshold": threshold, "detail": detail})
 
     # ---------- entry gate ----------
+    def _shadow_ok(self, ledger):
+        """PROTOCOL v3 amendment 3: a SHADOW_ ledger may trade only while its experiment is in OBSERVATION and a
+        human-started shadow is active."""
+        base = ledger[len("SHADOW_"):]
+        r = self.db.one("SELECT kind, actor FROM events WHERE kind IN ('shadow.approved','shadow.stopped') AND exp_id=? "
+                        "ORDER BY id DESC LIMIT 1", base)
+        return bool(r and r["kind"] == "shadow.approved" and r["actor"].startswith("human:")
+                    and lifecycle.state(self.db, base) == "OBSERVATION")
+
     def entry_allowed(self, exp_id, reduce_only, book):
-        st = lifecycle.state(self.db, exp_id)
+        if exp_id.startswith("SHADOW_"):
+            if not self._shadow_ok(exp_id) and not reduce_only:
+                return False, "shadow trading is not active (needs OBSERVATION and a human start)"
+            st = "PAPER_TRADING"                              # every other risk rule below applies unchanged
+        else:
+            st = lifecycle.state(self.db, exp_id)
         if st not in ("PAPER_TRADING", "PAUSED"):
             return False, f"strategy is {st}; only PAPER_TRADING strategies simulate orders"
         if book is None:

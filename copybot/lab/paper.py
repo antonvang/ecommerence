@@ -19,6 +19,19 @@ from lab import lifecycle
 from lab.risk import Risk
 
 SIMULATED = True
+SHADOW = "SHADOW_"          # research/PROTOCOL_V3.md amendment 3: shadow ledgers for observation candidates
+
+
+def shadow_base(ledger):
+    return ledger[len(SHADOW):] if ledger.startswith(SHADOW) else None
+
+
+def shadow_active(db, exp_id):
+    """A human started shadow trading for this experiment, has not stopped it, and it is still in OBSERVATION."""
+    r = db.one("SELECT kind, actor FROM events WHERE kind IN ('shadow.approved','shadow.stopped') AND exp_id=? "
+               "ORDER BY id DESC LIMIT 1", exp_id)
+    return bool(r and r["kind"] == "shadow.approved" and r["actor"].startswith("human:")
+                and lifecycle.state(db, exp_id) == "OBSERVATION")
 
 
 @dataclass(frozen=True)
@@ -52,7 +65,11 @@ class PaperEngine:
 
     # ---------- ledger ----------
     def start(self, exp_id, capital, costs, actor="system:paper"):
-        if lifecycle.state(self.db, exp_id) != "PAPER_TRADING":
+        base = shadow_base(exp_id)
+        if base is not None:
+            if not shadow_active(self.db, base):
+                raise lifecycle.LifecycleError(f"{base} has no active, human-started shadow trading in OBSERVATION")
+        elif lifecycle.state(self.db, exp_id) != "PAPER_TRADING":
             raise lifecycle.LifecycleError(f"{exp_id} is not PAPER_TRADING")
         if self.db.one("SELECT 1 FROM events WHERE kind='paper.started' AND exp_id=?", exp_id):
             return False

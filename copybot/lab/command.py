@@ -334,7 +334,10 @@ def paper_view(db):
         orders = db.one("SELECT COUNT(*) FROM sim_orders WHERE exp_id=?", eid)[0]
         refused = db.one("SELECT COUNT(*) FROM events WHERE exp_id=? AND kind IN ('paper.refused',"
                          "'paper.signal_while_paused')", eid)[0]
-        out.append({"exp_id": eid, "state": lifecycle.state(db, eid), "simulated": True, "label": "PAPER (simulated)",
+        shadow = eid.startswith("SHADOW_")
+        out.append({"exp_id": eid, "name": plain(db, eid)[0], "shadow": shadow,
+                    "state": lifecycle.state(db, eid[len("SHADOW_"):] if shadow else eid), "simulated": True,
+                    "label": "SKYGGEHANDEL (simuleret, ikke godkendt)" if shadow else "PAPER (simulated)",
                     "capital": led["capital"], "cash": led["cash"], "positions": led["positions"],
                     "open_positions": len(led["positions"]), "closed_trades": len(led["trades"]),
                     "equity": eq, "realized": realized, "unrealized": unreal,
@@ -370,7 +373,9 @@ def balance(db, now=None):
     now = now or time.time()
     p = paper_view(db)
     st = p["strategies"]
-    out = {"simulated": True, "strategies": len(st), "active": sum(1 for s in st if s["state"] == "PAPER_TRADING"),
+    out = {"simulated": True, "strategies": len(st),
+           "active": sum(1 for s in st if s["state"] == "PAPER_TRADING" or (s["shadow"] and s["state"] == "OBSERVATION")),
+           "shadow": sum(1 for s in st if s["shadow"]),
            "real_account_profit": REAL_ACCOUNT, "source": p["source"]}
     if not st:
         out.update({"capital": None, "equity": None, "pnl": None, "pnl_pct": None, "today": None, "realized": None,
@@ -526,6 +531,9 @@ LEGACY_DA = {
 
 def plain(db, eid):
     """(name, one-line explanation, version label) for any experiment id."""
+    if eid and eid.startswith("SHADOW_"):
+        n, x, v = plain(db, eid[len("SHADOW_"):])
+        return f"{n} — skyggehandel", x, v
     if eid in LEGACY_DA:
         return LEGACY_DA[eid], None, None
     v = registry.latest(db, eid) if eid else None

@@ -51,29 +51,71 @@ def cost_model():
     return CostModel(taker_fee=c["taker_fee"], extra_slippage=c["slippage"], expected_spread=2 * c["half_spread"])
 
 
+CM_DAYS = 120
+
+
+def _cm_get(url):
+    req = urllib.request.Request(url, headers={"User-Agent": "copybot-lab/paper (read-only)"})
+    with urllib.request.urlopen(req, timeout=60) as r:
+        return json.loads(r.read())
+
+
+def fetch_cm_live(metrics, symbols, now, get=_cm_get):
+    """CoinMetrics community daily values for the last CM_DAYS days up to yesterday: {metric: {symbol: {day: v}}}."""
+    from datetime import datetime, timezone
+    end = int(now) // 86400 * 86400 - 86400
+    d0 = datetime.fromtimestamp(end - CM_DAYS * 86400, timezone.utc).strftime("%Y-%m-%d")
+    d1 = datetime.fromtimestamp(end, timezone.utc).strftime("%Y-%m-%d")
+    assets = ",".join(s.replace("USDT", "").lower() for s in symbols)
+    out = {m: {} for m in metrics}
+    url = (f"https://community-api.coinmetrics.io/v4/timeseries/asset-metrics?assets={assets}&metrics={','.join(metrics)}"
+           f"&frequency=1d&start_time={d0}&end_time={d1}&page_size=10000")
+    for _ in range(50):
+        res = get(url)
+        for row in res.get("data") or []:
+            day = int(datetime.strptime(row["time"][:10], "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp())
+            for m in metrics:
+                if row.get(m) not in (None, "") and day <= end:
+                    out[m].setdefault(row["asset"].upper() + "USDT", {})[day] = float(row[m])
+        url = res.get("next_page_url")
+        if not url:
+            break
+    return out
+
+
+def shadow_experiments(db):
+    from lab.paper import shadow_active
+    return [x["exp_id"] for x in registry.status(db) if x["state"] == "OBSERVATION" and shadow_active(db, x["exp_id"])]
+
+
 def paper_experiments(db):
     return [x["exp_id"] for x in registry.status(db) if x["state"] == "PAPER_TRADING" and x["exp_id"].startswith("E_")]
 
 
-def run(db, get=_get, now=None):
+def run(db, get=_get, now=None, cm_get=_cm_get):
     now = now or time.time()
     out = {}
     for eid in paper_experiments(db):
-        out[eid] = run_one(db, eid, get, now)
+        out[eid] = run_one(db, eid, get, now, cm_get=cm_get)
+    for eid in shadow_experiments(db):                 # amendment 3: simulated, separate ledger, no effect on tests
+        out["SHADOW_" + eid] = run_one(db, eid, get, now, ledger="SHADOW_" + eid, cm_get=cm_get)
     return {"experiments": len(out), "results": out, "simulated": True}
 
 
-def run_one(db, eid, get, now):
+def run_one(db, eid, get, now, ledger=None, cm_get=_cm_get):
+    """Trade experiment `eid`'s frozen strategy on the simulated ledger `ledger` (default: the experiment itself)."""
+    L = ledger or eid
     eng, risk = PaperEngine(db, lambda: now), Risk(db, lambda: now)
     spec = json.loads(registry.latest(db, eid)["spec_json"])
-    if set(catalogue.TEMPLATES[spec["template"]].get("needs") or []) & {"metrics", "dvol", "stable", "taker", "rates", "cm"}:
-        if not db.one("SELECT 1 FROM events WHERE kind='paper.unsupported' AND exp_id=?", eid):
-            db.event("paper.unsupported", "agent:paper-1", eid, {"reason": "live inputs for this template are not "
-                                                                            "built yet (research/PROTOCOL_V3.md section 7)"})
+    tpl = catalogue.TEMPLATES[spec["template"]]
+    if set(tpl.get("needs") or []) & {"metrics", "dvol", "stable", "taker", "rates"}:
+        if not db.one("SELECT 1 FROM events WHERE kind='paper.unsupported' AND exp_id=?", L):
+            db.event("paper.unsupported", "agent:paper-1", L, {"reason": "live inputs for this template are not "
+                                                                          "built yet (research/PROTOCOL_V3.md section 7)"})
         return {"status": "unsupported", "reason": "live data for this template is not implemented; no orders"}
-    eng.start(eid, CAPITAL, cost_model(), actor="agent:paper-1")
-    if risk.paused(eid) or risk.fail_closed():
-        return {"status": "paused" if risk.paused(eid) else "fail_closed"}
+    eng.start(L, CAPITAL, cost_model(), actor="agent:paper-1")
+    if risk.paused(L) or risk.fail_closed():
+        return {"status": "paused" if risk.paused(L) else "fail_closed"}
     cost = pipeline.load_artifact(eid, "cost")
     variant = pipeline.load_artifact(eid, "backtest")["variants"][cost["selected"]]
     hour = int(now) // HOUR * HOUR
@@ -82,39 +124,48 @@ def run_one(db, eid, get, now):
         for s in catalogue.universe(spec["template"]):
             market[s] = fetch_market(s, now, get)
     except Exception as e:
-        risk.pause(eid, "data_fetch", None, None, f"public market data fetch failed: {e!r}"[:300], eng.cancel_entries)
+        risk.pause(L, "data_fetch", None, None, f"public market data fetch failed: {e!r}"[:300], eng.cancel_entries)
         return {"status": "paused", "reason": "data fetch failed"}
+    bundle = None
+    if "cm" in (tpl.get("needs") or []):
+        try:
+            bundle = {"cm": fetch_cm_live(tpl["cm_metrics"], list(market), now, cm_get)}
+        except Exception as e:
+            risk.pause(L, "data_fetch", None, None, f"CoinMetrics fetch failed: {e!r}"[:300], eng.cancel_entries)
+            return {"status": "paused", "reason": "CoinMetrics fetch failed"}
     for s, (bars, _, book, _) in market.items():
         if not bars or now - (bars[-1][0] + HOUR) > MAX_BAR_AGE or book.crossed():
-            risk.pause(eid, "data_stale", None, MAX_BAR_AGE, f"{s}: stale bars or invalid book", eng.cancel_entries)
+            risk.pause(L, "data_stale", None, MAX_BAR_AGE, f"{s}: stale bars or invalid book", eng.cancel_entries)
             return {"status": "paused", "reason": f"{s} data stale or invalid"}
-        risk.observe_book(eid, book)
+        risk.observe_book(L, book)
     marks = {s: m[2].mid() for s, m in market.items()}
-    equity = eng.pnl(eid, marks)["equity"]
-    tpl = catalogue.TEMPLATES[spec["template"]]
+    equity = eng.pnl(L, marks)["equity"]
     fam = tpl["family"]
     nxt = {s: m[0] + [(m[0][-1][0] + HOUR, m[0][-1][2], m[0][-1][2])] for s, m in market.items()}   # prices unused
     vol = {s: m[3] for s, m in market.items()} if tpl.get("needs_volume") else None
     xs = None
     if tpl.get("cross_sectional"):
         fund = {s: m[1] for s, m in market.items()}
-        xs = fam(nxt, fund, variant["params"], None, vol) if vol is not None else fam(nxt, fund, variant["params"])
+        if tpl.get("needs"):
+            xs = fam(nxt, fund, variant["params"], None, extra=bundle)
+        else:
+            xs = fam(nxt, fund, variant["params"], None, vol) if vol is not None else fam(nxt, fund, variant["params"])
     orders = []
     for s, (bars, funding, book, _) in market.items():
         target_pos = xs[s][-1] if xs else fam(nxt[s], funding, variant["params"], (variant["fit"] or {}).get(s))[-1]
         target_qty = target_pos * (equity / len(market)) / marks[s]
-        cur = eng.ledger(eid)["positions"].get(s, 0.0)
+        cur = eng.ledger(L)["positions"].get(s, 0.0)
         delta = target_qty - cur
         if abs(delta) * marks[s] < MIN_NOTIONAL:
             continue
         reduce_only = abs(target_qty) < abs(cur) and (target_qty == 0 or (target_qty > 0) == (cur > 0))
-        r = eng.submit_taker(eid, f"{eid}|{hour}|{s}", s, "buy" if delta > 0 else "sell", abs(delta), book,
+        r = eng.submit_taker(L, f"{L}|{hour}|{s}", s, "buy" if delta > 0 else "sell", abs(delta), book,
                              reduce_only=reduce_only, signal_ref=f"{spec['template']}@{hour}")
         orders.append({"symbol": s, "status": r["status"], "qty": abs(delta)})
-    if not db.one("SELECT 1 FROM sim_equity WHERE exp_id=? AND ts>=?", eid, hour):
-        eng.mark(eid, marks)
-    rec = eng.reconcile(eid)
+    if not db.one("SELECT 1 FROM sim_equity WHERE exp_id=? AND ts>=?", L, hour):
+        eng.mark(L, marks)
+    rec = eng.reconcile(L)
     if not rec["ok"]:
-        risk.trip_fail_closed("reconciliation", f"{eid}: {rec['problems']}"[:500])
-    return {"status": "ok", "orders": orders, "pnl": eng.pnl(eid, marks), "reconciled": rec["ok"]}
+        risk.trip_fail_closed("reconciliation", f"{L}: {rec['problems']}"[:500])
+    return {"status": "ok", "orders": orders, "pnl": eng.pnl(L, marks), "reconciled": rec["ok"]}
 

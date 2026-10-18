@@ -125,5 +125,85 @@ class Runner(unittest.TestCase):
         self.assertIn("1 fills without an order", rec["problems"])
 
 
+class Shadow(unittest.TestCase):
+    """research/PROTOCOL_V3.md amendment 3: simulated shadow ledger for observation candidates."""
+    EID = "E_mvrv_value_p3"
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp(prefix="labshadow")
+        self.db = DB(os.path.join(self.tmp, "lab.db"))
+        self.p = mock.patch.object(pipeline, "ARTIFACTS", os.path.join(self.tmp, "artifacts"))
+        self.p.start()
+        self.db.append("experiments", exp_id=self.EID, version=1, created_ts=0, mechanism_tag="onchain_value_mvrv",
+                       fingerprint="f", spec_json={"template": "mvrv_value", "execution": "taker"})
+        self.db.append("transitions", exp_id=self.EID, ts=0, from_state=None, to_state="OBSERVATION", actor="fixture",
+                       reason="fixture: on the observation list")
+        pipeline.save_artifact(self.EID, "cost", {"selected": 0})
+        pipeline.save_artifact(self.EID, "backtest", {"variants": [{"variant": 0, "params": {"mode": "level", "k": 3},
+                                                                    "fit": None, "positions": {}}]})
+
+    def tearDown(self):
+        self.p.stop()
+        self.db.close()
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def cm(self, url):
+        rows = []
+        for j, s in enumerate(data.UNIVERSE_CM16):
+            for d in range(130):
+                day = datetime.fromtimestamp(int(SAT) // 86400 * 86400 - (d + 1) * 86400, timezone.utc)
+                rows.append({"asset": s.replace("USDT", "").lower(), "time": day.strftime("%Y-%m-%dT00:00:00.000000000Z"),
+                             "CapMVRVCur": str(0.5 + 0.1 * j)})
+        return {"data": rows}
+
+    def counts(self):
+        return {k: self.db.one(f"SELECT COUNT(*) FROM {k} WHERE exp_id=?", self.EID)[0]
+                for k in ("results", "transitions", "trials")}
+
+    def test_needs_a_human_start_while_in_observation(self):
+        self.assertEqual(paper_runner.run(self.db, feed(SAT), SAT, cm_get=self.cm)["experiments"], 0)
+        self.db.event("shadow.approved", "agent:x", self.EID, {"reason": "not a human"})
+        self.assertEqual(paper_runner.run(self.db, feed(SAT), SAT, cm_get=self.cm)["experiments"], 0)
+        with self.assertRaises(lifecycle.LifecycleError):
+            PaperEngine(self.db).start("SHADOW_" + self.EID, 10_000.0, paper_runner.cost_model())
+
+    def test_trades_long_short_on_a_separate_ledger_without_touching_the_formal_tests(self):
+        before = self.counts()
+        self.db.event("shadow.approved", "human:test", self.EID, {"reason": "user asked for shadow trading"})
+        out = paper_runner.run(self.db, feed(SAT), SAT, cm_get=self.cm)["results"]
+        r = out["SHADOW_" + self.EID]
+        self.assertEqual(r["status"], "ok")
+        sides = sorted(self.db.one("SELECT side FROM sim_orders WHERE order_id=?",
+                                   f"SHADOW_{self.EID}|{int(SAT) // 3600 * 3600}|{o['symbol']}")[0] for o in r["orders"])
+        self.assertEqual(sides, ["buy"] * 3 + ["sell"] * 3)                       # 3 cheapest long, 3 dearest short
+        self.assertTrue(r["reconciled"])
+        self.assertAlmostEqual(r["pnl"]["total"], r["pnl"]["realized"] + r["pnl"]["unrealized"], places=9)
+        self.assertEqual(self.counts(), before)                                   # no results, transitions, trials
+        self.assertEqual(lifecycle.state(self.db, self.EID), "OBSERVATION")
+        self.assertEqual(self.db.one("SELECT COUNT(*) FROM sim_orders WHERE exp_id=?", self.EID)[0], 0)
+        from lab import command
+        b = command.balance(self.db)
+        self.assertEqual((b["shadow"], b["active"]), (1, 1))
+        v = command.paper_view(self.db)["strategies"][0]
+        self.assertTrue(v["shadow"])
+        self.assertIn("ikke godkendt", v["label"])
+        self.assertIn("skyggehandel", v["name"])
+        # leaving OBSERVATION ends shadow trading
+        self.db.append("transitions", exp_id=self.EID, ts=1, from_state="OBSERVATION", to_state="REJECTED",
+                       actor="fixture", reason="fixture: forward test failed")
+        self.assertEqual(paper_runner.run(self.db, feed(SAT + 3600), SAT + 3600, cm_get=self.cm)["experiments"], 0)
+
+    def test_a_coinmetrics_failure_pauses_the_shadow_ledger_only(self):
+        self.db.event("shadow.approved", "human:test", self.EID, {"reason": "user asked for shadow trading"})
+
+        def broken(url):
+            raise IOError("coinmetrics down")
+        r = paper_runner.run(self.db, feed(SAT), SAT, cm_get=broken)["results"]["SHADOW_" + self.EID]
+        self.assertEqual(r["status"], "paused")
+        self.assertTrue(Risk(self.db).paused("SHADOW_" + self.EID))
+        self.assertEqual(lifecycle.state(self.db, self.EID), "OBSERVATION")
+        self.assertEqual(self.db.one("SELECT COUNT(*) FROM sim_orders")[0], 0)
+
+
 if __name__ == "__main__":
     unittest.main()

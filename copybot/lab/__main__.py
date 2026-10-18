@@ -20,6 +20,7 @@
   python -m lab jobs [--status S]                                          (persistent job queue)
   python -m lab approve-template TEMPLATE --reason ".."  -> code;  python -m lab confirm-template CODE
   python -m lab revoke-template TEMPLATE --reason ".."
+  python -m lab shadow-start EXP --reason ".." | shadow-stop EXP --reason ".."   (simulated shadow ledger, OBSERVATION only)
 """
 from __future__ import annotations
 
@@ -72,6 +73,8 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
     jb = sub.add_parser("jobs"); jb.add_argument("--status")
     at = sub.add_parser("approve-template"); at.add_argument("template"); at.add_argument("--reason", required=True)
     ct = sub.add_parser("confirm-template"); ct.add_argument("code")
+    for c in ("shadow-start", "shadow-stop"):
+        sp = sub.add_parser(c); sp.add_argument("exp"); sp.add_argument("--reason", required=True)
     rt = sub.add_parser("revoke-template"); rt.add_argument("template"); rt.add_argument("--reason", required=True)
     wb = sub.add_parser("web"); wb.add_argument("--port", type=int, default=8770); wb.add_argument("--duration", type=float)
     args = ap.parse_args(argv)
@@ -108,6 +111,17 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
             rows = db.q(q + " WHERE status=? ORDER BY updated_ts DESC LIMIT 50", args.status) if args.status else                 db.q(q + " ORDER BY updated_ts DESC LIMIT 50")
             for r in rows:
                 out(f"{r['job_id']:<45} {r['status']:<9} try {r['attempts']} {r['lease_owner'] or ''} {r['error'] or ''}")
+            return 0
+        if args.cmd in ("shadow-start", "shadow-stop"):
+            if len(args.reason.strip()) < 10:
+                out("refused: a reason of at least 10 characters is required")
+                return 1
+            if args.cmd == "shadow-start" and lifecycle.state(db, args.exp) != "OBSERVATION":
+                out(f"refused: {args.exp} is not in OBSERVATION")
+                return 1
+            kind = "shadow.approved" if args.cmd == "shadow-start" else "shadow.stopped"
+            db.event(kind, human(), args.exp, {"reason": args.reason, "simulated": True})
+            out(f"{args.exp}: {kind} (simulated shadow ledger SHADOW_{args.exp}; no effect on the formal tests)")
             return 0
         if args.cmd in ("approve-template", "confirm-template", "revoke-template"):
             from lab import templates
