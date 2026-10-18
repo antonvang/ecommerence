@@ -38,8 +38,11 @@ def _get_pool():
     global _pool
     with _pool_lock:
         if _pool is None:
+            import multiprocessing
             from concurrent.futures import ProcessPoolExecutor
-            _pool = ProcessPoolExecutor(max_workers=HEAVY_SLOTS)
+            # spawn everywhere: a forked child would inherit the parent's SQLite connections and POSIX file locks
+            # (database is locked, risk of corruption). Windows always spawns; Linux defaults to fork.
+            _pool = ProcessPoolExecutor(max_workers=HEAVY_SLOTS, mp_context=multiprocessing.get_context("spawn"))
         return _pool
 
 

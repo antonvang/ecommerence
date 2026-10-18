@@ -304,6 +304,17 @@ class LinuxRam(unittest.TestCase):
             self.assertIsNone(control._ram_linux(os.path.join(d, "missing")))
 
 
+class WorkerProcesses(unittest.TestCase):
+    def test_heavy_steps_spawn_fresh_processes_on_every_platform(self):
+        """A forked child would inherit SQLite connections and POSIX locks (Linux default); spawn never does."""
+        with mock.patch.object(fleet, "_pool", None):
+            pool = fleet._get_pool()
+            try:
+                self.assertEqual(pool._mp_context.get_start_method(), "spawn")
+            finally:
+                pool.shutdown()
+
+
 class ExportDb(unittest.TestCase):
     def test_export_refuses_while_running_and_copies_a_verified_chain(self):
         from lab.__main__ import main
