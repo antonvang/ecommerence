@@ -288,3 +288,26 @@ udelukkende på de registrerede resultater af de eksisterende gates.
    - Skyggehandel kan ikke ændre status eller udløse godkendelse.
    - MVRV er fortsat i OBSERVATION og venter på observationstesten.
 9. **Ingen rigtige penge, ingen gearing, ingen broker.**
+
+### Ændring 4a (2026-10-18): præciseringer fra produktionsaudit — strammere, ingen tærskel ændret, før kode
+
+Audit af alle veje til en ordre viste, at verifikationen kun lå i paper-runneren. Disse regler gør den bindende overalt:
+
+1. **Én gate for ny eksponering.** Motorens fælles risiko-gate (`Risk.entry_allowed`, som hver simuleret ordre
+   passerer, også ved direkte motor-kald) kræver for ikke-reducerende ordrer: verificerbar godkendelse
+   (`promotion.trading_authorized`) og supervisor-puls inden for 30 s. Det gælder også skyggekonti (puls-delen).
+   Reducerende ordrer kræver ingen af delene, så lukning altid er mulig.
+2. **Verificerbar godkendelse.**
+   - **Menneskelig:** overgangen citerer en `approval_id`; godkendelsen findes for samme eksperiment og samme
+     målstatus, og der findes præcis én `approval.used` for den, skrevet af samme aktør som overgangen.
+   - **Automatisk:** overgangen er fra VALIDATED, citerer en tilladt `promotion.decision` for samme eksperiment,
+     samme fra- og til-status og samme spec-version og -fingeraftryk. Beslutningen er brugt præcis én gang
+     (`promotion.used`), og det citerede resultat er dette eksperiments slut-test-PASS.
+   - En beslutning kan kun bruges inden for 60 s og kun én gang. Den kan ikke genbruges til et andet skridt eller
+     eksperiment.
+3. **Udløb.** En automatisk godkendelse giver kun ny eksponering, mens politikken stadig er slået til. Slås
+   `autopromote` fra, holdes og opgøres positionerne og kan reduceres, men der åbnes ingen nye.
+4. **Kun PROTOCOL v3.** Den automatiske vej gælder kun eksperimenter registreret under PROTOCOL v3 (hvor ændring 4
+   står). Ældre protokoller venter på menneskelig godkendelse som før.
+5. **PASS præciseret.** SCREEN_PASSED → VALIDATION kræver, at seneste resultat er netop `PASS (screen)` eller
+   `PASS (forward test)`.
