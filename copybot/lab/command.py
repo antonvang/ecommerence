@@ -436,7 +436,7 @@ def short_reason(reason):
 
 def feed(db, limit=40):
     kinds = ("candidate.discovered", "lifecycle.transition", "batch.registered", "template.approved", "paper.order",
-             "job.failed", "system.running", "system.stopped", "system.paused", "system.resumed",
+             "job.failed", "system.running", "system.stopped", "system.stop_forced", "system.paused", "system.resumed",
              "system.resource_hold", "risk.event", "agent.error", "agent.recovered", "external.stale",
              "external.recovered")
     rows = db.q(f"SELECT id, ts, kind, actor, exp_id, payload FROM events WHERE kind IN ({','.join('?' * len(kinds))}) "
@@ -471,6 +471,8 @@ def feed(db, limit=40):
             e.update(tag="START", text=f"Flåden startet ({len(p.get('workers', []))} agenter)")
         elif k == "system.stopped":
             e.update(tag="STOP", text="Flåden stoppet")
+        elif k == "system.stop_forced":
+            e.update(tag="STOP", text=f"Flåden stoppet med magt ({p.get('signal')}): den svarede ikke")
         elif k == "system.paused":
             e.update(tag="PAUSE", text=f"Flåden sat på pause: {p.get('reason', '')}")
         elif k == "system.resumed":

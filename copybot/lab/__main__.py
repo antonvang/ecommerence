@@ -72,6 +72,8 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
     fl = sub.add_parser("fleet"); fl.add_argument("--duration", type=float)
     for c in ("pause", "resume", "stop"):
         sub.add_parser(c).add_argument("--reason", required=True)
+    sub.choices["stop"].add_argument("--force", action="store_true",
+                                     help="end a fleet that does not respond (SIGTERM, SIGKILL after 20 s)")
     jb = sub.add_parser("jobs"); jb.add_argument("--status")
     at = sub.add_parser("approve-template"); at.add_argument("template"); at.add_argument("--reason", required=True)
     ct = sub.add_parser("confirm-template"); ct.add_argument("code")
@@ -116,9 +118,12 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
             return 3
     db = DB(db_path)
     try:
-        if args.cmd in ("pause", "resume", "stop"):
+        if args.cmd == "stop":
             from lab import control
-            fn = {"pause": control.pause, "resume": control.resume, "stop": control.request_stop}[args.cmd]
+            return control.stop(db, human(), args.reason, force=args.force, out=out)
+        if args.cmd in ("pause", "resume"):
+            from lab import control
+            fn = {"pause": control.pause, "resume": control.resume}[args.cmd]
             out(f"{args.cmd}: {'recorded' if fn(db, human(), args.reason) else 'already in that state (no-op)'}")
             return 0
         if args.cmd == "export-db":                 # hand the lab over to another machine (research/LINUX_FLYT.md)

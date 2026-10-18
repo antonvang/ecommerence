@@ -14,6 +14,14 @@ afprøvet på denne maskine.
 | Uafhængig vagt | `setsid nohup ./START_WATCH.sh >> data/lab/watch.log 2>&1 < /dev/null &` | `kill <pid>` |
 
 - Alle tre nægter at starte en ekstra kopi (lås i `data/`).
+- **Frossen eller hængt flåde.** `lab stop` venter ikke på den. Holder flåden databasens skrivelås, eller er dens
+  heartbeat over 30 s gammelt, melder `lab stop` det straks med pid og procestilstand (exit 3).
+  - `python3 -m lab stop --force --reason "..."` afslutter den: først SIGTERM og SIGCONT, så den lukker pænt ned og
+    skriver `system.stopped`, og først SIGKILL efter 20 s (også dens jobprocesser). Hændelsen `system.stop_forced`
+    skrives bagefter.
+  - Målt 2026-10-18 i en isoleret database: en frossen supervisor meldt på 0 s; `--force` stoppede den pænt på 1 s
+    (exit 0).
+  - Ved SIGKILL skriver START_LAB.sh "STOPPEDE UVENTET", og dashboardet kører videre.
 - Kontrollér en start med `pgrep -af "research.pm_lp|lab (fleet|web|watch)"`. Kontrollér også, at
   `data/lab/watch_status.json` får nyt tidsstempel hvert halve minut.
 - Status nu: `python3 -m lab watch --once` (exit 0 = alt kører) og `python3 -m lab health`.

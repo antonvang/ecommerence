@@ -14,6 +14,7 @@ import json
 import math
 import os
 import secrets
+import sqlite3
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -372,7 +373,14 @@ class Handler(BaseHTTPRequestHandler):
                 if len(body.get("reason", "")) < 10:
                     return self._send(400, {"error": "a reason of at least 10 characters is required"})
                 fn = {"pause": control.pause, "resume": control.resume, "stop": control.request_stop}[act]
-                changed = fn(db, actor, body["reason"])
+                db.con.execute(f"PRAGMA busy_timeout={control.STOP_LOCK_WAIT_S * 1000}")
+                try:
+                    changed = fn(db, actor, body["reason"])
+                except sqlite3.OperationalError as e:      # a frozen fleet holds the write lock
+                    if "locked" not in str(e):
+                        raise
+                    return self._send(503, {"error": "the database is locked: the fleet does not respond. End it "
+                                                     "with: python3 -m lab stop --force --reason \"...\""})
                 return self._send(200, {"action": act, "changed": changed, "control": control.state(db)})
             if p in ("/api/control/approve-template", "/api/control/confirm-template"):
                 from lab import templates

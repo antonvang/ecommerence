@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import importlib
 import os
+import signal
 import threading
 import time
 
@@ -222,6 +223,9 @@ class Supervisor:
         os.makedirs(os.path.dirname(os.path.abspath(self.db_path)), exist_ok=True)
         lock = acquire_lock(os.path.join(os.path.dirname(os.path.abspath(self.db_path)), "lab.lock"))
         self.db = DB(self.db_path)
+        prev_term = None
+        if threading.current_thread() is threading.main_thread():     # SIGTERM (lab stop --force): graceful stop
+            prev_term = signal.signal(signal.SIGTERM, lambda *_: self.stop.set())
         try:
             ok, report = recover(self.db, Risk(self.db, self.now), now=self.now, check_evidence=self.check_evidence)
             self.log(f"startup recovery: {'ok' if ok else 'FAILED (FAIL_CLOSED)'} {report}")
@@ -256,3 +260,5 @@ class Supervisor:
             ops.log_json("supervisor", "stopped", self.log_dir, pid=os.getpid())
             self.db.close()
             release_lock(lock)
+            if prev_term is not None:
+                signal.signal(signal.SIGTERM, prev_term)
