@@ -194,3 +194,33 @@ This is an engineering fix only; no methodology changed.
   - one failed step no longer stops the loop (gaps count against D1);
   - a restart on the same day resumes that day's panel instead of selecting again.
 - No study-day data existed. D0 (2026-10-17) is unchanged.
+
+## Amendment 3 (2026-10-18 ~11:10 UTC, development period day 2): move to Linux; restart keeps D0
+
+This is an engineering fix only. No methodology, panel rule, seed, window or gate changes.
+
+- **What happened.** The Windows collector stopped at 2026-10-18 10:15:10 UTC (the PC restarted). An earlier gap on
+  the same day, 04:37–06:39 UTC, was a pause, not a restart (no restart line in the log). Windows has no autostart
+  for the collector, so it did not come back.
+- **Defect found before restarting.** `collect` set D0 to "tomorrow" on every start and passed that to the loop, while
+  `meta` kept the original D0. A restart on 2026-10-18 would have run with D0 = 2026-10-19. From the next midnight on it
+  would have selected the panel with the wrong seed (`20261017 + 0` instead of `+ 2`) and shifted every period by two
+  days. It never happened: the collector was not restarted after D0.
+- **The fix:**
+  - `collect` uses the D0 stored in `meta`. Only the very first start sets it.
+  - It refuses to start if a committed `PM_LP_START.md` gives a different D0.
+  - A single-instance lock (`data/research/pm_lp/collector.lock`) refuses a second collector.
+  - Every start is recorded in a new `runs` table (time, host, pid, D0, git commit).
+- **Host.** From now on the collector runs only on the Linux PC. Windows is used for editing code only.
+  - The Windows database was copied with SQLite's backup function while no collector was running. Row counts were
+    checked on both sides.
+  - On Linux the machine is kept from sleeping while the collector runs (`systemd-inhibit`, like `keepawake.ps1`
+    on Windows). No settings are changed.
+- **Missed data is not recovered.**
+  - Order books cannot be fetched for past minutes, so the gaps stay gaps.
+  - Trades are not back-filled. A trade without a valid snapshot (≤ 180 s old) never fills under §4 anyway.
+  - The gaps lower the development-period snapshot coverage, which is reported with `dev`.
+  - They do not touch the validation or holdout periods (2026-10-24 → 2026-11-13) or gate D1, which is computed on
+    the holdout.
+- **Schedule unchanged.** D0 = 2026-10-17; development to 10-23, validation to 10-30, holdout 10-31 → 11-13, resolution
+  tracking to 11-27.
