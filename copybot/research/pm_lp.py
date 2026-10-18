@@ -14,6 +14,7 @@ import json
 import math
 import os
 import random
+import socket
 import sqlite3
 import statistics
 import subprocess
@@ -359,6 +360,7 @@ CREATE INDEX IF NOT EXISTS trades_cid_t ON trades(cid, t);
 CREATE TABLE IF NOT EXISTS status(t INTEGER, cid TEXT, closed INTEGER, accepting INTEGER, payout REAL);
 CREATE TABLE IF NOT EXISTS polls(t INTEGER, kind TEXT, cid TEXT, ok INTEGER);
 CREATE TABLE IF NOT EXISTS reward_payouts(wallet TEXT, t INTEGER, size REAL, tx TEXT, PRIMARY KEY(wallet, tx, t));
+CREATE TABLE IF NOT EXISTS runs(t INTEGER, host TEXT, pid INTEGER, d0 INTEGER, git TEXT);
 """
 
 
@@ -659,6 +661,38 @@ def export_manifest(db_path=DB):
     return h.hexdigest()
 
 
+def collect(path=None, run=True, log=print):
+    """Start (or resume) collection. D0 is set once and then always read back (amendment 3): a restart never moves
+    the schedule. One collector at a time; every start is recorded in `runs`."""
+    from lab.supervisor import AlreadyRunning, acquire_lock, release_lock
+    path = path or DB
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    try:
+        lock = acquire_lock(os.path.join(os.path.dirname(path), "collector.lock"))
+    except AlreadyRunning:
+        raise SystemExit("en anden pm_lp-indsamler kører allerede (collector.lock): ingen ny startet") from None
+    try:
+        db = open_db(path)
+        row = db.execute("SELECT v FROM meta WHERE k='D0'").fetchone()
+        d0 = int(row[0]) if row else day_of(time.time()) + 1
+        committed = start_day() if path == DB else None
+        if committed is not None and committed != d0:
+            raise SystemExit(f"D0 i databasen ({d0}) passer ikke med research/PM_LP_START.md ({committed}): stoppet")
+        if row is None:
+            db.execute("INSERT INTO meta VALUES('D0', ?)", (str(d0),))
+        db.execute("INSERT INTO runs VALUES(?,?,?,?,?)", (int(time.time()), socket.gethostname(), os.getpid(), d0,
+                                                          git_head()))
+        db.commit()
+        day0 = datetime.fromtimestamp(d0 * DAY, timezone.utc).strftime("%Y-%m-%d")
+        log(f"start {datetime.now(timezone.utc).isoformat(timespec='seconds')} på {socket.gethostname()}: D0 = {day0}"
+            + ("" if row else " (ny; commit research/PM_LP_START.md med denne dato)"))
+        if run:
+            Collector(db, log=log).run(d0)
+        return d0
+    finally:
+        release_lock(lock)
+
+
 def main():
     args = sys.argv[1:]
     cmd = args[0] if args else ""
@@ -667,12 +701,7 @@ def main():
     if cmd == "collect":
         if "--approved" not in args:
             raise SystemExit("Indsamlingen kræver brugerens godkendelse: kør med --approved når den er givet.")
-        d0 = day_of(time.time()) + 1
-        open_db().execute("INSERT OR IGNORE INTO meta VALUES('D0', ?)", (str(d0),)).connection.commit()
-        print("D0 =", datetime.fromtimestamp(d0 * DAY, timezone.utc).strftime("%Y-%m-%d"),
-              "- commit research/PM_LP_START.md med denne dato")
-        Collector(open_db()).run(d0)
-        return
+        return collect()
     d0 = start_day()
     if d0 is None:
         raise SystemExit("research/PM_LP_START.md (D0) skal være committet")

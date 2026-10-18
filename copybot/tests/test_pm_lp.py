@@ -137,6 +137,8 @@ class Statistics(unittest.TestCase):
         self.assertEqual(verdict(g, 0.5, -0.1), "FAIL")
         g2 = gates(s, ok, ok, {"total_net": -1.0}, 100, True, True)
         self.assertEqual(verdict(g2, 0.5, 0.2), "INSUFFICIENT")
+        g3 = gates(s, ok, ok, ok, 100, False, True)                   # coverage gate D1 failed (missing data)
+        self.assertEqual(verdict(g3, 0.5, 0.2), "INSUFFICIENT")
 
 
 class PanelAndSeal(unittest.TestCase):
@@ -162,6 +164,67 @@ class PanelAndSeal(unittest.TestCase):
                 pm_lp.main()
         finally:
             sys.argv = argv
+
+    def test_restart_keeps_the_stored_d0_and_records_the_run(self):
+        # amendment 3: a restart days after D0 must not move the schedule
+        from unittest import mock
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "pm_lp.db")
+            db = pm_lp.open_db(path)
+            db.execute("INSERT INTO meta VALUES('D0', ?)", (str(D),))
+            db.commit()
+            db.close()
+            with mock.patch.object(pm_lp, "DB", path), mock.patch.object(pm_lp, "start_day", lambda: D),                     mock.patch.object(pm_lp.time, "time", lambda: (D + 2) * DAY + 3600):
+                self.assertEqual(pm_lp.collect(run=False, log=lambda *a: None), D)
+            db = sqlite3.connect(path)
+            self.assertEqual(db.execute("SELECT v FROM meta WHERE k='D0'").fetchone()[0], str(D))
+            self.assertEqual(db.execute("SELECT d0 FROM runs").fetchall(), [(D,)])
+            db.close()
+
+    def test_restart_refuses_a_d0_that_differs_from_the_committed_start(self):
+        from unittest import mock
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "pm_lp.db")
+            db = pm_lp.open_db(path)
+            db.execute("INSERT INTO meta VALUES('D0', ?)", (str(D),))
+            db.commit()
+            db.close()
+            with mock.patch.object(pm_lp, "DB", path), mock.patch.object(pm_lp, "start_day", lambda: D + 2):
+                with self.assertRaises(SystemExit):
+                    pm_lp.collect(run=False, log=lambda *a: None)
+            self.assertEqual(sqlite3.connect(path).execute("SELECT COUNT(*) FROM runs").fetchone()[0], 0)
+
+    def test_first_start_sets_d0_to_tomorrow(self):
+        from unittest import mock
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "pm_lp.db")
+            with mock.patch.object(pm_lp.time, "time", lambda: D * DAY + 100):
+                self.assertEqual(pm_lp.collect(path, run=False, log=lambda *a: None), D + 1)
+
+    def test_a_second_collector_is_refused(self):
+        from lab.supervisor import acquire_lock, release_lock
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "pm_lp.db")
+            lock = acquire_lock(os.path.join(tmp, "collector.lock"))
+            try:
+                with self.assertRaises(SystemExit):
+                    pm_lp.collect(path, run=False, log=lambda *a: None)
+            finally:
+                release_lock(lock)
+            self.assertEqual(pm_lp.collect(path, run=False, log=lambda *a: None), pm_lp.day_of(pm_lp.time.time()) + 1)
+
+    def test_missing_snapshots_fail_coverage_and_block_a_pass(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            db = pm_lp.open_db(os.path.join(tmp, "c.db"))
+            db.executemany("INSERT INTO panel VALUES(?,?)", [(D, "a")])
+            db.executemany("INSERT INTO snaps VALUES(?,?,?,?,?,?,?,?,?,?)",
+                           [(D * DAY + 60 * i, "a", 0.49, 0.51, 0, 0, 0.04, 20, 14.4, 0.01) for i in range(1200)])
+            db.execute("INSERT INTO polls VALUES(?, 'trades', 'a', 1)", (D * DAY + 10,))
+            db.commit()
+            cov = pm_lp.coverage(db, D, D)
+            self.assertAlmostEqual(cov["snapshot_coverage"], 1200 / 1440)
+            self.assertFalse(cov["ok"])                                # 83 % < 90 %: gate D1 fails
+            db.close()
 
     def test_db_usable_from_worker_threads_and_panel_resumes(self):
         # regression 16.10: indsamleren døde, fordi SQLite-forbindelsen blev brugt fra trade-trådene
