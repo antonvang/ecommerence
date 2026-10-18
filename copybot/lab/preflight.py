@@ -31,6 +31,17 @@ def _port_free(port):
         s.close()
 
 
+def dashboard_running(port, timeout=3):
+    """True if this lab's dashboard answers on the port (so a new start reuses it instead of failing)."""
+    import json
+    import urllib.request
+    try:
+        with urllib.request.urlopen(f"http://127.0.0.1:{port}/api/kpis", timeout=timeout) as r:
+            return "supervisor" in json.loads(r.read())
+    except Exception:
+        return False
+
+
 def checks(db_path, port=8770):
     out = []
     add = lambda name, ok, detail="": out.append((name, bool(ok), detail))  # noqa: E731
@@ -44,7 +55,12 @@ def checks(db_path, port=8770):
         add("no other lab running", True)
     except AlreadyRunning:
         add("no other lab running", False, "a supervisor already holds lab.lock: the lab is running")
-    add("dashboard port free", _port_free(port), f"127.0.0.1:{port}")
+    if _port_free(port):
+        add("dashboard port free", True, f"127.0.0.1:{port}")
+    else:
+        reuse = dashboard_running(port)
+        add("dashboard port free", reuse, f"127.0.0.1:{port} " + ("held by this lab's dashboard (reused)" if reuse
+                                                                  else "held by another program"))
     db = DB(db_path)
     try:
         chains, triggers = db.verify()

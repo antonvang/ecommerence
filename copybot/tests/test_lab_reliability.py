@@ -281,7 +281,56 @@ class StaleHeartbeat(Tmp):
             hold.set()
 
 
+class ExternalWatch(Tmp):
+    def test_collector_outage_is_logged_once_and_recovery_too(self):
+        from lab import ops
+        from lab.mission import EXTERNAL_RUNNING_S
+        ages = {"X01_pm_lp_v1": 30.0, "X02_copybot_paper": None}
+
+        def fresh(now=None):
+            return {k: {"label": k, "last_write_age_s": v, "basis": "t"} for k, v in ages.items()}
+        kinds = lambda: [r[0] for r in self.db.q(  # noqa: E731
+            "SELECT kind FROM events WHERE kind LIKE 'external.%' ORDER BY id")]
+        with mock.patch.object(ops, "external_freshness", fresh):
+            self.assertEqual(fleet.external_watch(self.db), [])
+            ages["X01_pm_lp_v1"] = EXTERNAL_RUNNING_S + 60                  # collector stopped writing
+            for _ in range(3):
+                self.assertEqual(fleet.external_watch(self.db), ["X01_pm_lp_v1"])
+            self.assertEqual(kinds(), ["external.stale"])
+            ages["X01_pm_lp_v1"] = 20.0
+            fleet.external_watch(self.db)
+            fleet.external_watch(self.db)
+            self.assertEqual(kinds(), ["external.stale", "external.recovered"])
+        self.assertNotIn("X02_copybot_paper", json.dumps([r[0] for r in self.db.q("SELECT exp_id FROM events")]))
+        texts = [x["text"] for x in command.feed(self.db)["items"]]
+        self.assertTrue(any("skriver data igen" in t for t in texts), texts)
+        self.assertTrue(any("ikke skrevet data" in t for t in texts), texts)
+
+
 class DashboardPort(unittest.TestCase):
+    def test_preflight_reuses_this_labs_running_dashboard(self):
+        import threading
+        from lab import preflight, web
+        tmp = tempfile.mkdtemp(prefix="labreuse")
+        try:
+            path = os.path.join(tmp, "lab.db")
+            DB(path).close()
+            a = web.LabServer(("127.0.0.1", 0), path)
+            port = a.server_address[1]
+            threading.Thread(target=a.serve_forever, daemon=True).start()
+            try:
+                self.assertTrue(preflight.dashboard_running(port))
+                with mock.patch("lab.engine.data.CACHE", tmp):
+                    r = {n: (ok, d) for n, ok, d in preflight.checks(path, port)}
+                self.assertTrue(r["dashboard port free"][0], r["dashboard port free"])
+                self.assertIn("reused", r["dashboard port free"][1])
+            finally:
+                a.shutdown()
+                a.server_close()
+            self.assertFalse(preflight.dashboard_running(port))
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
     def test_restart_rebinds_at_once_but_a_second_dashboard_is_refused(self):
         import threading
         import urllib.request

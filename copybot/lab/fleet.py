@@ -304,6 +304,29 @@ def strategy_pass(db):
             "holdouts_queued": pipeline.enqueue_holdouts(db)}
 
 
+def external_watch(db, now=None):
+    """External processes on this host (e.g. the pm_lp collector) that stopped writing: one hash-chained
+    external.stale event per outage and external.recovered when writes resume. Processes whose files are not on this
+    host are skipped. Nothing is restarted."""
+    from lab.mission import EXTERNAL_RUNNING_S
+    stale_now = []
+    for eid, x in ops.external_freshness(now).items():
+        age = x["last_write_age_s"]
+        if age is None:
+            continue
+        last = db.one("SELECT kind FROM events WHERE kind IN ('external.stale','external.recovered') AND exp_id=? "
+                      "ORDER BY id DESC LIMIT 1", eid)
+        was = bool(last and last["kind"] == "external.stale")
+        if age > EXTERNAL_RUNNING_S:
+            stale_now.append(eid)
+            if not was:
+                db.event("external.stale", "agent:risk-1", eid, {"label": x["label"], "last_write_age_s": round(age),
+                                                                 "threshold_s": EXTERNAL_RUNNING_S})
+        elif was:
+            db.event("external.recovered", "agent:risk-1", eid, {"label": x["label"], "last_write_age_s": round(age)})
+    return stale_now
+
+
 def risk_pass(db_path):
     def run(db):
         res = control.resources(os.path.dirname(os.path.abspath(db_path)))
@@ -318,7 +341,8 @@ def risk_pass(db_path):
         if problems and not Risk(db).fail_closed():
             Risk(db).trip_fail_closed("reconciliation", json.dumps(problems)[:500])
         return {"resources_ok": res["ok"], "ram_free_gb": round(((res["ram"] or {}).get("free") or 0) / 1e9, 2),
-                "disk_free_gb": round(res["disk"]["free"] / 1e9, 1), "reconciliation_problems": len(problems)}
+                "disk_free_gb": round(res["disk"]["free"] / 1e9, 1), "reconciliation_problems": len(problems),
+                "external_stale": external_watch(db)}
     return run
 
 

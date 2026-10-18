@@ -437,7 +437,8 @@ def short_reason(reason):
 def feed(db, limit=40):
     kinds = ("candidate.discovered", "lifecycle.transition", "batch.registered", "template.approved", "paper.order",
              "job.failed", "system.running", "system.stopped", "system.paused", "system.resumed",
-             "system.resource_hold", "risk.event")
+             "system.resource_hold", "risk.event", "agent.error", "agent.recovered", "external.stale",
+             "external.recovered")
     rows = db.q(f"SELECT id, ts, kind, actor, exp_id, payload FROM events WHERE kind IN ({','.join('?' * len(kinds))}) "
                 f"ORDER BY id DESC LIMIT ?", *kinds, int(limit))
     out = []
@@ -476,6 +477,16 @@ def feed(db, limit=40):
             e.update(tag="START", text="Flåden genoptaget")
         elif k == "system.resource_hold":
             e.update(tag="RESSOURCER", text="Lav RAM eller disk: nye jobs holdes tilbage")
+        elif k == "agent.error":
+            e.update(tag="FEJL", text=f"Agenten {p.get('agent')} fejler — markeret rød, indtil den virker igen",
+                     detail=str(p.get("error", "")))
+        elif k == "agent.recovered":
+            e.update(tag="OK", text=f"Agenten {p.get('agent')} virker igen")
+        elif k == "external.stale":
+            e.update(tag="FEJL", text=f"{p.get('label')} har ikke skrevet data i {int(p.get('last_write_age_s', 0)) // 60} "
+                                      f"min — tjek at den kører", detail=r["exp_id"])
+        elif k == "external.recovered":
+            e.update(tag="OK", text=f"{p.get('label')} skriver data igen")
         else:
             e.update(tag=k.upper(), text=k)
         out.append(e)

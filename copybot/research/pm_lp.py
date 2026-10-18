@@ -332,6 +332,33 @@ def frozen():
 
 
 # ---------- netværk ----------
+DNS_TTL = 300
+_dns, _real_getaddrinfo = {}, socket.getaddrinfo
+
+
+def _cached_getaddrinfo(host, port, *a, **k):
+    """Amendment 4: successful lookups are kept DNS_TTL seconds in this process (Linux has no local DNS cache and the
+    first resolver sometimes drops a query, costing a 5 s timeout). Failures are never kept."""
+    key = (host, port, a, tuple(sorted(k.items())))
+    hit = _dns.get(key)
+    now = time.monotonic()
+    if hit and now - hit[0] < DNS_TTL:
+        return hit[1]
+    res = _real_getaddrinfo(host, port, *a, **k)
+    _dns[key] = (now, res)
+    return res
+
+
+def install_dns_cache():
+    socket.getaddrinfo = _cached_getaddrinfo
+
+
+def forget_host(url):
+    host = urllib.parse.urlsplit(url).hostname
+    for key in [k for k in _dns if k[0] == host]:
+        _dns.pop(key, None)
+
+
 def http(url, body=None, tries=5):
     for i in range(tries):
         try:
@@ -340,6 +367,7 @@ def http(url, body=None, tries=5):
             with urllib.request.urlopen(req, timeout=30) as r:
                 return json.loads(r.read())
         except Exception:
+            forget_host(url)                      # a failed request never keeps a possibly stale address
             if i == tries - 1:
                 raise
             time.sleep(2 * (i + 1))
@@ -687,6 +715,7 @@ def collect(path=None, run=True, log=print):
         log(f"start {datetime.now(timezone.utc).isoformat(timespec='seconds')} på {socket.gethostname()}: D0 = {day0}"
             + ("" if row else " (ny; commit research/PM_LP_START.md med denne dato)"))
         if run:
+            install_dns_cache()
             Collector(db, log=log).run(d0)
         return d0
     finally:

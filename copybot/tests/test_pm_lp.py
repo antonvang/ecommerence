@@ -226,6 +226,33 @@ class PanelAndSeal(unittest.TestCase):
             self.assertFalse(cov["ok"])                                # 83 % < 90 %: gate D1 fails
             db.close()
 
+    def test_dns_cache_keeps_successes_for_the_ttl_and_never_failures(self):
+        from unittest import mock
+        calls = []
+
+        def resolver(host, port, *a, **k):
+            calls.append(host)
+            if host == "bad.example":
+                raise OSError("temporary failure")
+            return [("addr", host)]
+        clock = {"t": 1000.0}
+        pm_lp._dns.clear()
+        with mock.patch.object(pm_lp, "_real_getaddrinfo", resolver),                 mock.patch.object(pm_lp.time, "monotonic", lambda: clock["t"]):
+            for _ in range(5):
+                self.assertEqual(pm_lp._cached_getaddrinfo("clob.example", 443), [("addr", "clob.example")])
+            self.assertEqual(calls.count("clob.example"), 1)                 # one lookup for many calls
+            clock["t"] += pm_lp.DNS_TTL + 1
+            pm_lp._cached_getaddrinfo("clob.example", 443)
+            self.assertEqual(calls.count("clob.example"), 2)                 # expired after the TTL
+            for _ in range(2):
+                with self.assertRaises(OSError):
+                    pm_lp._cached_getaddrinfo("bad.example", 443)
+            self.assertEqual(calls.count("bad.example"), 2)                  # failures are not cached
+            pm_lp.forget_host("https://clob.example/books")
+            pm_lp._cached_getaddrinfo("clob.example", 443)
+            self.assertEqual(calls.count("clob.example"), 3)                 # a failed request clears its host
+        pm_lp._dns.clear()
+
     def test_db_usable_from_worker_threads_and_panel_resumes(self):
         # regression 16.10: indsamleren døde, fordi SQLite-forbindelsen blev brugt fra trade-trådene
         import threading
