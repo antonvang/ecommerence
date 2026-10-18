@@ -380,3 +380,92 @@ Baggrund: en isoleret verifikation af stopkoden (2026-10-18) viste fem driftsfej
 5. **Et trial er én testet variant.** Køres et cost-trin igen, skrives der ingen ekstra trials-række for en variant,
    der allerede er registreret for samme eksperiment og split. Antallet af trials i DSR er dermed antallet af testede
    varianter. Ingen tidligere række ændres eller fjernes.
+
+## Ændring 7 (2026-10-18): fremadtest på papir, pauseregler for simulerede konti og holdout som ét filsæt — før kode
+
+Baggrund: brugeren besluttede 2026-10-18 i sessionen:
+- fremadtest-konti for de frosne strategier, der kan handles live i dag, startet nu;
+- skyggekonti følger pausereglerne i ændring 3 §2, plus en menneskelig genoptag-kommando;
+- holdout-fejlen rettes som en dokumenteret fejlrettelse.
+
+Ingen gate for de formelle tests lempes, ingen tærskel ændres, og ingen registreret afgørelse ændres.
+
+1. **Pauseregler for simulerede konti** (`SHADOW_<eksperiment>` fra ændring 3 og `FWD_<eksperiment>` herunder).
+   - Kun drawdown (10 %), data og spread pauser en simuleret konto, som ændring 3 §2 siger. Reglen "2 tab i træk"
+     gælder ikke for disse konti. For godkendt papirhandel gælder alle regler uændret.
+   - Under pause åbnes intet nyt. Positionerne beholdes og opgøres hver time (ændring 4 §7).
+   - Kun et menneske kan genoptage en pauset simuleret konto: `python3 -m lab sim-resume <konto> --reason "..."`
+     skriver en CLEAR-hændelse med actor `human:`. Ingen agent kan genoptage.
+
+2. **Fremadtest-konti.**
+   - Mekanisk optagelsesregel: hver frosne variant, som paper-runneren i dag kan beregne på live Binance- og
+     CoinMetrics-data, undtagen eksperimenter i OBSERVATION (de har deres egen skyggekonto og fremadtest) og eksakte
+     dubletter (samme skabelon og parametre; den først registrerede beholdes). Det giver 10 konti:
+
+     | Eksperiment | Skabelon | Frosne parametre | SHA-256 cost.json | SHA-256 backtest.json |
+     |---|---|---|---|---|
+     | E_vol_managed_long_p1 | vol_managed_long | lookback_days 7, target_vol 0.5 | 88c8bf0a73c503ce185b2f4e8a000720cfd7e132c7d5ad5feba260fe1dd4d1b6 | 04082bdbc350924a788b233a4c8e4091a99bb7b85c0d29b43fff0320a97c264a |
+     | E_day_of_week_p1 | day_of_week | mode flat_weekend | 0b3ed84fde00458af08be5240960740b3049f43a92241da07e82d504361274a8 | 511d5d9970b5dc90971b34821416c311f724284b98478aab2b513a7ae76e6df4 |
+     | E_hour_of_day_p1 | hour_of_day | k 3 (frosset fit) | 6eb4d899312eea97a8fa3505ba8cd1608464772bce8e239aa02914feab4da004 | ed151ff19a0ba3866566bd717acd7af9dff77fcc6e1c19a0beda4a7b741a89fa |
+     | E_funding_contrarian_p1 | funding_contrarian | q 0.95 | f713d01e6ed6025b5f027c462566ab2c7ef935386220988b697f8569303f33aa | 0061c8ca4bbb9c743a91737056fb3356e907c62495477bd6a5c75ac8bd90f9ef |
+     | E_daily_reversal_p1 | daily_reversal | z 2.0 | 290c89e69cc98ac74180c3929a5d0c2aba9586aad9b8a6688b56390215f54108 | bc10953b2feeed3f31a0f6cb259a1c6946adadce044ee7de85da7c2cb3c37c26 |
+     | E_xs_momentum_p2 | xs_momentum | k 2, lookback_days 7 | 9348a84f7ac1cc60c634c284c3c9be7b97051f88134b371627ab33eae667a281 | 5d8ebbedd5607100952c1891208ac176ea07b20c331f877674571d80a812e572 |
+     | E_xs_max_lottery_p2 | xs_max_lottery | k 2, window_days 28 | 5c3c4c7d16d85fb5af8d83f5077e531babbca23d5813b2780c5fa07c4c8f2087 | 713c7f656e5552bddb3b7ef242124fe8ea3a215656554e6374e491462781f9c0 |
+     | E_xs_low_volatility_p2 | xs_low_volatility | k 2, lookback_days 28 | ec4bb4bb6d965661b155bf87c864e490336d26586661476e0e737a8d5bd897ab | 17c9ae82f6bc75710fe26a63cf652ea9b209d75ba8f159c82e83cf3aab2134d7 |
+     | E_xs_betting_against_beta_p2 | xs_betting_against_beta | k 2, lookback_days 28 | 1b85e44a0122af7e50c1ae45e2ad190d81c119efa77a41575b294ab217a9398a | 503857c886a128eb0171595bfbe1f31bcb3ff3d963c6aea861c0480082c58fb0 |
+     | E_supply_dilution_p3 | supply_dilution | k 3, lookback_days 30 | b28aed4201d32acabb72b94398cf37126926854061b31d161d144513d57fa886 | 2b8c44767ce1a3169288438d00c56f4778673062c7519e98645a73f922d0212a |
+
+     Udeladt: E_mvrv_value_p3 (OBSERVATION) og E_vol_managed_long_p2 (samme skabelon og parametre som _p1). Ikke
+     beregnelige i dag: skabeloner uden live-kilde (ændring 3 §4 og PROTOCOL_V3 afsnit 7), skabeloner med EOSUSDT
+     (afnoteret) og skabeloner med længere historik end 1000 timebars.
+   - Kun et menneske starter og stopper: `python3 -m lab forward-start --reason "..."` skriver `forward.approved`
+     (actor `human:`) for hver konto på listen; `forward-stop` skriver `forward.stopped`, og positionerne lukkes med
+     reducerende ordrer. En konto handler kun, hvis artefakternes registrerede SHA-256 stadig er dem i tabellen.
+   - Hver konto er simuleret med 10.000 USD i samme motor, med samme omkostninger, frosne variant og univers som
+     skyggekontoen. Ingen rigtige penge og ingen ordrer til en børs.
+   - Visning: mærket "FREMADTEST (simuleret, ikke godkendt, ekskl. funding)" i dashboardets eksisterende papir- og
+     saldodele. Kontiene holdes uden for overskriftens saldo og P&L og tælles aldrig som godkendt strategi. Live-P&L
+     er uden funding.
+
+3. **Ingen virkning på de formelle tests.**
+   - Ingen rækker i results, trials, transitions, alpha_ledger, approvals eller experiments, og ingen
+     `observation.started`. `promotion.decide` læser dem aldrig.
+   - Afviste og SUPPRESSED eksperimenter forbliver afviste; intet genoplives.
+   - Fremadtesten indgår ikke i kohorten `fwd202611`, så MVRV's N forbliver 1.
+
+4. **Data.**
+   - Live-signalet må læse de seneste 1h-bars (højst 1000), afregnet funding, en ordrebog med 20 niveauer og
+     CoinMetrics' seneste 120 dage. Det gælder kun livekontoens signal, aldrig en evaluering (som ændring 3 §4).
+   - Live-tal må ikke bruges til nogen beslutning om et eksperiment.
+
+5. **Evaluering** (reglerne ligger fast nu; den kører i 2027).
+   - Vindue: 2026-11-01 00:00 UTC til 2027-04-30 23:59 UTC (6 hele kalendermåneder).
+   - Den frosne regel genberegnes på arkivdata fra samme kilder som backtesten, tidligst 7 dage efter vinduet og
+     inklusive funding (som `step_observe`). De live papirkonti er aldrig evalueringsgrundlag.
+   - Krav som ændring 2 punkt 4: netto-gennemsnit pr. dag > 0; ensidet 90 % nedre grænse > 0 (5-dages blokke, 2.000
+     træk, seed 7); netto-Sharpe over lige-vægtet købe-og-holde af samme univers; netto total > 0 ved dobbelte
+     omkostninger; datakvalitet; PSR ≥ 1 − 0,05/N med N = 10, fastlagt nu.
+   - Et symbol, der ikke handles 2026-11-01, udelukkes, og vægten fordeles på resten, hvis mindst `min_symbols` er
+     tilbage; ellers giver kontoen "ingen afgørelse". Afnoteres et symbol i vinduet, udelukkes det fra dagen efter.
+   - Ingen aflæsning før vinduet er slut.
+   - Udfaldet registreres som hændelsen `forward.result` og en artefakt under `artifacts/_diagnostic/`, aldrig som en
+     results-række. En PASS er kun evidens: et menneske kan registrere et nyt, forbundet eksperiment, som skal
+     igennem alle eksisterende gates.
+   - Ærlig forventning: med N = 10 kræves en annualiseret Sharpe på cirka 3,7 over 6 måneder (uden fede haler).
+
+6. **Kobling.** En afstemningsfejl i en fremadtest-konto udløser FAIL_CLOSED som for enhver anden konto, og kontiene
+   tæller med i gaten "alle papirkonti afstemmer". Begge dele er strengere, ikke lempeligere.
+
+7. **Netværk.** Bars og funding hentes én gang i timen pr. symbol for alle konti. Ordrebogen hentes én gang pr.
+   kørsel pr. symbol for alle konti og igen lige før hver ordre. Flåden cacher DNS-opslag i 300 s. Kontiene dækker
+   højst 19 symboler.
+
+8. **Holdout som ét erklæret filsæt (fejlrettelse).**
+   - Fejlen: holdout-trinnet læser kursdata og ekstra kilder i separate læsninger, og gatewayen kræver, at senere
+     læsninger har samme filsæt som den første. En skabelon med ekstra kilder (fx MVRV med CoinMetrics) kan derfor
+     aldrig gennemføre sin holdout.
+   - Rettelsen: holdout-trinnet erklærer det komplette filsæt (alle kilder) i én åbning. Hver senere læsning i trinnet
+     eller i en kørsel med samme kode-hash skal være en delmængde af sættet med identiske SHA-256. Ingen fil uden for
+     sættet må læses.
+   - Holdout åbnes stadig kun én gang pr. eksperiment, og intet lempes. Ingen holdout er åbnet endnu, så intet
+     resultat ændres.
