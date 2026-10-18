@@ -739,3 +739,25 @@ Ingen gate lempes, ingen tærskel, intet vindue og ingen alfa ændres, og ingen 
    - Separate felter viser fremadtest-saldoen (startkapital, aktuel værdi, gevinst/tab) og en samlet simuleret oversigt
      (formel + fremadtest), tydeligt mærket som simuleret og ikke godkendt. Intet lægges ind i den formelle saldo, og
      intet tælles to gange.
+
+### Præcisering af ændring 9 (2026-10-19, før deploy)
+
+Ingen regel ændres. De faste tal og detaljer, som koden bruger, skrives her, før koden kører.
+
+- **Punkt 3, scan_digest.** Reglen gælder pr. detektor, metrik og instrument for det afsluttede UTC-døgn:
+  - INVESTIGATE, hvis serien er markeret i mindst 6 forskellige klokketimer i døgnet, og medianen af den markerede
+    |værdi| er mindst 4 gange omkostningsreferencen (taker-gebyr 0,05 % + halv spread 0,02 % + slippage 0,02 % =
+    0,09 %).
+  - Faktor 4, fordi en prisforskel kun kan høstes med to ben, der hver åbnes og lukkes: fire taker-handler.
+  - Kun prismetrikkerne `cross_venue_gap` og `perp_premium` har en omkostningsreference. Andre metrikker giver altid
+    NO_ACTION med begrundelsen "ingen omkostningsreference".
+  - Døgnet behandles tidligst kl. 00:30 UTC det følgende døgn. De seneste 7 afsluttede døgn med observationer får
+    hver ét job, så en flåde, der har stået stille, indhenter dem.
+- **Punkt 3, scan_dossier.** En nøgle, hvis instrument er en familie (fx alle mønter for `cross_venue_gap`), vurderes
+  pr. mønt. INVESTIGATE kræver, at mindst én mønt opfylder reglen alene. Samlede tal på tværs af mønter vises kun som
+  baggrund.
+- **Punkt 3, opfølgning.** Disse ikke-afgørende jobs tæller ikke som fremskridt i hypotese-pipelinen. Watcherens
+  besked om "intet research-arbejde" vurderes uden dem.
+- **Punkt 2, funding.** En afregning for en åben position, der er ældre end de hentede timebarer (cirka 41 dage), kan
+  ikke prissættes. Den registreres én gang som hændelsen `paper.funding_gap` og springes over; senere afregninger
+  bogføres som normalt. En afregning, hvor positionen var 0, bogføres ikke og blokerer intet.
