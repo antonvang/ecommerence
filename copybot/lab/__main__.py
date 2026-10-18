@@ -21,6 +21,8 @@
   python -m lab approve-template TEMPLATE --reason ".."  -> code;  python -m lab confirm-template CODE
   python -m lab revoke-template TEMPLATE --reason ".."
   python -m lab shadow-start EXP --reason ".." | shadow-stop EXP --reason ".."   (simulated shadow ledger, OBSERVATION only)
+  python -m lab forward-start --reason ".." | forward-stop [--exp EXP] --reason ".."   (amendment 7 forward tests)
+  python -m lab sim-resume LEDGER --reason ".."                          (resume a paused SHADOW_/FWD_ ledger)
   python -m lab autopromote on|off --reason ".."                         (automatic promotion policy, amendment 4)
 """
 from __future__ import annotations
@@ -81,6 +83,9 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
     ap_.add_argument("--reason", required=True)
     for c in ("shadow-start", "shadow-stop"):
         sp = sub.add_parser(c); sp.add_argument("exp"); sp.add_argument("--reason", required=True)
+    for c in ("forward-start", "forward-stop"):
+        fp = sub.add_parser(c); fp.add_argument("--exp"); fp.add_argument("--reason", required=True)
+    sr = sub.add_parser("sim-resume"); sr.add_argument("ledger"); sr.add_argument("--reason", required=True)
     rt = sub.add_parser("revoke-template"); rt.add_argument("template"); rt.add_argument("--reason", required=True)
     ex = sub.add_parser("export-db"); ex.add_argument("target")
     wt = sub.add_parser("watch"); wt.add_argument("--once", action="store_true")
@@ -175,6 +180,41 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
             kind = "shadow.approved" if args.cmd == "shadow-start" else "shadow.stopped"
             db.event(kind, human(), args.exp, {"reason": args.reason, "simulated": True})
             out(f"{args.exp}: {kind} (simulated shadow ledger SHADOW_{args.exp}; no effect on the formal tests)")
+            return 0
+        if args.cmd in ("forward-start", "forward-stop"):        # research/PROTOCOL_V3.md amendment 7
+            from lab import pipeline
+            from lab.paper import FORWARD_ACCOUNTS
+            if len(args.reason.strip()) < 10:
+                out("refused: a reason of at least 10 characters is required")
+                return 1
+            ids = [args.exp] if args.exp else list(FORWARD_ACCOUNTS)
+            unknown = [e for e in ids if e not in FORWARD_ACCOUNTS]
+            if unknown:
+                out(f"refused: not on the amendment 7 list: {', '.join(unknown)}")
+                return 1
+            kind = "forward.approved" if args.cmd == "forward-start" else "forward.stopped"
+            bad = [e for e in ids if kind == "forward.approved" and (
+                pipeline.recorded_sha(db, e, "cost"), pipeline.recorded_sha(db, e, "backtest")) != FORWARD_ACCOUNTS[e]]
+            if bad:                                     # all or nothing: nothing is started
+                out(f"refused: recorded artifacts are not the pinned ones (amendment 7): {', '.join(bad)}")
+                return 1
+            with db.tx():
+                for e in ids:
+                    pins = FORWARD_ACCOUNTS[e]
+                    db.event(kind, human(), e, {"reason": args.reason, "simulated": True, "ledger": "FWD_" + e,
+                                                "cost_sha256": pins[0], "backtest_sha256": pins[1],
+                                                "amendment": "PROTOCOL_V3 amendment 7"})
+            for e in ids:
+                out(f"{e}: {kind} (simulated forward-test ledger FWD_{e}; no effect on the formal tests)")
+            return 0
+        if args.cmd == "sim-resume":
+            from lab.risk import Risk
+            try:
+                done = Risk(db).resume_simulated(args.ledger, human(), args.reason)
+            except lifecycle.LifecycleError as e:
+                out(f"refused: {e}")
+                return 1
+            out(f"{args.ledger}: {'resumed (CLEAR recorded)' if done else 'not paused: nothing to resume'}")
             return 0
         if args.cmd in ("approve-template", "confirm-template", "revoke-template"):
             from lab import templates

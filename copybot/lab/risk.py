@@ -20,6 +20,8 @@ ACTOR = "system:risk"
 
 
 def rules_for(db, exp_id):
+    if exp_id.startswith(("SHADOW_", "FWD_")):        # amendment 7 section 1: drawdown, data and spread only
+        return {**DEFAULTS, "consecutive_losses": None}
     r = db.one("SELECT spec_json FROM experiments WHERE exp_id=? ORDER BY version DESC LIMIT 1", exp_id)
     spec = json.loads(r["spec_json"] or "{}") if r else {}
     return {**DEFAULTS, **(spec.get("risk") or {})}
@@ -75,7 +77,11 @@ class Risk:
     # ---------- entry gate ----------
     def _shadow_ok(self, ledger):
         """PROTOCOL v3 amendment 3: a SHADOW_ ledger may trade only while its experiment is in OBSERVATION and a
-        human-started shadow is active."""
+        human-started shadow is active. Amendment 7: a FWD_ ledger only while its human-started forward test with
+        pinned artifacts is active."""
+        if ledger.startswith("FWD_"):
+            from lab.paper import forward_active
+            return forward_active(self.db, ledger[len("FWD_"):])
         base = ledger[len("SHADOW_"):]
         r = self.db.one("SELECT kind, actor FROM events WHERE kind IN ('shadow.approved','shadow.stopped') AND exp_id=? "
                         "ORDER BY id DESC LIMIT 1", base)
@@ -83,9 +89,11 @@ class Risk:
                     and lifecycle.state(self.db, base) == "OBSERVATION")
 
     def entry_allowed(self, exp_id, reduce_only, book):
-        if exp_id.startswith("SHADOW_"):
+        if exp_id.startswith(("SHADOW_", "FWD_")):
             if not self._shadow_ok(exp_id) and not reduce_only:
-                return False, "shadow trading is not active (needs OBSERVATION and a human start)"
+                return False, ("forward test is not active (needs a human start and the pinned artifacts)"
+                               if exp_id.startswith("FWD_") else
+                               "shadow trading is not active (needs OBSERVATION and a human start)")
             st = "PAPER_TRADING"                              # every other risk rule below applies unchanged
         else:
             st = lifecycle.state(self.db, exp_id)
@@ -153,8 +161,30 @@ class Risk:
         with self.db.tx():
             self._event(exp_id, "revalidated", None, None, "CLEAR", "resumed after approved revalidation", actor)
 
+    def resume_simulated(self, ledger, actor, reason):
+        """Amendment 7 section 1: only a human resumes a paused SHADOW_ or FWD_ ledger (a CLEAR with the reason)."""
+        if not ledger.startswith(("SHADOW_", "FWD_")):
+            raise lifecycle.LifecycleError("only simulated SHADOW_/FWD_ ledgers resume this way; an approved "
+                                           "strategy resumes through its human-approved transition")
+        if not actor.startswith("human:"):
+            raise lifecycle.LifecycleError("only a human can resume a simulated ledger")
+        if not reason or len(reason.strip()) < 10:
+            raise lifecycle.LifecycleError("a reason of at least 10 characters is required")
+        if not self.paused(ledger):
+            return False
+        dd = self.db.one("SELECT drawdown FROM sim_equity WHERE exp_id=? ORDER BY id DESC LIMIT 1", ledger)
+        lim = rules_for(self.db, ledger)["max_drawdown"]
+        if dd and dd["drawdown"] >= lim:               # the unchanged breaker would pause it again at the next mark
+            raise lifecycle.LifecycleError(f"drawdown {dd['drawdown']:.2%} is still at or above {lim:.0%} of the "
+                                           "running peak; resume once it is below")
+        with self.db.tx():
+            self._event(ledger, "manual_resume", None, None, "CLEAR", reason.strip()[:300], actor)
+        return True
+
     def after_trade_closed(self, exp_id, trades, cancel_open=None):
         """trades: [(close_ts, pnl)] of completed round trips. Counts only trades after the last CLEAR."""
+        if exp_id.startswith(("SHADOW_", "FWD_")):       # simulated: drawdown, data, spread only (amendment 7)
+            return 0
         lim = rules_for(self.db, exp_id)["consecutive_losses"]
         since = self.last_clear_ts(exp_id)
         streak = 0

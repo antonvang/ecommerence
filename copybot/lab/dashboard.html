@@ -204,7 +204,7 @@ body{font-size:14px}
 @keyframes flin{from{background:#f07a3a33}to{background:transparent}}
 .tg{font:700 10px var(--mono);letter-spacing:.06em;padding:1px 6px;border-radius:5px;border:1px solid currentColor;white-space:nowrap}
 .tg-BESTÅET,.tg-GODKENDT,.tg-HANDLER,.tg-KØB{color:var(--green)} .tg-AFVIST,.tg-FEJL,.tg-SÆLG{color:var(--red)}
-.tg-PAUSE,.tg-HOLDOUT,.tg-RESSOURCER,.tg-RISIKO{color:var(--amber)} .tg-SØGNING,.tg-INGEN{color:var(--blue)} .tg-UNDERSØG,.tg-LÆRDOM{color:var(--violet)} .tg-IDÉ,.tg-TEST{color:var(--violet)} .tg-START,.tg-STOP,.tg-SORTERET{color:var(--blue)}
+.tg-PAUSE,.tg-HOLDOUT,.tg-RESSOURCER,.tg-RISIKO{color:var(--amber)} .tg-SØGNING,.tg-INGEN{color:var(--blue)} .tg-UNDERSØG,.tg-LÆRDOM,.tg-FREMADTEST{color:var(--violet)} .tg-IDÉ,.tg-TEST{color:var(--violet)} .tg-START,.tg-STOP,.tg-SORTERET{color:var(--blue)}
 .pl{display:grid;gap:7px}
 .pr{display:grid;grid-template-columns:120px 1fr 34px;gap:8px;align-items:center;font:12px var(--mono)}
 .pr .bar{height:9px;background:#1a1e26;border-radius:5px;overflow:hidden}
@@ -537,7 +537,9 @@ function animate(id, v, fmt){
 let lastEquity = null;
 function renderMoney(b){
   animate("bal", b.equity, v => usd(v));
-  $("#balsub").textContent = b.capital == null ? "ingen strategi handler endnu — starter, når den første består alle tests" : `startede på ${usd(b.capital)} · ${b.active} aktiv(e)` + (b.shadow ? ` · heraf ${b.shadow} skyggehandel (simuleret, ikke godkendt)` : "");
+  const fwd = b.forward ? ` · ${b.forward} fremadtest udenfor saldoen ${usd(b.forward_pnl, true)}` : "";
+  $("#balsub").textContent = (b.capital == null ? "ingen strategi handler endnu — starter, når den første består alle tests" : `startede på ${usd(b.capital)} · ${b.active} aktiv(e)` + (b.shadow ? ` · heraf ${b.shadow} skyggehandel (simuleret, ikke godkendt)` : "")) + fwd;
+  $("#balsub").title = b.forward ? `Fremadtest (simuleret, ikke godkendt, ekskl. funding): ${b.forward_running} kører, ${b.forward_paused} på pause, ${b.forward_open_positions} åbne positioner. Tæller ikke i saldoen.` : "";
   animate("pnl", b.pnl, v => usd(v, true));
   $("#pnl").className = "big " + (b.pnl > 0 ? "pos" : b.pnl < 0 ? "neg" : "");
   $("#m-pnl").className = "mcard pnl" + (b.pnl == null || b.pnl === 0 ? " zero" : b.pnl < 0 ? " neg" : "");
@@ -546,7 +548,7 @@ function renderMoney(b){
   $("#today").className = "big " + (b.today > 0 ? "pos" : b.today < 0 ? "neg" : "");
   $("#todaysub").textContent = b.capital == null ? "" : `${b.open_positions} åbne positioner`;
   animate("strat", b.active, v => String(Math.round(v)));
-  $("#stratsub").textContent = `${b.closed_trades} lukkede handler` + (b.win_rate == null ? "" : ` · ${(b.win_rate*100).toFixed(0)}% vundet`) + (b.shadow ? " · skyggehandel tæller ikke som godkendt" : "");
+  $("#stratsub").textContent = `${b.closed_trades} lukkede handler` + (b.win_rate == null ? "" : ` · ${(b.win_rate*100).toFixed(0)}% vundet`) + (b.shadow ? " · skyggehandel tæller ikke som godkendt" : "") + (b.forward ? ` · ${b.forward_running} fremadtest kører (ikke godkendt)` : "");
   if (lastEquity != null && b.equity != null && b.equity !== lastEquity) { const m = $("#m-bal"); m.classList.remove("glow"); void m.offsetWidth; m.classList.add("glow"); }
   lastEquity = b.equity;
   const h = b.history.map(p => [p.ts, p.equity]);
@@ -713,7 +715,7 @@ const day = ts => new Date(ts*1000).toISOString().slice(5,16).replace("T"," ");
 function renderPaper(p){
   const head = `<div class="grid3" style="margin-bottom:8px">${metric("Real account profit", `<span class="na">${NA}</span>`, esc(p.real_account_profit.reason))}
      ${metric("Paper-eligible (VALIDATED)", num(p.eligible.length, 0), p.eligible.length ? esc(p.eligible.join(", ")) + " — start only via the approved transition in the experiment drawer" : "none: needs a passed sealed holdout")}
-     ${metric("Strategies in paper", num(p.strategies.length, 0), "simulated fills against public order books")}</div>`;
+     ${metric("Strategies in paper", num(p.strategies.filter(s => !s.forward).length, 0), "simulated fills against public order books" + (p.strategies.some(s => s.forward) ? ` · + ${p.strategies.filter(s => s.forward).length} fremadtest (simuleret, ikke godkendt)` : ""))}</div>`;
   if (!p.strategies.length) { $("#paper").innerHTML = head + `<div class="empty">Paper equity: ${NA} — no strategy has been promoted to PAPER_TRADING. Promotion needs a validated sealed holdout and a human approval.</div><div class="cap">Source: ${esc(p.source)}</div>`; return; }
   $("#paper").innerHTML = head + p.strategies.map(s => {
     const eq = s.equity, pts = eq.map(e => [e.ts, e.equity]), dd = eq.map(e => [e.ts, e.drawdown]);
@@ -723,7 +725,7 @@ function renderPaper(p){
         "time (UTC)", "USD (simulated)", day, v => num(v, 0));
     const ddc = dd.length < 1 ? "" : axisChart(600, 110, {l:58,r:8,t:14,b:22}, [dd[0][0], Math.max(dd[dd.length-1][0], dd[0][0] + 3600)], [0, Math.max(0.01, ...dd.map(d=>d[1]))],
         (X, Y) => `<path d="${stepPath(dd, X, Y)}" fill="none" stroke="#ff5d5d" stroke-width="1.6"/>`, "time (UTC)", "drawdown (fraction)", day, v => (v*100).toFixed(1)+"%");
-    return `<div class="panel" style="background:var(--panel2);margin-bottom:10px"><div class="crow" style="justify-content:space-between"><b class="mono">${esc(s.name || s.exp_id)}</b><span>${s.shadow ? `<span class="badge" style="color:var(--amber)">${esc(s.label)}</span>` : badge(s.label)} ${s.paused?badge("PAUSED"):""} ${s.warming?badge("warming up"):""}</span></div>
+    return `<div class="panel" style="background:var(--panel2);margin-bottom:10px"><div class="crow" style="justify-content:space-between"><b class="mono">${esc(s.name || s.exp_id)}</b><span>${(s.shadow || s.forward) ? `<span class="badge" style="color:${s.forward ? "var(--violet)" : "var(--amber)"}">${esc(s.label)}</span>` : badge(s.label)} ${s.paused?badge("PAUSED"):""} ${s.forward && !s.active ? badge("STOPPET") : ""} ${s.warming?badge("warming up"):""}</span></div>
       <div class="grid2"><div>${chart}<div class="cap">Equity step chart (value held until the next hourly mark; no interpolation) · ${eq.length} marks · ${eq.length ? utc(eq[0].ts) + " → " + utc(eq[eq.length-1].ts) : ""} · source sim_equity</div></div>
       <div>${ddc}<div class="cap">Drawdown from running peak · source sim_equity</div></div></div>
       <div class="grid3">${metric("Realised P&L (sim.)", num(s.realized), "closed trades and fees, USD")}${metric("Unrealised P&L (sim.)", num(s.unrealized), "open positions at the last mark, USD")}${metric("Total P&L (sim.)", num(s.total_pnl), `capital ${num(s.capital,0)} USD`)}</div>

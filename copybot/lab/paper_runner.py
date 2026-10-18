@@ -42,7 +42,7 @@ def fetch_book(sym, now, get=_get):
                 asks=tuple((float(p), float(q)) for p, q in d["asks"]))
 
 
-def fetch_market(sym, now, get=_get, cache=None):
+def fetch_market(sym, now, get=_get, cache=None, books=None):
     """Closed 1h bars [(open_ts, open, close)], settled funding {ts: rate}, a Book and hourly quote volume.
     With a cache, bars and funding are fetched once per clock hour, as soon as the bar that closed at the top of the
     hour is published (they cannot change before the next close); the book is read on every call."""
@@ -59,7 +59,12 @@ def fetch_market(sym, now, get=_get, cache=None):
                    if int(f["fundingTime"]) // 1000 < now}
         if cache is not None and bars and bars[-1][0] + HOUR == hour:     # the latest closed bar is in
             cache[sym] = (hour, bars, funding, volume)
-    return bars, funding, fetch_book(sym, now, get), volume
+    book = books.get(sym) if books is not None else None
+    if book is None:                                   # one book per symbol per pass for every ledger
+        book = fetch_book(sym, now, get)
+        if books is not None:
+            books[sym] = book
+    return bars, funding, book, volume
 
 
 def cost_model():
@@ -99,6 +104,11 @@ def fetch_cm_live(metrics, symbols, now, get=_cm_get):
     return out
 
 
+def forward_experiments(db):
+    from lab.paper import FORWARD_ACCOUNTS, forward_active
+    return [e for e in FORWARD_ACCOUNTS if forward_active(db, e)]
+
+
 def shadow_experiments(db):
     from lab.paper import shadow_active
     return [x["exp_id"] for x in registry.status(db) if x["state"] == "OBSERVATION" and shadow_active(db, x["exp_id"])]
@@ -111,32 +121,50 @@ def paper_experiments(db):
 def closing_ledgers(db):
     """Ledgers that still hold positions but may no longer trade: approved paper strategies that were rejected or
     retired, and shadow ledgers whose shadow ended. Amendment 4: their positions are closed, never forgotten."""
-    from lab.paper import PaperEngine, shadow_active
+    from lab.paper import PaperEngine, forward_active, shadow_active
     eng, out = PaperEngine(db), []
     for r in db.q("SELECT DISTINCT exp_id FROM events WHERE kind='paper.started'"):
         led = r[0]
-        base = led[len("SHADOW_"):] if led.startswith("SHADOW_") else led
-        st = lifecycle.state(db, base)
-        done = (not shadow_active(db, base)) if led.startswith("SHADOW_") else st in ("REJECTED", "RETIRED")
+        if led.startswith("SHADOW_"):
+            base = led[len("SHADOW_"):]
+            done = not shadow_active(db, base)
+        elif led.startswith("FWD_"):                    # amendment 7: closed when the forward test is stopped
+            base = led[len("FWD_"):]
+            done = not forward_active(db, base)
+        else:
+            base = led
+            done = lifecycle.state(db, base) in ("REJECTED", "RETIRED")
         if done and eng.ledger(led)["positions"]:
             out.append((led, base))
     return out
 
 
-def close_ledger(db, led, base, get, now):
+def close_ledger(db, led, base, get, now, books=None):
+    """Reduce-only close of a ledger that may no longer trade. One close order per symbol per hour, each walking a
+    book read just before it; no bars or funding are needed (amendment 7 section 7). Marked once an hour."""
     eng, hour = PaperEngine(db, lambda: now), int(now) // HOUR * HOUR
     orders = []
     for s, q in eng.ledger(led)["positions"].items():
+        oid = f"{led}|close|{hour}|{s}"
+        if eng._existing(oid):
+            continue                                    # sent this hour; an unfilled rest is retried next hour
         try:
-            _, _, book, _ = fetch_market(s, now, get)
+            book = fetch_book(s, now, get)
         except Exception as e:
-            orders.append({"symbol": s, "status": f"fetch failed: {e!r}"[:80]})
+            orders.append({"symbol": s, "status": f"book unavailable: {e!r}"[:80]})
             continue
-        r = eng.submit_taker(led, f"{led}|close|{hour}|{s}", s, "sell" if q > 0 else "buy", abs(q), book,
-                             reduce_only=True, signal_ref="close: strategy ended")
+        if books is not None:
+            books[s] = book
+        r = eng.submit_taker(led, oid, s, "sell" if q > 0 else "buy", abs(q), book, reduce_only=True,
+                             signal_ref="close: strategy ended")
         orders.append({"symbol": s, "status": r["status"]})
-    db.event("paper.closing", "agent:paper-1", led, {"orders": orders, "simulated": True})
-    return {"status": "closing", "orders": orders}
+    if orders:
+        db.event("paper.closing", "agent:paper-1", led, {"orders": orders, "simulated": True})
+    try:
+        marked = _mark_hourly(db, eng, led, get, now, books)
+    except Exception:
+        marked = False                                  # no mark price this pass; the next pass tries again
+    return {"status": "closing", "orders": orders, "marked": marked}
 
 
 def held_experiments(db):
@@ -145,18 +173,30 @@ def held_experiments(db):
             and db.one("SELECT 1 FROM events WHERE kind='paper.started' AND exp_id=?", x["exp_id"])]
 
 
-def mark_only(db, ledger, get, now):
+def _mark_hourly(db, eng, ledger, get, now, books=None):
+    """Mark a ledger's positions once per clock hour at book mids (one shared book per symbol per pass)."""
+    if db.one("SELECT 1 FROM sim_equity WHERE exp_id=? AND ts>=?", ledger, int(now) // HOUR * HOUR):
+        return False
+    marks = {}
+    for s in eng.ledger(ledger)["positions"]:
+        book = books.get(s) if books is not None else None
+        if book is None:
+            book = fetch_book(s, now, get)
+            if books is not None:
+                books[s] = book
+        marks[s] = book.mid()
+    eng.mark(ledger, marks)
+    return True
+
+
+def mark_only(db, ledger, get, now, books=None):
     """Amendment 4 section 7: under a pause nothing new is opened; the positions are kept and marked once an hour."""
     eng = PaperEngine(db, lambda: now)
-    if db.one("SELECT 1 FROM sim_equity WHERE exp_id=? AND ts>=?", ledger, int(now) // HOUR * HOUR):
-        return {"status": "paused", "marked": False}
-    pos = eng.ledger(ledger)["positions"]
     try:
-        marks = {s: fetch_book(s, now, get).mid() for s in pos}
+        marked = _mark_hourly(db, eng, ledger, get, now, books)
     except Exception as e:
         return {"status": "paused", "marked": False, "reason": f"no mark prices: {e!r}"[:200]}
-    eng.mark(ledger, marks)
-    return {"status": "paused", "marked": True, "positions": len(pos)}
+    return {"status": "paused", "marked": marked, "positions": len(eng.ledger(ledger)["positions"])}
 
 
 def _guarded(db, ledger, fn):
@@ -176,10 +216,11 @@ def run(db, get=_get, now=None, cm_get=_cm_get, cache=None, cm_cache=None):
         cache = _HOURLY
     if cm_cache is None and cm_get is _cm_get:
         cm_cache = _CM_HOURLY
+    books = {}
     now = now or time.time()
     out = {}
     for led, base in closing_ledgers(db):              # reduce-only: allowed even without a supervisor or FAIL_CLOSED
-        out[led] = _guarded(db, led, lambda: close_ledger(db, led, base, get, now))
+        out[led] = _guarded(db, led, lambda: close_ledger(db, led, base, get, now, books))
     if not promotion.supervisor_ok(db, now):
         return {"experiments": len(out), "results": out, "simulated": True, "blocked": "supervisor state unknown"}
     for eid in paper_experiments(db):
@@ -191,18 +232,22 @@ def run(db, get=_get, now=None, cm_get=_cm_get, cache=None, cm_cache=None):
             out[eid] = {"status": "not authorized", "reason": why}
             continue
         out[eid] = _guarded(db, eid, lambda: run_one(db, eid, get, now, cm_get=cm_get, cache=cache,
-                                                     cm_cache=cm_cache))
+                                                     cm_cache=cm_cache, books=books))
     for eid in held_experiments(db):                   # paused: positions kept and marked, nothing new
         if eid not in out:                             # (not one a breaker paused in this very pass)
-            out[eid] = _guarded(db, eid, lambda: mark_only(db, eid, get, now))
+            out[eid] = _guarded(db, eid, lambda: mark_only(db, eid, get, now, books))
     for eid in shadow_experiments(db):                 # amendment 3: simulated, separate ledger, no effect on tests
         out["SHADOW_" + eid] = _guarded(db, "SHADOW_" + eid,
                                         lambda: run_one(db, eid, get, now, ledger="SHADOW_" + eid, cm_get=cm_get,
-                                                        cache=cache, cm_cache=cm_cache))
+                                                        cache=cache, cm_cache=cm_cache, books=books))
+    for eid in forward_experiments(db):                # amendment 7: forward paper tests, separate ledgers
+        out["FWD_" + eid] = _guarded(db, "FWD_" + eid,
+                                     lambda: run_one(db, eid, get, now, ledger="FWD_" + eid, cm_get=cm_get,
+                                                     cache=cache, cm_cache=cm_cache, books=books))
     return {"experiments": len(out), "results": out, "simulated": True}
 
 
-def run_one(db, eid, get, now, ledger=None, cm_get=_cm_get, cache=None, cm_cache=None):
+def run_one(db, eid, get, now, ledger=None, cm_get=_cm_get, cache=None, cm_cache=None, books=None):
     """Trade experiment `eid`'s frozen strategy on the simulated ledger `ledger` (default: the experiment itself)."""
     L = ledger or eid
     eng, risk = PaperEngine(db, lambda: now), Risk(db, lambda: now)
@@ -217,7 +262,7 @@ def run_one(db, eid, get, now, ledger=None, cm_get=_cm_get, cache=None, cm_cache
     if risk.fail_closed():
         return {"status": "fail_closed"}
     if risk.paused(L):
-        return mark_only(db, L, get, now)              # amendment 4 section 7: kept and marked, nothing new
+        return mark_only(db, L, get, now, books)       # amendment 4 section 7: kept and marked, nothing new
     try:
         variant = pipeline.frozen_variant(db, eid)                    # fail closed: no orders on unverified rules
     except pipeline.ArtifactError as e:
@@ -229,7 +274,7 @@ def run_one(db, eid, get, now, ledger=None, cm_get=_cm_get, cache=None, cm_cache
     market = {}
     try:
         for s in catalogue.universe(spec["template"]):
-            market[s] = fetch_market(s, now, get, cache)
+            market[s] = fetch_market(s, now, get, cache, books)
     except Exception as e:
         risk.pause(L, "data_fetch", None, None, f"public market data fetch failed: {e!r}"[:300], eng.cancel_entries)
         return {"status": "paused", "reason": "data fetch failed"}

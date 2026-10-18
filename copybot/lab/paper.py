@@ -34,6 +34,46 @@ def shadow_active(db, exp_id):
                 and lifecycle.state(db, exp_id) == "OBSERVATION")
 
 
+FORWARD = "FWD_"          # research/PROTOCOL_V3.md amendment 7: forward paper tests of frozen variants
+FORWARD_ACCOUNTS = {      # exp_id -> (SHA-256 cost.json, SHA-256 backtest.json), fixed by amendment 7 section 2
+    "E_vol_managed_long_p1": ("88c8bf0a73c503ce185b2f4e8a000720cfd7e132c7d5ad5feba260fe1dd4d1b6",
+                              "04082bdbc350924a788b233a4c8e4091a99bb7b85c0d29b43fff0320a97c264a"),
+    "E_day_of_week_p1": ("0b3ed84fde00458af08be5240960740b3049f43a92241da07e82d504361274a8",
+                         "511d5d9970b5dc90971b34821416c311f724284b98478aab2b513a7ae76e6df4"),
+    "E_hour_of_day_p1": ("6eb4d899312eea97a8fa3505ba8cd1608464772bce8e239aa02914feab4da004",
+                         "ed151ff19a0ba3866566bd717acd7af9dff77fcc6e1c19a0beda4a7b741a89fa"),
+    "E_funding_contrarian_p1": ("f713d01e6ed6025b5f027c462566ab2c7ef935386220988b697f8569303f33aa",
+                                "0061c8ca4bbb9c743a91737056fb3356e907c62495477bd6a5c75ac8bd90f9ef"),
+    "E_daily_reversal_p1": ("290c89e69cc98ac74180c3929a5d0c2aba9586aad9b8a6688b56390215f54108",
+                            "bc10953b2feeed3f31a0f6cb259a1c6946adadce044ee7de85da7c2cb3c37c26"),
+    "E_xs_momentum_p2": ("9348a84f7ac1cc60c634c284c3c9be7b97051f88134b371627ab33eae667a281",
+                         "5d8ebbedd5607100952c1891208ac176ea07b20c331f877674571d80a812e572"),
+    "E_xs_max_lottery_p2": ("5c3c4c7d16d85fb5af8d83f5077e531babbca23d5813b2780c5fa07c4c8f2087",
+                            "713c7f656e5552bddb3b7ef242124fe8ea3a215656554e6374e491462781f9c0"),
+    "E_xs_low_volatility_p2": ("ec4bb4bb6d965661b155bf87c864e490336d26586661476e0e737a8d5bd897ab",
+                               "17c9ae82f6bc75710fe26a63cf652ea9b209d75ba8f159c82e83cf3aab2134d7"),
+    "E_xs_betting_against_beta_p2": ("1b85e44a0122af7e50c1ae45e2ad190d81c119efa77a41575b294ab217a9398a",
+                                     "503857c886a128eb0171595bfbe1f31bcb3ff3d963c6aea861c0480082c58fb0"),
+    "E_supply_dilution_p3": ("b28aed4201d32acabb72b94398cf37126926854061b31d161d144513d57fa886",
+                             "2b8c44767ce1a3169288438d00c56f4778673062c7519e98645a73f922d0212a"),
+}
+def forward_base(ledger):
+    return ledger[len(FORWARD):] if ledger.startswith(FORWARD) else None
+
+
+def forward_active(db, exp_id):
+    """Amendment 7: on the fixed list, started by a human and not stopped, and its artifacts are still the pinned ones."""
+    pins = FORWARD_ACCOUNTS.get(exp_id)
+    if not pins:
+        return False
+    r = db.one("SELECT kind, actor FROM events WHERE kind IN ('forward.approved','forward.stopped') AND exp_id=? "
+               "ORDER BY id DESC LIMIT 1", exp_id)
+    if not (r and r["kind"] == "forward.approved" and r["actor"].startswith("human:")):
+        return False
+    from lab import pipeline
+    return (pipeline.recorded_sha(db, exp_id, "cost"), pipeline.recorded_sha(db, exp_id, "backtest")) == pins
+
+
 @dataclass(frozen=True)
 class CostModel:
     taker_fee: float              # fraction of notional, e.g. 0.0005
@@ -69,6 +109,10 @@ class PaperEngine:
         if base is not None:
             if not shadow_active(self.db, base):
                 raise lifecycle.LifecycleError(f"{base} has no active, human-started shadow trading in OBSERVATION")
+        elif forward_base(exp_id) is not None:
+            if not forward_active(self.db, forward_base(exp_id)):
+                raise lifecycle.LifecycleError(f"{forward_base(exp_id)} has no active, human-started forward test "
+                                               "with its pinned artifacts (amendment 7)")
         else:
             from lab import promotion
             ok, why = promotion.trading_authorized(self.db, exp_id)

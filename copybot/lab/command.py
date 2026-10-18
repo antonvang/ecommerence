@@ -370,8 +370,8 @@ def costs(db):
             "cost_model": __import__("lab.engine.catalogue", fromlist=["COSTS"]).COSTS}
 
 
-def paper_view(db):
-    from lab.paper import PaperEngine
+def paper_view(db, reconcile=True):
+    from lab.paper import PaperEngine, forward_active
     pe, rk, out = PaperEngine(db), Risk(db), []
     for r in db.q("SELECT DISTINCT exp_id FROM events WHERE kind='paper.started' ORDER BY exp_id"):
         eid = r[0]
@@ -389,10 +389,14 @@ def paper_view(db):
         orders = db.one("SELECT COUNT(*) FROM sim_orders WHERE exp_id=?", eid)[0]
         refused = db.one("SELECT COUNT(*) FROM events WHERE exp_id=? AND kind IN ('paper.refused',"
                          "'paper.signal_while_paused')", eid)[0]
-        shadow = eid.startswith("SHADOW_")
-        out.append({"exp_id": eid, "name": plain(db, eid)[0], "shadow": shadow,
-                    "state": lifecycle.state(db, eid[len("SHADOW_"):] if shadow else eid), "simulated": True,
-                    "label": "SKYGGEHANDEL (simuleret, ikke godkendt)" if shadow else "PAPER (simulated)",
+        shadow, forward = eid.startswith("SHADOW_"), eid.startswith("FWD_")
+        base = eid[len("SHADOW_"):] if shadow else eid[len("FWD_"):] if forward else eid
+        out.append({"exp_id": eid, "name": plain(db, eid)[0], "shadow": shadow, "forward": forward,
+                    "active": forward_active(db, base) if forward else None,
+                    "state": lifecycle.state(db, base), "simulated": True,
+                    "label": ("SKYGGEHANDEL (simuleret, ikke godkendt)" if shadow else
+                              "FREMADTEST (simuleret, ikke godkendt, ekskl. funding)" if forward else
+                              "PAPER (simulated)"),
                     "capital": led["capital"], "cash": led["cash"], "positions": led["positions"],
                     "open_positions": len(led["positions"]), "closed_trades": len(led["trades"]),
                     "equity": eq, "realized": realized, "unrealized": unreal,
@@ -400,8 +404,9 @@ def paper_view(db):
                     "max_drawdown": max((e["drawdown"] for e in eq), default=None),
                     "daily_drawdown": daily_dd,
                     "orders": orders, "fills": db.one("SELECT COUNT(*) FROM sim_fills WHERE exp_id=?", eid)[0],
-                    "rejected_orders": refused, "reconciliation": pe.reconcile(eid),
+                    "rejected_orders": refused, "reconciliation": pe.reconcile(eid) if reconcile else None,
                     "paused": rk.paused(eid), "warming": rk.warming(eid)})
+    out.sort(key=lambda s: (s["forward"], s["shadow"], s["exp_id"]))     # approved, shadow, then forward tests
     return {"strategies": out, "simulated": True, "real_account_profit": REAL_ACCOUNT,
             "source": "lab.db sim_orders / sim_fills / sim_equity (simulated fills against public order books)",
             "eligible": [x["exp_id"] for x in registry.status(db) if x["state"] == "VALIDATED"]}
@@ -426,9 +431,16 @@ def rejected(db, limit=100):
 def balance(db, now=None):
     """Aggregate simulated paper account over every strategy that has a paper ledger. No real account exists."""
     now = now or time.time()
-    p = paper_view(db)
-    st = p["strategies"]
-    out = {"simulated": True, "strategies": len(st),
+    p = paper_view(db, reconcile=False)                      # the money box needs no reconciliation (risk-1 does it)
+    fw = [s for s in p["strategies"] if s.get("forward")]      # amendment 7: never in the headline numbers
+    st = [s for s in p["strategies"] if not s.get("forward")]
+    fw_eq = sum((s["equity"][-1]["equity"] if s["equity"] else s["capital"]) for s in fw)
+    out = {"simulated": True, "strategies": len(st), "forward": len(fw),
+           "forward_capital": sum(s["capital"] for s in fw) if fw else None, "forward_equity": fw_eq if fw else None,
+           "forward_pnl": (fw_eq - sum(s["capital"] for s in fw)) if fw else None,
+           "forward_open_positions": sum(s["open_positions"] for s in fw),
+           "forward_paused": sum(1 for s in fw if s["paused"]),
+           "forward_running": sum(1 for s in fw if s["active"] and not s["paused"]),
            "active": sum(1 for s in st if s["state"] == "PAPER_TRADING" or (s["shadow"] and s["state"] == "OBSERVATION")),
            "shadow": sum(1 for s in st if s["shadow"]),
            "real_account_profit": REAL_ACCOUNT, "source": p["source"]}
@@ -492,8 +504,9 @@ def feed(db, limit=40):
              "job.failed", "system.running", "system.stopped", "system.stop_forced", "system.paused", "system.resumed",
              "system.resource_hold", "risk.pause", "risk.fail_closed", "risk.clear", "agent.error",
              "agent.recovered", "external.stale", "external.recovered", "job.timeout", "market.event",
-             "research.diagnostic", "scan.finished")
+             "research.diagnostic", "scan.finished", "forward.approved", "forward.stopped")
     rows = db.q(f"SELECT id, ts, kind, actor, exp_id, payload FROM events WHERE kind IN ({','.join('?' * len(kinds))}) "
+                f"AND NOT (kind='paper.order' AND substr(exp_id, 1, 4)='FWD_') "     # shown per account instead
                 f"ORDER BY id DESC LIMIT ?", *kinds, int(limit))
     out = []
     for r in rows:
@@ -549,6 +562,9 @@ def feed(db, limit=40):
             e.update(tag="UNDERSØG" if p.get("decision") == "INVESTIGATE" else "INGEN HANDLING",
                      text=f"Marked: {what} - {p.get('why')}"[:220], detail=p.get("decision"),
                      priority=p.get("priority"))
+        elif k in ("forward.approved", "forward.stopped"):
+            e.update(tag="FREMADTEST", text=f"Fremadtest {'startet' if k == 'forward.approved' else 'stoppet'}: "
+                                            f"{nm} (simuleret, ikke godkendt)")
         elif k == "scan.finished":
             e.update(tag="SØGNING", text=f"Søgning: {p.get('observations', 0)} målinger · {p.get('flagged', 0)} markeret · "
                                         f"{p.get('proposals', 0)} forslag · {len(p.get('created') or [])} nye · "
@@ -556,7 +572,8 @@ def feed(db, limit=40):
         elif k == "research.diagnostic":
             e.update(tag="LÆRDOM", text=f"{nm}: " + "; ".join(p.get("lessons") or [])[:200])
         elif k in ("risk.pause", "risk.fail_closed", "risk.clear"):
-            e.update(tag="RISIKO", text=f"Risiko: {k.split('.')[1]} - {p.get('rule')}: {p.get('detail')}"[:220])
+            e.update(tag="RISIKO", text=f"Risiko: {nm + ' - ' if nm else ''}{k.split('.')[1]} - {p.get('rule')}: "
+                                        f"{p.get('detail')}"[:220])
         elif k == "job.timeout":
             e.update(tag="FEJL", text=f"Et job tog for lang tid: {p.get('job_id')}")
         else:
@@ -619,6 +636,9 @@ def plain(db, eid):
     if eid and eid.startswith("SHADOW_"):
         n, x, v = plain(db, eid[len("SHADOW_"):])
         return f"{n} — skyggehandel", x, v
+    if eid and eid.startswith("FWD_"):
+        n, x, v = plain(db, eid[len("FWD_"):])
+        return f"{n} — fremadtest", x, v
     if eid in LEGACY_DA:
         return LEGACY_DA[eid], None, None
     v = registry.latest(db, eid) if eid else None
