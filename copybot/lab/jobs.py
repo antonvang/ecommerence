@@ -190,6 +190,17 @@ def recover(db, now=None):
     return n
 
 
+def runnable_any(db, kinds, now=None):
+    """Read-only: is any job of these kinds runnable now? Lets an idle agent skip the write-locked claim."""
+    import sqlite3
+    now = now or time.time()
+    try:
+        return db.one(f"SELECT 1 FROM jobs WHERE status='queued' AND next_run<=? AND kind IN "
+                      f"({','.join('?' * len(kinds))}) LIMIT 1", now, *kinds) is not None
+    except sqlite3.OperationalError:                    # no jobs table yet: let claim() create it
+        return True
+
+
 def runnable(db, now=None):
     """Queued jobs whose time has come, per kind, and when the next queued job becomes due."""
     now = now or time.time()

@@ -33,7 +33,9 @@ HOLD_ALERT_S = 30 * 60         # a resource hold longer than this is an outage o
 COLLECTOR_STALE_S = 300        # a snapshot round every ~61 s while quoting
 STATUS_STALE_S = 7 * 3600      # resolution tracking only: status polls every 6 h
 REMIND_S = 3600
-REMIND_OVERRIDE = {"progress": 24 * 3600}   # idleness is reported once a day, not every hour
+REMIND_OVERRIDE = {"progress": 24 * 3600, "paper": 6 * 3600}   # idleness daily, paper marks every 6 h
+PAPER_MARK_MAX_S = int(2.5 * 3600)   # every active simulated ledger is marked once an hour
+PAPER_PAUSE_MAX_S = 24 * 3600        # a ledger paused longer than this is reported
 IDLE_ALERT_S = 6 * 3600       # no finished job for this long while the fleet has run >= 2 h and nothing is runnable
 SLEEP_JUMP_S = 5               # CLOCK_BOOTTIME - CLOCK_MONOTONIC grows only while the host is suspended or hibernated
 PM_DB = os.path.join(HERE, "data", "research", "pm_lp", "pm_lp.db")
@@ -120,6 +122,10 @@ def check_lab(db_path, now):
         out["progress"] = _progress(con_path=db_path, now=now, sup=rows.get("supervisor"))
     except Exception as e:                            # the progress probe must never break the liveness checks
         out["progress"] = (None, f"not judged: progress check failed {e!r}"[:200])
+    try:
+        out["paper"] = _paper(con_path=db_path, now=now, sup=rows.get("supervisor"))
+    except Exception as e:
+        out["paper"] = (None, f"not judged: paper check failed {e!r}"[:200])
     sup = rows.get("supervisor")
     if sup is None:
         out["lab"] = (False, "no supervisor heartbeat recorded")
@@ -168,6 +174,61 @@ def _progress(con_path, now, sup):
         return (False, f"no research work: {done} and nothing runnable or running "
                        "(see research.idle_reason in /api/kpis)")
     return (True, f"{done}, {running} running, {runnable} runnable")
+
+
+def _active_ledgers(con):
+    """Ledgers that should be marked hourly: approved strategies in PAPER_TRADING/PAUSED, an active shadow, an
+    active forward test (amendments 3 and 7). Stopped or closed ledgers are not judged."""
+    def latest(kinds, eid):
+        r = con.execute(f"SELECT kind FROM events WHERE kind IN ({','.join('?' * len(kinds))}) AND exp_id=? "
+                        "ORDER BY id DESC LIMIT 1", (*kinds, eid)).fetchone()
+        return r[0] if r else None
+
+    def state(eid):
+        r = con.execute("SELECT to_state FROM transitions WHERE exp_id=? ORDER BY id DESC LIMIT 1", (eid,)).fetchone()
+        return r[0] if r else None
+    out = []
+    for (led,) in con.execute("SELECT DISTINCT exp_id FROM events WHERE kind='paper.started'").fetchall():
+        if led.startswith("FWD_"):
+            ok = latest(("forward.approved", "forward.stopped"), led[4:]) == "forward.approved"
+        elif led.startswith("SHADOW_"):
+            ok = latest(("shadow.approved", "shadow.stopped"), led[7:]) == "shadow.approved" \
+                and state(led[7:]) == "OBSERVATION"
+        else:
+            ok = state(led) in ("PAPER_TRADING", "PAUSED")
+        if ok:
+            out.append(led)
+    return out
+
+
+def _paper(con_path, now, sup):
+    """Is every active simulated ledger marked hourly, and is none of them paused for more than a day?"""
+    if not sup or sup.get("status") != "running":
+        return (None, "not judged (fleet down)")
+    con = _ro(con_path)
+    if con is None:
+        return (None, "not judged: no lab database")
+    try:
+        started = con.execute("SELECT MAX(ts) FROM events WHERE kind='system.running'").fetchone()[0] or now
+        active = _active_ledgers(con)
+        if not active:
+            return (None, "no active paper ledger")
+        stale, long_paused, paused = [], [], []
+        for led in active:
+            last = con.execute("SELECT MAX(ts) FROM sim_equity WHERE exp_id=?", (led,)).fetchone()[0]
+            if now - started > 1.5 * 3600 and (last is None or now - last > PAPER_MARK_MAX_S):
+                stale.append(led)
+            r = con.execute("SELECT action, ts FROM risk_events WHERE exp_id=? AND action IN ('PAUSE', 'CLEAR') "
+                            "ORDER BY id DESC LIMIT 1", (led,)).fetchone()
+            if r and r[0] == "PAUSE":
+                (long_paused if now - r[1] > PAPER_PAUSE_MAX_S else paused).append(led)
+    finally:
+        con.close()
+    if stale or long_paused:
+        why = ([f"not marked for over {PAPER_MARK_MAX_S // 3600:.1f} h: {', '.join(stale)}"] if stale else []) + \
+              ([f"paused for over a day: {', '.join(long_paused)}"] if long_paused else [])
+        return (False, "; ".join(why)[:300])
+    return (True, f"{len(active)} active ledgers marked hourly" + (f"; paused: {', '.join(paused)}" if paused else ""))
 
 
 def check_collector(pm_db, now):
@@ -371,7 +432,7 @@ class Watcher:
 def summary(res):
     """Lines for --once: lab-level components, then agents (only the bad or unknown ones are listed)."""
     lines = []
-    for k in ("lab", "lab_state", "progress", "dashboard", "collector", "awake"):
+    for k in ("lab", "lab_state", "progress", "paper", "dashboard", "collector", "awake"):
         if k in res:
             ok = res[k]["ok"]
             lines.append(f"  [{'OK ' if ok else '?? ' if ok is None else 'NO '}] {k}: {res[k]['detail']}")

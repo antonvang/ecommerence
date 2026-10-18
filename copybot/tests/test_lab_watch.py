@@ -82,9 +82,10 @@ class Checks(Base):
         self.lab_event("system.running", NOW - 3 * 3600)              # fleet up 3 h and doing research
         self.lab_event("job.done", NOW - 60)
         r = self.res()
-        self.assertTrue(all(v["ok"] for v in r.values()), {k: v for k, v in r.items() if not v["ok"]})
+        self.assertIsNone(r["paper"]["ok"])                              # no paper ledger: not judged
+        self.assertTrue(all(v["ok"] for k, v in r.items() if k != "paper"), {k: v for k, v in r.items() if not v["ok"]})
         self.assertEqual({k for k in r if not k.startswith("agent:")},
-                         {"lab", "lab_state", "progress", "dashboard", "collector", "awake"})
+                         {"lab", "lab_state", "progress", "paper", "dashboard", "collector", "awake"})
         self.assertEqual(len([k for k in r if k.startswith("agent:")]), len(ROLES))
 
     def test_whole_fleet_down_or_hung_and_agents_are_not_judged_then(self):

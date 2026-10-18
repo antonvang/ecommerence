@@ -30,6 +30,7 @@ HEAVY = {"backtest", "cost", "adversarial", "validate", "holdout", "observe"}
 HEAVY_SLOTS = int(os.environ.get("LAB_SLOTS") or max(2, (os.cpu_count() or 4) - 2))
 PROCESSES = os.environ.get("LAB_THREADS") != "1"
 LEASE_EVERY = 15
+QUIET_BEAT_S = 15        # an unchanged waiting heartbeat is written at most this often (was every 1-2 s tick)
 _slots = threading.BoundedSemaphore(HEAVY_SLOTS)
 _pool, _pool_lock = None, threading.Lock()
 STOPPING = threading.Event()     # set by shutdown(): no new claims; interrupted jobs are re-run after the next start
@@ -176,6 +177,7 @@ class Agent:
         self.next_periodic = 0.0
         self.counters = None
         self.failing = None                # last periodic error until a pass succeeds: alive is not healthy
+        self._quiet = (None, 0.0)          # (status, detail) of the last waiting heartbeat and when it was written
 
     # ---------- bookkeeping ----------
     def _load_counters(self, db):
@@ -184,8 +186,17 @@ class Agent:
                          "retries": (r and r["retries"]) or 0}
 
     def beat(self, db, status, **f):
+        self._quiet = (None, 0.0)
         _beat(db, self.name, self.role, status, started_ts=self.started, stale_after=self.stale_after,
               interval=self.interval, **self.counters, **f)
+
+    def _quiet_beat(self, db, status, **f):
+        """A waiting state that has not changed is written at most every QUIET_BEAT_S; a change is written at once."""
+        key, now = (status, f.get("detail")), time.time()
+        if self._quiet[0] == key and now - self._quiet[1] < QUIET_BEAT_S:
+            return
+        self.beat(db, status, **f)
+        self._quiet = (key, now)
 
     def log(self, kind, **fields):
         log_dir = os.path.join(os.path.dirname(os.path.abspath(self.db_path)), "logs") if self.db_path else ops.LOG_DIR
@@ -199,7 +210,7 @@ class Agent:
         if why and self.always_run and why != "stop requested":
             why = None                     # the risk agent must keep checking, or it could never lift its own hold
         if why:
-            self.beat(db, "blocked", detail=why, current_job=None, current_exp=None, next_action="wait: " + why)
+            self._quiet_beat(db, "blocked", detail=why, current_job=None, current_exp=None, next_action="wait: " + why)
             return
         if self.kinds:
             return self._job_tick(db)
@@ -209,11 +220,11 @@ class Agent:
         now = time.time()
         if now < self.next_periodic:
             if self.failing:
-                self.beat(db, "failed", detail=f"last pass failed: {self.failing}"[:200], current_job=None,
-                          current_exp=None, next_action=f"retry in {int(self.next_periodic - now)} s")
+                self._quiet_beat(db, "failed", detail=f"last pass failed: {self.failing}"[:200], current_job=None,
+                                 current_exp=None, next_action=f"retry in {int(self.next_periodic - now)} s")
             else:
-                self.beat(db, "idle", detail="waiting for next run", current_job=None, current_exp=None,
-                          next_action=f"next run in {int(self.next_periodic - now)} s")
+                self._quiet_beat(db, "idle", detail="waiting for next run", current_job=None, current_exp=None,
+                                 next_action=f"next run in {int(self.next_periodic - now)} s")
             return
         self.beat(db, "running", detail=f"{self.role} pass", current_job=f"{self.name}:periodic", current_exp=None,
                   next_action="finish pass")
@@ -247,20 +258,20 @@ class Agent:
             r = control.ram()
             need = job_ram_estimate(db)
             if r and r["free"] < control.RAM_MIN_FREE + need:
-                self.beat(db, "queued", detail=f"waiting for RAM: {r['free'] / 2 ** 30:.1f} GB free, a heavy job "
+                self._quiet_beat(db, "queued", detail=f"waiting for RAM: {r['free'] / 2 ** 30:.1f} GB free, a heavy job "
                           f"needs about {need / 2 ** 20:.0f} MB above the {control.RAM_MIN_FREE / 2 ** 30:.1f} GB floor",
                           current_job=None, current_exp=None, next_action="claim when memory frees")
                 return
             slot = _slots.acquire(blocking=False)
             if not slot:
-                self.beat(db, "queued", detail=f"waiting for a compute slot ({HEAVY_SLOTS} shared)",
+                self._quiet_beat(db, "queued", detail=f"waiting for a compute slot ({HEAVY_SLOTS} shared)",
                           current_job=None, current_exp=None, next_action="claim when a slot frees")
                 return
         try:
-            job = jobs.claim(db, self.name, self.kinds)
+            job = jobs.claim(db, self.name, self.kinds) if jobs.runnable_any(db, self.kinds) else None
             if job is None:
-                self.beat(db, "idle", detail="queue empty for " + ",".join(self.kinds), current_job=None,
-                          current_exp=None, next_action="poll queue")
+                self._quiet_beat(db, "idle", detail="queue empty for " + ",".join(self.kinds), current_job=None,
+                                 current_exp=None, next_action="poll queue")
                 return
             self._run(db, job)
         finally:
@@ -337,13 +348,32 @@ class Agent:
             db.close()
 
 
-def _summary(res):
+def _shape(v):
+    """A short, still meaningful stand-in for a large value (paper results: status and order count per ledger)."""
+    if isinstance(v, dict) and v and all(isinstance(x, dict) and "status" in x for x in v.values()):
+        return {k: x["status"] + (f"/{len(x['orders'])}" if x.get("orders") else "") for k, x in v.items()}
+    if isinstance(v, dict):
+        return f"{len(v)} keys"
+    if isinstance(v, (list, tuple)):
+        return f"{len(v)} items"
+    return str(v)[:80]
+
+
+def _summary(res, limit=300):
+    """Always valid JSON (it was cut mid-string at 300 characters): large values are summarised, not truncated."""
     if res is None:
         return "ok"
-    if isinstance(res, dict):
-        keep = {k: v for k, v in res.items() if k != "artifact"}
-        return json.dumps(keep, default=str)[:300]
-    return json.dumps(res, default=str)[:300]
+    keep = {k: v for k, v in res.items() if k != "artifact"} if isinstance(res, dict) else res
+    s = json.dumps(keep, default=str)
+    if len(s) <= limit:
+        return s
+    if isinstance(keep, dict):
+        s = json.dumps({k: (v if isinstance(v, (int, float, bool, type(None))) or (isinstance(v, str) and len(v) <= 80)
+                            else _shape(v)) for k, v in keep.items()}, default=str)
+        if len(s) <= 2 * limit:
+            return s
+        return json.dumps({"summary": "large result", "keys": list(keep)[:20]})
+    return json.dumps({"summary": _shape(keep)})
 
 
 # ---------- periodic functions ----------
