@@ -311,3 +311,41 @@ Audit af alle veje til en ordre viste, at verifikationen kun lå i paper-runnere
    står). Ældre protokoller venter på menneskelig godkendelse som før.
 5. **PASS præciseret.** SCREEN_PASSED → VALIDATION kræver, at seneste resultat er netop `PASS (screen)` eller
    `PASS (forward test)`.
+
+## Ændring 5 (2026-10-18): forskningsmotoren — hændelser, diagnoser og et strammere holdout-krav — før kode
+
+Baggrund: en audit (2026-10-18) viste, at laboratoriet er en verificeret batch-screener. Alle 28 skabeloner i
+kataloget er brugt, scannerens fund fører aldrig til en registreret beslutning, og der er ingen opfølgning på, hvorfor
+tidligere idéer fejlede. Ændringen gør ingen eksisterende regel lempeligere. Afgørelser og resultater for v1–v3 står,
+som de er registreret, og frosne artefakter overskrives aldrig.
+
+1. **Strammere slut-test.** Holdout-trinnet får gaten "holdout data quality (min symbols)": slut-testen består kun,
+   hvis der er data for mindst `min_symbols` symboler efter udelukkelser (samme krav som i screening). Ingen
+   slut-test er åbnet endnu, så intet resultat ændres.
+
+2. **Markedshændelser er registreringer, ikke handler.**
+   - Scanneren skriver for hvert forslag en hændelse `market.event` med detektor, instrument, målt værdi i forhold
+     til tærsklen, varighed, kilde og datakvalitet, samt en beslutning med begrundelse:
+     - `NO_ACTION`: venter på varighed, ligger i kirkegården, er dækket af et aktivt eksperiment, eller datakilden
+       fejlede;
+     - `INVESTIGATE`: et nyt fingeraftryk, der har varet.
+   - Hændelserne ændrer ingen tilstand, starter ingen handel og indgår ikke i nogen gate.
+   - En `INVESTIGATE` kan kun føre til en test gennem en senere forhåndsregistreret skabelon. Data fra 2025 og frem er
+     reserveret, så scannerfund kan kun testes fremadrettet.
+3. **Fejlrettelser i scanneren** (ingen ny regel):
+   - En kandidat i tilstanden `SUPPRESSED` behandles som kirkegård på linje med `REJECTED` og `WITHDRAWN`.
+   - "Varighed" tæller nu de forskellige klokketimer med flag inden for de seneste 24 timer og for samme instrument,
+     når forslaget har et instrument. Før talte den hele historikken, så to ubeslægtede flag kunne opfylde kravet.
+4. **Diagnoser er ikke-afgørende.**
+   - Et nyt jobtrin `diagnose` analyserer den allerede registrerede daglige nettoserie (`validate.json`, verificeret
+     mod sin SHA-256) for afsluttede eksperimenter:
+     - stabilitet over tredjedele og halvdele;
+     - koncentration på de bedste dage;
+     - dybeste tab og længste tabsperiode;
+     - eksponering.
+   - Trinnet læser ingen markedsdata og ingen nye split, og skriver kun i `artifacts/_diagnostic/`.
+   - Det skriver ingen rækker i results, trials eller transitions og ændrer ingen afgørelse. Det registreres som
+     hændelsen `research.diagnostic`.
+5. **Fejlrettelse i datagatewayen** (ingen ny regel): stier gemmes med `/`, og tidligere læsninger slås op i både `/`-
+   og `\`-form. Så gælder kravet "en fil må ikke ændre sig efter første læsning" også for data læst første gang på
+   Windows.
