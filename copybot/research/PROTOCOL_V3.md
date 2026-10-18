@@ -349,3 +349,34 @@ som de er registreret, og frosne artefakter overskrives aldrig.
 5. **Fejlrettelse i datagatewayen** (ingen ny regel): stier gemmes med `/`, og tidligere læsninger slås op i både `/`-
    og `\`-form. Så gælder kravet "en fil må ikke ændre sig efter første læsning" også for data læst første gang på
    Windows.
+
+## Ændring 6 (2026-10-18): jobkøens robusthed — afbrudte jobs, låst database og trials — før kode
+
+Baggrund: en isoleret verifikation af stopkoden (2026-10-18) viste fem driftsfejl i jobkøen og flåden:
+- et planlagt stop, der afbryder et job, blev bagefter registreret som `job.timeout` og brugte et forsøg (to stop
+  under et holdout-job kunne gøre det til `job.failed`);
+- `jobs.recover` kørte, efter at flådens workers var startet, og kunne udløbe et job, den nye flåde lige havde taget;
+- efter at én jobproces var død, fejlede alle senere tunge jobs, indtil flåden blev genstartet;
+- en anden proces, der holdt databasens skrivelås i over 30 s, fik flåden til at stoppe med exit 1;
+- et cost-trin, der blev kørt igen efter et afbrudt stop, skrev en ekstra trials-række for hver variant.
+
+Ændringen gør ingen gate lempeligere og ændrer ingen registreret afgørelse. Live-databasen har 56 trials-rækker for
+56 forskellige (eksperiment, variant, split), så ingen tidligere DSR påvirkes.
+
+1. **Et planlagt stop er ikke en fejl.**
+   - Når et stop afbryder et job, lægges det straks tilbage i køen med hændelsen `job.interrupted`, og forsøget
+     gives tilbage. Der skrives ingen `job.timeout`, `job.retry` eller `job.failed`, og det tæller ikke som fejl.
+   - Det gælder også, når jobprocessen dør først, fordi hele procesgruppen fik SIGTERM (pc'en lukker ned). Flåden
+     venter højst 3 s på, at stoppet bliver registreret, før den kalder det en fejl.
+   - Kan tilbagelægningen ikke skrives, kører `jobs.recover` jobbet igen efter næste start som før.
+2. **Leases ryddes, før workers starter.** `jobs.recover` kører før den første worker. Så udløber kun leases fra en
+   død proces.
+3. **En ødelagt jobpulje erstattes.** Dør en jobproces uden et stop (fx OOM), får næste tunge job en ny pulje. Det
+   afbrudte job tæller som et almindeligt fejlet forsøg (`job.retry`).
+4. **En låst database stopper ikke flåden.**
+   - Holder en anden proces skrivelåsen længere end SQLite's ventetid (30 s), venter supervisoren og agenterne den
+     ud i stedet for at stoppe.
+   - Episoden registreres bagefter som `system.db_busy` med varighed. Andre databasefejl behandles som før.
+5. **Et trial er én testet variant.** Køres et cost-trin igen, skrives der ingen ekstra trials-række for en variant,
+   der allerede er registreret for samme eksperiment og split. Antallet af trials i DSR er dermed antallet af testede
+   varianter. Ingen tidligere række ændres eller fjernes.
