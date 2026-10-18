@@ -12,7 +12,8 @@ until the S7 gate opens (research/ENGINE_PROPOSAL.md section 10, lab/README.md, 
   python3 -m lab watch --once     one check; exit 0 if everything judged is up, 1 otherwise (external health check)
 
 Components: lab (supervisor alive), lab_state (FAIL_CLOSED, long resource hold), agent:<name> per roster agent (not
-judged while the supervisor is down), dashboard, collector; plus a one-off 'suspended' alert after the host slept.
+judged while the supervisor is down), dashboard, collector, awake (a logind block on sleep, e.g. the desktop systemd-inhibit
+line; not judged where logind cannot be asked); plus a one-off 'suspended' alert after the host slept.
 """
 from __future__ import annotations
 
@@ -172,6 +173,30 @@ def check_collector(pm_db, now):
     return (True, f"pid {procs[0]}, resolution tracking, last status poll {int(age)} s ago")
 
 
+def logind_inhibitors():
+    """Active logind inhibitors (read-only call on the system bus; needs no authorisation)."""
+    from gi.repository import Gio, GLib
+    bus = Gio.bus_get_sync(Gio.BusType.SYSTEM, None)
+    rows = bus.call_sync("org.freedesktop.login1", "/org/freedesktop/login1", "org.freedesktop.login1.Manager",
+                         "ListInhibitors", None, GLib.VariantType("(a(ssssuu))"), 0, 10_000, None).unpack()[0]
+    return [{"what": w, "who": who, "why": why, "mode": m, "uid": u, "pid": p} for w, who, why, m, u, p in rows]
+
+
+def check_awake():
+    """Is sleep blocked in logind (research/LINUX_DRIFT.md: systemd-inhibit started on the desktop)? Not judged
+    where logind cannot be asked."""
+    try:
+        inh = logind_inhibitors()
+    except Exception as e:
+        return (None, f"logind not reachable ({type(e).__name__})")
+    blocks = [i for i in inh if i["mode"] == "block" and "sleep" in i["what"].split(":")]
+    ours = [i for i in blocks if i["who"] == "copybot"]
+    if ours or blocks:
+        i = (ours or blocks)[0]
+        return (True, f"sleep blocked in logind by '{i['who']}' (pid {i['pid']})")
+    return (False, "sleep is NOT blocked: run the systemd-inhibit line from research/LINUX_DRIFT.md on the desktop")
+
+
 def check_dashboard(port):
     from lab.preflight import dashboard_running
     return (True, f"answers on 127.0.0.1:{port}") if dashboard_running(port) else \
@@ -189,7 +214,8 @@ def check(db_path=DEFAULT_DB, pm_db=PM_DB, port=8770, now=None):
         out["lab"] = (False, f"check failed: {e!r}"[:300])
         out["lab_state"] = (None, "not judged: lab check failed")
         out.update({f"agent:{n}": (None, "not judged: lab check failed") for n in ROLES})
-    for comp, fn in (("dashboard", lambda: check_dashboard(port)), ("collector", lambda: check_collector(pm_db, now))):
+    for comp, fn in (("dashboard", lambda: check_dashboard(port)), ("collector", lambda: check_collector(pm_db, now)),
+                     ("awake", check_awake)):
         try:
             out[comp] = fn()
         except Exception as e:
@@ -295,7 +321,7 @@ class Watcher:
 def summary(res):
     """Lines for --once: lab-level components, then agents (only the bad or unknown ones are listed)."""
     lines = []
-    for k in ("lab", "lab_state", "dashboard", "collector"):
+    for k in ("lab", "lab_state", "dashboard", "collector", "awake"):
         if k in res:
             ok = res[k]["ok"]
             lines.append(f"  [{'OK ' if ok else '?? ' if ok is None else 'NO '}] {k}: {res[k]['detail']}")

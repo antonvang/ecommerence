@@ -46,7 +46,8 @@ class Base(unittest.TestCase):
         con.commit()
         con.close()
         self.p = [mock.patch.object(watch, "_processes", lambda needle: [4242]),
-                  mock.patch("lab.preflight.dashboard_running", lambda port, timeout=3: True)]
+                  mock.patch("lab.preflight.dashboard_running", lambda port, timeout=3: True),
+                  mock.patch.object(watch, "check_awake", lambda: (True, "sleep blocked in logind by 'copybot'"))]
         for x in self.p:
             x.start()
 
@@ -80,7 +81,8 @@ class Checks(Base):
     def test_everything_up(self):
         r = self.res()
         self.assertTrue(all(v["ok"] for v in r.values()), {k: v for k, v in r.items() if not v["ok"]})
-        self.assertEqual({k for k in r if not k.startswith("agent:")}, {"lab", "lab_state", "dashboard", "collector"})
+        self.assertEqual({k for k in r if not k.startswith("agent:")},
+                         {"lab", "lab_state", "dashboard", "collector", "awake"})
         self.assertEqual(len([k for k in r if k.startswith("agent:")]), len(ROLES))
 
     def test_whole_fleet_down_or_hung_and_agents_are_not_judged_then(self):
@@ -338,6 +340,23 @@ class Cli(Base):
             if hasattr(os, "getuid"):
                 self.assertTrue(watch.notify("t", "b"))
                 self.assertTrue(calls[0]["DBUS_SESSION_BUS_ADDRESS"].startswith("unix:path=/run/user/"))
+
+    def test_awake_reads_logind_blocks(self):
+        self.p[2].stop()
+        try:
+            inh = [{"what": "sleep", "who": "NetworkManager", "why": "x", "mode": "delay", "uid": 0, "pid": 1}]
+            with mock.patch.object(watch, "logind_inhibitors", lambda: inh):
+                ok, detail = watch.check_awake()
+                self.assertFalse(ok)                                           # delay locks do not block sleep
+                self.assertIn("NOT blocked", detail)
+            inh.append({"what": "sleep:idle", "who": "copybot", "why": "lab og pm_lp", "mode": "block", "uid": 1000,
+                        "pid": 225567})
+            with mock.patch.object(watch, "logind_inhibitors", lambda: inh):
+                self.assertEqual(watch.check_awake(), (True, "sleep blocked in logind by 'copybot' (pid 225567)"))
+            with mock.patch.object(watch, "logind_inhibitors", side_effect=RuntimeError("no system bus")):
+                self.assertIsNone(watch.check_awake()[0])
+        finally:
+            self.p[2].start()
 
     def test_the_lab_watches_the_watcher(self):
         from lab import ops

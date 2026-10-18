@@ -20,14 +20,17 @@ afprøvet på denne maskine.
 
 ## Dvale
 
-**Målt kl. 12:44 UTC:**
-- **Dvale er ikke blokeret.**
-  - `systemd-inhibit --list` viser kun "delay"-inhibitorer samt XFCE's håndtering af tasterne.
-  - Der er ingen "block" for laboratoriet eller indsamleren.
-- **logind:** `IdleAction=ignore` og `KillUserProcesses=false`. Kernen har talt 0 dvaler siden opstart 10:59 CEST.
-- **XFCE:** kun tænd/sluk-knappen er indstillet ("spørg"). Standard for "dvale ved inaktivitet" og for dvaletasten er
-  ikke aflæst.
-- Dvale fra menuen eller dvaletasten er altså mulig.
+**Målt kl. 14:04 UTC: dvale er blokeret.**
+- Du startede blokeringslinjen nedenfor på skrivebordet kl. 14:03:34 UTC (pid 225567, session 2, `setsid nohup`).
+- `systemd-inhibit --list` viser `copybot ... sleep:idle ... block`.
+- Vagten kontrollerer det hvert halve minut (komponenten `awake`, læser logind) og melder, hvis blokeringen
+  forsvinder, fx efter en genstart.
+- Før det, kl. 12:44 UTC, var der ingen blokering. Der var kun "delay"-inhibitorer, `IdleAction=ignore`, og kernen
+  havde talt 0 dvaler siden opstart.
+- XFCE står på standard bortset fra tænd/sluk-knappen ("spørg"). Standard for "dvale ved inaktivitet" er ikke
+  aflæst; med blokeringen er det ligegyldigt.
+- XFCE's egen inhibit-grænseflade (som videoafspillere bruger) blev afprøvet. Den laver **ikke** en logind-blokering
+  og stopper derfor ikke dvale fra menuen. Den bruges ikke.
 
 **Forventet, ikke afprøvet her:**
 - Ved dvale fryser alt, også vagten.
@@ -45,7 +48,9 @@ SSH afviser polkit den.
 setsid nohup systemd-inhibit --what=sleep:idle --who=copybot --why="lab og pm_lp" --mode=block sleep infinity >/dev/null 2>&1 &
 ```
 
-- Kontrollér med `systemd-inhibit --list`: der skal stå `copybot ... block`.
+- Kontrollér med `systemd-inhibit --list` (der skal stå `copybot ... block`) eller med `python3 -m lab watch --once`
+  (linjen `awake`).
+- Skal køres igen efter hver genstart af maskinen og efter log-ud af skrivebordet. Vagten minder om det.
 - Med `setsid nohup` overlever blokeringen, at terminalvinduet lukkes. Den varer, til processen stoppes, eller
   maskinen genstarter.
 - Uden `setsid nohup` ophører den, når vinduet lukkes.
@@ -92,7 +97,8 @@ Vagten ser:
 - hver enkelt agent, der fejler eller er hængt (`agent:<navn>`; vurderes ikke, mens flåden er nede);
 - dashboardet nede;
 - indsamlerproces væk, gamle snapshots (5 min) eller ulæselig database;
-- dvale, bagefter.
+- dvale, bagefter;
+- om dvale er blokeret i logind (`awake`).
 
 **Grænser:**
 - Alt overvågning kører på samme maskine. Strømsvigt, genstart, dvale eller netværksudfald på selve pc'en kan kun en
