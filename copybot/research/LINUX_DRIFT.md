@@ -56,7 +56,8 @@ afprøvet på denne maskine.
   - Log-ud-dialogen viser ikke længere Dvale og Dvaletilstand (`xfce4-session /shutdown/ShowSuspend`,
     `ShowHibernate` = false).
   - Fortryd: `xfconf-query -c <kanal> -p <egenskab> -r`.
-- Varig blokering for hele systemet, også efter genstart og før log-ind, kræver sudo (ikke kørt):
+- Varig blokering for hele systemet, også efter genstart og før log-ind: kørt 2026-10-18 med root-godkendelse
+  (brugeren `anton` er ikke i `sudo`-gruppen; polkit-dialogen kræver root-adgangskoden). Alle fem står som `masked`:
   `sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target suspend-then-hibernate.target`.
   Fortryd med `unmask`.
 - Strømsvigt kan ingen indstilling i styresystemet forhindre. BIOS-indstillingen "After Power Loss: Power On" får
