@@ -272,3 +272,13 @@ This amendment discloses what the code actually does. Nothing changes: no code, 
 - **Cadence.** A round starts once at least 60 s have passed since the previous one. The loop checks every 5 s, so
   rounds are 60–65 s apart and about 1.5–2 % of calendar minutes have no round. This was already true on D0 (97.9 %).
   The 90 % gate D1 is unchanged and stays reachable.
+
+## Amendment 6 (2026-10-18 ~13:10 UTC): resolver timeout for future collector starts
+
+This is an engineering change only. No method, data, window or gate changes.
+
+- `START_PM_LP.sh` now exports `RES_OPTIONS="timeout:1 attempts:2"`. A query lost by the first resolver then costs
+  1 s instead of 5 s (measured in `research/DNS_LINUX.md`).
+- It takes effect at the next start of the collector. The running collector (started 11:48:36 UTC with the 300 s
+  lookup cache from amendment 4) is not restarted for it.
+- Undo: delete that line.
