@@ -681,3 +681,61 @@ Ingen gate for de formelle tests lempes, ingen tærskel ændres, og ingen regist
       - Der er ikke beregnet strategiafkast.
       - Familiernes gitre er taget uændret fra udkast, der blev skrevet før.
       - Screeningen er kun et filter, så fremadtestens gyldighed påvirkes ikke.
+
+## Ændring 9 (2026-10-18): spot-data før pm_lp-perioden, funding i papirkonti, ikke-afgørende researchjobs fra scanningerne og edge-overvågning — før kode
+
+**Beslutning:** brugeren besluttede 2026-10-18 i sessionen:
+- familiernes spot-data for træning og validering må hentes én gang før 2026-10-24, uden for pm_lp's kritiske periode;
+- papirkonti bogfører afregnet funding fremover;
+- scanningerne fører til ikke-afgørende researchjobs;
+- edge overvåges ikke-afgørende nu; afgørende regler kommer som ændring 11.
+
+Ingen gate lempes, ingen tærskel, intet vindue og ingen alfa ændres, og ingen registreret afgørelse ændres.
+
+1. **Spot-data for familier før 2026-10-24.**
+   - Ændring 8 punkt 7 og 17 ændres kun sådan: indtil 2026-10-24 00:00 UTC må koden for ændring 8 hente de
+     spot-klinefiler (1h, `data.binance.vision`), som en godkendt familie skal screenes på i træning og validering
+     (`train3` 2022-01..2023-06 og `validation3` 2023-07..2023-12). Registrering må ske i samme periode.
+   - Fra 2026-10-24 00:00 UTC til 2026-11-28 00:00 UTC gælder embargoen i ændring 8 uændret: ingen
+     netværksforespørgsler fra koden for ændring 8. Mangler en screening filer ved embargoens start, venter den
+     (`family.waiting`) og fortsætter efter 2026-11-28.
+   - Holdout-data (2024) og fremaddata hentes kun efter 2026-11-27, som før.
+   - Neddrosling: højst 2 samtidige downloads, flådens DNS-cache, filerne i `data/lab/market/spot_klines/`.
+     Forventet omfang cirka 720 filer og 25-50 MB.
+
+2. **Funding i papirkonti.**
+   - Fra ændringens deploy (hændelsen `paper.funding_started`, tidspunkt T_F) bogfører alle simulerede papirkonti
+     afregnet Binance-funding for åbne positioner som en pengestrøm. Det gælder godkendt papirhandel, skyggekonti og
+     fremadtest-konti.
+   - Beløb = − position × pris ved afregningen × afregnet rate. En lang position betaler en positiv rate, en kort
+     modtager den. Prisen er åbningskursen for den timebar, der starter ved afregningen.
+   - Rækkerne er append-only og hash-kædede (tabellen `sim_funding`), én pr. konto, instrument og afregning.
+   - Afregninger før T_F genberegnes ikke. P&L vises "inkl. funding fra T_F".
+   - Fremadtestene i ændring 2 og 7 evalueres fortsat ved arkivgenberegning med funding og påvirkes ikke.
+   - Afstemningen udvides: kontant = startkapital + fill-pengestrømme − gebyrer + funding.
+
+3. **Ikke-afgørende researchjobs fra scanningerne** (udvider ændring 5 punkt 4).
+   - Et dagligt job `scan_digest` (report-1) læser kun tabellen `observations` for de seneste 24 timer og 7 dage. Pr.
+     detektor, metrik og instrument opgør det: målinger, markerede klokketimer, vedvarenhed, størrelse mod tærsklen
+     (median og p90), fejlrate og størrelse mod en fast omkostningsreference (katalogets taker-gebyr + halv spread +
+     slippage).
+   - Det skriver `artifacts/_diagnostic/scanner/<dag>.json` og hændelsen `research.digest` med en registreret
+     beslutning: NO_ACTION (intet vedvarende over omkostningerne) eller INVESTIGATE (vedvarende over omkostningerne;
+     kandidat til et familieudkast, som kræver en ny familie og brugerens godkendelse).
+   - Et job `scan_dossier` (report-1) for hver ny INVESTIGATE-nøgle i `market.event` bruger samme kilder og skriver en
+     artefakt og hændelsen `research.dossier`.
+   - Jobbene registrerer ingen eksperimenter, handler ikke, ændrer ingen tilstand og henter ingen data.
+
+4. **Edge-overvågning (ikke-afgørende).**
+   - For hver aktiv papirkonto vises: dage live, netto pr. dag efter omkostninger (inkl. funding fra T_F) og afstanden
+     til valideringsforventningen fra `validate.json` (`daily_net`: gennemsnit og spredning) som en z-værdi. Konti uden
+     valideringsserie vises "ingen forventning".
+   - Visningen afgør intet, og pauser sker kun efter de eksisterende risikoregler. En kort god periode giver aldrig
+     en PASS; afgørelsen er stadig den forhåndsregistrerede fremadtest.
+   - Afgørende kriterier for tab af edge skrives som ændring 11, før den første strategi går i godkendt papirhandel.
+
+5. **Saldooversigt (kun visning).**
+   - Den formelle saldo er uændret: de konti, der i dag indgår efter gældende regler.
+   - Separate felter viser fremadtest-saldoen (startkapital, aktuel værdi, gevinst/tab) og en samlet simuleret oversigt
+     (formel + fremadtest), tydeligt mærket som simuleret og ikke godkendt. Intet lægges ind i den formelle saldo, og
+     intet tælles to gange.
