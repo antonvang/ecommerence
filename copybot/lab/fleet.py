@@ -138,6 +138,7 @@ class Agent:
         self.always_run = name == "risk-1"
         self.next_periodic = 0.0
         self.counters = None
+        self.failing = None                # last periodic error until a pass succeeds: alive is not healthy
 
     # ---------- bookkeeping ----------
     def _load_counters(self, db):
@@ -170,8 +171,12 @@ class Agent:
     def _periodic_tick(self, db):
         now = time.time()
         if now < self.next_periodic:
-            self.beat(db, "idle", detail="waiting for next run", current_job=None, current_exp=None,
-                      next_action=f"next run in {int(self.next_periodic - now)} s")
+            if self.failing:
+                self.beat(db, "failed", detail=f"last pass failed: {self.failing}"[:200], current_job=None,
+                          current_exp=None, next_action=f"retry in {int(self.next_periodic - now)} s")
+            else:
+                self.beat(db, "idle", detail="waiting for next run", current_job=None, current_exp=None,
+                          next_action=f"next run in {int(self.next_periodic - now)} s")
             return
         self.beat(db, "running", detail=f"{self.role} pass", current_job=f"{self.name}:periodic", current_exp=None,
                   next_action="finish pass")
@@ -181,15 +186,21 @@ class Agent:
             summary = _summary(res)
             self.log("periodic.done", result=summary)
             self.next_periodic = time.time() + self.every
+            if self.failing:
+                db.event("agent.recovered", f"agent:{self.name}", None, {"agent": self.name, "after": self.failing})
+            self.failing = None
             self.beat(db, "idle", detail="ok", current_job=None, current_exp=None, last_result=summary,
-                      next_action=f"next run in {int(self.every)} s")
+                      last_ok_ts=time.time(), next_action=f"next run in {int(self.every)} s")
         except Exception as e:
             self.counters["errors"] += 1
             self.next_periodic = time.time() + min(self.every, 60)
-            self.log("periodic.error", error=repr(e))
-            db.event("agent.error", f"agent:{self.name}", None, {"agent": self.name, "error": repr(e)[:300]})
-            self.beat(db, "idle", detail=repr(e)[:200], current_job=None, current_exp=None,
-                      last_result=f"error: {repr(e)[:150]}", next_action="retry next pass")
+            self.log("periodic.error", error=repr(e), trace=traceback.format_exc()[-1500:])
+            if self.failing != repr(e)[:300]:                    # a changed or new failure is recorded once
+                db.event("agent.error", f"agent:{self.name}", None, {"agent": self.name, "error": repr(e)[:300]})
+            self.failing = repr(e)[:300]
+            self.beat(db, "failed", detail=repr(e)[:200], current_job=None, current_exp=None,
+                      last_result=f"error: {repr(e)[:150]}", last_error=repr(e)[:300], last_error_ts=time.time(),
+                      next_action="retry next pass")
 
     def _job_tick(self, db):
         slot = False
@@ -236,11 +247,12 @@ class Agent:
             if jobs.complete(db, jid, self.name, res):
                 self.counters["tasks_done"] += 1
                 last = _summary(res)
+                done = {"last_ok_ts": time.time()}
             else:
-                last = "lease lost (timed out): result discarded"
+                last, done = "lease lost (timed out): result discarded", {}
             self.log("job.done", job=jid, exp=eid, seconds=round(time.time() - t0, 2), result=last)
             self.beat(db, "idle", detail="ok", current_job=None, current_exp=None, last_result=last,
-                      next_action="claim next job")
+                      next_action="claim next job", **done)
         except Exception as e:
             stop.set()
             keeper.join(5)
@@ -252,7 +264,8 @@ class Agent:
             self.log("job.error", job=jid, exp=eid, error=repr(e), outcome=outcome,
                      trace=traceback.format_exc()[-1500:])
             self.beat(db, "idle", detail=repr(e)[:200], current_job=None, current_exp=None,
-                      last_result=f"{job['kind']} {outcome}: {repr(e)[:120]}", next_action="claim next job")
+                      last_result=f"{job['kind']} {outcome}: {repr(e)[:120]}", last_error=repr(e)[:300],
+                      last_error_ts=time.time(), next_action="claim next job")
 
     def _keep_lease(self, job, stop):
         """Own connection (sqlite objects are per thread). Extends the lease until the job's own timeout is reached."""
@@ -309,9 +322,18 @@ def risk_pass(db_path):
     return run
 
 
+class AgentDegraded(RuntimeError):
+    """The pass ran, but part of its task could not be done: the agent is reported as failed."""
+
+
 def paper_pass(db):
     from lab import paper_runner
-    return paper_runner.run(db)
+    res = paper_runner.run(db)
+    bad = {k: v.get("reason") or v["status"] for k, v in res["results"].items() if v.get("status") in
+           ("blocked", "error")}
+    if bad:
+        raise AgentDegraded(f"paper ledgers not processed: {json.dumps(bad)[:250]}")
+    return res
 
 
 def catalogue_pass(db):

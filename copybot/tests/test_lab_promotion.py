@@ -20,7 +20,7 @@ from lab.db import DB  # noqa: E402
 from lab.engine import data  # noqa: E402
 from lab.paper import Book, PaperEngine  # noqa: E402
 from lab.risk import Risk  # noqa: E402
-from tests.lab_fixtures import approve_paper, supervised  # noqa: E402
+from tests.lab_fixtures import approve_paper, frozen, supervised  # noqa: E402
 from tests.test_lab_paper_runner import SAT, feed  # noqa: E402
 
 HOUR = 3600
@@ -65,8 +65,8 @@ class Base(unittest.TestCase):
         if verdict:
             registry.record_result(self.db, eid, label, verdict, {}, {}, "system:test")
         params = {"mode": "level", "k": 3} if template == "mvrv_value" else {"mode": "weekend_only"}
-        pipeline.save_artifact(eid, "cost", {"selected": 0})
-        pipeline.save_artifact(eid, "backtest", {"variants": [{"variant": 0, "params": params, "fit": None,
+        frozen(self.db, eid, "cost", {"selected": 0})
+        frozen(self.db, eid, "backtest", {"variants": [{"variant": 0, "params": params, "fit": None,
                                                                "positions": {}}]})
 
     def screen_passed(self, eid=GOOD):

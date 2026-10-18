@@ -77,7 +77,8 @@ class DB:
         for c, typ in (("status", "TEXT"), ("stale_after", "INTEGER"), ("interval", "REAL"), ("role", "TEXT"),
                        ("current_job", "TEXT"), ("current_exp", "TEXT"), ("started_ts", "REAL"),
                        ("tasks_done", "INTEGER"), ("errors", "INTEGER"), ("retries", "INTEGER"),
-                       ("last_result", "TEXT"), ("next_action", "TEXT")):
+                       ("last_result", "TEXT"), ("next_action", "TEXT"), ("last_ok_ts", "REAL"),
+                       ("last_error", "TEXT"), ("last_error_ts", "REAL")):
             if c not in cols:                         # operational table only (not hash-chained): safe to extend
                 self.con.execute(f"ALTER TABLE heartbeats ADD COLUMN {c} {typ}")
 

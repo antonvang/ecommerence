@@ -121,8 +121,11 @@ def complete(db, job_id, worker_id, result=None, now=None):
         if cur.rowcount != 1:
             return False                                   # lease lost (timed out and taken over): result discarded
         j = get(db, job_id)
+        art = (result or {}).get("artifact") if isinstance(result, dict) else None
         db.event("job.done", worker_id, j["exp_id"], {"job_id": job_id, "kind": j["kind"],
-                                                      "duration_s": round(now - (j["started_ts"] or now), 3)})
+                                                      "duration_s": round(now - (j["started_ts"] or now), 3),
+                                                      **({"artifact_sha256": art["sha256"]}
+                                                         if isinstance(art, dict) and art.get("sha256") else {})})
     return True
 
 

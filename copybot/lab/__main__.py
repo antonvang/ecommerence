@@ -81,9 +81,13 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
         sp = sub.add_parser(c); sp.add_argument("exp"); sp.add_argument("--reason", required=True)
     rt = sub.add_parser("revoke-template"); rt.add_argument("template"); rt.add_argument("--reason", required=True)
     ex = sub.add_parser("export-db"); ex.add_argument("target")
+    pf = sub.add_parser("preflight"); pf.add_argument("--port", type=int, default=8770)
     wb = sub.add_parser("web"); wb.add_argument("--port", type=int, default=8770); wb.add_argument("--duration", type=float)
     args = ap.parse_args(argv)
     db_path = args.db or db_path
+    if args.cmd == "preflight":       # read-only startup checks (START_LAB.sh)
+        from lab import preflight
+        return preflight.main(db_path, args.port, out)
     if args.cmd == "web":
         from lab import web
         return web.run(args.db or db_path, args.port, args.duration, out)

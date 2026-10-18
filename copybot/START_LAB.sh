@@ -16,6 +16,10 @@ if [ ! -f data/lab/lab.db ]; then
 fi
 
 mkdir -p data/lab
+if [ -f data/lab/lab.db ]; then
+  echo " Tjekker at laboratoriet kan starte sikkert ..."
+  "$PY" -m lab preflight || { echo " Start afbrudt. Se ovenfor (og research/LINUX_FLYT.md)."; exit 1; }
+fi
 echo
 echo " Mars Command Center - forskningsflaade (paper, ingen rigtige penge)"
 echo " ==================================================================="

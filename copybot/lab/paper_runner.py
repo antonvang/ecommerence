@@ -123,12 +123,23 @@ def close_ledger(db, led, base, get, now):
     return {"status": "closing", "orders": orders}
 
 
+def _guarded(db, ledger, fn):
+    """One ledger's failure never stops the others (closing in particular); it is reported, not swallowed."""
+    try:
+        return fn()
+    except Exception as e:
+        last = db.one("SELECT payload FROM events WHERE kind='paper.error' AND exp_id=? ORDER BY id DESC LIMIT 1", ledger)
+        if last is None or json.loads(last[0]).get("error") != repr(e)[:300]:     # a new or changed error, once
+            db.event("paper.error", "agent:paper-1", ledger, {"error": repr(e)[:300]})
+        return {"status": "error", "reason": repr(e)[:200]}
+
+
 def run(db, get=_get, now=None, cm_get=_cm_get):
     from lab import promotion
     now = now or time.time()
     out = {}
     for led, base in closing_ledgers(db):              # reduce-only: allowed even without a supervisor or FAIL_CLOSED
-        out[led] = close_ledger(db, led, base, get, now)
+        out[led] = _guarded(db, led, lambda: close_ledger(db, led, base, get, now))
     if not promotion.supervisor_ok(db, now):
         return {"experiments": len(out), "results": out, "simulated": True, "blocked": "supervisor state unknown"}
     for eid in paper_experiments(db):
@@ -139,9 +150,10 @@ def run(db, get=_get, now=None, cm_get=_cm_get):
                 db.event("paper.not_authorized", "agent:paper-1", eid, {"reason": why})
             out[eid] = {"status": "not authorized", "reason": why}
             continue
-        out[eid] = run_one(db, eid, get, now, cm_get=cm_get)
+        out[eid] = _guarded(db, eid, lambda: run_one(db, eid, get, now, cm_get=cm_get))
     for eid in shadow_experiments(db):                 # amendment 3: simulated, separate ledger, no effect on tests
-        out["SHADOW_" + eid] = run_one(db, eid, get, now, ledger="SHADOW_" + eid, cm_get=cm_get)
+        out["SHADOW_" + eid] = _guarded(db, "SHADOW_" + eid,
+                                        lambda: run_one(db, eid, get, now, ledger="SHADOW_" + eid, cm_get=cm_get))
     return {"experiments": len(out), "results": out, "simulated": True}
 
 
@@ -159,8 +171,13 @@ def run_one(db, eid, get, now, ledger=None, cm_get=_cm_get):
     eng.start(L, CAPITAL, cost_model(), actor="agent:paper-1")
     if risk.paused(L) or risk.fail_closed():
         return {"status": "paused" if risk.paused(L) else "fail_closed"}
-    cost = pipeline.load_artifact(eid, "cost")
-    variant = pipeline.load_artifact(eid, "backtest")["variants"][cost["selected"]]
+    try:
+        variant = pipeline.frozen_variant(db, eid)                    # fail closed: no orders on unverified rules
+    except pipeline.ArtifactError as e:
+        if not db.one("SELECT 1 FROM events WHERE kind='paper.blocked' AND exp_id=? AND payload LIKE ?", L,
+                      f"%{str(e)[:60]}%"):
+            db.event("paper.blocked", "agent:paper-1", L, {"reason": str(e), "orders": "none"})
+        return {"status": "blocked", "reason": str(e)}
     hour = int(now) // HOUR * HOUR
     market = {}
     try:

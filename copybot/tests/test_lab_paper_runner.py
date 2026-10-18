@@ -14,7 +14,7 @@ from lab.db import DB  # noqa: E402
 from lab.engine import data  # noqa: E402
 from lab.paper import PaperEngine  # noqa: E402
 from lab.risk import Risk  # noqa: E402
-from tests.lab_fixtures import approve_paper  # noqa: E402
+from tests.lab_fixtures import approve_paper, frozen  # noqa: E402
 
 HOUR = 3600
 EID = "E_day_of_week_p1"
@@ -49,8 +49,8 @@ class Runner(unittest.TestCase):
         self.db.append("experiments", exp_id=EID, version=1, created_ts=0, mechanism_tag="calendar_day_of_week",
                        fingerprint="f", spec_json=spec)
         approve_paper(self.db, EID)
-        pipeline.save_artifact(EID, "cost", {"selected": 1})
-        pipeline.save_artifact(EID, "backtest", {"variants": [
+        frozen(self.db, EID, "cost", {"selected": 1})
+        frozen(self.db, EID, "backtest", {"variants": [
             {"variant": 0, "params": {"mode": "flat_weekend"}, "fit": None, "positions": {}},
             {"variant": 1, "params": {"mode": "weekend_only"}, "fit": None, "positions": {}}]})
 
@@ -89,8 +89,8 @@ class Runner(unittest.TestCase):
         self.db.append("experiments", exp_id=eid, version=1, created_ts=0, mechanism_tag="cross_sectional_momentum",
                        fingerprint="x", spec_json={"template": "xs_momentum", "execution": "taker"})
         approve_paper(self.db, eid)
-        pipeline.save_artifact(eid, "cost", {"selected": 0})
-        pipeline.save_artifact(eid, "backtest", {"variants": [{"variant": 0, "params": {"lookback_days": 7, "k": 2},
+        frozen(self.db, eid, "cost", {"selected": 0})
+        frozen(self.db, eid, "backtest", {"variants": [{"variant": 0, "params": {"lookback_days": 7, "k": 2},
                                                                "fit": None, "positions": {}}]})
         r = paper_runner.run(self.db, feed(SAT), SAT)["results"][eid]
         self.assertEqual(r["status"], "ok")
@@ -142,8 +142,8 @@ class Shadow(unittest.TestCase):
                        fingerprint="f", spec_json={"template": "mvrv_value", "execution": "taker"})
         self.db.append("transitions", exp_id=self.EID, ts=0, from_state=None, to_state="OBSERVATION", actor="fixture",
                        reason="fixture: on the observation list")
-        pipeline.save_artifact(self.EID, "cost", {"selected": 0})
-        pipeline.save_artifact(self.EID, "backtest", {"variants": [{"variant": 0, "params": {"mode": "level", "k": 3},
+        frozen(self.db, self.EID, "cost", {"selected": 0})
+        frozen(self.db, self.EID, "backtest", {"variants": [{"variant": 0, "params": {"mode": "level", "k": 3},
                                                                     "fit": None, "positions": {}}]})
 
     def tearDown(self):

@@ -34,6 +34,10 @@ class StepError(Exception):
     pass
 
 
+class ArtifactError(StepError):
+    """A frozen artifact is missing, unrecorded or differs from its recorded SHA-256: fail closed, never regenerate."""
+
+
 # ---------- artifacts ----------
 def save_artifact(exp_id, name, obj):
     os.makedirs(os.path.join(ARTIFACTS, exp_id), exist_ok=True)
@@ -48,6 +52,41 @@ def save_artifact(exp_id, name, obj):
 def load_artifact(exp_id, name):
     with open(os.path.join(ARTIFACTS, exp_id, f"{name}.json"), encoding="utf-8") as f:
         return json.load(f)
+
+
+def recorded_sha(db, exp_id, name):
+    """The SHA-256 recorded when step `name` of `exp_id` finished: the hash-chained job.done event (newer runs), else
+    the job's stored result (runs before the hash was chained). None if nothing was recorded."""
+    jid = f"{name}|{exp_id}"
+    for r in db.q("SELECT payload FROM events WHERE kind='job.done' AND exp_id=? ORDER BY id DESC", exp_id):
+        p = json.loads(r["payload"])
+        if p.get("job_id") == jid and p.get("artifact_sha256"):
+            return p["artifact_sha256"]
+    j = db.one("SELECT status, result FROM jobs WHERE job_id=?", jid)
+    if j and j["status"] == "done" and j["result"]:
+        return ((json.loads(j["result"]) or {}).get("artifact") or {}).get("sha256")
+    return None
+
+
+def frozen_artifact(db, exp_id, name):
+    """Load a frozen artifact only if its bytes match the recorded SHA-256 (fail closed otherwise)."""
+    path = os.path.join(ARTIFACTS, exp_id, f"{name}.json")
+    want = recorded_sha(db, exp_id, name)
+    if want is None:
+        raise ArtifactError(f"{exp_id}/{name}.json has no recorded SHA-256")
+    try:
+        with open(path, "rb") as f:
+            raw = f.read()
+    except FileNotFoundError:
+        raise ArtifactError(f"{exp_id}/{name}.json is missing (frozen parameters are never regenerated)") from None
+    if hashlib.sha256(raw).hexdigest() != want:
+        raise ArtifactError(f"{exp_id}/{name}.json differs from its recorded SHA-256")
+    return json.loads(raw)
+
+
+def frozen_variant(db, exp_id):
+    cost = frozen_artifact(db, exp_id, "cost")
+    return frozen_artifact(db, exp_id, "backtest")["variants"][cost["selected"]]
 
 
 # ---------- discovery and registration ----------
@@ -575,8 +614,7 @@ def step_observe(db, job, worker):
     pl = job["payload"]
     split = data.forward_split(pl["start"], pl.get("months", OBSERVATION_MONTHS))
     spec = _spec(db, eid)
-    cost = load_artifact(eid, "cost")
-    v = load_artifact(eid, "backtest")["variants"][cost["selected"]]
+    v = frozen_variant(db, eid)                                          # verified against the recorded hashes
     bars, funding, dups, vol = _market(db, eid, split, worker, spec)      # data.window() refuses unfinished windows
     q, excluded, enough = _quality(bars, split, dups, spec, vol)
     _drop(bars, funding, vol, excluded, spec)
@@ -661,8 +699,7 @@ def step_holdout(db, job, worker):
     if spec["template"] in NO_CLEAN_HOLDOUT:
         raise StepError("no clean holdout possible: BTC/ETH 2024 data was already seen by L14_tsmom_v1 "
                         "(research/PROTOCOL_V3.md amendment 1)")
-    cost = load_artifact(eid, "cost")
-    v = load_artifact(eid, "backtest")["variants"][cost["selected"]]
+    v = frozen_variant(db, eid)                                          # verified against the recorded hashes
     bars, funding, dups, vol = _market(db, eid, "holdout", worker, spec)
     _, h_excluded, _ = _quality(bars, "holdout", dups, spec, vol)
     if catalogue.TEMPLATES[spec["template"]].get("universe") in ("30", "30v3", "cm16"):

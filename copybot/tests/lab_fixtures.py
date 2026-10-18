@@ -19,6 +19,15 @@ def approve_paper(db, eid, actor="human:fixture", ts=0, from_state=None):
     return aid
 
 
+def frozen(db, eid, name, obj):
+    """Save a step artifact and record its SHA-256 the way a finished pipeline job does (hash-chained job.done)."""
+    from lab import pipeline
+    art = pipeline.save_artifact(eid, name, obj)
+    db.event("job.done", "system:fixture", eid, {"job_id": f"{name}|{eid}", "kind": name,
+                                                 "artifact_sha256": art["sha256"]})
+    return art
+
+
 def supervised(db, ts=None, status="running"):
     """A supervisor heartbeat (the exposure gate needs one within 30 s)."""
     db.con.execute("INSERT INTO heartbeats(worker, ts, pid, ok, detail, status) VALUES('supervisor',?,1,1,'',?) "

@@ -101,6 +101,8 @@ def agents(db, now=None):
                     "uptime_s": (r["ts"] - r["started_ts"]) if r.get("started_ts") else None,
                     "tasks_done": r.get("tasks_done"), "errors": r.get("errors"), "retries": r.get("retries"),
                     "last_result": r.get("last_result"), "next_action": r.get("next_action"), "detail": r.get("detail"),
+                    "last_ok_ts": r.get("last_ok_ts"), "last_error": r.get("last_error"),
+                    "last_error_ts": r.get("last_error_ts"),
                     "pid": r.get("pid")})
     return {"supervisor": wk["supervisor"], "agents": out, "total": len(out), "retired": retired,
             "active": sum(1 for a in out if a["status"] in ("running", "idle", "queued", "blocked")),

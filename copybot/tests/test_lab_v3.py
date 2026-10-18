@@ -18,6 +18,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from lab import fleet, jobs, lifecycle, paper_runner, pipeline, registry, templates  # noqa: E402
 from lab.db import DB  # noqa: E402
+from tests.lab_fixtures import frozen  # noqa: E402
 from lab.engine import adversarial, catalogue, data  # noqa: E402
 
 HOUR, DAY = 3600, 86400
@@ -479,8 +480,8 @@ class ForwardEvaluation(unittest.TestCase):
         self.db.append("transitions", exp_id=eid, ts=0, from_state=None, to_state="OBSERVATION", actor="fixture",
                        reason="fixture: entered observation")
         self.db.event("observation.started", "system:t", eid, {"window": self.split, "start": a, "end": b})
-        pipeline.save_artifact(eid, "cost", {"selected": 0})
-        pipeline.save_artifact(eid, "backtest", {"variants": [{"variant": 0, "params": {"n": 20}, "fit": None,
+        frozen(self.db, eid, "cost", {"selected": 0})
+        frozen(self.db, eid, "backtest", {"variants": [{"variant": 0, "params": {"n": 20}, "fit": None,
                                                                "positions": {}}]})
         self.job = {"exp_id": eid, "payload": {"start": a, "months": 6}}
 
