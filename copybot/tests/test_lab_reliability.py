@@ -248,6 +248,39 @@ class Preflight(Tmp):
         self.assertIn("PREFLIGHT FAILED", lines[-1])
 
 
+class StaleHeartbeat(Tmp):
+    def test_one_stale_event_per_episode_not_one_per_second(self):
+        import threading
+        from lab.supervisor import Supervisor, Worker
+        clock = {"t": 1_000_000.0}
+        w = Worker("slow-1", lambda db: None, interval=1, stale_after=30)
+        hold = threading.Event()
+        w.thread = threading.Thread(target=hold.wait, daemon=True)            # alive, busy in a long pass
+        w.thread.start()
+        sup = Supervisor(self.path, [w], now=lambda: clock["t"], log=lambda *a: None)
+        sup.db = self.db
+        beat = lambda: self.db.con.execute(  # noqa: E731
+            "INSERT INTO heartbeats(worker, ts, pid, ok, detail, status) VALUES('slow-1',?,1,1,'','running') "
+            "ON CONFLICT(worker) DO UPDATE SET ts=excluded.ts", (int(clock["t"]),))
+        try:
+            beat()
+            clock["t"] += 100                                                 # stale for 100 s
+            for _ in range(60):
+                sup.check()
+                clock["t"] += 1
+            count = lambda: self.db.one("SELECT COUNT(*) FROM events WHERE kind='worker.heartbeat_stale'")[0]  # noqa
+            self.assertEqual(count(), 1)
+            self.assertEqual(self.db.one("SELECT COUNT(*) FROM events WHERE kind='worker.restarted'")[0], 0)
+            beat()
+            sup.check()                                                       # fresh again
+            clock["t"] += 100
+            sup.check()
+            sup.check()
+            self.assertEqual(count(), 2)                                      # a new episode is reported once
+        finally:
+            hold.set()
+
+
 class DashboardPort(unittest.TestCase):
     def test_restart_rebinds_at_once_but_a_second_dashboard_is_refused(self):
         import threading

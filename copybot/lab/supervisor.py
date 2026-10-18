@@ -68,6 +68,7 @@ class Worker:
         self.beats_itself, self.role = beats_itself, role
         self.stale_after = stale_after or max(3 * interval, 10)
         self.thread, self.restarts, self.next_start, self.failed = None, [], 0.0, False
+        self.stale_reported = False               # one worker.heartbeat_stale event per stale episode
 
 
 def heartbeat_worker():
@@ -194,9 +195,11 @@ class Supervisor:
             alive = w.thread is not None and w.thread.is_alive()
             stale = hb is not None and now - hb["ts"] > w.stale_after
             if alive and not stale:
+                w.stale_reported = False
                 continue
-            if stale and alive:
+            if stale and alive and not w.stale_reported:
                 self.db.event("worker.heartbeat_stale", ACTOR, None, {"worker": w.name, "age": now - hb["ts"]})
+                w.stale_reported = True
             w.restarts = [t for t in w.restarts if now - t < 3600]
             if len(w.restarts) >= MAX_RESTARTS_PER_HOUR:
                 w.failed = True
