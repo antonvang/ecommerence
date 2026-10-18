@@ -469,3 +469,215 @@ Ingen gate for de formelle tests lempes, ingen tærskel ændres, og ingen regist
      sættet må læses.
    - Holdout åbnes stadig kun én gang pr. eksperiment, og intet lempes. Ingen holdout er åbnet endnu, så intet
      resultat ændres.
+
+## Ændring 8 (2026-10-18): hypotesefamilier — forhåndsregistrerede familier af ikke-prisforudsigende mekanismer, alfa-budget og fremadtest — før kode
+
+**Beslutning:** brugeren besluttede 2026-10-18 at genstarte idégenereringen gennem forhåndsregistrerede hypotesefamilier:
+- kun mekanismer, der ikke forudsiger priser: struktur, tilskud, carry, flow og likviditetsydelse. Det følger
+  `research/STRATEGIC_OPPORTUNITY_REVIEW.md` afsnit 3 ("Price-prediction strategies are therefore not pursued further");
+- en AI må skrive udkast til en familie, men kun brugeren godkender den, og han skriver selv godkendelsen i terminalen;
+- et alfa-budget håndhæves, og en fremadtest afgør;
+- registreringer, der skal hente nye data, venter til efter 2026-11-27. Indtil da bruger pm_lp netværket og DNS.
+
+**Gælder:** kun eksperimenter, der registreres som instanser af en godkendt familie.
+- Alle resultater for v1–v3 står, som de er registreret.
+- MVRV's kohorte `fwd202611` (N = 1) og fremadtest-familien i ændring 7 (N = 10) ændres ikke.
+- `lab/engine/catalogue.py` ændres ikke. De 3 skabelongodkendelser, der i dag er gyldige for katalogets blob
+  `cfa04601fd86`, forbliver derfor gyldige: `mvrv_value`, `real_rate_filter` og `supply_dilution`.
+- Ingen gate lempes, ingen tærskel ændres, og alt nyt er strengere.
+- Tallene mærket (bekræftet) blev bekræftet af brugeren 2026-10-18, sammen med første familie (F1 `fcarry`),
+  F2 `dbasis` kun i fase B og accept af oplysningen i punkt 20.
+
+1. **Hvad en familie er.**
+   - En familie består af to filer:
+     - en committet JSON-fil `research/families/<fid>.json` (skema `lab.family/1`);
+     - ét mekanismemodul `lab/families/<fid>.py` med positionsfunktioner, instrumentmodel og attribution.
+   - Hver familie har ét kanonisk mekanisme-tag fra det kontrollerede ordforråd `research/families/VOCABULARY.json`.
+     - Ordforrådet dækker alle eksisterende tags fra kataloget, legacy og scanneren, hver med klasse og beslægtede tags.
+     - Et nyt tag kræver en ændring af ordforrådet. Ordforrådets blob er bundet i godkendelsen, så brugeren ser og godkender ændringen.
+   - Instanserne hedder `E_<fid>__<instans>_a8`.
+
+2. **Kun ikke-prisforudsigende mekanismer.**
+   - Klassen skal være `carry`, `structural`, `subsidy`, `flow` eller `liquidity_provision`. Klassen `price_prediction` afvises, og alle 28 katalog-tags har den klasse.
+   - Positionerne skal være afdækket i samme aktiv (`hedged_same_asset`), fx lang spot og kort perp i samme mønt. Retningsbestemte bøger og uafdækkede lange/korte bøger på tværs af mønter afvises.
+   - Afkastkilden skal være en navngiven pengestrøm (funding, låst basis eller belønning). Attributionsgaten i punkt 8 tester den.
+   - Denne ændring kan kun køre to instrumentmodeller: `spot_perp_ratio` og `spot_delivery_ratio`. De øvrige klasser står i ordforrådet, men kræver en senere ændring med deres egen instrumentmodel.
+
+3. **Størrelse. (bekræftet)**
+   - Højst K = 3 basisinstanser. Hver har præcis 2 faste varianter, og varianten vælges på træning efter den eksisterende regel.
+   - Hver basisinstans må have højst 1 forhåndsopregnet efterfølger (punkt 9). Det giver højst 12 trials pr. familie.
+   - Tilbagekig er højst 14 dage. Positionerne er 0, indtil tilbagekigget er fyldt inden for vinduet (afsnit 2, "Opvarmning").
+   - Beslutninger træffes kl. 01:00 UTC og bruger kun funding, der er afregnet før beslutningen.
+     - Grund: motoren krediterer en afregning til positionen i den time, der starter ved afregningen (`lab/engine/data.py:158-163`, `lab/engine/backtest.py:28-38`).
+     - En beslutning kl. 00:00 ville derfor give hver indgang en afregning, som den ikke ville få i virkeligheden.
+   - Signaler bruger summen af afregnet funding over L dage, annualiseret (× 365/L). Det gør dem uafhængige af afregningsintervallet (8, 4 eller 2 timer).
+   - Højst 2 familier pr. kanonisk tag i hele programmet. Højst 1 åben familie pr. tag ad gangen.
+
+4. **Udkast.**
+   - En AI må skrive og committe familiefil og modul som udkast (feltet `drafted_by`).
+   - Udkastet må ikke beregne afkast eller signaler på data fra noget vindue.
+   - Aggregerede tal, der er set under designet, skal oplyses i filen (feltet `drafting_data_access`); se punkt 20.
+   - `python3 -m lab family-check FIL` er skrivebeskyttet og bruger intet netværk; alle må køre den. Den viser:
+     - skema og ordforråd;
+     - blobs;
+     - kirkegård og beslægtede tags;
+     - hvilke filer der allerede ligger i cachen;
+     - budgetvirkning og styrketabel.
+
+5. **Godkendelse — kun brugeren.**
+   - Godkendelsen har to trin, som brugeren selv skriver i en interaktiv terminal:
+     - `python3 -m lab approve-family <fid> --reason "..."` viser resumé, blobs, styrketabel, budgetvirkning og kirkegårdskvitteringer og giver en engangskode, der gælder i 15 minutter;
+     - `python3 -m lab confirm-family` spørger om koden og om de første 8 tegn af familiefilens blob. Begge læses fra prompten, aldrig som argumenter.
+   - Begge kommandoer nægter at køre, hvis stdin eller stdout ikke er en terminal, eller hvis en assistent-miljøvariabel (`CLAUDECODE`, `CLAUDE_CODE_*`) er sat. Der findes intet dashboard-endepunkt.
+   - En assistent kører aldrig disse kommandoer. Mønstret "Claude bekræftede på brugerens instruks" (ændring 2, registrering) gælder ikke for familier.
+   - Ærligt: koden kan ikke bevise, at et menneske skrev. Det er denne regel, der er bindende.
+   - Godkendelsen (hændelsen `family.approved`) binder:
+     - de committede blobs af familiefilen, modulet, `lab/families/__init__.py` og `VOCABULARY.json`;
+     - de tærskler, familien bruger: `PLACEBO_P_MAX` 0,10, `DSR_MIN` 0,95, `COST_HIGH_MULT` 2,0 og bootstrap med 5 dage, 2.000 træk og seed 7.
+   - Ændres noget af dette før registrering, er godkendelsen ugyldig.
+   - Godkendelsen registrerer, hvilke instanser der er aktive, og hvilke der er droppet.
+   - Kun et menneske kan tilbagekalde med `revoke-family`, og kun før registrering.
+
+6. **Kirkegård og lektioner.**
+   - Den eksisterende discovery-agent opdager instanserne fra committede, gyldige familiefiler, inklusive efterfølgere.
+   - Kirkegården gælder som i dag: samme tag og udførelse, eller samme fingeraftryk. Et match giver SUPPRESSED.
+   - Beslægtede tags fra ordforrådet tjekkes også. Hvert match på et eksperiment i REJECTED eller WITHDRAWN skal stå i `graveyard_acknowledged` med:
+     - en tekst "materially different because …" på mindst 40 tegn;
+     - de lektioner, teksten adresserer. Nøglerne er årsag 1–4 i `DIAGNOSE_HVORFOR_INTET_BESTAAR.md` og lektioner fra `research.diagnostic`.
+   - Mangler en kvittering, nægtes godkendelse.
+   - En SUPPRESSED instans genoplives kun gennem den eksisterende menneskelige overgang SUPPRESSED → DISCOVERED, med begrundelsen "materially different because …".
+     - For familieinstanser kræver `lab confirm` en interaktiv terminal.
+     - Genoplivning er et separat skridt og sker før `approve-family`.
+   - Kirkegården tjekkes igen ved registrering. Familiens egne søskende tæller ikke som match.
+
+7. **Registrering.**
+   - Registreringen går gennem den eksisterende `register_batch`, som strategy-1 kalder i en flåde, et menneske har startet.
+   - Basisinstanserne registreres én gang, som én batch: `batch.registered` med familie og trial-cutoff. Validering venter på alle medlemmers cost-trin.
+   - Registrering nægtes, hvis:
+     - godkendelsen er ugyldig, eller der ikke er reserveret alfa;
+     - programmet er stoppet (punkt 15), eller 3 familier allerede er åbne;
+     - et ikke-afsluttet eksperiment uden for familien dækker samme tag og udførelse;
+     - det er før 2026-11-28 00:00 UTC, og en fil, som screeningen skal læse, ikke allerede ligger i `data/lab/market`.
+
+8. **Screening er kun et filter.**
+   - PROTOCOL v3-vinduerne og alle v2/v3-gates gælder uændret:
+     - train-gaten;
+     - før-validerings-gaten: eksakte look-ahead- og forgiftningstests, datakvalitet og placebo p < 0,10;
+     - alle validerings-krav.
+   - Ny og strengere gate, **mekanisme-attribution**: pengestrømmen minus alle omkostninger skal være > 0, og basis- og kurs-P&L skal være ≤ pengestrømmen.
+   - Købe-og-holde-benchmarket er lige-vægtet købe-og-holde af de samme perps, med katalogets omkostninger.
+   - DSR beregnes og registreres, men afgør intet.
+   - Hver instans, der består alle andre krav, får "OBSERVE (family forward test)" og går SCREENING → OBSERVATION. Det gælder også ved DSR ≥ 0,95. En familieinstans går aldrig direkte til SCREEN_PASSED.
+   - Instrumentet er én kvotientserie pr. mønt, så placebo blander begge ben samlet, og afdækningen bevares.
+   - En regel, der næsten altid er aktiv, har ingen timing og fejler derfor placebo. Det er en kendt og accepteret konsekvens.
+
+9. **Efterfølgere.**
+   - Efterfølgere skal være forhåndsopregnet. De er kun én generation dybe og kan kun registreres, før kohorten lukkes.
+   - En efterfølger registreres som en ekstra batch i familien, og kun hvis forælderens hash-verificerede træningsartefakter (`cost.json`, `adversarial.json`) opfylder den mekaniske udløser i familiefilen.
+   - Valideringsresultater, fremaddata, slut-test og live-tal udløser aldrig noget.
+   - Efterfølgere, der ikke er udløst, når kohorten lukkes, går DISCOVERED → SUPPRESSED. Det er en eksisterende automatisk kant.
+   - En idé, der opstår efter resultaterne, er en ny familie med ny godkendelse og ny alfa.
+
+10. **Kohorte. (bekræftet)**
+    - Kohorten lukkes ved det første strategy-pass, hvor alle registrerede medlemmer har et resultat, og ingen efterfølger længere kan udløses.
+    - Hændelsen `cohort.fixed` registrerer kohorte-id, medlemmer, M, α_F, α_i = α_F/M og vinduerne. M og α_i genberegnes aldrig.
+    - M ≤ 3. Overlever flere end 3, går de 3 med højest validerings-netto-Sharpe videre. Resten får "REJECTED: not selected (family cohort cap 3)".
+    - Vinduet starter 00:00 UTC den 1. i måneden efter lukningen, dog aldrig før 2026-12-01, og varer 12 hele kalendermåneder.
+    - Vinduet hedder `fwdYYYYMMm12`, og delvinduet hedder `fwdYYYYMMm06`.
+    - Den gamle kohortetælling i `step_observe` ignorerer hændelser med en kohortenøgle, så MVRV's N forbliver 1.
+    - M = 0 lukker familien som FUTILE_IN_SAMPLE.
+
+11. **Fremadtest (den afgør).**
+    - Den frosne variant genberegnes på arkivdata, tidligst 7 dage efter vinduets slutning.
+    - Kravene er de samme som i ændring 2 punkt 4:
+      - netto-gennemsnit pr. dag > 0;
+      - ensidet 90 % nedre grænse > 0 (5-dages blokke, 2.000 træk, seed 7);
+      - netto-Sharpe over lige-vægtet købe-og-holde af de samme perps;
+      - netto total > 0 ved dobbelte omkostninger;
+      - datakvalitet med `min_symbols`.
+    - Hertil kommer mekanisme-attribution som i punkt 8.
+    - Held-tjek: PSR_kons ≥ 1 − α_i. PSR_kons er den mindste af tre værdier, så den er aldrig lempeligere end i dag:
+      - PSR med skævhed 0 og kurtosis 3, som i dag;
+      - PSR med stikprøvens skævhed og kurtosis;
+      - PSR med effektivt n = n / max(1, 1 + 2·Σ_{k=1..5}(1 − k/6)·ρ_k), aldrig over n.
+    - Et symbol uden spot- eller perp-fil for vinduets første måned udelukkes før beregning (ændring 7 punkt 5).
+    - PASS → SCREEN_PASSED. FAIL → REJECTED.
+
+12. **Mellemliggende aflæsning — kan kun afvise.**
+    - Delvinduet (månederne 1–6) er sit eget erklærede vindue. Det læses tidligst 7 dage efter, at det er slut.
+    - Er netto-gennemsnittet pr. dag ≤ 0, eller pengestrømmen minus omkostninger ≤ 0, er udfaldet "FAIL (forward futility)" → REJECTED.
+    - Ellers sættes slutevalueringen i kø.
+    - Aflæsningen kan aldrig give PASS og ændrer hverken M eller α_i.
+
+13. **Alfa-budget. (bekræftet)**
+    - Programformuen er W0 = 0,05 for alle fremadtests under ændring 8 tilsammen.
+      - Den er adskilt fra ændring 2 (0,05 pr. vindue) og ændring 7 (0,05 ved N = 10).
+      - Laboratoriets samlede fejlrisiko er derfor ikke 0,05. Det står åbent her.
+    - Reglen er alfa-forbrug (Bonferroni), ikke alfa-investering.
+    - α_F = 0,0125 pr. familie reserveres ved `confirm-family` som en række i `alpha_ledger` (exp_id `family:<fid>`, note "A8 reserve"). Godkendelse nægtes, hvis den resterende formue er under α_F.
+    - Ved `cohort.fixed` med M ≥ 1 bruges α_F og fordeles som α_F/M pr. instans.
+    - Alfa frigives (med en negativ række, "A8 release") kun, hvis familien tilbagekaldes før registrering, hvis M = 0, eller hvis familien bliver utestbar før lukning.
+    - En PASS giver ingen alfa tilbage.
+    - Familiefejlraten over alle ændring 8-fremadtests er ≤ 0,05 ved foreningsgrænsen, uden antagelse om uafhængighed.
+    - De eksisterende rækker på 0,005 pr. eksperiment (28 rækker, 0,14 i alt) er bogføring af screening og indgår ikke i W0. Familieinstanser får en screening-række på 0.
+
+14. **Styrkekrav før godkendelse.**
+    - Godkendelse nægtes, medmindre styrken er ≥ 0,5 ved sand Sharpe 3,0 (fast, ikke selverklæret), α_F/3 og familiens vindueslængde.
+    - Med α_F = 0,0125 kræver det 12 måneder: styrken er 0,63, mens 6 måneder giver 0,30.
+
+15. **Futilitet og programstop. (bekræftet)**
+    - Familieniveau:
+      - M = 0 → FUTILE_IN_SAMPLE.
+      - For få symboler eller for lidt data → UNTESTABLE.
+      - Begge frigiver alfa.
+      - En permanent jobfejl standser familien uden at lukke kohorten.
+    - Programmet modtager ingen nye familiegodkendelser, når et af disse gælder:
+      - (a) den resterende formue er under α_F;
+      - (b) 3 familier i træk er lukket uden en fremad-PASS (FUTILE, UNTESTABLE eller alle FAIL);
+      - (c) der er ingen fremad-PASS pr. 2028-06-30.
+    - Kun en ny dateret ændring kan genstarte programmet. Kørende fremadtests fortsætter til ende.
+
+16. **Efter en fremad-PASS.**
+    - Instansen går til SCREEN_PASSED.
+    - Familier følger ikke den automatiske vej i ændring 4, fordi gaten "catalogue experiment" er lukket for dem. Slut-test 2024 og simuleret handel kræver derfor menneskelige godkendelser.
+    - Slut-testen åbnes én gang som ét erklæret filsæt, der også rummer spot-filerne. Familiefilens blob er gatewayens kode-hash.
+    - Uden en ren slut-test standser instansen på SCREEN_PASSED.
+    - Simuleret handel for familier kræver et live spot-feed, som ikke findes i dag, og en senere ændring.
+
+17. **Data og netværk. (bekræftet)**
+    - Før 2026-11-28 00:00 UTC foretager koden for ændring 8 ingen netværksforespørgsler: ingen HEAD-tjek og ingen downloads. pm_lp's opfølgning løber til 2026-11-27 (`PM_LP_START.md`).
+    - Derefter hentes data kun fra `data.binance.vision`, gennem den eksisterende cache og download-kode og med flådens DNS-cache.
+    - Spot-zips har samme filnavne som perp-zips. De gemmes derfor i `data/lab/market/spot_klines/`, og leveringskontrakter i `data/lab/market/cm_klines/`.
+    - Hver familiefil angiver filantal og størrelse.
+
+18. **Kode-pin.**
+    - Ved registrering skriver specifikationen familiefilens blob, modulets blob og blobs for motorens filer.
+    - Ændres familiefilen eller modulet efter registrering, fejler hvert senere trin lukket, også i 2027. En rettelse kræver en dateret ændring.
+
+19. **Sikkerhed.**
+    - Alt er simuleret: ingen rigtige penge, ingen nøgler, ingen ordrer.
+    - Ingen autostart, cron eller timere. Alt kører i strategy-1's og discovery-agentens pass, i en flåde, som et menneske har startet.
+    - Fremadjobs bruger det eksisterende felt `not_before`.
+
+20. **Ærlig forventning og oplysning.**
+    - Krævet annualiseret Sharpe (PSR med skævhed 0 og kurtosis 3):
+
+      | Vindue | α_i 0,0125 | α_i 0,00625 | α_i 0,0042 |
+      |---|---|---|---|
+      | 12 måneder | 2,25 | 2,51 | 2,65 |
+      | 6 måneder | 3,21 | 3,58 | 3,78 |
+
+    - Styrke ved 12 måneder med aflæsning ved 6 måneder (simuleret):
+
+      | Sand Sharpe | 2 | 3 | 4 |
+      |---|---|---|---|
+      | M = 1 | 0,40 | 0,77 | 0,96 |
+      | M = 3 | 0,25 | 0,63 | 0,91 |
+
+      Under nulhypotesen stoppes cirka 50 % ved 6 måneder.
+    - Autokorrelation: med daglig AR(1), ρ = 0,3, består et nul-eksperiment dagens held-tjek med cirka 0,048 i stedet for 0,0125. PSR_kons giver cirka 0,017, men koster styrke: ved sand Sharpe 3 falder den fra 0,71 til 0,53.
+    - Oplysning om data set under designet 2026-10-18:
+      - Aggregerede funding-tal for de cachede filer 2022-01..2023-12 blev set: andel afregninger på præcis 0,01 % 0,44; andel negative 0,30; gennemsnit ≈ 0.
+      - Der er ikke beregnet strategiafkast.
+      - Familiernes gitre er taget uændret fra udkast, der blev skrevet før.
+      - Screeningen er kun et filter, så fremadtestens gyldighed påvirkes ikke.
