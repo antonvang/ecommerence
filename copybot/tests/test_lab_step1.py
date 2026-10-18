@@ -46,6 +46,11 @@ class IdleAgents(Base):
         jobs.enqueue(self.db, "data|E_x", "data", "E_x", {}, actor="system:t")
         self.assertTrue(jobs.runnable_any(self.db, ("data",)))
         self.assertFalse(jobs.runnable_any(self.db, ("cost",)))
+        jobs.enqueue(self.db, "cost|E_x", "cost", "E_x", {}, depends_on=("data|E_x",), actor="system:t")
+        self.assertTrue(jobs.runnable_any(self.db, ("cost",)))            # blocked: claim() must run to unblock it
+        j = jobs.claim(self.db, "data-1", ("data",))
+        self.db.con.execute("UPDATE jobs SET lease_until=0 WHERE job_id=?", (j["job_id"],))
+        self.assertTrue(jobs.runnable_any(self.db, ("report",)))          # an expired lease anywhere: claim retries it
 
 
 class Summary(unittest.TestCase):

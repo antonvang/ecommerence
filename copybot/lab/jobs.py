@@ -191,12 +191,15 @@ def recover(db, now=None):
 
 
 def runnable_any(db, kinds, now=None):
-    """Read-only: is any job of these kinds runnable now? Lets an idle agent skip the write-locked claim."""
+    """Read-only: could claim() have work for these kinds now? A runnable job, a job waiting on dependencies (claim
+    unblocks it) or an expired lease anywhere (claim retries it) all say yes. Lets an idle agent skip the write-locked
+    claim when the queue has nothing for it."""
     import sqlite3
     now = now or time.time()
+    q = ",".join("?" * len(kinds))
     try:
-        return db.one(f"SELECT 1 FROM jobs WHERE status='queued' AND next_run<=? AND kind IN "
-                      f"({','.join('?' * len(kinds))}) LIMIT 1", now, *kinds) is not None
+        return db.one(f"SELECT 1 FROM jobs WHERE (kind IN ({q}) AND (status='blocked' OR (status='queued' AND "
+                      f"next_run<=?))) OR (status='running' AND lease_until<?) LIMIT 1", *kinds, now, now) is not None
     except sqlite3.OperationalError:                    # no jobs table yet: let claim() create it
         return True
 
