@@ -252,3 +252,39 @@ mærket i dashboardet og må ikke påvirke de formelle tests.
 5. **Visning.**
    - Skyggekonti vises i dashboardets saldo- og paper-dele med mærket "skyggehandel (simuleret, ikke godkendt)".
    - De vises aldrig som godkendt strategi eller som rigtig indtjening. Rigtig konto er fortsat "ikke tilgængelig".
+
+## Ændring 4 (2026-10-18): automatisk promovering gennem én central beslutningsfunktion — før kode
+
+**Beslutning:** brugeren bad om en automatisk kæde fra hypotese til godkendt paper trading uden manuel godkendelse pr.
+strategi. Brugeren har givet tilladelse til at slå den til (logget). Ingen tærskel ændres. Beslutningerne bygger
+udelukkende på de registrerede resultater af de eksisterende gates.
+
+1. **Politik.**
+   - Automatikken er aktiv, når den seneste `policy.autopromote`-hændelse er `on` og er skrevet af en `human:`-aktør.
+   - Den kan slås fra igen; så venter alt på menneskelig godkendelse som før.
+2. **Én beslutningsfunktion (`lab/promotion.py: decide`).**
+   - Det er den eneste kode, der kan udføre de to automatiske overgange nedenfor.
+   - Hver beslutning (ja eller nej med årsag) skrives som en `promotion.decision`-hændelse med sin evidens.
+   - Ingen worker, CLI, dashboard-knap, shadow- eller paper-runner har en anden vej.
+3. **SCREEN_PASSED → VALIDATION** (åbner slut-testen 2024 én gang). Kræver:
+   - seneste resultat er en PASS: enten screen-PASS, hvor alle validerings-krav inkl. held-tjek er bestået, eller fremad-PASS fra observationstesten;
+   - skabelonen har en ren slut-test (ikke `vrp_timing`/`btc_volume_share`, jf. ændring 1);
+   - laben er ikke FAIL_CLOSED, og supervisoren har slået puls inden for 30 s.
+4. **VALIDATED → PAPER_TRADING.** Kræver:
+   - seneste VALIDATION-resultat er en slut-test-PASS;
+   - paper-motoren har live-data for skabelonen (ellers venter den);
+   - laben er ikke FAIL_CLOSED, ressourcerne er OK, og alle paper-konti afstemmer.
+5. **Lukket gate = vent.** Hvis en betingelse ikke er opfyldt, registreres "venter: <årsag>", og intet sker.
+   Observation (ændring 2) og tidsbaserede gates håndhæves fortsat af koden.
+6. **Ordre-verifikation.**
+   - Paper-runneren åbner kun nye positioner for en godkendt strategi, hvis `promotion.trading_authorized` kan verificere: lifecycle PAPER_TRADING, og overgangen dertil citerer enten en menneskelig godkendelse eller en `promotion.decision`, der var tilladt.
+   - Alle risiko-regler gælder som før.
+7. **Positionspolitik.**
+   - **Pause:** ingen nye positioner; eksisterende beholdes og opgøres hver time; kun reducerende ordrer er tilladt.
+   - **REJECTED/RETIRED efter paper:** alle positioner lukkes med reducerende ordrer ved næste kørsel.
+   - **Genstart:** konti og ordre-id'er er idempotente, så der opstår ingen dubletter, og positionerne fortsætter efter opvarmning.
+8. **Skyggehandel (ændring 3) er adskilt.**
+   - Beslutningsfunktionen læser aldrig skyggekonti eller deres resultater.
+   - Skyggehandel kan ikke ændre status eller udløse godkendelse.
+   - MVRV er fortsat i OBSERVATION og venter på observationstesten.
+9. **Ingen rigtige penge, ingen gearing, ingen broker.**
