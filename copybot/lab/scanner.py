@@ -298,7 +298,11 @@ def run(db, names=None, get=http_get, post=http_post, now=None):
         summary["investigate" if decision == "INVESTIGATE" else "no_action"] += 1
 
     for name in names or DETECTORS:
-        observations, proposals = DETECTORS[name](get, post, now)
+        try:
+            observations, proposals = DETECTORS[name](get, post, now)
+        except Exception as e:                        # one failing detector never stops the others
+            observations, proposals = [obs(vname(name), "detector", None, "error", None,
+                                           payload={"error": f"detector failed: {e!r}"[:300]})], []
         errors = [o for o in observations if o["metric"] == "error"]
         quality = {"observations": len(observations), "errors": len(errors)}
         for o in errors:                              # an unstable data source is an event of its own

@@ -107,6 +107,18 @@ class ScannerDecisions(Base):
         self.assertEqual(err[0]["decision"], "NO_ACTION")
         self.assertIn("binance unreachable", err[0]["why"])
 
+    def test_a_crashing_detector_does_not_stop_the_scan(self):
+        def boom(get, post, now):
+            raise RuntimeError("upstream changed its format")
+        w = World(gap=0.006)
+        with mock.patch.dict(scanner.DETECTORS, {"venue_subsidy": boom}):
+            s = scanner.run(self.db, ["venue_subsidy", "pricing_constraint"], w.get, w.post, now=DAY * 10)
+        self.assertTrue(any("upstream changed its format" in str(e) for e in s["errors"]))
+        self.assertGreater(s["observations"], 1)                              # pricing_constraint still ran
+        self.assertEqual(self.db.one("SELECT COUNT(*) FROM events WHERE kind='scan.finished'")[0], 1)
+        log = command.agent_log(self.db, "discovery-scanner")["events"]
+        self.assertIn("scan.finished", [e["kind"] for e in log])               # the agent's own work is visible
+
 
 class Diagnostics(Base):
     def finished(self, eid, daily, gates, state="REJECTED"):

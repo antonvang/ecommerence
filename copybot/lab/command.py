@@ -123,9 +123,14 @@ def agents(db, now=None):
             "job_agents_without_work": sum(1 for a in out if (a["work"] or "").startswith("no work"))}
 
 
+AGENT_ACTORS = {"discovery-scanner": ("system:scanner",), "paper-1": ("system:paper",), "risk-1": ("system:risk",)}
+
+
 def agent_log(db, name, limit=50):
-    rows = db.q("SELECT id, ts, kind, exp_id, payload FROM events WHERE actor IN (?,?,?) ORDER BY id DESC LIMIT ?",
-                name, f"agent:{name}", f"system:{name}", int(limit))
+    """An agent's own events, including those its code writes under a module actor (scanner, paper engine, risk)."""
+    actors = (name, f"agent:{name}", f"system:{name}") + AGENT_ACTORS.get(name, ())
+    rows = db.q(f"SELECT id, ts, kind, exp_id, payload FROM events WHERE actor IN ({','.join('?' * len(actors))}) "
+                f"ORDER BY id DESC LIMIT ?", *actors, int(limit))
     return {"agent": name, "events": [dict(r) | {"payload": _j(r["payload"])} for r in rows]}
 
 
