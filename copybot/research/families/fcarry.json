@@ -1,0 +1,288 @@
+{
+  "schema": "lab.family/1",
+  "family_id": "fcarry",
+  "title": "Hedged Binance funding carry: long spot / short USD-M perp in the same coin",
+  "amendment": "research/PROTOCOL_V3.md Ændring 8",
+  "drafted_by": "ai:claude-opus-5-5 2026-10-18",
+  "drafting_data_access": {
+    "strategy_returns_computed": "none",
+    "disclosed": [
+      "2026-10-18 design review saw the aggregate settled-funding distribution of the cached USD-M files 2022-01..2023-12: share exactly 0.0001 = 0.44, share negative = 0.30, mean ~0. No signal or return was computed. Grids are copied unchanged from drafts written before that read."
+    ]
+  },
+  "mechanism": {
+    "tag": "delta_neutral_funding_carry",
+    "class": "carry",
+    "price_exposure": "hedged_same_asset",
+    "return_source": "settled Binance USD-M funding received by the short perp leg",
+    "non_price_prediction": "Both legs are the same coin, so the price delta is ~0. P&L = funding received + change of the spot/perp ratio - costs. Signals forecast only the persistence of the funding cash flow, never price direction or relative price between coins.",
+    "attribution": {
+      "cash_flow": "funding_income",
+      "rule": "funding_income - (fees + spread + slippage) > 0 AND gross_ratio_pnl <= funding_income; in-sample (validation) and forward"
+    },
+    "evidence": [
+      {
+        "ref": "Binance USD-M funding = premium + clamp(0.01%/8h - premium, +-0.05%)",
+        "status": "unverified"
+      },
+      {
+        "ref": "research/RESULTS_carry_v1.md: Hyperliquid carry, holdout +4.352 %, development -0.079 %, edge decaying",
+        "status": "verified-local"
+      },
+      {
+        "ref": "Schmeling, Schrimpf & Todorov, BIS Working Paper 1087, Crypto carry",
+        "status": "unverified (Crossref check before approval)"
+      }
+    ]
+  },
+  "graveyard_acknowledged": [
+    {
+      "exp_id": "L13_carry_v1",
+      "match": "exact",
+      "materially_different_because": "materially different because carry_v1 ran on Hyperliquid spot pairs (19 pairs, valid only from 2024-12, survivorship on delisted spot pairs, 2.2 coins on average) with weekly top-5 re-ranking whose fees exceeded the funding in development; this family uses Binance spot/perp pairs of the 30 PROTOCOL v3 coins with point-in-time data from 2022, low-turnover filter/hysteresis/persistence rules decided at 01:00 UTC, explicit two-leg costs, an attribution gate, and is decided only by an unseen 12-month forward window",
+      "lessons_addressed": [
+        "DIAGNOSE-4 turnover x costs",
+        "L13 weekly churn",
+        "L13 decay"
+      ]
+    },
+    {
+      "exp_id": "L08_funding_carry_leverage",
+      "match": "related",
+      "materially_different_because": "materially different because L08 was unhedged leveraged perp carry that failed through liquidations at 5x-10x; this family is 1x, same-coin hedged, never leveraged, and rejects profit from price moves by the attribution gate",
+      "lessons_addressed": [
+        "L08 leverage and liquidations"
+      ]
+    },
+    {
+      "exp_id": "E_funding_contrarian_p1",
+      "match": "related",
+      "materially_different_because": "materially different because funding_contrarian was a directional tail-entry bet on 8 coins that lost to the 2023-H2 rally; this family has zero price delta per coin and is paid the funding instead of betting on a reversal",
+      "lessons_addressed": [
+        "DIAGNOSE-1 rally benchmark",
+        "DIAGNOSE-3 regime shift"
+      ]
+    },
+    {
+      "exp_id": "L22_m3_premium_convergence",
+      "match": "related",
+      "materially_different_because": "materially different because L22 traded minute-level premium convergence and lost 31.6-33.4 bp net to costs; this family holds for days to weeks, earns settled funding rather than premium reversion, and needs about 15 days of floor funding to repay a pair round trip",
+      "lessons_addressed": [
+        "DIAGNOSE-4 turnover x costs",
+        "L22 costs"
+      ]
+    }
+  ],
+  "related_tags_reviewed": [
+    "funding_carry",
+    "funding_carry_leverage",
+    "funding_crowding_contrarian",
+    "perp_premium_convergence",
+    "dated_futures_basis_carry"
+  ],
+  "universe": {
+    "base": "30v3",
+    "rule": "UNIVERSE_30_V3 (lab/engine/data.py:30-31); a coin whose spot or perp leg fails the existing data-quality rule in a split is excluded in that split (missing spot months fail coverage)",
+    "min_symbols": 24,
+    "holdout_exclude": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "clean_holdout": true,
+    "forward_listing_rule": "exclude a coin with no spot or perp file for the first window month (amendment 7 section 5)"
+  },
+  "instrument_model": {
+    "type": "spot_perp_ratio",
+    "bars": "per coin and hour: (ts, spot_open / perp_open, spot_close / perp_close) on the intersection of hours",
+    "funding_for_costs": "minus the settled rate, so a +1 position earns the settled rate through backtest.apply_costs",
+    "position": "+1 = long 1 unit spot and short 1 unit perp, equal notional, 1x; 0 = flat; never negative",
+    "benchmark": "equal-weight buy-and-hold of the same USD-M perps with catalogue costs and funding",
+    "capital_per_unit_notional": 2
+  },
+  "data": [
+    {
+      "source": "binance_um_klines_1h",
+      "url": "https://data.binance.vision/data/futures/um/monthly/klines/{SYM}/1h/{SYM}-1h-{YYYY}-{MM}.zip",
+      "cache_dir": "data/lab/market/klines",
+      "splits": [
+        "train3",
+        "validation3"
+      ],
+      "files_estimate": 720,
+      "mb_estimate": 25
+    },
+    {
+      "source": "binance_um_fundingRate",
+      "url": "https://data.binance.vision/data/futures/um/monthly/fundingRate/{SYM}/{SYM}-fundingRate-{YYYY}-{MM}.zip",
+      "cache_dir": "data/lab/market/funding",
+      "splits": [
+        "train3",
+        "validation3"
+      ],
+      "files_estimate": 720,
+      "mb_estimate": 3
+    },
+    {
+      "source": "binance_spot_klines_1h",
+      "url": "https://data.binance.vision/data/spot/monthly/klines/{SYM}/1h/{SYM}-1h-{YYYY}-{MM}.zip",
+      "cache_dir": "data/lab/market/spot_klines",
+      "splits": [
+        "train3",
+        "validation3"
+      ],
+      "files_estimate": 720,
+      "mb_estimate": "25-50"
+    }
+  ],
+  "costs": {
+    "taker_fee": 0.0015,
+    "half_spread": 0.0004,
+    "slippage": 0.0004,
+    "per": "unit of pair turnover (both legs)",
+    "components": {
+      "spot_taker": 0.001,
+      "perp_taker": 0.0005,
+      "spot_half_spread": 0.0002,
+      "perp_half_spread": 0.0002,
+      "spot_slippage": 0.0002,
+      "perp_slippage": 0.0002
+    },
+    "estimates": [
+      "all half_spread and slippage values",
+      "spot taker VIP0 0.10 % not re-verified"
+    ],
+    "funding": "settled Binance funding from the data, credited to the short perp leg",
+    "stress_mult": 2.0
+  },
+  "decision_time_utc": "01:00",
+  "windows": {
+    "train": "train3 2022-01..2023-06",
+    "validation": "validation3 2023-07..2023-12",
+    "holdout": "2024, sealed, human approval only, without BTC/ETH/SOL",
+    "reserved": "2025-01-01 until the forward window start, never read"
+  },
+  "forward": {
+    "months": 12,
+    "interim_futility_months": 6,
+    "earliest_start": "2026-12-01"
+  },
+  "alpha": {
+    "family": 0.0125,
+    "split": "alpha_F / M at cohort.fixed, M <= 3"
+  },
+  "power_check": {
+    "true_sharpe": 3.0,
+    "alpha": 0.0041667,
+    "months": 12,
+    "required": 0.5,
+    "expected": 0.63
+  },
+  "instances": [
+    {
+      "id": "filt",
+      "function": "carry_filter",
+      "horizon": "days",
+      "execution": "taker",
+      "max_lookback_days": 7,
+      "rule": "Daily 01:00 UTC. APR_7 = sum of funding settled in the 7 days before the decision x 365/7. Hold +1 in coin i iff APR_7 >= enter_apr, else 0. Flat until 7 days of funding exist in the window.",
+      "grid": [
+        {
+          "lookback_days": 7,
+          "enter_apr": 0.1095
+        },
+        {
+          "lookback_days": 7,
+          "enter_apr": 0.219
+        }
+      ],
+      "successor": {
+        "id": "filt_w",
+        "function": "carry_filter_weekly",
+        "grid": [
+          {
+            "lookback_days": 7,
+            "enter_apr": 0.1095
+          },
+          {
+            "lookback_days": 7,
+            "enter_apr": 0.219
+          }
+        ],
+        "trigger": {
+          "artifact": "cost",
+          "all": [
+            "rejected_early == true",
+            "selected.net.fees + selected.net.spread + selected.net.slippage > -selected.net.funding"
+          ]
+        },
+        "why": "Same rule decided only on Mondays 01:00 UTC; tests whether a train-gate failure was caused by churn costs rather than an absent cash flow."
+      }
+    },
+    {
+      "id": "hyst",
+      "function": "carry_hysteresis",
+      "horizon": "days",
+      "execution": "taker",
+      "max_lookback_days": 7,
+      "rule": "Daily 01:00 UTC. Enter +1 when APR_7 >= 0.219; exit to 0 when APR_7 < exit_apr; otherwise keep the previous position.",
+      "grid": [
+        {
+          "lookback_days": 7,
+          "exit_apr": 0.0
+        },
+        {
+          "lookback_days": 7,
+          "exit_apr": 0.1095
+        }
+      ],
+      "successor": null
+    },
+    {
+      "id": "floor",
+      "function": "carry_floor",
+      "horizon": "weeks",
+      "execution": "taker",
+      "max_lookback_days": 14,
+      "rule": "Mondays 01:00 UTC. share = fraction of the last 14 completed UTC days whose summed settled funding >= 0.0003 (the 0.01 %/8h interest floor per day). Hold +1 for the week iff share >= q.",
+      "grid": [
+        {
+          "days": 14,
+          "q": 0.8
+        },
+        {
+          "days": 14,
+          "q": 0.95
+        }
+      ],
+      "successor": null
+    }
+  ],
+  "expected": {
+    "required_forward_sharpe_12m": {
+      "M=1": 2.25,
+      "M=2": 2.51,
+      "M=3": 2.65
+    },
+    "forward_power_12m_with_interim": {
+      "S=2": [
+        0.4,
+        0.3,
+        0.25
+      ],
+      "S=3": [
+        0.77,
+        0.68,
+        0.63
+      ],
+      "S=4": [
+        0.96,
+        0.93,
+        0.91
+      ]
+    },
+    "p_at_least_one_screen_survivor": "0.25-0.45 [estimate]",
+    "p_at_least_one_forward_pass": "0.04-0.12 [estimate]",
+    "false_pass_under_null": "<= 0.0125 for the family"
+  }
+}

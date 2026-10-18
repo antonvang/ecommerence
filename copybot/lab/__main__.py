@@ -23,6 +23,7 @@
   python -m lab shadow-start EXP --reason ".." | shadow-stop EXP --reason ".."   (simulated shadow ledger, OBSERVATION only)
   python -m lab forward-start --reason ".." | forward-stop [--exp EXP] --reason ".."   (amendment 7 forward tests)
   python -m lab sim-resume LEDGER --reason ".."                          (resume a paused SHADOW_/FWD_ ledger)
+  python -m lab family-check FILE                                        (amendment 8; read-only, no network)
   python -m lab autopromote on|off --reason ".."                         (automatic promotion policy, amendment 4)
 """
 from __future__ import annotations
@@ -40,6 +41,47 @@ from lab.db import DB, DEFAULT_DB
 
 def human():
     return "human:" + (getpass.getuser() or "unknown")
+
+
+class _ReadOnly:
+    """The q/one subset of DB over a mode=ro connection (nothing can be written)."""
+    def __init__(self, path):
+        import sqlite3
+        self.con = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+        self.con.row_factory = sqlite3.Row
+
+    def q(self, sql, *a):
+        return self.con.execute(sql, a).fetchall()
+
+    def one(self, sql, *a):
+        return self.con.execute(sql, a).fetchone()
+
+
+def family_check(path, db_path, out=print):
+    from lab import families
+    db = _ReadOnly(db_path) if os.path.exists(db_path) else None
+    try:
+        r = families.check(db, path)
+    finally:
+        if db is not None:
+            db.con.close()
+    out(f"family {r['family']}: {'OK' if not r['problems'] else str(len(r['problems'])) + ' problem(s)'}")
+    for p in r["problems"]:
+        out(f"  problem: {p}")
+    out(f"  graveyard (same or related tag): {', '.join(r['graveyard']) or 'none'}"
+        + (f"; not acknowledged: {', '.join(r['unacknowledged'])}" if r["unacknowledged"] else ""))
+    for d, (have, need) in r["cache"].items():
+        out(f"  cache {d}: {have} of {need} files present")
+    for k, b in r["blobs"].items():
+        out(f"  blob {k:<10} {b['path']}: committed {(b['committed'] or '-')[:12]}, "
+            f"working {(b['working'] or '-')[:12]}{'' if b['clean'] else '  (not committed as is)'}")
+    a = r["alpha"]
+    out(f"  alpha: family {a['family']}, amendment 8 already reserved {a['reserved']:.4f} of W0 {a['W0']}")
+    for months, row in r["required_sharpe"].items():
+        out(f"  required annualised Sharpe over {months} months: "
+            + ", ".join(f"alpha {al:.5f} -> {s}" for al, s in row.items()))
+    out(f"  power at true Sharpe 3.0 (alpha_F/3, 12 months): {r['power_at_3']}")
+    return 0 if not r["problems"] else 1
 
 
 def main(argv=None, db_path=DEFAULT_DB, out=print):
@@ -86,6 +128,7 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
     for c in ("forward-start", "forward-stop"):
         fp = sub.add_parser(c); fp.add_argument("--exp"); fp.add_argument("--reason", required=True)
     sr = sub.add_parser("sim-resume"); sr.add_argument("ledger"); sr.add_argument("--reason", required=True)
+    fc = sub.add_parser("family-check"); fc.add_argument("file")
     rt = sub.add_parser("revoke-template"); rt.add_argument("template"); rt.add_argument("--reason", required=True)
     ex = sub.add_parser("export-db"); ex.add_argument("target")
     wt = sub.add_parser("watch"); wt.add_argument("--once", action="store_true")
@@ -114,6 +157,8 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
         except supervisor.AlreadyRunning as e:
             out(f"refused: {e}")
             return 3
+    if args.cmd == "family-check":    # research/PROTOCOL_V3.md amendment 8 point 4: read-only, no network
+        return family_check(args.file, db_path, out)
     if args.cmd == "fleet":           # the research agent fleet runs inside the single-instance supervisor
         from lab import fleet, supervisor
         from research.pm_lp import install_dns_cache
