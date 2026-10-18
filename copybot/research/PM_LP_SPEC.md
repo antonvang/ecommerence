@@ -224,3 +224,27 @@ This is an engineering fix only. No methodology, panel rule, seed, window or gat
     the holdout.
 - **Schedule unchanged.** D0 = 2026-10-17; development to 10-23, validation to 10-30, holdout 10-31 → 11-13, resolution
   tracking to 11-27.
+
+## Amendment 4 (2026-10-18 ~11:50 UTC, development period day 2): DNS stalls on Linux cut the snapshot cadence
+
+This is an engineering fix only. No methodology, panel rule, seed, window or gate changes.
+
+- **What was measured on Linux (11:20–11:35 UTC):**
+  - 8 snapshot rounds in 15 minutes, with spacings up to 284 s.
+  - On Windows (2026-10-17) the spacing never exceeded 180 s and coverage was 97.9 %.
+  - A trades round (200 markets) took about 3 minutes on Linux, against under 1 minute on Windows. The snapshots
+    wait for it in the same loop.
+- **Cause:**
+  - Single HTTP calls take about 0.08 s.
+  - Some name lookups wait exactly 5 s: the first resolver (192.168.1.3) drops some of the parallel A/AAAA queries,
+    and glibc's 5-second timeout then applies.
+  - Linux has no local DNS cache, so every call does a lookup. Windows caches DNS.
+- **The fix:** the collector process keeps successful name lookups for 300 s, in memory only. Failed lookups are
+  not kept, and a failed request clears that host. Nothing else changes: the same endpoints, cadences, retries and
+  data.
+- **Impact:**
+  - Development-period day 2026-10-18 lost further snapshot minutes between 11:20 and the restart with this fix.
+    They are not recovered.
+  - The validation and holdout periods, and gate D1, are unaffected.
+  - The system-level cause (resolver timeout) is reported to the user. Changing it needs administrator rights and
+    their approval.
