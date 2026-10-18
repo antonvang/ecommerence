@@ -433,9 +433,10 @@ class EndToEnd(unittest.TestCase):
         eid = "E_smart_vs_crowd_p3"
         self.db.append("experiments", exp_id=eid, version=1, created_ts=0, mechanism_tag="m", fingerprint="f",
                        spec_json={"template": "smart_vs_crowd"})
-        self.db.append("transitions", exp_id=eid, ts=0, from_state=None, to_state="PAPER_TRADING", actor="fixture",
+        self.db.append("transitions", exp_id=eid, ts=0, from_state=None, to_state="PAPER_TRADING", actor="human:fixture",
                        reason="fixture: approved for paper trading")
-        r = paper_runner.run(self.db, lambda url: (_ for _ in ()).throw(AssertionError("no fetch")), 1.8e9)
+        with mock.patch("lab.promotion.supervisor_ok", lambda db, now=None: True):
+            r = paper_runner.run(self.db, lambda url: (_ for _ in ()).throw(AssertionError("no fetch")), 1.8e9)
         self.assertEqual(r["results"][eid]["status"], "unsupported")
         self.assertIsNone(self.db.one("SELECT 1 FROM events WHERE kind='paper.started'"))   # no ledger opened
         self.assertEqual(self.db.one("SELECT COUNT(*) FROM sim_orders")[0], 0)

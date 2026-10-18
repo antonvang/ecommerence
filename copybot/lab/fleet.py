@@ -282,7 +282,10 @@ def strategy_pass(db):
     from lab import registry
     found = [x["exp_id"] for x in registry.status(db) if x["state"] == "DISCOVERED" and x["exp_id"].startswith("E_")]
     registered = pipeline.register_batch(db, found, "strategy-1") if found else []     # one batch per pass (v2)
-    return {"registered": registered, "holdouts_queued": pipeline.enqueue_holdouts(db)}
+    from lab import promotion
+    decisions = [d for d in promotion.step(db) if d.get("applicable")]                 # amendment 4: one decision path
+    return {"registered": registered, "promotions": [(d["exp_id"], d["to"], d["allowed"]) for d in decisions],
+            "holdouts_queued": pipeline.enqueue_holdouts(db)}
 
 
 def risk_pass(db_path):

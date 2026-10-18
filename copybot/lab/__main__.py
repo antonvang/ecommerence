@@ -21,6 +21,7 @@
   python -m lab approve-template TEMPLATE --reason ".."  -> code;  python -m lab confirm-template CODE
   python -m lab revoke-template TEMPLATE --reason ".."
   python -m lab shadow-start EXP --reason ".." | shadow-stop EXP --reason ".."   (simulated shadow ledger, OBSERVATION only)
+  python -m lab autopromote on|off --reason ".."                         (automatic promotion policy, amendment 4)
 """
 from __future__ import annotations
 
@@ -73,6 +74,8 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
     jb = sub.add_parser("jobs"); jb.add_argument("--status")
     at = sub.add_parser("approve-template"); at.add_argument("template"); at.add_argument("--reason", required=True)
     ct = sub.add_parser("confirm-template"); ct.add_argument("code")
+    ap_ = sub.add_parser("autopromote"); ap_.add_argument("state", choices=("on", "off"))
+    ap_.add_argument("--reason", required=True)
     for c in ("shadow-start", "shadow-stop"):
         sp = sub.add_parser(c); sp.add_argument("exp"); sp.add_argument("--reason", required=True)
     rt = sub.add_parser("revoke-template"); rt.add_argument("template"); rt.add_argument("--reason", required=True)
@@ -111,6 +114,11 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
             rows = db.q(q + " WHERE status=? ORDER BY updated_ts DESC LIMIT 50", args.status) if args.status else                 db.q(q + " ORDER BY updated_ts DESC LIMIT 50")
             for r in rows:
                 out(f"{r['job_id']:<45} {r['status']:<9} try {r['attempts']} {r['lease_owner'] or ''} {r['error'] or ''}")
+            return 0
+        if args.cmd == "autopromote":
+            from lab import promotion
+            changed = promotion.set_policy(db, args.state == "on", human(), args.reason)
+            out(f"automatic promotion {args.state}: {'recorded' if changed else 'already in that state'}")
             return 0
         if args.cmd in ("shadow-start", "shadow-stop"):
             if len(args.reason.strip()) < 10:

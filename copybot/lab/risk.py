@@ -89,6 +89,8 @@ class Risk:
             st = "PAPER_TRADING"                              # every other risk rule below applies unchanged
         else:
             st = lifecycle.state(self.db, exp_id)
+            if reduce_only and st in lifecycle.FINAL:
+                st = "PAUSED"                                 # amendment 4: positions are closed, never forgotten
         if st not in ("PAPER_TRADING", "PAUSED"):
             return False, f"strategy is {st}; only PAPER_TRADING strategies simulate orders"
         if book is None:

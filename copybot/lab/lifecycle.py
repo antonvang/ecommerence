@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import os
 import secrets
 import subprocess
@@ -96,6 +97,27 @@ def _do(db, exp_id, cur, to, actor, reason, evidence):
     db.append("transitions", exp_id=exp_id, ts=int(time.time()), from_state=cur, to_state=to, actor=actor,
               reason=reason, evidence=evidence or {})
     db.event("lifecycle.transition", actor, exp_id, {"from": cur, "to": to, "reason": reason})
+
+
+POLICY_EDGES = {("SCREEN_PASSED", "VALIDATION"), ("VALIDATED", "PAPER_TRADING")}
+
+
+def policy_transition(db, exp_id, to, actor, reason, evidence):
+    """Amendment 4: lab/promotion.decide may take the two policy edges, citing an allowed decision event. Nothing else
+    may call this (enforced by the actor and the cited decision)."""
+    if actor != "system:promotion":
+        raise LifecycleError("policy transitions are reserved for system:promotion")
+    ev = evidence or {}
+    with db.tx():
+        cur = state(db, exp_id)
+        if (cur, to) not in POLICY_EDGES:
+            raise LifecycleError(f"{cur} -> {to} is not a policy edge")
+        d = db.one("SELECT actor, payload FROM events WHERE id=? AND kind='promotion.decision' AND exp_id=?",
+                   ev.get("decision_event_id"), exp_id)
+        if d is None or d["actor"] != actor or not json.loads(d["payload"]).get("allowed"):
+            raise LifecycleError("a policy transition must cite an allowed promotion decision for this experiment")
+        _check(db, exp_id, to, "human", reason, ev, ())
+        _do(db, exp_id, cur, to, actor, reason, ev)
 
 
 def auto_transition(db, exp_id, to, actor, reason, evidence=None, guards=()):

@@ -42,17 +42,20 @@ class Runner(unittest.TestCase):
         self.db = DB(os.path.join(self.tmp, "lab.db"))
         self.p = mock.patch.object(pipeline, "ARTIFACTS", os.path.join(self.tmp, "artifacts"))
         self.p.start()
+        self.sup = mock.patch("lab.promotion.supervisor_ok", lambda db, now=None: True)
+        self.sup.start()
         spec = {"template": "day_of_week", "execution": "taker"}
         self.db.append("experiments", exp_id=EID, version=1, created_ts=0, mechanism_tag="calendar_day_of_week",
                        fingerprint="f", spec_json=spec)
-        self.db.append("transitions", exp_id=EID, ts=0, from_state=None, to_state="PAPER_TRADING", actor="fixture",
-                       reason="fixture: approved for paper trading")
+        self.db.append("transitions", exp_id=EID, ts=0, from_state=None, to_state="PAPER_TRADING",
+                       actor="human:fixture", reason="fixture: approved for paper trading")
         pipeline.save_artifact(EID, "cost", {"selected": 1})
         pipeline.save_artifact(EID, "backtest", {"variants": [
             {"variant": 0, "params": {"mode": "flat_weekend"}, "fit": None, "positions": {}},
             {"variant": 1, "params": {"mode": "weekend_only"}, "fit": None, "positions": {}}]})
 
     def tearDown(self):
+        self.sup.stop()
         self.p.stop()
         self.db.close()
         shutil.rmtree(self.tmp, ignore_errors=True)
@@ -85,8 +88,8 @@ class Runner(unittest.TestCase):
         eid = "E_xs_momentum_p2"
         self.db.append("experiments", exp_id=eid, version=1, created_ts=0, mechanism_tag="cross_sectional_momentum",
                        fingerprint="x", spec_json={"template": "xs_momentum", "execution": "taker"})
-        self.db.append("transitions", exp_id=eid, ts=0, from_state=None, to_state="PAPER_TRADING", actor="fixture",
-                       reason="fixture: approved for paper trading")
+        self.db.append("transitions", exp_id=eid, ts=0, from_state=None, to_state="PAPER_TRADING",
+                       actor="human:fixture", reason="fixture: approved for paper trading")
         pipeline.save_artifact(eid, "cost", {"selected": 0})
         pipeline.save_artifact(eid, "backtest", {"variants": [{"variant": 0, "params": {"lookback_days": 7, "k": 2},
                                                                "fit": None, "positions": {}}]})
@@ -134,6 +137,8 @@ class Shadow(unittest.TestCase):
         self.db = DB(os.path.join(self.tmp, "lab.db"))
         self.p = mock.patch.object(pipeline, "ARTIFACTS", os.path.join(self.tmp, "artifacts"))
         self.p.start()
+        self.sup = mock.patch("lab.promotion.supervisor_ok", lambda db, now=None: True)
+        self.sup.start()
         self.db.append("experiments", exp_id=self.EID, version=1, created_ts=0, mechanism_tag="onchain_value_mvrv",
                        fingerprint="f", spec_json={"template": "mvrv_value", "execution": "taker"})
         self.db.append("transitions", exp_id=self.EID, ts=0, from_state=None, to_state="OBSERVATION", actor="fixture",
@@ -143,6 +148,7 @@ class Shadow(unittest.TestCase):
                                                                     "fit": None, "positions": {}}]})
 
     def tearDown(self):
+        self.sup.stop()
         self.p.stop()
         self.db.close()
         shutil.rmtree(self.tmp, ignore_errors=True)
@@ -191,7 +197,12 @@ class Shadow(unittest.TestCase):
         # leaving OBSERVATION ends shadow trading
         self.db.append("transitions", exp_id=self.EID, ts=1, from_state="OBSERVATION", to_state="REJECTED",
                        actor="fixture", reason="fixture: forward test failed")
-        self.assertEqual(paper_runner.run(self.db, feed(SAT + 3600), SAT + 3600, cm_get=self.cm)["experiments"], 0)
+        out = paper_runner.run(self.db, feed(SAT + 3600), SAT + 3600, cm_get=self.cm)["results"]
+        self.assertEqual(out["SHADOW_" + self.EID]["status"], "closing")          # amendment 4: positions closed
+        self.assertEqual(PaperEngine(self.db).ledger("SHADOW_" + self.EID)["positions"], {})
+        self.assertTrue(PaperEngine(self.db).reconcile("SHADOW_" + self.EID)["ok"])
+        out = paper_runner.run(self.db, feed(SAT + 7200), SAT + 7200, cm_get=self.cm)
+        self.assertEqual(out["experiments"], 0)                                    # nothing left to trade or close
 
     def test_a_coinmetrics_failure_pauses_the_shadow_ledger_only(self):
         self.db.event("shadow.approved", "human:test", self.EID, {"reason": "user asked for shadow trading"})

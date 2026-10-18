@@ -14,7 +14,7 @@ import json
 import time
 import urllib.request
 
-from lab import pipeline, registry
+from lab import lifecycle, pipeline, registry
 from lab.engine import catalogue, data
 from lab.paper import Book, CostModel, PaperEngine
 from lab.risk import Risk
@@ -92,10 +92,53 @@ def paper_experiments(db):
     return [x["exp_id"] for x in registry.status(db) if x["state"] == "PAPER_TRADING" and x["exp_id"].startswith("E_")]
 
 
+def closing_ledgers(db):
+    """Ledgers that still hold positions but may no longer trade: approved paper strategies that were rejected or
+    retired, and shadow ledgers whose shadow ended. Amendment 4: their positions are closed, never forgotten."""
+    from lab.paper import PaperEngine, shadow_active
+    eng, out = PaperEngine(db), []
+    for r in db.q("SELECT DISTINCT exp_id FROM events WHERE kind='paper.started'"):
+        led = r[0]
+        base = led[len("SHADOW_"):] if led.startswith("SHADOW_") else led
+        st = lifecycle.state(db, base)
+        done = (not shadow_active(db, base)) if led.startswith("SHADOW_") else st in ("REJECTED", "RETIRED")
+        if done and eng.ledger(led)["positions"]:
+            out.append((led, base))
+    return out
+
+
+def close_ledger(db, led, base, get, now):
+    eng, hour = PaperEngine(db, lambda: now), int(now) // HOUR * HOUR
+    orders = []
+    for s, q in eng.ledger(led)["positions"].items():
+        try:
+            _, _, book, _ = fetch_market(s, now, get)
+        except Exception as e:
+            orders.append({"symbol": s, "status": f"fetch failed: {e!r}"[:80]})
+            continue
+        r = eng.submit_taker(led, f"{led}|close|{hour}|{s}", s, "sell" if q > 0 else "buy", abs(q), book,
+                             reduce_only=True, signal_ref="close: strategy ended")
+        orders.append({"symbol": s, "status": r["status"]})
+    db.event("paper.closing", "agent:paper-1", led, {"orders": orders, "simulated": True})
+    return {"status": "closing", "orders": orders}
+
+
 def run(db, get=_get, now=None, cm_get=_cm_get):
+    from lab import promotion
     now = now or time.time()
     out = {}
+    if not promotion.supervisor_ok(db, now):
+        return {"experiments": 0, "results": {}, "simulated": True, "blocked": "supervisor state unknown"}
+    for led, base in closing_ledgers(db):
+        out[led] = close_ledger(db, led, base, get, now)
     for eid in paper_experiments(db):
+        ok, why = promotion.trading_authorized(db, eid)
+        if not ok:
+            if not db.one("SELECT 1 FROM events WHERE kind='paper.not_authorized' AND exp_id=? AND payload LIKE ?",
+                          eid, f"%{why[:40]}%"):
+                db.event("paper.not_authorized", "agent:paper-1", eid, {"reason": why})
+            out[eid] = {"status": "not authorized", "reason": why}
+            continue
         out[eid] = run_one(db, eid, get, now, cm_get=cm_get)
     for eid in shadow_experiments(db):                 # amendment 3: simulated, separate ledger, no effect on tests
         out["SHADOW_" + eid] = run_one(db, eid, get, now, ledger="SHADOW_" + eid, cm_get=cm_get)
