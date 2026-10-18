@@ -248,5 +248,30 @@ class Preflight(Tmp):
         self.assertIn("PREFLIGHT FAILED", lines[-1])
 
 
+class DashboardPort(unittest.TestCase):
+    def test_restart_rebinds_at_once_but_a_second_dashboard_is_refused(self):
+        import threading
+        import urllib.request
+        from lab import web
+        from lab.preflight import _port_free
+        tmp = tempfile.mkdtemp(prefix="labport")
+        try:
+            DB(os.path.join(tmp, "lab.db")).close()
+            a = web.LabServer(("127.0.0.1", 0), os.path.join(tmp, "lab.db"))
+            port = a.server_address[1]
+            threading.Thread(target=a.serve_forever, daemon=True).start()
+            urllib.request.urlopen(f"http://127.0.0.1:{port}/api/kpis", timeout=10).read()   # leaves TIME_WAIT
+            with self.assertRaises(OSError):
+                web.LabServer(("127.0.0.1", port), os.path.join(tmp, "lab.db"))    # never two listeners
+            self.assertFalse(_port_free(port))
+            a.shutdown()
+            a.server_close()
+            self.assertTrue(_port_free(port))
+            b = web.LabServer(("127.0.0.1", port), os.path.join(tmp, "lab.db"))    # restart right away
+            b.server_close()
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+
 if __name__ == "__main__":
     unittest.main()

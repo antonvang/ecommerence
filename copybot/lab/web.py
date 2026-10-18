@@ -231,7 +231,9 @@ def _sse_event(r):
 
 # ---------- server ----------
 class LabServer(ThreadingHTTPServer):
-    allow_reuse_address = False
+    # POSIX SO_REUSEADDR only skips TIME_WAIT after a restart (a second listener is still refused); on Windows it would
+    # let two servers share the port, so it stays off there.
+    allow_reuse_address = os.name != "nt"
     daemon_threads = True
 
     def __init__(self, addr, db_path):

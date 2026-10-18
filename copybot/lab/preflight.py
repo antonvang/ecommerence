@@ -21,6 +21,8 @@ NEEDS_FROZEN = ("VALIDATION", "VALIDATED", "OBSERVATION", "PAPER_TRADING", "PAUS
 def _port_free(port):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
+        if os.name != "nt":                       # same rule as lab/web.py LabServer: TIME_WAIT is not "in use"
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         s.bind(("127.0.0.1", port))
         return True
     except OSError:
