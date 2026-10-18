@@ -112,7 +112,8 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
     if args.cmd == "fleet":           # the research agent fleet runs inside the single-instance supervisor
         from lab import fleet, supervisor
         try:
-            return supervisor.Supervisor(db_path, fleet.workers(db_path), log=out).run(args.duration)
+            return supervisor.Supervisor(db_path, fleet.workers(db_path), log=out,
+                                         on_stop=(fleet.shutdown,)).run(args.duration)
         except supervisor.AlreadyRunning as e:
             out(f"refused: {e}")
             return 3

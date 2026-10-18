@@ -26,6 +26,7 @@ SUPERVISOR_BEAT = "supervisor"
 ALIVE_EVERY = 3600          # append-only proof of continuous operation (used by the S7 gate)
 DISK_EVERY = 60
 MAX_RESTARTS_PER_HOUR = 5
+JOIN_S = 10                 # total wait for worker threads on shutdown (they are daemons; the process exits after)
 ACTOR = "system:supervisor"
 
 
@@ -130,9 +131,10 @@ def recover(db, risk, stale_after=60, now=time.time, check_evidence=True):
 
 class Supervisor:
     def __init__(self, db_path=DEFAULT_DB, workers=(), now=time.time, sleep=time.sleep, log=print,
-                 check_evidence=True):
+                 check_evidence=True, on_stop=()):
         self.db_path, self.workers, self.now, self.sleep, self.log = db_path, list(workers), now, sleep, log
         self.check_evidence = check_evidence
+        self.on_stop = list(on_stop)              # called first on shutdown, e.g. fleet.shutdown (no new jobs)
         self.stop = threading.Event()
         self.db = None
         self.log_dir = os.path.join(os.path.dirname(os.path.abspath(db_path)), "logs")
@@ -246,15 +248,23 @@ class Supervisor:
                     break
                 self.housekeeping()
                 self.sleep(1.0)
+                if self.stop.is_set():                # SIGTERM during the sleep: the workers are stopping, not dead
+                    break
                 self.check()
             return 0
         finally:
             self.stop.set()
+            for fn in self.on_stop:
+                try:
+                    fn()
+                except Exception as e:
+                    self.log(f"on_stop {getattr(fn, '__name__', fn)} failed: {e!r}")
+            self.db.event("system.stopped", ACTOR, None, {"pid": os.getpid()})     # before any long wait
+            self.beat(self.db, SUPERVISOR_BEAT, 1, "stopped cleanly", "stopped", 30, 1.0)
+            end = time.monotonic() + JOIN_S
             for w in self.workers:
                 if w.thread is not None:
-                    w.thread.join(timeout=10)
-            self.db.event("system.stopped", ACTOR, None, {"pid": os.getpid()})
-            self.beat(self.db, SUPERVISOR_BEAT, 1, "stopped cleanly", "stopped", 30, 1.0)
+                    w.thread.join(timeout=max(0.0, end - time.monotonic()))
             for w in self.workers:
                 self.db.con.execute("UPDATE heartbeats SET status='stopped' WHERE worker=?", (w.name,))
             ops.log_json("supervisor", "stopped", self.log_dir, pid=os.getpid())

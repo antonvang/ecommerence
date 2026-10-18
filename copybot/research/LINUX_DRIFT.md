@@ -14,13 +14,26 @@ afprøvet på denne maskine.
 | Uafhængig vagt | `setsid nohup ./START_WATCH.sh >> data/lab/watch.log 2>&1 < /dev/null &` | `kill <pid>` |
 
 - Alle tre nægter at starte en ekstra kopi (lås i `data/`).
-- **Frossen eller hængt flåde.** `lab stop` venter ikke på den. Holder flåden databasens skrivelås, eller er dens
-  heartbeat over 30 s gammelt, melder `lab stop` det straks med pid og procestilstand (exit 3).
-  - `python3 -m lab stop --force --reason "..."` afslutter den: først SIGTERM og SIGCONT, så den lukker pænt ned og
-    skriver `system.stopped`, og først SIGKILL efter 20 s (også dens jobprocesser). Hændelsen `system.stop_forced`
-    skrives bagefter.
+- **Stop af flåden** (`lab stop` og dashboardets stop-knap), som koden gør det fra commit efter d37201f:
+  - Flåden holder op med at tage nye jobs. Tunge jobs, der kører i jobprocesser, afbrydes: poolen lukkes
+    (`cancel_futures`), og jobprocesserne dræbes. `system.stopped` skrives, før der ventes på tråde, og der ventes
+    højst 10 s i alt. Et stop tager derfor sekunder, ikke op til 3 minutter.
+  - Et afbrudt job står som `running` og køres igen efter næste start (`jobs.recover`). Det tæller ikke som
+    `job.failed` eller `worker.failed`, men forsøget tæller med i jobbets maks. 3 forsøg.
+  - Under stoppet genstartes ingen workers (ingen falsk `worker.restarted`).
+- **Frossen eller hængt flåde.** `lab stop` venter ikke på den.
+  - Flåden regnes kun for hængt, når processen står i tilstand T (frosset), eller når dens heartbeat er over 30 s
+    gammelt. Så melder `lab stop` det straks med pid og procestilstand (exit 3).
+  - Holder en anden proces databasens skrivelås (aflæst i `/proc/locks`), melder `lab stop` hvilken, og flåden
+    røres ikke, heller ikke med `--force` (exit 3).
+  - `python3 -m lab stop --force --reason "..."` afslutter en hængt flåde: først SIGTERM og SIGCONT, så den
+    lukker pænt ned som ovenfor, og først SIGKILL efter 20 s (også jobprocesser, der er startet i mellemtiden).
+    Bagefter skrives `system.stop_forced`. Kan den ikke skrives, siger `lab stop` det og giver exit 4.
+  - Flåden genkendes kun som `python3 -m lab [--db ...] fleet|supervise`, startet fra denne mappe og højst 300 s
+    før sin `system.running`-hændelse. En genbrugt pid eller en flåde fra en anden kopi af koden røres ikke.
   - Målt 2026-10-18 i en isoleret database: en frossen supervisor meldt på 0 s; `--force` stoppede den pænt på 1 s
-    (exit 0).
+    (exit 0). Testet (tests/test_lab_stop.py): SIGTERM midt i et 120 s job giver exit 0 på få sekunder, og jobbet
+    køres igen efter genstart.
   - Ved SIGKILL skriver START_LAB.sh "STOPPEDE UVENTET", og dashboardet kører videre.
 - Kontrollér en start med `pgrep -af "research.pm_lp|lab (fleet|web|watch)"`. Kontrollér også, at
   `data/lab/watch_status.json` får nyt tidsstempel hvert halve minut.

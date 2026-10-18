@@ -32,11 +32,14 @@ PROCESSES = os.environ.get("LAB_THREADS") != "1"
 LEASE_EVERY = 15
 _slots = threading.BoundedSemaphore(HEAVY_SLOTS)
 _pool, _pool_lock = None, threading.Lock()
+STOPPING = threading.Event()     # set by shutdown(): no new claims; interrupted jobs are re-run after the next start
 
 
 def _get_pool():
     global _pool
     with _pool_lock:
+        if STOPPING.is_set():
+            raise RuntimeError("fleet is stopping")
         if _pool is None:
             import multiprocessing
             from concurrent.futures import ProcessPoolExecutor
@@ -44,6 +47,25 @@ def _get_pool():
             # (database is locked, risk of corruption). Windows always spawns; Linux defaults to fork.
             _pool = ProcessPoolExecutor(max_workers=HEAVY_SLOTS, mp_context=multiprocessing.get_context("spawn"))
         return _pool
+
+
+def shutdown():
+    """Supervisor on_stop hook: claim nothing new, cancel queued pool work and kill running job processes (Python
+    would otherwise wait for them at exit). Their jobs stay `running`; jobs.recover re-runs them after the next start,
+    and nothing is recorded as a failure."""
+    global _pool
+    STOPPING.set()
+    with _pool_lock:
+        pool, _pool = _pool, None
+    if pool is None:
+        return
+    procs = list((getattr(pool, "_processes", None) or {}).values())
+    pool.shutdown(wait=False, cancel_futures=True)
+    for p in procs:
+        if p.is_alive():
+            p.kill()
+    for p in procs:
+        p.join(2)
 
 
 JOB_RAM_DEFAULT = 400 * 2 ** 20          # used until worker processes have reported a measured peak
@@ -118,7 +140,7 @@ def _beat(db, name, role, status, **f):
 
 def blocked_reason(db):
     st = control.state(db)
-    if st["stop"]:
+    if st["stop"] or STOPPING.is_set():
         return "stop requested"
     if st["paused"]:
         return "lab paused by operator"
@@ -258,6 +280,11 @@ class Agent:
         except Exception as e:
             stop.set()
             keeper.join(5)
+            if STOPPING.is_set():                       # shutdown killed the job: left for jobs.recover, not a failure
+                self.log("job.interrupted", job=jid, exp=eid, seconds=round(time.time() - t0, 2), error=repr(e))
+                self.beat(db, "stopped", detail="interrupted by shutdown; re-run after the next start",
+                          current_job=None, current_exp=None, next_action="none (stopping)")
+                return
             retryable = not isinstance(e, (lifecycle.LifecycleError, pipeline.StepError, KeyError))
             outcome = jobs.fail(db, jid, self.name, repr(e), retryable=retryable)
             self.counters["errors"] += 1
@@ -409,6 +436,7 @@ def agents(db_path):
 
 
 def workers(db_path):
+    STOPPING.clear()                     # a new fleet in this process (tests) starts unstopped
     return [Worker(a.name, a, a.interval, stale_after=a.stale_after, beats_itself=True, role=a.role)
             for a in agents(db_path)]
 
