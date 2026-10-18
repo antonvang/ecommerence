@@ -32,18 +32,34 @@ def _get(path):
         return json.loads(r.read())
 
 
-def fetch_market(sym, now, get=_get):
-    """Closed 1h bars [(open_ts, open, close)], settled funding {ts: rate} and a Book."""
-    kl = get(f"/fapi/v1/klines?symbol={sym}&interval=1h&limit=1000")
-    bars = [(int(k[0]) // 1000, float(k[1]), float(k[4])) for k in kl if int(k[6]) // 1000 < now]
-    volume = {int(k[0]) // 1000: float(k[7]) for k in kl if int(k[6]) // 1000 < now and len(k) > 7}
-    fr = get(f"/fapi/v1/fundingRate?symbol={sym}&limit=200")
-    funding = {int(f["fundingTime"]) // 1000 // HOUR * HOUR: float(f["fundingRate"]) for f in fr
-               if int(f["fundingTime"]) // 1000 < now}
+_HOURLY = {}        # symbol -> (hour, bars, funding, volume): closed bars and settled funding change once an hour
+_CM_HOURLY = {}     # (metrics, symbols) -> (hour, values): CoinMetrics daily values, re-read once an hour
+
+
+def fetch_book(sym, now, get=_get):
     d = get(f"/fapi/v1/depth?symbol={sym}&limit=20")
-    book = Book(ts=now, bids=tuple((float(p), float(q)) for p, q in d["bids"]),
+    return Book(ts=now, bids=tuple((float(p), float(q)) for p, q in d["bids"]),
                 asks=tuple((float(p), float(q)) for p, q in d["asks"]))
-    return bars, funding, book, volume
+
+
+def fetch_market(sym, now, get=_get, cache=None):
+    """Closed 1h bars [(open_ts, open, close)], settled funding {ts: rate}, a Book and hourly quote volume.
+    With a cache, bars and funding are fetched once per clock hour, as soon as the bar that closed at the top of the
+    hour is published (they cannot change before the next close); the book is read on every call."""
+    hour = int(now) // HOUR * HOUR
+    hit = cache.get(sym) if cache is not None else None
+    if hit and hit[0] == hour:
+        bars, funding, volume = hit[1:]
+    else:
+        kl = get(f"/fapi/v1/klines?symbol={sym}&interval=1h&limit=1000")
+        bars = [(int(k[0]) // 1000, float(k[1]), float(k[4])) for k in kl if int(k[6]) // 1000 < now]
+        volume = {int(k[0]) // 1000: float(k[7]) for k in kl if int(k[6]) // 1000 < now and len(k) > 7}
+        fr = get(f"/fapi/v1/fundingRate?symbol={sym}&limit=200")
+        funding = {int(f["fundingTime"]) // 1000 // HOUR * HOUR: float(f["fundingRate"]) for f in fr
+                   if int(f["fundingTime"]) // 1000 < now}
+        if cache is not None and bars and bars[-1][0] + HOUR == hour:     # the latest closed bar is in
+            cache[sym] = (hour, bars, funding, volume)
+    return bars, funding, fetch_book(sym, now, get), volume
 
 
 def cost_model():
@@ -123,6 +139,26 @@ def close_ledger(db, led, base, get, now):
     return {"status": "closing", "orders": orders}
 
 
+def held_experiments(db):
+    """Approved paper strategies that a circuit breaker paused: they keep their positions (amendment 4 section 7)."""
+    return [x["exp_id"] for x in registry.status(db) if x["state"] == "PAUSED" and x["exp_id"].startswith("E_")
+            and db.one("SELECT 1 FROM events WHERE kind='paper.started' AND exp_id=?", x["exp_id"])]
+
+
+def mark_only(db, ledger, get, now):
+    """Amendment 4 section 7: under a pause nothing new is opened; the positions are kept and marked once an hour."""
+    eng = PaperEngine(db, lambda: now)
+    if db.one("SELECT 1 FROM sim_equity WHERE exp_id=? AND ts>=?", ledger, int(now) // HOUR * HOUR):
+        return {"status": "paused", "marked": False}
+    pos = eng.ledger(ledger)["positions"]
+    try:
+        marks = {s: fetch_book(s, now, get).mid() for s in pos}
+    except Exception as e:
+        return {"status": "paused", "marked": False, "reason": f"no mark prices: {e!r}"[:200]}
+    eng.mark(ledger, marks)
+    return {"status": "paused", "marked": True, "positions": len(pos)}
+
+
 def _guarded(db, ledger, fn):
     """One ledger's failure never stops the others (closing in particular); it is reported, not swallowed."""
     try:
@@ -134,8 +170,12 @@ def _guarded(db, ledger, fn):
         return {"status": "error", "reason": repr(e)[:200]}
 
 
-def run(db, get=_get, now=None, cm_get=_cm_get):
+def run(db, get=_get, now=None, cm_get=_cm_get, cache=None, cm_cache=None):
     from lab import promotion
+    if cache is None and get is _get:                  # live: one shared hourly cache for every ledger
+        cache = _HOURLY
+    if cm_cache is None and cm_get is _cm_get:
+        cm_cache = _CM_HOURLY
     now = now or time.time()
     out = {}
     for led, base in closing_ledgers(db):              # reduce-only: allowed even without a supervisor or FAIL_CLOSED
@@ -150,14 +190,19 @@ def run(db, get=_get, now=None, cm_get=_cm_get):
                 db.event("paper.not_authorized", "agent:paper-1", eid, {"reason": why})
             out[eid] = {"status": "not authorized", "reason": why}
             continue
-        out[eid] = _guarded(db, eid, lambda: run_one(db, eid, get, now, cm_get=cm_get))
+        out[eid] = _guarded(db, eid, lambda: run_one(db, eid, get, now, cm_get=cm_get, cache=cache,
+                                                     cm_cache=cm_cache))
+    for eid in held_experiments(db):                   # paused: positions kept and marked, nothing new
+        if eid not in out:                             # (not one a breaker paused in this very pass)
+            out[eid] = _guarded(db, eid, lambda: mark_only(db, eid, get, now))
     for eid in shadow_experiments(db):                 # amendment 3: simulated, separate ledger, no effect on tests
         out["SHADOW_" + eid] = _guarded(db, "SHADOW_" + eid,
-                                        lambda: run_one(db, eid, get, now, ledger="SHADOW_" + eid, cm_get=cm_get))
+                                        lambda: run_one(db, eid, get, now, ledger="SHADOW_" + eid, cm_get=cm_get,
+                                                        cache=cache, cm_cache=cm_cache))
     return {"experiments": len(out), "results": out, "simulated": True}
 
 
-def run_one(db, eid, get, now, ledger=None, cm_get=_cm_get):
+def run_one(db, eid, get, now, ledger=None, cm_get=_cm_get, cache=None, cm_cache=None):
     """Trade experiment `eid`'s frozen strategy on the simulated ledger `ledger` (default: the experiment itself)."""
     L = ledger or eid
     eng, risk = PaperEngine(db, lambda: now), Risk(db, lambda: now)
@@ -169,8 +214,10 @@ def run_one(db, eid, get, now, ledger=None, cm_get=_cm_get):
                                                                           "built yet (research/PROTOCOL_V3.md section 7)"})
         return {"status": "unsupported", "reason": "live data for this template is not implemented; no orders"}
     eng.start(L, CAPITAL, cost_model(), actor="agent:paper-1")
-    if risk.paused(L) or risk.fail_closed():
-        return {"status": "paused" if risk.paused(L) else "fail_closed"}
+    if risk.fail_closed():
+        return {"status": "fail_closed"}
+    if risk.paused(L):
+        return mark_only(db, L, get, now)              # amendment 4 section 7: kept and marked, nothing new
     try:
         variant = pipeline.frozen_variant(db, eid)                    # fail closed: no orders on unverified rules
     except pipeline.ArtifactError as e:
@@ -182,14 +229,22 @@ def run_one(db, eid, get, now, ledger=None, cm_get=_cm_get):
     market = {}
     try:
         for s in catalogue.universe(spec["template"]):
-            market[s] = fetch_market(s, now, get)
+            market[s] = fetch_market(s, now, get, cache)
     except Exception as e:
         risk.pause(L, "data_fetch", None, None, f"public market data fetch failed: {e!r}"[:300], eng.cancel_entries)
         return {"status": "paused", "reason": "data fetch failed"}
     bundle = None
     if "cm" in (tpl.get("needs") or []):
         try:
-            bundle = {"cm": fetch_cm_live(tpl["cm_metrics"], list(market), now, cm_get)}
+            key, hour_now = (tuple(tpl["cm_metrics"]), tuple(sorted(market))), int(now) // HOUR * HOUR
+            hit = cm_cache.get(key) if cm_cache is not None else None
+            if hit and hit[0] == hour_now:
+                cmv = hit[1]
+            else:
+                cmv = fetch_cm_live(tpl["cm_metrics"], list(market), now, cm_get)
+                if cm_cache is not None:
+                    cm_cache[key] = (hour_now, cmv)
+            bundle = {"cm": cmv}
         except Exception as e:
             risk.pause(L, "data_fetch", None, None, f"CoinMetrics fetch failed: {e!r}"[:300], eng.cancel_entries)
             return {"status": "paused", "reason": "CoinMetrics fetch failed"}
@@ -219,6 +274,14 @@ def run_one(db, eid, get, now, ledger=None, cm_get=_cm_get):
         if abs(delta) * marks[s] < MIN_NOTIONAL:
             continue
         reduce_only = abs(target_qty) < abs(cur) and (target_qty == 0 or (target_qty > 0) == (cur > 0))
+        try:
+            book = fetch_book(s, now, get)                # the order walks a book read just now
+        except Exception as e:
+            orders.append({"symbol": s, "status": f"not sent: book unavailable ({e!r})"[:120], "qty": abs(delta)})
+            continue                                    # same order id: the next pass this hour retries it
+        if book.crossed() or not book.bids or not book.asks:
+            orders.append({"symbol": s, "status": "not sent: invalid book", "qty": abs(delta)})
+            continue
         r = eng.submit_taker(L, f"{L}|{hour}|{s}", s, "buy" if delta > 0 else "sell", abs(delta), book,
                              reduce_only=reduce_only, signal_ref=f"{spec['template']}@{hour}")
         orders.append({"symbol": s, "status": r["status"], "qty": abs(delta)})
