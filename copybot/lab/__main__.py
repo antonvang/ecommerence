@@ -24,6 +24,8 @@
   python -m lab forward-start --reason ".." | forward-stop [--exp EXP] --reason ".."   (amendment 7 forward tests)
   python -m lab sim-resume LEDGER --reason ".."                          (resume a paused SHADOW_/FWD_ ledger)
   python -m lab family-check FILE                                        (amendment 8; read-only, no network)
+  python -m lab approve-family FID --reason ".." -> code;  python -m lab confirm-family   (typed by the user)
+  python -m lab revoke-family FID --reason ".." | families                 (amendment 8)
   python -m lab autopromote on|off --reason ".."                         (automatic promotion policy, amendment 4)
 """
 from __future__ import annotations
@@ -84,6 +86,46 @@ def family_check(path, db_path, out=print):
     return 0 if not r["problems"] else 1
 
 
+def family_cmd(args, db, out, ask=input):
+    """Amendment 8 point 5: approve-family and confirm-family are typed by the user in an interactive terminal."""
+    from lab import families
+    try:
+        if args.cmd == "approve-family":
+            if family_check(families.path_of(args.fid), db.path, out) != 0:
+                out("refused: fix the problems above first")
+                return 1
+            code = families.request(db, args.fid, human(), args.reason)
+            b = families.bound_blobs(args.fid)["family"]
+            out(f"approval code {code} (valid 15 min). Family file blob {b[:12]}.")
+            out("Confirm by typing: python3 -m lab confirm-family   (it asks for the code and the first 8 "
+                "characters of the blob)")
+            return 0
+        if args.cmd == "confirm-family":
+            families.GUARD()
+            code = ask("approval code: ")
+            prefix = ask("first 8 characters of the family file blob: ")
+            fid, eid = families.confirm(db, code, prefix, human())
+            out(f"{fid}: family.approved (event {eid}); alpha reserved. Instances register through the fleet, "
+                "not before 2026-11-28 if data must be downloaded.")
+            return 0
+        if args.cmd == "revoke-family":
+            released = families.revoke(db, args.fid, human(), args.reason)
+            out(f"{args.fid}: family.revoked" + (f"; alpha {released} released" if released else ""))
+            return 0
+        reserved = families.alpha_reserved(db)
+        out(f"amendment 8 alpha: {reserved:.4f} of W0 {families.W0} reserved or spent")
+        for f in sorted(os.listdir(families.FAMILY_DIR)):
+            if f.endswith(".json") and f != "VOCABULARY.json":
+                fid = f[:-5]
+                a = families.approval(db, fid)
+                out(f"  {fid}: {'approved (event ' + str(a) + ')' if a else 'not approved'}"
+                    f"{', registered' if families.registered(db, fid) else ''}")
+        return 0
+    except families.FamilyError as e:
+        out(f"refused: {e}")
+        return 1
+
+
 def main(argv=None, db_path=DEFAULT_DB, out=print):
     ap = argparse.ArgumentParser(prog="python -m lab")
     ap.add_argument("--db", help="registry path (default data/lab/lab.db)")
@@ -129,6 +171,10 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
         fp = sub.add_parser(c); fp.add_argument("--exp"); fp.add_argument("--reason", required=True)
     sr = sub.add_parser("sim-resume"); sr.add_argument("ledger"); sr.add_argument("--reason", required=True)
     fc = sub.add_parser("family-check"); fc.add_argument("file")
+    af = sub.add_parser("approve-family"); af.add_argument("fid"); af.add_argument("--reason", required=True)
+    sub.add_parser("confirm-family")
+    rf = sub.add_parser("revoke-family"); rf.add_argument("fid"); rf.add_argument("--reason", required=True)
+    sub.add_parser("families")
     rt = sub.add_parser("revoke-template"); rt.add_argument("template"); rt.add_argument("--reason", required=True)
     ex = sub.add_parser("export-db"); ex.add_argument("target")
     wt = sub.add_parser("watch"); wt.add_argument("--once", action="store_true")
@@ -261,6 +307,8 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
                 return 1
             out(f"{args.ledger}: {'resumed (CLEAR recorded)' if done else 'not paused: nothing to resume'}")
             return 0
+        if args.cmd in ("approve-family", "confirm-family", "revoke-family", "families"):   # amendment 8
+            return family_cmd(args, db, out)
         if args.cmd in ("approve-template", "confirm-template", "revoke-template"):
             from lab import templates
             try:

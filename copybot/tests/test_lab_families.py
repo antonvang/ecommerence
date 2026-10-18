@@ -134,5 +134,116 @@ class Check(unittest.TestCase):
         con.close()
 
 
+CLEAN = {k: {"path": k, "committed": c, "working": c, "clean": True}
+         for k, c in (("family", "abcdef0123456789"), ("module", "1111"), ("adapter", "2222"), ("vocabulary", "3333"))}
+
+
+class Approval(unittest.TestCase):
+    """Phase A2: approval typed by the user, alpha budget and binding (amendment 8 points 5 and 13)."""
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp(prefix="labfamA2")
+        self.db = DB(os.path.join(self.tmp, "lab.db"))
+        for eid in ("L13_carry_v1", "L08_funding_carry_leverage", "E_funding_contrarian_p1", "L22_m3_premium_convergence"):
+            self.db.append("experiments", exp_id=eid, version=1, created_ts=0, mechanism_tag="x", fingerprint=eid,
+                           spec_json={})
+        self.blobs = copy.deepcopy(CLEAN)
+        self.p = [mock.patch.object(families, "GUARD", lambda: None),
+                  mock.patch.object(families, "blobs", lambda fid: copy.deepcopy(self.blobs)),
+                  mock.patch.object(families.os.path, "exists",
+                                    lambda p, _real=os.path.exists: True if p.endswith("fcarry.py") else _real(p))]
+        for p in self.p:
+            p.start()
+
+    def tearDown(self):
+        for p in self.p:
+            p.stop()
+        self.db.close()
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def approve(self, prefix="abcdef01"):
+        code = families.request(self.db, "fcarry", "human:anton", "Anton approves F1 after reading it")
+        return families.confirm(self.db, code, prefix, "human:anton")
+
+    def test_only_an_interactive_human_outside_an_assistant_session(self):
+        self.p[0].stop()
+        try:
+            with mock.patch.dict(os.environ, {"CLAUDECODE": "1"}):
+                with self.assertRaises(families.FamilyError):
+                    families.request(self.db, "fcarry", "human:anton", "Anton approves F1 after reading it")
+            env = {k: v for k, v in os.environ.items() if k != "CLAUDECODE" and not k.startswith("CLAUDE_CODE_")}
+            with mock.patch.dict(os.environ, env, clear=True), mock.patch("sys.stdin.isatty", lambda: False):
+                with self.assertRaises(families.FamilyError):
+                    families.request(self.db, "fcarry", "human:anton", "Anton approves F1 after reading it")
+        finally:
+            self.p[0].start()
+        with self.assertRaises(families.FamilyError):
+            families.request(self.db, "fcarry", "agent:strategy-1", "an agent cannot approve a family")
+
+    def test_two_steps_reserve_alpha_and_bind_the_files(self):
+        with self.assertRaises(families.FamilyError):
+            self.approve(prefix="00000000")                                    # wrong blob prefix
+        fid, eid = self.approve()
+        self.assertEqual(fid, "fcarry")
+        self.assertEqual(families.approval(self.db, "fcarry"), eid)
+        self.assertAlmostEqual(families.alpha_reserved(self.db), 0.0125)
+        self.blobs["module"]["committed"] = self.blobs["module"]["working"] = "9999"
+        self.assertIsNone(families.approval(self.db, "fcarry"))               # a bound file changed
+        self.blobs["module"]["committed"] = self.blobs["module"]["working"] = "1111"
+        self.assertEqual(families.approval(self.db, "fcarry"), eid)
+        with mock.patch.object(families, "thresholds", lambda: {"changed": True}):
+            self.assertIsNone(families.approval(self.db, "fcarry"))           # a bound gate value changed
+
+    def test_codes_expire_and_are_used_once(self):
+        code = families.request(self.db, "fcarry", "human:anton", "Anton approves F1 after reading it", now=1000)
+        with self.assertRaises(families.FamilyError):
+            families.confirm(self.db, code, "abcdef01", "human:anton", now=1000 + families.APPROVAL_SECONDS + 1)
+        families.confirm(self.db, code, "abcdef01", "human:anton", now=1001)
+        with self.assertRaises(families.FamilyError):
+            families.confirm(self.db, code, "abcdef01", "human:anton", now=1002)
+
+    def test_the_budget_refuses_a_family_that_does_not_fit(self):
+        self.db.append("alpha_ledger", exp_id="family:other", ts=0, alpha=0.045, note="A8 reserve")
+        with self.assertRaises(families.FamilyError):
+            self.approve()
+        self.db.append("alpha_ledger", exp_id="E_screening_only", ts=0, alpha=0.005, note="screening")
+        self.assertAlmostEqual(families.alpha_reserved(self.db), 0.045)       # screening rows are not A8 wealth
+
+    def test_revoke_releases_alpha_only_before_registration(self):
+        self.approve()
+        self.assertAlmostEqual(families.revoke(self.db, "fcarry", "human:anton", "Anton withdraws F1 for now"), 0.0125)
+        self.assertAlmostEqual(families.alpha_reserved(self.db), 0.0)
+        self.assertIsNone(families.approval(self.db, "fcarry"))
+        self.approve()
+        self.db.append("experiments", exp_id="E_fcarry__filt_a8", version=1, created_ts=0, mechanism_tag="x",
+                       fingerprint="f", spec_json={})
+        with self.assertRaises(families.FamilyError):
+            families.revoke(self.db, "fcarry", "human:anton", "too late: already registered")
+
+    def test_a_family_code_cannot_execute_a_lifecycle_transition(self):
+        from lab import lifecycle
+        code = families.request(self.db, "fcarry", "human:anton", "Anton approves F1 after reading it")
+        with self.assertRaises(Exception):
+            lifecycle.confirm(self.db, code, "human:anton")
+        self.assertEqual(self.db.one("SELECT COUNT(*) FROM transitions")[0], 0)
+
+    def test_the_cli_asks_for_the_code_and_the_blob_prefix_at_the_prompt(self):
+        import argparse
+        from lab.__main__ import family_cmd
+        code = families.request(self.db, "fcarry", "human:anton", "Anton approves F1 after reading it")
+        answers, lines = iter([code, "abcdef01"]), []
+        rc = family_cmd(argparse.Namespace(cmd="confirm-family"), self.db, lines.append, ask=lambda q: next(answers))
+        self.assertEqual(rc, 0, lines)
+        self.assertIn("family.approved", lines[-1])
+        lines.clear()
+        self.assertEqual(family_cmd(argparse.Namespace(cmd="families"), self.db, lines.append), 0)
+        self.assertTrue(any(line.strip().startswith("fcarry: approved") for line in lines), lines)
+
+    def test_a_catalogue_change_does_not_void_a_family_approval(self):
+        _, eid = self.approve()
+        with mock.patch("lab.templates.catalogue_blob", lambda: "a-different-catalogue-blob"):
+            self.assertEqual(families.approval(self.db, "fcarry"), eid)
+
+
 if __name__ == "__main__":
     unittest.main()

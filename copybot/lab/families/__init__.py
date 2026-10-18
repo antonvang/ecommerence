@@ -260,3 +260,166 @@ def check(db, path):
             "cache": cache_status(fam), "blobs": blobs(fid), "alpha": {"family": alpha_f, "reserved": used, "W0": W0},
             "required_sharpe": table,
             "power_at_3": round(power(POWER_SHARPE, alpha_f / K_MAX, FORWARD_MONTHS), 2) if alpha_f else None}
+
+
+# ---------- phase A2: approval typed by the user, alpha budget, binding (amendment 8 points 5 and 13) ----------
+APPROVAL_SECONDS = 15 * 60
+
+
+class FamilyError(Exception):
+    pass
+
+
+def thresholds():
+    """The gate values a family approval binds: any change voids the approval before registration."""
+    import hashlib
+    import inspect
+    from lab import pipeline
+    from lab.engine import backtest, catalogue
+    return {"PLACEBO_P_MAX": catalogue.PLACEBO_P_MAX, "DSR_MIN": catalogue.DSR_MIN,
+            "COST_HIGH_MULT": catalogue.COST_HIGH_MULT, "seed": pipeline.SEED,
+            "bootstrap_code": hashlib.sha256(inspect.getsource(backtest.metrics).encode()).hexdigest()[:16]}
+
+
+def interactive_human():
+    """Amendment 8 point 5: approvals are typed by the user in an interactive terminal, never by an assistant.
+    (Policy, not proof: a faked terminal is possible; the rule and the logged actor are what bind.)"""
+    import sys
+    if os.environ.get("CLAUDECODE") or any(k.startswith("CLAUDE_CODE_") for k in os.environ):
+        raise FamilyError("refused: an assistant session may not approve or confirm a family (amendment 8 point 5)")
+    if not (sys.stdin.isatty() and sys.stdout.isatty()):
+        raise FamilyError("refused: approve-family and confirm-family must be typed in an interactive terminal")
+
+
+GUARD = interactive_human
+
+
+def bound_blobs(fid):
+    """The committed blobs an approval binds. Every bound file must exist and be committed exactly as it is."""
+    b = blobs(fid)
+    dirty = [v["path"] for v in b.values() if not v["clean"]]
+    if dirty:
+        raise FamilyError(f"commit these files exactly as they are first: {', '.join(dirty)}")
+    return {k: v["committed"] for k, v in b.items()}
+
+
+def registered(db, fid):
+    prefix = f"E_{fid}__"
+    return db.one("SELECT 1 FROM experiments WHERE substr(exp_id, 1, ?) = ? LIMIT 1", len(prefix), prefix) is not None
+
+
+def _blocking_problems(db, fam):
+    fid = fam.get("family_id")
+    bad = validate(fam)
+    if not os.path.exists(module_path(fid)):
+        bad.append(f"mechanism module lab/families/{fid}.py is missing")
+    _, unacked = graveyard_hits(db, fam)
+    bad += [f"graveyard: {e} is not acknowledged" for e in unacked]
+    alpha_f = (fam.get("alpha") or {}).get("family") or 0
+    if alpha_reserved(db) + alpha_f > W0 + 1e-12:
+        bad.append(f"alpha budget: {alpha_reserved(db):.4f} of {W0} reserved; this family needs {alpha_f}")
+    if registered(db, fid):
+        bad.append(f"{fid} is already registered: approvals and revocations are only possible before registration")
+    return bad
+
+
+def request(db, fid, actor, reason, now=None):
+    """Step 1 of 2: checks every rule and returns a one-time code (15 min). Nothing is approved yet."""
+    import hashlib
+    import secrets
+    import time
+    GUARD()
+    if not actor.startswith("human:"):
+        raise FamilyError("family approvals come from a human actor")
+    if not reason or len(reason.strip()) < 10:
+        raise FamilyError("a reason of at least 10 characters is required")
+    fam = load(fid)
+    bad = _blocking_problems(db, fam)
+    if bad:
+        raise FamilyError("; ".join(bad))
+    b = bound_blobs(fid)
+    now = int(now or time.time())
+    code = secrets.token_hex(3)
+    with db.tx():
+        db.append("approvals", code_hash=hashlib.sha256(code.encode()).hexdigest(), exp_id=f"family:{fid}",
+                  to_state="FAMILY_APPROVED", ts=now, expires_ts=now + APPROVAL_SECONDS, actor=actor,
+                  reason=reason.strip(),
+                  evidence={"blobs": b, "thresholds": thresholds(), "alpha_family": fam["alpha"]["family"],
+                            "instances": [i["id"] for i in fam["instances"]]})
+        db.event("family.approval_requested", actor, None, {"family": fid, "reason": reason.strip()})
+    return code
+
+
+def confirm(db, code, blob_prefix, actor, now=None):
+    """Step 2 of 2: the user types the code and the first 8 characters of the family file's blob."""
+    import hashlib
+    import time
+    from lab.db import canonical
+    GUARD()
+    now = int(now or time.time())
+    if not actor.startswith("human:"):
+        raise FamilyError("only a human can confirm a family")
+    a = db.one("SELECT * FROM approvals WHERE code_hash=? AND to_state='FAMILY_APPROVED'",
+               hashlib.sha256((code or "").strip().encode()).hexdigest())
+    if a is None:
+        raise FamilyError("unknown approval code")
+    if now > a["expires_ts"]:
+        raise FamilyError("approval code expired")
+    if db.one("SELECT 1 FROM events WHERE kind='approval.used' AND payload=?", canonical({"approval_id": a["id"]})):
+        raise FamilyError("approval code already used")
+    ev, fid = json.loads(a["evidence"]), a["exp_id"].split(":", 1)[1]
+    b = bound_blobs(fid)
+    if b != ev["blobs"]:
+        raise FamilyError("a bound file changed since the approval was requested")
+    prefix = (blob_prefix or "").strip().lower()
+    if len(prefix) < 8 or not b["family"].startswith(prefix):
+        raise FamilyError("the typed blob prefix does not match the committed family file")
+    if thresholds() != ev["thresholds"]:
+        raise FamilyError("a bound gate value changed since the approval was requested")
+    bad = _blocking_problems(db, load(fid))
+    if bad:
+        raise FamilyError("; ".join(bad))
+    with db.tx():
+        eid = db.event("family.approved", actor, None, {"family": fid, "blobs": b, "thresholds": ev["thresholds"],
+                                                        "alpha_family": ev["alpha_family"],
+                                                        "instances": ev["instances"], "approval_id": a["id"],
+                                                        "reason": a["reason"]})
+        db.event("approval.used", actor, None, {"approval_id": a["id"]})
+        db.append("alpha_ledger", exp_id=f"family:{fid}", ts=now, alpha=ev["alpha_family"], note="A8 reserve")
+    return fid, eid
+
+
+def revoke(db, fid, actor, reason, now=None):
+    """Only a human, only before registration. A reserved alpha is released (a negative A8 release row)."""
+    import time
+    if not actor.startswith("human:"):
+        raise FamilyError("only a human can revoke a family")
+    if not reason or len(reason.strip()) < 10:
+        raise FamilyError("a reason of at least 10 characters is required")
+    if registered(db, fid):
+        raise FamilyError(f"{fid} is already registered: it can no longer be revoked")
+    reserved = db.one("SELECT COALESCE(SUM(alpha), 0) FROM alpha_ledger WHERE exp_id=?", f"family:{fid}")[0]
+    with db.tx():
+        db.event("family.revoked", actor, None, {"family": fid, "reason": reason.strip()})
+        if reserved > 0:
+            db.append("alpha_ledger", exp_id=f"family:{fid}", ts=int(now or time.time()), alpha=-reserved,
+                      note="A8 release")
+    return reserved
+
+
+def approval(db, fid):
+    """The id of the valid family.approved event, or None (never approved, revoked, or a bound file or gate value
+    changed). A change to lab/engine/catalogue.py does not void a family approval."""
+    for r in db.q("SELECT id, kind, payload FROM events WHERE kind IN ('family.approved', 'family.revoked') "
+                  "ORDER BY id DESC"):
+        p = json.loads(r["payload"])
+        if p.get("family") != fid:
+            continue
+        if r["kind"] == "family.revoked":
+            return None
+        try:
+            ok = bound_blobs(fid) == p.get("blobs") and thresholds() == p.get("thresholds")
+        except FamilyError:
+            ok = False
+        return r["id"] if ok else None
+    return None
