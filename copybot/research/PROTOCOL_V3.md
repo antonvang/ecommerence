@@ -226,3 +226,29 @@ Held-tjekket på 0,287 er langt under 0,95. Efter ændring 2 betyder det:
 - **Evaluering:** den kører automatisk tidligst **2027-05-07** (jobbet `observe|E_mvrv_value_p3` står i køen), når flåden kører.
 - **Ingen tidlig læsning:** data fra vinduet kan ikke læses før.
 - **Holdt tilbage:** intet er sendt til simuleret handel, og 2024-slut-testen er ikke åbnet.
+
+## Ændring 3 (2026-10-18): skyggehandel for kandidater på observationslisten — før kode
+
+**Beslutning:** brugeren bad om simuleret skyggehandel for kandidater på observationslisten (nu MVRV). Den vises tydeligt
+mærket i dashboardet og må ikke påvirke de formelle tests.
+
+1. **Hvad.**
+   - Et eksperiment i OBSERVATION kan få en separat, simuleret konto ("skyggekonto", id `SHADOW_<eksperiment>`).
+   - Kontoen handler den frosne strategi live: samme variant, parametre, univers og omkostninger.
+   - Startkapitalen er 10.000 USD (simuleret).
+   - Ingen rigtige penge, ingen ordrer til en børs og ingen nøgler.
+2. **Hvornår.**
+   - Kun efter en menneskelig start pr. eksperiment (`shadow.approved`, actor `human:`); den kan stoppes på samme måde (`shadow.stopped`).
+   - Den stopper automatisk, når eksperimentet forlader OBSERVATION.
+   - Risiko-breakers (drawdown, data, spread) pauser den som enhver paper-konto.
+3. **Ingen effekt på de formelle tests.**
+   - Skyggekontoen skriver ingen resultater, livscyklus-overgange eller trials for eksperimentet.
+   - Observationstestens evaluering (ændring 2) kører uændret og læser fortsat først vinduets historiske data, når vinduet er slut.
+   - Skyggekontoen ser de samme live-markeder undervejs. **Dens resultater må ikke bruges til nogen beslutning om eksperimentet**, hverken at stoppe, ændre eller fremskynde det. Afgørelsen er udelukkende den automatiske observationstest.
+4. **Data.**
+   - Offentlige Binance REST-data som den eksisterende paper-motor: lukkede 1h-bars, funding og en ordrebog med 20 niveauer.
+   - CoinMetrics community-API for de seneste 120 dage frem til i går (dagsværdi for dag D bruges fra D+1).
+   - Fejler en datakilde, pauses kontoen (ingen handel).
+5. **Visning.**
+   - Skyggekonti vises i dashboardets saldo- og paper-dele med mærket "skyggehandel (simuleret, ikke godkendt)".
+   - De vises aldrig som godkendt strategi eller som rigtig indtjening. Rigtig konto er fortsat "ikke tilgængelig".
