@@ -248,3 +248,27 @@ This is an engineering fix only. No methodology, panel rule, seed, window or gat
   - The validation and holdout periods, and gate D1, are unaffected.
   - The system-level cause (resolver timeout) is reported to the user. Changing it needs administrator rights and
     their approval.
+
+## Amendment 5 (2026-10-18 ~12:40 UTC): corrections to amendment 3 after an independent check
+
+This amendment discloses what the code actually does. Nothing changes: no code, method, data or gate.
+
+- **Trades.** Amendment 3 said that trades are not back-filled. That statement was wrong. The trade poll in §2 (120 s
+  overlap, de-duplicated) reads back to the last successful poll of that market minus 120 s. After a restart it
+  reads 720 s back.
+  - After a pause inside one process, the next poll therefore retrieved the trades of the pause from the approved
+    endpoint: 223 trades timestamped 04:40–06:34 UTC on 2026-10-18.
+  - After the restart, 9 trades from 11:12–11:16 UTC were retrieved.
+  - No order-book snapshot was or can be back-filled. Under §4 a trade fills only against a snapshot ≤ 180 s old, so
+    these trades create no fills or rewards.
+  - They do enter the trade tables, and therefore the maker-wallet set in `payout_check` (D2) and the reported trade
+    counts. That is the behaviour registered in §2. The rows are kept unchanged.
+- **Sleep.** Amendment 3 said the Linux machine is kept awake while the collector runs. That is not in effect.
+  - `systemd-inhibit` needs the active local desktop session. Both Linux starts were made over SSH and fell back
+    with a logged warning.
+  - Checked at 12:30 UTC: no suspend since boot (`/sys/power/suspend_stats` 0/0; boot and monotonic clocks equal). The
+    only Xfce power setting changed from its default is the power button.
+  - Suspend is not blocked. Keeping the machine awake is the user's decision; this amendment does not change it.
+- **Cadence.** A round starts once at least 60 s have passed since the previous one. The loop checks every 5 s, so
+  rounds are 60–65 s apart and about 1.5–2 % of calendar minutes have no round. This was already true on D0 (97.9 %).
+  The 90 % gate D1 is unchanged and stays reachable.
