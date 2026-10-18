@@ -692,6 +692,30 @@ def _drop(bars, funding, vol, symbols, spec):
                 per.pop(s, None)
 
 
+def _declare_holdout(db, eid, spec, worker):
+    """Amendment 7 section 8: open the holdout once with every file of every source the step will read (bars,
+    funding and the template's extra series). Later reads in the step must be part of this set, unchanged."""
+    tpl, sp = catalogue.TEMPLATES[spec["template"]], _sp(spec, "holdout")
+    symbols, needs = catalogue.universe(spec["template"]), tpl.get("needs") or []
+    paths = []
+    for s in symbols:                                  # the same paths as _files and _extra read them
+        f = data.files_for(s, sp)
+        paths += [os.path.join(HERE, p) if not os.path.isabs(p) else p for p in f["klines"] + f["funding"]]
+    if "metrics" in needs:
+        paths += [data.metrics_for(s, sp) for s in symbols]
+    if "dvol" in needs:
+        paths += [data.dvol_for(c, sp) for c in sorted({s.replace("USDT", "") for s in symbols})]
+    if "rates" in needs:
+        paths.append(data.fred_for("DFII10", sp))
+    if "cm" in needs:
+        paths += [data.cm_for(m, sp, symbols) for m in tpl.get("cm_metrics", [])]
+    if "stable" in needs:
+        paths.append(data.stable_for(sp))
+    return Gateway(db, f"system:{worker}").access(eid, data.GATEWAY_SPLIT[sp], paths, data.window(sp),
+                                                 "holdout: every source in one declared set", "evaluate",
+                                                 _code_hash())
+
+
 def step_holdout(db, job, worker):
     """Sealed 2024 holdout, only reachable after a human-approved SCREEN_PASSED -> VALIDATION transition."""
     eid = job["exp_id"]
@@ -702,6 +726,7 @@ def step_holdout(db, job, worker):
         raise StepError("no clean holdout possible: BTC/ETH 2024 data was already seen by L14_tsmom_v1 "
                         "(research/PROTOCOL_V3.md amendment 1)")
     v = frozen_variant(db, eid)                                          # verified against the recorded hashes
+    _declare_holdout(db, eid, spec, worker)                              # amendment 7 section 8
     bars, funding, dups, vol = _market(db, eid, "holdout", worker, spec)
     hq, h_excluded, h_enough = _quality(bars, "holdout", dups, spec, vol)
     if catalogue.TEMPLATES[spec["template"]].get("universe") in ("30", "30v3", "cm16"):

@@ -91,11 +91,14 @@ class Gateway:
         if split == "holdout":
             opened = self.db.one("SELECT payload FROM events WHERE kind='holdout.opened' AND exp_id=? ORDER BY id LIMIT 1",
                                  exp_id)
-            if opened:
+            if opened:                 # research/PROTOCOL_V3.md amendment 7 section 8: one declared file set
                 import json
                 first = json.loads(opened["payload"])
-                if first.get("code_hash") != code_hash or sorted(first.get("sha256", [])) != sorted(shas.values()):
-                    self._refuse(exp_id, split, "holdout already opened with different code or data", rel)
+                inside = set(shas.values()) <= set(first.get("sha256", [])) and (
+                    first.get("paths") is None or set(rel) <= set(first["paths"]))
+                if first.get("code_hash") != code_hash or not inside:
+                    self._refuse(exp_id, split, "holdout already opened with different code or data: every later "
+                                 "read must be part of the declared file set with identical hashes", rel)
 
         now = int(time.time())
         with self.db.tx():
@@ -108,7 +111,8 @@ class Gateway:
             if split == "holdout" and not self.db.one("SELECT 1 FROM events WHERE kind='holdout.opened' AND exp_id=?",
                                                       exp_id):
                 self.db.event("holdout.opened", self.actor, exp_id, {"code_hash": code_hash,
-                                                                     "sha256": sorted(shas.values())})
+                                                                     "sha256": sorted(shas.values()),
+                                                                     "paths": sorted(rel)})
             self.db.event("data.accessed", self.actor, exp_id, {"split": split, "purpose": purpose, "paths": rel,
                                                                 "window": list(window)})
         return shas
