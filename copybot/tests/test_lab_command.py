@@ -293,6 +293,44 @@ class StopState(unittest.TestCase):
         self.assertFalse(control.state(db)["stop"])
 
 
+class LinuxRam(unittest.TestCase):
+    def test_meminfo_is_read_as_available_memory(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = os.path.join(d, "meminfo")
+            with open(p, "w") as f:
+                f.write("MemTotal:       16000000 kB\nMemFree:          500000 kB\nMemAvailable:    4000000 kB\n")
+            self.assertEqual(control._ram_linux(p), {"total": 16000000 * 1024, "free": 4000000 * 1024,
+                                                     "load_pct": 75})
+            self.assertIsNone(control._ram_linux(os.path.join(d, "missing")))
+
+
+class ExportDb(unittest.TestCase):
+    def test_export_refuses_while_running_and_copies_a_verified_chain(self):
+        from lab.__main__ import main
+        from tests.lab_fixtures import supervised
+        with tempfile.TemporaryDirectory() as d:
+            src, dst = os.path.join(d, "lab.db"), os.path.join(d, "copy.db")
+            db = DB(src)
+            db.event("x", "system:test")
+            supervised(db)
+            db.close()
+            lines = []
+            self.assertEqual(main(["--db", src, "export-db", dst], out=lines.append), 3)    # fleet running
+            self.assertFalse(os.path.exists(dst))
+            db = DB(src)
+            supervised(db, status="stopped")
+            db.close()
+            self.assertEqual(main(["--db", src, "export-db", dst], out=lines.append), 0)
+            self.assertIn("chain OK", lines[-1])
+            copy = DB(dst)
+            try:
+                self.assertTrue(copy.one("SELECT 1 FROM events WHERE kind='lab.exported'"))
+                self.assertEqual(copy.one("SELECT COUNT(*) FROM events")[0], 2)
+            finally:
+                copy.close()
+            self.assertEqual(main(["--db", src, "export-db", dst], out=lines.append), 3)    # never overwrite
+
+
 class Resources(unittest.TestCase):
     def test_hold_recorded_only_on_change(self):
         db = DB(":memory:")

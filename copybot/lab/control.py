@@ -52,9 +52,9 @@ def request_stop(db, actor, reason):
 
 
 def ram():
-    """Free and total physical memory in bytes (Windows API; None elsewhere)."""
+    """Free and total physical memory in bytes (Windows API, Linux /proc/meminfo; None elsewhere)."""
     if os.name != "nt":
-        return None
+        return _ram_linux()
     class M(ctypes.Structure):
         _fields_ = [("l", ctypes.c_ulong), ("load", ctypes.c_ulong), ("tot", ctypes.c_ulonglong),
                     ("avail", ctypes.c_ulonglong), ("tp", ctypes.c_ulonglong), ("ap", ctypes.c_ulonglong),
@@ -64,6 +64,16 @@ def ram():
     if not ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(m)):
         return None
     return {"total": m.tot, "free": m.avail, "load_pct": m.load}
+
+
+def _ram_linux(path="/proc/meminfo"):
+    try:
+        with open(path) as f:
+            kb = {k.strip(): int(v.split()[0]) for k, v in (line.split(":", 1) for line in f if ":" in line)}
+        tot, free = kb["MemTotal"] * 1024, kb["MemAvailable"] * 1024
+    except (OSError, KeyError, ValueError):
+        return None
+    return {"total": tot, "free": free, "load_pct": round(100 * (1 - free / tot)) if tot else None}
 
 
 def resources(path=None):

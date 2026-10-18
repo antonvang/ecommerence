@@ -28,6 +28,7 @@ from __future__ import annotations
 import argparse
 import getpass
 import json
+import os
 import sys
 
 from lab import legacy, lifecycle, registry
@@ -79,6 +80,7 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
     for c in ("shadow-start", "shadow-stop"):
         sp = sub.add_parser(c); sp.add_argument("exp"); sp.add_argument("--reason", required=True)
     rt = sub.add_parser("revoke-template"); rt.add_argument("template"); rt.add_argument("--reason", required=True)
+    ex = sub.add_parser("export-db"); ex.add_argument("target")
     wb = sub.add_parser("web"); wb.add_argument("--port", type=int, default=8770); wb.add_argument("--duration", type=float)
     args = ap.parse_args(argv)
     db_path = args.db or db_path
@@ -107,6 +109,29 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
             fn = {"pause": control.pause, "resume": control.resume, "stop": control.request_stop}[args.cmd]
             out(f"{args.cmd}: {'recorded' if fn(db, human(), args.reason) else 'already in that state (no-op)'}")
             return 0
+        if args.cmd == "export-db":                 # hand the lab over to another machine (research/LINUX_FLYT.md)
+            import sqlite3
+            from lab import promotion
+            if promotion.supervisor_ok(db):
+                out("refused: the fleet is running; stop it first so only one machine keeps the history")
+                return 3
+            if os.path.exists(args.target):
+                out(f"refused: {args.target} already exists")
+                return 3
+            db.event("lab.exported", human(), None, {"target": os.path.basename(args.target),
+                                                     "note": "history continues on the machine that imports this copy"})
+            dst = sqlite3.connect(args.target)
+            db.con.backup(dst)
+            dst.close()
+            copy = DB(args.target)
+            try:
+                chains, triggers = copy.verify()
+            finally:
+                copy.close()
+            ok = triggers and all(b is None for _, b in chains.values())
+            out(f"exported to {args.target}: {sum(n for n, _ in chains.values())} rows, chain "
+                f"{'OK' if ok else 'BROKEN'}")
+            return 0 if ok else 2
         if args.cmd == "jobs":
             from lab import jobs
             out(json.dumps(jobs.counts(db)))
