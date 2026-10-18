@@ -258,6 +258,18 @@ class Progress(Base):
         tags = [i["tag"] for i in items]
         self.assertEqual(tags[:3], ["RISIKO", "LÆRDOM", "UNDERSØG"])
 
+    def test_every_scan_is_visible_as_search_activity(self):
+        s = scanner.run(self.db, ["pricing_constraint"], World(gap=0.006).get, World(gap=0.006).post, now=DAY * 10)
+        item = command.feed(self.db)["items"][0]
+        self.assertEqual(item["tag"], "SØGNING")
+        self.assertEqual(item["text"], f"Søgning: {s['observations']} målinger · {s['flagged']} markeret · "
+                                       f"{s['proposals']} forslag · 0 nye · 0 undersøges")
+        r = command.research_progress(self.db)
+        self.assertEqual(r["scans_24h"], 1)
+        self.assertIsNotNone(r["last_scan_ts"])
+        names = {x[0] for x in self.db.q("SELECT name FROM sqlite_master WHERE type='index'")}
+        self.assertTrue({"events_kind", "sim_fills_order", "sim_equity_ts"} <= names)
+
     def test_watcher_judges_progress_only_on_a_fleet_that_has_run_two_hours(self):
         run = {"status": "running"}
         self.assertIsNone(watch._progress(self.path, time.time(), {"status": "stopped"})[0])

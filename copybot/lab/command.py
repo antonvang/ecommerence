@@ -212,6 +212,9 @@ def research_progress(db, now=None):
             "last_verdict_ts": last_verdict, "last_verdict_age_s": (now - last_verdict) if last_verdict else None,
             "last_new_experiment_ts": last_exp, "untested_templates": untested,
             "idle_reason": "; ".join(reasons) or None,
+            "last_scan_ts": db.one("SELECT MAX(ts) FROM events WHERE kind='scan.finished'")[0],
+            "scans_24h": db.one("SELECT COUNT(*) FROM events WHERE kind='scan.finished' AND ts>=?", int(now - 86400))[0],
+            "diagnostics_total": db.one("SELECT COUNT(*) FROM events WHERE kind='research.diagnostic'")[0],
             "market_events_24h": db.one("SELECT COUNT(*) FROM events WHERE kind='market.event' AND ts>=?",
                                         int(now - 86400))[0]}
 
@@ -489,7 +492,7 @@ def feed(db, limit=40):
              "job.failed", "system.running", "system.stopped", "system.stop_forced", "system.paused", "system.resumed",
              "system.resource_hold", "risk.pause", "risk.fail_closed", "risk.clear", "agent.error",
              "agent.recovered", "external.stale", "external.recovered", "job.timeout", "market.event",
-             "research.diagnostic")
+             "research.diagnostic", "scan.finished")
     rows = db.q(f"SELECT id, ts, kind, actor, exp_id, payload FROM events WHERE kind IN ({','.join('?' * len(kinds))}) "
                 f"ORDER BY id DESC LIMIT ?", *kinds, int(limit))
     out = []
@@ -546,6 +549,10 @@ def feed(db, limit=40):
             e.update(tag="UNDERSØG" if p.get("decision") == "INVESTIGATE" else "INGEN HANDLING",
                      text=f"Marked: {what} - {p.get('why')}"[:220], detail=p.get("decision"),
                      priority=p.get("priority"))
+        elif k == "scan.finished":
+            e.update(tag="SØGNING", text=f"Søgning: {p.get('observations', 0)} målinger · {p.get('flagged', 0)} markeret · "
+                                        f"{p.get('proposals', 0)} forslag · {len(p.get('created') or [])} nye · "
+                                        f"{p.get('investigate', 0)} undersøges")
         elif k == "research.diagnostic":
             e.update(tag="LÆRDOM", text=f"{nm}: " + "; ".join(p.get("lessons") or [])[:200])
         elif k in ("risk.pause", "risk.fail_closed", "risk.clear"):

@@ -204,7 +204,7 @@ body{font-size:14px}
 @keyframes flin{from{background:#f07a3a33}to{background:transparent}}
 .tg{font:700 10px var(--mono);letter-spacing:.06em;padding:1px 6px;border-radius:5px;border:1px solid currentColor;white-space:nowrap}
 .tg-BESTÅET,.tg-GODKENDT,.tg-HANDLER,.tg-KØB{color:var(--green)} .tg-AFVIST,.tg-FEJL,.tg-SÆLG{color:var(--red)}
-.tg-PAUSE,.tg-HOLDOUT,.tg-RESSOURCER{color:var(--amber)} .tg-IDÉ,.tg-TEST{color:var(--violet)} .tg-START,.tg-STOP,.tg-SORTERET{color:var(--blue)}
+.tg-PAUSE,.tg-HOLDOUT,.tg-RESSOURCER,.tg-RISIKO{color:var(--amber)} .tg-SØGNING,.tg-INGEN{color:var(--blue)} .tg-UNDERSØG,.tg-LÆRDOM{color:var(--violet)} .tg-IDÉ,.tg-TEST{color:var(--violet)} .tg-START,.tg-STOP,.tg-SORTERET{color:var(--blue)}
 .pl{display:grid;gap:7px}
 .pr{display:grid;grid-template-columns:120px 1fr 34px;gap:8px;align-items:center;font:12px var(--mono)}
 .pr .bar{height:9px;background:#1a1e26;border-radius:5px;overflow:hidden}
@@ -578,7 +578,9 @@ function renderStatus(k){
     + st("Data opdateret", lastData ? ago(lastData) : NA, lastData ? "" : "na");
   $("#status").title = k.tests_per_min_basis;
   Planet.setActive(sup.alive);
-  $("#g-cap").innerHTML = sup.alive ? `<span style="color:var(--green)">● AKTIV</span> · ${k.agents_running} agent(er) arbejder` : `<span class="dim">○ STANDBY</span> · flåden kører ikke`;
+  const rs = k.research || {};
+  const srch = rs.last_scan_ts ? ` · søgning ${ago(rs.last_scan_ts)} · ${rs.scans_24h} i døgnet` : "";
+  $("#g-cap").innerHTML = sup.alive ? `<span style="color:var(--green)">● AKTIV</span> · ${k.agents_running} agent(er) arbejder${srch}` : `<span class="dim">○ STANDBY</span> · flåden kører ikke`;
 }
 const seenFeed = new Set(); let feedPrimed = false;
 function renderFeed(f){
@@ -852,6 +854,8 @@ function startStream(){
       if (e.stage && e.kind.startsWith("job.")) Orbits.pulse(e.stage, e.kind === "job.failed" || e.kind === "job.timeout" ? "#ff5d5d" : e.kind === "job.retry" ? "#f4b860" : e.kind === "job.done" ? "#5fd39a" : "#f07a3a");
       if (e.kind === "lifecycle.transition" && e.to) Orbits.pulse(TO_STAGE[e.to], e.to === "REJECTED" ? "#ff5d5d" : "#f07a3a");
       if (e.kind === "candidate.discovered") Orbits.pulse("DISCOVERED", "#b39cff");
+      if (e.kind === "scan.finished" || e.kind === "market.event") Orbits.pulse("DISCOVERED", "#7fb0ff");
+      if (e.kind === "research.diagnostic") Orbits.pulse("REJECTED", "#b39cff");
     });
     schedule(); };
   es.onerror = () => { if (es.readyState === 2) { es = null; setLink("polling"); if (!pollTimer) pollTimer = setInterval(() => refresh(false), 10000); } else { showOffline(); } };

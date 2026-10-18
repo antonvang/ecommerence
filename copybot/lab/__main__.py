@@ -111,6 +111,8 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
             return 3
     if args.cmd == "fleet":           # the research agent fleet runs inside the single-instance supervisor
         from lab import fleet, supervisor
+        from research.pm_lp import install_dns_cache
+        install_dns_cache()           # same cache as the pm_lp collector: fewer queries to the shared NAS DNS
         try:
             return supervisor.Supervisor(db_path, fleet.workers(db_path), log=out,
                                          on_stop=(fleet.shutdown,)).run(args.duration)

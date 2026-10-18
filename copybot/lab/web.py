@@ -319,7 +319,7 @@ class Handler(BaseHTTPRequestHandler):
                         last[0])]
                 finally:
                     db.close()
-                state = (top, fills, beat)
+                state = (top, fills, beat // 10)      # heartbeats alone trigger a refresh at most every 10 s
                 if state != last:
                     msg = {"last_event_id": top, "fills": fills, "heartbeat_ts": beat, "new_events": new,
                            "first": last is None}
