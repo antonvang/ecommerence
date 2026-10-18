@@ -299,8 +299,16 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
             rk = Risk(db)
             out(f"FAIL_CLOSED: {'YES' if rk.fail_closed() else 'no'}")
             for h in db.q("SELECT * FROM heartbeats ORDER BY worker"):
-                out(f"worker {h['worker']:<12} last beat {int(_t.time() - h['ts'])}s ago, pid {h['pid']}, "
-                    f"{'ok' if h['ok'] else 'ERROR ' + (h['detail'] or '')}")
+                age = int(_t.time() - h["ts"])
+                if not h["ok"]:
+                    tag = "ERROR " + (h["detail"] or "")
+                elif h["status"] == "stopped":
+                    tag = "stopped"
+                elif age > (h["stale_after"] or 300):
+                    tag = f"STALE (no heartbeat for {age}s)"
+                else:
+                    tag = "ok"
+                out(f"worker {h['worker']:<12} last beat {age}s ago, pid {h['pid']}, {tag}")
             for x in registry.status(db):
                 if x["state"] in ("PAPER_TRADING", "PAUSED"):
                     out(f"{x['exp_id']:<20} {x['state']:<14} paused={rk.paused(x['exp_id'])} warming={rk.warming(x['exp_id'])}")

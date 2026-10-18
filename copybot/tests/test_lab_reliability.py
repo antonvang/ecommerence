@@ -307,6 +307,22 @@ class ExternalWatch(Tmp):
         self.assertTrue(any("ikke skrevet data" in t for t in texts), texts)
 
 
+class HealthCommand(Tmp):
+    def test_health_marks_old_and_stopped_heartbeats(self):
+        from lab.__main__ import main
+        now = int(time.time())
+        rows = [("fresh-1", now, "idle"), ("old-1", now - 126_000, "idle"), ("gone-1", now - 50, "stopped")]
+        for w, ts, st in rows:
+            self.db.con.execute("INSERT INTO heartbeats(worker, ts, pid, ok, detail, status, stale_after) "
+                                "VALUES(?,?,1,1,'',?,180)", (w, ts, st))
+        lines = []
+        main(["--db", self.path, "health"], out=lines.append)
+        by = {w: next(x for x in lines if x.startswith(f"worker {w}")) for w, _, _ in rows}
+        self.assertTrue(by["fresh-1"].endswith(", ok"))
+        self.assertIn("STALE", by["old-1"])
+        self.assertTrue(by["gone-1"].endswith(", stopped"))
+
+
 class DashboardPort(unittest.TestCase):
     def test_preflight_reuses_this_labs_running_dashboard(self):
         import threading

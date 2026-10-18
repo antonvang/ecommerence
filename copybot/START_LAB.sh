@@ -7,6 +7,7 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 PY=python3
+export PYTHONUNBUFFERED=1          # supervisor and fleet messages reach the log at once, also before a crash
 PORT="${LAB_PORT:-8770}"
 now() { date -u +%FT%TZ; }
 command -v "$PY" >/dev/null || { echo "Python 3 mangler: sudo apt install python3"; exit 1; }
@@ -42,7 +43,8 @@ USER_STOP=0
 trap 'USER_STOP=1' INT TERM
 echo
 echo " Forskningsflaaden koerer nu i DETTE vindue."
-echo " - Stop: Ctrl+C her (dashboardet stopper samtidig), eller Pause/Stop i dashboardet."
+echo " - Stop: Ctrl+C her (dashboardet stopper samtidig), Pause/Stop i dashboardet, eller"
+echo "   python3 -m lab stop --reason \"...\" (ogsaa naar scriptet koerer i baggrunden)."
 echo
 set +e
 "$PY" -m lab fleet
