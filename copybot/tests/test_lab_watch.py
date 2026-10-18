@@ -343,6 +343,8 @@ class Cli(Base):
 
     def test_awake_reads_logind_blocks(self):
         self.p[2].stop()
+        masked = mock.patch.object(watch, "sleep_masked", lambda: False)
+        masked.start()
         try:
             inh = [{"what": "sleep", "who": "NetworkManager", "why": "x", "mode": "delay", "uid": 0, "pid": 1}]
             with mock.patch.object(watch, "logind_inhibitors", lambda: inh):
@@ -355,6 +357,21 @@ class Cli(Base):
                 self.assertEqual(watch.check_awake(), (True, "sleep blocked in logind by 'copybot' (pid 225567)"))
             with mock.patch.object(watch, "logind_inhibitors", side_effect=RuntimeError("no system bus")):
                 self.assertIsNone(watch.check_awake()[0])
+        finally:
+            masked.stop()
+            self.p[2].start()
+
+    def test_awake_accepts_sleep_masked_system_wide_without_an_inhibitor(self):
+        self.p[2].stop()
+        try:
+            with mock.patch.object(watch, "sleep_masked", lambda: True), \
+                    mock.patch.object(watch, "logind_inhibitors", lambda: []):
+                ok, detail = watch.check_awake()
+            self.assertTrue(ok)
+            self.assertIn("masked", detail)
+            with mock.patch.object(watch, "sleep_masked", side_effect=RuntimeError("no system bus")), \
+                    mock.patch.object(watch, "logind_inhibitors", lambda: []):
+                self.assertFalse(watch.check_awake()[0])                  # falls back to the logind check
         finally:
             self.p[2].start()
 

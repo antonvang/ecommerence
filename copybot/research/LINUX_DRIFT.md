@@ -44,8 +44,8 @@ afprøvet på denne maskine.
 **Målt kl. 14:04 UTC: dvale er blokeret.**
 - Du startede blokeringslinjen nedenfor på skrivebordet kl. 14:03:34 UTC (pid 225567, session 2, `setsid nohup`).
 - `systemd-inhibit --list` viser `copybot ... sleep:idle ... block`.
-- Vagten kontrollerer det hvert halve minut (komponenten `awake`, læser logind) og melder, hvis blokeringen
-  forsvinder, fx efter en genstart.
+- Vagten kontrollerer det hvert halve minut (komponenten `awake`). Den godtager, at dvale-målene er `masked` i
+  systemd (gælder også efter genstart), og ellers en blokering i logind. Den melder kun, hvis ingen af dem findes.
 - Før det, kl. 12:44 UTC, var der ingen blokering. Der var kun "delay"-inhibitorer, `IdleAction=ignore`, og kernen
   havde talt 0 dvaler siden opstart.
 - XFCE er sat eksplicit 2026-10-18 (uden sudo, i brugerens xfconf):
@@ -83,7 +83,8 @@ setsid nohup systemd-inhibit --what=sleep:idle --who=copybot --why="lab og pm_lp
 
 - Kontrollér med `systemd-inhibit --list` (der skal stå `copybot ... block`) eller med `python3 -m lab watch --once`
   (linjen `awake`).
-- Skal køres igen efter hver genstart af maskinen og efter log-ud af skrivebordet. Vagten minder om det.
+- Efter genstart er linjen ikke længere nødvendig, fordi dvale-målene er `masked`. Den skader ikke og kan køres som
+  ekstra sikring.
 - Med `setsid nohup` overlever blokeringen, at terminalvinduet lukkes. Den varer, til processen stoppes, eller
   maskinen genstarter.
 - Uden `setsid nohup` ophører den, når vinduet lukkes.

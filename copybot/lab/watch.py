@@ -182,9 +182,27 @@ def logind_inhibitors():
     return [{"what": w, "who": who, "why": why, "mode": m, "uid": u, "pid": p} for w, who, why, m, u, p in rows]
 
 
+SLEEP_TARGETS = ("sleep.target", "suspend.target", "hibernate.target", "hybrid-sleep.target")
+
+
+def sleep_masked():
+    """Are all sleep targets masked in systemd (sleep disabled system-wide, also after a reboot)? Read-only call."""
+    from gi.repository import Gio, GLib
+    bus = Gio.bus_get_sync(Gio.BusType.SYSTEM, None)
+    return all(bus.call_sync("org.freedesktop.systemd1", "/org/freedesktop/systemd1",
+                             "org.freedesktop.systemd1.Manager", "GetUnitFileState", GLib.Variant("(s)", (t,)),
+                             GLib.VariantType("(s)"), 0, 10_000, None).unpack()[0].startswith("masked")
+               for t in SLEEP_TARGETS)
+
+
 def check_awake():
-    """Is sleep blocked in logind (research/LINUX_DRIFT.md: systemd-inhibit started on the desktop)? Not judged
-    where logind cannot be asked."""
+    """Is sleep impossible: sleep targets masked in systemd, or a logind block (research/LINUX_DRIFT.md:
+    systemd-inhibit started on the desktop)? Not judged where neither can be asked."""
+    try:
+        if sleep_masked():
+            return (True, "sleep disabled system-wide (systemd sleep targets masked)")
+    except Exception:
+        pass
     try:
         inh = logind_inhibitors()
     except Exception as e:
