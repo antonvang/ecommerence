@@ -12,7 +12,7 @@ from lab.db import DB  # noqa: E402
 from lab.lifecycle import state  # noqa: E402
 from lab.paper import Book, CostModel, PaperEngine  # noqa: E402
 from lab.risk import Risk  # noqa: E402
-from tests.lab_fixtures import EXP, N_ORDERS  # noqa: E402
+from tests.lab_fixtures import EXP, N_ORDERS, approve_paper, supervised  # noqa: E402
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -20,8 +20,7 @@ HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 def paper_strategy(db, eid=EXP):
     db.append("experiments", exp_id=eid, version=1, created_ts=0, mechanism_tag="t", fingerprint=eid,
               spec_json={"execution": "taker", "risk": {"consecutive_losses": 1000}})   # demo trades lose the spread
-    db.append("transitions", exp_id=eid, ts=0, from_state=None, to_state="PAPER_TRADING", actor="fixture",
-              reason="fixture: strategy already approved for paper trading")
+    approve_paper(db, eid)
     PaperEngine(db).start(eid, 10_000.0, CostModel(taker_fee=0.0005))
 
 
@@ -53,7 +52,9 @@ class Recovery(unittest.TestCase):
         self.assertEqual(pe.submit_taker(EXP, "o1", "X", "buy", 1, b)["status"], "refused")
         self.assertFalse(pe.risk.observe_book(EXP, Book(ts=time.time() - 600, bids=b.bids, asks=b.asks)))  # stale
         self.assertTrue(pe.risk.observe_book(EXP, b))
-        self.assertEqual(pe.submit_taker(EXP, "o2", "X", "buy", 1, b)["status"], "filled")
+        self.assertEqual(pe.submit_taker(EXP, "o2", "X", "buy", 1, b)["status"], "refused")   # no supervisor heartbeat
+        supervised(self.db)
+        self.assertEqual(pe.submit_taker(EXP, "o3", "X", "buy", 1, b)["status"], "filled")
 
     def test_tampered_chain_fails_closed_and_supervisor_refuses_to_start(self):
         self.db.event("x", "system:test")

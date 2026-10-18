@@ -20,6 +20,7 @@ POLICY = "policy.autopromote"
 ACTOR = "system:promotion"
 SPEC = "research/PROTOCOL_V3.md"
 SUPERVISOR_FRESH_S = 30
+SCREEN_PASSES = ("PASS (screen)", "PASS (forward test)")
 LIVE_UNSUPPORTED = {"metrics", "dvol", "stable", "taker", "rates"}     # paper runner has no live feed for these yet
 
 
@@ -51,6 +52,15 @@ def _template(db, eid):
     return (json.loads(registry.latest(db, eid)["spec_json"] or "{}")).get("template")
 
 
+def _version(db, eid):
+    r = registry.latest(db, eid)
+    return {"version": r["version"], "fingerprint": r["fingerprint"]} if r else {}
+
+
+def used_marker(did):
+    return json.dumps({"decision_event_id": did}, sort_keys=True, separators=(",", ":"))
+
+
 def _latest(db, eid, label=None):
     q = "SELECT id, label, verdict FROM results WHERE exp_id=?" + (" AND label=?" if label else "")
     return db.one(q + " ORDER BY id DESC LIMIT 1", *((eid, label) if label else (eid,)))
@@ -72,13 +82,15 @@ def checks(db, eid, now=None):
     st = lifecycle.state(db, eid)
     t = _template(db, eid)
     common = [("catalogue experiment (pre-registered template)", bool(eid.startswith("E_") and t in catalogue.TEMPLATES), t),
+              ("registered under PROTOCOL v3 (amendment 4a)",
+               bool(t in catalogue.TEMPLATES and catalogue.protocol_of(t) == 3), t),
               ("lab not FAIL_CLOSED", not Risk(db).fail_closed(), None),
               ("supervisor healthy", supervisor_ok(db, now), None)]
     if st == "SCREEN_PASSED":
         res = _latest(db, eid)
         return "VALIDATION", common + [
             ("latest result is a PASS (screen incl. luck check, or forward test)",
-             bool(res and (res["verdict"] or "").upper().startswith("PASS")), res["id"] if res else None),
+             bool(res and (res["verdict"] or "").startswith(SCREEN_PASSES)), res["id"] if res else None),
             ("a clean 2024 holdout is possible (amendment 1)", t not in NO_CLEAN_HOLDOUT, t)]
     if st == "VALIDATED":
         res = _latest(db, eid, "VALIDATION")
@@ -102,11 +114,12 @@ def decide(db, eid, now=None, execute=True):
     closed = [g for g, ok, _ in gates if not ok]
     allowed = not closed
     payload = {"from": lifecycle.state(db, eid), "to": to, "allowed": allowed, "closed": closed,
-               "evidence": {g: d for g, ok, d in gates}}
+               "evidence": {g: d for g, ok, d in gates}, **_version(db, eid)}
     last = db.one("SELECT payload FROM events WHERE kind='promotion.decision' AND exp_id=? ORDER BY id DESC LIMIT 1",
                   eid)
     prev = json.loads(last["payload"]) if last else None
-    if prev is None or (prev.get("allowed"), prev.get("closed"), prev.get("to")) != (allowed, closed, to) or allowed:
+    if prev is None or (prev.get("allowed"), prev.get("closed"), prev.get("to"), prev.get("from")) != \
+            (allowed, closed, to, payload["from"]) or allowed:
         dec = db.event("promotion.decision", ACTOR, eid, payload)
     else:
         dec = None                                           # unchanged "waiting" decision: not logged again
@@ -126,22 +139,61 @@ def step(db, now=None):
     return out
 
 
+def _human_ok(db, eid, tr, ev):
+    """Amendment 4a: a human entry cites its one-time approval (same experiment, same target, used once, same actor)."""
+    aid = ev.get("approval_id")
+    a = db.one("SELECT exp_id, to_state FROM approvals WHERE id=?", aid) if aid is not None else None
+    if a is None or a["exp_id"] != eid or a["to_state"] != "PAPER_TRADING":
+        return False, "human entry does not cite a matching approval code"
+    used = db.q("SELECT actor FROM events WHERE kind='approval.used' AND exp_id=? AND payload=?", eid,
+                json.dumps({"approval_id": aid}, sort_keys=True, separators=(",", ":")))
+    if len(used) != 1 or used[0]["actor"] != tr["actor"]:
+        return False, "approval code was not used exactly once by the approving human"
+    return True, f"human approval #{aid}"
+
+
+def _auto_ok(db, eid, tr, ev):
+    """Amendment 4a: an automatic entry cites one allowed decision for this step and spec version, used once, a
+    holdout PASS of this experiment, and the policy is still on (switching it off ends new exposure)."""
+    did = ev.get("decision_event_id")
+    d = db.one("SELECT actor, payload FROM events WHERE id=? AND kind='promotion.decision' AND exp_id=?", did, eid) \
+        if did else None
+    p = json.loads(d["payload"]) if d else {}
+    if d is None or d["actor"] != ACTOR or not p.get("allowed") or (p.get("from"), p.get("to")) != \
+            ("VALIDATED", "PAPER_TRADING") or tr["from_state"] != "VALIDATED":
+        return False, "cited promotion decision missing, not allowed or for another step"
+    if {k: p.get(k) for k in ("version", "fingerprint")} != _version(db, eid):
+        return False, "promotion decision was made for another spec version"
+    if db.one("SELECT COUNT(*) FROM events WHERE kind='promotion.used' AND exp_id=? AND payload=?", eid,
+              used_marker(did))[0] != 1:
+        return False, "promotion decision was not used exactly once"
+    r = db.one("SELECT verdict FROM results WHERE id=? AND exp_id=? AND label='VALIDATION'", ev.get("result_id"), eid)
+    if r is None or not (r["verdict"] or "").startswith("PASS (holdout)"):
+        return False, "cited result is not this experiment's holdout PASS"
+    if not policy(db)["on"]:
+        return False, "automatic promotion policy is off (approval expired)"
+    return True, f"automatic promotion decision #{did}"
+
+
 def trading_authorized(db, eid):
-    """Approved paper trading may open positions only if its PAPER_TRADING entry is verifiable: a human approval, or
-    an allowed decision of this module citing an active policy."""
-    if lifecycle.state(db, eid) != "PAPER_TRADING":
-        return False, f"{eid} is {lifecycle.state(db, eid)}"
-    tr = db.one("SELECT actor, evidence FROM transitions WHERE exp_id=? AND to_state='PAPER_TRADING' ORDER BY id DESC "
-                "LIMIT 1", eid)
-    if tr is None:
-        return False, "no PAPER_TRADING transition"
-    if tr["actor"].startswith("human:"):
-        return True, "human approval"
+    """Approved paper trading may open positions only if its current PAPER_TRADING entry is verifiable."""
+    st = lifecycle.state(db, eid)
+    if st != "PAPER_TRADING":
+        return False, f"{eid} is {st}"
+    tr = db.one("SELECT actor, from_state, to_state, evidence FROM transitions WHERE exp_id=? ORDER BY id DESC LIMIT 1",
+                eid)
     ev = json.loads(tr["evidence"] or "{}")
-    if tr["actor"] != ACTOR or not ev.get("decision_event_id"):
-        return False, f"PAPER_TRADING entry by {tr['actor']} is not a verifiable approval"
-    d = db.one("SELECT actor, payload FROM events WHERE id=? AND kind='promotion.decision' AND exp_id=?",
-               ev["decision_event_id"], eid)
-    if d is None or d["actor"] != ACTOR or not json.loads(d["payload"]).get("allowed"):
-        return False, "cited promotion decision missing or not allowed"
-    return True, f"automatic promotion decision #{ev['decision_event_id']}"
+    if tr["actor"].startswith("human:"):
+        return _human_ok(db, eid, tr, ev)
+    if tr["actor"] == ACTOR:
+        return _auto_ok(db, eid, tr, ev)
+    return False, f"PAPER_TRADING entry by {tr['actor']} is not a verifiable approval"
+
+
+def exposure_allowed(db, ledger, now=None):
+    """Amendment 4a: the one check for new exposure, called by the engine's risk gate for every non-reducing order."""
+    if not supervisor_ok(db, now):
+        return False, "supervisor heartbeat missing or stale: no new exposure"
+    if ledger.startswith("SHADOW_"):
+        return True, "shadow ledger (checked by the shadow rule)"
+    return trading_authorized(db, ledger)

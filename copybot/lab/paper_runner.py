@@ -127,10 +127,10 @@ def run(db, get=_get, now=None, cm_get=_cm_get):
     from lab import promotion
     now = now or time.time()
     out = {}
-    if not promotion.supervisor_ok(db, now):
-        return {"experiments": 0, "results": {}, "simulated": True, "blocked": "supervisor state unknown"}
-    for led, base in closing_ledgers(db):
+    for led, base in closing_ledgers(db):              # reduce-only: allowed even without a supervisor or FAIL_CLOSED
         out[led] = close_ledger(db, led, base, get, now)
+    if not promotion.supervisor_ok(db, now):
+        return {"experiments": len(out), "results": out, "simulated": True, "blocked": "supervisor state unknown"}
     for eid in paper_experiments(db):
         ok, why = promotion.trading_authorized(db, eid)
         if not ok:

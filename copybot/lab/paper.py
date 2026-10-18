@@ -69,8 +69,11 @@ class PaperEngine:
         if base is not None:
             if not shadow_active(self.db, base):
                 raise lifecycle.LifecycleError(f"{base} has no active, human-started shadow trading in OBSERVATION")
-        elif lifecycle.state(self.db, exp_id) != "PAPER_TRADING":
-            raise lifecycle.LifecycleError(f"{exp_id} is not PAPER_TRADING")
+        else:
+            from lab import promotion
+            ok, why = promotion.trading_authorized(self.db, exp_id)
+            if not ok:
+                raise lifecycle.LifecycleError(f"{exp_id} has no verifiable paper approval: {why}")
         if self.db.one("SELECT 1 FROM events WHERE kind='paper.started' AND exp_id=?", exp_id):
             return False
         self.db.event("paper.started", actor, exp_id, {"capital": capital, "costs": asdict(costs), "simulated": True})

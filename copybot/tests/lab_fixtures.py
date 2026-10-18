@@ -8,6 +8,24 @@ EXP = "TEST_demo"
 N_ORDERS = 10
 
 
+def approve_paper(db, eid, actor="human:fixture", ts=0, from_state=None):
+    """A verifiable human paper approval written the way lifecycle.confirm writes one (amendment 4a): an approvals
+    row, the transition citing its approval_id, and exactly one approval.used by the same human."""
+    aid = db.append("approvals", code_hash=f"fixture-{eid}-{ts}", exp_id=eid, to_state="PAPER_TRADING", ts=ts,
+                    expires_ts=ts + 900, actor=actor, reason="fixture: approved for paper trading", evidence={})
+    db.append("transitions", exp_id=eid, ts=ts, from_state=from_state, to_state="PAPER_TRADING", actor=actor,
+              reason="fixture: approved for paper trading", evidence={"approval_id": aid})
+    db.event("approval.used", actor, eid, {"approval_id": aid})
+    return aid
+
+
+def supervised(db, ts=None, status="running"):
+    """A supervisor heartbeat (the exposure gate needs one within 30 s)."""
+    db.con.execute("INSERT INTO heartbeats(worker, ts, pid, ok, detail, status) VALUES('supervisor',?,1,1,'',?) "
+                   "ON CONFLICT(worker) DO UPDATE SET ts=excluded.ts, status=excluded.status",
+                   (int(ts if ts is not None else time.time()), status))
+
+
 def demo_worker():
     state = {"k": 0}
 

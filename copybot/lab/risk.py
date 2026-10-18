@@ -107,6 +107,11 @@ class Risk:
             return False, "warming up after a restart"
         if not reduce_only and (st == "PAUSED" or self.paused(exp_id)):
             return False, "strategy is paused"
+        if not reduce_only:
+            from lab import promotion                         # amendment 4a: one gate for every new exposure
+            ok, why = promotion.exposure_allowed(self.db, exp_id, self.now())
+            if not ok:
+                return False, f"not authorized: {why}"
         return True, "ok"
 
     def block(self, exp_id, rule, value, threshold, detail):

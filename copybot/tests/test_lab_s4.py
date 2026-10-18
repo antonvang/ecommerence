@@ -1,6 +1,7 @@
 import os
 import sys
 import unittest
+from unittest import mock
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -8,6 +9,7 @@ from lab import lifecycle  # noqa: E402
 from lab.db import DB  # noqa: E402
 from lab.lifecycle import LifecycleError, state  # noqa: E402
 from lab.paper import Book, CostModel, PaperEngine  # noqa: E402
+from tests.lab_fixtures import approve_paper, supervised  # noqa: E402
 
 COSTS = CostModel(taker_fee=0.001, maker_fee=-0.0002, extra_slippage=0.0005, expected_spread=0.002)
 
@@ -23,8 +25,11 @@ class Clock:
 def strategy(db, eid, st="PAPER_TRADING", risk=None):
     spec = {"execution": "taker", **({"risk": risk} if risk else {})}
     db.append("experiments", exp_id=eid, version=1, created_ts=0, mechanism_tag="t", fingerprint=eid, spec_json=spec)
-    db.append("transitions", exp_id=eid, ts=0, from_state=None, to_state=st, actor="fixture",
-              reason="fixture: strategy already approved for paper trading")
+    if st == "PAPER_TRADING":
+        approve_paper(db, eid)
+    else:
+        db.append("transitions", exp_id=eid, ts=0, from_state=None, to_state=st, actor="fixture",
+                  reason="fixture: strategy in a given state")
 
 
 def book(clock, bid=99.9, ask=100.1, depth=10.0):
@@ -35,8 +40,11 @@ class Base(unittest.TestCase):
     def setUp(self):
         self.db, self.clock = DB(":memory:"), Clock()
         self.pe = PaperEngine(self.db, self.clock)
+        self.sup = mock.patch("lab.promotion.supervisor_ok", lambda db, now=None: True)   # fake clock, no supervisor
+        self.sup.start()
 
     def tearDown(self):
+        self.sup.stop()
         self.db.close()
 
     def started(self, eid="S1", risk=None, capital=10_000.0):

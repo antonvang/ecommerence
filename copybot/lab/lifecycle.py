@@ -100,6 +100,7 @@ def _do(db, exp_id, cur, to, actor, reason, evidence):
 
 
 POLICY_EDGES = {("SCREEN_PASSED", "VALIDATION"), ("VALIDATED", "PAPER_TRADING")}
+POLICY_DECISION_TTL_S = 60                                            # amendment 4a: used at once, or decide again
 
 
 def policy_transition(db, exp_id, to, actor, reason, evidence):
@@ -112,12 +113,23 @@ def policy_transition(db, exp_id, to, actor, reason, evidence):
         cur = state(db, exp_id)
         if (cur, to) not in POLICY_EDGES:
             raise LifecycleError(f"{cur} -> {to} is not a policy edge")
-        d = db.one("SELECT actor, payload FROM events WHERE id=? AND kind='promotion.decision' AND exp_id=?",
-                   ev.get("decision_event_id"), exp_id)
-        if d is None or d["actor"] != actor or not json.loads(d["payload"]).get("allowed"):
-            raise LifecycleError("a policy transition must cite an allowed promotion decision for this experiment")
+        did = ev.get("decision_event_id")
+        d = db.one("SELECT ts, actor, payload FROM events WHERE id=? AND kind='promotion.decision' AND exp_id=?",
+                   did, exp_id)
+        p = json.loads(d["payload"]) if d else {}
+        if d is None or d["actor"] != actor or not p.get("allowed") or (p.get("from"), p.get("to")) != (cur, to):
+            raise LifecycleError("a policy transition must cite an allowed promotion decision for this step")
+        v = db.one("SELECT version, fingerprint FROM experiments WHERE exp_id=? ORDER BY version DESC LIMIT 1", exp_id)
+        if (p.get("version"), p.get("fingerprint")) != (v["version"], v["fingerprint"]):
+            raise LifecycleError("the promotion decision was made for another spec version")
+        if time.time() - d["ts"] > POLICY_DECISION_TTL_S:
+            raise LifecycleError("the promotion decision is too old; decide again")
+        marker = json.dumps({"decision_event_id": did}, sort_keys=True, separators=(",", ":"))
+        if db.one("SELECT 1 FROM events WHERE kind='promotion.used' AND exp_id=? AND payload=?", exp_id, marker):
+            raise LifecycleError("the promotion decision was already used")
         _check(db, exp_id, to, "human", reason, ev, ())
         _do(db, exp_id, cur, to, actor, reason, ev)
+        db.event("promotion.used", actor, exp_id, {"decision_event_id": did})
 
 
 def auto_transition(db, exp_id, to, actor, reason, evidence=None, guards=()):

@@ -14,6 +14,7 @@ from lab.db import DB  # noqa: E402
 from lab.engine import data  # noqa: E402
 from lab.paper import PaperEngine  # noqa: E402
 from lab.risk import Risk  # noqa: E402
+from tests.lab_fixtures import approve_paper  # noqa: E402
 
 HOUR = 3600
 EID = "E_day_of_week_p1"
@@ -47,8 +48,7 @@ class Runner(unittest.TestCase):
         spec = {"template": "day_of_week", "execution": "taker"}
         self.db.append("experiments", exp_id=EID, version=1, created_ts=0, mechanism_tag="calendar_day_of_week",
                        fingerprint="f", spec_json=spec)
-        self.db.append("transitions", exp_id=EID, ts=0, from_state=None, to_state="PAPER_TRADING",
-                       actor="human:fixture", reason="fixture: approved for paper trading")
+        approve_paper(self.db, EID)
         pipeline.save_artifact(EID, "cost", {"selected": 1})
         pipeline.save_artifact(EID, "backtest", {"variants": [
             {"variant": 0, "params": {"mode": "flat_weekend"}, "fit": None, "positions": {}},
@@ -88,8 +88,7 @@ class Runner(unittest.TestCase):
         eid = "E_xs_momentum_p2"
         self.db.append("experiments", exp_id=eid, version=1, created_ts=0, mechanism_tag="cross_sectional_momentum",
                        fingerprint="x", spec_json={"template": "xs_momentum", "execution": "taker"})
-        self.db.append("transitions", exp_id=eid, ts=0, from_state=None, to_state="PAPER_TRADING",
-                       actor="human:fixture", reason="fixture: approved for paper trading")
+        approve_paper(self.db, eid)
         pipeline.save_artifact(eid, "cost", {"selected": 0})
         pipeline.save_artifact(eid, "backtest", {"variants": [{"variant": 0, "params": {"lookback_days": 7, "k": 2},
                                                                "fit": None, "positions": {}}]})

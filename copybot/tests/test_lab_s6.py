@@ -14,6 +14,7 @@ from lab import registry, web  # noqa: E402
 from lab.db import DB  # noqa: E402
 from lab.lifecycle import state  # noqa: E402
 from lab.paper import Book, CostModel, PaperEngine  # noqa: E402
+from tests.lab_fixtures import approve_paper, supervised  # noqa: E402
 
 
 def fixture(path):
@@ -22,8 +23,11 @@ def fixture(path):
                              ("P1", "PAPER_TRADING", None), ("P2", "PAPER_TRADING", None)):
         db.append("experiments", exp_id=eid, version=1, created_ts=0, mechanism_tag=f"m_{eid}", fingerprint=eid,
                   spec_json={"execution": "taker", "risk": {"consecutive_losses": 99}})
-        db.append("transitions", exp_id=eid, ts=0, from_state=None, to_state=st, actor="fixture",
-                  reason="fixture for dashboard tests")
+        if st == "PAPER_TRADING":
+            approve_paper(db, eid)
+        else:
+            db.append("transitions", exp_id=eid, ts=0, from_state=None, to_state=st, actor="fixture",
+                      reason="fixture for dashboard tests")
         if verdict:
             db.append("results", exp_id=eid, version=1, ts=0, label="LEGACY", verdict=verdict, metrics={}, evidence={})
     registry.discover(db, "C1", "a hypothesis", "new_mech", "inst", "minutes", "taker", "unit test", "human:t")
@@ -32,6 +36,7 @@ def fixture(path):
     pe.start("P2", 1000.0, CostModel(taker_fee=0.001))
     pe.start("P1", 1000.0, CostModel(taker_fee=0.001, expected_spread=0.01))
     b = Book(ts=time.time(), bids=((99.9, 50),), asks=((100.1, 50),))
+    supervised(db)
     pe.submit_taker("P1", "o1", "X", "buy", 2, b)
     pe.mark("P1", {"X": 100.5})
     pe.mark("P1", {"X": 99.0})
