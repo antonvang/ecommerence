@@ -902,7 +902,8 @@ godkendelse. De afgørende kriterier for tab af edge i godkendt papirhandel (æn
 
 3. **Automatisk start** (actor `system:lane`, hændelsen `lane.started`; i modsætning til ændring 3 og 7 kræver det
    ingen menneskelig start).
-   - Højst 3 aktive banekonti, højst én pr. mekanismefunktion, og højst én ny konto pr. klokketime.
+   - Højst 3 aktive banekonti, højst én pr. mekanismefunktion, og højst én ny konto pr. klokketime (målt på
+     kørslens ur).
    - Ved start hentes ordrebogen for begge ben af hver mønt i kurven (eller i familiens banes univers, når kurven er
      alle mønter). En mønt, hvor et ben ikke kan hentes, udelades og registreres. Er der færre end 5 mønter tilbage,
      registreres `lane.skipped`, og varianten afprøves ikke igen.
@@ -927,6 +928,9 @@ godkendelse. De afgørende kriterier for tab af edge i godkendt papirhandel (æn
      spredning / √n) ≤ −3.
    - **Tab:** kontoens værdi ved seneste opgørelse er mindst 3 % under startkapitalen.
    - **Pause:** kontoen har været sat på pause af en risikoregel i 24 timer.
+   - **Kilden betaler ikke:** 14 dage efter start er kontoens bogførte funding minus alle betalte gebyrer ≤ 0
+     (familiens attributionsregel "pengestrøm − omkostninger > 0" anvendt live). Det stopper også en konto, der ikke
+     har haft en position i de 14 dage, så pladsen går til den næste kandidat.
    - **Familien:** familiens godkendelse er ikke længere gyldig.
    - **Udløb:** 90 dage efter start.
    - **Mennesket:** brugeren slår banekontiene fra (`python3 -m lab lane-off --reason "..."`, i en terminal); så
@@ -937,10 +941,12 @@ godkendelse. De afgørende kriterier for tab af edge i godkendt papirhandel (æn
    spredning = gennemsnit × √365 / netto-Sharpe. Begge divideres med 2, fordi backtesten regner pr. enhed af det ene
    ben, mens kontoen bruger kapital til begge ben (`capital_per_unit_notional` 2). Live-dagsafkast er ændringen i
    kontoens værdi fra én UTC-dags sidste opgørelse til den næstes, efter omkostninger og inklusive funding.
-   - Ærlig forventning: `explore0` er 2020-2021, hvor funding var usædvanligt høj. Mange konti vil derfor blive stoppet
-     af "edge mangler". Det er reglen, der virker, ikke en fejl.
-   - Med z ≤ −3 tjekket dagligt i op til 90 dage stoppes en konto, hvis edge faktisk er som forventet, med en
-     sandsynlighed på højst få procent (gentagne kig).
+   - Ærlig forventning: `explore0` er 2020-2021, hvor funding var usædvanligt høj. Mange konti vil derfor blive stoppet,
+     oftest af "kilden betaler ikke" eller "tab". Det er reglerne, der virker, ikke en fejl.
+   - "Edge mangler" er langsom: ved Sharpe 1-3 kræver en statistisk påvisning måneder af dagsafkast, så reglen fanger
+     i praksis kun store, vedvarende tab. Den hurtige regel er "kilden betaler ikke". Med z ≤ −3 tjekket dagligt i
+     op til 90 dage stoppes en konto, hvis edge faktisk er som forventet, med en lille sandsynlighed (anslået under
+     10 % pga. gentagne kig), men ikke nul.
 
 7. **Lovende konti (ikke-afgørende).** Har en konto mindst 30 dagsafkast, positivt live-gennemsnit og z > −1,
    registreres én gang `lane.promising`. Det er et signal til, at en AI skriver et familieudkast efter ændring 8 for
