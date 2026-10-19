@@ -875,6 +875,19 @@ længere end nødvendigt. pm_lp's egne regler (perioder, krav, holdout, evalueri
 5. **Driftsregel B** (`research/LINUX_DRIFT.md`): deploy af lab'en er igen tilladt fra 2026-11-14; ingen planlagt
    genstart af maskinen eller systemopdatering før 2026-11-28, så indsamlerens opfølgning ikke afbrydes.
 
+## Ændring 10c (2026-10-19): udforskningsvinduet starter 2020-03 — før kode
+
+**Beslutning:** brugeren godkendte 2026-10-19 i sessionen ("ja til 10c") efter banens første kørsel i produktionen.
+Kørslen (hændelse 2360, artefakt SHA-256 `e49b7878…`) evaluerede 0 varianter: kun 4 mønter (BCH, BTC, ETH, XRP)
+bestod den uændrede datakvalitetsregel (dækning ≥ 99 %) i 2020-01..2021-12, fordi ADA, LINK, LTC, EOS, ETC, TRX og
+XLM fik deres USD-M perp i løbet af januar 2020 og BNB, ATOM, VET og XTZ i februar 2020.
+
+1. `explore0` = 2020-03..2021-12 (erstatter 2020-01..2021-12 i ændring 10 punkt 2). Alt andet i ændring 10, 10a, 10b og
+   11 gælder uændret: kvalitetsreglen, gulvet på 5 mønter, kravene til forslag, netværket, og at intet er bevis.
+2. Begrundelse: ændringen gør søgningen mulig. Den lemper ingen regel og vælges ikke efter et resultat: ingen variant
+   er evalueret, og ingen afkastserie er set. Vinduet ligger stadig før `train3`, og ingen ny fil skal hentes.
+3. Forventet: cirka 15 mønter med fuld dækning (skønnet ud fra filernes første måned i cachen; ikke kørt endnu).
+
 ## Ændring 11 (2026-10-19): banekonti — banens kandidater handles automatisk på papir og stoppes automatisk — før kode
 
 **Beslutning:** brugeren besluttede 2026-10-19 i sessionen, at systemet selv skal handle på det, banen finder, og selv
