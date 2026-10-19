@@ -1,5 +1,6 @@
 # pm_lp_v1-indsamleren som systemd-brugertjeneste (research/LINUX_DRIFT.md, "pm_lp: beskyttelse af holdout", punkt C).
-# Installeres KUN, når `python3 -m lab gate` viser S7 OPEN (godkendt af brugeren 2026-10-19 på den betingelse).
+# Installeres efter brugerens beslutning 2026-10-19 (undtagelse fra S7-reglen for denne ene tjeneste; se LINUX_DRIFT.md).
+# Slås fra efter 2026-11-27, før `holdout` køres.
 # Starter indsamleren ved opstart af maskinen (kræver linger) og igen efter et nedbrud. Ingen ordrer, ingen konto,
 # kun offentlige API'er; samme start som i hånden (START_PM_LP.sh). Fortryd: systemctl --user disable pm-lp-collector.
 [Unit]

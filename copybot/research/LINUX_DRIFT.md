@@ -110,7 +110,7 @@ hybrid-sleep.target`. Fortryd med `unmask`. Kræver din godkendelse.
 ## Genstart og strømsvigt
 
 - Alt stopper, og **intet starter af sig selv.** Det er bevidst: autostart er S7-automatisering. Undtagelse, når
-  S7 er åben og tjenesten er installeret: indsamleren (se "pm_lp: beskyttelse af holdout", punkt C).
+  tjenesten er installeret: indsamleren (se "pm_lp: beskyttelse af holdout", punkt C).
 - Efter genstart kører du de tre startlinjer ovenfor, i rækkefølgen indsamler, laboratorium, vagt.
 - **Indsamleren** genoptager med samme D0 (2026-10-17).
   - Målt ved genstart samme dag: første snapshot 6–14 s efter start.
@@ -155,9 +155,13 @@ Driftsregler, ikke en protokolændring: ingen porte, vinduer, paneler, data elle
 - Undtaget er de trin, protokollen selv kræver: `dev` og commit af `PM_LP_FROZEN.md` (punkt F). De rører ikke
   indsamleren, og en commit med kun dokumentation kræver ingen genstart.
 
-**C. Autostart af indsamleren alene, først når S7 er åben.**
-- Forudsætning: `python3 -m lab gate` viser `S7 gate: OPEN` (tidligst ca. 2026-10-26 10:30 UTC). Før det installeres
-  intet. Laboratoriet og vagten startes fortsat i hånden.
+**C. Autostart af indsamleren alene.**
+- **Undtagelse fra S7-reglen, besluttet af brugeren 2026-10-19:** tjenesten for indsamleren må installeres før
+  S7-gaten er åben (S7 var CLOSED, 0,18 af 7 dage). Brugeren blev oplyst om, at tidsplanen også uden undtagelsen
+  havde givet beskyttelse før holdout, og valgte at installere nu. Undtagelsen gælder kun denne ene tjeneste.
+  S7-gaten selv, dens beregning og reglen for al anden automatisering (laboratoriet, vagten, planlagte opgaver)
+  er uændrede.
+- Laboratoriet og vagten startes fortsat i hånden.
 - Unit-fil: `research/systemd/pm-lp-collector.service`. Den venter på navneopslag efter opstart (højst 10 min),
   fordi indsamleren kalder API'et før sin fejltolerante løkke, og den starter igen 60 s efter et nedbrud.
 - Installation (brugeren, i en terminal; den kørende indsamler røres ikke):
@@ -168,9 +172,13 @@ Driftsregler, ikke en protokolændring: ingen porte, vinduer, paneler, data elle
   systemctl --user enable pm-lp-collector.service      # kun enable: ingen start nu
   loginctl enable-linger anton                          # brugertjenester starter ved opstart uden login
   ```
-- Test: én bevidst genstart i valideringsperioden (2026-10-27 → 10-29), aldrig i holdout. Bagefter:
-  `systemctl --user status pm-lp-collector`, ny linje i `runs`, første snapshot inden for få minutter. Start
-  laboratoriet i hånden inden for ca. 1 time (S7, se ovenfor).
+- Test: én bevidst genstart før holdout, helst i development-perioden (til 2026-10-23), aldrig i holdout. Genstart
+  lige efter en `system.alive`-post (ca. HH:51 UTC). Bagefter: `systemctl --user status pm-lp-collector`, ny
+  linje i `runs`, første snapshot inden for få minutter. Start laboratoriet i hånden inden for ca. 1 time (S7, se
+  ovenfor) og derefter vagten.
+- **Slå tjenesten fra efter 2026-11-27** (indsamlingen er færdig ved D0+41), før `holdout` køres:
+  `systemctl --user disable --now pm-lp-collector`. Ellers starter en senere genstart indsamleren, som skriver en ny
+  `runs`-række og dermed ændrer databasen efter resultatet.
 - Når tjenesten er slået til, startes og stoppes indsamleren kun med `systemctl --user start|stop pm-lp-collector`,
   aldrig med START_PM_LP.sh i hånden (den anden kopi afvises af `collector.lock` og prøves igen hvert minut).
 - Fortryd: `systemctl --user disable --now pm-lp-collector`, `rm ~/.config/systemd/user/pm-lp-collector.service`,
