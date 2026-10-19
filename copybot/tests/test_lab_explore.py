@@ -79,7 +79,7 @@ class Base(unittest.TestCase):
 class TheLaneReadsOnlyExplore0(Base):
     def test_explore0_lies_before_the_families_windows_and_is_not_reserved(self):
         a, b = data.window(explore.SPLIT)
-        self.assertEqual(datetime.fromtimestamp(a, timezone.utc).strftime("%Y-%m"), "2020-01")
+        self.assertEqual(datetime.fromtimestamp(a, timezone.utc).strftime("%Y-%m"), "2020-03")
         self.assertLess(b, data.window("train3")[0])
         self.assertLess(b, data.RESERVED_FROM)
 

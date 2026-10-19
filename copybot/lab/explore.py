@@ -1,7 +1,7 @@
 """PROTOCOL_V3 amendments 10, 10a and 10b: the automatic exploration lane. The fleet keeps searching for ideas without
 the search ever counting as evidence, spending alpha or touching the data the families are tested on.
 
-- Window: only explore0 = 2020-01..2021-12, before the families' train3. `_files` is the lane's only data access and
+- Window: only explore0 = 2020-03..2021-12 (10c), before the families' train3. `_files` is the lane's only data access and
   refuses every other window (train3, validation3, the 2024 holdout, 2025+ reserved data, forward windows).
 - Templates: the mechanism functions of families with a valid amendment 8 approval (families.binding_approval). First
   the fixed GRIDS, then variants drawn with a fixed seed from SPACES, each with a coin basket of >= MIN_COINS coins
@@ -36,7 +36,7 @@ from lab import families, jobs, pipeline
 from lab.engine import data
 
 SPLIT = "explore0"
-WINDOW = ((2020, 1), (2021, 12))
+WINDOW = ((2020, 3), (2021, 12))               # 10c: after the USD-M perp listings of January-February 2020
 data.SPLITS.setdefault(SPLIT, WINDOW)          # the lane's own window; the gateway (lab/data.py) never serves it
 LABEL = "EXPLORATORY_LANE"
 WEEKLY_MAX = 5000                              # 10a point 4
