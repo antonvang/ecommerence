@@ -38,6 +38,18 @@ class ArtifactError(StepError):
     """A frozen artifact is missing, unrecorded or differs from its recorded SHA-256: fail closed, never regenerate."""
 
 
+class Deferred(StepError):
+    """The step may not run yet (amendment 9: family files under the download embargo). The fleet puts the job back
+    until `until` without using an attempt (jobs.defer); it is never a failure."""
+
+    def __init__(self, reason, until):
+        super().__init__(reason, until)
+        self.until = until
+
+    def __str__(self):
+        return str(self.args[0])
+
+
 # ---------- artifacts ----------
 def save_artifact(exp_id, name, obj):
     os.makedirs(os.path.join(ARTIFACTS, exp_id), exist_ok=True)
@@ -146,18 +158,34 @@ def register(db, eid, actor="strategy-1"):
 
 
 def _template(db, eid):
-    t = json.loads(registry.latest(db, eid)["spec_json"] or "{}").get("template")
-    if not t:
-        raise StepError(f"{eid} is not a catalogue instance")
-    return t
+    spec = json.loads(registry.latest(db, eid)["spec_json"] or "{}")
+    if not spec.get("template") and not spec.get("family"):
+        raise StepError(f"{eid} is not a catalogue or family instance")
+    return spec.get("template")
 
 
 def register_batch(db, eids, actor="strategy-1"):
     """PROTOCOL v2 batch: register every approved instance in `eids` together. Logs `batch.registered` with the
     trials-ledger cutoff, then queues the jobs so that no member validates before every member finished its cost step.
-    Instances without a valid template approval are skipped. Returns the registered ids."""
-    blob = templates.catalogue_blob()
-    ok = sorted(e for e in eids if templates.approval(db, _template(db, e), blob) is not None)
+    Instances without a valid template approval are skipped. Family instances (amendment 8) are split off: each
+    approved family registers its base instances as its own batch (see _register_family). Returns the registered ids."""
+    fams, cat = {}, []
+    for e in eids:
+        fid = json.loads(registry.latest(db, e)["spec_json"] or "{}").get("family")
+        if fid:
+            fams.setdefault(fid, []).append(e)
+        else:
+            cat.append(e)
+    out = []
+    if cat:
+        blob = templates.catalogue_blob()
+        out += _batch(db, sorted(e for e in cat if templates.approval(db, _template(db, e), blob) is not None), actor)
+    for fid in sorted(fams):
+        out += _register_family(db, fid, fams[fid], actor)
+    return out
+
+
+def _batch(db, ok, actor, family=None, extra=None):
     if not ok:
         return []
     for eid in ok:
@@ -165,15 +193,48 @@ def register_batch(db, eids, actor="strategy-1"):
     cutoff = db.one("SELECT COALESCE(MAX(id),0) FROM trials")[0]
     batch = "B-" + hashlib.sha256("|".join(ok).encode()).hexdigest()[:12]
     db.event("batch.registered", f"system:{actor}", None, {"batch": batch, "exp_ids": ok, "trial_cutoff_id": cutoff,
-                                                          "protocol_version": max(catalogue.protocol_of(
-                                                              _template(db, e)) for e in ok)})
+                                                          "protocol_version": 3 if family else max(
+                                                              catalogue.protocol_of(_template(db, e)) for e in ok),
+                                                          **({"family": family, "amendment": 8} if family else {}),
+                                                          **(extra or {})})
     for eid in ok:
         enqueue_pipeline(db, eid, actor, batch_members=ok)
     return ok
 
 
+def _register_family(db, fid, eids, actor):
+    """Amendment 8 point 7: the DISCOVERED base instances of an approved family register once, as one batch, when
+    families.registration_block finds nothing in the way (approval and reserved alpha, programme stop, open families,
+    covering, graveyard re-check, embargo). Point 9: a DISCOVERED successor whose registered parent's frozen training
+    artifact meets its trigger registers as an extra batch of the family, before the cohort is fixed. An unapproved
+    family is skipped silently; any other block is recorded once as family.waiting."""
+    from lab import families
+    p = families.approval_payload(db, fid)
+    if p is None:
+        return []
+    fam, out, why = families.load(fid), [], []
+    base = sorted(e for e in eids if (families.instance_of(e) or (None, None))[1] in p.get("instances", [])
+                  and lifecycle.state(db, e) == "DISCOVERED")
+    if base and not families.registered(db, fid):
+        why = families.registration_block(db, fam)
+        if not why:
+            out += _batch(db, base, actor, family=fid)
+    for e in sorted(families.triggered(db, fam, eids) if families.registered(db, fid) else []):
+        block = families.registration_block(db, fam, successor=e)
+        if block:
+            why += [f"{e}: {b}" for b in block]
+        else:
+            parent = families.exp_id(fid, json.loads(registry.latest(db, e)["spec_json"])["parent"])
+            out += _batch(db, [e], actor, family=fid, extra={"successor_of": parent})
+    if why:
+        families.waiting(db, fid, why, actor)
+    return out
+
+
 def _register_one(db, eid, actor):
     v = registry.latest(db, eid)
+    if json.loads(v["spec_json"] or "{}").get("family"):
+        return _register_family_one(db, eid, v, actor)
     t = _template(db, eid)
     if v["version"] == 1:
         commit = registry.last_commit(templates.CATALOGUE)
@@ -188,16 +249,49 @@ def _register_one(db, eid, actor):
     templates.register_transition(db, eid, t, f"system:{actor}")
 
 
+def _register_family_one(db, eid, v, actor):
+    """Version 2 from families.instance_spec (spec_path = the family file, code_hash = its approved blob), a screening
+    alpha row of 0 (amendment 8 point 13), then families.register_transition."""
+    from lab import families
+    fid, iid = json.loads(v["spec_json"])["family"], json.loads(v["spec_json"])["instance"]
+    if v["version"] == 1:
+        p = families.approval_payload(db, fid)
+        if p is None:
+            raise lifecycle.LifecycleError(f"family {fid} has no valid human approval")
+        rel = f"research/families/{fid}.json"
+        engine = {f: registry.blob_at(registry.last_commit(f), f) for f in ENGINE_CODE}
+        spec = families.instance_spec(families.load(fid), iid, p["blobs"], engine)
+        with db.tx():
+            db.append("experiments", exp_id=eid, version=2, created_ts=int(time.time()),
+                      mechanism_tag=v["mechanism_tag"], fingerprint=v["fingerprint"], spec_json=spec, spec_path=rel,
+                      spec_commit=registry.last_commit(rel), code_hash=p["blobs"]["family"],
+                      note=f"family {fid} instance {iid} spec (amendment 8)")
+            db.append("alpha_ledger", exp_id=eid, ts=int(time.time()), alpha=0.0, note="A8 in-sample filter")
+            db.event("exp.version_added", actor, eid, {"version": 2, "template": spec["template"], "family": fid})
+    families.register_transition(db, eid, fid, f"system:{actor}")
+
+
+def _priority(spec):
+    """Job priority: the catalogue order, family instances after every catalogue template."""
+    if spec.get("family"):
+        from lab import families
+        return families.PRIORITY
+    return 20 + list(catalogue.TEMPLATES).index(spec["template"])
+
+
 def enqueue_pipeline(db, eid, actor="strategy-1", batch_members=()):
-    """Chain the steps. Under v2 the validate step also waits for the cost step of every batch member."""
-    prio = 20 + list(catalogue.TEMPLATES).index(json.loads(registry.latest(db, eid)["spec_json"])["template"])
+    """Chain the steps. Under v2 the validate step also waits for the cost step of every batch member. A family's data
+    step fetches its spot files at most 2 at a time (amendment 9), so it gets a longer lease."""
+    spec = json.loads(registry.latest(db, eid)["spec_json"])
+    prio = _priority(spec)
     prev = []
     for s in STEPS:
         deps = list(prev)
         if s == "validate":
             deps += [f"cost|{m}" for m in batch_members if m != eid]
         jobs.enqueue(db, f"{s}|{eid}", s, eid, {"exp_id": eid}, priority=prio, depends_on=deps,
-                     timeout_s=900 if s in ("backtest", "adversarial", "validate") else 300, actor=f"system:{actor}")
+                     timeout_s=900 if s in ("backtest", "adversarial", "validate") else
+                     1800 if s == "data" and spec.get("family") else 300, actor=f"system:{actor}")
         prev = [f"{s}|{eid}"]
 
 
@@ -228,23 +322,76 @@ def dsr_trials(db, eid, spec):
 
 # ---------- helpers ----------
 def _spec(db, eid):
-    return json.loads(registry.latest(db, eid)["spec_json"])
+    v = registry.latest(db, eid)
+    spec = json.loads(v["spec_json"])
+    if spec.get("family") and v["version"] >= 2:          # amendment 8 point 18: a registered instance's code pin
+        from lab import families
+        bad = families.pin_problems(spec)
+        if bad:
+            raise StepError(f"{eid}: {'; '.join(bad)}")
+    return spec
 
 
-def _files(db, eid, split, worker, symbols=None):
-    """Download/reuse the split's files (parallel threads) and record the read through the gateway (state rules apply)."""
+def _tpl(spec):
+    """The template dict of a spec: the catalogue's, or a family instance's view (lab/families; never injected into
+    catalogue.TEMPLATES)."""
+    if spec.get("family"):
+        from lab import families
+        return families.template(spec)
+    return catalogue.TEMPLATES[spec["template"]]
+
+
+def _universe(spec):
+    return tuple(spec["universe"]) if spec.get("family") else catalogue.universe(spec["template"])
+
+
+def _min_symbols(spec):
+    return spec["min_symbols"] if spec.get("family") else catalogue.min_symbols(spec["template"])
+
+
+def _symbols(spec, split):
+    """The coins a step reads for a data split. A family's 2024 holdout never reads its holdout_exclude coins, nor
+    BTC/ETH/SOL (seen by L14_tsmom_v1, amendment 1): they are outside the declared set (amendment 8 point 16)."""
+    if spec.get("family") and split == "holdout":
+        drop = set(spec.get("holdout_exclude") or ()) | set(data.HOLDOUT_SEEN)
+        return tuple(s for s in _universe(spec) if s not in drop)
+    return _universe(spec)
+
+
+def _download(db, eid, spec, split, worker, symbols):
+    """{symbol: {'klines', 'funding'[, 'spot']}} downloaded or reused (parallel threads). A family's files (spot zips in
+    their own directory) go through the embargo guard; a file that may not be fetched yet defers the job with a
+    family.waiting event instead of failing it (amendment 8 point 17, amendment 9 point 1)."""
     from concurrent.futures import ThreadPoolExecutor
-    symbols = symbols or catalogue.universe(_spec(db, eid)["template"])
-    with ThreadPoolExecutor(DOWNLOAD_THREADS) as ex:
-        got = list(ex.map(lambda s: (s, data.files_for(s, split)), symbols))
-    per_sym, all_files = {}, []
-    for s, f in got:
-        per_sym[s] = f
-        all_files += f["klines"] + f["funding"]
+    if not spec.get("family"):
+        with ThreadPoolExecutor(DOWNLOAD_THREADS) as ex:
+            return dict(ex.map(lambda s: (s, data.files_for(s, split)), symbols))
+    from lab import families
+    get = families.guarded_get(split)
+    try:
+        if families.blocked(symbols, (split,)):
+            raise families.Embargoed(families.embargo_reason(split))
+        with ThreadPoolExecutor(DOWNLOAD_THREADS) as ex:
+            return dict(ex.map(lambda s: (s, {**data.files_for(s, split, get),
+                                              "spot": data.spot_files_for(s, split, get)}), symbols))
+    except families.Embargoed as e:
+        families.waiting(db, spec["family"], [str(e)], f"system:{worker}",
+                         topic=None if split in families.SCREEN_SPLITS else split)
+        raise Deferred(f"{eid}: {e}", families.EMBARGO_UNTIL) from None
+
+
+def _files(db, eid, split, worker, symbols=None, spec=None):
+    """Download/reuse the split's files (parallel threads) and record the read through the gateway (state rules apply).
+    A family's spot files are recorded in the same access as its perp files."""
+    spec = spec or _spec(db, eid)
+    symbols = symbols or _universe(spec)
+    per_sym, all_files = _download(db, eid, spec, split, worker, symbols), []
+    for s, f in per_sym.items():
+        all_files += f["klines"] + f["funding"] + f.get("spot", [])
     Gateway(db, f"system:{worker}").access(eid, data.GATEWAY_SPLIT[split],
                                            [os.path.join(HERE, p) if not os.path.isabs(p) else p for p in all_files],
                                            data.window(split), "https://data.binance.vision", "evaluate",
-                                           registry.blob_at(registry.last_commit(templates.CATALOGUE), templates.CATALOGUE))
+                                           _code_hash(spec))
     return per_sym
 
 
@@ -263,7 +410,11 @@ def _sp(spec, split):
     return V3_SPLITS.get(split, split) if (spec.get("protocol_version") or 1) >= 3 else split
 
 
-def _code_hash():
+def _code_hash(spec=None):
+    """The gateway's code hash: the catalogue blob, or for a family instance its registered family file blob (amendment
+    8 point 16), so a catalogue change never locks a family holdout."""
+    if spec and spec.get("family"):
+        return spec["code_blobs"]["family"]
     return registry.blob_at(registry.last_commit(templates.CATALOGUE), templates.CATALOGUE)
 
 
@@ -308,9 +459,16 @@ def _market(db, eid, split, worker, spec, exclude=()):
     """Bars, funding, duplicates and the template's extra data (hourly volume for the older 30-coin templates, or the
     PROTOCOL v3 bundle), without the symbols excluded by the data rule."""
     split = _sp(spec, split)
-    tpl = catalogue.TEMPLATES[spec["template"]]
-    symbols = catalogue.universe(spec["template"])
-    per_sym = _files(db, eid, split, worker, symbols)
+    tpl = _tpl(spec)
+    symbols = _symbols(spec, split)
+    per_sym = _files(db, eid, split, worker, symbols, spec)
+    if spec.get("family"):            # amendment 8: the instrument series, and the perps for the benchmark
+        from lab import families
+        bars, funding, dups, fd = families.transform(spec, per_sym, split)
+        _drop(bars, funding, fd, exclude, spec)
+        for s in exclude:
+            dups.pop(s, None)
+        return bars, funding, dups, fd
     bars, funding, dups = _load(per_sym, split)
     if tpl.get("needs_volume"):
         vol = {s: data.load_volume(per_sym[s], split) for s in per_sym}
@@ -344,7 +502,7 @@ OBSERVATION_MONTHS = 6
 def _quality(bars, split, dups, spec, bundle=None):
     """Per-symbol quality (klines; plus daily metrics coverage for v3) and whether enough symbols remain. External
     series (DVOL, stablecoins) below 95 % day coverage fail the data gate."""
-    t, split = spec["template"], _sp(spec, split)
+    split = _sp(spec, split)
     q = {s: data.quality(bars[s], split, dups[s]) for s in bars}
     series_ok = True
     if isinstance(bundle, dict) and "metrics" in bundle:
@@ -369,12 +527,17 @@ def _quality(bars, split, dups, spec, bundle=None):
                 q[s][f"{metric}_coverage"] = cov
                 q[s]["ok"] = q[s]["ok"] and cov >= METRICS_MIN_COVERAGE
     excluded = sorted(s for s, x in q.items() if not x["ok"])
-    return q, excluded, series_ok and len(q) - len(excluded) >= catalogue.min_symbols(t)
+    return q, excluded, series_ok and len(q) - len(excluded) >= _min_symbols(spec)
+
+
+def _t(t):
+    """A template given by catalogue name or as a template dict (_tpl)."""
+    return catalogue.TEMPLATES[t] if isinstance(t, str) else t
 
 
 def _family(t):
     """The template's family with one calling convention: (bars_by, funding_by, params, fit=None, data=None)."""
-    tpl = catalogue.TEMPLATES[t]
+    tpl = _t(t)
     fam = tpl["family"]
     if tpl.get("needs"):
         return lambda b, f, p, fit=None, volume_by=None: fam(b, f, p, None, extra=volume_by)
@@ -382,16 +545,19 @@ def _family(t):
 
 
 def _positions(t, bars, funding, params, fit, vol=None):
-    fam = catalogue.TEMPLATES[t]["family"]
-    if catalogue.TEMPLATES[t].get("needs"):
+    tpl = _t(t)
+    fam = tpl["family"]
+    if tpl.get("family_id"):          # amendment 8: a mechanism function sees only its instrument series and funding
+        return fam(bars, funding, params, None)
+    if tpl.get("needs"):
         return fam(bars, funding, params, None, extra=vol)
-    if catalogue.TEMPLATES[t].get("cross_sectional"):
+    if tpl.get("cross_sectional"):
         return fam(bars, funding, params, None, vol) if vol is not None else fam(bars, funding, params, None)
     return {s: fam(bars[s], funding[s], params, fit.get(s) if fit else None) for s in bars}
 
 
 def _fit(t, bars, params):
-    f = catalogue.TEMPLATES[t].get("fit")
+    f = _t(t).get("fit")
     return {s: f(b, params) for s, b in bars.items()} if f else None
 
 
@@ -405,25 +571,39 @@ def _benchmark(bars, funding, costs, seed=SEED):
     return _evaluate(bars, funding, pos, costs, seed=seed)
 
 
+def _bench(bars, funding, spec, vol=None):
+    """A step's buy-and-hold benchmark: the universe with the spec's costs and funding, or for a family instance
+    (amendment 8 point 8) the same perps with the catalogue's costs and their settled funding, never the instrument."""
+    from lab import families
+    if isinstance(vol, families.FamilyData):
+        return _benchmark(vol.perp, vol.funding, catalogue.COSTS)
+    return _benchmark(bars, funding, spec["costs"])
+
+
 def _strip(m):
     return {k: v for k, v in m.items() if k != "daily_net"}
+
+
+DSR_GATE = "deflated Sharpe probability >= 0.95"
 
 
 # ---------- step handlers (each returns a JSON-able result) ----------
 def step_data(db, job, worker):
     eid = job["exp_id"]
+    spec = _spec(db, eid)                       # a family's code pin fails closed before anything (amendment 8 p. 18)
     if lifecycle.state(db, eid) == "REGISTERED":
         lifecycle.auto_transition(db, eid, "SCREENING", f"system:{worker}", "screening starts: data fetch and checks")
     report, excluded, oks = {}, {}, []
-    spec = _spec(db, eid)
+    if spec.get("family"):            # amendment 9 point 1: every screening file is fetched now (guarded), not read
+        _download(db, eid, spec, _sp(spec, "validation"), worker, _universe(spec))
     for split in (("train",) if _v2(spec) else ("train", "validation")):     # v2: validation is read only to validate
         bars, _, dups, bundle = _market(db, eid, split, worker, spec)
         report[split], excluded[split], ok_split = _quality(bars, split, dups, spec, bundle)
         oks.append(ok_split)
     ok = all(oks)
     art = save_artifact(eid, "data", {"quality": report, "ok": ok, "excluded": excluded,
-                                      "min_symbols": catalogue.min_symbols(spec["template"])})
-    return {"ok": ok, "artifact": art, "symbols": len(catalogue.universe(spec["template"])),
+                                      "min_symbols": _min_symbols(spec)})
+    return {"ok": ok, "artifact": art, "symbols": len(_universe(spec)),
             "excluded": sum(len(v) for v in excluded.values())}
 
 
@@ -433,8 +613,8 @@ def step_backtest(db, job, worker):
     bars, funding, _, vol = _train(db, eid, worker, spec)
     out = []
     for k, params in enumerate(spec["grid"]):
-        fit = _fit(spec["template"], bars, params)
-        pos = _positions(spec["template"], bars, funding, params, fit, vol)
+        fit = _fit(_tpl(spec), bars, params)
+        pos = _positions(_tpl(spec), bars, funding, params, fit, vol)
         out.append({"variant": k, "params": params, "fit": fit,
                     "positions": {s: [round(x, 6) for x in p] for s, p in pos.items()}})
     art = save_artifact(eid, "backtest", {"split": "train", "variants": out})
@@ -444,7 +624,7 @@ def step_backtest(db, job, worker):
 def step_cost(db, job, worker):
     eid = job["exp_id"]
     spec = _spec(db, eid)
-    bars, funding, _, _ = _train(db, eid, worker, spec)
+    bars, funding, _, vol = _train(db, eid, worker, spec)
     bt = load_artifact(eid, "backtest")
     results = []
     seen = {r["variant"] for r in db.q("SELECT variant FROM trials WHERE exp_id=? AND split='train'", eid)}
@@ -456,7 +636,7 @@ def step_cost(db, job, worker):
             db.append("trials", exp_id=eid, ts=int(time.time()), variant=v["variant"], split="train",
                       sharpe_daily=sr_d, n_days=m["days"], net_total=m["net_total"], params=v["params"])
         results.append({"variant": v["variant"], "params": v["params"], "net": _strip(m), "net_2x_costs": _strip(hi)})
-    bench = _strip(_benchmark(bars, funding, spec["costs"]))
+    bench = _strip(_bench(bars, funding, spec, vol))
     best = max(results, key=lambda r: r["net"]["net_sharpe_ann"] if r["net"]["net_sharpe_ann"] is not None else -9e9)
     sel_sr = best["net"]["net_sharpe_ann"]
     early, reasons = (sel_sr or -1) <= 0, []
@@ -479,10 +659,12 @@ def step_adversarial(db, job, worker):
     if cost["rejected_early"]:
         art = save_artifact(eid, "adversarial", {"skipped": "rejected at cost check"})
         return {"skipped": True, "artifact": art}
-    t, v = spec["template"], load_artifact(eid, "backtest")["variants"][cost["selected"]]
+    tpl, v = _tpl(spec), load_artifact(eid, "backtest")["variants"][cost["selected"]]
     bars, funding, _, vol = _train(db, eid, worker, spec)
-    fam = _family(t)
-    if catalogue.TEMPLATES[t].get("cross_sectional"):
+    if spec.get("family"):            # amendment 8 point 8: tests and placebo on the instrument series alone
+        vol = None
+    fam = _family(tpl)
+    if tpl.get("cross_sectional"):
         trunc = {"ALL": adversarial.truncation_test_xs(fam, bars, funding, v["params"], 20, volume_by=vol)}
         poison = {"ALL": adversarial.poison_test_xs(fam, bars, funding, v["params"], volume_by=vol)}
     else:
@@ -524,10 +706,10 @@ def step_validate(db, job, worker):
     bars, funding, dups, vol = _market(db, eid, "validation", worker, spec)
     vq, v_excluded, v_enough = _quality(bars, "validation", dups, spec, vol)
     _drop(bars, funding, vol, v_excluded, spec)
-    pos = _positions(spec["template"], bars, funding, v["params"], v["fit"], vol)  # frozen params and train fit
+    pos = _positions(_tpl(spec), bars, funding, v["params"], v["fit"], vol)  # frozen params and train fit
     m = _evaluate(bars, funding, pos, spec["costs"])
     hi = _evaluate(bars, funding, pos, spec["costs"], catalogue.COST_HIGH_MULT)
-    bench = _benchmark(bars, funding, spec["costs"])
+    bench = _bench(bars, funding, spec, vol)
     trials = dsr_trials(db, eid, spec)
     sr_d = (m["net_mean_daily"] / m["net_sd_daily"]) if m.get("net_sd_daily") else None
     dsr = backtest.deflated_sharpe(sr_d, trials, m["days"])
@@ -535,14 +717,19 @@ def step_validate(db, job, worker):
              "one-sided 90% lower bound > 0": (m["lb_one_sided"] or -1) > 0,
              "net Sharpe > buy-and-hold": (m["net_sharpe_ann"] or -9e9) > (bench["net_sharpe_ann"] or -9e9),
              "net total > 0 at 2x costs": hi["net_total"] > 0,
-             "deflated Sharpe probability >= 0.95": (dsr or 0) >= catalogue.DSR_MIN,
+             DSR_GATE: (dsr or 0) >= catalogue.DSR_MIN,
              "adversarial checks pass": bool(adv.get("ok"))}
     if _v2(spec):
         gates["validation data quality"] = v_enough
+    extra = {}
+    if spec.get("family"):            # amendment 8 point 8: mechanism attribution, a stricter gate
+        from lab import families
+        extra["attribution"] = families.attribution(spec, m)
+        gates.update({f"mechanism attribution: {k}": ok for k, ok in extra["attribution"]["gates"].items()})
     art = save_artifact(eid, "validate", {"metrics": _strip(m), "metrics_2x_costs": _strip(hi),
                                           "benchmark": _strip(bench), "dsr": dsr, "trials_counted": len(trials),
                                           "gates": gates, "daily_net": m["daily_net"], "validation_quality": vq,
-                                          "validation_excluded": v_excluded})
+                                          "validation_excluded": v_excluded, **extra})
     return {"passed": all(gates.values()), "artifact": art, "tests": 1}
 
 
@@ -566,11 +753,16 @@ def step_report(db, job, worker):
         failed = [k for k, ok in val["gates"].items() if not ok]
         verdict = ("PASS (screen): all validation gates passed; eligible for a human-approved sealed holdout"
                    if not failed else f"REJECTED at validation: failed {', '.join(failed)}")
-        if spec.get("observation_test") and failed == ["deflated Sharpe probability >= 0.95"]:
+        if spec.get("observation_test") and failed == [DSR_GATE]:
             start = _next_month(time.time())
             verdict = (f"OBSERVE (forward test): passed every validation gate except the luck check (DSR "
                        f"{val.get('dsr') or 0:.3f}); forward window {_ymd(start)} + {OBSERVATION_MONTHS} months "
                        f"(research/PROTOCOL_V3.md amendment 2)")
+        if spec.get("family") and set(failed) <= {DSR_GATE}:    # amendment 8 point 8: the screen is only a filter
+            verdict = (f"OBSERVE (family forward test): passed every screening gate"
+                       f"{' except the luck check' if failed else ''} (DSR {val.get('dsr') or 0:.3f} is recorded and "
+                       f"decides nothing); the family cohort fixes the forward window (research/PROTOCOL_V3.md "
+                       f"amendment 8 points 8 and 10)")
     files = {s: f"data/lab/artifacts/{eid}/{s}.json" for s in STEPS if s != "report"}
     metrics = {"template": spec["template"], "selected_params": sel["params"], "train": sel["net"],
                "train_2x_costs": sel["net_2x_costs"], "train_benchmark": cost["benchmark"],
@@ -582,10 +774,11 @@ def step_report(db, job, worker):
                "batch": (batch_of(db, eid) or {}).get("batch")}
     rid = registry.record_result(db, eid, "EXPLORATORY", verdict, metrics, {"artifacts": files}, f"system:{worker}")
     ev = {"result_id": rid}
-    to = "SCREEN_PASSED" if verdict.startswith("PASS") else ("OBSERVATION" if verdict.startswith("OBSERVE") else "REJECTED")
+    to = "SCREEN_PASSED" if verdict.startswith("PASS") and not spec.get("family") else (   # a family: never
+        "OBSERVATION" if verdict.startswith("OBSERVE") else "REJECTED")
     lifecycle.auto_transition(db, eid, to, f"system:{worker}", verdict[:300], ev,
                               guards=(registry.make_result_guard(ev),))
-    if to == "OBSERVATION":
+    if to == "OBSERVATION" and not spec.get("family"):     # a family's cohort starts its window (amendment 8 point 10)
         start = _next_month(time.time())
         split = data.forward_split(start, OBSERVATION_MONTHS)
         a, b = data.window_bounds(split)
@@ -609,26 +802,30 @@ def _ymd(ts):
 
 
 def step_observe(db, job, worker):
-    """Forward test on new, unseen data (amendment 2). The data window cannot be read before it has ended."""
+    """Forward test on new, unseen data (amendment 2; a family instance: amendment 8 point 11). The data window cannot be
+    read before it has ended. The amendment 2 cohort N counts only events without a cohort key (amendment 8 point 10),
+    so MVRV's N stays 1."""
     eid = job["exp_id"]
     if lifecycle.state(db, eid) != "OBSERVATION":
         raise StepError("forward test requires lifecycle OBSERVATION")
     pl = job["payload"]
-    split = data.forward_split(pl["start"], pl.get("months", OBSERVATION_MONTHS))
     spec = _spec(db, eid)
+    if spec.get("family"):            # amendment 8 point 11: the family forward test of a fixed cohort decides
+        return _family_forward(db, eid, worker, spec)
+    split = data.forward_split(pl["start"], pl.get("months", OBSERVATION_MONTHS))
     v = frozen_variant(db, eid)                                          # verified against the recorded hashes
     bars, funding, dups, vol = _market(db, eid, split, worker, spec)      # data.window() refuses unfinished windows
     q, excluded, enough = _quality(bars, split, dups, spec, vol)
     _drop(bars, funding, vol, excluded, spec)
-    pos = _positions(spec["template"], bars, funding, v["params"], v["fit"], vol)
+    pos = _positions(_tpl(spec), bars, funding, v["params"], v["fit"], vol)
     m = _evaluate(bars, funding, pos, spec["costs"])
     hi = _evaluate(bars, funding, pos, spec["costs"], catalogue.COST_HIGH_MULT)
-    bench = _benchmark(bars, funding, spec["costs"])
+    bench = _bench(bars, funding, spec, vol)
     a, _ = data.window_bounds(split)
     cohort = 0
     for r in db.q("SELECT ts, payload FROM events WHERE kind='observation.started'"):
         p = json.loads(r["payload"])
-        if p.get("window") == split and r["ts"] < a:
+        if p.get("window") == split and r["ts"] < a and not p.get("cohort"):    # amendment 8 cohorts count apart
             cohort += 1
     need = 1 - 0.05 / max(1, cohort)
     sr_d = (m["net_mean_daily"] / m["net_sd_daily"]) if m.get("net_sd_daily") else None
@@ -656,6 +853,119 @@ def step_observe(db, job, worker):
     return {"verdict": verdict, "result_id": rid, "state": to, "tests": 1}
 
 
+def _forward_market(db, eid, worker, spec, months):
+    """Amendment 8 points 11 and 12: the window a fixed cohort declared (months 1-12, or 1-6 for the interim look) on
+    archive data, read only after it ended plus the 7-day publication lag. Coins with no perp or spot file for the first
+    month are excluded before any computation, then the quality rule with min_symbols; the frozen variant runs on the
+    instrument series, the benchmark is the same perps' buy-and-hold, and the family module's attribution applies."""
+    from lab import families
+    cf = families.cohort_of(db, eid)
+    if cf is None:
+        raise StepError(f"{eid} is not a selected member of a fixed family cohort (amendment 8 point 10)")
+    split = data.forward_split(cf["start"], months, tagged=True)
+    if split != cf["window" if months == families.FORWARD_MONTHS else "sub_window"]:
+        raise StepError(f"{split} is not a window cohort {cf['cohort']} declared")
+    data.window(split)                                   # refuses an unfinished window before anything is read
+    v = frozen_variant(db, eid)                          # verified against the recorded hashes
+    bars, funding, dups, fd = _market(db, eid, split, worker, spec)
+    gone = families.unlisted(list(bars), split)
+    _drop(bars, funding, fd, gone, spec)
+    for s in gone:
+        dups.pop(s, None)
+    q, excluded, enough = _quality(bars, split, dups, spec, fd)
+    _drop(bars, funding, fd, excluded, spec)
+    pos = _positions(_tpl(spec), bars, funding, v["params"], v["fit"], fd)
+    m = _evaluate(bars, funding, pos, spec["costs"])
+    return cf, split, {"m": m, "hi": _evaluate(bars, funding, pos, spec["costs"], catalogue.COST_HIGH_MULT),
+                       "bench": _bench(bars, funding, spec, fd), "attribution": families.attribution(spec, m),
+                       "quality": q, "excluded": excluded, "unlisted": gone, "enough": enough}
+
+
+def step_observe_interim(db, job, worker):
+    """Amendment 8 point 12: the reject-only look at months 1-6 of a family cohort's window, at the earliest 7 days
+    after the sub-window ended. Net mean per day <= 0 or cash flow minus costs <= 0 is 'FAIL (forward futility)' ->
+    REJECTED; otherwise the final forward test is queued (not_before = window end + 7 days). It never passes and changes
+    neither M nor alpha_i."""
+    from lab import families
+    eid = job["exp_id"]
+    if lifecycle.state(db, eid) != "OBSERVATION":
+        raise StepError("the interim look requires lifecycle OBSERVATION")
+    spec = _spec(db, eid)
+    if not spec.get("family"):
+        raise StepError("the interim look is for amendment 8 family instances only")
+    if db.one("SELECT 1 FROM events WHERE kind='family.interim' AND exp_id=?", eid):
+        raise StepError(f"{eid}: the interim look runs once (amendment 8 point 12)")
+    cf, split, f = _forward_market(db, eid, worker, spec, families.INTERIM_MONTHS)
+    m, att = f["m"], f["attribution"]
+    checks = {"net_mean_daily > 0": (m.get("net_mean_daily") or 0) > 0,
+              "cash flow - costs > 0": (att.get("cash_flow_minus_costs") or 0) > 0}
+    failed = [k for k, ok in checks.items() if not ok]
+    art = save_artifact(eid, "observe_interim", {"window": split, "cohort": cf["cohort"], "metrics": _strip(m),
+                                                 "attribution": att, "checks": checks, "quality": f["quality"],
+                                                 "excluded": f["excluded"], "unlisted": f["unlisted"],
+                                                 "decisional": "reject-only", "daily_net": m.get("daily_net") or []})
+    if failed:
+        verdict = (f"{families.FUTILITY}: failed {', '.join(failed)} on {split} (reject-only interim look, amendment 8 "
+                   f"point 12)")
+        rid = registry.record_result(db, eid, "VALIDATION", verdict, {"interim": _strip(m), "attribution": att,
+                                                                      "checks": checks, "window": split,
+                                                                      "cohort": cf["cohort"]},
+                                     {"artifacts": [art]}, f"system:{worker}")
+        ev = {"result_id": rid}
+        lifecycle.auto_transition(db, eid, "REJECTED", f"system:{worker}", verdict[:300], ev,
+                                  guards=(registry.make_result_guard(ev),))
+        return {"verdict": verdict, "result_id": rid, "state": "REJECTED", "artifact": art, "tests": 1}
+    db.event("family.interim", f"system:{worker}", eid, {"cohort": cf["cohort"], "window": split, "outcome": "continue",
+                                                         "checks": checks, "artifact_sha256": art["sha256"]})
+    jobs.enqueue(db, f"observe|{eid}", "observe", eid, {"start": cf["start"], "months": families.FORWARD_MONTHS,
+                                                        "cohort": cf["cohort"]}, priority=5, max_attempts=3,
+                 timeout_s=1800, actor=f"system:{worker}", not_before=cf["final_not_before"])
+    return {"verdict": "continue: the final forward test is queued", "state": "OBSERVATION", "artifact": art,
+            "tests": 1}
+
+
+def _family_forward(db, eid, worker, spec):
+    """Amendment 8 point 11, the deciding forward test of a selected cohort member (after its interim look continued):
+    the gates of amendment 2 point 4 against the perps' buy-and-hold, data quality with min_symbols, the mechanism
+    attribution, and PSR_cons >= 1 - alpha_i with alpha_i from cohort.fixed (never recomputed). PASS -> SCREEN_PASSED,
+    FAIL -> REJECTED; the result is a VALIDATION row. Families never take the automatic promotion path (point 16)."""
+    from lab import families
+    if not db.one("SELECT 1 FROM events WHERE kind='family.interim' AND exp_id=?", eid):
+        raise StepError(f"{eid}: the final forward test follows the interim look (amendment 8 point 12)")
+    cf, split, f = _forward_market(db, eid, worker, spec, families.FORWARD_MONTHS)
+    m, hi, bench, att = f["m"], f["hi"], f["bench"], f["attribution"]
+    need = 1 - cf["alpha_i"]
+    prob, psr_detail = families.psr_cons(m.get("daily_net") or [])
+    gates = {"net_mean_daily > 0": (m.get("net_mean_daily") or 0) > 0,
+             "one-sided 90% lower bound > 0": (m.get("lb_one_sided") or -1) > 0,
+             "net Sharpe > buy-and-hold": (m.get("net_sharpe_ann") or -9e9) > (bench.get("net_sharpe_ann") or -9e9),
+             "net total > 0 at 2x costs": (hi.get("net_total") or 0) > 0,
+             f"forward luck check PSR_cons >= {need:.4f}": (prob or 0) >= need,
+             "forward data quality": f["enough"],
+             **{f"mechanism attribution: {k}": ok for k, ok in att["gates"].items()}}
+    failed = [k for k, ok in gates.items() if not ok]
+    verdict = (f"{families.FORWARD_PASS}: every gate passed on the unseen window {split} (M {cf['M']}, alpha_i "
+               f"{cf['alpha_i']:.5f}); the 2024 holdout and simulated trading need human approvals (amendment 8 "
+               f"point 16)" if not failed else f"{families.FORWARD_FAIL}: failed {', '.join(failed)}")
+    art = save_artifact(eid, "observe", {"window": split, "cohort": cf["cohort"], "M": cf["M"], "alpha_i": cf["alpha_i"],
+                                         "metrics": _strip(m), "metrics_2x_costs": _strip(hi),
+                                         "benchmark": _strip(bench), "psr_cons": prob, "psr": psr_detail,
+                                         "attribution": att, "gates": gates, "quality": f["quality"],
+                                         "excluded": f["excluded"], "unlisted": f["unlisted"],
+                                         "daily_net": m.get("daily_net") or []})
+    rid = registry.record_result(db, eid, "VALIDATION", verdict, {"forward": _strip(m), "benchmark": _strip(bench),
+                                                                  "psr_cons": prob, "psr": psr_detail,
+                                                                  "alpha_i": cf["alpha_i"], "M": cf["M"],
+                                                                  "cohort": cf["cohort"], "gates": gates,
+                                                                  "attribution": att, "window": split},
+                                 {"artifacts": [art]}, f"system:{worker}")
+    ev = {"result_id": rid}
+    to = "SCREEN_PASSED" if not failed else "REJECTED"
+    lifecycle.auto_transition(db, eid, to, f"system:{worker}", verdict[:300], ev,
+                              guards=(registry.make_result_guard(ev),))
+    return {"verdict": verdict, "result_id": rid, "state": to, "artifact": art, "tests": 1}
+
+
 def render_report(eid, spec, verdict, m):
     def fmt(x, pct=True):
         return "n/a" if x is None else (f"{x * 100:.2f} %" if pct else f"{x:.2f}")
@@ -680,10 +990,13 @@ NO_CLEAN_HOLDOUT = ("vrp_timing", "btc_volume_share")
 
 
 def _drop(bars, funding, vol, symbols, spec):
-    tpl = catalogue.TEMPLATES[spec["template"]]
+    from lab import families
+    tpl = _tpl(spec)
     for s in symbols:
         bars.pop(s, None), funding.pop(s, None)
-        if vol is not None and tpl.get("needs_volume"):
+        if isinstance(vol, families.FamilyData):
+            vol.drop(s)
+        elif vol is not None and tpl.get("needs_volume"):
             vol.pop(s, None)
         elif vol is not None:
             for k in ("volume", "taker", "metrics"):
@@ -694,13 +1007,17 @@ def _drop(bars, funding, vol, symbols, spec):
 
 def _declare_holdout(db, eid, spec, worker):
     """Amendment 7 section 8: open the holdout once with every file of every source the step will read (bars,
-    funding and the template's extra series). Later reads in the step must be part of this set, unchanged."""
-    tpl, sp = catalogue.TEMPLATES[spec["template"]], _sp(spec, "holdout")
-    symbols, needs = catalogue.universe(spec["template"]), tpl.get("needs") or []
+    funding and the template's extra series). Later reads in the step must be part of this set, unchanged. A family's
+    spot files are part of the set, its excluded coins are not (_symbols), its files come through the embargo guard
+    (2024 data only after 2026-11-27) and its family file blob is the code hash (amendment 8 point 16)."""
+    tpl, sp = _tpl(spec), _sp(spec, "holdout")
+    symbols, needs = _symbols(spec, sp), tpl.get("needs") or []
     paths = []
-    for s in symbols:                                  # the same paths as _files and _extra read them
-        f = data.files_for(s, sp)
-        paths += [os.path.join(HERE, p) if not os.path.isabs(p) else p for p in f["klines"] + f["funding"]]
+    per = _download(db, eid, spec, sp, worker, symbols) if spec.get("family") else \
+        {s: data.files_for(s, sp) for s in symbols}
+    for s, f in per.items():                           # the same paths as _files and _extra read them
+        paths += [os.path.join(HERE, p) if not os.path.isabs(p) else p for p in f["klines"] + f["funding"]
+                  + f.get("spot", [])]
     if "metrics" in needs:
         paths += [data.metrics_for(s, sp) for s in symbols]
     if "dvol" in needs:
@@ -713,38 +1030,50 @@ def _declare_holdout(db, eid, spec, worker):
         paths.append(data.stable_for(sp))
     return Gateway(db, f"system:{worker}").access(eid, data.GATEWAY_SPLIT[sp], paths, data.window(sp),
                                                  "holdout: every source in one declared set", "evaluate",
-                                                 _code_hash())
+                                                 _code_hash(spec))
 
 
 def step_holdout(db, job, worker):
-    """Sealed 2024 holdout, only reachable after a human-approved SCREEN_PASSED -> VALIDATION transition."""
+    """Sealed 2024 holdout, only reachable after a human-approved SCREEN_PASSED -> VALIDATION transition (a family
+    instance: typed in a terminal, never the automatic path or the dashboard, amendment 8 point 16)."""
     eid = job["exp_id"]
     if lifecycle.state(db, eid) != "VALIDATION":
         raise StepError("holdout requires lifecycle VALIDATION")
     spec = _spec(db, eid)
-    if spec["template"] in NO_CLEAN_HOLDOUT:
+    if spec.get("template") in NO_CLEAN_HOLDOUT:
         raise StepError("no clean holdout possible: BTC/ETH 2024 data was already seen by L14_tsmom_v1 "
                         "(research/PROTOCOL_V3.md amendment 1)")
+    if spec.get("family") and not spec.get("clean_holdout"):
+        raise StepError("no clean holdout declared in the family file: the instance stops at SCREEN_PASSED "
+                        "(research/PROTOCOL_V3.md amendment 8 point 16)")
     v = frozen_variant(db, eid)                                          # verified against the recorded hashes
     _declare_holdout(db, eid, spec, worker)                              # amendment 7 section 8
     bars, funding, dups, vol = _market(db, eid, "holdout", worker, spec)
     hq, h_excluded, h_enough = _quality(bars, "holdout", dups, spec, vol)
-    if catalogue.TEMPLATES[spec["template"]].get("universe") in ("30", "30v3", "cm16"):
+    if _tpl(spec).get("universe") in ("30", "30v3", "cm16"):
         h_excluded = sorted(set(h_excluded) | set(data.HOLDOUT_SEEN))
     h_left = [s for s in hq if s not in h_excluded]
-    h_enough = bool(h_enough) and len(h_left) >= catalogue.min_symbols(spec["template"])   # amendment 5 (stricter)
+    h_enough = bool(h_enough) and len(h_left) >= _min_symbols(spec)   # amendment 5 (stricter)
     _drop(bars, funding, vol, h_excluded, spec)
-    pos = _positions(spec["template"], bars, funding, v["params"], v["fit"], vol)
+    pos = _positions(_tpl(spec), bars, funding, v["params"], v["fit"], vol)
     m = _evaluate(bars, funding, pos, spec["costs"], lb_q=0.05)
-    bench = _benchmark(bars, funding, spec["costs"])
+    bench = _bench(bars, funding, spec, vol)
     gates = {"net_mean_daily > 0": (m["net_mean_daily"] or 0) > 0, "one-sided 95% lower bound > 0": (m["lb_one_sided"] or -1) > 0,
              "net Sharpe > buy-and-hold": (m["net_sharpe_ann"] or -9e9) > (bench["net_sharpe_ann"] or -9e9),
              "holdout data quality (min symbols)": h_enough}
     passed = all(gates.values())
     verdict = "PASS (holdout): paper-eligible after a human approval" if passed else \
         f"FAIL (holdout): failed {', '.join(k for k, ok in gates.items() if not ok)}"
+    extra = {}
+    if spec.get("family"):            # recorded for the human steps; amendment 8 point 16 adds no holdout gate
+        from lab import families
+        extra = {"not_read": sorted(set(_universe(spec)) - set(_symbols(spec, "holdout"))), "excluded": h_excluded,
+                 "attribution_recorded": families.attribution(spec, m)}
+        if passed:
+            verdict = ("PASS (holdout): simulated trading of a family instance needs a live spot feed and a later "
+                       "amendment (research/PROTOCOL_V3.md amendment 8 point 16)")
     art = save_artifact(eid, "holdout", {"metrics": _strip(m), "benchmark": _strip(bench), "gates": gates,
-                                         "daily_net": m["daily_net"]})
+                                         "daily_net": m["daily_net"], **extra})
     rid = registry.record_result(db, eid, "VALIDATION", verdict, {"holdout": _strip(m), "benchmark": _strip(bench),
                                                                    "gates": gates}, {"artifacts": [art]},
                                  f"system:{worker}")
@@ -798,7 +1127,7 @@ def enqueue_diagnostics(db, actor="strategy-1"):
 
 HANDLERS = {"data": step_data, "backtest": step_backtest, "cost": step_cost, "adversarial": step_adversarial,
             "validate": step_validate, "report": step_report, "holdout": step_holdout, "observe": step_observe,
-            "diagnose": step_diagnose,
+            "diagnose": step_diagnose, "observe_interim": step_observe_interim,
             # PROTOCOL_V3 amendment 9 section 3; lab/scanresearch.py imports this module, so it is resolved per call
             "scan_digest": lambda db, job, worker: __import__("lab.scanresearch", fromlist=["step_digest"])
             .step_digest(db, job, worker),
@@ -807,11 +1136,13 @@ HANDLERS = {"data": step_data, "backtest": step_backtest, "cost": step_cost, "ad
 
 
 def enqueue_holdouts(db, actor="strategy-1"):
-    """Experiments a human moved into VALIDATION get exactly one holdout job."""
+    """Experiments a human moved into VALIDATION get exactly one holdout job. A family instance fetches its 2024 spot
+    and perp files at most 2 at a time (amendment 9), so it gets the longer lease of its data step."""
     n = 0
     for x in registry.status(db):
         if x["state"] == "VALIDATION" and x["exp_id"].startswith("E_"):
+            fam = json.loads(registry.latest(db, x["exp_id"])["spec_json"] or "{}").get("family")
             _, created = jobs.enqueue(db, f"holdout|{x['exp_id']}", "holdout", x["exp_id"], {}, priority=5,
-                                      max_attempts=2, timeout_s=900, actor=f"system:{actor}")
+                                      max_attempts=2, timeout_s=1800 if fam else 900, actor=f"system:{actor}")
             n += created
     return n

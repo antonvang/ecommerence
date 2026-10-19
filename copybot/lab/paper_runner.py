@@ -308,6 +308,11 @@ def run_one(db, eid, get, now, ledger=None, cm_get=_cm_get, cache=None, cm_cache
     L = ledger or eid
     eng, risk = PaperEngine(db, lambda: now), Risk(db, lambda: now)
     spec = json.loads(registry.latest(db, eid)["spec_json"])
+    if spec.get("family"):          # amendment 8 point 16: no live spot feed exists yet (a later amendment); no orders
+        if not db.one("SELECT 1 FROM events WHERE kind='paper.unsupported' AND exp_id=?", L):
+            db.event("paper.unsupported", "agent:paper-1", L, {"reason": "amendment 8 family instance: simulated "
+                                                                          "trading needs a live spot feed (point 16)"})
+        return {"status": "unsupported", "reason": "live data for this family instance is not implemented; no orders"}
     tpl = catalogue.TEMPLATES[spec["template"]]
     if set(tpl.get("needs") or []) & {"metrics", "dvol", "stable", "taker", "rates"}:
         if not db.one("SELECT 1 FROM events WHERE kind='paper.unsupported' AND exp_id=?", L):

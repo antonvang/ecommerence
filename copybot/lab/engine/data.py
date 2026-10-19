@@ -74,11 +74,13 @@ def window(split, now=None):
     return int(a), int(b) - 1
 
 
-def forward_split(start_ts, months=6):
-    """Register (idempotently) a forward window of whole calendar months starting at the month of start_ts."""
+def forward_split(start_ts, months=6, tagged=False):
+    """Register (idempotently) a forward window of whole calendar months starting at the month of start_ts. The default
+    name stays fwdYYYYMM (amendment 2); `tagged` gives fwdYYYYMMm{months:02d} (amendment 8 cohorts), so windows with
+    the same start month never overwrite each other in SPLITS."""
     d = datetime.fromtimestamp(start_ts, timezone.utc)
     y1, m1 = d.year + (d.month + months - 2) // 12, (d.month + months - 2) % 12 + 1
-    name = f"fwd{d.year}{d.month:02d}"
+    name = f"fwd{d.year}{d.month:02d}" + (f"m{months:02d}" if tagged else "")
     SPLITS[name] = ((d.year, d.month), (y1, m1))
     GATEWAY_SPLIT[name] = "forward"
     return name
@@ -108,6 +110,8 @@ def _fetch(url, path, get=None):
             if e.code == 404:
                 return None
             time.sleep(2 * (i + 1))
+        except ReservedData:
+            raise                                         # a refused fetch (embargo guard) is never retried
         except Exception:
             time.sleep(2 * (i + 1))
     raise IOError(f"download failed: {url}")
@@ -126,6 +130,35 @@ def files_for(sym, split, get=None):
         p = _fetch(f"{BASE}/fundingRate/{sym}/{f}", os.path.join(CACHE, "funding", f), get)
         if p:
             out["funding"].append(p)
+    return out
+
+
+SPOT_BASE = "https://data.binance.vision/data/spot/monthly"
+
+
+def spot_files_for(sym, split, get=None):
+    """Spot 1h kline zips (amendment 8 point 17). They have the same file names as the perp zips, so they are cached in
+    their own directory CACHE/spot_klines and never reuse a perp zip of the same name. Returns [paths]."""
+    window(split)                                         # raises for reserved windows
+    out = []
+    for y, m in months(split):
+        k = f"{sym}-1h-{y}-{m:02d}.zip"
+        p = _fetch(f"{SPOT_BASE}/klines/{sym}/1h/{k}", os.path.join(CACHE, "spot_klines", k), get)
+        if p:
+            out.append(p)
+    return out
+
+
+def expected_paths(sym, split, spot=False):
+    """{kind: [(url, cache path)]} that files_for (and spot_files_for) would read for one symbol and split. No network
+    and no window guard: it only names files."""
+    out = {"klines": [], "funding": []} | ({"spot": []} if spot else {})
+    for y, m in months(split):
+        k, f = f"{sym}-1h-{y}-{m:02d}.zip", f"{sym}-fundingRate-{y}-{m:02d}.zip"
+        out["klines"].append((f"{BASE}/klines/{sym}/1h/{k}", os.path.join(CACHE, "klines", k)))
+        out["funding"].append((f"{BASE}/fundingRate/{sym}/{f}", os.path.join(CACHE, "funding", f)))
+        if spot:
+            out["spot"].append((f"{SPOT_BASE}/klines/{sym}/1h/{k}", os.path.join(CACHE, "spot_klines", k)))
     return out
 
 

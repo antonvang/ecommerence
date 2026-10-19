@@ -351,12 +351,15 @@ class Handler(BaseHTTPRequestHandler):
         try:
             p = urlparse(self.path).path
             if p == "/api/control/approve":
+                from lab import families               # amendment 8: no dashboard route for family instances
                 ev = {"committed_files": body.get("committed") or []} if body.get("committed") else None
                 code = lifecycle.request_approval(db, body["exp_id"], body["to"], actor, body.get("reason", ""), ev,
-                                                  guards=(registry.complete_spec_guard,))
+                                                  guards=(registry.complete_spec_guard, families.no_web_guard))
                 return self._send(200, {"code": code, "expires_in_s": lifecycle.APPROVAL_SECONDS})
             if p == "/api/control/confirm":
-                exp, to = lifecycle.confirm(db, body.get("code", ""), actor, guards=(registry.complete_spec_guard,))
+                from lab import families
+                exp, to = lifecycle.confirm(db, body.get("code", ""), actor,
+                                            guards=(registry.complete_spec_guard, families.no_web_guard))
                 return self._send(200, {"exp_id": exp, "state": to})
             if p == "/api/control/pause":                 # risk-reducing: always allowed for a paper strategy
                 if lifecycle.state(db, body["exp_id"]) != "PAPER_TRADING":

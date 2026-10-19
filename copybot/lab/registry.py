@@ -43,12 +43,13 @@ def last_commit(path):
         return None
 
 
-def graveyard(db, mechanism_tag, execution, fp):
-    """Rejected or withdrawn experiments with the same fingerprint, or the same mechanism and execution style."""
+def graveyard(db, mechanism_tag, execution, fp, exclude=()):
+    """Rejected or withdrawn experiments with the same fingerprint, or the same mechanism and execution style.
+    `exclude`: ids that never count (a family's own members, amendment 8 point 6)."""
     hits = []
     for r in db.q("SELECT exp_id, mechanism_tag, fingerprint, spec_json FROM experiments e WHERE version="
                   "(SELECT MAX(version) FROM experiments WHERE exp_id=e.exp_id)"):
-        if state(db, r["exp_id"]) not in ("REJECTED", "WITHDRAWN"):
+        if r["exp_id"] in exclude or state(db, r["exp_id"]) not in ("REJECTED", "WITHDRAWN"):
             continue
         spec = json.loads(r["spec_json"] or "{}")
         if r["fingerprint"] == fp or (r["mechanism_tag"] == mechanism_tag and spec.get("execution") == execution):
@@ -56,12 +57,26 @@ def graveyard(db, mechanism_tag, execution, fp):
     return hits
 
 
-def covering(db, mechanism_tag, execution, fp):
+def graveyard_related(db, tags, execution=None, exclude=()):
+    """Rejected or withdrawn experiments whose mechanism tag is one of `tags` (a tag and its related tags from
+    research/families/VOCABULARY.json, amendment 8 point 6); with `execution`, only that execution style."""
+    hits = []
+    for r in db.q("SELECT exp_id, mechanism_tag, spec_json FROM experiments e WHERE version="
+                  "(SELECT MAX(version) FROM experiments WHERE exp_id=e.exp_id)"):
+        if r["exp_id"] in exclude or r["mechanism_tag"] not in tags or \
+                state(db, r["exp_id"]) not in ("REJECTED", "WITHDRAWN"):
+            continue
+        if execution is None or json.loads(r["spec_json"] or "{}").get("execution") == execution:
+            hits.append(r["exp_id"])
+    return hits
+
+
+def covering(db, mechanism_tag, execution, fp, exclude=()):
     """Non-final experiments (incl. EXTERNAL) that already study this fingerprint or mechanism + execution."""
     hits = []
     for r in db.q("SELECT exp_id, mechanism_tag, fingerprint, spec_json FROM experiments e WHERE version="
                   "(SELECT MAX(version) FROM experiments WHERE exp_id=e.exp_id)"):
-        if state(db, r["exp_id"]) in FINAL or state(db, r["exp_id"]) in ("SUPPRESSED", None):
+        if r["exp_id"] in exclude or state(db, r["exp_id"]) in FINAL or state(db, r["exp_id"]) in ("SUPPRESSED", None):
             continue
         spec = json.loads(r["spec_json"] or "{}")
         if r["fingerprint"] == fp or (r["mechanism_tag"] == mechanism_tag and spec.get("execution") == execution):
@@ -69,14 +84,15 @@ def covering(db, mechanism_tag, execution, fp):
     return hits
 
 
-def discover(db, exp_id, hypothesis, mechanism_tag, instrument, horizon, execution, source, actor, extra=None):
+def discover(db, exp_id, hypothesis, mechanism_tag, instrument, horizon, execution, source, actor, extra=None,
+             exclude=()):
     """Create a DISCOVERED candidate, or SUPPRESSED if it matches the graveyard. Never evaluates profitability."""
     if db.one("SELECT 1 FROM experiments WHERE exp_id=?", exp_id):
         raise RegistryError(f"{exp_id} already exists")
     fp = fingerprint(mechanism_tag, instrument, horizon, execution)
     spec = {"hypothesis": hypothesis, "instrument": instrument, "horizon": horizon, "execution": execution,
             "sources": [source], **(extra or {})}
-    dup = graveyard(db, mechanism_tag, execution, fp)
+    dup = graveyard(db, mechanism_tag, execution, fp, exclude)
     with db.tx():
         db.append("experiments", exp_id=exp_id, version=1, created_ts=int(time.time()), mechanism_tag=mechanism_tag,
                   fingerprint=fp, spec_json=spec, note="discovered")

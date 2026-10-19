@@ -20,7 +20,8 @@ from lab.risk import Risk
 PIPE = ("DISCOVERED", "QUEUED", "RUNNING", "COST_CHECK", "VALIDATION", "PAPER_ELIGIBLE", "PAPER_TRADING", "ACCEPTED",
         "REJECTED", "PAUSED")
 STAGE_OF_KIND = {"data": "RUNNING", "backtest": "RUNNING", "cost": "COST_CHECK", "adversarial": "VALIDATION",
-                 "validate": "VALIDATION", "report": "VALIDATION", "holdout": "VALIDATION", "observe": "VALIDATION"}
+                 "validate": "VALIDATION", "report": "VALIDATION", "holdout": "VALIDATION", "observe": "VALIDATION",
+                 "observe_interim": "VALIDATION"}
 NON_STAGE_KINDS = ("diagnose", "scan_digest", "scan_dossier")   # decide nothing: never move an experiment on the orbit
 STAGE_OF_STATE = {"DISCOVERED": "DISCOVERED", "REGISTERED": "QUEUED", "SCREENING": "RUNNING",
                   "SCREEN_PASSED": "VALIDATION", "VALIDATION": "VALIDATION", "VALIDATED": "PAPER_ELIGIBLE",
@@ -226,8 +227,94 @@ def kpis(db, window_s=900, now=None):
         "retries_total": db.one("SELECT COUNT(*) FROM events WHERE kind IN ('job.retry','job.timeout')")[0],
         "disk": res["disk"], "ram": res["ram"], "ram_min_free": res["ram_min_free"], "resources_ok": res["ok"],
         "data": last_data_update(db), "gate_s7": s7_gate(db, now), "real_account_profit": REAL_ACCOUNT,
-        "research": research_progress(db, now),
+        "research": research_progress(db, now), "families": families_card(db, now),
         "last_event_id": db.one("SELECT COALESCE(MAX(id),0) FROM events")[0]}
+
+
+# ---------- amendment 8 hypothesis families (read-only) ----------
+FAMILY_VERIFY_S = 60          # the approval binding is checked with git at most once a minute (dashboard polls: 10 s)
+_family_verified = {}         # (db path, approval event id, family) -> (checked ts, still valid)
+FAMILY_PROGRESS = ("family.approved", "family.revoked", "batch.registered", "cohort.fixed", "family.closed")
+MEMBER_PROGRESS = ("job.done", "lifecycle.transition", "result.recorded", "family.interim", "holdout.opened")
+
+
+def _family_events(db, kinds, fid):
+    return [r for r in db.q(f"SELECT id, ts, kind, payload FROM events WHERE kind IN ({','.join('?' * len(kinds))}) "
+                            f"ORDER BY id", *kinds) if (_j(r["payload"]) or {}).get("family") == fid]
+
+
+def _family_approval(db, fid, now):
+    """(state, event row): approved, void (a bound file or gate value changed since), revoked, or not approved."""
+    from lab import families
+    ev = _family_events(db, ("family.approved", "family.revoked"), fid)
+    if not ev:
+        return "not approved", None
+    if ev[-1]["kind"] == "family.revoked":
+        return "revoked", ev[-1]
+    key = (db.path, ev[-1]["id"], fid)
+    hit = _family_verified.get(key)
+    if hit is None or now - hit[0] > FAMILY_VERIFY_S:
+        hit = _family_verified[key] = (now, families.approval(db, fid) == ev[-1]["id"])
+    return ("approved" if hit[1] else "void: a bound file or gate value changed since the approval"), ev[-1]
+
+
+def _family_row(db, fid, now):
+    from lab import families
+    fam = families.load(fid)
+    state, ev = _family_approval(db, fid, now)
+    members, by_state = families.members(db, fid), {}
+    for e in members:
+        st = lifecycle.state(db, e)
+        by_state[st] = by_state.get(st, 0) + 1
+    held = db.q("SELECT alpha, note FROM alpha_ledger WHERE exp_id=?", f"family:{fid}")
+    spent = sum(r[0] for r in db.q(f"SELECT alpha FROM alpha_ledger WHERE note=? AND exp_id IN "
+                                   f"({','.join('?' * len(members))})", families.SPEND_NOTE, *members)) \
+        if members else 0.0
+    cf, c, waiting = families.cohort(db, fid), families.closed(db, fid), None
+    w = _family_events(db, ("family.waiting",), fid)
+    if w:
+        p = _j(w[-1]["payload"]) or {}
+        later = [r["id"] for r in _family_events(db, FAMILY_PROGRESS, fid)]
+        if members:
+            later.append(db.one(f"SELECT COALESCE(MAX(id), 0) FROM events WHERE kind IN "
+                                f"({','.join('?' * len(MEMBER_PROGRESS))}) AND exp_id IN "
+                                f"({','.join('?' * len(members))})", *MEMBER_PROGRESS, *members)[0])
+        waiting = {"reasons": p.get("reasons"), "topic": p.get("topic") or "registration", "ts": w[-1]["ts"],
+                   "current": w[-1]["id"] > max(later, default=0)}     # until a later step of the family
+    return {"family": fid, "title": fam.get("title"), "tag": (fam.get("mechanism") or {}).get("tag"),
+            "approval": state, "approval_event": ev["id"] if ev else None, "approval_ts": ev["ts"] if ev else None,
+            "registered": families.registered(db, fid), "members": by_state,
+            "alpha": {"family": (fam.get("alpha") or {}).get("family"),
+                      "reserved": sum(r[0] for r in held),                # held for the family until a cohort uses it
+                      "spent": spent,                                      # alpha_i of the cohort's instances
+                      "released": -sum(r[0] for r in held if r[1] == families.RELEASE_NOTE)},
+            "cohort": {k: cf.get(k) for k in ("cohort", "M", "alpha_F", "alpha_i", "window", "sub_window", "start",
+                                              "end", "interim_not_before", "final_not_before", "selected",
+                                              "not_selected")} if cf else None,
+            "closed": c.get("outcome") if c else None, "waiting": waiting}
+
+
+def families_card(db, now=None):
+    """Amendment 8, read-only: each committed family file with its approval state, alpha reserved/spent/released, the
+    fixed cohort and its forward windows, the close and the latest waiting reason ('current' until a later step of the
+    family). Approvals are typed in a terminal only (python3 -m lab approve-family / confirm-family): no endpoint."""
+    from lab import families
+    now = now or time.time()
+    try:
+        fids = families.family_ids()
+    except OSError:
+        fids = []
+    rows = []
+    for fid in fids:
+        try:
+            rows.append(_family_row(db, fid, now))
+        except Exception as e:                    # one broken family file never breaks the KPIs
+            rows.append({"family": fid, "error": repr(e)[:200]})
+    used = families.alpha_reserved(db)
+    return {"families": rows, "W0": families.W0, "alpha_used": used, "alpha_left": families.W0 - used,
+            "open": sorted(families.open_families(db)), "open_max": families.OPEN_MAX,
+            "programme_stop": families.programme_stop(db, now),
+            "approval": "terminal only: python3 -m lab approve-family / confirm-family (amendment 8 point 5)"}
 
 
 def _untested_templates(db):
@@ -875,9 +962,18 @@ def approvals(db):
         if x["state"] in NEEDS_YOU:
             n, ex, ver = plain(db, x["exp_id"])
             to, what = NEEDS_YOU[x["state"]]
-            tpl = ((_j(registry.latest(db, x["exp_id"])["spec_json"]) or {}).get("template"))
+            spec = _j(registry.latest(db, x["exp_id"])["spec_json"]) or {}
+            tpl = spec.get("template")
             if x["state"] == "SCREEN_PASSED" and tpl in ("vrp_timing", "btc_volume_share"):
                 to, what = None, "Ingen ren slut-test mulig: BTC/ETH-data for 2024 er allerede set (PROTOCOL v3 ændring 1)"
+            elif spec.get("family"):                  # amendment 8 points 5 and 16: typed in a terminal, no button
+                to, what = None, (
+                    f"Kun i terminalen: python3 -m lab approve {x['exp_id']} VALIDATION --reason ... --committed ... "
+                    f"og derefter python3 -m lab confirm <kode> (ændring 8 punkt 16)"
+                    if to == "VALIDATION" and spec.get("clean_holdout") else
+                    "Ingen ren slut-test i familiefilen: standser her (ændring 8 punkt 16)" if to == "VALIDATION" else
+                    "Simuleret handel for familier kræver et live spot-feed og en senere ændring (ændring 8 "
+                    "punkt 16)")
             waiting.append({"exp_id": x["exp_id"], "name": n, "explain": ex, "round": ver, "state": x["state"],
                             "status": STATE_PLAIN[x["state"]], "to": to, "action": what,
                             "needs_evidence": x["state"] in ("SCREEN_PASSED", "PAUSED")})

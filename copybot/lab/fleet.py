@@ -23,7 +23,7 @@ from lab.db import DB
 from lab.risk import Risk
 from lab.supervisor import Worker
 
-HEAVY = {"backtest", "cost", "adversarial", "validate", "holdout", "observe"}
+HEAVY = {"backtest", "cost", "adversarial", "validate", "holdout", "observe", "observe_interim"}
 # Heavy steps run in worker processes (Python threads cannot use several cores at once). One slot per process;
 # two cores stay free for the supervisor, agents, dashboard and the rest of the PC. LAB_SLOTS overrides,
 # LAB_THREADS=1 runs heavy steps in-thread (used by tests that patch module state).
@@ -308,6 +308,12 @@ class Agent:
         except Exception as e:
             stop.set()
             keeper.join(5)
+            if isinstance(e, pipeline.Deferred):            # amendment 9: waiting for the embargo is not a failure
+                done = jobs.defer(db, jid, self.name, str(e), e.until)
+                self.log("job.deferred", job=jid, exp=eid, until=e.until, error=repr(e), deferred=done)
+                self.beat(db, "idle", detail=f"deferred: {e}"[:200], current_job=None, current_exp=None,
+                          last_result=f"{job['kind']} deferred", next_action="claim next job")
+                return
             broken = type(e).__name__ == "BrokenProcessPool"
             if STOPPING.is_set() or (broken and STOPPING.wait(STOP_GRACE_S)):   # a stop killed it: not a failure
                 try:
@@ -378,16 +384,19 @@ def _summary(res, limit=300):
 
 # ---------- periodic functions ----------
 def strategy_pass(db):
-    """Register DISCOVERED catalogue instances whose template has a valid human approval; queue approved holdouts."""
-    from lab import registry
+    """Register DISCOVERED catalogue instances whose template has a valid human approval, and instances of approved
+    families (amendment 8: one batch per family); queue approved holdouts."""
+    from lab import families, registry
     found = [x["exp_id"] for x in registry.status(db) if x["state"] == "DISCOVERED" and x["exp_id"].startswith("E_")]
     registered = pipeline.register_batch(db, found, "strategy-1") if found else []     # one batch per pass (v2)
+    fams = families.pass_(db, "strategy-1")                                             # errors contained per family
     from lab import promotion
     decisions = [d for d in promotion.step(db) if d.get("applicable")]                 # amendment 4: one decision path
     from lab import scanresearch
     return {"registered": registered, "promotions": [(d["exp_id"], d["to"], d["allowed"]) for d in decisions],
             "holdouts_queued": pipeline.enqueue_holdouts(db), "diagnostics_queued": pipeline.enqueue_diagnostics(db),
-            "scan_research_queued": scanresearch.enqueue(db)}           # amendment 9 section 3: digest and dossiers
+            "scan_research_queued": scanresearch.enqueue(db),           # amendment 9 section 3: digest and dossiers
+            **({"families": fams} if fams else {})}
 
 
 def external_watch(db, now=None):
@@ -447,7 +456,10 @@ def paper_pass(db):
 
 
 def catalogue_pass(db):
-    return [{"exp_id": e, "state": s, "duplicate_of": d} for e, s, d in pipeline.discover_catalogue(db)]
+    """Catalogue templates, then the instances of every committed, valid family file (amendment 8 point 6)."""
+    from lab import families
+    return [{"exp_id": e, "state": s, "duplicate_of": d} for e, s, d in
+            pipeline.discover_catalogue(db) + families.discover_all(db)]
 
 
 def scanner_pass(db):
@@ -472,9 +484,9 @@ ROSTER = (
     ("adversarial-2", "Adversarial agent: look-ahead, poison, delay, placebo", ("adversarial",), None, None, True),
     ("adversarial-3", "Adversarial agent: look-ahead, poison, delay, placebo", ("adversarial",), None, None, True),
     ("validation-1", "Validation agent: frozen variant on validation; forward test; sealed holdout after approval",
-     ("validate", "holdout", "observe"), None, None, True),
+     ("validate", "holdout", "observe", "observe_interim"), None, None, True),
     ("validation-2", "Validation agent: frozen variant on validation; forward test; sealed holdout after approval",
-     ("validate", "holdout", "observe"), None, None, True),
+     ("validate", "holdout", "observe", "observe_interim"), None, None, True),
     ("report-1", "Reporting agent: results, lifecycle verdicts, markdown reports; diagnostics of finished experiments",
      ("report", "diagnose", "scan_digest", "scan_dossier"), None, None, False),
     ("paper-1", "Paper execution agent: simulated orders for PAPER_TRADING experiments only", None, paper_pass, 60,

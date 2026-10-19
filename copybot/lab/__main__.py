@@ -117,9 +117,11 @@ def family_cmd(args, db, out, ask=input):
         for f in sorted(os.listdir(families.FAMILY_DIR)):
             if f.endswith(".json") and f != "VOCABULARY.json":
                 fid = f[:-5]
-                a = families.approval(db, fid)
+                a, cf, c = families.approval(db, fid), families.cohort(db, fid), families.closed(db, fid)
                 out(f"  {fid}: {'approved (event ' + str(a) + ')' if a else 'not approved'}"
-                    f"{', registered' if families.registered(db, fid) else ''}")
+                    f"{', registered' if families.registered(db, fid) else ''}"
+                    f"{', cohort ' + cf['cohort'] + ' M ' + str(cf['M']) if cf else ''}"
+                    f"{', closed ' + str(c.get('outcome')) if c else ''}")
         return 0
     except families.FamilyError as e:
         out(f"refused: {e}")
@@ -374,8 +376,10 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
                                               {"committed_files": args.committed} if args.committed else None,
                                               guards=(registry.complete_spec_guard,))
             out(f"approval code for {args.exp} -> {args.to}: {code}   (confirm within 15 minutes: python -m lab confirm {code})")
-        elif args.cmd == "confirm":
-            exp, to = lifecycle.confirm(db, args.code, human(), guards=(registry.complete_spec_guard,))
+        elif args.cmd == "confirm":                 # a family instance (amendment 8 point 6): interactive terminal only
+            from lab import families
+            exp, to = lifecycle.confirm(db, args.code, human(), guards=(registry.complete_spec_guard,
+                                                                         families.terminal_guard))
             out(f"{exp} -> {to}")
         elif args.cmd == "transition":
             ev = {"result_id": args.result_id} if args.result_id is not None else None

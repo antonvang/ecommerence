@@ -164,6 +164,22 @@ def release(db, job_id, worker_id, reason, now=None):
     return True
 
 
+def defer(db, job_id, worker_id, reason, until, now=None):
+    """A job that may not run yet (amendment 9: family files under the download embargo) goes back to the queue until
+    `until` and gets its attempt back: waiting is not an error (event job.deferred). Only the lease owner can."""
+    now = now or time.time()
+    with db.tx():
+        j = get(db, job_id)
+        if not j or j["status"] != "running" or j["lease_owner"] != worker_id:
+            return False
+        db.con.execute("UPDATE jobs SET status='queued', attempts=MAX(attempts - 1, 0), next_run=?, lease_owner=NULL, "
+                       "lease_until=NULL, error=?, updated_ts=? WHERE job_id=?",
+                       (max(now, until), str(reason)[:500], now, job_id))
+        db.event("job.deferred", worker_id, j["exp_id"], {"job_id": job_id, "kind": j["kind"], "until": int(until),
+                                                          "reason": str(reason)[:200]})
+    return True
+
+
 def _expire(db, now):
     for r in db.q("SELECT job_id, lease_owner, attempts, max_attempts, exp_id FROM jobs WHERE status='running' AND "
                   "lease_until<?", now):
