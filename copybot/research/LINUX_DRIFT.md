@@ -132,7 +132,7 @@ Driftsregler, ikke en protokolændring: ingen porte, vinduer, paneler, data elle
 |---|---|---|---|
 | 10-18 04:37:50 → 06:39:35 | Windows | 121,8 min | Processen stod stille og fortsatte uden genstart (dvale eller frosset konsol; ikke bevist) |
 | 10-18 10:15:10 → 11:20:08 | Windows → Linux | 65,0 min | Windows-pc'en genstartede; indsamleren blev startet på Linux 11:19:54 |
-| 10-19 07:39:52 → 10:30:02 | Linux | 170,2 min | Pæn genstart af maskinen 07:40:27 (`last -x`); ca. 165 min gik med at vente på start i hånden |
+| 10-19 07:39:52 → 10:30:02 | Linux | 170,2 min | Brugeren trykkede på tænd/sluk-knappen 07:40:27 (systemjournalen: `Power key pressed short` → `Powering off`; bekræftet af brugeren); ca. 165 min gik med at vente på start i hånden |
 
 - I alle tre huller var der 0 snapshots og 0 trade-polls. Et netværksudfald havde givet polls med `ok=0`
   (`pm_lp.py` gemmer også fejlede polls); der er 0 fejlede polls ud af 140.400. Dækningsberegningen er korrekt
@@ -185,8 +185,8 @@ Driftsregler, ikke en protokolændring: ingen porte, vinduer, paneler, data elle
   `systemctl --user daemon-reload`, `loginctl disable-linger anton`. Start derefter i hånden som før.
 
 **D. Ingen genstartsknap på låseskærmen.**
-- Genstarten 10-19 skete, mens låseskærmens greeter-session (siden 22:02 UTC aftenen før) stadig var åben.
-  LightDM's greeter har en strømmenu, der virker uden login. Det er ikke bevist, at den blev brugt.
+- Udført af brugeren 2026-10-19. Grundlaget var en hypotese om genstarten 10-19, som systemjournalen siden har
+  afkræftet (det var tænd/sluk-knappen, trykket af brugeren selv). Ændringen beholdes som ekstra sikring.
 - Ændring (brugeren, kræver sudo): fjern `~power` fra greeterens indikatorer. Den gælder fra næste gang
   låseskærmen vises. LightDM må ikke genstartes (det lukker skrivebordssessionen).
   ```
