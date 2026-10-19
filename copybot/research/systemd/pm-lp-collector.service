@@ -1,0 +1,25 @@
+# pm_lp_v1-indsamleren som systemd-brugertjeneste (research/LINUX_DRIFT.md, "pm_lp: beskyttelse af holdout", punkt C).
+# Installeres KUN, når `python3 -m lab gate` viser S7 OPEN (godkendt af brugeren 2026-10-19 på den betingelse).
+# Starter indsamleren ved opstart af maskinen (kræver linger) og igen efter et nedbrud. Ingen ordrer, ingen konto,
+# kun offentlige API'er; samme start som i hånden (START_PM_LP.sh). Fortryd: systemctl --user disable pm-lp-collector.
+[Unit]
+Description=pm_lp_v1 indsamler (observationsstudie, kun offentlige API'er)
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+WorkingDirectory=%h/ecommerence/copybot
+# Collector.run kalder API'et før sin fejltolerante løkke (research/pm_lp.py refresh_rewards): vent på navneopslag
+# efter opstart, højst 10 min, så indsamleren ikke stopper, fordi netværket ikke er oppe endnu.
+ExecStartPre=/bin/sh -c 'i=0; until getent hosts clob.polymarket.com >/dev/null; do i=$$((i+1)); [ $$i -ge 120 ] && exit 1; sleep 5; done'
+ExecStart=%h/ecommerence/copybot/START_PM_LP.sh
+StandardOutput=append:%h/ecommerence/copybot/data/research/pm_lp/collector.log
+StandardError=append:%h/ecommerence/copybot/data/research/pm_lp/collector.log
+# Efter et nedbrud: ny start efter 60 s. "indsamling færdig" (D0+41) afslutter med 0 og startes ikke igen. Kører en
+# indsamler allerede (collector.lock), afviser den nye sig selv og prøver igen hvert minut (én loglinje pr. forsøg).
+Restart=on-failure
+RestartSec=60
+TimeoutStopSec=30
+
+[Install]
+WantedBy=default.target

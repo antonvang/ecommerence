@@ -109,7 +109,8 @@ hybrid-sleep.target`. Fortryd med `unmask`. Kræver din godkendelse.
 
 ## Genstart og strømsvigt
 
-- Alt stopper, og **intet starter af sig selv.** Det er bevidst: autostart er S7-automatisering.
+- Alt stopper, og **intet starter af sig selv.** Det er bevidst: autostart er S7-automatisering. Undtagelse, når
+  S7 er åben og tjenesten er installeret: indsamleren (se "pm_lp: beskyttelse af holdout", punkt C).
 - Efter genstart kører du de tre startlinjer ovenfor, i rækkefølgen indsamler, laboratorium, vagt.
 - **Indsamleren** genoptager med samme D0 (2026-10-17).
   - Målt ved genstart samme dag: første snapshot 6–14 s efter start.
@@ -120,6 +121,76 @@ hybrid-sleep.target`. Fortryd med `unmask`. Kræver din godkendelse.
   `python3 -m lab gate` viser tællingen.
 - **Varm journal efter `kill -9` eller strømsvigt.** Vagten kan så melde "pm_lp database unreadable". Indsamleren
   ruller journalen tilbage selv, næste gang den starter. Slet aldrig `pm_lp.db-journal` i hånden.
+
+## pm_lp: beskyttelse af holdout (godkendt af brugeren 2026-10-19)
+
+Driftsregler, ikke en protokolændring: ingen porte, vinduer, paneler, data eller D0 ændres (PM_LP_SPEC er uændret).
+
+**Grundlag (read-only undersøgelse 2026-10-19, alle tider UTC):**
+
+| Hul | Vært | Varighed | Årsag |
+|---|---|---|---|
+| 10-18 04:37:50 → 06:39:35 | Windows | 121,8 min | Processen stod stille og fortsatte uden genstart (dvale eller frosset konsol; ikke bevist) |
+| 10-18 10:15:10 → 11:20:08 | Windows → Linux | 65,0 min | Windows-pc'en genstartede; indsamleren blev startet på Linux 11:19:54 |
+| 10-19 07:39:52 → 10:30:02 | Linux | 170,2 min | Pæn genstart af maskinen 07:40:27 (`last -x`); ca. 165 min gik med at vente på start i hånden |
+
+- I alle tre huller var der 0 snapshots og 0 trade-polls. Et netværksudfald havde givet polls med `ok=0`
+  (`pm_lp.py` gemmer også fejlede polls); der er 0 fejlede polls ud af 140.400. Dækningsberegningen er korrekt
+  (rækker = runder × 200 hver dag).
+- D1 er gennemsnittet over hele holdout (10-31 → 11-13), ikke en daglig grænse: alle snapshot-rækker / (markedsdage
+  × 1440) (`pm_lp.coverage`). Uden huller er dækningen ca. 97,9 % (en runde pr. ca. 61,3 s). Budgettet til
+  nedetid er derfor ca. 1.600 min (ca. 26 timer) i alt over de 14 dage. De tre huller ovenfor ville tilsammen have
+  kostet ca. 1,8 procentpoint.
+
+**A. Efter enhver genstart eller stop: indsamleren først og straks.**
+- Start indsamleren, før noget andet undersøges, merges, testes eller deployes. Først derefter laboratoriet og
+  vagten (rækkefølgen ovenfor).
+- Undersøg årsagen bagefter, mens indsamleren kører.
+
+**B. Ingen planlagte ændringer 2026-10-31 → 2026-11-27** (holdout og opfølgning på markedernes afgørelse).
+- Ingen planlagt genstart, systemopdatering eller deploy, heller ikke af laboratoriet.
+- Indsamleren stoppes aldrig med vilje i perioden.
+- Kan noget ikke vente (fx en sikkerhedsrettelse), kræver det brugerens udtrykkelige godkendelse, og indsamleren
+  bliver ved med at køre.
+
+**C. Autostart af indsamleren alene, først når S7 er åben.**
+- Forudsætning: `python3 -m lab gate` viser `S7 gate: OPEN` (tidligst ca. 2026-10-26 10:30 UTC). Før det installeres
+  intet. Laboratoriet og vagten startes fortsat i hånden.
+- Unit-fil: `research/systemd/pm-lp-collector.service`. Den venter på navneopslag efter opstart (højst 10 min),
+  fordi indsamleren kalder API'et før sin fejltolerante løkke, og den starter igen 60 s efter et nedbrud.
+- Installation (brugeren, i en terminal; den kørende indsamler røres ikke):
+  ```
+  mkdir -p ~/.config/systemd/user
+  cp ~/ecommerence/copybot/research/systemd/pm-lp-collector.service ~/.config/systemd/user/
+  systemctl --user daemon-reload
+  systemctl --user enable pm-lp-collector.service      # kun enable: ingen start nu
+  loginctl enable-linger anton                          # brugertjenester starter ved opstart uden login
+  ```
+- Test: én bevidst genstart i valideringsperioden (2026-10-27 → 10-29), aldrig i holdout. Bagefter:
+  `systemctl --user status pm-lp-collector`, ny linje i `runs`, første snapshot inden for få minutter. Start
+  laboratoriet i hånden inden for ca. 1 time (S7, se ovenfor).
+- Når tjenesten er slået til, startes og stoppes indsamleren kun med `systemctl --user start|stop pm-lp-collector`,
+  aldrig med START_PM_LP.sh i hånden (den anden kopi afvises af `collector.lock` og prøves igen hvert minut).
+- Fortryd: `systemctl --user disable --now pm-lp-collector`, `rm ~/.config/systemd/user/pm-lp-collector.service`,
+  `systemctl --user daemon-reload`, `loginctl disable-linger anton`. Start derefter i hånden som før.
+
+**D. Ingen genstartsknap på låseskærmen.**
+- Genstarten 10-19 skete, mens låseskærmens greeter-session (siden 22:02 UTC aftenen før) stadig var åben.
+  LightDM's greeter har en strømmenu, der virker uden login. Det er ikke bevist, at den blev brugt.
+- Ændring (brugeren, kræver sudo): fjern `~power` fra greeterens indikatorer. Den gælder fra næste gang
+  låseskærmen vises. LightDM må ikke genstartes (det lukker skrivebordssessionen).
+  ```
+  sudo cp -a /etc/lightdm/lightdm-gtk-greeter.conf /etc/lightdm/lightdm-gtk-greeter.conf.bak-20261019
+  echo 'indicators = ~host;~spacer;~clock;~spacer;~session;~language;~a11y' | sudo tee -a /etc/lightdm/lightdm-gtk-greeter.conf
+  ```
+- Fortryd: `sudo cp -a /etc/lightdm/lightdm-gtk-greeter.conf.bak-20261019 /etc/lightdm/lightdm-gtk-greeter.conf`.
+- Tænd/sluk-knappen og genstart fra skrivebordet virker stadig.
+
+**E. Læseadgang til systemjournalen.**
+- Så en fremtidig genstart kan bevises (hvem eller hvad udløste den). Gruppen `systemd-journal` giver kun adgang
+  til journalen (mindre end `adm`, som også giver alle filer i `/var/log`).
+- Ændring (brugeren, kræver sudo): `sudo usermod -aG systemd-journal anton`. Gælder fra næste login.
+- Fortryd: `sudo gpasswd -d anton systemd-journal`.
 
 ## Overvågning
 
