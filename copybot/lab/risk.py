@@ -9,6 +9,7 @@ and excluded from any resume decision.
 from __future__ import annotations
 
 import json
+import os
 import time
 
 from lab import lifecycle
@@ -129,9 +130,9 @@ class Risk:
 
     # ---------- breakers ----------
     def pause(self, exp_id, rule, value, threshold, detail, cancel_open=None):
-        if self.paused(exp_id):
-            return
-        with self.db.tx():
+        with self.db.tx():                             # BEGIN IMMEDIATE: two breakers at once record one PAUSE
+            if self.paused(exp_id):
+                return
             self._event(exp_id, rule, value, threshold, "PAUSE", detail)
         if cancel_open:
             cancel_open(exp_id, f"paused by {rule}")
@@ -140,19 +141,24 @@ class Risk:
                                       {"rule": rule, "value": value, "threshold": threshold})
 
     def trip_fail_closed(self, rule, detail):
-        if self.fail_closed():
-            return
-        with self.db.tx():
+        with self.db.tx():                             # BEGIN IMMEDIATE: serialised with clear_fail_closed
+            if self.fail_closed():
+                return
             self._event(GLOBAL, rule, None, None, "FAIL_CLOSED", detail)
 
     def fail_closed_causes(self):
         """The conditions that trip FAIL_CLOSED and are not re-checked within seconds by the fleet: broken hash chains
         or missing append-only triggers and cited evidence that does not resolve (checked at start only), an
-        overfilled order (checked at start and at that ledger's next fill), and a started ledger that does not
-        reconcile. Returns problems (empty = the cause is gone)."""
-        from lab import legacy
+        overfilled order (checked at start and at that ledger's next fill), a started ledger that does not reconcile,
+        and free disk below the floor (re-checked every minute by the supervisor). Returns problems (empty = the cause
+        is gone)."""
+        from lab import legacy, ops
         from lab.paper import PaperEngine
         out = []
+        if self.db.path != ":memory:":
+            d = ops.disk(os.path.dirname(os.path.abspath(self.db.path)))
+            if not d["free_ok"]:
+                out.append(f"disk: {d['free']} bytes free < {d['min_free']}")
         chains, triggers = self.db.verify()
         broken = {t: b for t, (_, b) in chains.items() if b is not None}
         if broken or not triggers:
@@ -173,17 +179,22 @@ class Risk:
         return out
 
     def clear_fail_closed(self, actor, reason):
-        """Only a human, and only once the cause is gone (fail_closed_causes): a CLEAR never lets the lab trade on a
-        broken registry, an overfill or an unreconciled ledger."""
+        """Only a human, only an active FAIL_CLOSED, and only once the cause is gone (fail_closed_causes). The checks
+        and the CLEAR run in one BEGIN IMMEDIATE transaction (about 1 s on the live registry; other writers wait):
+        nothing can fill, overfill or trip in between, and an error in any check raises, so it never clears on a
+        doubt. Returns True if a CLEAR was written, False if the lab was not FAIL_CLOSED."""
         if not actor.startswith("human:"):
             raise lifecycle.LifecycleError("only a human can clear FAIL_CLOSED")
         if not reason or len(reason) < 10:
             raise lifecycle.LifecycleError("a reason is required")
-        causes = self.fail_closed_causes()
-        if causes:
-            raise lifecycle.LifecycleError("FAIL_CLOSED stays until the cause is gone: " + "; ".join(causes))
         with self.db.tx():
+            if not self.fail_closed():
+                return False
+            causes = self.fail_closed_causes()
+            if causes:
+                raise lifecycle.LifecycleError("FAIL_CLOSED stays until the cause is gone: " + "; ".join(causes))
             self._event(GLOBAL, "manual_clear", None, None, "CLEAR", reason, actor)
+        return True
 
     def record_resume(self, exp_id, actor):
         """Log the CLEAR that pairs with a human-approved PAUSED -> PAPER_TRADING transition."""

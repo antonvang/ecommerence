@@ -267,7 +267,7 @@ details.more[open]>summary{margin-bottom:12px}
     </div>
   </div>
 
-  <div class="banner red" id="b-fail">LAB ER FAIL_CLOSED — ingen nye simulerede handler eller jobs, før et menneske rydder det. <button class="btn danger" id="clearfc">Ryd med begrundelse…</button></div>
+  <div class="banner red" id="b-fail">LAB ER FAIL_CLOSED — ingen nye simulerede handler eller jobs, før et menneske rydder det. Ryd det i en terminal, når årsagen er væk: <span class="mono">python3 -m lab clear-fail-closed --reason "..."</span></div>
   <div class="banner amber" id="b-ctl"></div>
   <div class="banner amber" id="b-off"></div>
 
@@ -964,8 +964,7 @@ $("#drawer").addEventListener("click", ev => { if (ev.target.id === "drawer") $(
 addEventListener("keydown", ev => { if (ev.key === "Escape") $("#drawer").classList.remove("open"); });
 $("#kind").addEventListener("change", () => refreshAudit().catch(() => showOffline()));
 $("#logsel").addEventListener("change", () => { logAgent = $("#logsel").value; loadLog().catch(() => showOffline()); });
-$("#clearfc").onclick = async () => { const reason = prompt("Why is it safe to clear FAIL_CLOSED? (≥ 10 characters)"); if (!reason) return;
-  try { await control("/api/control/clear-fail-closed", {reason}); refresh(true); } catch (err) { alert("Refused: " + err.message); } };
+
 setInterval(() => { $("#clock").textContent = new Date().toISOString().slice(11,19) + " UTC"; }, 1000);
 
 const SNAPSHOT = new URLSearchParams(location.search).has("snapshot");   // static render for screenshots: no live stream

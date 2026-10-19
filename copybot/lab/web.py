@@ -397,9 +397,10 @@ class Handler(BaseHTTPRequestHandler):
                     return self._send(200, {"template": tpl, "approved": True})
                 except templates.TemplateError as e:
                     return self._send(400, {"error": str(e)})
-            if p == "/api/control/clear-fail-closed":
-                Risk(db).clear_fail_closed(actor, body.get("reason", ""))
-                return self._send(200, {"fail_closed": Risk(db).fail_closed()})
+            if p == "/api/control/clear-fail-closed":     # the token is in the served page: any local process
+                return self._send(403, {"error": "FAIL_CLOSED is cleared only in a terminal: python3 -m lab "   # has it
+                                                 "clear-fail-closed --reason \"...\" (refused while the cause holds)",
+                                        "fail_closed": Risk(db).fail_closed()})
             return self._send(404, {"error": "no such control"})
         except (lifecycle.LifecycleError, registry.RegistryError, AccessRefused, KeyError) as e:
             return self._send(400, {"error": str(e)})

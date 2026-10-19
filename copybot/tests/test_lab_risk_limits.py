@@ -246,5 +246,155 @@ class ClearingFailClosedNeedsTheCauseGone(Base):
         self.assertFalse(self.risk.fail_closed())
 
 
+class ClearingFailClosedIsAtomic(Base):
+    """The checks and the CLEAR are one BEGIN IMMEDIATE transaction: a cause that arises while the checks run waits
+    and is recorded after the CLEAR, instead of being swallowed by it. An error in a check refuses the clear."""
+
+    def trip_meanwhile(self):
+        """Run clear_fail_closed while another process trips disk_low during its checks; returns that thread."""
+        done, orig = [], Risk.fail_closed_causes
+
+        def trip():
+            other = DB(self.path)
+            try:
+                Risk(other, now=lambda: NOW).trip_fail_closed("disk_low", "fixture: the disk filled up meanwhile")
+                done.append(1)
+            finally:
+                other.close()
+        t = threading.Thread(target=trip)
+
+        def causes(risk):
+            t.start()
+            t.join(0.5)                       # the old code let it finish here: FAIL_CLOSED was still set, so no-op
+            return orig(risk)
+        with mock.patch.object(Risk, "fail_closed_causes", causes):
+            self.assertTrue(self.risk.clear_fail_closed("human:anton", "fixture: the worker is back"))
+        t.join(30)
+        return done
+
+    def test_a_cause_that_arises_during_the_checks_is_not_cleared(self):
+        self.risk.trip_fail_closed("worker_failed", "fixture: a worker died")
+        self.assertEqual(self.trip_meanwhile(), [1])
+        self.assertTrue(self.risk.fail_closed())
+        last = self.db.one("SELECT rule FROM risk_events WHERE exp_id=? AND action IN ('FAIL_CLOSED','CLEAR') "
+                           "ORDER BY id DESC LIMIT 1", GLOBAL)[0]
+        self.assertEqual(last, "disk_low")
+
+    def test_an_error_in_a_check_refuses_the_clear(self):
+        self.risk.trip_fail_closed("integrity", "fixture")
+        rows = self.db.one("SELECT COUNT(*) FROM risk_events")[0]
+        with mock.patch.object(DB, "verify", side_effect=RuntimeError("fixture: verify crashed")):
+            with self.assertRaises(RuntimeError):
+                self.risk.clear_fail_closed("human:anton", "fixture: looked at it")
+        self.assertTrue(self.risk.fail_closed())
+        self.assertEqual(self.db.one("SELECT COUNT(*) FROM risk_events")[0], rows)
+        self.assertFalse(self.db.con.in_transaction)                      # rolled back, the registry is writable
+
+    def test_low_disk_keeps_it_closed(self):
+        self.risk.trip_fail_closed("disk_low", "fixture")
+        low = {"total": 1, "used": 1, "free": 5, "free_ok": False, "min_free": 10}
+        with mock.patch("lab.ops.disk", lambda path: low):
+            with self.assertRaises(lifecycle.LifecycleError) as c:
+                self.risk.clear_fail_closed("human:anton", "fixture: looked at it")
+        self.assertIn("disk", str(c.exception))
+        self.assertTrue(self.risk.fail_closed())
+
+    def test_a_clear_without_fail_closed_writes_nothing(self):
+        rows = self.db.one("SELECT COUNT(*) FROM risk_events")[0], self.db.one("SELECT COUNT(*) FROM events")[0]
+        self.assertFalse(self.risk.clear_fail_closed("human:anton", "fixture: nothing to clear"))
+        self.assertEqual((self.db.one("SELECT COUNT(*) FROM risk_events")[0],
+                          self.db.one("SELECT COUNT(*) FROM events")[0]), rows)
+
+
+class ConcurrentTripsAndPauses(Base):
+    """trip_fail_closed and pause check inside their write transaction: two at once record one row."""
+
+    def first_lets_the_other_go(self, call_first, call_other):
+        other = DB(self.path)
+        real_tx, fired = self.db.tx, []
+
+        def tx():
+            if not fired:
+                fired.append(1)
+                call_other(Risk(other, now=lambda: NOW))
+            return real_tx()
+        with mock.patch.object(self.db, "tx", tx):
+            call_first(self.risk)
+        other.close()
+
+    def test_two_trips_at_once_record_one_fail_closed(self):
+        trip = lambda r: r.trip_fail_closed("worker_failed", "fixture: a worker died")      # noqa: E731
+        self.first_lets_the_other_go(trip, trip)
+        self.assertEqual(self.db.one("SELECT COUNT(*) FROM risk_events WHERE action='FAIL_CLOSED'")[0], 1)
+
+    def test_two_pauses_at_once_record_one_pause(self):
+        pause = lambda r: r.pause(L, "data_fetch", None, None, "fixture: a failed fetch")    # noqa: E731
+        self.first_lets_the_other_go(pause, pause)
+        self.assertEqual(self.db.one("SELECT COUNT(*) FROM risk_events WHERE exp_id=? AND action='PAUSE'", L)[0], 1)
+
+    def test_threads_racing_trip_once(self):
+        start = threading.Barrier(4)
+
+        def go():
+            db = DB(self.path)
+            try:
+                start.wait()
+                Risk(db, now=lambda: NOW).trip_fail_closed("worker_failed", "fixture: racing workers")
+            finally:
+                db.close()
+        ts = [threading.Thread(target=go) for _ in range(4)]
+        for t in ts:
+            t.start()
+        for t in ts:
+            t.join(30)
+        self.assertEqual(self.db.one("SELECT COUNT(*) FROM risk_events WHERE action='FAIL_CLOSED'")[0], 1)
+
+
+class ClearFailClosedCommand(Base):
+    """python3 -m lab clear-fail-closed: typed by a human in a terminal, refused while the cause holds."""
+
+    def cli(self, *argv, guard=lambda step: None):
+        from lab.__main__ import main
+        lines = []
+        with mock.patch("lab.__main__.TERMINAL_GUARD", guard):
+            rc = main(list(argv), self.path, lines.append)
+        return rc, "\n".join(lines)
+
+    def test_a_human_in_a_terminal_clears_it(self):
+        self.risk.trip_fail_closed("worker_failed", "fixture: a worker died")
+        rc, txt = self.cli("clear-fail-closed", "--reason", "fixture: the worker is back")
+        self.assertEqual(rc, 0, txt)
+        self.assertIn("FAIL_CLOSED cleared", txt)
+        self.assertFalse(self.risk.fail_closed())
+        actor = self.db.one("SELECT actor FROM risk_events WHERE action='CLEAR' ORDER BY id DESC LIMIT 1")[0]
+        self.assertTrue(actor.startswith("human:"), actor)
+        rc, txt = self.cli("clear-fail-closed", "--reason", "fixture: the worker is back again")
+        self.assertEqual(rc, 0)
+        self.assertIn("nothing to clear", txt)
+
+    def test_it_prints_the_cause_and_keeps_it_closed(self):
+        self.db.event("paper.started", "human:anton", L, {"simulated": True})
+        self.risk.trip_fail_closed("reconciliation", "fixture")
+        with mock.patch.object(PaperEngine, "reconcile", lambda self, e: {"ok": False, "problems": ["fixture"]}):
+            rc, txt = self.cli("clear-fail-closed", "--reason", "fixture: looked at it")
+        self.assertEqual(rc, 1)
+        self.assertIn("refused: FAIL_CLOSED stays until the cause is gone", txt)
+        self.assertTrue(self.risk.fail_closed())
+
+    def test_an_assistant_session_or_no_terminal_is_refused(self):
+        from lab import __main__ as cli_mod
+        self.risk.trip_fail_closed("worker_failed", "fixture: a worker died")
+        with mock.patch.dict(os.environ, {"CLAUDECODE": "1"}):
+            rc, txt = self.cli("clear-fail-closed", "--reason", "an assistant clears it", guard=cli_mod.terminal_human)
+        self.assertEqual(rc, 1)
+        self.assertIn("an assistant session may not clear FAIL_CLOSED", txt)
+        env = {k: v for k, v in os.environ.items() if k != "CLAUDECODE" and not k.startswith("CLAUDE_CODE_")}
+        with mock.patch.dict(os.environ, env, clear=True), mock.patch("sys.stdin.isatty", lambda: False):
+            rc, txt = self.cli("clear-fail-closed", "--reason", "no terminal clears it", guard=cli_mod.terminal_human)
+        self.assertEqual(rc, 1)
+        self.assertIn("must be typed in an interactive terminal", txt)
+        self.assertTrue(self.risk.fail_closed())
+
+
 if __name__ == "__main__":
     unittest.main()

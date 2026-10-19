@@ -23,6 +23,7 @@
   python3 -m lab shadow-start EXP --reason ".." | shadow-stop EXP --reason ".."   (simulated shadow ledger, OBSERVATION only)
   python3 -m lab forward-start --reason ".." | forward-stop [--exp EXP] --reason ".."   (amendment 7 forward tests)
   python3 -m lab sim-resume LEDGER --reason ".."                          (resume a paused SHADOW_/FWD_ ledger)
+  python3 -m lab clear-fail-closed --reason ".."                         (terminal only; refused while the cause holds)
   python3 -m lab family-check FILE                                        (amendment 8; read-only, no network)
   python3 -m lab approve-family FID --reason ".." -> code;  python3 -m lab confirm-family   (typed by the user)
   python3 -m lab revoke-family FID --reason ".." | families                 (amendment 8)
@@ -194,6 +195,7 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
     for c in ("forward-start", "forward-stop"):
         fp = sub.add_parser(c); fp.add_argument("--exp"); fp.add_argument("--reason", required=True)
     sr = sub.add_parser("sim-resume"); sr.add_argument("ledger"); sr.add_argument("--reason", required=True)
+    cf = sub.add_parser("clear-fail-closed"); cf.add_argument("--reason", required=True)   # terminal only
     fc = sub.add_parser("family-check"); fc.add_argument("file")
     af = sub.add_parser("approve-family"); af.add_argument("fid"); af.add_argument("--reason", required=True)
     sub.add_parser("confirm-family")
@@ -326,6 +328,19 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
                                                 "amendment": "PROTOCOL_V3 amendment 7"})
             for e in ids:
                 out(f"{e}: {kind} (simulated forward-test ledger FWD_{e}; no effect on the formal tests)")
+            return 0
+        if args.cmd == "clear-fail-closed":           # a human in a terminal, once the cause is gone
+            from lab.risk import Risk
+            why = TERMINAL_GUARD("clear FAIL_CLOSED")
+            if why:
+                out(f"refused: {why}")
+                return 1
+            try:
+                done = Risk(db).clear_fail_closed(human(), args.reason)
+            except lifecycle.LifecycleError as e:
+                out(f"refused: {e}")
+                return 1
+            out("FAIL_CLOSED cleared (CLEAR recorded)" if done else "the lab is not FAIL_CLOSED: nothing to clear")
             return 0
         if args.cmd == "sim-resume":
             from lab.risk import Risk

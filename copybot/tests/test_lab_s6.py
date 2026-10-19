@@ -88,6 +88,24 @@ class Dashboard(unittest.TestCase):
         self.assertIn(self.srv.token, html)
         self.assertNotIn("__LAB_TOKEN__", html)
 
+    def test_fail_closed_cannot_be_cleared_from_the_dashboard(self):
+        """The token is in the page any local process can GET, so the dashboard never clears FAIL_CLOSED: that is
+        python3 -m lab clear-fail-closed in a terminal."""
+        from lab.risk import Risk
+        db = self.db()
+        try:
+            Risk(db).trip_fail_closed("worker_failed", "fixture: dashboard clear test")
+            code, body = self.post("/api/control/clear-fail-closed", {"reason": "a local process clears it"})
+            self.assertEqual(code, 403)
+            self.assertIn("python3 -m lab clear-fail-closed", body["error"])
+            self.assertTrue(body["fail_closed"])
+            self.assertTrue(Risk(db).fail_closed())
+            self.assertNotIn('id="clearfc"', self.get("/"))
+        finally:
+            with db.tx():
+                Risk(db)._event("GLOBAL", "fixture_cleanup", None, None, "CLEAR", "fixture cleanup", "human:t")
+            db.close()
+
     def test_numbers_come_from_the_database(self):
         ov = self.get("/api/overview")
         db = self.db()
