@@ -853,3 +853,24 @@ beviset er stadig den forhåndsregistrerede fremadtest, og den kan ikke gøres h
      højst 3 kandidater efter de samme krav som i ændring 10 punkt 5, og med antallet af afprøvede varianter i alt.
 
 5. **Rækkefølge** som ændring 10 punkt 7: deploy tidligst efter 2026-11-27, data fra 2026-11-28.
+
+## Ændring 10b (2026-10-19): udforskningsbanens data nu og netværk efter pm_lp's holdout — før kode
+
+**Beslutning:** brugeren besluttede 2026-10-19 i sessionen, at banen skal køre nu og ikke vente på pm_lp's
+tidsplan, at Claude selv træffer beslutningerne ("tag selv beslutninger og kør"), og at lab'en ikke skal følge pm_lp
+længere end nødvendigt. pm_lp's egne regler (perioder, krav, holdout, evaluering tidligst 2026-11-28) ændres ikke.
+Ændringen gælder kun banens netværk og deploy-tidspunkt; ingen gate, tærskel, alfa eller familieregel ændres.
+
+1. **Begrundelse.** pm_lp's datakrav D1 gælder kun holdout 2026-10-31..11-13. Fra 2026-11-14 stiller indsamleren
+   ikke længere priser (kun status hver 6. time til D0+41), så lab'ens netværk kan ikke skade D1. Før 2026-10-24 er
+   pm_lp i udviklingsperioden, hvor dækningen ikke er en gate (samme begrundelse som ændring 9 punkt 1).
+2. **Banens netværk** (erstatter ændring 10 punkt 4, andet punkt): banen må hente sine `explore0`-filer (USD-M
+   klines og funding, spot-klines) før 2026-10-24 00:00 UTC og igen fra 2026-11-14 00:00 UTC. COIN-M-filer først fra
+   2026-11-28 (ændring 8 punkt 17 uændret). Kun `data.binance.vision`, højst 2 samtidige downloads i hele lab'en.
+   I mellemtiden læser banen kun filer, der allerede ligger i cachen, og laver ingen forespørgsel.
+3. **Deploy** (erstatter ændring 10 punkt 7 og 10a punkt 5): koden må deployes før 2026-10-24, så filerne kan hentes
+   i tide. Deploy kræver én genstart af lab'en (flåde og dashboard) og ingen ændring af pm_lp.
+4. **F2's embargo flyttes ikke.** Den står i en fil, F1's godkendelse er bundet til (`lab/families/__init__.py`), og
+   F2 kan alligevel nå sin kohorte inden 2026-11-30.
+5. **Driftsregel B** (`research/LINUX_DRIFT.md`): deploy af lab'en er igen tilladt fra 2026-11-14; ingen planlagt
+   genstart af maskinen eller systemopdatering før 2026-11-28, så indsamlerens opfølgning ikke afbrydes.

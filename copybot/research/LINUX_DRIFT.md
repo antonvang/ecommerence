@@ -148,7 +148,9 @@ Driftsregler, ikke en protokolændring: ingen porte, vinduer, paneler, data elle
 - Undersøg årsagen bagefter, mens indsamleren kører.
 
 **B. Ingen planlagte ændringer 2026-10-31 → 2026-11-27** (holdout og opfølgning på markedernes afgørelse).
-- Ingen planlagt genstart, systemopdatering eller deploy, heller ikke af laboratoriet.
+- Ingen planlagt genstart af maskinen og ingen systemopdatering til og med 2026-11-27.
+- Ingen deploy af laboratoriet 2026-10-31 → 2026-11-13 (holdout). Fra 2026-11-14 er deploy af laboratoriet igen
+  tilladt (PROTOCOL_V3 ændring 10b: indsamleren stiller ikke længere priser), uden genstart af maskinen.
 - Indsamleren stoppes aldrig med vilje i perioden.
 - Kan noget ikke vente (fx en sikkerhedsrettelse), kræver det brugerens udtrykkelige godkendelse, og indsamleren
   bliver ved med at køre.
