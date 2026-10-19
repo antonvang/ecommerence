@@ -663,6 +663,9 @@ function renderApprovals(a){
   $("#tpls").innerHTML = a.templates.map(x => `<div class="trow"><span class="nm">${esc(x.name)}</span>
       <span>${x.can_approve ? (pendingCode["t:" + x.template] ? `<button class="btn go" data-confirm-tpl="${esc(x.template)}">Bekræft</button>` : `<button class="btn primary" data-approve-tpl="${esc(x.template)}">Godkend til test</button>`) : `<span class="chipst ${cls(x.status)}">${esc(x.status)}</span>`}</span>
       <span class="ex">${esc(x.explain || "")}</span></div>`).join("");
+  const fc = (K || {}).families, famTxt = f => f.error ? `${f.family}: fejl` : [`${f.family}: ${({"approved": "godkendt", "not approved": "ikke godkendt", "revoked": "tilbagekaldt"})[f.approval] || "godkendelse ugyldig"}`,
+    f.closed ? `lukket ${f.closed}` : f.cohort ? `kohorte ${f.cohort.cohort} · M ${f.cohort.M}` : f.registered ? "registreret" : "", f.members && Object.keys(f.members).length ? `instanser: ${Object.entries(f.members).map(([s, n]) => `${DA[s] || s} ${n}`).join(", ")}` : "", f.waiting && f.waiting.current ? `venter: ${(f.waiting.reasons_da || f.waiting.reasons || []).join("; ")}` : ""].filter(Boolean).join(" · ");
+  if (fc && fc.families && fc.families.length) $("#tpls").innerHTML += `<div class="trow"><span class="nm">Hypotesefamilier (ændring 8)</span><span class="chipst c-no">kun i terminalen</span><span class="ex">${esc(fc.families.map(famTxt).join(" | "))} · alfa ${Number(fc.alpha_used).toFixed(4)} af ${fc.W0}</span></div>`;
   $("#approvals").querySelectorAll("[data-approve-exp]").forEach(b => b.onclick = async () => {
     try { const r = await control("/api/control/approve", {exp_id: b.dataset.approveExp, to: b.dataset.to, reason: "Godkendt fra dashboardet af brugeren",
         committed: b.dataset.ev === "1" ? ["research/PROTOCOL_V2.md"] : []});

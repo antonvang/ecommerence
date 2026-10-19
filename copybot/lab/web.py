@@ -67,7 +67,8 @@ def overview(db):
     chains, triggers = db.verify()
     return {"fail_closed": rk.fail_closed(), "heartbeats": hb, "pipeline": counts, "experiments": len(st),
             "finished": len(tested), "rejected": counts.get("REJECTED", 0), "last_scan_ts": last_obs,
-            "alpha_spent": db.one("SELECT COALESCE(SUM(alpha),0) FROM alpha_ledger")[0],
+            "alpha_spent": db.one("SELECT COALESCE(SUM(alpha),0) FROM alpha_ledger WHERE COALESCE(note, '') "
+                                  "NOT LIKE 'A8 %'")[0],     # amendment 8 rows are outside W0's screening sum
             "chain_ok": triggers and all(b is None for _, b in chains.values()),
             "rows": {t: n for t, (n, _) in chains.items()}, "finished_by_mechanism": by_mech,
             "paper_only": True, "now": int(time.time())}
@@ -351,12 +352,15 @@ class Handler(BaseHTTPRequestHandler):
         try:
             p = urlparse(self.path).path
             if p == "/api/control/approve":
+                from lab import families               # amendment 8: no dashboard route for family instances
                 ev = {"committed_files": body.get("committed") or []} if body.get("committed") else None
                 code = lifecycle.request_approval(db, body["exp_id"], body["to"], actor, body.get("reason", ""), ev,
-                                                  guards=(registry.complete_spec_guard,))
+                                                  guards=(registry.complete_spec_guard, families.no_web_guard))
                 return self._send(200, {"code": code, "expires_in_s": lifecycle.APPROVAL_SECONDS})
             if p == "/api/control/confirm":
-                exp, to = lifecycle.confirm(db, body.get("code", ""), actor, guards=(registry.complete_spec_guard,))
+                from lab import families
+                exp, to = lifecycle.confirm(db, body.get("code", ""), actor,
+                                            guards=(registry.complete_spec_guard, families.no_web_guard))
                 return self._send(200, {"exp_id": exp, "state": to})
             if p == "/api/control/pause":                 # risk-reducing: always allowed for a paper strategy
                 if lifecycle.state(db, body["exp_id"]) != "PAPER_TRADING":

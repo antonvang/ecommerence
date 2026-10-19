@@ -162,6 +162,8 @@ def confirm(db, code, actor, guards=(), now=None):
     a = db.one("SELECT * FROM approvals WHERE code_hash=?", h)
     if a is None:
         raise LifecycleError("unknown approval code")
+    if a["to_state"] == "FAMILY_APPROVED":           # amendment 8: a family code is confirmed with confirm-family
+        raise LifecycleError("this is a family approval code: confirm it with python3 -m lab confirm-family")
     if not actor.startswith("human:"):
         raise LifecycleError("only a 'human:<name>' actor can confirm an approval")
     if now > a["expires_ts"]:

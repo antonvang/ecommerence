@@ -21,7 +21,8 @@ ACTOR = "system:promotion"
 SPEC = "research/PROTOCOL_V3.md"
 SUPERVISOR_FRESH_S = 30
 SCREEN_PASSES = ("PASS (screen)", "PASS (forward test)")
-LIVE_UNSUPPORTED = {"metrics", "dvol", "stable", "taker", "rates"}     # paper runner has no live feed for these yet
+LIVE_UNSUPPORTED = {"metrics", "dvol", "stable", "taker", "rates",     # paper runner has no live feed for these yet
+                    "spot", "delivery"}                                # amendment 8 point 16: family legs
 
 
 def policy(db):
@@ -50,6 +51,15 @@ def supervisor_ok(db, now=None):
 
 def _template(db, eid):
     return (json.loads(registry.latest(db, eid)["spec_json"] or "{}")).get("template")
+
+
+def _needs(db, eid, t):
+    """Live inputs a strategy needs: a catalogue template's extra sources, or a family instance's legs (amendment 8)."""
+    from lab.engine import catalogue
+    spec = json.loads(registry.latest(db, eid)["spec_json"] or "{}")
+    if spec.get("family"):
+        return {"spot", "delivery"} if spec.get("instrument_model") == "spot_delivery_ratio" else {"spot"}
+    return set((catalogue.TEMPLATES.get(t) or {}).get("needs") or [])
 
 
 def _version(db, eid):
@@ -94,7 +104,7 @@ def checks(db, eid, now=None):
             ("a clean 2024 holdout is possible (amendment 1)", t not in NO_CLEAN_HOLDOUT, t)]
     if st == "VALIDATED":
         res = _latest(db, eid, "VALIDATION")
-        needs = set((catalogue.TEMPLATES.get(t) or {}).get("needs") or [])
+        needs = _needs(db, eid, t)
         return "PAPER_TRADING", common + [
             ("holdout PASS recorded", bool(res and (res["verdict"] or "").startswith("PASS (holdout)")),
              res["id"] if res else None),
@@ -176,10 +186,14 @@ def _auto_ok(db, eid, tr, ev):
 
 
 def trading_authorized(db, eid):
-    """Approved paper trading may open positions only if its current PAPER_TRADING entry is verifiable."""
+    """Approved paper trading may open positions only if its current PAPER_TRADING entry is verifiable. A family
+    instance never may (amendment 8 point 16: a live spot feed and a later amendment first)."""
+    from lab import families
     st = lifecycle.state(db, eid)
     if st != "PAPER_TRADING":
         return False, f"{eid} is {st}"
+    if families.is_instance(db, eid):
+        return False, f"{eid}: {families.NO_PAPER}"
     tr = db.one("SELECT actor, from_state, to_state, evidence FROM transitions WHERE exp_id=? ORDER BY id DESC LIMIT 1",
                 eid)
     ev = json.loads(tr["evidence"] or "{}")

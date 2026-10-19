@@ -164,6 +164,22 @@ def release(db, job_id, worker_id, reason, now=None):
     return True
 
 
+def defer(db, job_id, worker_id, reason, until, now=None):
+    """A job that may not run yet (amendment 9: family files under the download embargo) goes back to the queue until
+    `until` and gets its attempt back: waiting is not an error (event job.deferred). Only the lease owner can."""
+    now = now or time.time()
+    with db.tx():
+        j = get(db, job_id)
+        if not j or j["status"] != "running" or j["lease_owner"] != worker_id:
+            return False
+        db.con.execute("UPDATE jobs SET status='queued', attempts=MAX(attempts - 1, 0), next_run=?, lease_owner=NULL, "
+                       "lease_until=NULL, error=?, updated_ts=? WHERE job_id=?",
+                       (max(now, until), str(reason)[:500], now, job_id))
+        db.event("job.deferred", worker_id, j["exp_id"], {"job_id": job_id, "kind": j["kind"], "until": int(until),
+                                                          "reason": str(reason)[:200]})
+    return True
+
+
 def _expire(db, now):
     for r in db.q("SELECT job_id, lease_owner, attempts, max_attempts, exp_id FROM jobs WHERE status='running' AND "
                   "lease_until<?", now):
@@ -193,15 +209,30 @@ def recover(db, now=None):
 def runnable_any(db, kinds, now=None):
     """Read-only: could claim() have work for these kinds now? A runnable job, a job waiting on dependencies (claim
     unblocks it) or an expired lease anywhere (claim retries it) all say yes. Lets an idle agent skip the write-locked
-    claim when the queue has nothing for it."""
+    claim when the queue has nothing for it. A blocked job that waits, directly or through other blocked jobs, on a job
+    queued for later (a deferral until the embargo ends, a retry backoff) cannot unblock before then, so it says no."""
     import sqlite3
     now = now or time.time()
     q = ",".join("?" * len(kinds))
     try:
-        return db.one(f"SELECT 1 FROM jobs WHERE (kind IN ({q}) AND (status='blocked' OR (status='queued' AND "
-                      f"next_run<=?))) OR (status='running' AND lease_until<?) LIMIT 1", *kinds, now, now) is not None
+        if db.one(f"SELECT 1 FROM jobs WHERE (kind IN ({q}) AND status='queued' AND next_run<=?) OR "
+                  f"(status='running' AND lease_until<?) LIMIT 1", *kinds, now, now) is not None:
+            return True
+        if db.one(f"SELECT 1 FROM jobs WHERE kind IN ({q}) AND status='blocked' LIMIT 1", *kinds) is None:
+            return False
+        blocked = {r["job_id"]: (r["kind"], json.loads(r["depends_on"] or "[]"))
+                   for r in db.q("SELECT job_id, kind, depends_on FROM jobs WHERE status='blocked'")}
+        stuck = {r[0] for r in db.q("SELECT job_id FROM jobs WHERE status='queued' AND next_run>?", now)}
     except sqlite3.OperationalError:                    # no jobs table yet: let claim() create it
         return True
+    grew = True
+    while grew:                                         # waiting on a later job, or on a blocked job that does
+        grew = False
+        for j, (_, deps) in blocked.items():
+            if j not in stuck and any(d in stuck for d in deps):
+                stuck.add(j)
+                grew = True
+    return any(k in kinds and j not in stuck for j, (k, _) in blocked.items())
 
 
 def runnable(db, now=None):
