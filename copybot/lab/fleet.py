@@ -23,7 +23,7 @@ from lab.db import DB
 from lab.risk import Risk
 from lab.supervisor import Worker
 
-HEAVY = {"backtest", "cost", "adversarial", "validate", "holdout", "observe", "observe_interim", "explore"}
+HEAVY = {"backtest", "cost", "adversarial", "validate", "holdout", "observe", "observe_interim"}
 # Heavy steps run in worker processes (Python threads cannot use several cores at once). One slot per process;
 # two cores stay free for the supervisor, agents, dashboard and the rest of the PC. LAB_SLOTS overrides,
 # LAB_THREADS=1 runs heavy steps in-thread (used by tests that patch module state).
@@ -397,7 +397,7 @@ def strategy_pass(db):
     return {"registered": registered, "promotions": [(d["exp_id"], d["to"], d["allowed"]) for d in decisions],
             "holdouts_queued": pipeline.enqueue_holdouts(db), "diagnostics_queued": pipeline.enqueue_diagnostics(db),
             "scan_research_queued": scanresearch.enqueue(db),           # amendment 9 section 3: digest and dossiers
-            "explore_queued": explore.enqueue(db, every=explore.ENQUEUE_EVERY),   # amendment 10: hourly
+            "explore_queued": explore.enqueue(db),          # amendments 10/10a: one lane job at a time, hourly
             **({"families": fams} if fams else {})}
 
 

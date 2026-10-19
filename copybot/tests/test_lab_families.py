@@ -268,7 +268,7 @@ class Approval(unittest.TestCase):
 # ---------- phase A3: discovery, registration, spot cache, embargo (design (C) tests 2, 3, 7-11) ----------
 import urllib.error  # noqa: E402
 from datetime import datetime, timezone  # noqa: E402
-from lab import fleet, jobs, lifecycle, pipeline, registry, templates  # noqa: E402
+from lab import explore, fleet, jobs, lifecycle, pipeline, registry, templates  # noqa: E402
 from lab.engine import data  # noqa: E402
 
 GRAVE = (("L13_carry_v1", "delta_neutral_funding_carry"), ("L08_funding_carry_leverage", "funding_carry_leverage"),
@@ -318,6 +318,9 @@ class A3Base(unittest.TestCase):
                   mock.patch.object(pipeline, "ARTIFACTS", os.path.join(self.tmp, "artifacts")),
                   mock.patch.object(pipeline, "REPORTS", os.path.join(self.tmp, "reports")),
                   mock.patch.object(fleet, "PROCESSES", False),
+                  # amendment 8 tests run without the amendment 10 lane, which would fetch explore0 for an approved
+                  # family through the fleet; tests/test_lab_explore.py covers the lane
+                  mock.patch.object(explore, "eligible", lambda db: []),
                   mock.patch.object(fleet.control, "ram", lambda: {"total": 16e9, "free": 8e9, "load_pct": 50})]
         for p in self.p:
             p.start()

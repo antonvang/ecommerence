@@ -182,7 +182,8 @@ def _progress(con_path, now, sup):
         # (non-decisional side jobs run daily; they must not hide an idle hypothesis pipeline)
         try:
             runnable, running = con.execute("SELECT COALESCE(SUM(status='queued' AND next_run<=?), 0), "
-                                            "COALESCE(SUM(status='running'), 0) FROM jobs", (now,)).fetchone()
+                                            "COALESCE(SUM(status='running'), 0) FROM jobs WHERE kind NOT IN "
+                                            "('explore', 'explore_report')", (now,)).fetchone()   # amendment 10
         except sqlite3.OperationalError:                 # no jobs table yet: nothing was ever queued
             runnable = running = 0
     finally:
