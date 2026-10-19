@@ -232,6 +232,20 @@ Driftsregler, ikke en protokolændring: ingen porte, vinduer, paneler, data elle
   development- og validation-resuméet, `coverage_dev`, `coverage_val`, `db_sha256`, `git` og tidspunktet for
   kopien. Den committes og lægges i produktion (fast-forward og `git pull --ff-only`). `holdout` kræver, at filen er
   committet og uændret i produktionsmappen.
+- **Format (audit 2026-10-19, godkendt):** præcis én linje, der begynder med `n_req:`, og efter kolon kun et
+  heltal eller `none`. Ingen anden linje må begynde med `n_req:` (`frozen()` tager den sidste og kalder `int()` på
+  den). Skriv desuden `dev_json_sha256: <sha256sum af pm_lp_v1_dev.json>` og `db_copy_sha256: <sha256sum af
+  kopien>`.
+- Commit filen 2026-10-31, før nogen ser på holdout-data. Kør ikke `dev` igen bagefter (den overskriver
+  `pm_lp_v1_dev.json` uden advarsel).
+- **Ved `holdout` (tidligst 2026-11-28 00:00 UTC; koden afviser før D0+41 er slut):** slå først tjenesten fra
+  (punkt C). Kontrollér i hånden, at `sha256sum data/research/results/pm_lp_v1_dev.json` er lig
+  `dev_json_sha256`, og at `n_req` i json-filen er lig værdien i `PM_LP_FROZEN.md`. Kør `holdout` én gang (koden
+  håndhæver det ikke).
+- I `RESULTS_pm_lp_v1.md` beskrives som kendt begrænsning: `n_req` antager uafhængige markedsdage, så G3 er et
+  svagere krav, end tallet ser ud; G2 bruger cluster-bootstrap over markeder, men ikke over dage.
+- Efter 2026-11-27, i dev og ikke deployet før holdout er evalueret: tests for `dev`- og `holdout`-datovagten, at
+  `dev` ikke ser data efter perioden, `frozen()`-parsning og en kontrol af `n_req` mellem filerne.
 - Oprydning: `git -C ~/ecommerence worktree remove ~/pm_lp_devrun`. Kopien i `~/pm_lp_runs/2026-10-31/` gemmes.
 
 ## Overvågning
