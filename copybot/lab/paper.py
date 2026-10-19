@@ -134,6 +134,10 @@ class PaperEngine:
         if base is not None:
             if not shadow_active(self.db, base):
                 raise lifecycle.LifecycleError(f"{base} has no active, human-started shadow trading in OBSERVATION")
+        elif exp_id.startswith("LANE_"):
+            from lab import lane
+            if not lane.is_active(self.db, exp_id):
+                raise lifecycle.LifecycleError(f"{exp_id} is not an active lane account (amendment 11)")
         elif forward_base(exp_id) is not None:
             if not forward_active(self.db, forward_base(exp_id)):
                 raise lifecycle.LifecycleError(f"{forward_base(exp_id)} has no active, human-started forward test "

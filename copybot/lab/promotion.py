@@ -208,6 +208,6 @@ def exposure_allowed(db, ledger, now=None):
     """Amendment 4a: the one check for new exposure, called by the engine's risk gate for every non-reducing order."""
     if not supervisor_ok(db, now):
         return False, "supervisor heartbeat missing or stale: no new exposure"
-    if ledger.startswith(("SHADOW_", "FWD_")):
-        return True, "simulated ledger (checked by the shadow / forward-test rule)"
+    if ledger.startswith(("SHADOW_", "FWD_", "LANE_")):
+        return True, "simulated ledger (checked by the shadow / forward-test / lane rule)"
     return trading_authorized(db, ledger)

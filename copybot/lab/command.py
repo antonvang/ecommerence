@@ -604,7 +604,7 @@ def _pause_info(rk, eid):
     if not rk.paused(eid):
         return None
     r = rk._last(eid, ("PAUSE",))
-    sim = eid.startswith(("SHADOW_", "FWD_"))
+    sim = eid.startswith(("SHADOW_", "FWD_", "LANE_"))
     return {"rule": r["rule"], "detail": r["detail"], "ts": r["ts"],
             "resume": f'python3 -m lab sim-resume {eid} --reason "..." (typed in a terminal)' if sim else
             "revalidation and a human approval (amendment 4)"}
@@ -613,9 +613,11 @@ def _pause_info(rk, eid):
 def paper_view(db, reconcile=True, edges=True, now=None):
     """Every paper ledger. P&L is as of its last hourly mark: realized (closed trades, fees and booked funding) from a
     replay of the ledger up to the mark, unrealized = position value at the mark minus cost basis."""
+    from lab import lane
     from lab.paper import PaperEngine, forward_active, funding_t0
     now = now or time.time()
     pe, rk, out = PaperEngine(db), Risk(db), []
+    lanes = lane.started(db)
     for r in db.q("SELECT DISTINCT exp_id FROM events WHERE kind='paper.started' ORDER BY exp_id"):
         eid = r[0]
         led = pe.ledger(eid)
@@ -636,12 +638,16 @@ def paper_view(db, reconcile=True, edges=True, now=None):
         orders = db.one("SELECT COUNT(*) FROM sim_orders WHERE exp_id=?", eid)[0]
         refused = db.one("SELECT COUNT(*) FROM events WHERE exp_id=? AND kind IN ('paper.refused',"
                          "'paper.signal_while_paused')", eid)[0]
-        shadow, forward = eid.startswith("SHADOW_"), eid.startswith("FWD_")
+        shadow, forward, is_lane = eid.startswith("SHADOW_"), eid.startswith("FWD_"), eid.startswith(lane.PREFIX)
         base = eid[len("SHADOW_"):] if shadow else eid[len("FWD_"):] if forward else eid
-        out.append({"exp_id": eid, "name": plain(db, eid)[0], "shadow": shadow, "forward": forward,
-                    "active": forward_active(db, base) if forward else None,
-                    "state": lifecycle.state(db, base), "simulated": True,
-                    "label": ("SKYGGEHANDEL (simuleret, ikke godkendt, inkl. funding fra T_F)" if shadow else
+        out.append({"exp_id": eid, "name": plain(db, eid)[0], "shadow": shadow, "forward": forward, "lane": is_lane,
+                    "active": forward_active(db, base) if forward else lane.is_active(db, eid) if is_lane else None,
+                    "state": None if is_lane else lifecycle.state(db, base), "simulated": True,
+                    "lane_info": ({**lanes.get(eid, {}), "stats": lane.stats(db, eid, now, lanes.get(eid)),
+                                   "retired": (lane.retired(db).get(eid) if not lane.is_active(db, eid) else None)}
+                                  if is_lane else None),
+                    "label": (lane.LABEL if is_lane else
+                              "SKYGGEHANDEL (simuleret, ikke godkendt, inkl. funding fra T_F)" if shadow else
                               "FREMADTEST (simuleret, ikke godkendt, inkl. funding fra T_F)" if forward else
                               "PAPER (simulated, incl. funding from T_F)"),
                     "capital": led["capital"], "cash": led["cash"], "positions": led["positions"],
@@ -654,8 +660,8 @@ def paper_view(db, reconcile=True, edges=True, now=None):
                     "orders": orders, "fills": db.one("SELECT COUNT(*) FROM sim_fills WHERE exp_id=?", eid)[0],
                     "rejected_orders": refused, "reconciliation": pe.reconcile(eid) if reconcile else None,
                     "paused": rk.paused(eid), "warming": rk.warming(eid), "pause": _pause_info(rk, eid),
-                    "edge": edge(db, eid, now) if edges else None})
-    out.sort(key=lambda s: (s["forward"], s["shadow"], s["exp_id"]))     # approved, shadow, then forward tests
+                    "edge": edge(db, eid, now) if (edges and not is_lane) else None})
+    out.sort(key=lambda s: (s["lane"], s["forward"], s["shadow"], s["exp_id"]))  # approved, shadow, forward, lane
     return {"strategies": out, "simulated": True, "real_account_profit": REAL_ACCOUNT, "funding_t0": funding_t0(db),
             "source": "lab.db sim_orders / sim_fills / sim_equity / sim_funding (simulated fills against public order "
                       "books; settled funding from T_F)",
@@ -749,7 +755,8 @@ def _balance(db, now=None):
     now = now or time.time()
     p = paper_view(db, reconcile=False, edges=False, now=now)   # no reconciliation here (risk-1 does it) or edge
     fw = [s for s in p["strategies"] if s.get("forward")]      # amendment 7: never in the headline numbers
-    st = [s for s in p["strategies"] if not s.get("forward")]
+    ln = [s for s in p["strategies"] if s.get("lane")]         # amendment 11: never in any headline or combined sum
+    st = [s for s in p["strategies"] if not s.get("forward") and not s.get("lane")]
     active = [s for s in st if s["state"] == "PAPER_TRADING" or (s["shadow"] and s["state"] == "OBSERVATION")
               or s["state"] == "PAUSED"]
     out = {"simulated": True, "strategies": len(st),
@@ -757,6 +764,10 @@ def _balance(db, now=None):
                        "paused": sum(1 for s in fw if s["paused"]),
                        "running": sum(1 for s in fw if s["active"] and not s["paused"]),
                        "simulated": True, "approved": False, "label": "FREMADTEST (simuleret, ikke godkendt)"},
+           "lane": {**_money(ln), "ledgers": len(ln), "running": sum(1 for s in ln if s["active"] and not s["paused"]),
+                    "active": sum(1 for s in ln if s["active"]), "paused": sum(1 for s in ln if s["paused"]),
+                    "open_positions": sum(s["open_positions"] for s in ln), "simulated": True, "approved": False,
+                    "evidence": False, "label": "BANEKONTI (udforskning, simuleret, aldrig bevis)"},
            "active": sum(1 for s in st if s["state"] == "PAPER_TRADING" or (s["shadow"] and s["state"] == "OBSERVATION")),
            "trading": sum(1 for s in active if not s["paused"] and s["state"] != "PAUSED"),
            "paused": sum(1 for s in active if s["paused"] or s["state"] == "PAUSED"),
@@ -837,9 +848,10 @@ def feed(db, limit=40):
              "system.resource_hold", "risk.pause", "risk.fail_closed", "risk.clear", "agent.error",
              "agent.recovered", "external.stale", "external.recovered", "job.timeout", "market.event",
              "research.diagnostic", "scan.finished", "forward.approved", "forward.stopped", "research.digest",
-             "research.dossier")
+             "research.dossier", "lane.started", "lane.retired", "lane.promising")
     rows = db.q(f"SELECT id, ts, kind, actor, exp_id, payload FROM events WHERE kind IN ({','.join('?' * len(kinds))}) "
                 f"AND NOT (kind='paper.order' AND substr(exp_id, 1, 4)='FWD_') "     # shown per account instead
+                f"AND NOT (kind='paper.order' AND substr(exp_id, 1, 5)='LANE_') "
                 f"ORDER BY id DESC LIMIT ?", *kinds, int(limit))
     out = []
     for r in rows:
@@ -895,6 +907,10 @@ def feed(db, limit=40):
             e.update(tag="UNDERSØG" if p.get("decision") == "INVESTIGATE" else "INGEN HANDLING",
                      text=f"Marked: {what} - {sr.why_da(p.get('why'), STAGE_DA)}"[:220], detail=p.get("decision"),
                      priority=p.get("priority"))
+        elif k in ("lane.started", "lane.retired", "lane.promising"):
+            e.update(tag="BANEKONTO", text=(f"Banekonto startet: {nm} (simuleret, aldrig bevis)" if k == "lane.started"
+                                            else f"Banekonto stoppet: {nm} - {p.get('detail')}" if k == "lane.retired"
+                                            else f"Banekonto lovende: {nm} - kandidat til et familieudkast")[:220])
         elif k in ("forward.approved", "forward.stopped"):
             e.update(tag="FREMADTEST", text=f"Fremadtest {'startet' if k == 'forward.approved' else 'stoppet'}: "
                                             f"{nm} (simuleret, ikke godkendt)")
@@ -978,6 +994,12 @@ def plain(db, eid):
     if eid and eid.startswith("FWD_"):
         n, x, v = plain(db, eid[len("FWD_"):])
         return f"{n} — fremadtest", x, v
+    if eid and eid.startswith("LANE_"):
+        r = db.one("SELECT payload FROM events WHERE kind='lane.started' AND exp_id=? ORDER BY id LIMIT 1", eid)
+        p = _j(r["payload"]) if r else {}
+        return (f"Banekonto {(p or {}).get('family', '?')}.{(p or {}).get('function', '?')} "
+                f"({len((p or {}).get('coins') or [])} mønter)", "Udforskning fra banen, handlet live på papir; aldrig bevis",
+                None)
     if eid in LEGACY_DA:
         return LEGACY_DA[eid], None, None
     v = registry.latest(db, eid) if eid else None

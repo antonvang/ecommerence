@@ -22,7 +22,8 @@
   python3 -m lab revoke-template TEMPLATE --reason ".."
   python3 -m lab shadow-start EXP --reason ".." | shadow-stop EXP --reason ".."   (simulated shadow ledger, OBSERVATION only)
   python3 -m lab forward-start --reason ".." | forward-stop [--exp EXP] --reason ".."   (amendment 7 forward tests)
-  python3 -m lab sim-resume LEDGER --reason ".."                          (resume a paused SHADOW_/FWD_ ledger)
+  python3 -m lab sim-resume LEDGER --reason ".."                          (resume a paused SHADOW_/FWD_/LANE_ ledger)
+  python3 -m lab lane-off|lane-on --reason ".."                          (amendment 11 lane accounts; terminal only)
   python3 -m lab clear-fail-closed --reason ".."                         (terminal only; refused while the cause holds)
   python3 -m lab family-check FILE                                        (amendment 8; read-only, no network)
   python3 -m lab approve-family FID --reason ".." -> code;  python3 -m lab confirm-family   (typed by the user)
@@ -195,6 +196,8 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
     for c in ("forward-start", "forward-stop"):
         fp = sub.add_parser(c); fp.add_argument("--exp"); fp.add_argument("--reason", required=True)
     sr = sub.add_parser("sim-resume"); sr.add_argument("ledger"); sr.add_argument("--reason", required=True)
+    for c in ("lane-off", "lane-on"):
+        sub.add_parser(c).add_argument("--reason", required=True)
     cf = sub.add_parser("clear-fail-closed"); cf.add_argument("--reason", required=True)   # terminal only
     fc = sub.add_parser("family-check"); fc.add_argument("file")
     af = sub.add_parser("approve-family"); af.add_argument("fid"); af.add_argument("--reason", required=True)
@@ -354,6 +357,20 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
                 out(f"refused: {e}")
                 return 1
             out(f"{args.ledger}: {'resumed (CLEAR recorded)' if done else 'not paused: nothing to resume'}")
+            return 0
+        if args.cmd in ("lane-off", "lane-on"):       # amendment 11 point 5: a human switches the lane accounts
+            from lab import lane
+            why = TERMINAL_GUARD(f"switch the lane accounts {args.cmd[5:]}")
+            if why:
+                out(f"refused: {why}")
+                return 1
+            try:
+                lane.set_policy(db, args.cmd == "lane-on", human(), args.reason)
+            except lifecycle.LifecycleError as e:
+                out(f"refused: {e}")
+                return 1
+            out("lane accounts on: the paper agent starts them by amendment 11" if args.cmd == "lane-on" else
+                "lane accounts off: the paper agent retires every active one and closes its positions")
             return 0
         if args.cmd == "family-coverage":           # amendment 8 point 17: refused before 2026-11-28 00:00 UTC
             from lab import families

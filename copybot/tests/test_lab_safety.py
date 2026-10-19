@@ -19,6 +19,8 @@ LAB = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "lab")
 ALLOWED_HOSTS = {
     "data.binance.vision",            # monthly archives (amendment 8 point 17)
     "fapi.binance.com",               # public USD-M market data (depth, klines, fundingRate): GET only
+    "data-api.binance.vision",        # public spot market data only, no trading endpoints (amendment 11 point 8,
+                                      # approved by the user 2026-10-19): GET only; api.binance.com stays forbidden
     "community-api.coinmetrics.io",   # CoinMetrics community API
     "fred.stlouisfed.org",            # FRED rates
     "stablecoins.llama.fi",           # DefiLlama stablecoins

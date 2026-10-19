@@ -210,6 +210,8 @@ def _active_ledgers(con):
     for (led,) in con.execute("SELECT DISTINCT exp_id FROM events WHERE kind='paper.started'").fetchall():
         if led.startswith("FWD_"):
             ok = latest(("forward.approved", "forward.stopped"), led[4:]) == "forward.approved"
+        elif led.startswith("LANE_"):                  # amendment 11
+            ok = latest(("lane.started", "lane.retired"), led) == "lane.started"
         elif led.startswith("SHADOW_"):
             ok = latest(("shadow.approved", "shadow.stopped"), led[7:]) == "shadow.approved" \
                 and state(led[7:]) == "OBSERVATION"

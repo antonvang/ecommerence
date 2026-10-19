@@ -18,10 +18,11 @@ GLOBAL = "GLOBAL"
 DEFAULTS = {"consecutive_losses": 2, "max_drawdown": 0.10, "data_max_age_s": 60, "spread_max_mult": 3.0,
             "spread_strikes": 3, "spread_window_s": 86400}
 ACTOR = "system:risk"
+SIMULATED = ("SHADOW_", "FWD_", "LANE_")          # amendments 3, 7 and 11: simulated ledgers, never approved trading
 
 
 def rules_for(db, exp_id):
-    if exp_id.startswith(("SHADOW_", "FWD_")):        # amendment 7 section 1: drawdown, data and spread only
+    if exp_id.startswith(SIMULATED):                  # amendment 7 section 1: drawdown, data and spread only
         return {**DEFAULTS, "consecutive_losses": None}
     r = db.one("SELECT spec_json FROM experiments WHERE exp_id=? ORDER BY version DESC LIMIT 1", exp_id)
     spec = json.loads(r["spec_json"] or "{}") if r else {}
@@ -79,7 +80,10 @@ class Risk:
     def _shadow_ok(self, ledger):
         """PROTOCOL v3 amendment 3: a SHADOW_ ledger may trade only while its experiment is in OBSERVATION and a
         human-started shadow is active. Amendment 7: a FWD_ ledger only while its human-started forward test with
-        pinned artifacts is active."""
+        pinned artifacts is active. Amendment 11: a LANE_ ledger only while the lane account is active."""
+        if ledger.startswith("LANE_"):
+            from lab import lane
+            return lane.is_active(self.db, ledger)
         if ledger.startswith("FWD_"):
             from lab.paper import forward_active
             return forward_active(self.db, ledger[len("FWD_"):])
@@ -90,9 +94,10 @@ class Risk:
                     and lifecycle.state(self.db, base) == "OBSERVATION")
 
     def entry_allowed(self, exp_id, reduce_only, book):
-        if exp_id.startswith(("SHADOW_", "FWD_")):
+        if exp_id.startswith(SIMULATED):
             if not self._shadow_ok(exp_id) and not reduce_only:
-                return False, ("forward test is not active (needs a human start and the pinned artifacts)"
+                return False, ("lane account is not active (amendment 11)" if exp_id.startswith("LANE_") else
+                               "forward test is not active (needs a human start and the pinned artifacts)"
                                if exp_id.startswith("FWD_") else
                                "shadow trading is not active (needs OBSERVATION and a human start)")
             st = "PAPER_TRADING"                              # every other risk rule below applies unchanged
@@ -205,9 +210,10 @@ class Risk:
             self._event(exp_id, "revalidated", None, None, "CLEAR", "resumed after approved revalidation", actor)
 
     def resume_simulated(self, ledger, actor, reason):
-        """Amendment 7 section 1: only a human resumes a paused SHADOW_ or FWD_ ledger (a CLEAR with the reason)."""
-        if not ledger.startswith(("SHADOW_", "FWD_")):
-            raise lifecycle.LifecycleError("only simulated SHADOW_/FWD_ ledgers resume this way; an approved "
+        """Amendment 7 section 1: only a human resumes a paused SHADOW_, FWD_ or LANE_ ledger (a CLEAR with the
+        reason)."""
+        if not ledger.startswith(SIMULATED):
+            raise lifecycle.LifecycleError("only simulated SHADOW_/FWD_/LANE_ ledgers resume this way; an approved "
                                            "strategy resumes through its human-approved transition")
         if not actor.startswith("human:"):
             raise lifecycle.LifecycleError("only a human can resume a simulated ledger")
@@ -226,7 +232,7 @@ class Risk:
 
     def after_trade_closed(self, exp_id, trades, cancel_open=None):
         """trades: [(close_ts, pnl)] of completed round trips. Counts only trades after the last CLEAR."""
-        if exp_id.startswith(("SHADOW_", "FWD_")):       # simulated: drawdown, data, spread only (amendment 7)
+        if exp_id.startswith(SIMULATED):                 # simulated: drawdown, data, spread only (amendment 7)
             return 0
         lim = rules_for(self.db, exp_id)["consecutive_losses"]
         since = self.last_clear_ts(exp_id)

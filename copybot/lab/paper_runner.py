@@ -22,6 +22,8 @@ from lab.paper import Book, CostModel, PaperEngine
 from lab.risk import Risk
 
 REST = "https://fapi.binance.com"
+SPOT_REST = "https://data-api.binance.vision"   # amendment 11 point 8: spot public book, a market-data-only host
+SPOT_SUFFIX = ".SPOT"
 CAPITAL = 10_000.0                      # simulated USD
 MIN_NOTIONAL = 10.0
 HOUR = 3600
@@ -29,7 +31,7 @@ MAX_BAR_AGE = 2 * HOUR
 
 
 def _get(path):
-    req = urllib.request.Request(REST + path, headers={"User-Agent": "copybot-lab/paper (read-only)"})
+    req = urllib.request.Request(path if path.startswith("https://") else REST + path, headers={"User-Agent": "copybot-lab/paper (read-only)"})
     with urllib.request.urlopen(req, timeout=20) as r:
         return json.loads(r.read())
 
@@ -39,7 +41,11 @@ _CM_HOURLY = {}     # (metrics, symbols) -> (hour, values): CoinMetrics daily va
 
 
 def fetch_book(sym, now, get=_get):
-    d = get(f"/fapi/v1/depth?symbol={sym}&limit=20")
+    """20-level public book: USD-M, or Binance spot for an instrument `<SYM>.SPOT` (amendment 11)."""
+    if sym.endswith(SPOT_SUFFIX):
+        d = get(f"{SPOT_REST}/api/v3/depth?symbol={sym[:-len(SPOT_SUFFIX)]}&limit=20")
+    else:
+        d = get(f"/fapi/v1/depth?symbol={sym}&limit=20")
     return Book(ts=now, bids=tuple((float(p), float(q)) for p, q in d["bids"]),
                 asks=tuple((float(p), float(q)) for p, q in d["asks"]))
 
@@ -133,6 +139,7 @@ def paper_experiments(db):
 def closing_ledgers(db):
     """Ledgers that still hold positions but may no longer trade: approved paper strategies that were rejected or
     retired, and shadow ledgers whose shadow ended. Amendment 4: their positions are closed, never forgotten."""
+    from lab import lane
     from lab.paper import PaperEngine, forward_active, shadow_active
     eng, out = PaperEngine(db), []
     for r in db.q("SELECT DISTINCT exp_id FROM events WHERE kind='paper.started'"):
@@ -143,6 +150,9 @@ def closing_ledgers(db):
         elif led.startswith("FWD_"):                    # amendment 7: closed when the forward test is stopped
             base = led[len("FWD_"):]
             done = not forward_active(db, base)
+        elif led.startswith(lane.PREFIX):              # amendment 11: closed when the lane account retires
+            base = led
+            done = not lane.is_active(db, led)
         else:
             base = led
             done = lifecycle.state(db, base) in ("REJECTED", "RETIRED")
@@ -177,6 +187,9 @@ def _cached_funding(get, now, cache):
     def data(syms):
         out = {}
         for s in syms:
+            if s.endswith(SPOT_SUFFIX):                 # a spot leg has no funding (amendment 11 point 4)
+                out[s] = ({}, {})
+                continue
             _, funding, _, opens = hourly(s, now, get, cache)
             out[s] = (funding, opens)
         return out
@@ -300,7 +313,11 @@ def run(db, get=_get, now=None, cm_get=_cm_get, cache=None, cm_cache=None):
         out["FWD_" + eid] = _guarded(db, "FWD_" + eid,
                                      lambda: run_one(db, eid, get, now, ledger="FWD_" + eid, cm_get=cm_get,
                                                      cache=cache, cm_cache=cm_cache, books=books))
-    return {"experiments": len(out), "results": out, "simulated": True}
+    from lab import lane                               # amendment 11: lane accounts start and retire by fixed rules
+    managed = _guarded(db, "LANE", lambda: lane.manage(db, now, get))
+    for led in lane.active(db):
+        out[led] = _guarded(db, led, lambda: lane.run_one(db, led, get, now, cache, books))
+    return {"experiments": len(out), "results": out, "simulated": True, "lane": managed}
 
 
 def run_one(db, eid, get, now, ledger=None, cm_get=_cm_get, cache=None, cm_cache=None, books=None):
