@@ -821,3 +821,35 @@ ikke-prisforudsigende mekanismer (ændring 8 punkt 2). Udforskning er aldrig gru
 
 7. **Rækkefølge.** Ændringstekst (denne) → kode og tests i dev → deploy tidligst efter 2026-11-27 (pm_lp's holdout og
    opfølgning røres ikke; regel B i `research/LINUX_DRIFT.md`) → data hentes fra 2026-11-28.
+
+## Ændring 10a (2026-10-19): bredere og hurtigere udforskningsbane — før kode
+
+**Beslutning:** brugeren besluttede 2026-10-19 i sessionen, at banen skal forske hele tiden og bredt i markedet, ikke
+kun i et fast gitter ("Gør alt der bedst ... researchen hele tiden alt market"). Ændring 10 gælder med disse
+ændringer. Alt i ændring 10 punkt 1, 2 og 6 er uændret: kun `explore0`, aldrig bevis, ingen alfa, ingen
+registrering, ingen handel; familier kun gennem ændring 8 og brugerens godkendelse. Udforskning giver idéer hurtigt;
+beviset er stadig den forhåndsregistrerede fremadtest, og den kan ikke gøres hurtigere uden at miste sin værdi.
+
+1. **Automatisk generering i stedet for et fast gitter** (erstatter ændring 10 punkt 3, tredje punkt).
+   - Først det faste gitter (`GRIDS`), derefter varianter trukket deterministisk (fast seed) fra et parameterrum pr.
+     mekanismefunktion (`SPACES` i `lab/explore.py`), stadig inden for familiernes grænser (tilbagekig højst 14 dage).
+   - Hver trukken variant har også en møntkurv: en delmængde af de mønter, der består datakvalitetsreglen i
+     `explore0`, med mindst 5 mønter.
+   - En variant afprøves kun én gang.
+
+2. **Bredere univers.** Banen bruger foreningsmængden af lab'ens kendte møntlister (`UNIVERSE_30`, `UNIVERSE_30_V3`,
+   `UNIVERSE_CM16`, `UNIVERSE`) for familier med instrumentmodellen `spot_perp_ratio`, og familiens kandidatmønter
+   for `spot_delivery_ratio`. Ingen ny datakilde og ingen ny forespørgselstype. Markeder uden for Binance-arkivet
+   (fx Hyperliquid, Polymarket) kræver en ny instrumentmodel og en separat ændring.
+
+3. **Scannerens fund går ind i banen.** Mønter med markerede `perp_premium`-observationer de seneste 7 dage får
+   forrang i møntkurvene for `spot_perp_ratio`. Det er udforskning, ikke en hypotese; ændring 5 og 9 gælder fortsat
+   for alt formelt. `cross_venue_gap` kan ikke undersøges på arkivdata og indgår ikke.
+
+4. **Omfang og takt** (erstatter ændring 10 punkt 4, første punkt, og punkt 5, første punkt).
+   - Højst 5.000 varianter pr. ISO-uge (UTC). Flåden planlægger højst én gang i timen et job pr. familie med højst 30
+     varianter.
+   - Forslagslisten skrives dagligt (`artifacts/_explore/<dag>.json`, hændelsen `research.explore_proposals`) med
+     højst 3 kandidater efter de samme krav som i ændring 10 punkt 5, og med antallet af afprøvede varianter i alt.
+
+5. **Rækkefølge** som ændring 10 punkt 7: deploy tidligst efter 2026-11-27, data fra 2026-11-28.
