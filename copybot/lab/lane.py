@@ -4,8 +4,8 @@ The exploration lane's candidates (amendment 10 point 5) trade automatically on 
 `LANE_<10 hex>` and retire automatically by fixed rules. Never evidence: no results, trials, transitions, approvals,
 alpha rows or formal balance; a candidate becomes formal only through an amendment 8 family draft and the user.
 
-- start (system:lane): at most SLOTS active, one per mechanism function, one new account per clock hour; both legs'
-  public books must load for at least MIN_COINS coins;
+- start (system:lane): at most SLOTS active, PER_FUNCTION per mechanism function, one new account per START_EVERY
+  (12b); both legs' public books must load for at least MIN_COINS coins;
 - trade: the family's own function on the latest 1h perp bars and settled funding; +1 = long spot and short perp of the
   same quantity, sized at opening and held until the signal is 0 (no rebalancing); a partly filled leg is brought up
   to the other leg's quantity later;
@@ -15,6 +15,7 @@ alpha rows or formal balance; a candidate becomes formal only through an amendme
 """
 from __future__ import annotations
 
+import collections
 import hashlib
 import importlib
 import json
@@ -34,8 +35,9 @@ POLICY = "lane.policy"
 SPOT = ".SPOT"                                  # instrument suffix of the spot leg (book from the spot API)
 MODEL = "spot_perp_ratio"                       # point 2: the only instrument model with a live feed here
 CAPITAL = 10_000.0
-SLOTS = 3
-START_EVERY = 3600
+SLOTS = 6                                       # 12b
+START_EVERY = 600                               # 12b: one new lane account per 10 minutes
+PER_FUNCTION = 2                                # 12b: at most two active accounts per mechanism function
 PROBES = 3                                      # candidates probed per pass at most (each probe reads 2 books a coin)
 MIN_COINS = explore.MIN_COINS
 COSTS = CostModel(taker_fee=0.001, extra_slippage=0.0002, expected_spread=0.0004)   # point 4, per leg
@@ -50,8 +52,8 @@ PROMISING_DAYS, PROMISING_Z = 30, -1.0
 SOURCE_DAYS = 14                                # point 5: funding booked - fees paid must be > 0 by then
 # amendment 12: scanner accounts (source "scanner"): one coin, the scanner's perp premium decides in and out
 SCAN_LABEL = "SCANNERKONTO (scannerfund, simuleret, aldrig bevis)"
-SCAN_SLOTS = 5
-SCAN_MIN, SCAN_BIG = 0.005, 0.01                # in: >= 1 % in the latest scan, or >= 0.5 % in the two latest
+SCAN_SLOTS = 10                                 # 12b
+SCAN_MIN = 0.005                                # 12b: in on the first positive premium >= 0.5 %
 SCAN_STALE_S = 3 * HOUR                         # an older latest scan: nothing new opens, a position is held
 SCAN_COOLDOWN_S = DAY
 SCAN_LOSS = 0.05
@@ -72,7 +74,7 @@ def label(info):
 def rules_text(info):
     """The automatic stop rules, in Danish, for the dashboard."""
     if is_scanner(info):
-        return (f"ind ved præmie ≥ {SCAN_BIG:.0%} eller ≥ {SCAN_MIN:.1%} i to scanninger, ud når den er væk i to; "
+        return (f"ind ved første præmie ≥ {SCAN_MIN:.1%}, ud når den er væk i to målinger; "
                 f"stoppes ved tab ≥ {SCAN_LOSS:.0%}, 24 t pause, funding − gebyrer ≤ 0 efter {SCAN_SOURCE_S // DAY} "
                 f"dage, {SCAN_FLAT_S // DAY} døgn uden position eller {SCAN_MAX_AGE_S // DAY} dage")
     return (f"stoppes ved funding − gebyrer ≤ 0 efter {SOURCE_DAYS} dage, tab ≥ {LOSS_RETIRE:.0%}, 24 t pause, "
@@ -359,10 +361,11 @@ def manage(db, now=None, get=None, fids=None):
     last = max((i["ts"] for i in info.values() if not is_scanner(i)), default=None)
     if len(act) >= SLOTS or (last is not None and now - last < START_EVERY):
         return out
-    busy, done = {(info[a]["family"], info[a]["function"]) for a in act}, tried_keys(db)
+    busy = collections.Counter((info[a]["family"], info[a]["function"]) for a in act)
+    done = tried_keys(db)
     probes = 0
     for r in candidates(db, fids):
-        if r["key"] in done or (r["family"], r["function"]) in busy:
+        if r["key"] in done or busy[(r["family"], r["function"])] >= PER_FUNCTION:
             continue
         if probes >= PROBES:
             break
@@ -393,8 +396,9 @@ def _last_two(db, now):
     return ts, [premiums(db, t) for t in ts]
 
 
-def scan_entry(p_now, p_prev):
-    return p_now is not None and p_now >= SCAN_MIN and (p_now >= SCAN_BIG or (p_prev or 0) >= SCAN_MIN)
+def scan_entry(p_now, p_prev=None):
+    """12b: the latest measurement alone decides the entry (p_prev is kept for the record)."""
+    return p_now is not None and p_now >= SCAN_MIN
 
 
 def scan_signal(db, coin, holding, now):

@@ -112,20 +112,22 @@ class Candidates(Base):
 
 
 class Start(Base):
-    def test_starts_one_per_hour_one_per_function_at_most_three(self):
-        self.publish([result("a1", sharpe=5), result("a2", sharpe=4), result("b1", fn="carry_floor", sharpe=3,
-                                                                              params={"days": 7, "q": 0.8}),
-                      result("c1", fn="carry_hysteresis", sharpe=2, params={"lookback_days": 7, "exit_apr": 0.0}),
-                      result("d1", fn="carry_filter_weekly", sharpe=1.5)])
+    def test_starts_one_per_ten_minutes_two_per_function_at_most_six(self):
+        floor = {"days": 7, "q": 0.8}
+        hyst = {"lookback_days": 7, "exit_apr": 0.0}
+        self.publish([result("a1", sharpe=9), result("a2", sharpe=8), result("a3", sharpe=7),
+                      result("b1", fn="carry_floor", sharpe=6, params=floor),
+                      result("b2", fn="carry_floor", sharpe=5, params=floor),
+                      result("c1", fn="carry_hysteresis", sharpe=4, params=hyst),
+                      result("c2", fn="carry_hysteresis", sharpe=3, params=hyst),
+                      result("d1", fn="carry_filter_weekly", sharpe=2)])
         get = market()
-        first = lane.manage(self.db, NOW, get, fids=["fcarry"])["started"]
-        self.assertEqual(first, lane.ledger_id("a1"))
-        self.assertIsNone(lane.manage(self.db, NOW + 60, get, fids=["fcarry"])["started"])     # one per hour
-        second = lane.manage(self.db, NOW + HOUR, get, fids=["fcarry"])["started"]
-        self.assertEqual(second, lane.ledger_id("b1"))                  # a2 has the same function as a1
-        lane.manage(self.db, NOW + 2 * HOUR, get, fids=["fcarry"])
-        self.assertEqual(len(lane.active(self.db)), 3)
-        self.assertIsNone(lane.manage(self.db, NOW + 3 * HOUR, get, fids=["fcarry"])["started"])   # three slots
+        self.assertEqual(lane.manage(self.db, NOW, get, fids=["fcarry"])["started"], lane.ledger_id("a1"))
+        self.assertIsNone(lane.manage(self.db, NOW + 60, get, fids=["fcarry"])["started"])     # one per 10 minutes
+        got = [lane.manage(self.db, NOW + k * lane.START_EVERY, get, fids=["fcarry"])["started"] for k in range(1, 7)]
+        self.assertEqual(got[:5], [lane.ledger_id(k) for k in ("a2", "b1", "b2", "c1", "c2")])   # a3: a1, a2 hold it
+        self.assertIsNone(got[5])                                                                 # six slots
+        self.assertEqual(len(lane.active(self.db)), lane.SLOTS)
 
     def test_coins_without_both_books_are_dropped_and_too_few_skip(self):
         with mock.patch.object(explore, "universe", lambda fam: tuple(COINS + ["SOLUSDT"])):
@@ -364,7 +366,7 @@ class Scanner(Base):
     def test_entry_rule(self):
         self.scan(NOW - 2 * HOUR, {"AAAUSDT": 0.006, "CCCUSDT": 0.006, "DDDUSDT": -0.02})
         self.scan(NOW - HOUR, {"AAAUSDT": 0.007, "BBBUSDT": 0.012, "EEEUSDT": 0.006, "DDDUSDT": -0.03})
-        self.assertEqual(lane.scan_candidates(self.db, NOW), ["BBBUSDT", "AAAUSDT"])   # largest first; no negative
+        self.assertEqual(lane.scan_candidates(self.db, NOW), ["BBBUSDT", "AAAUSDT", "EEEUSDT"])   # 12b: one >= 0.5 %
 
     def test_stale_scans_open_nothing_and_hold(self):
         self.scan(NOW - 4 * HOUR, {"BBBUSDT": 0.02})
@@ -372,18 +374,17 @@ class Scanner(Base):
         self.assertEqual(lane.scan_signal(self.db, "BBBUSDT", True, NOW), 1.0)
         self.assertEqual(lane.scan_signal(self.db, "BBBUSDT", False, NOW), 0.0)
 
-    def test_starts_at_once_up_to_five_independent_of_lane_slots(self):
-        self.scan(NOW - 60, {f"C{i}USDT": 0.01 + i / 1000 for i in range(7)})
-        out = lane.manage(self.db, NOW, market(), fids=[])
-        self.assertEqual(len(out["scanner"]["started"]), lane.PROBES)                # probes per pass
-        out = lane.manage(self.db, NOW + 60, market(), fids=[])
-        self.assertEqual(len(out["scanner"]["started"]), 2)                          # five in all
+    def test_starts_at_once_up_to_ten_independent_of_lane_slots(self):
+        self.scan(NOW - 60, {f"C{i:02d}USDT": 0.01 + i / 1000 for i in range(12)})
+        per_pass = [len(lane.manage(self.db, NOW + 60 * k, market(), fids=[])["scanner"]["started"])
+                    for k in range(5)]
+        self.assertEqual(per_pass, [lane.PROBES, lane.PROBES, lane.PROBES, 1, 0])      # probes per pass, ten in all
         info = lane.started(self.db)
-        self.assertEqual(len(info), 5)
+        self.assertEqual(len(info), lane.SCAN_SLOTS)
         self.assertTrue(all(lane.is_scanner(i) and len(i["coins"]) == 1 for i in info.values()))
-        self.assertEqual(sorted(i["coins"][0] for i in info.values()), [f"C{i}USDT" for i in range(2, 7)])
+        self.assertEqual(sorted(i["coins"][0] for i in info.values()), [f"C{i:02d}USDT" for i in range(2, 12)])
         self.publish([result()])                                                     # the lane still starts its own
-        self.assertIsNotNone(lane.manage(self.db, NOW + 120, market(), fids=["fcarry"])["started"])
+        self.assertIsNotNone(lane.manage(self.db, NOW + 600, market(), fids=["fcarry"])["started"])
 
     def test_trades_both_legs_and_closes_when_the_premium_is_gone(self):
         self.scan(NOW - 60, {"BBBUSDT": 0.015})

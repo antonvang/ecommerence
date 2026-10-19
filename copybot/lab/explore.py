@@ -39,8 +39,8 @@ SPLIT = "explore0"
 WINDOW = ((2020, 3), (2021, 12))               # 10c: after the USD-M perp listings of January-February 2020
 data.SPLITS.setdefault(SPLIT, WINDOW)          # the lane's own window; the gateway (lab/data.py) never serves it
 LABEL = "EXPLORATORY_LANE"
-WEEKLY_MAX = 5000                              # 10a point 4
-BATCH = 30                                     # new variants per job (one job at a time, at most hourly)
+WEEKLY_MAX = 10080                             # 12b point 3 (60 an hour for the whole week; 10a: 5000)
+BATCH = 60                                     # 12b: new variants per job (one job at a time, at most hourly)
 PROPOSALS_MAX = 3
 SHARPE_MIN = 1.0
 THIRDS_MIN = 2
