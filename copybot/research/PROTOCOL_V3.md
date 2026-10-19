@@ -1050,3 +1050,18 @@ på de 15 mønter, der bestod kvalitetsreglen i `explore0`. Det følger ordlyden
 2. En aktiv konto, der handler mønter, som varianten ikke blev testet på, stoppes automatisk (`lane.retired`, regel
    `basket`) og lukkes reducerende. Varianten afprøves ikke igen (punkt 2); næste kandidat tager pladsen.
 3. Strengere, ikke lempeligere: kontoen kan kun handle det, testen dækker.
+
+## Ændring 12b (2026-10-19): endnu mere aggressiv — før kode
+
+**Beslutning:** brugeren bad 2026-10-19 om at gøre systemet "endnu mere aggressiv" og svarede på Claudes forslag til
+12b: "Jeg vil gerne have den". Kun simuleret handel; ændring 10 punkt 1, 11 og 12 gælder ud over dette. Stopreglerne
+er uændrede, så det, der ikke virker, stoppes lige så hurtigt.
+
+1. **Scannerkonti** (ændring 12 punkt 2 og 4): ind ved den første måling med positiv præmie ≥ 0,5 % (scannerens
+   tærskel); højst 10 aktive scannerkonti. Udreglen (væk i to målinger i træk) er uændret.
+2. **Banekonti** (ændring 11 punkt 3): højst 6 aktive, højst to pr. mekanismefunktion, højst én ny pr. 10 minutter.
+3. **Banen** (ændring 10a punkt 4): højst 60 nye varianter pr. job (stadig ét job ad gangen, højst ét i timen) og
+   højst 10.080 varianter pr. ISO-uge, så 60 i timen kan holdes hele ugen.
+4. **Ærligt:** flere konti og lavere indgang betyder flere rundture og mere betalt spread i små mønter. Det giver
+   hurtigere svar på, hvad der betaler sig, ikke mere bevis. Intet er afkastvalgt.
+5. **Netværk:** ingen nye værter. Højst 10 + 6 konti; bøger hentes ved start, ved timens opgørelse og før ordrer.
