@@ -874,3 +874,80 @@ længere end nødvendigt. pm_lp's egne regler (perioder, krav, holdout, evalueri
    F2 kan alligevel nå sin kohorte inden 2026-11-30.
 5. **Driftsregel B** (`research/LINUX_DRIFT.md`): deploy af lab'en er igen tilladt fra 2026-11-14; ingen planlagt
    genstart af maskinen eller systemopdatering før 2026-11-28, så indsamlerens opfølgning ikke afbrydes.
+
+## Ændring 11 (2026-10-19): banekonti — banens kandidater handles automatisk på papir og stoppes automatisk — før kode
+
+**Beslutning:** brugeren besluttede 2026-10-19 i sessionen, at systemet selv skal handle på det, banen finder, og selv
+stoppe det, der ikke virker ("når den finder noget ... så handler den på det med det samme og så når det ikke virker
+med så fyrer den agtig strategien", "fortsæt med 11", "gør automatisk"). Kun simuleret handel. Ingen rigtige penge,
+ingen ordrer til en børs og ingen nøgler; rigtige penge kræver fortsat piloten og brugerens egen beslutning.
+
+**Uændret:** ingen gate lempes, ingen tærskel, intet vindue, ingen alfa og ingen registreret afgørelse ændres.
+Ændring 10 punkt 1 gælder fuldt ud: banen og dens konti er aldrig bevis, tæller aldrig som PASS, i en gate, i den
+formelle saldo eller i fremadtest-saldoen, og de registrerer ingen eksperimenter, overgange, resultater, trials eller
+alfa-rækker. En kandidat bliver kun til noget formelt gennem et familieudkast efter ændring 8 og brugerens
+godkendelse. De afgørende kriterier for tab af edge i godkendt papirhandel (ændring 9 punkt 4) skrives som en senere
+ændring, før den første strategi går i godkendt papirhandel; ingen er i nærheden i dag.
+
+1. **Hvad.** En banekonto (`LANE_<10 hex>`, de første 10 tegn af SHA-256 af variantens nøgle) er en simuleret konto
+   med 10.000 USD, som handler én kandidat fra banen live: samme mekanismefunktion, parametre og møntkurv som i
+   `explore0`. Mærket "BANEKONTO (udforskning, simuleret, aldrig bevis)" i dashboardet.
+
+2. **Hvilke kandidater.**
+   - Varianter i banens resultater (`artifacts/_explore/<dag>/*.json`), der opfylder alle tre krav i ændring 10 punkt
+     5, for en familie, der stadig har en gyldig godkendelse. Bedste netto-Sharpe først (ved lighed nøglen).
+   - Kun familier med instrumentmodellen `spot_perp_ratio` (i dag F1 `fcarry`). `spot_delivery_ratio` (F2) kræver
+     COIN-M live-data og en separat ændring.
+   - En variant handles højst én gang; en stoppet konto startes aldrig igen.
+
+3. **Automatisk start** (actor `system:lane`, hændelsen `lane.started`; i modsætning til ændring 3 og 7 kræver det
+   ingen menneskelig start).
+   - Højst 3 aktive banekonti, højst én pr. mekanismefunktion, og højst én ny konto pr. klokketime.
+   - Ved start hentes ordrebogen for begge ben af hver mønt i kurven (eller i familiens banes univers, når kurven er
+     alle mønter). En mønt, hvor et ben ikke kan hentes, udelades og registreres. Er der færre end 5 mønter tilbage,
+     registreres `lane.skipped`, og varianten afprøves ikke igen.
+   - Hændelsen registrerer nøglen, artefaktens sti og SHA-256, mønterne og forventningen (punkt 6).
+
+4. **Handel.**
+   - Signalet beregnes med familiens egen funktion i `lab/families/<fid>.py` på de seneste 1h-bars og den afregnede
+     funding fra Binance USD-M (højst 1000 bars og 200 afregninger, som paper-runneren i dag). Beslutningstidspunktet
+     01:00 UTC og alle regler er familiens.
+   - Position +1 i en mønt = lang spot og kort perp med samme mængde. Ved åbning er mængden kontoens værdi / (2 ×
+     antal mønter) / perp-midtkurs pr. ben. Mængden holdes, til signalet går til 0; der rebalanceres ikke. Et ben, der
+     kun delvist blev fyldt, bringes op til det andet bens mængde i en senere kørsel.
+   - Taker-ordrer går gennem den offentlige ordrebog med 20 niveauer, som i den eksisterende papirmotor. Gebyr 0,10 %
+     pr. ben (spot-gebyret, også for perp-benet: forsigtigt), ekstra slippage 0,02 %, forventet spread 0,04 % pr. ben.
+   - Funding bogføres for perp-benet efter ændring 9 punkt 2. Spot-benet har ingen funding.
+   - Risikoreglerne i ændring 7 punkt 1 gælder uændret (drawdown 10 %, data, spread). Afstemningsfejl giver
+     FAIL_CLOSED, og kontiene tæller med i "alle papirkonti afstemmer" (strengere, ikke lempeligere).
+
+5. **Automatisk stop** (hændelsen `lane.retired`, actor `system:lane`; positionerne lukkes med reducerende ordrer).
+   En konto stoppes, så snart én af disse gælder:
+   - **Edge mangler:** mindst 7 hele dagsafkast live, og z = (live gennemsnit − forventet gennemsnit) / (forventet
+     spredning / √n) ≤ −3.
+   - **Tab:** kontoens værdi ved seneste opgørelse er mindst 3 % under startkapitalen.
+   - **Pause:** kontoen har været sat på pause af en risikoregel i 24 timer.
+   - **Familien:** familiens godkendelse er ikke længere gyldig.
+   - **Udløb:** 90 dage efter start.
+   - **Mennesket:** brugeren slår banekontiene fra (`python3 -m lab lane-off --reason "..."`, i en terminal); så
+     stoppes alle aktive konti, og ingen nye startes, før brugeren skriver `lane-on`.
+   Et menneske kan genoptage en pauset banekonto inden for de 24 timer med `sim-resume` (ændring 7 punkt 1).
+
+6. **Forventning.** Fra variantens resultat i `explore0` ved 2× omkostninger: gennemsnit = netto total / dage,
+   spredning = gennemsnit × √365 / netto-Sharpe. Begge divideres med 2, fordi backtesten regner pr. enhed af det ene
+   ben, mens kontoen bruger kapital til begge ben (`capital_per_unit_notional` 2). Live-dagsafkast er ændringen i
+   kontoens værdi fra én UTC-dags sidste opgørelse til den næstes, efter omkostninger og inklusive funding.
+   - Ærlig forventning: `explore0` er 2020-2021, hvor funding var usædvanligt høj. Mange konti vil derfor blive stoppet
+     af "edge mangler". Det er reglen, der virker, ikke en fejl.
+   - Med z ≤ −3 tjekket dagligt i op til 90 dage stoppes en konto, hvis edge faktisk er som forventet, med en
+     sandsynlighed på højst få procent (gentagne kig).
+
+7. **Lovende konti (ikke-afgørende).** Har en konto mindst 30 dagsafkast, positivt live-gennemsnit og z > −1,
+   registreres én gang `lane.promising`. Det er et signal til, at en AI skriver et familieudkast efter ændring 8 for
+   brugerens godkendelse; det er aldrig bevis og ændrer intet andet.
+
+8. **Netværk.** Nyt: offentlig Binance spot-ordrebog (`https://api.binance.com/api/v3/depth`, 20 niveauer, ingen
+   nøgle) for spot-benet. Perp-benet bruger paper-runnerens eksisterende forespørgsler og timecache. Bøger hentes ved
+   start, ved timens opgørelse og lige før hver ordre; signal og funding fra timecachen. Højst 3 konti.
+
+9. **Rækkefølge.** Ændringstekst (denne) → kode og tests i dev → brugeren deployer (regel B: ikke 2026-10-31..11-13).
