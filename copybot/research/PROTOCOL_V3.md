@@ -973,3 +973,45 @@ godkendelse. De afgørende kriterier for tab af edge i godkendt papirhandel (æn
    hentes ved start, ved timens opgørelse og lige før hver ordre; signal og funding fra timecachen. Højst 3 konti.
 
 9. **Rækkefølge.** Ændringstekst (denne) → kode og tests i dev → brugeren deployer (regel B: ikke 2026-10-31..11-13).
+
+## Ændring 12 (2026-10-19): scannerkonti — scannerens fund handles straks på papir — før kode
+
+**Beslutning:** brugeren godkendte 2026-10-19 i sessionen udkastet (`research/drafts/AENDRING12_UDKAST.md`) og bad om
+en mere aggressiv udgave: "ja til ændring 12 dog behøver det ikke være så tilbageholdende. Må gerne være aggressiv og
+handle med samme på det - kør automatisk". Teksten herunder erstatter udkastet. Kun simuleret handel.
+
+**Uændret:** ændring 10 punkt 1 og ændring 11 gælder: aldrig bevis, ingen formelle rækker, ingen formel saldo, ingen
+alfa; rigtige penge kræver piloten og brugerens beslutning. Mekanismen er F1's (lang spot, kort perp i samme mønt,
+pengestrømmen er funding; ikke prisforudsigende), men reglen for ind og ud er scannerens, ikke en familiefunktion, så
+kontiene kan aldrig blive til en F1-instans eller et forslag til en.
+
+1. **Konto.** En banekonto efter ændring 11 med kilden `scanner` (`LANE_<10 hex>` af nøglen `scan|<mønt>|<time>`),
+   10.000 USD, én mønt, mærket "SCANNERKONTO (scannerfund, simuleret, aldrig bevis)". Handel, omkostninger, funding,
+   risikoregler, afstemning, `lane-off` og visning som i ændring 11.
+
+2. **Ind (straks).** Scanneren måler én gang i timen. En mønt med Binance spot og USD-M perp åbnes ved den første
+   kørsel efter en scanning, hvor dens `perp_premium` (mark/index − 1) er positiv og enten mindst 1 % eller mindst
+   0,5 % (scannerens tærskel) i de to seneste scanninger. Mængden er halvdelen af kontoens værdi pr. ben.
+
+3. **Ud.** Positionen lukkes, når mønten ikke er markeret med positiv præmie i de to seneste scanninger. En lukket
+   konto åbner igen efter reglen i punkt 2. Er den seneste scanning over 3 timer gammel, åbnes intet nyt, og en åben
+   position holdes.
+
+4. **Antal.** Højst 5 aktive scannerkonti, én pr. mønt, ingen timegrænse. De tæller ikke med i ændring 11's 3 pladser.
+   En mønt kan få en ny konto 24 timer efter, at dens forrige blev stoppet eller sprunget over.
+
+5. **Automatisk stop.** Ændring 11 punkt 5 med disse tal: tab ≥ 5 % af startkapitalen; 24 timer på pause; kilden
+   betaler ikke (funding − gebyrer ≤ 0) 3 dage efter start; ingen position i 2 sammenhængende døgn; udløb efter 30
+   dage; brugerens `lane-off`. Der er ingen historisk forventning, så z-reglen og "lovende"-reglen gælder ikke.
+   Risikoreglernes drawdown-pause ved 10 % gælder uændret.
+
+6. **Ærlige forbehold.** Mønterne er ofte små med tynde bøger og store spreads; ordren går gennem bogens 20 niveauer,
+   så slippage bogføres ærligt, og spread-reglen pauser kontoen. En høj præmie kan betyde forestående afnotering
+   eller en presset short; ændringen i spot/perp-forholdet rammer kontoen. Indgang ved første 1 %-måling betaler
+   omkostninger også for kortvarige udsving. Reglerne er ikke valgt efter afkast; intet afkast er beregnet.
+
+7. **Netværk.** Ingen nye værter og ingen nye forespørgsler fra scanneren; reglen læser scannerens egne målinger i
+   registret. Handlen bruger USD-M som i dag og spot-bogen fra `data-api.binance.vision` (ændring 11 punkt 8). Højst
+   5 ekstra mønter.
+
+8. **Rækkefølge.** Tekst (denne) → kode og tests i dev → brugeren deployer (regel B: ikke 2026-10-31..11-13).
