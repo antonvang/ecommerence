@@ -585,6 +585,10 @@ class Screen(A3Base):
         self.assertEqual(covered, sorted(COINS))
         code = families.request(self.db, "dbasis", "human:anton", "Anton approves F2 after reading it")
         families.confirm(self.db, code, CLEAN["family"]["committed"][:8], "human:anton")
+        from lab import explore           # the amendment 10 lane would fetch explore0 for the approved family: this
+        lane = mock.patch.object(explore, "eligible", lambda db: [])     # test screens F2 only, without network
+        lane.start()
+        self.addCleanup(lane.stop)
         self.assertEqual(fleet.strategy_pass(self.db)["registered"], [e])
         ag = [a for a in fleet.agents(self.db_path) if a.kinds]
         for _ in range(50):

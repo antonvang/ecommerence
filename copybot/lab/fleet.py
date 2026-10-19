@@ -23,7 +23,7 @@ from lab.db import DB
 from lab.risk import Risk
 from lab.supervisor import Worker
 
-HEAVY = {"backtest", "cost", "adversarial", "validate", "holdout", "observe", "observe_interim"}
+HEAVY = {"backtest", "cost", "adversarial", "validate", "holdout", "observe", "observe_interim", "explore"}
 # Heavy steps run in worker processes (Python threads cannot use several cores at once). One slot per process;
 # two cores stay free for the supervisor, agents, dashboard and the rest of the PC. LAB_SLOTS overrides,
 # LAB_THREADS=1 runs heavy steps in-thread (used by tests that patch module state).
@@ -393,10 +393,11 @@ def strategy_pass(db):
     fams = families.pass_(db, "strategy-1")                                             # errors contained per family
     from lab import promotion
     decisions = [d for d in promotion.step(db) if d.get("applicable")]                 # amendment 4: one decision path
-    from lab import scanresearch
+    from lab import explore, scanresearch
     return {"registered": registered, "promotions": [(d["exp_id"], d["to"], d["allowed"]) for d in decisions],
             "holdouts_queued": pipeline.enqueue_holdouts(db), "diagnostics_queued": pipeline.enqueue_diagnostics(db),
             "scan_research_queued": scanresearch.enqueue(db),           # amendment 9 section 3: digest and dossiers
+            "explore_queued": explore.enqueue(db, every=explore.ENQUEUE_EVERY),   # amendment 10: hourly
             **({"families": fams} if fams else {})}
 
 
@@ -477,8 +478,10 @@ ROSTER = (
      600, False),
     ("strategy-1", "Strategy agent: registers approved-template instances, queues approved holdouts", None,
      strategy_pass, 30, False),
-    ("backtest-1", "Backtest agent: grid positions on the train window", ("backtest",), None, None, True),
-    ("backtest-2", "Backtest agent: grid positions on the train window", ("backtest",), None, None, True),
+    ("backtest-1", "Backtest agent: grid positions on the train window; exploration lane (amendment 10)",
+     ("backtest", "explore"), None, None, True),
+    ("backtest-2", "Backtest agent: grid positions on the train window; exploration lane (amendment 10)",
+     ("backtest", "explore"), None, None, True),
     ("cost-1", "Cost agent: net results, 2x cost stress, trials ledger, selection", ("cost",), None, None, True),
     ("cost-2", "Cost agent: net results, 2x cost stress, trials ledger, selection", ("cost",), None, None, True),
     ("adversarial-1", "Adversarial agent: look-ahead, poison, delay, placebo", ("adversarial",), None, None, True),
@@ -489,7 +492,7 @@ ROSTER = (
     ("validation-2", "Validation agent: frozen variant on validation; forward test; sealed holdout after approval",
      ("validate", "holdout", "observe", "observe_interim"), None, None, True),
     ("report-1", "Reporting agent: results, lifecycle verdicts, markdown reports; diagnostics of finished experiments",
-     ("report", "diagnose", "scan_digest", "scan_dossier"), None, None, False),
+     ("report", "diagnose", "scan_digest", "scan_dossier", "explore_report"), None, None, False),
     ("paper-1", "Paper execution agent: simulated orders for PAPER_TRADING experiments only", None, paper_pass, 60,
      False),
     ("risk-1", "Risk supervisor agent: RAM/disk holds, paper reconciliation", None, None, 15, False),

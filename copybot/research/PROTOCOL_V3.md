@@ -761,3 +761,63 @@ Ingen regel ændres. De faste tal og detaljer, som koden bruger, skrives her, f�
 - **Punkt 2, funding.** En afregning for en åben position, der er ældre end de hentede timebarer (cirka 41 dage), kan
   ikke prissættes. Den registreres én gang som hændelsen `paper.funding_gap` og springes over; senere afregninger
   bogføres som normalt. En afregning, hvor positionen var 0, bogføres ikke og blokerer intet.
+
+## Ændring 10 (2026-10-19): automatisk udforskningsbane — før kode
+
+**Beslutning:** brugeren godkendte 2026-10-19 i sessionen udkastet (`research/drafts/AENDRING10_UDKAST.md`, commit
+`103a0be`) og de fem tal mærket [BEKRÆFT] som foreslået ("JA kør alt"). Ønsket: flåden skal søge efter nye idéer hele
+tiden. Teksten herunder er udkastet med de præciseringer, koden kræver; intet er lempet.
+
+**Uændret:** ingen gate lempes, ingen tærskel, intet vindue, ingen alfa og ingen registreret afgørelse ændres.
+Familier oprettes og godkendes fortsat kun efter ændring 8 (brugeren skriver godkendelsen i terminalen). Kun
+ikke-prisforudsigende mekanismer (ændring 8 punkt 2). Udforskning er aldrig grundlag for handel med rigtige penge.
+
+1. **Udforskning er aldrig bevis.**
+   - Alt, banen producerer, mærkes `EXPLORATORY_LANE` og tæller aldrig som PASS, aldrig i en gate og aldrig i en
+     saldo. Banen registrerer ingen eksperimenter, overgange, resultater eller alfa-rækker, ændrer ingen tilstand og
+     handler ikke, heller ikke på papir.
+   - Ingen alfa reserveres eller bruges. Banen tæller ikke som en familie i programstoppet (ændring 8 punkt 15).
+
+2. **Eget datavindue, adskilt fra familiernes.**
+   - Banen læser kun udforskningsvinduet `explore0` = 2020-01..2021-12, før familiernes `train3` (2022-01..2023-06).
+   - Den læser aldrig `train3`, `validation3`, holdout 2024, den reserverede periode fra 2025-01-01 eller
+     fremaddata. Koden håndhæver det: banens eneste dataadgang afviser alle andre vinduer, og en test viser det.
+   - Datadækningen for 2020-2021 er ukendt pr. mønt og instrument. En mønt, der ikke består den eksisterende
+     datakvalitetsregel i `explore0`, udelades mekanisk.
+   - Banen evaluerer en familie, når mindst 5 mønter består (samme gulv som F2-designet). Familiernes eget
+     `min_symbols` (F1: 24) gælder ikke i banen, fordi mange mønter først fik perps i 2020-2021, og fordi banen intet
+     afgør. [BEKRÆFT: tallet 5 er tilføjet under kodningen og skal bekræftes af brugeren.]
+
+3. **Hvad banen søger.**
+   - Kun mekanismefunktionerne i `lab/families/<fid>.py` for familier med en gyldig godkendelse efter ændring 8 (i
+     dag kun F1 `fcarry`; F2 `dbasis` først efter sin godkendelse). Banen ser derfor aldrig en familie, før brugeren
+     har godkendt den, og den kan ikke påvirke en godkendelse, der endnu ikke er givet.
+   - Kun de godkendte instrumentmodeller (`spot_perp_ratio`, `spot_delivery_ratio`) og familiens eget univers og
+     omkostninger (2× stress). En ny instrumentmodel eller et nyt tag kræver en separat ændring.
+   - Parametergitrene står fast i `lab/explore.py` (`GRIDS`) og holder sig inden for familiernes egne grænser
+     (tilbagekig højst 14 dage), så et forslag kan blive til en familie uden ændring.
+   - Attributionsreglen fra familiens modul beregnes for hver variant.
+
+4. **Omfang og ressourcer.**
+   - Højst 500 varianter pr. ISO-uge (UTC). Jobbene har lavere prioritet end alle andre jobs og deler flådens grænse
+     for tunge jobs og ressourcereglerne (RAM, disk).
+   - Data hentes tidligst 2026-11-28 00:00 UTC (embargoen i ændring 8), gennem familiernes downloadvagt: kun
+     `data.binance.vision`, højst 2 samtidige downloads. Før det venter jobbet.
+
+5. **Forslag til brugeren.**
+   - Ugentligt skriver report-1 en forslagsliste (`artifacts/_explore/<uge>.json` og hændelsen
+     `research.explore_proposals`) med højst 3 kandidater, der opfylder alle:
+     - netto Sharpe ≥ 1,0 i `explore0` med 2× omkostninger;
+     - familiens attributionsregel holder (mekanismens pengestrøm, ikke prisbevægelse, bærer resultatet);
+     - positiv netto i mindst 2 af 3 kronologiske tredjedele af `explore0`.
+   - Hvert forslag oplyser antallet af afprøvede varianter i alt (multipel testning).
+   - Et forslag bliver kun til en familie, hvis en AI skriver et familieudkast efter ændring 8, og brugeren godkender
+     det. Familiefilen skal citere forslaget og antallet af afprøvede varianter.
+
+6. **Hvad banen ikke ændrer.**
+   - Alfa-budgettet (W0 = 0,05) og programstoppet gælder fuldt ud for familier, der kommer fra banen.
+   - Watcherens og kommandocentralens "pipeline-fremskridt" tæller ikke udforskningsjobs (som `scan_digest` i
+     ændring 9).
+
+7. **Rækkefølge.** Ændringstekst (denne) → kode og tests i dev → deploy tidligst efter 2026-11-27 (pm_lp's holdout og
+   opfølgning røres ikke; regel B i `research/LINUX_DRIFT.md`) → data hentes fra 2026-11-28.

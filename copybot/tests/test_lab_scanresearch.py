@@ -215,7 +215,8 @@ class Queue(Base):
         self.assertEqual(command.job_state(self.db, "E_a"), (None, None, None))
         self.assertTrue({"scan_digest", "scan_dossier"} <= set(pipeline.HANDLERS))
         kinds = {n: k for n, _r, k, *_ in fleet.ROSTER}
-        self.assertEqual(kinds["report-1"], ("report", "diagnose", "scan_digest", "scan_dossier"))
+        self.assertEqual(kinds["report-1"], ("report", "diagnose", "scan_digest", "scan_dossier",
+                                             "explore_report"))              # amendment 10: the lane's weekly list
 
 
 class Dossier(Base):

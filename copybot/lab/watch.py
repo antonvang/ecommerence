@@ -177,7 +177,8 @@ def _progress(con_path, now, sup):
         if now - started < 2 * 3600:
             return (None, "not judged (fleet up less than 2 h)")
         last = con.execute("SELECT MAX(ts) FROM events WHERE kind='job.done' AND COALESCE(json_extract(payload, "
-                           "'$.kind'), '') NOT IN ('diagnose', 'scan_digest', 'scan_dossier')").fetchone()[0]
+                           "'$.kind'), '') NOT IN ('diagnose', 'scan_digest', 'scan_dossier', 'explore', "
+                           "'explore_report')").fetchone()[0]
         # (non-decisional side jobs run daily; they must not hide an idle hypothesis pipeline)
         try:
             runnable, running = con.execute("SELECT COALESCE(SUM(status='queued' AND next_run<=?), 0), "

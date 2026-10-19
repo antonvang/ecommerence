@@ -1332,7 +1332,12 @@ HANDLERS = {"data": step_data, "backtest": step_backtest, "cost": step_cost, "ad
             "scan_digest": lambda db, job, worker: __import__("lab.scanresearch", fromlist=["step_digest"])
             .step_digest(db, job, worker),
             "scan_dossier": lambda db, job, worker: __import__("lab.scanresearch", fromlist=["step_dossier"])
-            .step_dossier(db, job, worker)}
+            .step_dossier(db, job, worker),
+            # PROTOCOL_V3 amendment 10: the exploration lane (decides nothing; lab/explore.py imports this module)
+            "explore": lambda db, job, worker: __import__("lab.explore", fromlist=["step_explore"])
+            .step_explore(db, job, worker),
+            "explore_report": lambda db, job, worker: __import__("lab.explore", fromlist=["step_report"])
+            .step_report(db, job, worker)}
 
 
 def enqueue_holdouts(db, actor="strategy-1"):
