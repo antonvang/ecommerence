@@ -152,6 +152,8 @@ Driftsregler, ikke en protokolændring: ingen porte, vinduer, paneler, data elle
 - Indsamleren stoppes aldrig med vilje i perioden.
 - Kan noget ikke vente (fx en sikkerhedsrettelse), kræver det brugerens udtrykkelige godkendelse, og indsamleren
   bliver ved med at køre.
+- Undtaget er de trin, protokollen selv kræver: `dev` og commit af `PM_LP_FROZEN.md` (punkt F). De rører ikke
+  indsamleren, og en commit med kun dokumentation kræver ingen genstart.
 
 **C. Autostart af indsamleren alene, først når S7 er åben.**
 - Forudsætning: `python3 -m lab gate` viser `S7 gate: OPEN` (tidligst ca. 2026-10-26 10:30 UTC). Før det installeres
@@ -191,6 +193,38 @@ Driftsregler, ikke en protokolændring: ingen porte, vinduer, paneler, data elle
   til journalen (mindre end `adm`, som også giver alle filer i `/var/log`).
 - Ændring (brugeren, kræver sudo): `sudo usermod -aG systemd-journal anton`. Gælder fra næste login.
 - Fortryd: `sudo gpasswd -d anton systemd-journal`.
+
+**F. `dev` og `PM_LP_FROZEN.md` (PM_LP_SPEC §9 trin 5) på en kopi, så indsamleren ikke forstyrres.**
+- `dev` nægter at køre før valideringen er slut (`day_of(nu) <= D0+13`). Første mulige tid er 2026-10-31 00:00 UTC,
+  dvs. holdout dag 1. Kør tidligst 01:00 UTC (02:00 dansk tid; sommertiden slutter 10-25), så de sidste trades fra
+  10-30 er hentet. `dev` læser kun rækker før 10-31 00:00 UTC og bruger intet netværk, så resultatet er det samme
+  på en kopi som på den levende database.
+- Hvorfor en kopi: `dev` læser alle markeder i development og validation og hasher hele databasefilen
+  (`export_manifest`). På den levende database ville det konkurrere med indsamleren i holdout, og hashen ville
+  beskrive en fil, der ændrer sig hvert minut. En SQLite-backup er konsistent, tager få sekunder (indsamleren
+  venter op til 60 s på en lås), og kopien gemmes som det præcise grundlag for resultatet.
+- Trin (fra `~/ecommerence/copybot`; intet her rører indsamleren):
+  ```
+  mkdir -p ~/pm_lp_runs/2026-10-31
+  python3 - ~/pm_lp_runs/2026-10-31/pm_lp.db <<'EOF'
+  import sqlite3, sys
+  s = sqlite3.connect('file:data/research/pm_lp/pm_lp.db?mode=ro', uri=True)
+  d = sqlite3.connect(sys.argv[1]); s.backup(d); d.close(); s.close()
+  EOF
+  sha256sum ~/pm_lp_runs/2026-10-31/pm_lp.db
+  git -C ~/ecommerence worktree add --detach ~/pm_lp_devrun "$(git -C ~/ecommerence rev-parse HEAD)"
+  mkdir -p ~/pm_lp_devrun/copybot/data/research/pm_lp
+  cp ~/pm_lp_runs/2026-10-31/pm_lp.db ~/pm_lp_devrun/copybot/data/research/pm_lp/pm_lp.db
+  cd ~/pm_lp_devrun/copybot && python3 -m research.pm_lp dev | tee ~/pm_lp_runs/2026-10-31/dev_output.json
+  ```
+- Kontrol: `git` i resultatet er produktionens HEAD, `D0` er 20743, og `db_sha256` er lig `sha256sum` af kopien.
+- `holdout` læser `data/research/results/pm_lp_v1_dev.json` i produktionsmappen: kopiér den dertil
+  (`cp ~/pm_lp_devrun/copybot/data/research/results/pm_lp_v1_dev.json ~/ecommerence/copybot/data/research/results/`).
+- `research/PM_LP_FROZEN.md` skrives med linjen `n_req: <tal>` (eller `n_req: none`, når middelværdien er ≤ 0),
+  development- og validation-resuméet, `coverage_dev`, `coverage_val`, `db_sha256`, `git` og tidspunktet for
+  kopien. Den committes og lægges i produktion (fast-forward og `git pull --ff-only`). `holdout` kræver, at filen er
+  committet og uændret i produktionsmappen.
+- Oprydning: `git -C ~/ecommerence worktree remove ~/pm_lp_devrun`. Kopien i `~/pm_lp_runs/2026-10-31/` gemmes.
 
 ## Overvågning
 
