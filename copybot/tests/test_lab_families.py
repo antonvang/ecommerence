@@ -7,6 +7,7 @@ import shutil
 import sqlite3
 import sys
 import tempfile
+import types
 import unittest
 from unittest import mock
 
@@ -364,6 +365,13 @@ class A3Base(unittest.TestCase):
 
     def events(self, kind):
         return [json.loads(r[0]) for r in self.db.q("SELECT payload FROM events WHERE kind=? ORDER BY id", kind)]
+
+    def queue_on_the_fixture_clock(self):
+        """The job queue (enqueue, claim, defer, runnable_any) reads the fixture clock, so a test about dates is not red
+        once the wall clock passes them."""
+        p = mock.patch.object(jobs, "time", types.SimpleNamespace(time=lambda: self.now[0]))
+        p.start()
+        self.addCleanup(p.stop)
 
     def family_batches(self):
         return [b for b in self.events("batch.registered") if b.get("family")]
@@ -779,6 +787,7 @@ class Embargo(A3Base):
         self.assertEqual(sum("/data/spot/monthly/klines/BTCUSDT/1h/" in u for u in calls), 18)
 
     def test_a_screening_job_waits_for_the_embargo_instead_of_failing(self):
+        self.queue_on_the_fixture_clock()
         self.now[0] = ts(2026, 10, 20)                                         # registered while spot may be fetched
         self.ready(files=False)
         self.touch(kinds=("klines", "funding"))
@@ -936,8 +945,8 @@ class Invariants(A3Base):
     def test_a_deferred_job_gets_its_attempt_back(self):
         jobs.enqueue(self.db, "data|X", "data", "X", {})
         j = jobs.claim(self.db, "w1", ("data",))
-        self.assertFalse(jobs.defer(self.db, "data|X", "w2", "not the owner", families.EMBARGO_UNTIL))
-        self.assertTrue(jobs.defer(self.db, "data|X", "w1", "embargo", families.EMBARGO_UNTIL))
+        self.assertFalse(jobs.defer(self.db, "data|X", "w2", "not the owner", families.EMBARGO_UNTIL, now=self.now[0]))
+        self.assertTrue(jobs.defer(self.db, "data|X", "w1", "embargo", families.EMBARGO_UNTIL, now=self.now[0]))
         j = jobs.get(self.db, "data|X")
         self.assertEqual((j["status"], j["attempts"], j["next_run"], j["lease_owner"]),
                          ("queued", 0, families.EMBARGO_UNTIL, None))
@@ -2681,9 +2690,9 @@ class PartialBaseBatch(A3Base):
 
     def test_the_base_batch_registers_only_when_every_approved_instance_is_discovered(self):
         families.discover_all(self.db)
-        force_approval(self.db)                                    # approved while all three are still SUPPRESSED
-        self.touch()
         self.revive([F])
+        force_approval(self.db)                                    # approved while floor and hyst are still SUPPRESSED
+        self.touch()
         for _ in range(2):
             self.assertEqual(fleet.strategy_pass(self.db)["registered"], [])        # PoC PartialBatch gave [F]
         self.assertEqual(lifecycle.state(self.db, F), "DISCOVERED")
@@ -2692,7 +2701,11 @@ class PartialBaseBatch(A3Base):
         self.assertIn(f"base instance(s) not DISCOVERED: {H} (SUPPRESSED), {L} (SUPPRESSED)", w[0]["reasons"][0])
         self.assertIn("revival comes before approve-family", w[0]["reasons"][0])
         self.assertTrue(fleet.strategy_pass(self.db)["families"]["fcarry"].startswith("waiting: base instance(s)"))
+        with self.assertRaises(lifecycle.LifecycleError):          # no revival under the approval (review finding 1)
+            self.revive([L])
+        families.revoke(self.db, "fcarry", "human:anton", "revive floor and hyst first, then approve again")
         self.revive([L, H])
+        self.approve()                                             # the path the waiting reason names
         self.assertEqual(sorted(fleet.strategy_pass(self.db)["registered"]), BASE)   # one batch with all three
         b = self.family_batches()
         self.assertEqual((len(b), b[0]["exp_ids"]), (1, BASE))
@@ -2762,6 +2775,34 @@ class BatchFailureResumes(A3Base):
         self.assertEqual(families.unfinished(self.db), ["fcarry"])
         fleet.strategy_pass(self.db)
         self.complete()
+
+    def test_a_member_already_screening_and_a_void_approval_still_get_the_missing_jobs(self):
+        """Review of 4c32ff6, finding 4: enqueue_pipeline queues the 6 jobs in separate transactions and data-1 moves a
+        member to SCREENING at once; and a void approval after the batch event must not stop the resume. Otherwise
+        cost|E never exists, the other members' validate jobs stay blocked and the family hangs on 'screening'."""
+        self.ready()
+        real = jobs.enqueue
+
+        def flaky(db, job_id, *a, **k):
+            if job_id == f"cost|{L}" and not db.one("SELECT 1 FROM events WHERE kind='test.flaky'"):
+                db.event("test.flaky", "fixture", None, {})
+                raise RuntimeError("the pass stopped at the 3rd job of member 2")
+            return real(db, job_id, *a, **k)
+        with mock.patch.object(jobs, "enqueue", flaky):
+            fleet.strategy_pass(self.db)
+        self.assertTrue(families.registered(self.db, "fcarry"))
+        self.assertEqual([len(self.jobs_of(e)) for e in BASE], [6, 2, 0])
+        lifecycle.auto_transition(self.db, L, "SCREENING", "system:data-1", "the data step started")   # as data-1 does
+        self.blobs["adapter"] = {**self.blobs["adapter"], "committed": "9999", "working": "9999"}
+        self.assertIsNone(families.approval(self.db, "fcarry"))               # void after the batch event
+        self.assertEqual(families.unfinished(self.db), ["fcarry"])
+        self.assertEqual(fleet.strategy_pass(self.db)["registered"], [])
+        for e in BASE:
+            self.assertEqual(self.jobs_of(e), sorted(pipeline.STEPS), e)
+            for d in jobs.get(self.db, f"validate|{e}")["depends_on"]:
+                self.assertIsNotNone(jobs.get(self.db, d), d)
+        self.assertEqual(families.unfinished(self.db), [])
+        self.assertEqual(lifecycle.state(self.db, L), "SCREENING")
 
 
 class HumanRegisterEdge(A3Base):
@@ -3268,6 +3309,7 @@ class DeferredJobsLetIdleAgentsSleep(A3Base):
     job and an expired lease anywhere still count (0979ef7; test_lab_step1)."""
 
     def test_jobs_blocked_behind_a_deferred_job_are_not_runnable(self):
+        self.queue_on_the_fixture_clock()
         self.now[0] = ts(2026, 10, 20)
         self.ready(files=False)
         self.touch(kinds=("klines", "funding"))
@@ -3366,6 +3408,222 @@ class DelistedCoinsLeaveFromTheDayAfter(ForwardBase):
         with self.assertRaises(urllib.error.HTTPError):
             families.guarded_get("train3", fetch=gone)(screen)
         self.assertIn(screen, families.absent())
+
+
+
+class ReportStepResumesAfterACrash(A5Base):
+    """Review of 4c32ff6, finding 5: the report step records its result and takes its edge before jobs.complete. A retry
+    of a family instance's report job (a crash, a lost lease) completes what the first run recorded, records nothing
+    twice, and never fails for good on 'requires lifecycle SCREENING' (a failed report job stops the family for good
+    and leaves alpha_F reserved)."""
+
+    def results(self):
+        return self.db.one("SELECT COUNT(*) FROM results")[0]
+
+    def test_a_rerun_report_after_its_edge_records_nothing_and_returns_the_first_result(self):
+        self.register()
+        first = {F: self.screened(F, sharpe=1.5), L: self.screened(L, observe=False)}
+        n = self.results()
+        for e, r in first.items():
+            again = pipeline.step_report(self.db, {"exp_id": e}, "report-1")
+            self.assertEqual((again["result_id"], again["state"], again["verdict"], again.get("resumed")),
+                             (r["result_id"], r["state"], r["verdict"], True), e)
+        self.assertEqual((lifecycle.state(self.db, F), lifecycle.state(self.db, L)), ("OBSERVATION", "REJECTED"))
+        self.assertEqual(self.results(), n)
+
+    def test_a_crash_between_the_result_and_the_edge_takes_the_edge_on_the_retry(self):
+        self.register()
+        real = lifecycle.auto_transition
+
+        def dies(db, eid, to, *a, **k):
+            if to != "SCREENING":
+                raise RuntimeError("the worker died after the result")
+            return real(db, eid, to, *a, **k)
+        with mock.patch.object(lifecycle, "auto_transition", dies):
+            with self.assertRaises(RuntimeError):
+                self.screened(F, sharpe=1.5)
+        self.assertEqual((lifecycle.state(self.db, F), self.results()), ("SCREENING", 1))
+        again = pipeline.step_report(self.db, {"exp_id": F}, "report-1")
+        self.assertEqual((again["state"], again.get("resumed"), self.results()), ("OBSERVATION", True, 1))
+        self.assertEqual(lifecycle.state(self.db, F), "OBSERVATION")
+
+    def test_a_lost_lease_on_the_report_job_never_stops_the_family(self):
+        self.register()
+        with mock.patch.object(pipeline, "step_report", lambda *a, **k: None):
+            self.screened(F, sharpe=1.5)                       # the frozen artifacts; the report runs as a job below
+        jid = f"report|{F}"
+        agent = [a for a in fleet.agents(self.db_path) if a.name == "report-1"][0]
+
+        def run():
+            with self.db.tx():
+                self.db.con.execute("UPDATE jobs SET status='queued', next_run=0, lease_owner=NULL WHERE job_id=?",
+                                    (jid,))
+            agent(self.db)
+            return jobs.get(self.db, jid)
+        with mock.patch.object(jobs, "complete", lambda *a, **k: False):    # the lease was lost: result discarded
+            run()
+        self.assertEqual((lifecycle.state(self.db, F), self.results()), ("OBSERVATION", 1))
+        j = run()
+        self.assertEqual(j["status"], "done", j["error"])
+        self.assertTrue(j["result"]["resumed"])
+        self.assertEqual(self.results(), 1)
+        self.assertEqual(families.failed_jobs(self.db, BASE), [])
+
+
+
+class ConfirmRechecksInsideItsTransaction(A3Base):
+    """Review of 4c32ff6, finding 3: confirm checks W0, the per-tag limits and the programme stop again inside the
+    write transaction (BEGIN IMMEDIATE) that writes the reservation, so two families confirmed at the same time cannot
+    both pass. The other confirm is simulated as committing right after this one's first check."""
+
+    def race(self, other):
+        families.discover_all(self.db)
+        self.revive()
+        code = families.request(self.db, "fcarry", "human:anton", "Anton approves F1 after reading it")
+        real = families._blocking_problems
+
+        def then_the_other_commits(db, fam):
+            bad = real(db, fam)
+            other()
+            return bad
+        with mock.patch.object(families, "_blocking_problems", then_the_other_commits):
+            with self.assertRaises(families.FamilyError) as c:
+                families.confirm(self.db, code, "abcdef01", "human:anton")
+        self.assertNotIn("fcarry", [e.get("family") for e in self.events("family.approved")])
+        self.assertAlmostEqual(families.reserved(self.db, "fcarry"), 0.0)
+        return str(c.exception)
+
+    def test_w0(self):
+        def other():
+            for fid in ("fa", "fb", "fc", "fd"):
+                self.db.append("alpha_ledger", exp_id=f"family:{fid}", ts=0, alpha=0.0125, note="A8 reserve")
+        self.assertIn("alpha budget", self.race(other))
+
+    def test_one_open_family_per_tag(self):
+        def other():
+            self.db.append("experiments", exp_id="E_ftwo__x1_a8", version=1, created_ts=0,
+                           mechanism_tag="delta_neutral_funding_carry", fingerprint="E_ftwo__x1_a8",
+                           spec_json={"execution": "taker", "family": "ftwo"})
+            self.db.event("family.approved", "human:anton", None, {"family": "ftwo"})
+        self.assertIn("at most 1 open family per tag", self.race(other))
+
+    def test_the_programme_stop(self):
+        def other():
+            for fid in ("fa", "fb", "fc"):
+                self.db.event("family.closed", "system:fixture", None, {"family": fid, "outcome": "FUTILE_IN_SAMPLE"})
+        self.assertIn("programme stopped", self.race(other))
+
+
+
+class EveryGateEdgeOfAFamilyNeedsItsStep(A3Base):
+    """Review of 4c32ff6, finding 2: 'lab transition E VALIDATED --result-id <a forward PASS>' skipped the sealed holdout
+    (VALIDATION -> VALIDATED is an automatic edge and the forward PASS is system-recorded). VALIDATION -> VALIDATED /
+    REJECTED now need the holdout step's 'PASS (holdout)' / 'FAIL (holdout)' result citing its hash-matching
+    holdout.json, and `lab transition` refuses a family instance on any edge outside registry.GATE_EDGES."""
+
+    def cli(self, *args):
+        out = []
+        with mock.patch.dict(os.environ, {"CLAUDECODE": "1"}):
+            main(list(args), db_path=self.db_path, out=out.append)
+        return out
+
+    def in_validation(self, e):
+        for st in ("SCREENING", "OBSERVATION", "SCREEN_PASSED", "VALIDATION"):
+            self.db.append("transitions", exp_id=e, ts=0, from_state=None, to_state=st, actor="fixture",
+                           reason="fixture: the path to a holdout")
+
+    def test_a_forward_pass_or_an_uncited_holdout_result_never_validates(self):
+        self.ready()
+        fleet.strategy_pass(self.db)
+        self.in_validation(F)
+        fwd = registry.record_result(self.db, F, "VALIDATION", families.FORWARD_PASS + ": fixture", {}, {},
+                                     "system:validation-1")
+        bare = registry.record_result(self.db, F, "VALIDATION", "PASS (holdout): no artifact", {}, {},
+                                      "system:validation-1")
+        for rid in (fwd, bare):
+            out = self.cli("transition", F, "VALIDATED", "--reason", "skip the sealed holdout", "--result-id", str(rid))
+            self.assertTrue(out and out[0].startswith("refused"), out)
+        self.assertEqual(lifecycle.state(self.db, F), "VALIDATION")
+
+    def test_the_holdout_steps_own_results_still_take_both_edges(self):
+        self.ready()
+        fleet.strategy_pass(self.db)
+        for e, verdict, to in ((F, "PASS (holdout): fixture", "VALIDATED"), (L, "FAIL (holdout): fixture", "REJECTED")):
+            self.in_validation(e)
+            art = pipeline.save_artifact(e, "holdout", {"gates": {}})
+            rid = registry.record_result(self.db, e, "VALIDATION", verdict, {}, {"artifacts": [art]},
+                                         "system:validation-1")
+            ev = {"result_id": rid}
+            lifecycle.auto_transition(self.db, e, to, "system:validation-1", verdict, ev,
+                                      guards=(registry.make_result_guard(ev),))
+            self.assertEqual(lifecycle.state(self.db, e), to)
+
+    def test_lab_transition_refuses_a_family_instance_on_any_non_gate_edge(self):
+        families.discover_all(self.db)
+        self.revive()
+        out = self.cli("transition", F, "SUPPRESSED", "--reason", "withdraw it by hand")
+        self.assertTrue(out and out[0].startswith("refused"), out)
+        self.assertEqual(lifecycle.state(self.db, F), "DISCOVERED")
+        self.approve()
+        self.touch()
+        fleet.strategy_pass(self.db)
+        out = self.cli("transition", F, "SCREENING", "--reason", "start the screen by hand")
+        self.assertTrue(out and out[0].startswith("refused"), out)
+        self.assertEqual(lifecycle.state(self.db, F), "REGISTERED")
+
+
+
+class SuccessorsAreFixedAtTheApproval(A5Base):
+    """Review of 4c32ff6, finding 1 (points 5, 6 and 9): after approve-family no instance of the family is revived or
+    withdrawn by hand, and a successor registers only if it was DISCOVERED when the approval was requested (the
+    approval names it). Otherwise a human could revive filt_w once filt's frozen cost.json met the trigger, and cohort
+    membership would be a choice made after the in-sample results were known."""
+    GUARDS = (registry.complete_spec_guard, families.terminal_guard)
+
+    def test_a_successor_revived_after_approve_family_never_joins_the_cohort(self):
+        families.discover_all(self.db)
+        self.revive(BASE)
+        early = lifecycle.request_approval(self.db, S, "DISCOVERED", "human:anton", WHY)   # issued before the approval
+        self.approve()
+        self.touch()
+        self.assertEqual(sorted(fleet.strategy_pass(self.db)["registered"]), BASE)
+        self.screened(F, early=True, funding=-0.005)                          # filt rejected at train: triggered
+        with self.assertRaises(lifecycle.LifecycleError):
+            lifecycle.request_approval(self.db, S, "DISCOVERED", "human:anton", WHY, guards=self.GUARDS)
+        with self.assertRaises(lifecycle.LifecycleError):
+            lifecycle.confirm(self.db, early, "human:anton", guards=self.GUARDS)
+        self.assertEqual(lifecycle.state(self.db, S), "SUPPRESSED")
+        for e in (L, H):
+            self.screened(e)
+        self.assertEqual(fleet.strategy_pass(self.db)["registered"], [])
+        self.assertTrue(self.status().startswith("forward test"))
+        self.assertNotIn(S, families.cohort(self.db, "fcarry")["members"])
+        self.assertEqual(lifecycle.state(self.db, S), "SUPPRESSED")
+
+    def test_a_successor_revived_between_request_and_confirm_never_registers(self):
+        families.discover_all(self.db)
+        self.revive(BASE)
+        code = families.request(self.db, "fcarry", "human:anton", "Anton approves F1 after reading it")
+        self.revive([S])                                                      # after the request, before the confirm
+        families.confirm(self.db, code, "abcdef01", "human:anton")
+        self.assertEqual(families.approval_payload(self.db, "fcarry")["successors"], [])
+        self.touch()
+        self.assertEqual(sorted(fleet.strategy_pass(self.db)["registered"]), BASE)
+        self.screened(F, early=True, funding=-0.005)
+        self.assertEqual(fleet.strategy_pass(self.db)["registered"], [])
+        self.assertTrue(any(S in r and "approval" in r for r in self.events("family.waiting")[-1]["reasons"]))
+        self.assertEqual(lifecycle.state(self.db, S), "DISCOVERED")
+
+    def test_a_successor_revived_before_the_request_is_named_by_the_approval(self):
+        self.ready()
+        self.assertEqual(families.approval_payload(self.db, "fcarry")["successors"], [S])
+
+    def test_no_instance_is_withdrawn_by_hand_after_the_approval(self):
+        self.ready()
+        for e in (S, F):
+            with self.assertRaises(lifecycle.LifecycleError):
+                lifecycle.request_approval(self.db, e, "WITHDRAWN", "human:anton", "withdraw it now", guards=self.GUARDS)
+            self.assertEqual(lifecycle.state(self.db, e), "DISCOVERED")
 
 
 if __name__ == "__main__":

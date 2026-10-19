@@ -385,6 +385,12 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
                                                                          families.terminal_guard))
             out(f"{exp} -> {to}")
         elif args.cmd == "transition":              # a family instance: families.gate_problem (amendment 8 p. 8-12)
+            from lab import families
+            cur = lifecycle.state(db, args.exp)
+            if families.is_instance(db, args.exp) and (cur, args.to) not in registry.GATE_EDGES:
+                raise lifecycle.LifecycleError(
+                    f"{args.exp} is an amendment 8 family instance: lab transition takes only its gate edges, each on "
+                    f"its step's result; {cur} -> {args.to} is the fleet's or a human terminal step (points 6-12)")
             ev = {"result_id": args.result_id} if args.result_id is not None else None
             lifecycle.auto_transition(db, args.exp, args.to, "system:cli", args.reason, ev,
                                       guards=(registry.make_result_guard(ev),))

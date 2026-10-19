@@ -223,18 +223,17 @@ def _register_family(db, fid, eids, actor):
     parent's frozen training artifact meets its trigger registers as an extra batch of the family, before the cohort is
     fixed. An unapproved family is skipped silently; any other block is recorded once as family.waiting."""
     from lab import families
+    out = _resume_family(db, fid, actor) if families.registered(db, fid) else []   # also under a void approval
     p = families.approval_payload(db, fid)
     if p is None:
-        return []
-    fam, out, why = families.load(fid), [], []
+        return out
+    fam, why = families.load(fid), []
     if not families.registered(db, fid):
         base = sorted(families.exp_id(fid, i) for i in p.get("instances") or [])
         why = families.base_waiting(db, fid, p) or families.registration_block(db, fam) or [
             b for e in base if lifecycle.state(db, e) == "DISCOVERED" for b in families.spec_problems(db, e, fam, p)]
         if base and not why:
             out += _batch(db, base, actor, family=fid)
-    else:
-        out += _resume_family(db, fid, actor)
     for e in sorted(families.triggered(db, fam, eids) if families.registered(db, fid) else []):
         block = families.registration_block(db, fam, successor=e) or families.spec_problems(db, e, fam, p)
         if block:
@@ -249,8 +248,10 @@ def _register_family(db, fid, eids, actor):
 
 def _resume_family(db, fid, actor):
     """Amendment 8 point 7 after a pass that stopped part-way once the base batch event was written: a REGISTERED
-    successor outside every batch.registered event of its family gets its batch of one, and every batch member still in
-    REGISTERED gets the screening jobs it lacks (enqueue is idempotent). Returns the ids whose batch was written now."""
+    successor outside every batch.registered event of its family gets its batch of one, and every batch member in
+    REGISTERED or SCREENING (data-1 moves a member on as soon as its data job runs) gets the screening jobs it lacks
+    (enqueue is idempotent). It runs whatever the approval says now: the batch was registered under a valid one, and
+    the steps keep their own code pin. Returns the ids whose batch was written now."""
     from lab import families
     jobs.init(db)
     batches = [b for b in (json.loads(r[0]) for r in db.q("SELECT payload FROM events WHERE kind='batch.registered' "
@@ -262,7 +263,7 @@ def _resume_family(db, fid, actor):
             out += _batch(db, [e], actor, family=fid, extra={"successor_of": families.exp_id(fid, parent)})
     for b in batches:
         for e in b["exp_ids"]:
-            if lifecycle.state(db, e) == "REGISTERED" and db.one(
+            if lifecycle.state(db, e) in ("REGISTERED", "SCREENING") and db.one(
                     f"SELECT COUNT(*) FROM jobs WHERE job_id IN ({','.join('?' * len(STEPS))})",
                     *(f"{s}|{e}" for s in STEPS))[0] < len(STEPS):
                 enqueue_pipeline(db, e, actor, batch_members=b["exp_ids"])
@@ -780,9 +781,35 @@ def step_validate(db, job, worker):
     return {"passed": all(gates.values()), "artifact": art, "tests": 1}
 
 
+def _report_resume(db, eid, worker):
+    """A family instance's report job retried after a crash or a lost lease (review of 4c32ff6, finding 5): the screen
+    result its first run recorded (by the step, for the current spec version) takes the edge it decided, or is returned
+    once that edge was taken; nothing is recorded twice. None when the step has not recorded one."""
+    from lab import families
+    v = registry.latest(db, eid)["version"]
+    for r in db.q("SELECT id, verdict FROM results WHERE exp_id=? AND label='EXPLORATORY' AND version=? ORDER BY id DESC",
+                  eid, v):
+        verdict = r["verdict"] or ""
+        if not verdict.startswith(("OBSERVE (family forward test)", "REJECTED")) or \
+                verdict.startswith(families.NOT_SELECTED) or not str(families.recorded_by(db, eid, r["id"]) or "").startswith("system:"):
+            continue
+        st = lifecycle.state(db, eid)
+        if st == "SCREENING":
+            ev = {"result_id": r["id"]}
+            lifecycle.auto_transition(db, eid, "OBSERVATION" if verdict.startswith("OBSERVE") else "REJECTED",
+                                      f"system:{worker}", verdict[:300], ev, guards=(registry.make_result_guard(ev),))
+            st = lifecycle.state(db, eid)
+        return {"verdict": verdict, "result_id": r["id"], "state": st, "resumed": True}
+    return None
+
+
 def step_report(db, job, worker):
     eid = job["exp_id"]
     spec = _spec(db, eid)
+    if spec.get("family"):
+        done = _report_resume(db, eid, worker)
+        if done is not None:
+            return done
     cost, adv, val = load_artifact(eid, "cost"), load_artifact(eid, "adversarial"), load_artifact(eid, "validate")
     sel = next(r for r in cost["variants"] if r["variant"] == cost["selected"])
     if cost["rejected_early"] and _v2(spec):
