@@ -965,8 +965,11 @@ godkendelse. De afgørende kriterier for tab af edge i godkendt papirhandel (æn
    registreres én gang `lane.promising`. Det er et signal til, at en AI skriver et familieudkast efter ændring 8 for
    brugerens godkendelse; det er aldrig bevis og ændrer intet andet.
 
-8. **Netværk.** Nyt: offentlig Binance spot-ordrebog (`https://api.binance.com/api/v3/depth`, 20 niveauer, ingen
-   nøgle) for spot-benet. Perp-benet bruger paper-runnerens eksisterende forespørgsler og timecache. Bøger hentes ved
-   start, ved timens opgørelse og lige før hver ordre; signal og funding fra timecachen. Højst 3 konti.
+8. **Netværk.** Nyt: offentlig Binance spot-ordrebog (`https://data-api.binance.vision/api/v3/depth`, 20 niveauer,
+   ingen nøgle) for spot-benet. Værten er Binances vært kun for offentlige markedsdata; den kan ikke modtage ordrer.
+   `api.binance.com` (handelsværten) bruges aldrig. Værten tilføjes listen over tilladte værter i
+   `tests/test_lab_safety.py`, kun med brugerens godkendelse; alle andre sikkerhedskrav (kun GET, ingen signering,
+   ingen nøgler) gælder uændret. Perp-benet bruger paper-runnerens eksisterende forespørgsler og timecache. Bøger
+   hentes ved start, ved timens opgørelse og lige før hver ordre; signal og funding fra timecachen. Højst 3 konti.
 
 9. **Rækkefølge.** Ændringstekst (denne) → kode og tests i dev → brugeren deployer (regel B: ikke 2026-10-31..11-13).
