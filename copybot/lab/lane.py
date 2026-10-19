@@ -48,7 +48,35 @@ PAUSE_RETIRE_S = DAY
 MAX_AGE_S = 90 * DAY
 PROMISING_DAYS, PROMISING_Z = 30, -1.0
 SOURCE_DAYS = 14                                # point 5: funding booked - fees paid must be > 0 by then
+# amendment 12: scanner accounts (source "scanner"): one coin, the scanner's perp premium decides in and out
+SCAN_LABEL = "SCANNERKONTO (scannerfund, simuleret, aldrig bevis)"
+SCAN_SLOTS = 5
+SCAN_MIN, SCAN_BIG = 0.005, 0.01                # in: >= 1 % in the latest scan, or >= 0.5 % in the two latest
+SCAN_STALE_S = 3 * HOUR                         # an older latest scan: nothing new opens, a position is held
+SCAN_COOLDOWN_S = DAY
+SCAN_LOSS = 0.05
+SCAN_SOURCE_S = 3 * DAY
+SCAN_FLAT_S = 2 * DAY
+SCAN_MAX_AGE_S = 30 * DAY
 _CANDIDATES = {}                                # (registry, last research.explore id, families) -> candidates
+
+
+def is_scanner(info):
+    return (info or {}).get("source") == "scanner"
+
+
+def label(info):
+    return SCAN_LABEL if is_scanner(info) else LABEL
+
+
+def rules_text(info):
+    """The automatic stop rules, in Danish, for the dashboard."""
+    if is_scanner(info):
+        return (f"ind ved præmie ≥ {SCAN_BIG:.0%} eller ≥ {SCAN_MIN:.1%} i to scanninger, ud når den er væk i to; "
+                f"stoppes ved tab ≥ {SCAN_LOSS:.0%}, 24 t pause, funding − gebyrer ≤ 0 efter {SCAN_SOURCE_S // DAY} "
+                f"dage, {SCAN_FLAT_S // DAY} døgn uden position eller {SCAN_MAX_AGE_S // DAY} dage")
+    return (f"stoppes ved funding − gebyrer ≤ 0 efter {SOURCE_DAYS} dage, tab ≥ {LOSS_RETIRE:.0%}, 24 t pause, "
+            f"z ≤ {Z_RETIRE:g} eller {MAX_AGE_S // DAY} dage")
 
 
 def ledger_id(key):
@@ -134,10 +162,12 @@ def candidates(db, fids):
             sha = hashlib.sha256(raw).hexdigest()
             if sha not in known:
                 continue                                         # not a recorded lane artifact: never traded
-            for r in json.loads(raw).get("results") or []:
+            art = json.loads(raw)
+            for r in art.get("results") or []:
                 if r.get("candidate") and r.get("family") in fids and all((r.get("checks") or {}).values()):
                     out[r["key"]] = {**r, "artifact": os.path.relpath(os.path.join(d, f), pipeline.HERE)
-                                     .replace("\\", "/"), "artifact_sha256": sha}
+                                     .replace("\\", "/"), "artifact_sha256": sha,
+                                     "evaluated_coins": r.get("coins") or art.get("coins") or None}
     res = sorted(out.values(), key=lambda r: (-(r.get("net_sharpe_ann") or 0), r["key"]))
     _CANDIDATES.clear()
     _CANDIDATES[memo] = res
@@ -177,8 +207,66 @@ def stats(db, ledger, now=None, info=None):
             "age_days": (now - info["ts"]) / DAY if info.get("ts") else None, "decisional": False}
 
 
-def _retire_reason(db, ledger, info, now, fids):
+def _paused_for(risk, ledger, now):
+    p = risk._last(ledger, ("PAUSE",)) if risk.paused(ledger) else None
+    return (now - p["ts"], p["rule"]) if p is not None else (None, None)
+
+
+def _paid(db, ledger, now):
+    try:
+        return PaperEngine(db, lambda: now).ledger(ledger)
+    except lifecycle.LifecycleError:                             # never ran (no paper.started): nothing paid
+        return {"funding": 0.0, "fees": 0.0, "positions": {}}
+
+
+def _scan_retire_reason(db, ledger, info, now):
+    """Amendment 12 point 5."""
     st, risk = stats(db, ledger, now, info), Risk(db, lambda: now)
+    if now - info["ts"] >= SCAN_MAX_AGE_S:
+        return "expired", f"{SCAN_MAX_AGE_S // DAY} dage efter start", st
+    if st["equity"] is not None and st["equity"] <= CAPITAL * (1 - SCAN_LOSS):
+        return "loss", f"værdi {st['equity']:.2f} er mindst {SCAN_LOSS:.0%} under startkapitalen", st
+    age, rule = _paused_for(risk, ledger, now)
+    if age is not None and age >= PAUSE_RETIRE_S:
+        return "paused", f"på pause i {age / HOUR:.0f} timer ({rule})", st
+    led = _paid(db, ledger, now)
+    if now - info["ts"] >= SCAN_SOURCE_S:
+        st["funding_minus_fees"] = led["funding"] - led["fees"]
+        if st["funding_minus_fees"] <= 0:
+            return "source", (f"kilden betaler ikke: funding {led['funding']:.2f} − gebyrer {led['fees']:.2f} ≤ 0 "
+                              f"efter {SCAN_SOURCE_S // DAY} dage"), st
+    if not led["positions"]:
+        last = db.one("SELECT MAX(ts) FROM sim_fills WHERE exp_id=?", ledger)[0]
+        since = max(info["ts"], last or 0)
+        if now - since >= SCAN_FLAT_S:
+            return "flat", f"ingen position i {SCAN_FLAT_S // DAY} døgn: præmien er væk", st
+    return None, None, st
+
+
+def _tested_coins(info):
+    """The coins the variant was evaluated on, from its recorded artifact (hash-checked); None if unreadable."""
+    if info.get("evaluated_coins"):
+        return info["evaluated_coins"]
+    try:
+        with open(os.path.join(pipeline.HERE, info["artifact"]), "rb") as fh:
+            raw = fh.read()
+    except (OSError, KeyError, TypeError):
+        return None
+    if hashlib.sha256(raw).hexdigest() != info.get("artifact_sha256"):
+        return None
+    art = json.loads(raw)
+    r = next((x for x in art.get("results") or [] if x.get("key") == info.get("key")), {})
+    return r.get("coins") or art.get("coins")
+
+
+def _retire_reason(db, ledger, info, now, fids):
+    if is_scanner(info):
+        return _scan_retire_reason(db, ledger, info, now)
+    st, risk = stats(db, ledger, now, info), Risk(db, lambda: now)
+    tested = _tested_coins(info)
+    extra = sorted(set(info.get("coins") or []) - set(tested or []))
+    if tested is not None and extra:                             # started before the basket fix (amendment 11)
+        return "basket", f"handler {len(extra)} mønter, varianten ikke blev testet på ({', '.join(extra[:5])} ...)", st
     if info.get("family") not in fids:
         return "family", "familiens godkendelse er ikke længere gyldig", st
     if now - info["ts"] >= MAX_AGE_S:
@@ -213,7 +301,7 @@ def _probe(r, fam, get, now):
     """Coins whose perp and spot books both load (one read each), in basket order."""
     from lab import paper_runner
     ok, dropped = [], []
-    for s in r.get("coins") or explore.universe(fam):
+    for s in r.get("evaluated_coins") or r.get("coins") or explore.universe(fam):   # the coins it was tested on
         try:
             for inst in (s, s + SPOT):
                 b = paper_runner.fetch_book(inst, now, get)
@@ -229,7 +317,8 @@ def _start(db, r, get, now):
     led, fam = ledger_id(r["key"]), families.load(r["family"])
     coins, dropped = _probe(r, fam, get, now)
     base = {k: r.get(k) for k in ("key", "family", "function", "params", "net_sharpe_ann", "artifact",
-                                  "artifact_sha256")} | {"basket": r.get("coins"), "dropped": dropped}
+                                  "artifact_sha256", "evaluated_coins")} | {"basket": r.get("coins"),
+                                                                            "dropped": dropped}
     if len(coins) < MIN_COINS:
         db.event("lane.skipped", ACTOR, led, {**base, "coins": coins, "reason": f"{len(coins)} coins with both live "
                                               f"books, fewer than {MIN_COINS}", "simulated": True})
@@ -256,7 +345,7 @@ def manage(db, now=None, get=None, fids=None):
         if rule:
             retire(db, led, rule, detail, st, now)
             out["retired"].append(led)
-        elif (st["days"] >= PROMISING_DAYS and st["mean"] is not None and st["mean"] > 0 and st["z"] is not None
+        elif (not is_scanner(info[led]) and st["days"] >= PROMISING_DAYS and st["mean"] is not None and st["mean"] > 0 and st["z"] is not None
               and st["z"] > PROMISING_Z and not db.one("SELECT 1 FROM events WHERE kind='lane.promising' AND "
                                                        "exp_id=?", led)):
             db.event("lane.promising", ACTOR, led, {"stats": st, "decisional": False, "label": LABEL,
@@ -264,8 +353,10 @@ def manage(db, now=None, get=None, fids=None):
             out["promising"].append(led)
     if not on or get is None or Risk(db, lambda: now).fail_closed():
         return out
-    act = active(db)
-    last = max((i["ts"] for i in info.values()), default=None)
+    out["scanner"] = manage_scanner(db, now, get)
+    info = started(db)
+    act = [a for a in active(db) if not is_scanner(info[a])]
+    last = max((i["ts"] for i in info.values() if not is_scanner(i)), default=None)
     if len(act) >= SLOTS or (last is not None and now - last < START_EVERY):
         return out
     busy, done = {(info[a]["family"], info[a]["function"]) for a in act}, tried_keys(db)
@@ -281,6 +372,96 @@ def manage(db, now=None, get=None, fids=None):
             out["started"] = led
             break
         out["skipped"].append(r["key"])
+    return out
+
+
+# ---------- scanner accounts (amendment 12) ----------
+def scans(db, now, n=2):
+    """The latest n scan times with a USD-M premium read (the scanner writes symbols_compared every such scan)."""
+    return [r[0] for r in db.q("SELECT DISTINCT ts FROM observations WHERE metric='symbols_compared' AND "
+                               "instrument='binance_perps' AND ts<=? ORDER BY ts DESC LIMIT ?", int(now), n)]
+
+
+def premiums(db, ts):
+    """{symbol: premium} of the positive premiums the scanner flagged at scan time ts."""
+    return {r["instrument"]: r["value"] for r in db.q("SELECT instrument, value FROM observations WHERE "
+                                                      "metric='perp_premium' AND flagged=1 AND ts=? AND value>0", ts)}
+
+
+def _last_two(db, now):
+    ts = scans(db, now)
+    return ts, [premiums(db, t) for t in ts]
+
+
+def scan_entry(p_now, p_prev):
+    return p_now is not None and p_now >= SCAN_MIN and (p_now >= SCAN_BIG or (p_prev or 0) >= SCAN_MIN)
+
+
+def scan_signal(db, coin, holding, now):
+    """Point 2-3: in on the entry rule; out when neither of the two latest scans flags a positive premium; with no scan
+    in SCAN_STALE_S nothing new opens and a position is held."""
+    ts, ps = _last_two(db, now)
+    if not ts or now - ts[0] > SCAN_STALE_S:
+        return 1.0 if holding else 0.0
+    vals = [p.get(coin) for p in ps] + [None]
+    if holding:
+        return 1.0 if any(v is not None and v > 0 for v in vals[:2]) else 0.0
+    return 1.0 if scan_entry(vals[0], vals[1]) else 0.0
+
+
+def scan_candidates(db, now):
+    """Coins meeting the entry rule now, largest latest premium first."""
+    ts, ps = _last_two(db, now)
+    if not ts or now - ts[0] > SCAN_STALE_S:
+        return []
+    prev = ps[1] if len(ps) > 1 else {}
+    return sorted((c for c, v in ps[0].items() if scan_entry(v, prev.get(c))), key=lambda c: (-ps[0][c], c))
+
+
+def _cooling(db, coin, now):
+    """Point 4: a coin gets a new account SCAN_COOLDOWN_S after its last one stopped or was skipped."""
+    info = started(db)
+    for kind in ("lane.retired", "lane.skipped"):
+        for _, ts, _, led, p in _events(db, kind):
+            i = p if kind == "lane.skipped" else info.get(led, {})
+            if is_scanner(i) and coin in (i.get("coins") or []) and now - p.get("t", ts) < SCAN_COOLDOWN_S:
+                return True
+    return False
+
+
+def manage_scanner(db, now, get):
+    """Start scanner accounts for every coin that meets the entry rule, up to SCAN_SLOTS (point 4)."""
+    from lab import paper_runner
+    info = started(db)
+    held = {info[a]["coins"][0] for a in active(db) if is_scanner(info[a])}
+    out, probes = {"started": [], "skipped": []}, 0
+    ts, ps = _last_two(db, now)
+    for coin in scan_candidates(db, now):
+        if len(held) >= SCAN_SLOTS or probes >= PROBES:
+            break
+        if coin in held or _cooling(db, coin, now):
+            continue
+        probes += 1
+        key, hour = f"scan|{coin}|{int(now) // HOUR * HOUR}", int(now) // HOUR * HOUR
+        led = ledger_id(key)
+        trigger = {"scan_ts": ts[:2], "premium": [p.get(coin) for p in ps], "rule": "research/PROTOCOL_V3.md "
+                   "amendment 12 point 2"}
+        base = {"key": key, "source": "scanner", "family": "fcarry", "function": "scanner_premium", "params": {},
+                "coin": coin, "trigger": trigger, "label": SCAN_LABEL, "simulated": True, "decisional": False,
+                "t": int(now)}
+        try:
+            for inst in (coin, coin + SPOT):
+                if paper_runner.fetch_book(inst, now, get).crossed():
+                    raise ValueError("crossed or empty book")
+        except Exception as e:
+            db.event("lane.skipped", ACTOR, led, {**base, "coins": [coin], "reason": f"book unavailable: {e!r}"[:160]})
+            out["skipped"].append(coin)
+            continue
+        db.event("lane.started", ACTOR, led, {**base, "coins": [coin], "expectation": None, "capital": CAPITAL,
+                                              "costs": COSTS.__dict__, "hour": hour,
+                                              "rule": "research/PROTOCOL_V3.md amendment 12"})
+        held.add(coin)
+        out["started"].append(led)
     return out
 
 
@@ -318,7 +499,12 @@ def run_one(db, ledger, get, now, cache=None, books=None):
             return {"status": "paused", "reason": f"{s} data stale"}
     funded = pr.book_funding(db, eng, ledger, now, lambda syms: {
         x: (market[x][1], opens[x]) if x in market else ({}, {}) for x in syms})     # the spot leg has no funding
-    want = _signal(info, market)
+    if is_scanner(info):                                 # amendment 12: the scanner's premium decides
+        c = info["coins"][0]
+        pos0 = eng.ledger(ledger)["positions"]
+        want = {c: scan_signal(db, c, pos0.get(c + SPOT, 0.0) > 0 or pos0.get(c, 0.0) < 0, now)}
+    else:
+        want = _signal(info, market)
     pos = eng.ledger(ledger)["positions"]
     last = db.one("SELECT equity FROM sim_equity WHERE exp_id=? ORDER BY id DESC LIMIT 1", ledger)
     size = (last["equity"] if last else CAPITAL) / (UNIT_CAPITAL * len(info["coins"]))

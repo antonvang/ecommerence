@@ -556,7 +556,7 @@ function renderMoney(b){
   $("#todaysub").textContent = b.capital == null ? "" : `${b.open_positions} åbne positioner`;
   animate("strat", b.active, v => String(Math.round(v)));
   const f = b.forward || {}, c = b.combined || {}, r = b.reconciliation || {};
-  $("#stratsub").textContent = `${b.trading ?? 0} handler · ${b.paused ?? 0} på pause` + (f.ledgers ? ` · fremadtest: ${f.running} handler, ${f.paused} på pause (ikke godkendt)` : "") + ((b.lane || {}).ledgers ? ` · banekonti: ${b.lane.running} handler (udforskning, aldrig bevis)` : "") + ` · ${b.closed_trades} lukkede handler` + (b.win_rate == null ? "" : ` · ${(b.win_rate*100).toFixed(0)}% vundet`) + (b.shadow ? " · skyggehandel tæller ikke som godkendt" : "");
+  $("#stratsub").textContent = `${b.trading ?? 0} handler · ${b.paused ?? 0} på pause` + (f.ledgers ? ` · fremadtest: ${f.running} handler, ${f.paused} på pause (ikke godkendt)` : "") + ((b.lane || {}).ledgers ? ` · bane- og scannerkonti: ${b.lane.running} handler (simuleret, aldrig bevis)` : "") + ` · ${b.closed_trades} lukkede handler` + (b.win_rate == null ? "" : ` · ${(b.win_rate*100).toFixed(0)}% vundet`) + (b.shadow ? " · skyggehandel tæller ikke som godkendt" : "");
   renderSim(b, f, c, r);
   if (lastEquity != null && b.equity != null && b.equity !== lastEquity) { const m = $("#m-bal"); m.classList.remove("glow"); void m.offsetWidth; m.classList.add("glow"); }
   lastEquity = b.equity;
@@ -763,9 +763,10 @@ function renderPaper(p){
 }
 function laneRow(l){
   if (!l) return "";
-  const st = l.stats || {}, x = st.expectation, z = st.z != null ? st.z.toFixed(2) : `<span class="na">z fra 7 hele dage</span>`;
+  const st = l.stats || {}, x = st.expectation, z = l.scanner ? `<span class="na">gælder ikke</span>` : st.z != null ? st.z.toFixed(2) : `<span class="na">z fra 7 hele dage</span>`;
+  const trig = l.scanner && l.trigger ? `<div class="cap">Udløser: præmie ${(l.trigger.premium || []).map(v => v == null ? "–" : (v*100).toFixed(2) + "%").join(" → ")} i de seneste scanninger</div>` : "";
   const stop = l.retired ? `<div class="cap" style="color:var(--amber)">Stoppet automatisk: ${esc(l.retired.detail || l.retired.rule || "")}</div>` : "";
-  return `<div class="grid3">${metric("Dage live", num(st.age_days, 1), `${st.days ?? 0} hele døgn målt · ${(l.coins || []).length} mønter`)}${metric("Netto pr. dag (sim.)", st.mean == null ? `<span class="na">${NA}</span>` : `${(st.mean*100).toFixed(3)}%`, "efter omkostninger, inkl. funding")}${metric("Edge mod udforskning (z)", z, (x ? `forventning ${(x.mean*100).toFixed(3)}% ± ${(x.sd*100).toFixed(3)}% pr. dag (2020-2021, 2x omkostninger)` : "ingen forventning") + " · stoppes automatisk ved z ≤ −3, tab ≥ 3 %, 24 t pause eller 90 dage")}</div>${stop}`;
+  return trig + `<div class="grid3">${metric("Dage live", num(st.age_days, 1), `${st.days ?? 0} hele døgn målt · ${(l.coins || []).length} mønter`)}${metric("Netto pr. dag (sim.)", st.mean == null ? `<span class="na">${NA}</span>` : `${(st.mean*100).toFixed(3)}%`, "efter omkostninger, inkl. funding")}${metric("Edge mod udforskning (z)", z, (x ? `forventning ${(x.mean*100).toFixed(3)}% ± ${(x.sd*100).toFixed(3)}% pr. dag (2020-2021, 2x omkostninger)` : "ingen historisk forventning") + " · " + esc(l.rules || ""))}</div>${stop}`;
 }
 function edgeRow(e){
   if (!e) return "";

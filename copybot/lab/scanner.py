@@ -136,12 +136,52 @@ def venue_subsidy(get, post, now):
     return out, props
 
 
+def _perps(get):
+    """Live USDT-margined perpetuals on crypto underlyings (no dated futures, no stock/commodity contracts)."""
+    info = get(f"{BN}/fapi/v1/exchangeInfo")
+    return {s["symbol"] for s in info.get("symbols", []) if s.get("contractType") == "PERPETUAL"
+            and s.get("underlyingType") == "COIN" and s.get("status") == "TRADING" and s.get("quoteAsset") == "USDT"}
+
+
+def premium_obs(get, perps):
+    """Measurement (b): |mark/index - 1| >= PREMIUM_MIN per perp, flagged, plus the count compared."""
+    out, n = [], 0
+    for x in get(f"{BN}/fapi/v1/premiumIndex"):
+        if x.get("symbol") not in perps:
+            continue
+        m, i = float(x.get("markPrice") or 0), float(x.get("indexPrice") or 0)
+        if m <= 0 or i <= 0:
+            continue
+        n += 1
+        p = m / i - 1
+        if abs(p) >= PREMIUM_MIN:
+            out.append(obs("pricing_constraint", f"{BN}/fapi/v1/premiumIndex", x["symbol"], "perp_premium", p,
+                           PREMIUM_MIN, True, {"funding": x.get("lastFundingRate")}))
+    out.append(obs("pricing_constraint", f"{BN}/fapi/v1/premiumIndex", "binance_perps", "symbols_compared", n))
+    return out
+
+
+PERPS_EVERY = 3600
+_PERPS = {}                                     # premium-watch: url -> (fetched at, perps); exchangeInfo once an hour
+
+
+def premium_watch(db, get=http_get, now=None):
+    """Amendment 12a: measurement (b) every minute, written as observations only (no market.event, no candidate)."""
+    now = int(now or time.time())
+    hit = _PERPS.get(BN)
+    if hit is None or now - hit[0] >= PERPS_EVERY or not hit[1]:
+        _PERPS[BN] = hit = (now, _perps(get))
+    rows = premium_obs(get, hit[1])
+    with db.tx():
+        for o in rows:
+            db.append("observations", ts=now, **o)
+    return {"observations": len(rows), "flagged": sum(o["flagged"] for o in rows), "decisional": False}
+
+
 def pricing_constraint(get, post, now):
     out, props = [], []
     try:   # only live USDT-margined perpetuals on crypto underlyings (no dated futures, no stock/commodity contracts)
-        info = get(f"{BN}/fapi/v1/exchangeInfo")
-        perps = {s["symbol"] for s in info.get("symbols", []) if s.get("contractType") == "PERPETUAL"
-                 and s.get("underlyingType") == "COIN" and s.get("status") == "TRADING" and s.get("quoteAsset") == "USDT"}
+        perps = _perps(get)
     except Exception as e:
         perps = set()
         out.append(obs("pricing_constraint", BN, "binance_perps", "error", None, payload={"error": repr(e)}))
@@ -181,20 +221,7 @@ def pricing_constraint(get, post, now):
         out.append(obs("pricing_constraint", HL_INFO, "hyperliquid_binance_perps", "error", None, payload={"error": repr(e)}))
     # (b) perpetual premium vs index
     try:
-        pi = get(f"{BN}/fapi/v1/premiumIndex")
-        n = 0
-        for x in pi:
-            if x.get("symbol") not in perps:
-                continue
-            m, i = float(x.get("markPrice") or 0), float(x.get("indexPrice") or 0)
-            if m <= 0 or i <= 0:
-                continue
-            n += 1
-            p = m / i - 1
-            if abs(p) >= PREMIUM_MIN:
-                out.append(obs("pricing_constraint", f"{BN}/fapi/v1/premiumIndex", x["symbol"], "perp_premium", p,
-                               PREMIUM_MIN, True, {"funding": x.get("lastFundingRate")}))
-        out.append(obs("pricing_constraint", f"{BN}/fapi/v1/premiumIndex", "binance_perps", "symbols_compared", n))
+        out += premium_obs(get, perps)
         if any(o["metric"] == "perp_premium" for o in out):
             props.append(proposal(
                 "pricing_constraint", "perp_premium", None, "perp_premium_convergence", "binance_perps", "minutes",

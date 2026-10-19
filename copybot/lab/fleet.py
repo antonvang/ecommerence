@@ -469,11 +469,18 @@ def scanner_pass(db):
     return scanner.run(db)
 
 
+def premium_pass(db):
+    from lab import scanner                   # amendment 12a: the perp premium every minute (observations only)
+    return scanner.premium_watch(db)
+
+
 # ---------- roster ----------
 ROSTER = (
     # name, role, kinds, periodic fn, every s, heavy
     ("data-1", "Data agent: downloads and quality-checks market data per experiment", ("data",), None, None, False),
     ("discovery-scanner", "Discovery agent: live-market anomaly scanner (S3 detectors)", None, scanner_pass, 3600, False),
+    ("premium-watch", "Discovery agent: Binance perp premium every minute (amendment 12a)", None, premium_pass, 60,
+     False),
     ("discovery-catalogue", "Discovery agent: proposes catalogue hypotheses (graveyard dedup)", None, catalogue_pass,
      600, False),
     ("strategy-1", "Strategy agent: registers approved-template instances, queues approved holdouts", None,

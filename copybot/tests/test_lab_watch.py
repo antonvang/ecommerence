@@ -330,7 +330,7 @@ class Cli(Base):
         lines = []
         with mock.patch.object(watch, "PM_DB", self.pm), mock.patch.object(watch.time, "time", lambda: NOW):
             self.assertEqual(watch.main(self.lab, 8770, once=True, out=lines.append), 0)
-            self.assertIn("  [OK ] agents: 16 healthy", lines)
+            self.assertIn("  [OK ] agents: 17 healthy", lines)
             self.lab_sql("UPDATE heartbeats SET status='stopped' WHERE worker='supervisor'")
             lines.clear()
             self.assertEqual(watch.main(self.lab, 8770, once=True, out=lines.append), 1)

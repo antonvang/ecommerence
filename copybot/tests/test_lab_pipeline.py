@@ -450,7 +450,7 @@ class Control(Env):
         pipeline.discover_catalogue(self.db)
         self.approve("day_of_week", "hour_of_day", "vol_managed_long")
         ws = [w for w in fleet.workers(self.db_path) if w.name not in ("discovery-scanner", "paper-1", "risk-1",
-                                                                         "discovery-catalogue")]
+                                                                         "discovery-catalogue", "premium-watch")]
         sup = Supervisor(self.db_path, ws, log=lambda *a: None, check_evidence=False)
         import threading
         t = threading.Thread(target=sup.run, kwargs={"duration": 240})

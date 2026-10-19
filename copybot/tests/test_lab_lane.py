@@ -11,7 +11,8 @@ from unittest import mock
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from lab import __main__ as cli, command, explore, lane, lifecycle, paper_runner, pipeline, promotion, watch  # noqa: E402
+from lab import __main__ as cli, command, explore, lane, lifecycle, paper_runner, pipeline, promotion, scanner  # noqa: E402
+from lab import watch  # noqa: E402
 from lab.db import DB  # noqa: E402
 from lab.paper import PaperEngine  # noqa: E402
 from lab.risk import Risk  # noqa: E402
@@ -138,6 +139,27 @@ class Start(Base):
         self.assertEqual(out["skipped"], ["k9"])
         self.assertIsNone(out["started"])
         self.assertIn("k9", lane.tried_keys(self.db))
+
+    def test_all_coins_means_the_coins_it_was_tested_on(self):
+        art = pipeline.save_artifact(os.path.join(explore.DIR, "2026-10-19"), "fcarry_t",
+                                     {"label": explore.LABEL, "family": "fcarry", "coins": COINS[:5],
+                                      "results": [result()]})
+        self.db.event("research.explore", "system:backtest-1", None, {"artifact_sha256": art["sha256"]})
+        with mock.patch.object(explore, "universe", lambda fam: tuple(COINS + ["SOLUSDT", "APEUSDT"])):
+            led = lane.manage(self.db, NOW, market(), fids=["fcarry"])["started"]
+        self.assertEqual(lane.started(self.db)[led]["coins"], COINS[:5])
+
+    def test_an_account_trading_untested_coins_is_retired(self):
+        art = pipeline.save_artifact(os.path.join(explore.DIR, "2026-10-19"), "fcarry_t",
+                                     {"label": explore.LABEL, "family": "fcarry", "coins": COINS[:5],
+                                      "results": [result()]})
+        led = lane.ledger_id("fcarry.carry_filter|a")             # as started before the fix: all universe coins
+        self.db.event("lane.started", lane.ACTOR, led, {"key": "fcarry.carry_filter|a", "family": "fcarry",
+                                                        "function": "carry_filter", "params": {}, "basket": None,
+                                                        "coins": COINS + ["APEUSDT"], "artifact": art["path"],
+                                                        "artifact_sha256": art["sha256"], "t": int(NOW)})
+        self.assertEqual(lane.manage(self.db, NOW + 60, None, fids=["fcarry"])["retired"], [led])
+        self.assertEqual(lane.retired(self.db)[led]["rule"], "basket")
 
     def test_no_start_while_fail_closed_or_off(self):
         self.publish([result()])
@@ -327,6 +349,145 @@ class Views(Base):
         self.assertIn(led, watch._active_ledgers(con))
         kinds = {i["tag"] for i in command.feed(self.db)["items"]}
         self.assertIn("BANEKONTO", kinds)
+
+
+class Scanner(Base):
+    """Amendment 12: scanner accounts."""
+    def scan(self, ts, prems):
+        self.db.append("observations", ts=int(ts), detector="pricing_constraint/2", source="premiumIndex",
+                       instrument="binance_perps", metric="symbols_compared", value=100, threshold=None, flagged=0,
+                       payload=None)
+        for sym, v in prems.items():
+            self.db.append("observations", ts=int(ts), detector="pricing_constraint/2", source="premiumIndex",
+                           instrument=sym, metric="perp_premium", value=v, threshold=0.005, flagged=1, payload=None)
+
+    def test_entry_rule(self):
+        self.scan(NOW - 2 * HOUR, {"AAAUSDT": 0.006, "CCCUSDT": 0.006, "DDDUSDT": -0.02})
+        self.scan(NOW - HOUR, {"AAAUSDT": 0.007, "BBBUSDT": 0.012, "EEEUSDT": 0.006, "DDDUSDT": -0.03})
+        self.assertEqual(lane.scan_candidates(self.db, NOW), ["BBBUSDT", "AAAUSDT"])   # largest first; no negative
+
+    def test_stale_scans_open_nothing_and_hold(self):
+        self.scan(NOW - 4 * HOUR, {"BBBUSDT": 0.02})
+        self.assertEqual(lane.scan_candidates(self.db, NOW), [])
+        self.assertEqual(lane.scan_signal(self.db, "BBBUSDT", True, NOW), 1.0)
+        self.assertEqual(lane.scan_signal(self.db, "BBBUSDT", False, NOW), 0.0)
+
+    def test_starts_at_once_up_to_five_independent_of_lane_slots(self):
+        self.scan(NOW - 60, {f"C{i}USDT": 0.01 + i / 1000 for i in range(7)})
+        out = lane.manage(self.db, NOW, market(), fids=[])
+        self.assertEqual(len(out["scanner"]["started"]), lane.PROBES)                # probes per pass
+        out = lane.manage(self.db, NOW + 60, market(), fids=[])
+        self.assertEqual(len(out["scanner"]["started"]), 2)                          # five in all
+        info = lane.started(self.db)
+        self.assertEqual(len(info), 5)
+        self.assertTrue(all(lane.is_scanner(i) and len(i["coins"]) == 1 for i in info.values()))
+        self.assertEqual(sorted(i["coins"][0] for i in info.values()), [f"C{i}USDT" for i in range(2, 7)])
+        self.publish([result()])                                                     # the lane still starts its own
+        self.assertIsNotNone(lane.manage(self.db, NOW + 120, market(), fids=["fcarry"])["started"])
+
+    def test_trades_both_legs_and_closes_when_the_premium_is_gone(self):
+        self.scan(NOW - 60, {"BBBUSDT": 0.015})
+        led = lane.manage(self.db, NOW, market(), fids=[])["scanner"]["started"][0]
+        r = lane.run_one(self.db, led, market(), NOW)
+        self.assertEqual(r["signal"], {"BBBUSDT": 1.0})
+        pos = PaperEngine(self.db).ledger(led)["positions"]
+        self.assertAlmostEqual(pos["BBBUSDT.SPOT"], -pos["BBBUSDT"])
+        self.assertAlmostEqual(pos["BBBUSDT.SPOT"] * 100.0, 5_000, delta=2.0)       # half the account per leg
+        self.scan(NOW + HOUR - 60, {})                                               # not flagged in this scan
+        g = market()
+        g.now = NOW + HOUR
+        self.assertEqual(lane.run_one(self.db, led, g, NOW + HOUR)["signal"], {"BBBUSDT": 1.0})   # one scan gone
+        self.scan(NOW + 2 * HOUR - 60, {})
+        g.now = NOW + 2 * HOUR
+        self.assertEqual(lane.run_one(self.db, led, g, NOW + 2 * HOUR)["signal"], {"BBBUSDT": 0.0})
+        self.assertEqual(PaperEngine(self.db).ledger(led)["positions"], {})
+        self.assertTrue(PaperEngine(self.db).reconcile(led)["ok"])
+
+    def test_retire_rules_and_cooldown(self):
+        self.scan(NOW - 60, {"BBBUSDT": 0.015})
+        led = lane.manage(self.db, NOW, market(), fids=[])["scanner"]["started"][0]
+        lane.run_one(self.db, led, market(), NOW)
+        self.mark(led, NOW + 30, 9_600.0)                                            # -4 %: below the 5 % stop
+        self.assertEqual(lane.manage(self.db, NOW + 60, None, fids=[])["retired"], [])
+        self.mark(led, NOW + 90, 9_450.0)
+        self.assertEqual(lane.manage(self.db, NOW + 120, None, fids=[])["retired"], [led])
+        self.assertEqual(lane.retired(self.db)[led]["rule"], "loss")
+        self.scan(NOW + 180, {"BBBUSDT": 0.015})
+        self.assertEqual(lane.manage(self.db, NOW + 240, market(), fids=[])["scanner"]["started"], [])   # cooldown
+        out = lane.manage(self.db, NOW + 240 + lane.SCAN_COOLDOWN_S, market(), fids=[])
+        self.assertEqual(out["scanner"]["started"], [])                              # the scan is stale by then
+        self.scan(NOW + lane.SCAN_COOLDOWN_S + 200, {"BBBUSDT": 0.015})
+        out = lane.manage(self.db, NOW + 240 + lane.SCAN_COOLDOWN_S, market(), fids=[])
+        self.assertEqual(len(out["scanner"]["started"]), 1)
+
+    def test_flat_and_source_rules(self):
+        self.scan(NOW - 60, {"BBBUSDT": 0.015, "CCCUSDT": 0.02})
+        out = lane.manage(self.db, NOW, market(), fids=[])["scanner"]["started"]
+        info = lane.started(self.db)
+        flat = next(x for x in out if info[x]["coins"] == ["BBBUSDT"])
+        held = next(x for x in out if info[x]["coins"] == ["CCCUSDT"])
+        lane.run_one(self.db, held, market(rate=0.0), NOW)                            # holds, but earns no funding
+        self.assertEqual(lane.manage(self.db, NOW + 2 * DAY - 60, None, fids=[])["retired"], [])
+        self.assertEqual(lane.manage(self.db, NOW + 2 * DAY, None, fids=[])["retired"], [flat])
+        self.assertEqual(lane.retired(self.db)[flat]["rule"], "flat")
+        self.assertEqual(lane.manage(self.db, NOW + 3 * DAY, None, fids=[])["retired"], [held])
+        self.assertEqual(lane.retired(self.db)[held]["rule"], "source")
+
+    def test_human_off_stops_scanner_accounts_too(self):
+        self.scan(NOW - 60, {"BBBUSDT": 0.015})
+        led = lane.manage(self.db, NOW, market(), fids=[])["scanner"]["started"][0]
+        lane.set_policy(self.db, False, "human:test", "stop all lane accounts now")
+        self.assertEqual(lane.manage(self.db, NOW + 60, market(), fids=[])["retired"], [led])
+        self.assertEqual(lane.manage(self.db, NOW + 120, market(), fids=[]).get("scanner"), None)
+
+    def test_view_names_and_labels(self):
+        self.scan(NOW - 60, {"BBBUSDT": 0.015})
+        led = lane.manage(self.db, NOW, market(), fids=[])["scanner"]["started"][0]
+        lane.run_one(self.db, led, market(), NOW)
+        with mock.patch("time.time", lambda: NOW + 60):
+            v = command.paper_view(self.db, now=NOW + 60)
+            b = command.balance(self.db, now=NOW + 60)
+        s = next(x for x in v["strategies"] if x["exp_id"] == led)
+        self.assertEqual(s["label"], lane.SCAN_LABEL)
+        self.assertEqual(s["name"], "Scannerkonto BBBUSDT")
+        self.assertTrue(s["lane_info"]["scanner"])
+        self.assertEqual(b["lane"]["scanner"], 1)
+        self.assertIsNone(b["capital"])
+
+
+class PremiumWatch(Base):
+    """Amendment 12a: the perp premium every minute, observations only."""
+    def setUp(self):
+        super().setUp()
+        scanner._PERPS.clear()
+        self.urls = []
+
+    def get(self, prem):
+        def g(url):
+            self.urls.append(url)
+            if url.endswith("/fapi/v1/exchangeInfo"):
+                return {"symbols": [{"symbol": s, "contractType": "PERPETUAL", "underlyingType": "COIN",
+                                     "status": "TRADING", "quoteAsset": "USDT"} for s in ("AAAUSDT", "BBBUSDT")]}
+            if url.endswith("/fapi/v1/premiumIndex"):
+                return [{"symbol": s, "markPrice": str(100 * (1 + v)), "indexPrice": "100", "lastFundingRate": "0.001"}
+                        for s, v in prem.items()]
+            raise AssertionError(url)
+        return g
+
+    def test_writes_observations_only_and_reads_the_perp_list_hourly(self):
+        events = self.db.one("SELECT COUNT(*) FROM events")[0]
+        out = scanner.premium_watch(self.db, self.get({"AAAUSDT": 0.012, "BBBUSDT": 0.001, "ZZZUSDT": 0.05}), NOW - 60)
+        self.assertEqual((out["observations"], out["flagged"]), (2, 1))           # ZZZ is not a traded perp
+        scanner.premium_watch(self.db, self.get({"AAAUSDT": 0.006}), NOW - 30)
+        self.assertEqual(sum(u.endswith("exchangeInfo") for u in self.urls), 1)
+        self.assertEqual(self.db.one("SELECT COUNT(*) FROM events")[0], events)   # no market.event, no candidate
+        self.assertTrue(all(u.startswith("https://fapi.binance.com/") for u in self.urls))
+        self.assertEqual(lane.scans(self.db, NOW), [int(NOW - 30), int(NOW - 60)])
+        self.assertEqual(lane.scan_candidates(self.db, NOW), ["AAAUSDT"])
+        led = lane.manage(self.db, NOW, market(), fids=[])["scanner"]["started"][0]
+        self.assertEqual(lane.started(self.db)[led]["coins"], ["AAAUSDT"])
+        scanner.premium_watch(self.db, self.get({}), NOW + 3600 + 1)
+        self.assertEqual(sum(u.endswith("exchangeInfo") for u in self.urls), 2)   # the list again after an hour
 
 
 if __name__ == "__main__":

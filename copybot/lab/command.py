@@ -644,9 +644,10 @@ def paper_view(db, reconcile=True, edges=True, now=None):
                     "active": forward_active(db, base) if forward else lane.is_active(db, eid) if is_lane else None,
                     "state": None if is_lane else lifecycle.state(db, base), "simulated": True,
                     "lane_info": ({**lanes.get(eid, {}), "stats": lane.stats(db, eid, now, lanes.get(eid)),
+                                   "rules": lane.rules_text(lanes.get(eid)), "scanner": lane.is_scanner(lanes.get(eid)),
                                    "retired": (lane.retired(db).get(eid) if not lane.is_active(db, eid) else None)}
                                   if is_lane else None),
-                    "label": (lane.LABEL if is_lane else
+                    "label": (lane.label(lanes.get(eid)) if is_lane else
                               "SKYGGEHANDEL (simuleret, ikke godkendt, inkl. funding fra T_F)" if shadow else
                               "FREMADTEST (simuleret, ikke godkendt, inkl. funding fra T_F)" if forward else
                               "PAPER (simulated, incl. funding from T_F)"),
@@ -765,9 +766,10 @@ def _balance(db, now=None):
                        "running": sum(1 for s in fw if s["active"] and not s["paused"]),
                        "simulated": True, "approved": False, "label": "FREMADTEST (simuleret, ikke godkendt)"},
            "lane": {**_money(ln), "ledgers": len(ln), "running": sum(1 for s in ln if s["active"] and not s["paused"]),
+                    "scanner": sum(1 for s in ln if (s.get("lane_info") or {}).get("scanner")),
                     "active": sum(1 for s in ln if s["active"]), "paused": sum(1 for s in ln if s["paused"]),
                     "open_positions": sum(s["open_positions"] for s in ln), "simulated": True, "approved": False,
-                    "evidence": False, "label": "BANEKONTI (udforskning, simuleret, aldrig bevis)"},
+                    "evidence": False, "label": "BANE- OG SCANNERKONTI (simuleret, aldrig bevis)"},
            "active": sum(1 for s in st if s["state"] == "PAPER_TRADING" or (s["shadow"] and s["state"] == "OBSERVATION")),
            "trading": sum(1 for s in active if not s["paused"] and s["state"] != "PAUSED"),
            "paused": sum(1 for s in active if s["paused"] or s["state"] == "PAUSED"),
@@ -908,9 +910,9 @@ def feed(db, limit=40):
                      text=f"Marked: {what} - {sr.why_da(p.get('why'), STAGE_DA)}"[:220], detail=p.get("decision"),
                      priority=p.get("priority"))
         elif k in ("lane.started", "lane.retired", "lane.promising"):
-            e.update(tag="BANEKONTO", text=(f"Banekonto startet: {nm} (simuleret, aldrig bevis)" if k == "lane.started"
-                                            else f"Banekonto stoppet: {nm} - {p.get('detail')}" if k == "lane.retired"
-                                            else f"Banekonto lovende: {nm} - kandidat til et familieudkast")[:220])
+            e.update(tag="BANEKONTO", text=(f"{nm} startet (simuleret, aldrig bevis)" if k == "lane.started"
+                                            else f"{nm} stoppet: {p.get('detail')}" if k == "lane.retired"
+                                            else f"{nm} lovende: kandidat til et familieudkast")[:220])
         elif k in ("forward.approved", "forward.stopped"):
             e.update(tag="FREMADTEST", text=f"Fremadtest {'startet' if k == 'forward.approved' else 'stoppet'}: "
                                             f"{nm} (simuleret, ikke godkendt)")
@@ -997,6 +999,9 @@ def plain(db, eid):
     if eid and eid.startswith("LANE_"):
         r = db.one("SELECT payload FROM events WHERE kind='lane.started' AND exp_id=? ORDER BY id LIMIT 1", eid)
         p = _j(r["payload"]) if r else {}
+        if (p or {}).get("source") == "scanner":
+            return (f"Scannerkonto {((p.get('coins') or ['?'])[0])}", "Scannerens perp-præmie handlet live på papir; "
+                    "aldrig bevis", None)
         return (f"Banekonto {(p or {}).get('family', '?')}.{(p or {}).get('function', '?')} "
                 f"({len((p or {}).get('coins') or [])} mønter)", "Udforskning fra banen, handlet live på papir; aldrig bevis",
                 None)
