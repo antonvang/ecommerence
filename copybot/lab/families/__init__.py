@@ -52,6 +52,8 @@ DECISION_TIME = "01:00"
 ALLOWED_CLASSES = ("carry", "structural", "subsidy", "flow", "liquidity_provision")
 INSTRUMENT_MODELS = ("spot_perp_ratio", "spot_delivery_ratio")
 CASH_FLOWS = ("funding_income", "locked_basis", "reward")
+DELIVERY_MIN_COINS = 5                        # F2 design: fewer than 5 coins with quarterlies -> not approved
+COVERAGE_SPLITS = ("train3", "validation3", "holdout")   # continuous quarterlies 2022-01..2024-12 (F2 design)
 TRIGGER_ARTIFACTS = ("cost", "adversarial")
 ACK_PREFIX, ACK_MIN = "materially different because", 40
 UNIVERSES = {"30v3": "UNIVERSE_30_V3", "30": "UNIVERSE_30", "cm16": "UNIVERSE_CM16", "8": "UNIVERSE"}
@@ -158,6 +160,20 @@ def validate(fam, vocab=None):
             bad.append(f"costs.{k} must be >= the catalogue's {catalogue.COSTS[k]}")
     if (fam.get("universe") or {}).get("base") not in UNIVERSES:
         bad.append(f"universe.base must be one of {sorted(UNIVERSES)}")
+    if (fam.get("instrument_model") or {}).get("type") == "spot_delivery_ratio":   # F2: an explicit coin list
+        from lab.engine import data
+        u = fam.get("universe") or {}
+        syms, base = u.get("symbols"), getattr(data, UNIVERSES.get(u.get("base"), "UNIVERSE"), ())
+        if not (isinstance(syms, list) and len(set(syms)) == len(syms) >= DELIVERY_MIN_COINS and
+                all(x in base for x in syms)):
+            bad.append(f"universe.symbols must list at least {DELIVERY_MIN_COINS} distinct coins of the base universe "
+                       f"(spot_delivery_ratio: the coins with COIN-M quarterlies)")
+        else:
+            if set(syms) & set(data.HOLDOUT_SEEN):
+                bad.append("universe.symbols must exclude BTC, ETH and SOL, so a clean 2024 holdout exists")
+            want = max(DELIVERY_MIN_COINS, math.ceil(0.8 * len(syms)))
+            if u.get("min_symbols") != want:
+                bad.append(f"universe.min_symbols must be max({DELIVERY_MIN_COINS}, ceil(0.8 n)) = {want}")
     inst = fam.get("instances") or []
     if not 1 <= len(inst) <= K_MAX:
         bad.append(f"1 to {K_MAX} base instances are allowed")
@@ -232,9 +248,13 @@ def graveyard_hits(db, fam, vocab=None):
 def expected_files(fam, splits=("train3", "validation3")):
     """{cache_dir: [paths]} the screening will read (no network; spot zips in their own directory)."""
     from lab.engine import data
-    syms = getattr(data, UNIVERSES.get((fam.get("universe") or {}).get("base"), "UNIVERSE"))
+    syms = symbols(fam)
     out = {}
     for d in fam.get("data") or []:
+        if d.get("source") == KIND_SOURCE["delivery"]:       # the held quarterlies (calendar, no network)
+            out[d["cache_dir"]] = [p for sp in splits if sp in data.SPLITS for s in syms
+                                   for c in data.delivery_plan(s, sp) for _, p in c["files"]]
+            continue
         pat = FILE_PATTERNS.get(d.get("source"))
         if not pat:
             continue
@@ -288,6 +308,8 @@ def check(db, path):
     hits, unacked = graveyard_hits(db, fam, vocab) if db is not None else ([], [])
     problems += [f"graveyard: {e} has the same or a related tag and is not acknowledged" for e in unacked]
     problems += tag_problems(db, fam) if db is not None else []
+    if delivery_model(fam) and os.path.exists(module_path(fid)):    # F2: both checks are shown before approval
+        problems += selftest_problems(fid) + (coverage_problems(db, fam) if db is not None else [])
     alpha_f = (fam.get("alpha") or {}).get("family") or 0
     used = alpha_reserved(db) if db is not None else 0.0
     if used + alpha_f > W0 + 1e-12:
@@ -396,6 +418,8 @@ def _blocking_problems(db, fam):
     bad = validate(fam)
     if not os.path.exists(module_path(fid)):
         bad.append(f"mechanism module lab/families/{fid}.py is missing")
+    elif delivery_model(fam):                  # F2 design: approved only after both checks (before registration)
+        bad += selftest_problems(fid) + coverage_problems(db, fam)
     _, unacked = graveyard_hits(db, fam)
     bad += [f"graveyard: {e} is not acknowledged" for e in unacked]
     bad += _programme_limits(db, fam)
@@ -607,7 +631,8 @@ SCREEN_SPLITS = ("train3", "validation3")
 OPEN_MAX = 3                                   # point 3: at most 3 open families
 PRIORITY = 120                                 # job priority of family instances (after every catalogue template)
 SPOT = "binance_spot_klines_1h"
-KIND_SOURCE = {"klines": "binance_um_klines_1h", "funding": "binance_um_fundingRate", "spot": SPOT}
+KIND_SOURCE = {"klines": "binance_um_klines_1h", "funding": "binance_um_fundingRate", "spot": SPOT,
+               "delivery": "binance_cm_klines_1h"}
 DATA_HOST = "https://data.binance.vision/"
 INSTANCE_RE = re.compile(r"E_([a-z0-9]{3,12})__([a-z0-9_]{2,12})_a8")
 FORWARD_PASS = "PASS (family forward test)"    # verdict prefix of a family forward PASS (point 11)
@@ -672,11 +697,21 @@ def instrument(fam):
 
 
 def symbols(fam_or_spec):
-    """The universe: frozen in a registered spec, else the family file's base universe."""
+    """The universe: frozen in a registered spec, else the family file's explicit coin list (universe.symbols, a subset
+    of its base universe), else its base universe."""
     if fam_or_spec.get("universe_base"):
         return tuple(fam_or_spec["universe"])
     from lab.engine import data
-    return getattr(data, UNIVERSES.get((fam_or_spec.get("universe") or {}).get("base"), "UNIVERSE"))
+    u = fam_or_spec.get("universe") or {}
+    if u.get("symbols") and delivery_model(fam_or_spec):
+        return tuple(u["symbols"])
+    return getattr(data, UNIVERSES.get(u.get("base"), "UNIVERSE"))
+
+
+def delivery_model(fam_or_spec):
+    """True for the instrument model spot_delivery_ratio (a family file has a dict, a registered spec a string)."""
+    m = fam_or_spec.get("instrument_model")
+    return (m.get("type") if isinstance(m, dict) else m) == "spot_delivery_ratio"
 
 
 def discover_all(db, actor="discovery-catalogue"):
@@ -750,8 +785,10 @@ def transform(spec, per_sym, split):
     non-positive ratio, which the quality rule flags. Returns (bars, funding, duplicates, FamilyData)."""
     from lab.engine import data
     model = spec.get("instrument_model")
+    if model == "spot_delivery_ratio":
+        return _transform_delivery(per_sym, split)
     if model != "spot_perp_ratio":
-        raise FamilyError(f"instrument model {model!r} is not implemented (spot_delivery_ratio is phase B)")
+        raise FamilyError(f"instrument model {model!r} is not implemented")
     bars, funding, dups, perp, raw = {}, {}, {}, {}, {}
     for s, f in per_sym.items():
         pb, fr, d1 = data.load(f, split)
@@ -764,11 +801,40 @@ def transform(spec, per_sym, split):
     return bars, funding, dups, FamilyData(perp, raw)
 
 
-def attribution(spec, m):
+def _transform_delivery(per_sym, split):
+    """Instrument model spot_delivery_ratio (F2 dbasis): per coin one series (ts, spot_open / F_open, spot_close /
+    F_close) stitched from the held quarterlies (data.quarterlies: each contract from the previous roll time up to its
+    own), on the hours both the spot and the held contract have. No funding (a delivery future has none). The bar that
+    opens at a roll time carries a return between two contracts; the mechanism module holds 0 on it. A missing hour of
+    either leg lowers the coin's coverage (the quality rule excludes it). The perp bars and settled funding are kept for
+    the benchmark only (point 8: equal-weight buy-and-hold of the same perps). Returns (bars, funding, duplicates,
+    FamilyData)."""
+    from lab.engine import data
+    bars, funding, dups, perp, raw = {}, {}, {}, {}, {}
+    for s, f in per_sym.items():
+        pb, fr, d1 = data.load(f, split)
+        sb, _, d2 = data.load({"klines": f.get("spot") or [], "funding": []}, split)
+        spot, series, d3 = {ts: (o, c) for ts, o, c in sb}, [], 0
+        for c in f.get("delivery") or []:
+            cb, _, dd = data.load({"klines": c.get("paths") or [], "funding": []}, split)
+            d3 += dd
+            series += [(ts, spot[ts][0] / o if o > 0 else 0.0, spot[ts][1] / cl if cl > 0 else 0.0)
+                       for ts, o, cl in cb if c["from"] <= ts < c["to"] and ts in spot]
+        series.sort()
+        bars[s], funding[s], dups[s], perp[s], raw[s] = series, {}, d2 + d3, pb, fr
+    return bars, funding, dups, FamilyData(perp, raw)
+
+
+def attribution(spec, m, bars=None, pos=None):
     """Mechanism attribution (point 8, stricter): the family module's rule on portfolio metrics; for fcarry funding
-    income minus all costs > 0 and gross ratio P&L <= funding income. Returns {..., 'gates': {name: ok}}."""
+    income minus all costs > 0 and gross ratio P&L <= funding income. A module that declares
+    ATTRIBUTION_NEEDS_POSITIONS (dbasis: the locked basis is booked per held segment) also gets the instrument bars
+    and positions. Returns {..., 'gates': {name: ok}}."""
     import importlib
-    return importlib.import_module(f"lab.families.{spec['family']}").attribution(m)
+    mod = importlib.import_module(f"lab.families.{spec['family']}")
+    if getattr(mod, "ATTRIBUTION_NEEDS_POSITIONS", False):
+        return mod.attribution(m, bars=bars, pos=pos)
+    return mod.attribution(m)
 
 
 def instance_spec(fam, iid, blobs, engine_blobs):
@@ -968,6 +1034,108 @@ def register_transition(db, eid, fid, actor):
                                                      "reason": f"approved family {fid}"})
 
 
+# ---------- F2: the coverage of the COIN-M quarterlies and the synthetic convergence test (design (D) F2) ----------
+def selftest_problems(fid):
+    """The module's synthetic convergence test (explicit criteria in its docstring), or [] if it has none or passes."""
+    import importlib
+    mod = importlib.import_module(f"lab.families.{fid}")
+    if not hasattr(mod, "convergence_selftest"):
+        return ["the mechanism module has no synthetic convergence test (F2 design: required before approval)"]
+    r = mod.convergence_selftest()
+    return [] if r["ok"] else [f"synthetic convergence test fails: {k}" for k, ok in r["checks"].items() if not ok]
+
+
+TRUST_INJECTED_COVERAGE = False               # tests only: a coverage record from an injected HEAD counts
+
+
+def delivery_candidates(fam):
+    """Every coin the coverage check examines: the base universe without holdout_exclude (BTC, ETH, SOL), so the
+    universe is the mechanically covered set and never a hand-picked list (no researcher degree of freedom)."""
+    from lab.engine import data
+    u = fam.get("universe") or {}
+    base = getattr(data, UNIVERSES.get(u.get("base"), "UNIVERSE"), ())
+    return [s for s in base if s not in set(u.get("holdout_exclude") or []) | set(data.HOLDOUT_SEEN)]
+
+
+def delivery_urls(syms, splits=COVERAGE_SPLITS):
+    """{coin: [url]} of every quarterly kline zip the screen and the holdout read (calendar only, no network)."""
+    from lab.engine import data
+    return {s: [u for sp in splits for c in data.delivery_plan(s, sp) for u, _ in c["files"]] for s in syms}
+
+
+def _head(url):
+    """{present, status, length, etag} from a HEAD request: present only on HTTP 200, absent only on 404; anything
+    else raises, so no record is written (never 'absent' on a doubt)."""
+    if not url.startswith(DATA_HOST + "data/futures/cm/"):
+        raise FamilyError(f"coverage checks only COIN-M files on {DATA_HOST}: {url}")
+    with _download_slot():
+        try:
+            with urllib.request.urlopen(urllib.request.Request(url, method="HEAD", headers={
+                    "User-Agent": "copybot-research/1.0"}), timeout=60) as r:
+                if r.status != 200:
+                    raise FamilyError(f"HEAD {url} answered {r.status}: not counted either way")
+                return {"present": True, "status": 200, "length": r.headers.get("Content-Length"),
+                        "etag": r.headers.get("ETag")}
+        except urllib.error.HTTPError as e:
+            if e.code == 404:
+                return {"present": False, "status": 404}
+            raise
+
+
+def check_coverage(db, fid, actor, head=None, now=None):  # fid: a family id or a family file path (a draft)
+    """F2 design: before approval, HEAD requests establish which coins have every quarterly zip of 2022-01..2024-12
+    (train3, validation3, holdout). Point 17: no request before 2026-11-28 00:00 UTC. HEAD reads no data. Records
+    family.coverage {family, checked: {url: present}, covered}. Returns (covered coins, {url: present})."""
+    from lab.engine import data
+    now = data.CLOCK() if now is None else now
+    if now < EMBARGO_UNTIL:
+        raise FamilyError("the coverage check sends HEAD requests: none before 2026-11-28 00:00 UTC (amendment 8 "
+                          "point 17; pm_lp uses the network until 2026-11-27)")
+    fam = load(fid)
+    fid = fam.get("family_id") or fid
+    if not delivery_model(fam):
+        raise FamilyError(f"{fid} is not a spot_delivery_ratio family: it has no quarterlies to check")
+    urls = delivery_urls(delivery_candidates(fam))
+    evidence = {}
+    for us in urls.values():
+        for u in us:
+            r = (head or _head)(u)
+            evidence[u] = r if isinstance(r, dict) else {"present": bool(r)}
+    checked = {u: bool(r.get("present")) for u, r in evidence.items()}
+    covered = sorted(s for s, us in urls.items() if all(checked[u] for u in us))
+    db.event("family.coverage", actor, None, {"family": fid, "splits": list(COVERAGE_SPLITS), "checked": checked,
+                                               "evidence": evidence, "covered": covered, "coins": list(urls),
+                                               "via": "http" if head is None else "injected"})
+    return covered, checked
+
+
+def coverage_problems(db, fam):
+    """Approval and registration of a spot_delivery_ratio family: every coin of universe.symbols must have every
+    quarterly zip of train3, validation3 and holdout recorded present by a family.coverage check (the latest record
+    of each URL counts), and at least 5 coins (F2 design). Returns problems."""
+    seen = {}
+    for r in db.q("SELECT payload FROM events WHERE kind='family.coverage' ORDER BY id"):
+        p = json.loads(r[0])
+        if p.get("via") == "http" or (TRUST_INJECTED_COVERAGE and p.get("via") == "injected"):
+            seen.update(p.get("checked") or {})
+    cand = delivery_candidates(fam)
+    urls = delivery_urls(cand)
+    unchecked = [s for s in cand if not all(u in seen for u in urls[s])]
+    covered = sorted(s for s in cand if s not in unchecked and all(seen[u] for u in urls[s]))
+    out = []
+    if unchecked:
+        out.append(f"COIN-M quarterly coverage is not recorded for {len(unchecked)} candidate coin(s) "
+                   f"({', '.join(unchecked[:6])}{' ...' if len(unchecked) > 6 else ''}): run python3 -m lab "
+                   f"family-coverage <family file> (from 2026-11-28; amendment 8 point 17)")
+    elif sorted(symbols(fam)) != covered:
+        out.append(f"universe.symbols must be exactly the coins with verified continuous quarterlies 2022-01..2024-12 "
+                   f"({', '.join(covered) or 'none'}): no coin added or left out by hand")
+    if not unchecked and len(covered) < DELIVERY_MIN_COINS:
+        out.append(f"fewer than {DELIVERY_MIN_COINS} coins with verified continuous quarterlies 2022-01..2024-12: "
+                   f"F2 is not approved (design)")
+    return out
+
+
 # ---------- the download embargo (amendment 8 point 17 with amendment 9 point 1) ----------
 def fetch_allowed(source, split, now=None):
     """Before 2026-10-24 00:00 UTC only the train3/validation3 spot klines of a family may be downloaded; from then until
@@ -983,6 +1151,8 @@ def fetch_allowed(source, split, now=None):
 def source_of(url):
     if url.startswith(DATA_HOST + "data/spot/") and "/klines/" in url:
         return SPOT
+    if url.startswith(DATA_HOST + "data/futures/cm/") and "/klines/" in url:   # F2: COIN-M quarterlies (point 17)
+        return KIND_SOURCE["delivery"]
     if url.startswith(DATA_HOST + "data/futures/um/"):
         return KIND_SOURCE["funding"] if "/fundingRate/" in url else KIND_SOURCE["klines"] if "/klines/" in url \
             else None
@@ -1088,26 +1258,27 @@ def guarded_get(split, fetch=None):
     return get
 
 
-def expected_paths(syms, splits, spot=True):
-    """[(source, split, url, cache path)] of every file the screening reads for these symbols (no network)."""
+def expected_paths(syms, splits, spot=True, delivery=False):
+    """[(source, split, url, cache path)] of every file the screening reads for these symbols (no network); with
+    `delivery` also the COIN-M quarterlies of instrument model spot_delivery_ratio."""
     from lab.engine import data
     return [(KIND_SOURCE[kind], sp, u, p) for sp in splits for s in syms
-            for kind, pairs in data.expected_paths(s, sp, spot).items() for u, p in pairs]
+            for kind, pairs in data.expected_paths(s, sp, spot, delivery=delivery).items() for u, p in pairs]
 
 
-def missing(syms, splits, spot=True):
+def missing(syms, splits, spot=True, delivery=False):
     """Files not in the cache and not known to be absent from the archive."""
     gone = absent()
-    return [x for x in expected_paths(syms, splits, spot) if x[2] not in gone and not os.path.exists(x[3])]
+    return [x for x in expected_paths(syms, splits, spot, delivery) if x[2] not in gone and not os.path.exists(x[3])]
 
 
-def blocked(syms, splits, now=None):
+def blocked(syms, splits, now=None, delivery=False):
     """Missing files that may not be downloaded now (empty = the step can read or fetch everything)."""
-    return [x for x in missing(syms, splits) if not fetch_allowed(x[0], x[1], now)]
+    return [x for x in missing(syms, splits, delivery=delivery) if not fetch_allowed(x[0], x[1], now)]
 
 
-def ready(syms, splits, now=None):
-    return not blocked(syms, splits, now)
+def ready(syms, splits, now=None, delivery=False):
+    return not blocked(syms, splits, now, delivery)
 
 
 # ---------- registration rules (point 7) ----------
@@ -1258,10 +1429,12 @@ def registration_block(db, fam, now=None, successor=None):
                   if lifecycle.state(db, e) != "DISCOVERED"}
     if cover:
         bad.append(f"open experiment(s) outside the family cover the same tag and execution: {', '.join(sorted(cover))}")
+    if delivery_model(fam):
+        bad += coverage_problems(db, fam)
     unacked = graveyard_recheck(db, fam)
     if unacked:
         bad.append(f"graveyard re-check: {', '.join(unacked)} not acknowledged in the family file")
-    n = len(blocked(symbols(fam), SCREEN_SPLITS, now))
+    n = len(blocked(symbols(fam), SCREEN_SPLITS, now, delivery=delivery_model(fam)))
     if n:
         bad.append(f"{n} {EMBARGO_REASON}")
     return bad
@@ -1792,14 +1965,22 @@ def cohort_pass(db, fid, actor="strategy-1", now=None):
 
 
 # ---------- phase A5: the forward test (points 11 and 12; the steps are in lab/pipeline.py) ----------
-def unlisted(symbols, split):
-    """Point 11 (amendment 7 point 5): coins without a perp or spot file for the window's first month, excluded before
-    any computation (read from the cache after the guarded download)."""
+def _first_delivery_file(s, split):
+    from lab.engine import data
+    plan = data.delivery_plan(s, split)
+    return plan[0]["files"][0][1] if plan and plan[0]["files"] else None
+
+
+def unlisted(symbols, split, delivery=False):
+    """Point 11 (amendment 7 point 5): coins without a perp or spot file (and, for spot_delivery_ratio, the held
+    quarterly's file) for the window's first month, excluded before any computation (read from the cache after the
+    guarded download)."""
     from lab.engine import data
     out = []
     for s in symbols:
         e = data.expected_paths(s, split, spot=True)
-        if not (os.path.exists(e["klines"][0][1]) and os.path.exists(e["spot"][0][1])):
+        if not (os.path.exists(e["klines"][0][1]) and os.path.exists(e["spot"][0][1])) or \
+                (delivery and not os.path.exists(_first_delivery_file(s, split) or "")):
             out.append(s)
     return out
 
@@ -1807,22 +1988,27 @@ def unlisted(symbols, split):
 COVERAGE_MIN = 0.99                            # data.quality's coverage rule
 
 
-def unpublished(symbols, split):
+PUBLICATION_WAIT_MAX_S = 60 * 86400           # spot_delivery_ratio: a quarterly leg unpublished for 60 days is gone
+
+
+def unpublished(symbols, split, delivery=False, now=None):
     """A forward window's last month that the archive has published for none of the coins (perp klines or spot klines,
     read after the guarded download): a publication delay, never a delisting of every coin (review of fdd898a). The
     reason to wait, or None."""
     from lab.engine import data
     if not split.startswith("fwd") or not symbols:
         return None
-    for kind in ("klines", "spot"):
-        if not any(os.path.exists(data.expected_paths(s, split, spot=True)[kind][-1][1]) for s in symbols):
+    late = delivery and (data.CLOCK() if now is None else now) > data.window_bounds(split)[1] + PUBLICATION_WAIT_MAX_S
+    for kind in ("klines", "spot") + (("delivery",) if delivery and not late else ()):
+        if not any(os.path.exists(data.expected_paths(s, split, spot=True, delivery=delivery)[kind][-1][1])
+                   for s in symbols):
             y, m = data.months(split)[-1]
             return (f"the archive has not published {y}-{m:02d} {kind} files for any coin of {split} yet: the forward "
                     f"test waits a day and reads nothing before (amendment 8 point 11)")
     return None
 
 
-def delisted(bars, split):
+def delisted(bars, split, delivery=False):
     """Point 11 cites amendment 7 point 5: a coin delisted in the window is excluded from the day after, not from the
     whole window (finding protocol-statistics #8, survivorship). {coin: last listed hour} for the coins whose instrument
     series stops before the window's last hour while the cache has no perp or no spot klines file for every later month
@@ -1835,9 +2021,22 @@ def delisted(bars, split):
             continue
         d = datetime.fromtimestamp(x[-1][0], timezone.utc)
         e = data.expected_paths(s, split, spot=True)
-        if all(not (os.path.exists(e["klines"][k][1]) and os.path.exists(e["spot"][k][1]))
+        held = _delivery_months(s, split) if delivery else None
+        if all(not (os.path.exists(e["klines"][k][1]) and os.path.exists(e["spot"][k][1]) and
+                    (held is None or held.get(ym)))
                for k, ym in enumerate(mon) if ym > (d.year, d.month)):
             out[s] = x[-1][0]
+    return out
+
+
+def _delivery_months(s, split):
+    """{(year, month): True if a file of a quarterly held in that month is in the cache}."""
+    from lab.engine import data
+    out = {}
+    for c in data.delivery_plan(s, split):
+        for u, p in c["files"]:
+            y, m = (int(v) for v in p[-11:-4].split("-"))
+            out[(y, m)] = out.get((y, m), False) or os.path.exists(p)
     return out
 
 

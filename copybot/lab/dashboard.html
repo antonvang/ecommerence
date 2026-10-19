@@ -275,7 +275,7 @@ details.more[open]>summary{margin-bottom:12px}
     <div class="mcard" id="m-bal"><div class="lab">Saldo (paper)</div><div class="big" id="bal">–</div><div class="sub" id="balsub"></div></div>
     <div class="mcard pnl zero" id="m-pnl"><div class="lab" style="padding-left:6px">Total P&amp;L (paper)</div><div class="big" id="pnl" style="padding-left:6px">–</div><div class="sub" id="pnlsub" style="padding-left:6px"></div></div>
     <div class="mcard" id="m-today"><div class="lab">I dag</div><div class="big" id="today">–</div><div class="sub" id="todaysub"></div></div>
-    <div class="mcard" id="m-strat"><div class="lab">Strategier der handler</div><div class="big" id="strat">–</div><div class="sub" id="stratsub"></div></div>
+    <div class="mcard" id="m-strat"><div class="lab">Aktive strategier</div><div class="big" id="strat">–</div><div class="sub" id="stratsub"></div></div>
   </section>
   <section class="money sim" aria-label="Simuleret samlet (ikke godkendt)">
     <div class="simcap" id="simcap">SIMULERET SAMLET (ikke godkendt)</div>
@@ -565,7 +565,7 @@ function renderMoney(b){
     : axisChart(1000, 210, {l:70,r:10,t:16,b:24}, [h[0][0], Math.max(h[h.length-1][0], h[0][0] + 3600)],
         [Math.min(...h.map(p => p[1]), b.capital), Math.max(...h.map(p => p[1]), b.capital)],
         (X, Y) => `<line x1="${X(h[0][0])}" x2="${X(h[h.length-1][0])}" y1="${Y(b.capital)}" y2="${Y(b.capital)}" stroke="#5f5b57" stroke-dasharray="3 3"/><path d="${stepPath(h, X, Y)}" fill="none" stroke="${b.pnl >= 0 ? "#5fd39a" : "#ff5d5d"}" stroke-width="2"/>`,
-        "tid (UTC)", "USD (simuleret)", day, v => "$" + num(v, 0)) + `<div class="cap">Samlet paper-saldo for alle strategier; værdien holdes til næste timemark (ingen interpolation). Stiplet linje = startkapital. Kilde: ${esc(b.source)}</div>`;
+        "tid (UTC)", "USD (simuleret)", day, v => "$" + num(v, 0)) + `<div class="cap">Formel paper-saldo (godkendte konti og skyggehandel; fremadtest vises for sig); værdien holdes til næste timemark (ingen interpolation). Stiplet linje = startkapital. Kilde: ${esc(b.source)}</div>`;
 }
 function renderSim(b, f, c, r){
   const tf = b.funding_t0 ? ` · inkl. funding fra ${utc(b.funding_t0)}` : " · funding bogføres fra T_F";
@@ -579,7 +579,7 @@ function renderSim(b, f, c, r){
   animate("combpnl", c.pnl, v => usd(v, true));
   $("#combpnl").className = "big " + (c.pnl > 0 ? "pos" : c.pnl < 0 ? "neg" : "");
   $("#m-combpnl").className = "mcard pnl" + (c.pnl == null || c.pnl === 0 ? " zero" : c.pnl < 0 ? " neg" : "");
-  $("#combpnlsub").textContent = c.pnl == null ? "" : `realiseret ${usd(c.realized, true)} / urealiseret ${usd(c.unrealized, true)} / gebyrer ${usd(-c.fees, true)} / funding ${usd(c.funding, true)}`;
+  $("#combpnlsub").textContent = c.pnl == null ? "" : `realiseret ${usd(c.realized, true)} + urealiseret ${usd(c.unrealized, true)} (realiseret indeholder allerede gebyrer ${usd(-c.fees, true)} og funding ${usd(c.funding, true)})`;
   $("#combpnlsub").title = "Realiseret indeholder gebyrer og funding; de vises også hver for sig.";
 }
 function st(k, v, cls=""){ return `<div class="st"><div class="k">${esc(k)}</div><div class="v ${cls}">${v}</div></div>`; }
@@ -753,7 +753,7 @@ function renderPaper(p){
         "time (UTC)", "USD (simulated)", day, v => num(v, 0));
     const ddc = dd.length < 1 ? "" : axisChart(600, 110, {l:58,r:8,t:14,b:22}, [dd[0][0], Math.max(dd[dd.length-1][0], dd[0][0] + 3600)], [0, Math.max(0.01, ...dd.map(d=>d[1]))],
         (X, Y) => `<path d="${stepPath(dd, X, Y)}" fill="none" stroke="#ff5d5d" stroke-width="1.6"/>`, "time (UTC)", "drawdown (fraction)", day, v => (v*100).toFixed(1)+"%");
-    return `<div class="panel" style="background:var(--panel2);margin-bottom:10px"><div class="crow" style="justify-content:space-between"><b class="mono">${esc(s.name || s.exp_id)}</b><span>${(s.shadow || s.forward) ? `<span class="badge" style="color:${s.forward ? "var(--violet)" : "var(--amber)"}">${esc(s.label)}</span>` : badge(s.label)} ${s.paused?badge("PAUSED"):""} ${s.forward && !s.active ? badge("STOPPET") : ""} ${s.warming?badge("warming up"):""}</span></div>
+    return `<div class="panel" style="background:var(--panel2);margin-bottom:10px"><div class="crow" style="justify-content:space-between"><b class="mono">${esc(s.name || s.exp_id)}</b><span>${(s.shadow || s.forward) ? `<span class="badge" style="color:${s.forward ? "var(--violet)" : "var(--amber)"}">${esc(s.label)}</span>` : badge(s.label)} ${s.paused?badge("PAUSED"):""} ${s.forward && !s.active ? badge("STOPPET") : ""} ${s.warming?badge("warming up"):""}</span></div>${s.pause ? `<div class="cap" style="color:var(--amber)">Pause siden ${esc(new Date(s.pause.ts * 1000).toISOString().slice(0, 16).replace("T", " "))} UTC: ${esc(s.pause.rule)} - ${esc(s.pause.detail || "")}. Genoptag: <span class="mono">${esc(s.pause.resume)}</span></div>` : ""}
       <div class="grid2"><div>${chart}<div class="cap">Equity step chart (value held until the next hourly mark; no interpolation) · ${eq.length} marks · ${eq.length ? utc(eq[0].ts) + " → " + utc(eq[eq.length-1].ts) : ""} · source sim_equity</div></div>
       <div>${ddc}<div class="cap">Drawdown from running peak · source sim_equity</div></div></div>
       <div class="grid3">${metric("Realised P&L (sim.)", num(s.realized), `closed trades, fees and funding, USD · gebyrer ${num(s.fees)} · funding ${num(s.funding)}`)}${metric("Unrealised P&L (sim.)", num(s.unrealized), "open positions at the last mark, USD")}${metric("Total P&L (sim.)", num(s.total_pnl), `capital ${num(s.capital,0)} USD`)}</div>

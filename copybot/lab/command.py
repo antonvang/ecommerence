@@ -282,6 +282,10 @@ def _family_approval(db, fid, now):
         return "not approved", None
     if ev[-1]["kind"] == "family.revoked":
         return "revoked", ev[-1]
+    if families.registered(db, fid):                # registered: the approval its registration cited binds (point 18)
+        ok = families.binding_approval(db, fid) is not None
+        return ("approved" if ok else "registered; the family file or module changed since: every step fails "
+                "closed (amendment 8 point 18)"), ev[-1]
     key = (db.path, ev[-1]["id"], fid)
     hit = _family_verified.get(key)
     if hit is None or now - hit[0] > FAMILY_VERIFY_S:
@@ -595,6 +599,17 @@ def edge(db, ledger, now=None, expectation=True):
     return out
 
 
+def _pause_info(rk, eid):
+    """Why a paused ledger is paused (its last PAUSE risk event) and how a human resumes a simulated one, or None."""
+    if not rk.paused(eid):
+        return None
+    r = rk._last(eid, ("PAUSE",))
+    sim = eid.startswith(("SHADOW_", "FWD_"))
+    return {"rule": r["rule"], "detail": r["detail"], "ts": r["ts"],
+            "resume": f'python3 -m lab sim-resume {eid} --reason "..." (typed in a terminal)' if sim else
+            "revalidation and a human approval (amendment 4)"}
+
+
 def paper_view(db, reconcile=True, edges=True, now=None):
     """Every paper ledger. P&L is as of its last hourly mark: realized (closed trades, fees and booked funding) from a
     replay of the ledger up to the mark, unrealized = position value at the mark minus cost basis."""
@@ -638,7 +653,7 @@ def paper_view(db, reconcile=True, edges=True, now=None):
                     "daily_drawdown": daily_dd,
                     "orders": orders, "fills": db.one("SELECT COUNT(*) FROM sim_fills WHERE exp_id=?", eid)[0],
                     "rejected_orders": refused, "reconciliation": pe.reconcile(eid) if reconcile else None,
-                    "paused": rk.paused(eid), "warming": rk.warming(eid),
+                    "paused": rk.paused(eid), "warming": rk.warming(eid), "pause": _pause_info(rk, eid),
                     "edge": edge(db, eid, now) if edges else None})
     out.sort(key=lambda s: (s["forward"], s["shadow"], s["exp_id"]))     # approved, shadow, then forward tests
     return {"strategies": out, "simulated": True, "real_account_profit": REAL_ACCOUNT, "funding_t0": funding_t0(db),

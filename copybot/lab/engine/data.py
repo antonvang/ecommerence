@@ -151,9 +151,9 @@ def spot_files_for(sym, split, get=None):
     return out
 
 
-def expected_paths(sym, split, spot=False):
-    """{kind: [(url, cache path)]} that files_for (and spot_files_for) would read for one symbol and split. No network
-    and no window guard: it only names files."""
+def expected_paths(sym, split, spot=False, delivery=False):
+    """{kind: [(url, cache path)]} that files_for (and spot_files_for, delivery_files_for) would read for one symbol and
+    split. No network and no window guard: it only names files."""
     out = {"klines": [], "funding": []} | ({"spot": []} if spot else {})
     for y, m in months(split):
         k, f = f"{sym}-1h-{y}-{m:02d}.zip", f"{sym}-fundingRate-{y}-{m:02d}.zip"
@@ -161,6 +161,82 @@ def expected_paths(sym, split, spot=False):
         out["funding"].append((f"{BASE}/fundingRate/{sym}/{f}", os.path.join(CACHE, "funding", f)))
         if spot:
             out["spot"].append((f"{SPOT_BASE}/klines/{sym}/1h/{k}", os.path.join(CACHE, "spot_klines", k)))
+    if delivery:
+        out["delivery"] = [pair for c in delivery_plan(sym, split) for pair in c["files"]]
+    return out
+
+
+# ---------- COIN-M quarterly delivery contracts (amendment 8: instrument model spot_delivery_ratio, F2 dbasis) ----------
+CM_BASE = "https://data.binance.vision/data/futures/cm/monthly"
+ROLL_BEFORE_S = 3 * DAY                     # the nearest quarterly with MORE than 3 days to expiry is the one held
+QUARTER_MONTHS = (3, 6, 9, 12)
+
+
+def quarterly_expiry(y, m):
+    """Binance COIN-M quarterly delivery time: 08:00 UTC on the last Friday of March, June, September or December."""
+    if m not in QUARTER_MONTHS:
+        raise ValueError(f"{y}-{m:02d} is not a quarterly delivery month")
+    last = datetime(y + (m == 12), 1 if m == 12 else m + 1, 1, tzinfo=timezone.utc).timestamp() - DAY
+    d = datetime.fromtimestamp(last, timezone.utc)
+    friday = last - ((d.weekday() - 4) % 7) * DAY
+    return int(friday) + 8 * HOUR
+
+
+def roll_time(expiry):
+    """The first 01:00 UTC at which the contract has no more than 3 days to expiry. From then on the next quarterly is
+    the nearest contract with more than 3 days to expiry; the bar that opens at this time is the flat roll bar (for a
+    Friday 08:00 expiry: the Wednesday 01:00 UTC bar, 55 hours before)."""
+    t = expiry - ROLL_BEFORE_S
+    t = t - t % DAY + HOUR
+    return t + DAY if expiry - t > ROLL_BEFORE_S else t
+
+
+def quarterlies(a, b):
+    """[(expiry, active_from, active_to)] of the held contract over [a, b]: each quarterly is held from the previous
+    quarterly's roll time up to (not including) its own roll time. Calendar only: no network."""
+    y = datetime.fromtimestamp(a, timezone.utc).year - 1
+    exp = [quarterly_expiry(yy, m) for yy in range(y, datetime.fromtimestamp(b, timezone.utc).year + 2)
+           for m in QUARTER_MONTHS]
+    out = []
+    for prev, e in zip(exp, exp[1:]):
+        f0, f1 = roll_time(prev), roll_time(e)
+        if f1 > a and f0 <= b:
+            out.append((e, f0, f1))
+    return out
+
+
+def delivery_symbol(sym, expiry):
+    """The COIN-M contract of a spot symbol: ADAUSDT and 2023-03-31 -> ADAUSD_230331."""
+    base = sym[:-4] if sym.endswith("USDT") else sym
+    return f"{base}USD_{datetime.fromtimestamp(expiry, timezone.utc):%y%m%d}"
+
+
+def delivery_plan(sym, split):
+    """For one symbol and split: [{contract, expiry, from, to, files: [(url, cache path)]}] of every quarterly held
+    inside the window, with the monthly 1h kline zips of the months it is held in (CACHE/cm_klines, amendment 8 point
+    17). No network and no window guard: it only names files."""
+    a, b = window_bounds(split)
+    out = []
+    for e, f0, f1 in quarterlies(a, b):
+        lo, hi = max(a, f0), min(b, f1 - HOUR)
+        c, files, d = delivery_symbol(sym, e), [], datetime.fromtimestamp(lo, timezone.utc)
+        y, m = d.year, d.month
+        while (y, m) <= (datetime.fromtimestamp(hi, timezone.utc).year, datetime.fromtimestamp(hi, timezone.utc).month):
+            k = f"{c}-1h-{y}-{m:02d}.zip"
+            files.append((f"{CM_BASE}/klines/{c}/1h/{k}", os.path.join(CACHE, "cm_klines", k)))
+            y, m = (y + 1, 1) if m == 12 else (y, m + 1)
+        out.append({"contract": c, "expiry": e, "from": f0, "to": f1, "files": files})
+    return out
+
+
+def delivery_files_for(sym, split, get=None):
+    """Download (or reuse) the 1h kline zips of every quarterly held in the window. Returns [{contract, expiry, from,
+    to, paths}] (a 404 leaves a month out; the quality rule then judges the coverage)."""
+    window(split)                                         # raises for reserved windows
+    out = []
+    for c in delivery_plan(sym, split):
+        paths = [p for p in (_fetch(u, path, get) for u, path in c["files"]) if p]
+        out.append({k: c[k] for k in ("contract", "expiry", "from", "to")} | {"paths": paths})
     return out
 
 

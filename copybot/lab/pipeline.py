@@ -421,13 +421,15 @@ def _download(db, eid, spec, split, worker, symbols):
         with ThreadPoolExecutor(DOWNLOAD_THREADS) as ex:
             return dict(ex.map(lambda s: (s, data.files_for(s, split)), symbols))
     from lab import families
-    get = families.guarded_get(split)
+    get, dlv = families.guarded_get(split), families.delivery_model(spec)
     try:
-        if families.blocked(symbols, (split,)):
+        if families.blocked(symbols, (split,), delivery=dlv):
             raise families.Embargoed(families.embargo_reason(split))
         with ThreadPoolExecutor(DOWNLOAD_THREADS) as ex:
             return dict(ex.map(lambda s: (s, {**data.files_for(s, split, get),
-                                              "spot": data.spot_files_for(s, split, get)}), symbols))
+                                              "spot": data.spot_files_for(s, split, get),
+                                              **({"delivery": data.delivery_files_for(s, split, get)} if dlv else {})}),
+                               symbols))
     except families.Embargoed as e:
         families.waiting(db, spec["family"], [str(e)], f"system:{worker}",
                          topic=None if split in families.SCREEN_SPLITS else split)
@@ -448,12 +450,17 @@ def _files(db, eid, split, worker, symbols=None, spec=None):
     symbols = symbols or _universe(spec)
     per_sym, all_files = _download(db, eid, spec, split, worker, symbols), []
     for s, f in per_sym.items():
-        all_files += f["klines"] + f["funding"] + f.get("spot", [])
+        all_files += f["klines"] + f["funding"] + f.get("spot", []) + _delivery_paths(f)
     Gateway(db, f"system:{worker}").access(eid, data.GATEWAY_SPLIT[split],
                                            [os.path.join(HERE, p) if not os.path.isabs(p) else p for p in all_files],
                                            data.window(split), "https://data.binance.vision", "evaluate",
                                            _code_hash(spec))
     return per_sym
+
+
+def _delivery_paths(f):
+    """The COIN-M quarterly zips of one symbol's files (instrument model spot_delivery_ratio), else []."""
+    return [p for c in f.get("delivery") or [] for p in c.get("paths") or []]
 
 
 def _load(per_sym, split):
@@ -785,7 +792,7 @@ def step_validate(db, job, worker):
     extra = {}
     if spec.get("family"):            # amendment 8 point 8: mechanism attribution, a stricter gate
         from lab import families
-        extra["attribution"] = families.attribution(spec, m)
+        extra["attribution"] = families.attribution(spec, m, bars, pos)
         gates.update({f"mechanism attribution: {k}": ok for k, ok in extra["attribution"]["gates"].items()})
     art = save_artifact(eid, "validate", {"metrics": _strip(m), "metrics_2x_costs": _strip(hi),
                                           "benchmark": _strip(bench), "dsr": dsr, "trials_counted": len(trials),
@@ -964,16 +971,17 @@ def _forward_market(db, eid, worker, spec, months):
     data.window(split)                                   # refuses an unfinished window before anything is read
     v = frozen_variant(db, eid)                          # verified against the recorded hashes
     bars, funding, dups, fd = _market(db, eid, split, worker, spec)
-    late = families.unpublished(list(bars), split)
+    dlv = families.delivery_model(spec)
+    late = families.unpublished(list(bars), split, delivery=dlv)
     if late:                                             # never a delisting of every coin: wait, read nothing yet
         families.waiting(db, cf["family"], [late], f"system:{worker}", topic=split)
         raise Deferred(f"{eid}: {late}", int(time.time()) + PUBLICATION_RETRY_S)
-    gone = families.unlisted(list(bars), split)
+    gone = families.unlisted(list(bars), split, delivery=dlv)
     _drop(bars, funding, fd, gone, spec)
     for s in gone:
         dups.pop(s, None)
     q, excluded, enough = _quality(bars, split, dups, spec, fd)      # enough: whole-window coins only, as before
-    late = families.delisted({s: bars[s] for s in excluded}, split)
+    late = families.delisted({s: bars[s] for s in excluded}, split, delivery=dlv)
     for s, last in late.items():
         q[s] = families.listed_quality(bars[s], split, dups[s], last)
     kept = {s: last for s, last in late.items() if q[s]["ok"]}
@@ -986,7 +994,7 @@ def _forward_market(db, eid, worker, spec, months):
             pos[s] = list(pos[s][:-1]) + [0.0]
     m = _evaluate(bars, funding, pos, spec["costs"])
     return cf, split, {"m": m, "hi": _evaluate(bars, funding, pos, spec["costs"], catalogue.COST_HIGH_MULT),
-                       "bench": _bench(bars, funding, spec, fd), "attribution": families.attribution(spec, m),
+                       "bench": _bench(bars, funding, spec, fd), "attribution": families.attribution(spec, m, bars, pos),
                        "quality": q, "excluded": excluded, "unlisted": gone, "enough": enough,
                        "delisted": {s: {"last_listed_hour": t, "excluded_from": _ymd(t - t % DAY_S + DAY_S)}
                                     for s, t in sorted(kept.items())}, "symbols": sorted(bars)}
@@ -1184,7 +1192,7 @@ def _declare_holdout(db, eid, spec, worker):
         {s: data.files_for(s, sp) for s in symbols}
     for s, f in per.items():                           # the same paths as _files and _extra read them
         paths += [os.path.join(HERE, p) if not os.path.isabs(p) else p for p in f["klines"] + f["funding"]
-                  + f.get("spot", [])]
+                  + f.get("spot", []) + _delivery_paths(f)]
     if "metrics" in needs:
         paths += [data.metrics_for(s, sp) for s in symbols]
     if "dvol" in needs:
@@ -1260,7 +1268,7 @@ def step_holdout(db, job, worker):
     if spec.get("family"):            # recorded for the human steps; amendment 8 point 16 adds no holdout gate
         from lab import families
         extra = {"not_read": sorted(set(_universe(spec)) - set(_symbols(spec, "holdout"))), "excluded": h_excluded,
-                 "attribution_recorded": families.attribution(spec, m)}
+                 "attribution_recorded": families.attribution(spec, m, bars, pos)}
         if passed:
             verdict = ("PASS (holdout): simulated trading of a family instance needs a live spot feed and a later "
                        "amendment (research/PROTOCOL_V3.md amendment 8 point 16)")

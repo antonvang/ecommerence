@@ -45,6 +45,19 @@ def human():
     return "human:" + (getpass.getuser() or "unknown")
 
 
+def terminal_human(step):
+    """A human step typed in an interactive terminal outside an assistant session (amendment 7 point 1: only a human
+    resumes a simulated ledger). Policy, not proof; the logged actor and this rule bind. Returns the refusal or None."""
+    if os.environ.get("CLAUDECODE") or any(k.startswith("CLAUDE_CODE_") for k in os.environ):
+        return f"an assistant session may not {step}: type it yourself in a terminal"
+    if not (sys.stdin.isatty() and sys.stdout.isatty()):
+        return f"{step} must be typed in an interactive terminal"
+    return None
+
+
+TERMINAL_GUARD = terminal_human                    # replaceable in tests
+
+
 class _ReadOnly:
     """The q/one subset of DB over a mode=ro connection (nothing can be written)."""
     def __init__(self, path):
@@ -123,6 +136,8 @@ def family_cmd(args, db, out, ask=input):
             if f.endswith(".json") and f != "VOCABULARY.json":
                 fid = f[:-5]
                 a, cf, c = families.approval(db, fid), families.cohort(db, fid), families.closed(db, fid)
+                if a is None and families.registered(db, fid):      # pinned at registration (point 18)
+                    a = (families.binding_approval(db, fid) or {}).get("event_id")
                 out(f"  {fid}: {'approved (event ' + str(a) + ')' if a else 'not approved'}"
                     f"{', registered' if families.registered(db, fid) else ''}"
                     f"{', cohort ' + cf['cohort'] + ' M ' + str(cf['M']) if cf else ''}"
@@ -184,6 +199,7 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
     sub.add_parser("confirm-family")
     rf = sub.add_parser("revoke-family"); rf.add_argument("fid"); rf.add_argument("--reason", required=True)
     sub.add_parser("families")
+    fcv = sub.add_parser("family-coverage"); fcv.add_argument("fid")   # F2: HEAD check (family id or file path)
     rt = sub.add_parser("revoke-template"); rt.add_argument("template"); rt.add_argument("--reason", required=True)
     ex = sub.add_parser("export-db"); ex.add_argument("target")
     wt = sub.add_parser("watch"); wt.add_argument("--once", action="store_true")
@@ -313,12 +329,31 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
             return 0
         if args.cmd == "sim-resume":
             from lab.risk import Risk
+            why = TERMINAL_GUARD("resume a simulated ledger")
+            if why:
+                out(f"refused: {why}")
+                return 1
             try:
                 done = Risk(db).resume_simulated(args.ledger, human(), args.reason)
             except lifecycle.LifecycleError as e:
                 out(f"refused: {e}")
                 return 1
             out(f"{args.ledger}: {'resumed (CLEAR recorded)' if done else 'not paused: nothing to resume'}")
+            return 0
+        if args.cmd == "family-coverage":           # amendment 8 point 17: refused before 2026-11-28 00:00 UTC
+            from lab import families
+            from research.pm_lp import install_dns_cache
+            install_dns_cache()                     # point 17: the fleet's DNS cache
+            try:
+                covered, checked = families.check_coverage(db, args.fid, human())
+            except families.FamilyError as e:
+                out(f"refused: {e}")
+                return 1
+            except OSError as e:                    # network, 5xx, 403: nothing recorded, run it again later
+                out(f"refused: the coverage check stopped without a record: {e!r}"[:300])
+                return 1
+            out(f"{args.fid}: {sum(checked.values())} of {len(checked)} quarterly zips present (HEAD, no data read)")
+            out(f"  fully covered 2022-01..2024-12: {', '.join(covered) or 'none'}")
             return 0
         if args.cmd in ("approve-family", "confirm-family", "revoke-family", "families"):   # amendment 8
             return family_cmd(args, db, out)

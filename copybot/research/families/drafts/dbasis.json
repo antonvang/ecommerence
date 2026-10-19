@@ -1,0 +1,290 @@
+{
+  "schema": "lab.family/1",
+  "family_id": "dbasis",
+  "title": "COIN-M quarterly cash-and-carry on altcoins: long spot / short the inverse quarterly in the same coin",
+  "amendment": "research/PROTOCOL_V3.md Ændring 8 (F2, phase B; design research/AENDRING8_DESIGN.md (D) F2)",
+  "drafted_by": "ai:claude-opus-5-5 2026-10-19 (draft in research/families/drafts/, which discovery does not read: it moves to research/families/ only with the universe the COIN-M coverage check confirms after 2026-11-28)",
+  "drafting_data_access": {
+    "strategy_returns_computed": "none",
+    "disclosed": [
+      "No COIN-M file was read or requested while this file was drafted (none is cached; point 17 forbids requests before 2026-11-28).",
+      "The design review of 2026-10-18 saw only the aggregate settled-funding distribution of the cached USD-M files (amendment 8 point 20); dbasis uses no funding.",
+      "Every threshold below was copied unchanged from the design written 2026-10-18, before any basis was seen; the rule wording follows the design (thresh exits at the roll). Only synthetic data (lab/families/dbasis.py convergence_selftest) was computed.",
+      "Known while drafting (2026-10-19), from the F1 fcarry screen on the same windows and coins and a correlated premium: filt train net Sharpe -1.12 and filt_w -0.40 (both REJECTED at the train gate); floor and hyst passed every screening gate (OBSERVATION; their validation net Sharpe values are recorded in cohort.fixed of fcarry:fwd202612m12). No dbasis signal or return was computed on real data."
+    ]
+  },
+  "mechanism": {
+    "tag": "dated_futures_basis_carry",
+    "class": "carry",
+    "price_exposure": "hedged_same_asset",
+    "return_source": "the basis locked between spot and an inverse COIN-M quarterly in the same coin, which converges by contract at delivery",
+    "non_price_prediction": "Both legs are the same coin: long 1 coin spot and short an inverse quarterly with face F0 USD is worth S * F0 / F, the ratio S / F, which converges to 1 at delivery. P&L = convergence of the locked basis - costs; the price delta is ~0. Signals read only the size of the basis now, never price direction or relative price between coins.",
+    "attribution": {
+      "cash_flow": "locked_basis",
+      "rule": "carry - (fees + spread + slippage) > 0 AND basis_and_price_pnl <= carry, where carry = the basis the held quarterly locks, accrued while held: per bar pos x ln(F / S) at the previous close x hours / hours to expiry; basis_and_price_pnl = gross ratio P&L - carry; both summed per hour as the engine sums gross P&L (equal-weight mean over the coins with a row); in-sample (validation) and forward"
+    },
+    "evidence": [
+      {
+        "ref": "Binance COIN-M quarterly delivery: 08:00 UTC on the last Friday of March, June, September and December (lab/engine/data.py quarterly_expiry)",
+        "status": "unverified (checked against the archive's contract names by the coverage check)"
+      },
+      {
+        "ref": "Binance COIN-M taker 0.05 %, spot taker 0.10 % (VIP0)",
+        "status": "unverified"
+      },
+      {
+        "ref": "Schmeling, Schrimpf & Todorov, BIS Working Paper 1087, Crypto carry (dated futures basis as the carry measure)",
+        "status": "unverified (Crossref check before approval)"
+      }
+    ]
+  },
+  "graveyard_acknowledged": [
+    {
+      "exp_id": "L13_carry_v1",
+      "match": "related",
+      "materially_different_because": "materially different because carry_v1 earned perp funding on 19 Hyperliquid spot pairs from 2024-12 with weekly top-5 re-ranking whose fees exceeded the funding; dbasis earns no funding at all: it locks a dated-futures basis that converges by contract at delivery, on Binance COIN-M quarterlies with explicit two-leg costs and at most one contract change per quarter",
+      "lessons_addressed": [
+        "DIAGNOSE-4 turnover x costs",
+        "L13 weekly churn",
+        "L13 decay"
+      ]
+    },
+    {
+      "exp_id": "L22_m3_premium_convergence",
+      "match": "related",
+      "materially_different_because": "materially different because L22 traded minute-level perp premium convergence that was not locked by any contract and lost 31.6-33.4 bp net to costs; dbasis holds a quarterly whose basis is locked and converges at a known delivery date, decides once a day at 01:00 UTC and holds for weeks",
+      "lessons_addressed": [
+        "DIAGNOSE-4 turnover x costs",
+        "L22 costs"
+      ]
+    },
+    {
+      "exp_id": "E_fcarry__filt_a8",
+      "match": "related",
+      "materially_different_because": "materially different because F1 filt earned USD-M perp funding, whose sign and size reset every settlement and failed its train gate (net Sharpe -1.12); dbasis earns no funding: the basis it enters is locked by a dated contract until it rolls 3 days before delivery, so the cash flow is known at entry",
+      "lessons_addressed": [
+        "F1 filt train gate",
+        "DIAGNOSE-4 turnover x costs"
+      ]
+    },
+    {
+      "exp_id": "E_fcarry__filt_w_a8",
+      "match": "related",
+      "materially_different_because": "materially different because F1 filt_w was the weekly variant of a perp funding filter that failed its train gate (net Sharpe -0.40); dbasis has no funding exposure and its exits are fixed by the contract calendar, not by a funding estimate",
+      "lessons_addressed": [
+        "F1 filt_w train gate",
+        "DIAGNOSE-4 turnover x costs"
+      ]
+    }
+  ],
+  "related_tags_reviewed": [
+    "delta_neutral_funding_carry",
+    "perp_premium_convergence",
+    "cross_venue_perp_gap"
+  ],
+  "universe": {
+    "base": "30v3",
+    "symbols": [
+      "XRPUSDT",
+      "BNBUSDT",
+      "ADAUSDT",
+      "DOTUSDT",
+      "LINKUSDT",
+      "LTCUSDT",
+      "BCHUSDT"
+    ],
+    "symbols_status": "provisional [U]: python3 -m lab family-coverage (from 2026-11-28) HEAD-checks every quarterly zip 2022-01..2024-12 of all 27 coins of UNIVERSE_30_V3 without BTC, ETH and SOL; approve-family refuses unless universe.symbols is exactly the fully covered set (no coin added or left out by hand) and has at least 5 coins",
+    "rule": "exactly the coins of UNIVERSE_30_V3 without BTC, ETH and SOL that have every COIN-M quarterly zip 2022-01..2024-12 (the coverage check); a coin whose spot or held-quarterly leg fails the existing data-quality rule in a split is excluded in that split",
+    "min_symbols": 6,
+    "holdout_exclude": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "clean_holdout": true,
+    "forward_listing_rule": "exclude a coin with no spot, perp or held-quarterly file for the first window month (amendment 7 section 5)"
+  },
+  "instrument_model": {
+    "type": "spot_delivery_ratio",
+    "bars": "per coin and hour: (ts, spot_open / F_open, spot_close / F_close), F = the held quarterly (USD per coin), on the intersection of hours; the held quarterly is the nearest one with more than 3 days to expiry and rolls at the first 01:00 UTC with no more than 3 days left (the Wednesday 01:00 UTC bar for a Friday 08:00 delivery)",
+    "funding_for_costs": "none (a delivery future pays no funding)",
+    "roll": "the bar that opens at the roll time carries a return between two contracts and is flat in every rule; a held position continues on the next contract from the following bar, so both legs are charged twice per roll",
+    "position": "+1 = long 1 coin spot and short the inverse quarterly with face F0 USD = the futures price at entry (value S x F0 / F, the ratio S / F), 1x; 0 = flat; never negative",
+    "benchmark": "equal-weight buy-and-hold of the same coins' USD-M perps with catalogue costs and funding (amendment 8 point 8)",
+    "capital_per_unit_notional": 2
+  },
+  "data": [
+    {
+      "source": "binance_um_klines_1h",
+      "url": "https://data.binance.vision/data/futures/um/monthly/klines/{SYM}/1h/{SYM}-1h-{YYYY}-{MM}.zip",
+      "cache_dir": "data/lab/market/klines",
+      "splits": [
+        "train3",
+        "validation3"
+      ],
+      "files_estimate": 168,
+      "mb_estimate": 6,
+      "use": "benchmark only (already cached)"
+    },
+    {
+      "source": "binance_um_fundingRate",
+      "url": "https://data.binance.vision/data/futures/um/monthly/fundingRate/{SYM}/{SYM}-fundingRate-{YYYY}-{MM}.zip",
+      "cache_dir": "data/lab/market/funding",
+      "splits": [
+        "train3",
+        "validation3"
+      ],
+      "files_estimate": 168,
+      "mb_estimate": 1,
+      "use": "benchmark only (already cached)"
+    },
+    {
+      "source": "binance_spot_klines_1h",
+      "url": "https://data.binance.vision/data/spot/monthly/klines/{SYM}/1h/{SYM}-1h-{YYYY}-{MM}.zip",
+      "cache_dir": "data/lab/market/spot_klines",
+      "splits": [
+        "train3",
+        "validation3"
+      ],
+      "files_estimate": 168,
+      "mb_estimate": 6,
+      "use": "spot leg (already cached for F1)"
+    },
+    {
+      "source": "binance_cm_klines_1h",
+      "url": "https://data.binance.vision/data/futures/cm/monthly/klines/{COIN}USD_{YYMMDD}/1h/{COIN}USD_{YYMMDD}-1h-{YYYY}-{MM}.zip",
+      "cache_dir": "data/lab/market/cm_klines",
+      "splits": [
+        "train3",
+        "validation3"
+      ],
+      "files_estimate": "screen ~32 per covered coin; the coverage check HEADs ~48 per candidate (27 coins)",
+      "mb_estimate": "8-15",
+      "use": "the held quarterly; nothing cached, fetched only from 2026-11-28 (amendment 8 point 17)"
+    }
+  ],
+  "costs": {
+    "taker_fee": 0.0015,
+    "half_spread": 0.0006,
+    "slippage": 0.0006,
+    "per": "unit of pair turnover (both legs)",
+    "components": {
+      "spot_taker": 0.001,
+      "coinm_taker": 0.0005,
+      "spot_half_spread": 0.0003,
+      "coinm_half_spread": 0.0003,
+      "spot_slippage": 0.0003,
+      "coinm_slippage": 0.0003
+    },
+    "estimates": [
+      "all half_spread and slippage values",
+      "taker fees VIP0 not re-verified",
+      "USDT-spot vs USD-index basis risk is not modelled"
+    ],
+    "funding": "none",
+    "stress_mult": 2.0
+  },
+  "decision_time_utc": "01:00",
+  "windows": {
+    "train": "train3 2022-01..2023-06",
+    "validation": "validation3 2023-07..2023-12",
+    "holdout": "2024, sealed, human approval only, without BTC/ETH/SOL",
+    "reserved": "2025-01-01 until the forward window start, never read"
+  },
+  "forward": {
+    "months": 12,
+    "interim_futility_months": 6,
+    "earliest_start": "2026-12-01"
+  },
+  "alpha": {
+    "family": 0.0125,
+    "split": "alpha_F / M at cohort.fixed, M <= 3"
+  },
+  "power_check": {
+    "true_sharpe": 3.0,
+    "alpha": 0.0041667,
+    "months": 12,
+    "required": 0.5,
+    "expected": 0.63
+  },
+  "instances": [
+    {
+      "id": "thresh",
+      "function": "basis_threshold",
+      "horizon": "weeks",
+      "execution": "taker",
+      "max_lookback_days": 1,
+      "rule": "Daily 01:00 UTC on the close of the 00:00 bar. B = (F/S - 1) x 365 / days to the held quarterly's expiry. Enter +1 at B >= theta; exit to 0 at B < theta / 2; otherwise keep. The roll (3 days before expiry) is an exit: on the new contract (decided at 02:00 on its first close) the position starts again only at B >= theta.",
+      "grid": [
+        {
+          "theta": 0.05
+        },
+        {
+          "theta": 0.1
+        }
+      ],
+      "successor": null
+    },
+    {
+      "id": "hold2exp",
+      "function": "basis_hold_to_roll",
+      "horizon": "weeks",
+      "execution": "taker",
+      "max_lookback_days": 1,
+      "rule": "Only at the first 01:00 UTC after a roll day (roll time + 1 day), on the close of the 00:00 bar: enter +1 if B >= theta and hold until the next roll (3 days before expiry); otherwise flat until then. Flat from each roll time.",
+      "grid": [
+        {
+          "theta": 0.05
+        },
+        {
+          "theta": 0.1
+        }
+      ],
+      "successor": null
+    },
+    {
+      "id": "xsbasis",
+      "function": "basis_cross_section",
+      "horizon": "weeks",
+      "execution": "taker",
+      "max_lookback_days": 1,
+      "rule": "Mondays 01:00 UTC on the close of the 00:00 bar: hold +1 in the k coins with the highest B among those with B >= 5 % (ties by coin name), 0 elsewhere, for the week. Flat on every roll bar; a held coin continues on the next contract.",
+      "grid": [
+        {
+          "k": 3
+        },
+        {
+          "k": 5
+        }
+      ],
+      "successor": null
+    }
+  ],
+  "expected": {
+    "required_forward_sharpe_12m": {
+      "M=1": 2.25,
+      "M=2": 2.51,
+      "M=3": 2.65
+    },
+    "forward_power_12m_with_interim": {
+      "S=2": [
+        0.4,
+        0.3,
+        0.25
+      ],
+      "S=3": [
+        0.77,
+        0.68,
+        0.63
+      ],
+      "S=4": [
+        0.96,
+        0.93,
+        0.91
+      ]
+    },
+    "p_forward_pass": "0.03-0.10 [design estimate]",
+    "correlation_with_f1": "positive: both harvest the leverage-demand premium; P(at least one PASS across F1 and F2) ~0.06-0.18, not the sum (design)",
+    "false_pass_under_null": "<= 0.0125 for the family"
+  }
+}

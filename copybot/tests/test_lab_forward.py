@@ -27,7 +27,8 @@ class Base(unittest.TestCase):
         self.path = os.path.join(self.tmp, "lab.db")
         self.db = DB(self.path)
         self.p = [mock.patch.object(pipeline, "ARTIFACTS", os.path.join(self.tmp, "artifacts")),
-                  mock.patch("lab.promotion.supervisor_ok", lambda db, now=None: True)]
+                  mock.patch("lab.promotion.supervisor_ok", lambda db, now=None: True),
+                  mock.patch("lab.__main__.TERMINAL_GUARD", lambda step: None)]     # a human in a terminal
         for p in self.p:
             p.start()
         pins = {}
@@ -195,6 +196,33 @@ class PauseRules(Base):
         clear = self.db.one("SELECT actor, rule FROM risk_events WHERE exp_id=? AND action='CLEAR'", led)
         self.assertTrue(clear["actor"].startswith("human:"))
         self.assertEqual(clear["rule"], "manual_resume")
+
+    def test_the_dashboard_shows_why_a_ledger_is_paused_and_how_to_resume_it(self):
+        from lab import command
+        led = "FWD_" + A
+        self.assertIsNone(command._pause_info(Risk(self.db), led))
+        Risk(self.db).after_equity(led, 0.12)
+        info = command._pause_info(Risk(self.db), led)
+        self.assertEqual(info["rule"], "max_drawdown")
+        self.assertIn(f"python3 -m lab sim-resume {led}", info["resume"])
+
+    def test_sim_resume_is_typed_by_a_human_in_a_terminal(self):
+        led = "FWD_" + A
+        Risk(self.db).after_equity(led, 0.12)
+        from lab import __main__ as cli_mod
+        with mock.patch("lab.__main__.TERMINAL_GUARD", cli_mod.terminal_human), \
+                mock.patch.dict(os.environ, {"CLAUDECODE": "1"}):
+            rc, txt = self.cli("sim-resume", led, "--reason", "an assistant resumes the ledger")
+        self.assertEqual(rc, 1)
+        self.assertIn("an assistant session may not resume a simulated ledger", txt)
+        self.assertTrue(Risk(self.db).paused(led))
+        env = {k: v for k, v in os.environ.items() if k != "CLAUDECODE" and not k.startswith("CLAUDE_CODE_")}
+        with mock.patch("lab.__main__.TERMINAL_GUARD", cli_mod.terminal_human), \
+                mock.patch.dict(os.environ, env, clear=True), mock.patch("sys.stdin.isatty", lambda: False):
+            rc, txt = self.cli("sim-resume", led, "--reason", "no terminal resumes the ledger")
+        self.assertEqual(rc, 1)
+        self.assertIn("must be typed in an interactive terminal", txt)
+        self.assertTrue(Risk(self.db).paused(led))
 
     def test_a_paused_forward_ledger_is_kept_and_marked(self):
         self.cli("forward-start", "--exp", A, "--reason", "user approved forward tests on 2026-10-18")

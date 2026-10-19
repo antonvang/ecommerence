@@ -215,7 +215,7 @@ class Alerts(Base):
     def setUp(self):
         super().setUp()
         self.sent, self.clock, self.lines = [], {"t": NOW}, []
-        self.counter, self.offset = {"n": 0}, {"s": 0.0}
+        self.counter, self.offset, self.boot = {"n": 0}, {"s": 0.0}, {"t": NOW - 86400}
         self.w = self.watcher()
 
     def watcher(self, delivered=True):
@@ -224,7 +224,7 @@ class Alerts(Base):
                              heartbeat_file=os.path.join(self.tmp, "watch.heartbeat"),
                              notifier=lambda t, b: self.sent.append(t) or delivered, clock=lambda: self.clock["t"],
                              suspends=lambda: self.counter["n"], slept=lambda: self.offset["s"],
-                             out=self.lines.append)
+                             booted=lambda: self.boot.get("t"), out=self.lines.append)
 
     def tick(self, advance=0, lab_alive=True):
         """Advance the clock; the collector keeps writing; the lab beats unless lab_alive is False."""
@@ -239,6 +239,23 @@ class Alerts(Base):
         for f in os.listdir(os.path.join(self.tmp, "logs")):
             out += [json.loads(l) for l in open(os.path.join(self.tmp, "logs", f))]
         return [r for r in out if r["kind"] != "alive"]
+
+    def test_a_reboot_or_a_long_silence_is_reported_at_the_next_start(self):
+        self.tick()
+        self.assertEqual(self.sent, [])                                     # a first start ever: nothing to report
+        self.clock["t"] += 60
+        self.w = self.watcher()                                             # a quick restart: no report
+        self.tick()
+        self.assertEqual(self.sent, [])
+        self.clock["t"] += 3 * 3600
+        self.boot["t"] = self.clock["t"] - 600                              # the host rebooted in between
+        self.w = self.watcher()
+        self.tick()
+        self.assertEqual(self.sent, ["Copybot: overvågningen var nede"])
+        self.assertIn("the host booted at", self.lines[-1])
+        self.assertIn("(180 min)", self.lines[-1])
+        self.tick(30)
+        self.assertEqual(len(self.sent), 1)                                 # once per start
 
     def test_down_once_reminder_hourly_and_recovery(self):
         self.tick()

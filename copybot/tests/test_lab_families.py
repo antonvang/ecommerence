@@ -1178,8 +1178,8 @@ class Transform(unittest.TestCase):
         settled = sum(1 for t in funding["AUSDT"] if t > b[0][0])
         self.assertEqual(settled, 92)
         self.assertAlmostEqual(sum(r[7] for r in rows) - sum(r[2] for r in rows), 0.0001 * settled, places=12)
-        with self.assertRaises(families.FamilyError):
-            families.transform({**self.spec, "instrument_model": "spot_delivery_ratio"}, per, "t1")
+        with self.assertRaises(families.FamilyError):                         # spot_delivery_ratio is F2's model
+            families.transform({**self.spec, "instrument_model": "spot_future_ratio"}, per, "t1")
 
     def test_a_missing_spot_hour_lowers_coverage_until_the_coin_is_excluded(self):
         a = ts(2022, 1, 1)
@@ -4032,6 +4032,18 @@ class TheHumanTextsAndSmallGuards(A5Base):
         self.assertIn("may not be downloaded before 2026-11-28", row["waiting"]["reasons"][0])   # the registry text
         self.assertEqual(row["members"], {"DISCOVERED": 4})
         self.assertEqual(command.reason_da("something new"), "something new")                 # unknown: as recorded
+
+    def test_a_registered_family_shows_the_approval_its_registration_cited(self):
+        self.register()
+        self.blobs["adapter"] = {**self.blobs["adapter"], "committed": "9999", "working": "9999"}  # a later deploy
+        self.assertIsNone(families.approval(self.db, "fcarry"))
+        state, ev = command._family_approval(self.db, "fcarry", self.now[0] + 10 ** 6)
+        self.assertEqual(state, "approved")
+        rc, text = _cli(self.db_path, "families")
+        self.assertIn("fcarry: approved (event", text)
+        self.blobs["module"] = {**self.blobs["module"], "committed": "8888", "working": "8888"}   # point 18
+        state, _ = command._family_approval(self.db, "fcarry", self.now[0] + 2 * 10 ** 6)
+        self.assertIn("fails closed", state)
 
     def test_the_dashboard_screening_alpha_leaves_out_amendment_8_rows(self):
         from lab import web

@@ -54,6 +54,21 @@ def suspend_count(path=SUSPEND_COUNT):
         return None
 
 
+DOWNTIME_S = 300                # a watcher restart after a longer silence is reported (reboot, kill, crash)
+
+
+def boot_time(path="/proc/stat"):
+    """When the host booted (Linux btime), or None where unsupported."""
+    try:
+        with open(path) as f:
+            for line in f:
+                if line.startswith("btime "):
+                    return int(line.split()[1])
+    except (OSError, ValueError):
+        pass
+    return None
+
+
 def sleep_offset():
     """Seconds the host has spent suspended or hibernated since boot (any sleep type); None where unsupported."""
     try:
@@ -390,11 +405,13 @@ def notify(title, body):
 class Watcher:
     def __init__(self, db_path=DEFAULT_DB, pm_db=PM_DB, port=8770, log_dir=None, status_file=STATUS_FILE,
                  heartbeat_file=HEARTBEAT_FILE, notifier=notify, clock=time.time, suspends=suspend_count,
-                 slept=sleep_offset, out=print):
+                 slept=sleep_offset, booted=boot_time, out=print):
         self.db_path, self.pm_db, self.port, self.notifier, self.clock = db_path, pm_db, port, notifier, clock
         self.log_dir = log_dir or os.path.join(os.path.dirname(os.path.abspath(db_path)), "logs")
         self.status_file, self.heartbeat_file, self.out = status_file, heartbeat_file, out
+        self.last_ts = None                         # the previous watcher's last tick (status file), if any
         self.state = self._load()                   # component -> {"ok", "since", "last_alert", "detail"}
+        self.booted, self.downtime_checked = booted, False
         self.last_alive = 0.0
         self.suspends, self.slept = suspends, slept
         self.suspend_seen, self.slept_seen = suspends(), slept()
@@ -402,15 +419,18 @@ class Watcher:
     def _load(self):
         try:
             with open(self.status_file, encoding="utf-8") as f:
-                return {k: v for k, v in json.load(f).get("components", {}).items()
-                        if isinstance(v, dict) and v.get("ok") in (True, False)}
+                st = json.load(f)
+            self.last_ts = st.get("ts") if isinstance(st.get("ts"), (int, float)) else None
+            return {k: v for k, v in st.get("components", {}).items()
+                    if isinstance(v, dict) and v.get("ok") in (True, False)}
         except (OSError, ValueError):
             return {}
 
     def _alert(self, kind, comp, detail, now):
         title = {"down": f"Copybot: {comp} NEDE", "still_down": f"Copybot: {comp} stadig nede",
                  "recovered": f"Copybot: {comp} virker igen",
-                 "suspended": "Copybot: maskinen har været i dvale"}[kind]
+                 "suspended": "Copybot: maskinen har været i dvale",
+                 "downtime": "Copybot: overvågningen var nede"}[kind]
         delivered = bool(self.notifier(title, detail))
         ops.log_json("watch", kind, self.log_dir, component=comp, detail=detail, notified=delivered)
         self.out(f"{datetime.fromtimestamp(now, timezone.utc).isoformat(timespec='seconds')} {title}: {detail}"
@@ -429,8 +449,26 @@ class Watcher:
         self.suspend_seen = n if n is not None else self.suspend_seen
         self.slept_seen = off if off is not None else self.slept_seen
 
+    def _downtime(self, now):
+        """At the first tick: the previous watcher's last tick is older than DOWNTIME_S, or the host booted after it
+        (a reboot, a kill, a crash). Every process was down with it: pm_lp snapshots, lab heartbeats and paper marks
+        have a gap that nobody saw."""
+        self.downtime_checked = True
+        if self.last_ts is None:
+            return
+        b = self.booted()
+        rebooted = b is not None and b > self.last_ts
+        if rebooted or now - self.last_ts > DOWNTIME_S:
+            iso = lambda t: datetime.fromtimestamp(t, timezone.utc).isoformat(timespec="seconds")   # noqa: E731
+            self._alert("downtime", "host", f"no watcher tick from {iso(self.last_ts)} to {iso(now)} "
+                        f"({int(now - self.last_ts) // 60} min)" + (f"; the host booted at {iso(b)}" if rebooted
+                                                                    else "") +
+                        ": pm_lp snapshots, lab heartbeats and paper marks have a gap in that time", now)
+
     def tick(self):
         now = self.clock()
+        if not self.downtime_checked:
+            self._downtime(now)
         self._host(now)
         res = check(self.db_path, self.pm_db, self.port, now)
         for comp, r in res.items():
