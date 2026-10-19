@@ -21,7 +21,7 @@
     "non_price_prediction": "Both legs are the same coin: long 1 coin spot and short an inverse quarterly with face F0 USD is worth S * F0 / F, the ratio S / F, which converges to 1 at delivery. P&L = convergence of the locked basis - costs; the price delta is ~0. Signals read only the size of the basis now, never price direction or relative price between coins.",
     "attribution": {
       "cash_flow": "locked_basis",
-      "rule": "carry - (fees + spread + slippage) > 0 AND basis_and_price_pnl <= carry, where carry = the basis the held quarterly locks, accrued while held: per bar pos x ln(F / S) at the previous close x hours / hours to expiry; basis_and_price_pnl = gross ratio P&L - carry; both summed per hour as the engine sums gross P&L (equal-weight mean over the coins with a row); in-sample (validation) and forward"
+      "rule": "carry - (fees + spread + slippage) > 0 AND basis_and_price_pnl <= carry, where carry = the convergence each held quarterly actually delivered, accrued linearly while held: per bar pos x (ln(F / S) at the previous close - ln(F / S) at the contract's last close in the series) x hours / hours to that last close (a level that never converges, such as a USDT spot vs USD index offset, accrues nothing); basis_and_price_pnl = gross ratio P&L - carry; both summed per hour as the engine sums gross P&L (equal-weight mean over the coins with a row); in-sample (validation) and forward"
     },
     "evidence": [
       {
@@ -93,7 +93,7 @@
       "LTCUSDT",
       "BCHUSDT"
     ],
-    "symbols_status": "provisional [U]: python3 -m lab family-coverage (from 2026-11-28) HEAD-checks every quarterly zip 2022-01..2024-12 of all 27 coins of UNIVERSE_30_V3 without BTC, ETH and SOL; approve-family refuses unless universe.symbols is exactly the fully covered set (no coin added or left out by hand) and has at least 5 coins",
+    "symbols_status": "provisional [U]: python3 -m lab family-coverage dbasis (from 2026-11-28) HEAD-checks every quarterly zip 2022-01..2024-12 and of the latest whole month of all 27 coins of UNIVERSE_30_V3 without BTC, ETH and SOL; approve-family refuses unless universe.symbols is exactly the fully covered set (no coin added or left out by hand) and has at least 5 coins",
     "rule": "exactly the coins of UNIVERSE_30_V3 without BTC, ETH and SOL that have every COIN-M quarterly zip 2022-01..2024-12 (the coverage check); a coin whose spot or held-quarterly leg fails the existing data-quality rule in a split is excluded in that split",
     "min_symbols": 6,
     "holdout_exclude": [

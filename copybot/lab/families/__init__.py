@@ -164,6 +164,9 @@ def validate(fam, vocab=None):
         from lab.engine import data
         u = fam.get("universe") or {}
         syms, base = u.get("symbols"), getattr(data, UNIVERSES.get(u.get("base"), "UNIVERSE"), ())
+        if u.get("base") != "30v3" or set(u.get("holdout_exclude") or []) != set(data.HOLDOUT_SEEN):
+            bad.append("spot_delivery_ratio: universe.base must be 30v3 and holdout_exclude exactly BTC, ETH, SOL "
+                       "(the coverage candidates are fixed; no coin is left out by hand)")
         if not (isinstance(syms, list) and len(set(syms)) == len(syms) >= DELIVERY_MIN_COINS and
                 all(x in base for x in syms)):
             bad.append(f"universe.symbols must list at least {DELIVERY_MIN_COINS} distinct coins of the base universe "
@@ -171,6 +174,7 @@ def validate(fam, vocab=None):
         else:
             if set(syms) & set(data.HOLDOUT_SEEN):
                 bad.append("universe.symbols must exclude BTC, ETH and SOL, so a clean 2024 holdout exists")
+
             want = max(DELIVERY_MIN_COINS, math.ceil(0.8 * len(syms)))
             if u.get("min_symbols") != want:
                 bad.append(f"universe.min_symbols must be max({DELIVERY_MIN_COINS}, ceil(0.8 n)) = {want}")
@@ -1048,13 +1052,20 @@ def selftest_problems(fid):
 TRUST_INJECTED_COVERAGE = False               # tests only: a coverage record from an injected HEAD counts
 
 
+def recent_month(now):
+    """The last whole calendar month before `now`, as a one-month split (its quarterly files must exist too: the
+    altcoin quarterlies still trade, so the forward window can be tested)."""
+    from lab.engine import data
+    d = datetime.fromtimestamp(now, timezone.utc)
+    y, m = (d.year - 1, 12) if d.month == 1 else (d.year, d.month - 1)
+    return data.forward_split(datetime(y, m, 1, tzinfo=timezone.utc).timestamp(), 1, tagged=True)
+
+
 def delivery_candidates(fam):
     """Every coin the coverage check examines: the base universe without holdout_exclude (BTC, ETH, SOL), so the
     universe is the mechanically covered set and never a hand-picked list (no researcher degree of freedom)."""
     from lab.engine import data
-    u = fam.get("universe") or {}
-    base = getattr(data, UNIVERSES.get(u.get("base"), "UNIVERSE"), ())
-    return [s for s in base if s not in set(u.get("holdout_exclude") or []) | set(data.HOLDOUT_SEEN)]
+    return [s for s in data.UNIVERSE_30_V3 if s not in data.HOLDOUT_SEEN]       # fixed: 30v3 without BTC/ETH/SOL
 
 
 def delivery_urls(syms, splits=COVERAGE_SPLITS):
@@ -1087,7 +1098,7 @@ def check_coverage(db, fid, actor, head=None, now=None):  # fid: a family id or 
     (train3, validation3, holdout). Point 17: no request before 2026-11-28 00:00 UTC. HEAD reads no data. Records
     family.coverage {family, checked: {url: present}, covered}. Returns (covered coins, {url: present})."""
     from lab.engine import data
-    now = data.CLOCK() if now is None else now
+    now = data.CLOCK() if now is None or head is None else now   # a real request always uses the real clock
     if now < EMBARGO_UNTIL:
         raise FamilyError("the coverage check sends HEAD requests: none before 2026-11-28 00:00 UTC (amendment 8 "
                           "point 17; pm_lp uses the network until 2026-11-27)")
@@ -1095,7 +1106,8 @@ def check_coverage(db, fid, actor, head=None, now=None):  # fid: a family id or 
     fid = fam.get("family_id") or fid
     if not delivery_model(fam):
         raise FamilyError(f"{fid} is not a spot_delivery_ratio family: it has no quarterlies to check")
-    urls = delivery_urls(delivery_candidates(fam))
+    recent = recent_month(now)
+    urls = delivery_urls(delivery_candidates(fam), COVERAGE_SPLITS + (recent,))
     evidence = {}
     for us in urls.values():
         for u in us:
@@ -1103,7 +1115,8 @@ def check_coverage(db, fid, actor, head=None, now=None):  # fid: a family id or 
             evidence[u] = r if isinstance(r, dict) else {"present": bool(r)}
     checked = {u: bool(r.get("present")) for u, r in evidence.items()}
     covered = sorted(s for s, us in urls.items() if all(checked[u] for u in us))
-    db.event("family.coverage", actor, None, {"family": fid, "splits": list(COVERAGE_SPLITS), "checked": checked,
+    db.event("family.coverage", actor, None, {"family": fid, "splits": list(COVERAGE_SPLITS) + [recent],
+                                               "recent_month": recent, "checked": checked,
                                                "evidence": evidence, "covered": covered, "coins": list(urls),
                                                "via": "http" if head is None else "injected"})
     return covered, checked
@@ -1113,13 +1126,19 @@ def coverage_problems(db, fam):
     """Approval and registration of a spot_delivery_ratio family: every coin of universe.symbols must have every
     quarterly zip of train3, validation3 and holdout recorded present by a family.coverage check (the latest record
     of each URL counts), and at least 5 coins (F2 design). Returns problems."""
-    seen = {}
+    seen, recent = {}, None
     for r in db.q("SELECT payload FROM events WHERE kind='family.coverage' ORDER BY id"):
         p = json.loads(r[0])
         if p.get("via") == "http" or (TRUST_INJECTED_COVERAGE and p.get("via") == "injected"):
             seen.update(p.get("checked") or {})
+            if p.get("recent_month"):
+                recent = p["recent_month"]
+    from lab.engine import data
+    if recent and recent not in data.SPLITS:
+        y, m = int(recent[3:7]), int(recent[7:9])
+        data.forward_split(datetime(y, m, 1, tzinfo=timezone.utc).timestamp(), 1, tagged=True)
     cand = delivery_candidates(fam)
-    urls = delivery_urls(cand)
+    urls = delivery_urls(cand, COVERAGE_SPLITS + ((recent,) if recent else ()))
     unchecked = [s for s in cand if not all(u in seen for u in urls[s])]
     covered = sorted(s for s in cand if s not in unchecked and all(seen[u] for u in urls[s]))
     out = []

@@ -186,23 +186,32 @@ def basis_cross_section(bars_by, funding_by, p, fit=None, volume_by=None, extra=
 
 
 def carry(bars, pos, held):
-    """Per bar (from i = 1, as backtest.gross): the carry the held contract pays while the position is held, i.e. the
-    basis it locks, accrued linearly to its expiry: pos_i x ln(F / S) at the previous close x (t_i - t_{i-1}) / (expiry
-    - t_{i-1}). In contango it is positive; in backwardation negative. It is what the contract promises, not what the
-    noisy ratio returned: the difference is the basis and price P&L."""
+    """Per bar (from i = 1, as backtest.gross): the convergence the held contract actually delivered, accrued linearly
+    while the position is held: pos_i x (ln(F / S) at the previous close - ln(F / S) at the contract's last close in
+    the series) x (t_i - t_{i-1}) / (time of that last close - t_{i-1}). It is the systematic drift of the basis toward
+    where the contract really ended (its roll, or the window end), measured ex post: a level that never converges (a
+    USDT spot vs USD index offset, a basis that only oscillates) accrues nothing; the rest of the gross is timing, i.e.
+    basis and price P&L."""
+    last = {}
+    for t, _, c in bars:
+        e = expiry_at(t, held)
+        if e is not None and c > 0:
+            last[e] = (t + HOUR, -math.log(c))       # the close of the contract's last bar, at its end time
     out = []
     for i in range(1, len(bars)):
         p, c, t0, t1 = pos[i], bars[i - 1][2], bars[i - 1][0], bars[i][0]
         e = expiry_at(t0, held)
-        v = p * -math.log(c) * (t1 - t0) / (e - t0) if p and c > 0 and e is not None and e > t0 else 0.0
+        end = last.get(e)
+        v = p * (-math.log(c) - end[1]) * (t1 - t0) / (end[0] - t0) \
+            if p and c > 0 and end is not None and end[0] > t0 else 0.0
         out.append((t1, v))
     return out
 
 
 def attribution(m, bars=None, pos=None):
     """The family file's attribution rule (amendment 8 point 8) on portfolio metrics (lab/engine/backtest.metrics) and
-    the instrument series: the cash flow is the locked basis accrued while held (carry); the basis and price P&L is the
-    gross ratio P&L minus that carry. Gates: carry - (fees + spread + slippage) > 0 AND basis and price P&L <= carry.
+    the instrument series: the cash flow is the convergence each held contract actually delivered, accrued while held
+    (carry); the basis and price P&L is the gross ratio P&L minus that carry. Gates: carry - (fees + spread + slippage) > 0 AND basis and price P&L <= carry.
     The carry is summed as the engine sums gross: per hour the equal-weight mean over the coins with a row."""
     costs = (m.get("fees") or 0.0) + (m.get("spread") or 0.0) + (m.get("slippage") or 0.0)
     gross = m.get("gross_total") or 0.0
@@ -279,7 +288,7 @@ def convergence_selftest():
        variants;
     7. attribution: on converging contango both gates pass; with a flipped sign (backwardation) the carry - costs
        gate fails; a profitable mean-reversion book on a ratio that never converges fails the 'basis and price P&L <=
-       carry' gate;
+       carry' gate; a constant offset that never converges (USDT spot vs USD index) accrues no carry and fails;
     8. strict look-ahead: poisoning the decision bar itself and every later bar never changes a position up to it.
     Returns {"ok": bool, "checks": {criterion: bool}, "details": {...}}."""
     from lab.engine import adversarial, backtest
@@ -377,8 +386,11 @@ def convergence_selftest():
             rev[s][i] = 0.0
     m_n = metrics_of(noise, rev)
     att_n = attribution(m_n, noise, rev)
-    det["attribution"] = {"contango": att, "backwardation": att_b, "noise_trading": att_n}
-    checks["7 attribution: converging contango passes; backwardation and noise trading without convergence fail"] = \
+    flat = {s: [(t, 0.998, 0.998) for t, _, _ in b] for s, b in bars_by.items()}   # a 20 bp offset, never converging
+    att_f = attribution(metrics_of(flat, ones), flat, ones)
+    det["attribution"] = {"contango": att, "backwardation": att_b, "noise_trading": att_n, "constant_offset": att_f}
+    checks["7 attribution: converging contango passes; backwardation, noise trading and a constant offset fail"] = \
         all(att["gates"].values()) and not att_b["gates"]["locked basis carry - costs > 0"] and \
-        m_n["gross_total"] > 0 and not att_n["gates"]["basis and price P&L <= locked basis carry"]
+        m_n["gross_total"] > 0 and not att_n["gates"]["basis and price P&L <= locked basis carry"] and \
+        abs(att_f["locked_basis_carry"]) < 1e-12 and not att_f["gates"]["locked basis carry - costs > 0"]
     return {"ok": all(checks.values()), "checks": checks, "details": det}

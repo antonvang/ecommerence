@@ -230,6 +230,19 @@ class Attribution(unittest.TestCase):
         self.assertAlmostEqual(full["gross_ratio_pnl"], full["locked_basis_carry"], delta=2e-4)
         self.assertFalse(weekly["gates"]["locked basis carry - costs > 0"])            # churn: costs > carry
 
+    def test_a_level_that_never_converges_accrues_no_carry(self):
+        """Review of 3600c85 (N1): a constant USDT/USD offset, or a level that only oscillates and is traded on its
+        swings, earns no carry; only the convergence a contract actually delivered counts."""
+        a = ts(2022, 4, 4)
+        flat = [(t, 0, 0.998) for t in range(a, a + 40 * DAY, HOUR)]
+        r = self.att(flat, [1.0] * len(flat))
+        self.assertAlmostEqual(r["locked_basis_carry"], 0.0, places=12)
+        self.assertFalse(r["gates"]["locked basis carry - costs > 0"])
+        wave = [(t, 0, 1 / (1.03 + 0.006 * math.sin(2 * math.pi * t / (10 * DAY)))) for t in range(a, a + 60 * DAY, HOUR)]
+        book = [0.0] + [1.0 if 1 / wave[i - 1][2] > 1.03 else 0.0 for i in range(1, len(wave))]
+        r = self.att(wave, book)
+        self.assertFalse(all(r["gates"].values()), r)
+
     def test_a_widening_basis_is_basis_pnl_not_carry(self):
         a = ts(2022, 4, 4)
         held = data.quarterlies(a, a + 30 * DAY)
@@ -240,8 +253,8 @@ class Attribution(unittest.TestCase):
             bars.append((t, 0, 1 / (1 + b * (e - t) / (365 * DAY))))
         r = self.att(bars, [1.0] * len(bars))
         self.assertLess(r["gross_ratio_pnl"], 0)
-        self.assertLess(r["basis_and_price_pnl"], 0)
-        self.assertGreater(r["locked_basis_carry"], 0)                                 # the carry was still accrued
+        self.assertLess(r["locked_basis_carry"], 0)                                    # it widened: no convergence
+        self.assertFalse(r["gates"]["locked basis carry - costs > 0"])
 
 
 class Rules(unittest.TestCase):
@@ -340,6 +353,13 @@ class FileRules(unittest.TestCase):
         self.assertNotIn("dbasis", families.family_ids())                   # the discovery agent never sees it
         self.assertEqual(families.symbols(DBASIS), tuple(DBASIS["universe"]["symbols"]))
 
+    def test_base_and_holdout_exclude_are_fixed(self):
+        """Review of 3600c85 (N2): no covered coin can be left out through holdout_exclude or another base."""
+        self.assertTrue(any("holdout_exclude exactly" in p for p in families.validate(
+            self.fam(holdout_exclude=["BTCUSDT", "ETHUSDT", "SOLUSDT", "ETCUSDT"]))))
+        self.assertTrue(any("universe.base must be 30v3" in p for p in families.validate(self.fam(base="8"))))
+        self.assertEqual(len(families.delivery_candidates(self.fam(base="8"))), 27)
+
     def test_universe_rules(self):
         self.assertTrue(families.validate(self.fam(symbols=list(COINS[:4]), min_symbols=5)))       # < 5 coins
         self.assertTrue(any("BTC, ETH and SOL" in p for p in
@@ -374,6 +394,25 @@ class Guards(A3Base):
         with self.assertRaises(families.Embargoed):
             get(u)
         self.assertEqual(called, [])
+
+    def test_a_real_request_always_uses_the_real_clock(self):
+        """Review of 3600c85 (N3): a `now` in the future never opens the embargo for real HEAD requests."""
+        with mock.patch.object(families, "_head", mock.Mock(side_effect=AssertionError("no request"))):
+            with self.assertRaises(families.FamilyError):
+                families.check_coverage(self.db, DRAFT, "human:anton", now=ts(2026, 12, 1))   # data.CLOCK: 11-20
+
+    def test_quarterlies_must_still_exist_in_the_latest_whole_month(self):
+        """Review of 3600c85 (N4): a coin whose quarterlies stopped (no file in the latest whole month) is not
+        covered, so alpha_F is never spent on a family whose forward window cannot be tested."""
+        draft = list(DBASIS["universe"]["symbols"])
+        bases = tuple(c[:-4] + "USD_" for c in draft)
+        stopped = "/" + draft[0][:-4] + "USD_"
+        head = lambda u: any(f"/{b}" in u for b in bases) and not (stopped in u and "-2026-10.zip" in u)  # noqa: E731
+        with mock.patch.object(families, "TRUST_INJECTED_COVERAGE", True):
+            covered, checked = families.check_coverage(self.db, DRAFT, "human:anton", head=head, now=ts(2026, 11, 29))
+            self.assertTrue(any("-2026-10.zip" in u for u in checked))
+            self.assertEqual(covered, sorted(draft[1:]))
+            self.assertTrue(any("must be exactly" in p for p in families._blocking_problems(self.db, DBASIS)))
 
     def test_the_coverage_check_is_refused_before_november_28(self):
         heads = []

@@ -344,8 +344,14 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
             from lab import families
             from research.pm_lp import install_dns_cache
             install_dns_cache()                     # point 17: the fleet's DNS cache
+            src = args.fid
+            if not src.endswith(".json") and not os.path.exists(families.path_of(src)):
+                src = os.path.join(families.FAMILY_DIR, "drafts", f"{src}.json")    # a draft before approval
+            if not os.path.exists(src if src.endswith(".json") else families.path_of(src)):
+                out(f"refused: no family file {args.fid} (research/families/ or research/families/drafts/)")
+                return 1
             try:
-                covered, checked = families.check_coverage(db, args.fid, human())
+                covered, checked = families.check_coverage(db, src, human())
             except families.FamilyError as e:
                 out(f"refused: {e}")
                 return 1
