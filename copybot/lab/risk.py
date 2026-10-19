@@ -170,14 +170,14 @@ class Risk:
             raise lifecycle.LifecycleError("only a human can resume a simulated ledger")
         if not reason or len(reason.strip()) < 10:
             raise lifecycle.LifecycleError("a reason of at least 10 characters is required")
-        if not self.paused(ledger):
-            return False
-        dd = self.db.one("SELECT drawdown FROM sim_equity WHERE exp_id=? ORDER BY id DESC LIMIT 1", ledger)
-        lim = rules_for(self.db, ledger)["max_drawdown"]
-        if dd and dd["drawdown"] >= lim:               # the unchanged breaker would pause it again at the next mark
-            raise lifecycle.LifecycleError(f"drawdown {dd['drawdown']:.2%} is still at or above {lim:.0%} of the "
-                                           "running peak; resume once it is below")
-        with self.db.tx():
+        with self.db.tx():                             # BEGIN IMMEDIATE: two resumes at once record one CLEAR
+            if not self.paused(ledger):
+                return False
+            dd = self.db.one("SELECT drawdown FROM sim_equity WHERE exp_id=? ORDER BY id DESC LIMIT 1", ledger)
+            lim = rules_for(self.db, ledger)["max_drawdown"]
+            if dd and dd["drawdown"] >= lim:           # the unchanged breaker would pause it again at the next mark
+                raise lifecycle.LifecycleError(f"drawdown {dd['drawdown']:.2%} is still at or above {lim:.0%} of the "
+                                               "running peak; resume once it is below")
             self._event(ledger, "manual_resume", None, None, "CLEAR", reason.strip()[:300], actor)
         return True
 
