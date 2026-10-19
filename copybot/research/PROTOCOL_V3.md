@@ -1015,3 +1015,26 @@ kontiene kan aldrig blive til en F1-instans eller et forslag til en.
    5 ekstra mønter.
 
 8. **Rækkefølge.** Tekst (denne) → kode og tests i dev → brugeren deployer (regel B: ikke 2026-10-31..11-13).
+
+## Ændring 12a (2026-10-19): præmien måles hvert minut — før kode
+
+**Beslutning:** brugeren besluttede 2026-10-19 i sessionen: "ja til 12a, kør videre - gerne meget meget meget meget
+hurtigere end 1 time ... jeg gider ikke være begrænset af den tid der" (datoen 2026-11-14, som Claude havde foreslået).
+Ændring 12 gælder uændret ud over dette.
+
+1. **Ny agent `premium-watch` (hvert 60. sekund).** Den laver præcis scannerens måling (b) (`perp_premium` =
+   mark/index − 1 fra `https://fapi.binance.com/fapi/v1/premiumIndex`, kun handlede USDT-perps på krypto, tærskel
+   0,5 %) og skriver de markerede mønter og `symbols_compared` som rækker i `observations`. Listen over handlede perps
+   (`exchangeInfo`) hentes højst én gang i timen. Agenten skriver ingen `market.event`, opretter ingen kandidater og
+   ændrer ingen tilstand; scannerens timevise kørsel med alle detektorer er uændret.
+2. **Virkning.** "Scanning" i ændring 12 punkt 2-3 er enhver måling af præmien (scannerens eller agentens). Ind- og
+   udreglen gælder derfor pr. minut: ind ved ≥ 1 % i én måling eller ≥ 0,5 % i to i træk; ud, når den er væk i to i
+   træk. Regel 3's "over 3 timer gammel" gælder uændret.
+3. **pm_lp.** Polymarket og Hyperliquid måles fortsat kun én gang i timen af scanneren. Agenten taler kun med
+   `fapi.binance.com` (allerede tilladt, 2 forespørgsler i minuttet ved fuld kørsel, vægt ≈ 11 af Binances 2.400 pr.
+   minut), så pm_lp-indsamlerens forbindelser og DNS påvirkes ikke målbart. Deploy før 2026-10-31 (regel B).
+4. **Ærlige forbehold.** Med målinger hvert minut kan en kortvarig præmie give ind- og udgang inden for få minutter.
+   Hver rundtur koster cirka 0,4-0,5 % af positionen i gebyrer og spread; stopreglerne i ændring 12 punkt 5 (tab
+   ≥ 5 %, kilden betaler ikke efter 3 dage) stopper en konto, der taber på det. Scannerens daglige opgørelse
+   (ændring 9) tæller fortsat markerede klokketimer, så flere målinger pr. time ændrer ikke dens regel.
+5. **Data.** Cirka 1.440 ekstra `symbols_compared`-rækker og nogle tusinde markerede rækker pr. døgn i registret.
