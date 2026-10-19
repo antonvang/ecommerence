@@ -1,0 +1,189 @@
+===== A3 open_issues
+[
+ "lab/families/fcarry.py does not exist yet (design item 5). template(spec) imports it lazily and calls fn(bars_by, funding_by, params, fit, volume_by=, extra=). The family transform in `_market` (ratio bars, cost-sign funding, FamilyData for the perp benchmark) is not done, so a registered family's steps still see only perp bars. The step_validate attribution gate, step_report routing to OBSERVATION, step_observe/interim, cohorts, successor triggers and the rest of pass_ (cohort close, family close, programme stop events) are later phases.",
+ "Code pin (point 18, design test 26) is not enforced yet. The spec records `code_blobs`, but no step fails closed when the family JSON or module changes after registration.",
+ "Design items 11-13 are untouched: `paper_runner.run_one` still raises KeyError for a family instance, `promotion.LIVE_UNSUPPORTED` has no spot/delivery, and `command.STAGE_OF_KIND` / the web families card are not added. The amendment 4 gate already stays closed for families; a test pins this.",
+ "Conventions for later phases: programme_stop reads `family.closed` events with payload {family, outcome in PASS/FAIL/FUTILE_IN_SAMPLE/UNTESTABLE}. A forward PASS is a VALIDATION result whose verdict starts with `families.FORWARD_PASS` ('PASS (family forward test)'). The cohort/close code should write exactly these.",
+ "Choices the main session should confirm: (a) the registration covering check ignores DISCOVERED candidates outside the family, so two discovered families cannot deadlock; REGISTERED and later states still block. (b) The family data step prefetches validation3 files, downloaded but not read through the gateway, so the whole screen can be fetched before 2026-10-24. (c) The web approve/confirm endpoints refuse every human step of a family instance, holdout included; the CLI path remains. (d) Approvals are refused while the programme is stopped (point 15). (e) The family data step has an 1800 s lease.",
+ "The 2-download limit is a semaphore inside one process. Downloads in practice happen only in the data step, which runs in the fleet's main process, so the limit holds. Holdout downloads after 2026-11-28 run in heavy worker processes and are not counted across processes.",
+ "Merge overlaps:\n- `fleet.strategy_pass` now calls `families.pass_` and returns an optional 'families' key.\n- `fleet._run` has a Deferred branch.\n- `jobs.defer` is new.\n- `web.py` approve/confirm now pass `families.no_web_guard`.\n- There is no new job kind, so `HANDLERS` and `STAGE_OF_KIND` are unchanged.",
+ "Timing: today is 2026-10-19. Spot data can be fetched only before 2026-10-24, and only for a family that is approved and registered, which requires the fcarry module. Otherwise the screen waits until 2026-11-28."
+]
+===== A4 open_issues
+[
+ "Design test 26 (code pin, amendment 8 point 18) is not implemented: the template view loads lab/families/<fid>.py lazily but does not yet check the working blobs of the family file and module against spec['code_blobs'] before each step. This belongs in a later phase.",
+ "The end-to-end Screen test runs on a 6-coin universe with min_symbols 5 (UNIVERSE_30_V3 and families.load are patched in that test only) to keep it near 30 s. The real family file still says 30 coins and min_symbols 24.",
+ "Interval independence holds for the 7-day windows. The floor rule's calendar-day sums are interval-independent only while the funding rate is steady, because a day's 00:00 settlement pays for the previous day's last hours. That follows from the rule's wording, and the test documents it.",
+ "The cohort, interim and final family observation, successor triggers and FUTILE/UNTESTABLE are phase A5. A family instance in OBSERVATION has no observe job until then, and step_observe has no family branch yet; it only got the perp benchmark wiring.",
+ "pipeline.enqueue_diagnostics will also queue a non-decisional diagnose job for finished family instances, for example REJECTED ones. Nothing excludes them. It is harmless, but phase B's forward attribution diagnostic may want to replace it.",
+ "The paper accounting agent also edits lab/paper_runner.py. My change is one early-return block at the top of run_one, right after the spec is loaded; expect a small merge."
+]
+===== A5 open_issues
+[
+ "Alpha ledger at cohort.fixed with M >= 1: a -alpha_F 'A8 spend' row on family:<fid> plus one +alpha_i 'A8 spend' row per instance, so every sum (family-check, the dashboard alpha_spent, families.alpha_reserved) stays unchanged. Amendment 8 point 13 does not spell out a spend-row format; if a different layout is wanted, decide before merging.",
+ "The UNTESTABLE rule is my reading of point 15: M = 0 and every registered member failed a data-quality gate (or its data.json is not ok). FUTILE_IN_SAMPLE otherwise.",
+ "Family cohorts write observation.started events that carry a 'cohort' key (the old cohort count skips them). Nothing outside pipeline reads these events today; any future reader must apply the same filter.",
+ "A triggered successor whose registration is refused by a lasting rule (programme stop, a new graveyard hit, an approval voided after registration) does not hold the cohort open. It is SUPPRESSED when the cohort closes, and the reasons are logged in family.waiting.",
+ "Not in this phase: the dashboard's read-only families, budget and cohort card from design (C) item 13. The only display change is command.STAGE_OF_KIND.",
+ "Merge overlaps to expect: pipeline.HANDLERS (observe_interim added), fleet.HEAVY and the job kinds of validation-1 and validation-2, command.STAGE_OF_KIND. The roster test only checks agent names, intervals and the validation agents' kinds, so new report-1 kinds from the scan-research agent will not break it.",
+ "Unchanged from A3: _register_family calls approval_payload (about 12 git calls) on each strategy pass while a family member is DISCOVERED (e.g. filt_w during screening). Cheap, but it could be cached."
+]
+===== A6 open_issues
+[
+ "Merge overlap with the parallel agents. lab/command.py: kpis() gains the 'families' key, there is a new families-card section after kpis(), and approvals() gains a family branch. lab/dashboard.html: one added line in renderApprovals(). The paper-accounting agent also edits command.py (balance) and the dashboard, so the main session has to merge these hunks.",
+ "Choice for the user: in the holdout, mechanism attribution is only recorded (attribution_recorded), not used as a gate, because amendment 8 point 16 adds no holdout gate. Making it a gate would be stricter but needs a dated amendment.",
+ "Choices for the user (both stricter, no threshold changed): a family holdout never reads BTC/ETH/SOL or holdout_exclude coins, while the catalogue reads them and excludes them afterwards; and lab confirm refuses SCREEN_PASSED -> VALIDATION for a family whose file has clean_holdout false.",
+ "Display only: the waiting reason's 'current' flag is a heuristic. A waiting event counts as current until a later family event appears (approval, revoke, batch, cohort, close) or a member's job.done, transition, result, interim or holdout.opened.",
+ "The approval-binding cache is per web process (60 s), so after a bound file changes the dashboard can show 'approved' for up to a minute. Registration and the pipeline always re-check the binding live.",
+ "A family holdout cannot actually run before about 2027-12 (it comes after the forward final). The embargo branch of step_holdout is exercised only by the test, which turns the fixture clock back to 2026-11-27."
+]
+===== protocol-statistics ok False
+checks "I applied a8_A6.patch (relative to ad86f50) in my own Linux worktree ~/vf8-protocol-statistics. The worktree has been removed and pruned. FULL suite: Ran 472, OK, failures 0, errors 0, skipped 1, exit 0. Targeted modules (test_lab_families, test_lab_pipeline, test_lab_v3, test_lab_promotion, test_lab_forward, test_lab_paper_runner): Ran 184, OK. I also wrote 10 attack tests in C:\\Users\\anton\\AppData\\Local\\Temp\\claude\\C--Users-anton-ecommerence\\57c12dde-7a8d-464c-8cc3-8abfb4268621\\scratchpad\\vf8_attack.py. They run on the suite's own synthetic fixtures (A3Base/A5Base, data._fetch raising), not on live data. All 10 attacks succeeded, which reproduces every finding except the survivorship note.\n\nChecked and correct:\n- **Alpha in the normal flows:** confirm reserves +alpha_F for family:<fid>. A cohort with M>=1 moves -alpha_F to the M instances (alpha_F/M each), and the programme total is unchanged. M=0 releases the full amount and closes the family as FUTILE_IN_SAMPLE, or UNTESTABLE when every member failed for data. Revoke releases only before registration, and a PASS returns nothing.\n- **M and alpha_i are fixed once:** cohort() takes the first cohort.fixed event, and repeated passes at later clock times do not add a second event or more ledger rows. It is a single writer (only fleet strategy-1 calls strategy_pass), so there is no race.\n- **Windows:** named fwdYYYYMMm12 and fwdYYYYMMm06, starting on the 1st of the month after the close and never before 2026-12-0
+---
+{
+ "title": "An approved family does not bind what gets registered: a hand-made spec version registers under the approval, and lab discover lets instances skip graveyard suppression and the human revival",
+ "severity": "high",
+ "file": "copybot/lab/families/__init__.py (register_transition ~L679-705); copybot/lab/pipeline.py (_register_family_one)",
+ "evidence": "_register_family_one builds version 2 from the family file only when the latest version is 1 (`if v[\"version\"] == 1`). register_transition checks only a few things: family==fid, version>=2, REQUIRED_SPEC truthy, seed, code_hash==approved family blob, code_blobs.module, and that the instance is approved. `lab add-version` has no TTY or CLAUDECODE guard. With code=\"research/families/fcarry.json\" (so code_hash equals the approved blob) and alpha=\"0.0\", the next strategy pass registered E_fcarry__filt_a8 with costs {taker 0, half_spread 0, slippage 0}, min_symbols 1, universe [BTC,ETH,SOL], holdout_exclude [] and a new grid {0.01, 0.02}. The pin check passes because it compares the spec's own code_blobs (PoC ForgedSpec). Second PoC (DiscoverBypass): `lab discover E_fcarry__{filt,floor,hyst}_a8 --mechanism harmless_tag` followed by add-version registered all 3 base instances without any SUPPRESSED->DISCOVERED revival (L13 never matched). experiments.mechanism_tag became 'harmless_tag', so registry.covering(db,'delta_neutral_funding_carry','taker',..) returns [] and the 'one open family per tag' block and later graveyard checks miss them. The 2024 holdout still drops BTC/ETH/SOL through data.HOLDOUT_SEEN.",
+ "fix": "In register_transition, require the latest spec to equal families.instance_spec(load(fid), iid, p['blobs'], recorded engine blobs) field for field. Also require v.mechanism_tag and fingerprint to equal the family file's tag and registry.fingerprint(tag, instrument(fam), horizon, execution), and require version 1 to have been written by discover_all (actor discovery-*, spec.family set). In _register_family_one, always build version 2 from the family file and refuse any other version. In registry.add_version and `lab discover`, refuse ids matching families.INSTANCE_RE. Add regression tests for both PoCs."
+}
+---
+{
+ "title": "lab result + lab transition put a family instance in SCREEN_PASSED without the forward test, and a self-recorded PASS closes the family as PASS and lifts the programme stop",
+ "severity": "high",
+ "file": "copybot/lab/__main__.py (transition/result commands); copybot/lab/families/__init__.py (forward_outcome, forward_passes)",
+ "evidence": "With CLAUDECODE=1 and no TTY: `lab result E_fcarry__filt_a8 --label EXPLORATORY --verdict 'PASS forged'` then `lab transition E_fcarry__filt_a8 SCREEN_PASSED --result-id N` moved the instance SCREENING -> SCREEN_PASSED directly (PoC C1). Point 8 says a family instance never goes directly to SCREEN_PASSED. On a fixed cohort (M=1), `lab result --label VALIDATION --verdict 'PASS (family forward test): forged'` plus `lab transition ... SCREEN_PASSED` gave state SCREEN_PASSED and the family status 'closed: PASS'. forward_passes={'E_fcarry__filt_a8','family:fcarry'} and programme_stop at 2028-07-02 returned [] (PoC C2): no window was read and no alpha_i test was run. forward_outcome and forward_passes trust any VALIDATION row with the verdict prefix, whatever its actor. Only step_report and lab confirm carry the amendment 8 guards. The CLI path is generic and existed before this patch, but the family close and the programme stop are new and rely on it.",
+ "fix": "Add a families guard to auto_transition through make_result_guard, used by `lab transition`. For an instance of a family: refuse SCREENING->SCREEN_PASSED always. Allow OBSERVATION->SCREEN_PASSED or ->REJECTED only when the cited result was recorded by a system: actor, carries metrics.cohort == cohort_of(eid)['cohort'], and has a hash-recorded observe/observe_interim artifact. Refuse `lab result` for family instances, or never let it write FORWARD_PASS/FORWARD_FAIL/FUTILITY/OBSERVE verdicts. Make forward_outcome and forward_passes count only system-recorded results whose metrics carry the cohort id."
+}
+---
+{
+ "title": "W0 can be exceeded: alpha_reserved counts any alpha_ledger row whose exp_id starts with 'family:'",
+ "severity": "medium",
+ "file": "copybot/lab/families/__init__.py (alpha_reserved ~L237, reserved ~L675)",
+ "evidence": "alpha_reserved = SUM(alpha) WHERE exp_id LIKE 'family:%' OR note='A8 spend'. `lab discover family:zzz ...` then `lab add-version family:zzz --spec <committed spec with alpha '-0.05'>` writes a -0.05 row (note 'version 2'), and the programme total drops to 0.0. With four families already holding 0.0125 each, a fifth family was approved: 'A8 reserve' rows sum 0.0625 > W0 0.05 (PoC BudgetPrefix). reserved(fid) can be faked the same way with an id of family:<fid>.",
+ "fix": "Sum only the amendment 8 rows: WHERE note IN ('A8 reserve','A8 spend','A8 release'), in both alpha_reserved and reserved(). Refuse registry.discover and add_version for ids containing ':' or starting with 'family:'. Add a property test with foreign negative rows."
+}
+---
+{
+ "title": "A family can be approved twice: each confirm reserves alpha_F again, and the cohort spends only one alpha_F, so the extra stays reserved and can never be released",
+ "severity": "medium",
+ "file": "copybot/lab/families/__init__.py (request/_blocking_problems ~L336-376, confirm ~L379-415, fix_cohort ~L1193-1244)",
+ "evidence": "_blocking_problems does not refuse a family that already holds a reservation. A second request+confirm while the approval is still valid, or a re-approval after a bound file changed and voided the first, appends another +0.0125 'A8 reserve' (held 0.025, PoCs A and A2). After registration and a cohort with M=1, the spend moves only 0.0125, so family:fcarry keeps 0.0125 and alpha_reserved stays 0.025. revoke is refused after registration, and a release happens only at M=0, so that alpha is lost to the programme. This does not let anyone spend more than W0. It breaks the rule of exactly alpha_F per family and the release cases of point 13, and it brings stop (a) forward.",
+ "fix": "In confirm, append only alpha_F - reserved(db, fid) (a top-up, never negative), or refuse request/confirm while reserved(fid) > 0 and the last approved/revoked event is not a revoke. As a safety net, release any excess over alpha_F with an 'A8 release' row in fix_cohort. Add a test."
+}
+---
+{
+ "title": "Point 3 'at most 2 families per canonical tag in the whole programme' is not enforced",
+ "severity": "medium",
+ "file": "copybot/lab/families/__init__.py (validate, _blocking_problems, registration_block)",
+ "evidence": "No code counts families per tag (grep finds no rule). PoC PerTag: two earlier families on delta_neutral_funding_carry were registered and closed (FUTILE_IN_SAMPLE), and a third family on the same tag, with the graveyard acknowledgements it needs, was approved (event 24) and registered its base batch. 'At most 1 open family per tag' is only implied by registry.covering (same tag and execution, non-final members), and finding 1 defeats it.",
+ "fix": "In _blocking_problems and registration_block, count distinct families whose approved or registered tag equals this family's tag (from family.approved payloads, or experiments.mechanism_tag of registered instance ids). Refuse at 2 in the programme, and refuse while one of them is in open_families(). Add a test for each limit."
+}
+---
+{
+ "title": "Approving before the revivals registers a partial base batch, and the remaining base instances can never register",
+ "severity": "low",
+ "file": "copybot/lab/pipeline.py (_register_family); copybot/lab/families/__init__.py (_blocking_problems, pass_)",
+ "evidence": "Points 6 and 7: revival happens before approve-family, and the base instances register once, as one batch. The code accepts the approval first. The next strategy pass registers whichever approved base instances are DISCOVERED at that moment. PoC PartialBatch: first pass ['E_fcarry__filt_a8'], then floor and hyst were revived, second pass [], and both stay DISCOVERED for good ('base instances are already registered'). With fcarry, each revival needs its own TTY approve/confirm within 15 minutes while the fleet runs every 30 s, so this order is easy to hit.",
+ "fix": "In _blocking_problems, refuse the approval while any approved base instance is not DISCOVERED, or make _register_family wait (family.waiting) until every instance in p['instances'] that is a base instance is DISCOVERED."
+}
+---
+{
+ "title": "A VALIDATED family instance can be put into PAPER_TRADING in a terminal and is then authorized for new exposure",
+ "severity": "low",
+ "file": "copybot/lab/families/__init__.py (terminal_guard ~L1369); copybot/lab/promotion.py (trading_authorized)",
+ "evidence": "terminal_guard refuses only SCREEN_PASSED->VALIDATION when there is no clean holdout. A human request_approval(PAPER_TRADING) plus confirm with terminal_guard succeeded: state PAPER_TRADING, and promotion.trading_authorized returned (True, 'human approval #6') (PoC HumanPaper). Only paper_runner.run_one's 'unsupported' branch keeps it from trading. Point 16 says simulated trading of a family needs a live spot feed and a later amendment, and the dashboard text in command.approvals says the same.",
+ "fix": "Have terminal_guard refuse (VALIDATED|PAUSED)->PAPER_TRADING for family instances until a later amendment. Have trading_authorized return False for specs with a family key."
+}
+---
+{
+ "title": "Forward test excludes a coin delisted mid-window from the whole window (survivorship)",
+ "severity": "low",
+ "file": "copybot/lab/pipeline.py (_forward_market)",
+ "evidence": "Missing later-month files fail the coverage rule, so the coin is dropped from all 12 months, including the months before it delisted. The suite's own test asserts this: LINK delisted from 2027-04 ends up in 'excluded'. That conditions the forward sample on surviving to the end of the window. Amendment 7 point 5, which point 11 cites, excludes a delisted coin only from the day after. For carry, coins that delist tend to have the worst funding and gaps, so this tilts the result towards PASS. A remembered 404 (absent_404.json, never expired) can also drop a coin for good if Binance publishes a monthly file later than sub-window end + 7 days. The design accepted 'delisted coins are excluded', so this is a design-level note.",
+ "fix": "For forward splits, keep a delisted coin's data up to its last listed day (flat afterwards) instead of applying the 99 % coverage exclusion to the whole window. Do not remember 404s for forward-window URLs (or let them expire)."
+}
+===== engineering-regressions ok False
+checks "Setup: the patch a8_A6.patch (relative to ad86f50) applied cleanly in ~/vf8-engineering-regressions on 192.168.1.108. The worktree and all /tmp files were removed at the end, and the live lab was not touched: the live DB was only read, with mode=ro, into a /tmp copy.\n\nFULL suite (python3 -m unittest discover -s tests): Ran 472 in 438 s, OK, failures 0, errors 0, skipped 1.\n\nTargeted modules with every non-loopback socket connect and DNS lookup refused, including in the spawned ProcessPool workers (test_lab_families, test_lab_pipeline, test_lab_v3, test_lab_s2, test_lab_promotion, test_lab_forward, test_lab_paper_runner, test_lab_research_engine, test_lab_command): Ran 229, OK, skipped 1, 0 network attempts. test_lab_families alone under the same socket block: 97 OK, 0 attempts.\n\nCatalogue paths:\n- lab/engine/catalogue.py is unchanged, and nothing assigns to or updates catalogue.TEMPLATES.\n- The remaining direct catalogue.TEMPLATES and spec['template'] uses sit only in catalogue-only branches: _tpl/_t/_priority/_universe/_min_symbols non-family branches, paper_runner after its early family return, and promotion.\n- Promotion stays closed for families: the 'catalogue experiment' gate fails for 'fcarry__x', and LIVE_UNSUPPORTED now contains 'spot'. No catalogue template has 'spot' in its needs.\n- For catalogue experiments, the following are identical to before: batch.registered payload, validate gate keys and artifact content, priorities, timeouts, _code_hash, symbols,
+---
+{
+ "title": "The base batch can register a subset of the approved instances, and the rest can never register",
+ "severity": "medium",
+ "file": "copybot/lab/pipeline.py",
+ "evidence": "_register_family picks `base` from whichever approved base instances happen to be DISCOVERED and registers them as soon as registration_block() is empty. After that, families.registered() is True, so the rest can never register. Nothing enforces protocol point 6 ('Genoplivning er et separat skridt og sker før approve-family'), and _blocking_problems/request/confirm do not check DISCOVERED. Point 7 requires the base instances to register once, as one batch. Reproduced in an adversarial test on the patched worktree (A3Base fixture): discover_all -> approve -> touch -> revive filt only -> strategy_pass registered ['E_fcarry__filt_a8']. Then revive floor and hyst -> strategy_pass registered []. States: filt REGISTERED, floor/hyst DISCOVERED (permanently), filt_w SUPPRESSED. Family status 'screening: 0 of 1', and no family.waiting event explains it. At the cohort fix, settle() moves floor and hyst DISCOVERED -> SUPPRESSED. A human cannot repair it either: a manual DISCOVERED->REGISTERED is refused by complete_spec_guard on the v1 spec. This order of steps is likely in practice: under amendment 9 the fleet runs during approval (spot download before 10-24), and the revivals are typed one by one, each with its own 15-minute code. The existing Screen test relies on this behaviour: it revives one instance and approves, giving 'a batch of one'.",
+ "fix": "In _register_family, register the base only when every id in p['instances'] is DISCOVERED. Otherwise call families.waiting(...) naming the instances that are still SUPPRESSED or missing. Additionally (belt and braces), make families._blocking_problems refuse request/confirm until every base instance exists and is DISCOVERED (point 6: revival before approve-family). Add a regression test: approve, then revive one, then the strategy pass registers nothing and writes a waiting event. Adjust the Screen fixture to revive all three, or use a one-instance test family."
+}
+---
+{
+ "title": "A family registration exception aborts the whole strategy pass (promotions, holdouts, diagnostics)",
+ "severity": "low",
+ "file": "copybot/lab/pipeline.py",
+ "evidence": "register_batch calls _register_family(db, fid, ...) with no per-family containment. families.pass_ and families.discover_all do contain errors. With families.registration_block mocked to raise RuntimeError('broken family') on an approved, revived fcarry: fleet.strategy_pass raised RuntimeError and pipeline.enqueue_holdouts was never called. The same applies to promotion.step and enqueue_diagnostics, every 30 s for as long as the error persists. Realistic triggers are rare (git or file errors in _register_family_one, LifecycleError from register_transition). It is still a new failure mode that reaches the catalogue path.",
+ "fix": "In register_batch, wrap each `out += _register_family(db, fid, fams[fid], actor)` in try/except Exception. Record the error once, e.g. families.waiting(db, fid, [f'registration error: {e!r}'[:200]], actor), and continue, matching pass_ and discover_all. Add a regression test."
+}
+---
+{
+ "title": "step_observe_interim is not idempotent across a crash or lease loss: a retry fails permanently and stops the family",
+ "severity": "low",
+ "file": "copybot/lab/pipeline.py",
+ "evidence": "The continue path writes db.event('family.interim', ...) and then calls jobs.enqueue('observe|eid', ...) in a separate transaction. A retry raises StepError('the interim look runs once') when the event already exists. If the worker dies or the lease is lost between the two writes, the final forward job is never queued. The retried interim then fails permanently (StepError is not retryable), and cohort_pass reports 'stopped: job(s) failed permanently' instead of running the deciding forward test. The futility path has the same gap: record_result is followed by a separate auto_transition, and a retry then hits 'requires lifecycle OBSERVATION'.",
+ "fix": "Make the retry complete what was left: if a family.interim event with outcome 'continue' exists, (re)enqueue observe|eid (enqueue is idempotent) and return its verdict instead of raising. Alternatively, write the event and the job row in one db.tx. For the futility path, reuse an existing FUTILITY result if one is present."
+}
+---
+{
+ "title": "After an embargo deferral, idle heavy agents take the claim() write lock every tick until 2026-11-28",
+ "severity": "low",
+ "file": "copybot/lab/jobs.py",
+ "evidence": "jobs.defer puts data|E back with next_run=EMBARGO_UNTIL, but its 5 downstream jobs per member stay 'blocked'. jobs.runnable_any counts any blocked job of the agent's kinds as runnable, so every idle backtest/cost/adversarial/validate/report agent calls the write-locked claim() each tick for about 5 weeks. This undoes 0979ef7 in that case. Measured in the adversarial test: after 3 deferrals, runnable_any(('backtest',)) was True, claim returned None, and there were 15 blocked jobs. It occurs only when registration happens before 10-24 and the data step does not finish before 10-24 00:00 UTC.",
+ "fix": "In runnable_any, count a blocked job only when none of its dependencies is queued with next_run > now (it cannot unblock before then). Or let jobs.defer also push next_run on the dependants and have _unblock respect it. Add a test."
+}
+---
+{
+ "title": "families.missing treats perp files the catalogue path already got a 404 for as missing, blocking registration until 11-28 (not triggered by fcarry)",
+ "severity": "low",
+ "file": "copybot/lab/families/__init__.py",
+ "evidence": "Only guarded_get records 404s in absent_404.json. Catalogue downloads (data._fetch with get=None) return None on a 404 and record nothing. A family whose universe contains a coin with unlisted perp months would therefore see those perp files as missing. Perp fetches are not allowed before 2026-11-28, so registration_block and _download would block or defer until 11-28. A read-only check of the live cache (~/ecommerence/copybot/data/lab/market) shows this does not happen for fcarry/30v3: all train3/validation3 perp files are present, and the only missing files are 720 spot files. blocked() returns 0 at 2026-10-19 and 720 at 2026-10-25.",
+ "fix": "For future families (no change needed for F1): seed absent_404.json from the catalogue's 404s (record them in data._fetch when get is None), or let missing() ignore perp months before the coin's first cached month. Document this in the family-check output."
+}
+===== end-to-end ok False
+checks "I applied a8_A6.patch to a Linux worktree ~/vf8-end-to-end at ad86f50. It applied cleanly. I committed it on detached HEAD 7e1fd67 because the approval binds committed blobs; that commit is now an unreachable object in ~/ecommerence/.git, never pushed.\n\n**Setup**\n- Live lab.db copied with the sqlite backup API, source opened mode=ro. data/lab/artifacts and data/lab/market copied with cp -a. The live lab's processes (web 753903, fleet 753943, watch 754508) kept the same PIDs before and after.\n- Synthetic spot zips: 720 zips (30 v3 coins x train3+validation3), made offline from the cached perp zips. Basis spot = perp*(1+0.0002+0.0003*sin(2*pi*t/30d)), no header row. TRXUSDT validation3 months use microsecond timestamps; they parsed with 1.0 coverage.\n- No network: a sitecustomize blocks every non-loopback connect and DNS lookup and logs the caller. Shims stand in for xdg-open, notify-send and browsers; COPYBOT_WATCH_NOTIFY=0.\n- Simulated: only families.GUARD (the TTY check), replaced in the fixture process. Everything else went through the real CLI: 4x `lab approve EXP DISCOVERED` + `lab confirm` with the L13 acknowledgement text, then approve-family + confirm-family (code and blob prefix typed at the prompt). Without the simulated TTY, `lab confirm` and confirm-family were refused, and the refusal did not consume the code.\n\n**Run (real fleet, python3 -m lab --db copy fleet)**\n- Discovery: 4 instances SUPPRESSED by L13_carry_v1. After revival and approval (event 1866,
+---
+{
+ "title": "Approving the family before every base instance is revived registers only the revived subset, and the other approved instances can never register",
+ "severity": "high",
+ "file": "copybot/lab/pipeline.py",
+ "evidence": "Probe on a scratch copy built from the pre-run snapshot. Steps: approve-family and confirm-family while all 4 instances are SUPPRESSED, then revive filt. Strategy pass 0 writes family.waiting with the text 'no base instance is DISCOVERED ... a SUPPRESSED instance is revived only by a human in a terminal', which invites reviving after approval. Pass 1 (filt revived) registers ['E_fcarry__filt_a8'] alone: batch.registered exp_ids [E_fcarry__filt_a8]. hyst and floor were revived before passes 2 and 3, but those passes register nothing and stay at 'screening: 0 of 1 registered members have a result'. Final states: filt REGISTERED, hyst DISCOVERED, floor DISCOVERED. registration_block returns ['the base instances are already registered (once, as one batch)']. No family.waiting names the stranded instances, yet the approval payload still lists instances ['filt','hyst','floor']. Cause: _register_family registers base = (DISCOVERED ∩ approved) as soon as that set is non-empty, and families.registered() then closes the one-shot gate. At cohort close, settle() would move hyst and floor to SUPPRESSED with the successor reason 'a successor registers only before'. The strategy pass runs every 30 s and each revival takes two typed commands, so the stranding is near-certain whenever the user approves before reviving.",
+ "fix": "In _register_family, register the base batch only when every instance in approval_payload['instances'] is DISCOVERED. Otherwise write family.waiting naming the instances that are still SUPPRESSED. Alternatively, refuse families.request/confirm while an approved base instance is not DISCOVERED, and record dropped instances in the approval. Change the pass_ waiting text to 'revive before approve-family'. Regression test: approve, revive one instance, run a strategy pass and assert nothing registers and a waiting event names the other two; revive the rest and assert one batch with all three."
+}
+---
+{
+ "title": "A failure inside the family batch loop leaves the family stuck for good: one member REGISTERED with no jobs, the rest unregistrable",
+ "severity": "medium",
+ "file": "copybot/lab/pipeline.py",
+ "evidence": "Fault-injection probe on a scratch copy: families.register_transition raises on its 2nd call, standing in for 'database is locked' or a bound file changing mid-batch. After the failing strategy pass: filt is REGISTERED (v2), floor is DISCOVERED with a complete v2, hyst is DISCOVERED (v1). There are no jobs, no batch.registered and no family.waiting. Three further normal passes all return 'screening: 0 of 1 registered members have a result', and registration_block = ['the base instances are already registered (once, as one batch)']. _batch is not atomic: it runs the per-member _register_one, then writes batch.registered and enqueue_pipeline outside one transaction, and _Tx cannot nest. families.registered() becomes True after the first REGISTERED transition, so the batch is never resumed. alpha_F stays reserved and no one is told. The catalogue path shares the loop, but there the remaining instances could still register in a later batch.",
+ "fix": "Base families.registered() on the family's batch.registered event, not on any REGISTERED transition. Let _register_family resume a partial batch: register the remaining approved DISCOVERED base members, then write batch.registered and enqueue_pipeline for every REGISTERED member without a data|<eid> job. At minimum, have cohort_pass write family.waiting when a registered member has no jobs. Regression test: inject a failure on the 2nd register_transition and assert the next pass completes the batch with jobs for all three."
+}
+---
+{
+ "title": "The generic human edge 'lab approve EXP REGISTERED' + 'lab confirm' registers a family instance even when the family approval is void",
+ "severity": "medium",
+ "file": "copybot/lab/families/__init__.py",
+ "evidence": "Probe on a scratch copy. E_fcarry__filt_a8 keeps a complete v2 spec after an injected first-call registration failure. Adding one trailing newline to research/families/VOCABULARY.json makes families.approval(db,'fcarry') None, and registration_block = ['no valid family approval']. Then `python3 -m lab approve E_fcarry__filt_a8 REGISTERED --reason ...` returns rc 0 with a code, and `python3 -m lab confirm <code>` (terminal simulated) prints 'E_fcarry__filt_a8 -> REGISTERED'. The transition (DISCOVERED -> REGISTERED, human:anton, evidence {approval_id: 38}) is written while the family approval is still None. A second probe registered E_fcarry__floor_a8 the same way. This bypasses families.register_transition: approval, reserved alpha, approved instances, code_hash, batch, trial cutoff and jobs. It breaks the invariant that registrations never happen without a valid family approval and its reserved alpha. terminal_guard only checks the TTY and the clean_holdout rule.",
+ "fix": "In families.terminal_guard and no_web_guard, refuse (cur, to) == ('DISCOVERED','REGISTERED') for family instances with the message 'family instances register only through register_batch with a valid family approval (amendment 8 point 7)'. Also pass the guard to request_approval in `lab approve` so the code is never issued. Regression test: a family instance with a v2 spec cannot be registered via lab approve/confirm."
+}
+---
+{
+ "title": "The pre-validation placebo does not test timing for low-turnover family rules: block shuffling multiplies their turnover 17-52x",
+ "severity": "low",
+ "file": "copybot/lab/engine/adversarial.py",
+ "evidence": "The patch does not change this gate; this is a methodology finding from the copy run. On the fcarry train ratio series, the actual turnover is 144 against a placebo mean of 2471 for floor (x17.2) and 2 against 103 for hyst (x51.6). The placebo means are -42.57 and -9.00 annualised Sharpe, giving p = 0.0. A timing-free rule (each coin on/off in random 20-40-day stretches, seeds 1-5) gets p = 0.0 with the family costs on all 5 seeds. At zero costs the same rules give p = 0.68 / 0.0 / 0.83 / 0.37 / 0.32. The placebo's docstring says 'roughly the same turnover', which does not hold for 01:00 daily or weekly holds. The forward test still controls the error rate. The cost is that the screen filters less than amendment 8 point 8 / design test 14 assume, so more instances share alpha_F, which lowers power.",
+ "fix": "No gate change without a dated amendment. Record the placebo's mean turnover and a zero-cost (timing-only) placebo p in adversarial.json for family instances as non-deciding diagnostics, and raise turnover-matched placebos in the next amendment if wanted."
+}
+---
+{
+ "title": "Stale and duplicated user-facing texts in the family CLI",
+ "severity": "low",
+ "file": "copybot/lab/__main__.py",
+ "evidence": "After a successful confirm-family the CLI prints 'Instances register through the fleet, not before 2026-11-28 if data must be downloaded'. Under amendment 9 point 1, spot screening files may be fetched, and registration may happen, until 2026-10-24; both wait from 10-24 to 11-28. In the copy run, registration and screening completed on 2026-10-19. A refused `lab confirm` of a family instance prints 'refused: refused: family approvals and confirmations ... interactive terminal', because the LifecycleError text already starts with 'refused:'.",
+ "fix": "Change the confirm-family text to say registration and spot downloads for train/validation are allowed until 2026-10-24 00:00 UTC, then wait until 2026-11-28. Drop the inner 'refused: ' prefix from the interactive_human messages, or the outer one in main."
+}
