@@ -1038,3 +1038,15 @@ hurtigere end 1 time ... jeg gider ikke være begrænset af den tid der" (datoen
    ≥ 5 %, kilden betaler ikke efter 3 dage) stopper en konto, der taber på det. Scannerens daglige opgørelse
    (ændring 9) tæller fortsat markerede klokketimer, så flere målinger pr. time ændrer ikke dens regel.
 5. **Data.** Cirka 1.440 ekstra `symbols_compared`-rækker og nogle tusinde markerede rækker pr. døgn i registret.
+
+### Præcisering af ændring 11 (2026-10-19): kontoen handler de mønter, varianten blev testet på — fejlrettelse
+
+Fundet i produktionen samme aften: den første banekonto (`LANE_d9f91862c8`, `carry_filter` 14 dage / 5 %) havde
+kurven "alle mønter" og handlede derfor banens univers (31 mønter med begge bøger), mens varianten kun var evalueret
+på de 15 mønter, der bestod kvalitetsreglen i `explore0`. Det følger ordlyden i punkt 3, men ikke testen.
+
+1. Punkt 3 rettes: når kurven er "alle mønter", er kurven de mønter, artefaktet registrerede som evalueret (`coins`),
+   ikke banens univers. Mønter uden begge live-bøger udelades stadig, og gulvet er stadig 5.
+2. En aktiv konto, der handler mønter, som varianten ikke blev testet på, stoppes automatisk (`lane.retired`, regel
+   `basket`) og lukkes reducerende. Varianten afprøves ikke igen (punkt 2); næste kandidat tager pladsen.
+3. Strengere, ikke lempeligere: kontoen kan kun handle det, testen dækker.
