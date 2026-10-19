@@ -139,6 +139,21 @@ CLEAN = {k: {"path": k, "committed": c, "working": c, "clean": True}
          for k, c in (("family", "abcdef0123456789"), ("module", "1111"), ("adapter", "2222"), ("vocabulary", "3333"))}
 
 
+def discovered(db, fid="fcarry", fam=None):
+    """The family's base instances DISCOVERED exactly as discover_all writes them (approve-family needs every base
+    instance revived first, amendment 8 point 6), for tests that approve without the discovery agent."""
+    from lab import registry as reg
+    fam = fam or FCARRY
+    for i in fam["instances"]:
+        e, tag = families.exp_id(fid, i["id"]), fam["mechanism"]["tag"]
+        db.append("experiments", exp_id=e, version=1, created_ts=0, mechanism_tag=tag,
+                  fingerprint=reg.fingerprint(tag, families.instrument(fam), i["horizon"], i["execution"]),
+                  spec_json={"family": fid, "instance": i["id"], "discovered_by": "discovery-catalogue"},
+                  note="discovered")
+        db.append("transitions", exp_id=e, ts=0, from_state=None, to_state="DISCOVERED", actor="discovery-catalogue",
+                  reason="fixture: discovered from the family file")
+
+
 class Approval(unittest.TestCase):
     """Phase A2: approval typed by the user, alpha budget and binding (amendment 8 points 5 and 13)."""
 
@@ -148,6 +163,7 @@ class Approval(unittest.TestCase):
         for eid in ("L13_carry_v1", "L08_funding_carry_leverage", "E_funding_contrarian_p1", "L22_m3_premium_convergence"):
             self.db.append("experiments", exp_id=eid, version=1, created_ts=0, mechanism_tag="x", fingerprint=eid,
                            spec_json={})
+        discovered(self.db)                                    # revival comes before approve-family (point 6)
         self.blobs = copy.deepcopy(CLEAN)
         self.p = [mock.patch.object(families, "GUARD", lambda: None),
                   mock.patch.object(families, "blobs", lambda fid: copy.deepcopy(self.blobs)),
@@ -216,10 +232,6 @@ class Approval(unittest.TestCase):
         self.assertAlmostEqual(families.alpha_reserved(self.db), 0.0)
         self.assertIsNone(families.approval(self.db, "fcarry"))
         self.approve()
-        self.db.append("experiments", exp_id="E_fcarry__filt_a8", version=1, created_ts=0, mechanism_tag="x",
-                       fingerprint="f", spec_json={})
-        self.db.append("transitions", exp_id="E_fcarry__filt_a8", ts=0, from_state=None, to_state="DISCOVERED",
-                       actor="fixture", reason="fixture: discovered")
         self.assertFalse(families.registered(self.db, "fcarry"))          # a discovered candidate is not registered
         self.db.append("transitions", exp_id="E_fcarry__filt_a8", ts=0, from_state="DISCOVERED", to_state="REGISTERED",
                        actor="fixture", reason="fixture: registered")
@@ -229,9 +241,10 @@ class Approval(unittest.TestCase):
     def test_a_family_code_cannot_execute_a_lifecycle_transition(self):
         from lab import lifecycle
         code = families.request(self.db, "fcarry", "human:anton", "Anton approves F1 after reading it")
+        before = self.db.one("SELECT COUNT(*) FROM transitions")[0]
         with self.assertRaises(Exception):
             lifecycle.confirm(self.db, code, "human:anton")
-        self.assertEqual(self.db.one("SELECT COUNT(*) FROM transitions")[0], 0)
+        self.assertEqual(self.db.one("SELECT COUNT(*) FROM transitions")[0], before)
 
     def test_the_cli_asks_for_the_code_and_the_blob_prefix_at_the_prompt(self):
         import argparse
@@ -367,7 +380,11 @@ class Discovery(A3Base):
                          ("fcarry", "filt_w", "filt", "fcarry__filt_w"))
         self.assertEqual(families.discover_all(self.db), [])                   # idempotent
         self.assertFalse(families.registered(self.db, "fcarry"))               # candidates are not registrations
-        self.approve()                                                        # approval still possible after discovery
+        with self.assertRaises(families.FamilyError) as c:                     # point 6: revival before approve-family
+            self.approve()
+        self.assertIn(families.REVIVE_FIRST, str(c.exception))
+        self.revive()
+        self.approve()                                                        # approval after discovery and revival
 
     def test_the_catalogue_pass_discovers_both(self):
         res = fleet.catalogue_pass(self.db)
@@ -455,6 +472,8 @@ class TerminalOnly(A3Base):
         self.assertEqual(lifecycle.state(self.db, "E_taker_pressure_p3"), "DISCOVERED")
 
     def test_a_family_code_is_an_unknown_state_for_lab_confirm(self):
+        families.discover_all(self.db)
+        self.revive()                                                         # revival before approve-family
         code = families.request(self.db, "fcarry", "human:anton", "Anton approves F1 after reading it")
         rc, text = self.cli("confirm", code)
         self.assertEqual(rc, 1)
@@ -581,7 +600,8 @@ class Registration(A3Base):
 
     def test_a_void_approval_or_missing_alpha_registers_nothing(self):
         """Test 2: changing any of the 4 bound files or a bound gate value voids the approval; without its reserved
-        alpha nothing registers either."""
+        alpha nothing registers either. Changed with finding protocol-statistics #3: this test released the alpha with a
+        row of another note, which no longer counts; an A8 release row does."""
         self.ready()
         for k in ("family", "module", "adapter", "vocabulary"):
             with self.subTest(k):
@@ -593,6 +613,8 @@ class Registration(A3Base):
         with mock.patch.object(families, "thresholds", lambda: {"DSR_MIN": 0.9}):
             self.assertEqual(fleet.strategy_pass(self.db)["registered"], [])
         self.db.append("alpha_ledger", exp_id="family:fcarry", ts=0, alpha=-0.0125, note="fixture: released")
+        self.assertAlmostEqual(families.reserved(self.db, "fcarry"), 0.0125)  # not an A8 row: it frees nothing
+        self.db.append("alpha_ledger", exp_id="family:fcarry", ts=0, alpha=-0.0125, note=families.RELEASE_NOTE)
         self.assertEqual(fleet.strategy_pass(self.db)["registered"], [])
         self.assertIn("alpha_F is not reserved for the family", self.events("family.waiting")[-1]["reasons"])
         with self.assertRaises(lifecycle.LifecycleError):
@@ -608,15 +630,24 @@ class Registration(A3Base):
         self.assertEqual(self.events("family.waiting"), [])
         self.assertEqual(fleet.strategy_pass(self.db)["families"], {"fcarry": "not approved"})
 
-    def test_an_approved_family_without_a_revived_instance_waits_once(self):
+    def test_an_approved_family_waits_once_while_a_base_instance_is_not_discovered(self):
+        """Changed with the 'partial base batch' finding: this test approved before any revival, which approve-family
+        now refuses (point 6). An approved family waits when a base instance left DISCOVERED after the approval (here
+        `lab transition ... SUPPRESSED`); nothing registers, not even the other two (point 7)."""
         families.discover_all(self.db)
+        self.revive()
         self.approve()
+        self.touch()
+        e = "E_fcarry__floor_a8"
+        lifecycle.auto_transition(self.db, e, "SUPPRESSED", "system:cli", "suppressed again after the approval")
         for _ in range(3):
-            fleet.strategy_pass(self.db)
+            self.assertEqual(fleet.strategy_pass(self.db)["registered"], [])
         w = self.events("family.waiting")
         self.assertEqual(len(w), 1)
-        self.assertIn("no base instance is DISCOVERED", w[0]["reasons"][0])
+        self.assertIn(f"base instance(s) not DISCOVERED: {e} (SUPPRESSED)", w[0]["reasons"][0])
+        self.assertIn("revival comes before approve-family", w[0]["reasons"][0])
         self.assertFalse(families.registered(self.db, "fcarry"))
+        self.assertEqual({lifecycle.state(self.db, x) for x in BASE if x != e}, {"DISCOVERED"})
 
 
 class Graveyard(A3Base):
@@ -665,14 +696,23 @@ class Graveyard(A3Base):
             families.request(self.db, "fcarry", "human:anton", "Anton approves F1 after reading it")
 
     def test_no_forward_pass_by_mid_2028_stops_the_programme(self):
+        """Changed with finding protocol-statistics #2: a PASS counts only as a forward result of the member's cohort
+        (recorded by its step, with the cohort id and its hash-matching observe.json); the row this test wrote before
+        (no cohort, no artifact) lifted the stop and no longer does."""
         self.assertEqual(families.programme_stop(self.db, ts(2028, 6, 30, 23, 59, 59)), [])
         self.assertTrue(families.programme_stop(self.db, ts(2028, 7, 1)))
-        self.db.append("experiments", exp_id="E_fold__x1_a8", version=1, created_ts=0, mechanism_tag="t",
-                       fingerprint="f", spec_json={})
-        self.db.append("transitions", exp_id="E_fold__x1_a8", ts=0, from_state=None, to_state="OBSERVATION",
-                       actor="fixture", reason="fixture: forward test")
-        registry.record_result(self.db, "E_fold__x1_a8", "VALIDATION", families.FORWARD_PASS + ": fixture", {}, {},
-                               "system:fixture")
+        e = "E_fold__x1_a8"
+        self.db.append("experiments", exp_id=e, version=1, created_ts=0, mechanism_tag="t", fingerprint="f",
+                       spec_json={})
+        self.db.append("transitions", exp_id=e, ts=0, from_state=None, to_state="OBSERVATION", actor="fixture",
+                       reason="fixture: forward test")
+        self.db.event("cohort.fixed", "system:fixture", None, {"family": "fold", "cohort": "fold:fwd202612m12",
+                                                              "selected": [e], "not_selected": [], "M": 1})
+        art = pipeline.save_artifact(e, "observe", {"window": "fwd202612m12", "fixture": True})
+        registry.record_result(self.db, e, "VALIDATION", families.FORWARD_PASS + ": fixture", {}, {}, "system:fixture")
+        self.assertTrue(families.programme_stop(self.db, ts(2028, 7, 1)))       # no cohort id, no artifact
+        registry.record_result(self.db, e, "VALIDATION", families.FORWARD_PASS + ": fixture",
+                               {"cohort": "fold:fwd202612m12"}, {"artifacts": [art]}, "system:fixture")
         self.assertEqual(families.programme_stop(self.db, ts(2028, 7, 1)), [])
 
 
@@ -1147,7 +1187,9 @@ SIX = ("BNBUSDT", "XRPUSDT", "DOGEUSDT", "ADAUSDT", "LINKUSDT", "LTCUSDT")
 class Screen(A3Base):
     """A synthetic end-to-end screen of one fcarry instance through data -> backtest -> cost -> adversarial ->
     validate -> report: six coins of synthetic spot, perp and funding files (min_symbols 5 in this test), the real
-    registration path, and data._fetch raising for any file that is not on disk (tests 14, 15 and 16)."""
+    registration path, and data._fetch raising for any file that is not on disk (tests 14, 15 and 16). The family file
+    is cut to the screened instance (a one-instance test family): the base batch registers only when every approved
+    base instance is DISCOVERED (amendment 8 point 7), so reviving one of three no longer gives a batch of one."""
     market = None
 
     @classmethod
@@ -1161,11 +1203,12 @@ class Screen(A3Base):
 
     def setUp(self):
         super().setUp()
-        real = families.load
+        real, self.only = families.load, "filt"
 
         def small(path_or_fid):
             fam = real(path_or_fid)
             fam["universe"]["min_symbols"] = 5
+            fam["instances"] = [i for i in fam["instances"] if i["id"] == self.only]     # a one-instance family
             return fam
 
         def disk_only(url, path, get=None):
@@ -1184,9 +1227,9 @@ class Screen(A3Base):
         super().tearDown()
 
     def screen(self, iid="filt"):
-        e = families.exp_id("fcarry", iid)
+        e, self.only = families.exp_id("fcarry", iid), iid
         families.discover_all(self.db)
-        self.revive([e])                                                       # only this instance: a batch of one
+        self.revive([e])                                                       # the only base instance: a batch of one
         self.approve()
         self.assertEqual(fleet.strategy_pass(self.db)["registered"], [e])
         ag = [a for a in fleet.agents(self.db_path) if a.kinds]
@@ -1665,10 +1708,9 @@ class CodePin(A5Base):
 FWD_SPAN = (ts(2026, 12, 1), ts(2027, 12, 1))
 
 
-class ForwardTest(A5Base):
-    """Tests 20-22 on a synthetic, unseen 2026-12..2027-11 market of six coins (min_symbols 4 here): the interim look
-    reads months 1-6 only after they ended plus 7 days and can only reject; the final test decides with PSR_cons >=
-    1 - alpha_i from cohort.fixed. data._fetch raises for any file that is not on disk or a remembered 404."""
+class ForwardBase(A5Base):
+    """A synthetic, unseen 2026-12..2027-11 market of six coins (min_symbols 4 here) for the forward tests. data._fetch
+    raises for any file that is not on disk or a remembered 404 (the fixture's stand-in for the archive's answer)."""
     market = None
 
     @classmethod
@@ -1729,6 +1771,24 @@ class ForwardTest(A5Base):
     def final(self):
         return pipeline.step_observe(self.db, jobs.get(self.db, f"observe|{F}"), "validation-1")
 
+    def reads(self):
+        return len(self.events("data.accessed"))
+
+
+def never(b, f, p, fit=None, volume_by=None, extra=None):
+    """A mechanism function that never holds anything: the interim look's futility."""
+    return {s: [0.0] * len(x) for s, x in b.items()}
+
+
+def always(b, f, p, fit=None, volume_by=None, extra=None):
+    """A mechanism function that always holds every coin."""
+    return {s: [1.0] * len(x) for s, x in b.items()}
+
+
+class ForwardTest(ForwardBase):
+    """Tests 20-22: the interim look reads months 1-6 only after they ended plus 7 days and can only reject; the final
+    test decides with PSR_cons >= 1 - alpha_i from cohort.fixed."""
+
     def test_the_interim_look_waits_for_its_window_and_then_queues_the_final_test(self):
         cf = self.cohort_of_one()
         self.assertEqual(jobs.get(self.db, f"observe_interim|{F}")["next_run"], ts(2027, 6, 1) + LAG)
@@ -1749,8 +1809,9 @@ class ForwardTest(A5Base):
         paths = [r[0] for r in self.db.q("SELECT path FROM datasets WHERE exp_id=?", F)]
         self.assertEqual(sum("/spot_klines/" in p for p in paths), 6 * 6)       # months 1-6 only, spot included
         self.assertEqual(self.events("family.interim")[0]["outcome"], "continue")
-        with self.assertRaises(pipeline.StepError):                             # the look runs once
-            self.interim()
+        n = self.reads()                  # the look runs once: a retry completes it (engineering finding #3; this test
+        self.assertEqual(self.interim()["verdict"], pipeline.INTERIM_CONTINUE)     # pinned a StepError before)
+        self.assertEqual((self.reads(), len(self.events("family.interim"))), (n, 1))
 
     def test_the_validation_agent_runs_the_interim_look(self):
         cf = self.cohort_of_one()
@@ -1822,7 +1883,9 @@ class ForwardTest(A5Base):
         self.assertEqual(lifecycle.state(self.db, F), "SCREEN_PASSED")
         self.assertIsNone(self.db.one("SELECT 1 FROM events WHERE kind='holdout.opened'"))
 
-    def test_unlisted_and_delisted_coins_are_excluded_before_any_computation(self):
+    def test_unlisted_coins_are_excluded_and_a_delisted_coin_only_from_the_day_after(self):
+        """Point 11 with amendment 7 point 5. This test pinned LINK in 'excluded' (dropped from the whole window), the
+        survivorship of finding protocol-statistics #8; LINK now counts until its last listed day."""
         cf = self.cohort_of_one()
         url, path = data.expected_paths("ADAUSDT", cf["window"], spot=True)["spot"][0]
         os.remove(path)                                                          # no spot file in month 1
@@ -1835,10 +1898,15 @@ class ForwardTest(A5Base):
         self.interim()
         self.now[0] = cf["final_not_before"]
         self.final()
-        art = pipeline.load_artifact(F, "observe")
-        self.assertEqual((art["unlisted"], art["excluded"]), (["ADAUSDT"], ["LINKUSDT"]))
-        self.assertNotIn("ADAUSDT", art["quality"])
-        self.assertTrue(art["gates"]["forward data quality"])                    # 4 coins left, min_symbols 4
+        gone = {"LINKUSDT": {"last_listed_hour": ts(2027, 3, 31, 23), "excluded_from": "2027-04-01"}}
+        for name in ("observe_interim", "observe"):
+            art = pipeline.load_artifact(F, name)
+            self.assertEqual((art["unlisted"], art["excluded"], art["delisted"]), (["ADAUSDT"], [], gone), name)
+            self.assertEqual(art["symbols"], sorted(set(SIX) - {"ADAUSDT"}))
+            self.assertNotIn("ADAUSDT", art["quality"])
+            self.assertEqual((art["quality"]["LINKUSDT"]["listed_until"], art["quality"]["LINKUSDT"]["ok"]),
+                             (ts(2027, 3, 31, 23), True))
+        self.assertTrue(art["gates"]["forward data quality"])                    # 4 whole-window coins, min_symbols 4
 
     def test_running_forward_tests_continue_after_a_programme_stop_and_fail_closed_on_edited_code(self):
         cf = self.cohort_of_one()
@@ -1999,6 +2067,8 @@ class ProgrammeStop(A3Base):
     """Test 27: no new family approval after 2028-06-30 without a forward PASS (point 15 c)."""
 
     def test_approvals_are_refused_after_june_2028_without_a_forward_pass(self):
+        families.discover_all(self.db)
+        self.revive()                                                            # revival before approve-family
         self.now[0] = ts(2028, 7, 1)
         with self.assertRaises(families.FamilyError) as c:
             families.request(self.db, "fcarry", "human:anton", "Anton approves F1 after reading it")
@@ -2068,19 +2138,25 @@ class Holdout(A5Base):
         rc = main(list(argv), self.db_path, lines.append)
         return rc, "\n".join(lines)
 
-    def forward_pass(self):
-        """filt survives the screen (M = 1); a fixture forward PASS takes the automatic edge the forward test takes."""
+    def forward_pass(self, approve=True):
+        """filt survives the screen (M = 1); a fixture forward PASS, recorded the way the forward step records it (the
+        cohort id and its hash-matching observe.json; changed with finding protocol-statistics #2, which refuses a
+        PASS without them), takes the automatic edge the forward test takes."""
         self.register()
         self.screened(F, params=GRIDS["carry_filter"][0])
         for e in (L, H):
             self.screened(e, observe=False)
         fleet.strategy_pass(self.db)
-        rid = registry.record_result(self.db, F, "VALIDATION", families.FORWARD_PASS + ": fixture", {}, {},
-                                     "system:validation-1")
+        cf = families.cohort(self.db, "fcarry")
+        art = pipeline.save_artifact(F, "observe", {"window": cf["window"], "cohort": cf["cohort"], "fixture": True})
+        rid = registry.record_result(self.db, F, "VALIDATION", families.FORWARD_PASS + ": fixture",
+                                     {"cohort": cf["cohort"]}, {"artifacts": [art]}, "system:validation-1")
         ev = {"result_id": rid}
         lifecycle.auto_transition(self.db, F, "SCREEN_PASSED", "system:validation-1", "forward PASS in this test", ev,
                                   guards=(registry.make_result_guard(ev),))
         self.assertEqual(self.status(), "closed: PASS")
+        if not approve:
+            return None
         rc, text = self.cli("approve", F, "VALIDATION", "--reason", OPEN_REASON, "--committed",
                             "research/PROTOCOL_V3.md")
         self.assertEqual(rc, 0, text)
@@ -2170,11 +2246,21 @@ class Holdout(A5Base):
         self.assertEqual(json.dumps({k: sorted(v) for k, v in catalogue.TEMPLATES.items()}, sort_keys=True), snapshot)
 
     def test_without_a_clean_holdout_the_instance_stops_at_screen_passed(self):
+        """Changed with finding end-to-end #3: `lab approve` runs the terminal guard too, so it issues no code for this
+        step; a code issued past the guard is still refused by `lab confirm`."""
         self.clean = False
-        code = self.forward_pass()
+        self.forward_pass(approve=False)
         card = next(w for w in command.approvals(self.db)["waiting"] if w["exp_id"] == F)
         self.assertIsNone(card["to"])
         self.assertIn("Ingen ren slut-test", card["action"])
+        n = self.db.one("SELECT COUNT(*) FROM approvals")[0]
+        rc, text = self.cli("approve", F, "VALIDATION", "--reason", OPEN_REASON, "--committed",
+                            "research/PROTOCOL_V3.md")
+        self.assertEqual(rc, 1, text)
+        self.assertIn("stops at SCREEN_PASSED", text)
+        self.assertEqual(self.db.one("SELECT COUNT(*) FROM approvals")[0], n)          # no code was issued
+        code = lifecycle.request_approval(self.db, F, "VALIDATION", "human:anton", OPEN_REASON,
+                                          {"committed_files": ["research/PROTOCOL_V3.md"]})
         rc, text = self.cli("confirm", code)
         self.assertEqual(rc, 1, text)
         self.assertIn("stops at SCREEN_PASSED", text)
@@ -2227,13 +2313,13 @@ class FamiliesCard(A5Base):
         self.assertEqual((k["W0"], k["alpha_used"], k["open"], k["programme_stop"]), (0.05, 0.0, [], []))
         self.assertIn("terminal only", k["approval"])
         families.discover_all(self.db)
+        self.revive()                                                            # revival before approve-family
         self.approve()
-        fleet.strategy_pass(self.db)                                             # nothing revived yet: it waits
+        fleet.strategy_pass(self.db)                                             # no screening file yet: it waits
         k, f = self.card()
         self.assertEqual((f["approval"], f["alpha"]["reserved"], k["alpha_used"]), ("approved", 0.0125, 0.0125))
         self.assertTrue(f["waiting"]["current"])
-        self.assertIn("no base instance is DISCOVERED", f["waiting"]["reasons"][0])
-        self.revive()
+        self.assertIn(families.EMBARGO_REASON, f["waiting"]["reasons"][0])
         self.touch()
         self.assertEqual(sorted(fleet.strategy_pass(self.db)["registered"]), BASE)
         k, f = self.card()
@@ -2267,6 +2353,8 @@ class FamiliesCard(A5Base):
         self.assertEqual((k["alpha_used"], k["open"]), (0.0, []))
 
     def test_the_binding_is_checked_at_most_once_a_minute_and_a_void_approval_shows(self):
+        families.discover_all(self.db)
+        self.revive()                                                            # revival before approve-family
         self.approve()
         calls = []
         real = families.approval
@@ -2311,7 +2399,13 @@ class Budget(A3Base):
     """Test 6, a property test: random sequences of request/confirm, revoke, registration, cohort (M = 0..3), close and
     screening rows never take the amendment 8 sum above W0 = 0.05; it always equals the model (alpha_F per approved,
     unreleased family); releases happen only for a revocation before registration or M = 0; a confirm is refused when
-    the wealth left is below alpha_F; the 0.005 screening rows never count."""
+    the wealth left is below alpha_F; the 0.005 screening rows never count, and neither does a foreign row of any sign
+    under a family-like id (finding protocol-statistics #3, PoC BudgetPrefix; drawn from a second generator, so the
+    sequences are the ones this test ran before). Every fixture family here copies fcarry's tag, so the per-tag limits
+    of point 3 (their own test, PerTagLimits) are switched off in this test only."""
+    FOREIGN = (("family:{fid}", "version 2"), ("family:{fid}", "exploratory screening"), ("family:zzz", "version 2"),
+               ("E_{fid}__m1_a8", "version 2"), ("FAMILY:{fid}", "A8 reserve"), ("E_screen_{fid}", "A8 spend"),
+               ("E_{fid}__m1_a8", "A8 in-sample filter"))
 
     def setUp(self):
         super().setUp()
@@ -2320,7 +2414,8 @@ class Budget(A3Base):
         self.p7 = [mock.patch.object(families, "load", lambda p: dict(copy.deepcopy(FCARRY), family_id=p)
                                      if p.startswith("fp") else real(p)),
                    mock.patch.object(families, "module_path", lambda fid: os.path.join(families.MODULE_DIR,
-                                                                                        "fcarry.py"))]
+                                                                                        "fcarry.py")),
+                   mock.patch.object(families, "tag_problems", lambda db, fam, registration=False: [])]
         for p in self.p7:
             p.start()
 
@@ -2352,13 +2447,18 @@ class Budget(A3Base):
                 self.db = DB(os.path.join(self.tmp, f"budget{seed}.db"))       # a fresh registry per sequence
                 jobs.init(self.db)
                 rng, n, model, pending = random.Random(seed), 0, {}, []
+                frng = random.Random(1000 + seed)                               # foreign rows: their own draws
                 for _ in range(40):
+                    e, note = frng.choice(self.FOREIGN)
+                    self.db.append("alpha_ledger", exp_id=e.format(fid=frng.choice(sorted(model) or ["fzzz"])), ts=0,
+                                   alpha=-frng.choice((0.05, 0.0125, 0.005)), note=note)
                     op = rng.choice(("request", "request", "confirm", "confirm", "revoke", "register", "cohort",
                                      "close", "screening"))
                     used = sum(a for a in model.values())
                     if op == "request":
                         n += 1
                         fid = f"fp{seed:02d}{n:03d}"
+                        discovered(self.db, fid, families.load(fid))          # revival before approve-family
                         try:
                             pending.append((fid, families.request(self.db, fid, "human:anton", "Anton approves it",
                                                                   now=self.now[0])))
@@ -2393,8 +2493,11 @@ class Budget(A3Base):
                         if ok:
                             fid = rng.choice(ok)
                             ev_id = families.approval(self.db, fid)
-                            for j in range(1, rng.randint(1, 4) + 1):
-                                self.member(fid, j, ev_id, rng.random() < 0.6)
+                            regs = [self.member(fid, j, ev_id, rng.random() < 0.6)
+                                    for j in range(1, rng.randint(1, 4) + 1)]
+                            self.db.event("batch.registered", "system:strategy-1", None,      # the base batch (point 7)
+                                          {"batch": f"B-{fid}", "exp_ids": regs, "trial_cutoff_id": 0,
+                                           "protocol_version": 3, "family": fid, "amendment": 8})
                     elif op == "cohort":
                         ok = [f for f in sorted(model) if families.registered(self.db, f) and
                               families.cohort(self.db, f) is None]
@@ -2431,6 +2534,838 @@ class Budget(A3Base):
                         self.assertIsNone(families.cohort(self.db, fid))
         for k, v in seen.items():
             self.assertGreater(v, 0, (k, seen))                              # every path was exercised
+
+
+# ---------- verifier findings of 2026-10-19, group 1: registration integrity (amendment 8 points 5-7 and 18) ----------
+def cli(db_path, *argv):
+    lines = []
+    rc = main(list(argv), db_path, lines.append)
+    return rc, "\n".join(lines)
+
+
+def discover_cli(db_path, eid):
+    return cli(db_path, "discover", eid, "--hypothesis", "h", "--mechanism", "harmless_tag", "--instrument", "i",
+               "--horizon", "days", "--execution", "taker", "--source", "s")
+
+
+def force_approval(db, fid="fcarry"):
+    """A family.approved event and its reservation written past request/confirm (an approval from before a rule, or a
+    forged one): what registration itself must still refuse."""
+    eid = db.event("family.approved", "human:anton", None, {
+        "family": fid, "blobs": families.bound_blobs(fid), "thresholds": families.thresholds(), "alpha_family": 0.0125,
+        "instances": [i["id"] for i in FCARRY["instances"]], "approval_id": None,
+        "reason": "fixture: written past request/confirm"})
+    db.append("alpha_ledger", exp_id=f"family:{fid}", ts=0, alpha=0.0125, note="A8 reserve")
+    return eid
+
+
+def built(db, eid, **change):
+    """The version 2 that _register_family_one builds for eid (the approval's blobs, the fixture's engine blobs)."""
+    blobs = families.approval_payload(db, "fcarry")["blobs"]
+    spec = families.instance_spec(FCARRY, families.instance_of(eid)[1], blobs, {f: "blob-test" for f in pipeline.ENGINE_CODE})
+    spec.update(change)
+    return spec
+
+
+def add_row(db, eid, version, spec):
+    """A spec version appended straight to the registry (past lab add-version)."""
+    v = registry.latest(db, eid)
+    db.append("experiments", exp_id=eid, version=version, created_ts=0, mechanism_tag=v["mechanism_tag"],
+              fingerprint=v["fingerprint"], spec_json=spec, spec_path="research/families/fcarry.json",
+              spec_commit="c0ffee", code_hash=CLEAN["family"]["committed"], note="fixture: written past add-version")
+
+
+class ApprovedFamilyBindsWhatRegisters(A3Base):
+    """Finding protocol-statistics #1 (PoCs ForgedSpec and DiscoverBypass; the ids of PoC BudgetPrefix): an approved
+    family binds what registers. lab discover / lab add-version refuse family instance ids and ids with ':'; a family
+    instance registers only with a version 1 the discovery agent wrote from the family file (its tag and fingerprint)
+    and the version 2 built from the family file and the approval's blobs, equal field for field; no other version."""
+
+    def test_lab_discover_and_add_version_refuse_family_ids(self):
+        self.ready()
+        path = os.path.join(self.tmp, "forged.json")
+        with open(path, "w") as f:
+            json.dump(built(self.db, F, costs=ZERO, min_symbols=1, holdout_exclude=[],
+                            universe=["BTCUSDT", "ETHUSDT", "SOLUSDT"], code="research/families/fcarry.json",
+                            alpha="0.0"), f)
+        fam_blob, real = CLEAN["family"]["committed"], registry.blob_at
+        with mock.patch.object(registry, "blob_at", lambda c, p: fam_blob if p.endswith(".json") else real(c, p)), \
+                mock.patch.object(registry, "git_committed", lambda p: True):          # as git would answer
+            rc, text = cli(self.db_path, "add-version", F, "--spec", path)
+            self.assertEqual(rc, 1, text)
+            self.assertIn("never added by hand", text)
+            with self.assertRaises(registry.RegistryError):
+                registry.add_version(self.db, F, path, "human:anton")
+            for e in ("family:zzz", "x:y", "E_fcarry__zzz_a8", " E_fcarry__filt_a8", "E_FCARRY__FILT_A8", "E_x_a8"):
+                with self.subTest(e):
+                    rc, text = discover_cli(self.db_path, e)
+                    self.assertEqual(rc, 1, text)
+                    self.assertIn("reserved", text)
+                    with self.assertRaises(registry.RegistryError):
+                        registry.discover(self.db, e, "h", "harmless_tag", "i", "days", "taker", "s", "human:anton")
+        self.assertEqual(registry.latest(self.db, F)["version"], 1)
+        self.assertIsNone(self.db.one("SELECT 1 FROM experiments WHERE exp_id IN ('family:zzz', 'x:y', 'E_x_a8', "
+                                      "'E_fcarry__zzz_a8', 'E_FCARRY__FILT_A8', ' E_fcarry__filt_a8')"))
+        self.assertEqual(sorted(fleet.strategy_pass(self.db)["registered"]), BASE)    # the real path is unchanged
+        spec = pipeline._spec(self.db, F)
+        self.assertEqual(spec, json.loads(json.dumps(built(self.db, F))))
+        self.assertEqual(spec["costs"]["taker_fee"], FCARRY["costs"]["taker_fee"])
+
+    def test_a_version_2_that_is_not_the_build_or_any_version_3_never_registers(self):
+        self.ready()
+        add_row(self.db, H, 2, built(self.db, H, costs=ZERO, min_symbols=1, holdout_exclude=[]))   # PoC ForgedSpec
+        self.assertEqual(fleet.strategy_pass(self.db)["registered"], [])
+        self.assertEqual({lifecycle.state(self.db, e) for e in BASE}, {"DISCOVERED"})   # checked before any registers
+        why = self.events("family.waiting")[-1]["reasons"]
+        self.assertTrue(any(r.startswith(f"{H}: spec version 2 is not the one built") for r in why), why)
+        with self.assertRaises(lifecycle.LifecycleError):
+            families.register_transition(self.db, H, "fcarry", "system:strategy-1")
+        add_row(self.db, L, 2, built(self.db, L))                 # the exact build an interrupted pass left is fine ...
+        add_row(self.db, L, 3, built(self.db, L))                 # ... but no other version
+        with self.assertRaises(lifecycle.LifecycleError):
+            pipeline._register_family_one(self.db, L, registry.latest(self.db, L), "strategy-1")
+        self.assertEqual(fleet.strategy_pass(self.db)["registered"], [])
+        self.assertTrue(any(r.startswith(f"{L}: spec version 3 exists") for r in self.events("family.waiting")[-1][
+            "reasons"]))
+        self.assertEqual((self.family_batches(), families.registration_started(self.db, "fcarry")), ([], False))
+
+    def test_instances_the_discovery_agent_did_not_write_are_neither_approved_nor_registered(self):
+        self.assertEqual([discover_cli(self.db_path, e)[0] for e in BASE], [1, 1, 1])   # PoC DiscoverBypass: refused
+        for e in BASE:                                                    # the same rows written past lab discover
+            self.db.append("experiments", exp_id=e, version=1, created_ts=0, mechanism_tag="harmless_tag",
+                           fingerprint=e, spec_json={"family": "fcarry", "instance": families.instance_of(e)[1],
+                                                     "discovered_by": "human:anton"}, note="fixture")
+            self.db.append("transitions", exp_id=e, ts=0, from_state=None, to_state="DISCOVERED", actor="human:anton",
+                           reason="fixture: not the discovery agent")
+        self.assertEqual([e for e, _, _ in families.discover_all(self.db)], [S])   # only the successor is new
+        self.touch()
+        with self.assertRaises(families.FamilyError) as c:
+            self.approve()
+        self.assertIn("not written by the discovery agent", str(c.exception))
+        force_approval(self.db)
+        self.assertEqual(fleet.strategy_pass(self.db)["registered"], [])
+        why = self.events("family.waiting")[-1]["reasons"]
+        self.assertTrue(any("not written by the discovery agent" in r for r in why), why)
+        self.assertTrue(any("mechanism tag delta_neutral_funding_carry" in r for r in why), why)
+        self.assertFalse(families.registration_started(self.db, "fcarry"))
+
+
+class PartialBaseBatch(A3Base):
+    """Finding 'approving before the revivals registers a partial base batch' (protocol-statistics #6, engineering #1,
+    end-to-end #1; PoC PartialBatch): approve-family and confirm-family refuse until every base instance is revived
+    (point 6), and the base batch registers only when every approved base instance is DISCOVERED, all together (point
+    7); until then family.waiting names the others."""
+
+    def test_approve_family_and_confirm_family_refuse_before_every_revival(self):
+        import argparse
+        from lab.__main__ import family_cmd
+        families.discover_all(self.db)
+        self.revive([F])
+        with self.assertRaises(families.FamilyError) as c:
+            self.approve()
+        self.assertIn(f"{families.REVIVE_FIRST}: base instance(s) not DISCOVERED: {H} (SUPPRESSED), {L} (SUPPRESSED)",
+                      str(c.exception))
+        lines = []
+        rc = family_cmd(argparse.Namespace(cmd="approve-family", fid="fcarry", reason="Anton approves F1 now"), self.db,
+                        lines.append)
+        self.assertEqual(rc, 1, lines)
+        self.assertTrue(lines[-1].startswith(f"refused: {families.REVIVE_FIRST}"), lines)
+        self.revive([L, H])
+        code = families.request(self.db, "fcarry", "human:anton", "Anton approves F1 after reading it")
+        lifecycle.auto_transition(self.db, H, "SUPPRESSED", "system:cli", "suppressed between request and confirm")
+        with self.assertRaises(families.FamilyError) as c:
+            families.confirm(self.db, code, "abcdef01", "human:anton")
+        self.assertIn(families.REVIVE_FIRST, str(c.exception))
+        self.assertIsNone(families.approval(self.db, "fcarry"))
+        self.assertAlmostEqual(families.alpha_reserved(self.db), 0.0)
+
+    def test_the_base_batch_registers_only_when_every_approved_instance_is_discovered(self):
+        families.discover_all(self.db)
+        force_approval(self.db)                                    # approved while all three are still SUPPRESSED
+        self.touch()
+        self.revive([F])
+        for _ in range(2):
+            self.assertEqual(fleet.strategy_pass(self.db)["registered"], [])        # PoC PartialBatch gave [F]
+        self.assertEqual(lifecycle.state(self.db, F), "DISCOVERED")
+        w = self.events("family.waiting")
+        self.assertEqual(len(w), 1)
+        self.assertIn(f"base instance(s) not DISCOVERED: {H} (SUPPRESSED), {L} (SUPPRESSED)", w[0]["reasons"][0])
+        self.assertIn("revival comes before approve-family", w[0]["reasons"][0])
+        self.assertTrue(fleet.strategy_pass(self.db)["families"]["fcarry"].startswith("waiting: base instance(s)"))
+        self.revive([L, H])
+        self.assertEqual(sorted(fleet.strategy_pass(self.db)["registered"]), BASE)   # one batch with all three
+        b = self.family_batches()
+        self.assertEqual((len(b), b[0]["exp_ids"]), (1, BASE))
+        self.assertTrue(families.registered(self.db, "fcarry"))
+
+
+class BatchFailureResumes(A3Base):
+    """Finding end-to-end #2: a failure inside the batch loop no longer strands the family. families.registered() is
+    the family's base batch.registered event, so the next pass registers the remaining approved members, writes the
+    batch once and queues the jobs of every member; a stop after the event queues the jobs that are missing."""
+
+    def jobs_of(self, e):
+        return sorted(r[0].split("|")[0] for r in self.db.q("SELECT job_id FROM jobs WHERE exp_id=?", e))
+
+    def complete(self):
+        b = self.family_batches()
+        self.assertEqual((len(b), b[0]["exp_ids"]), (1, BASE))
+        for e in BASE:
+            self.assertEqual(lifecycle.state(self.db, e), "REGISTERED")
+            self.assertEqual(self.jobs_of(e), sorted(pipeline.STEPS))
+            self.assertEqual(sorted(jobs.get(self.db, f"validate|{e}")["depends_on"]),
+                             sorted([f"adversarial|{e}"] + [f"cost|{m}" for m in BASE if m != e]))
+        self.assertEqual(families.unfinished(self.db), [])
+        self.assertEqual(fleet.strategy_pass(self.db)["registered"], [])
+        self.assertEqual(len(self.family_batches()), 1)
+
+    def test_a_failure_on_the_second_registration_is_completed_by_the_next_pass(self):
+        self.ready()
+        real, calls = families.register_transition, []
+
+        def flaky(db, eid, fid, actor):
+            calls.append(eid)
+            if len(calls) == 2:
+                raise sqlite3.OperationalError("database is locked")
+            return real(db, eid, fid, actor)
+        with mock.patch.object(families, "register_transition", flaky):
+            self.assertEqual(fleet.strategy_pass(self.db)["registered"], [])
+        self.assertEqual(calls, [F, L])
+        self.assertEqual([lifecycle.state(self.db, e) for e in BASE], ["REGISTERED", "DISCOVERED", "DISCOVERED"])
+        self.assertEqual(registry.latest(self.db, L)["version"], 1)              # rolled back with its transition
+        self.assertEqual((families.registered(self.db, "fcarry"), families.registration_started(self.db, "fcarry")),
+                         (False, True))
+        self.assertEqual((self.family_batches(), sum(jobs.counts(self.db).values())), ([], 0))
+        self.assertIn("registration error: OperationalError('database is locked')",
+                      self.events("family.waiting")[-1]["reasons"])
+        self.assertEqual(families.unfinished(self.db), ["fcarry"])
+        with self.assertRaises(families.FamilyError):                            # registration has started
+            families.revoke(self.db, "fcarry", "human:anton", "Anton withdraws F1 for now")
+        self.assertEqual(sorted(fleet.strategy_pass(self.db)["registered"]), BASE)
+        self.assertEqual([tuple(r) for r in self.db.q("SELECT exp_id, alpha FROM alpha_ledger WHERE note=? ORDER BY "
+                                                      "exp_id", "A8 in-sample filter")], [(e, 0.0) for e in BASE])
+        self.complete()
+
+    def test_a_stop_after_the_batch_event_queues_the_missing_jobs(self):
+        self.ready()
+        real, calls = pipeline.enqueue_pipeline, []
+
+        def flaky(db, eid, actor="strategy-1", batch_members=()):
+            calls.append(eid)
+            if len(calls) == 2:
+                raise RuntimeError("the pass stopped")
+            return real(db, eid, actor, batch_members)
+        with mock.patch.object(pipeline, "enqueue_pipeline", flaky):
+            fleet.strategy_pass(self.db)
+        self.assertTrue(families.registered(self.db, "fcarry"))
+        self.assertEqual([self.jobs_of(e) for e in BASE], [sorted(pipeline.STEPS), [], []])
+        self.assertEqual(families.unfinished(self.db), ["fcarry"])
+        fleet.strategy_pass(self.db)
+        self.complete()
+
+
+class HumanRegisterEdge(A3Base):
+    """Finding end-to-end #3: 'lab approve <family instance> REGISTERED' + 'lab confirm' never register a family
+    instance, with a void or a valid family approval: lab approve runs the terminal guard and issues no code, lab
+    confirm refuses a code issued past it, and so do the dashboard's guards. Only register_batch registers."""
+
+    def test_the_human_registered_edge_is_refused_for_family_instances(self):
+        self.ready()
+        add_row(self.db, F, 2, built(self.db, F))          # the complete version 2 an interrupted older pass left
+        reason = "Anton registers this instance by hand"
+        for void in (True, False):
+            with self.subTest(void=void):
+                self.blobs["vocabulary"]["committed"] = self.blobs["vocabulary"]["working"] = \
+                    "changed" if void else CLEAN["vocabulary"]["committed"]
+                self.assertEqual(families.approval(self.db, "fcarry") is None, void)
+                n = self.db.one("SELECT COUNT(*) FROM approvals")[0]
+                rc, text = cli(self.db_path, "approve", F, "REGISTERED", "--reason", reason)
+                self.assertEqual(rc, 1, text)
+                self.assertIn(families.REGISTER_ONLY_BATCH, text)
+                self.assertEqual(self.db.one("SELECT COUNT(*) FROM approvals")[0], n)        # no code was issued
+                code = lifecycle.request_approval(self.db, F, "REGISTERED", "human:anton", reason)   # past the guard
+                rc, text = cli(self.db_path, "confirm", code)
+                self.assertEqual(rc, 1, text)
+                self.assertIn(families.REGISTER_ONLY_BATCH, text)
+                with self.assertRaises(lifecycle.LifecycleError) as c:
+                    lifecycle.confirm(self.db, code, "human:anton@dashboard",
+                                      guards=(registry.complete_spec_guard, families.no_web_guard))
+                self.assertIn(families.REGISTER_ONLY_BATCH, str(c.exception))
+                self.assertEqual(lifecycle.state(self.db, F), "DISCOVERED")
+        self.assertIsNone(self.db.one("SELECT 1 FROM transitions WHERE to_state='REGISTERED'"))
+        self.assertEqual(sorted(fleet.strategy_pass(self.db)["registered"]), BASE)    # register_batch: one batch
+
+
+class RegistrationErrorContained(A3Base):
+    """Finding engineering #2: an exception while a family registers stays inside that family (one family.waiting
+    'registration error', recorded once); the catalogue batch, promotions, holdouts, diagnostics and scan research of
+    the strategy pass still run."""
+
+    def test_a_broken_family_never_stops_the_strategy_pass(self):
+        pipeline.discover_catalogue(self.db)
+        code = templates.request(self.db, "day_of_week", "human:test", "fixture approval for tests")
+        templates.confirm(self.db, code, "human:test")
+        self.ready()
+        ran, real = [], pipeline.enqueue_holdouts
+        with mock.patch.object(families, "registration_block", mock.Mock(side_effect=RuntimeError("broken family"))), \
+                mock.patch.object(pipeline, "enqueue_holdouts", lambda db, actor="strategy-1": ran.append(1) or
+                                  real(db, actor)):
+            for _ in range(3):
+                st = fleet.strategy_pass(self.db)
+                self.assertTrue({"promotions", "holdouts_queued", "diagnostics_queued", "scan_research_queued"} <=
+                                set(st), st)
+        self.assertEqual(len(ran), 3)
+        self.assertEqual(lifecycle.state(self.db, "E_day_of_week_p2"), "REGISTERED")    # the catalogue batch ran
+        self.assertEqual({lifecycle.state(self.db, e) for e in BASE}, {"DISCOVERED"})
+        w = [x for x in self.events("family.waiting") if x["reasons"][0].startswith("registration error")]
+        self.assertEqual(w, [{"family": "fcarry", "reasons": ["registration error: RuntimeError('broken family')"]}])
+
+
+class FamilyCliTexts(A3Base):
+    """Finding end-to-end #6: confirm-family states amendment 9's dates (registration and the train/validation spot
+    downloads until 2026-10-24 00:00 UTC, then a wait until 2026-11-28), and a refusal says 'refused:' once."""
+
+    def test_confirm_family_states_the_amendment_9_dates(self):
+        import argparse
+        from lab.__main__ import family_cmd
+        families.discover_all(self.db)
+        self.revive()
+        code = families.request(self.db, "fcarry", "human:anton", "Anton approves F1 after reading it")
+        answers, lines = iter([code, "abcdef01"]), []
+        rc = family_cmd(argparse.Namespace(cmd="confirm-family"), self.db, lines.append, ask=lambda q: next(answers))
+        self.assertEqual(rc, 0, lines)
+        self.assertIn("spot downloads are allowed until 2026-10-24 00:00 UTC", lines[-1])
+        self.assertIn("waits until 2026-11-28 00:00 UTC", lines[-1])
+        self.assertNotIn("not before 2026-11-28 if data must be downloaded", lines[-1])
+
+    def test_a_refusal_says_refused_once(self):
+        import argparse
+        from lab.__main__ import family_cmd
+        families.discover_all(self.db)
+        rc, text = cli(self.db_path, "approve", F, "DISCOVERED", "--reason", WHY)
+        self.assertEqual(rc, 0, text)
+        code, lines = text.split(": ")[1].split()[0], []
+        self.p[0].stop()                                                          # the real guard
+        try:
+            with mock.patch.dict(os.environ, {"CLAUDECODE": "1"}):
+                rc, text = cli(self.db_path, "confirm", code)
+                rc2 = family_cmd(argparse.Namespace(cmd="confirm-family"), self.db, lines.append,
+                                 ask=lambda q: self.fail("asked for a code"))
+        finally:
+            self.p[0].start()
+        self.assertEqual((rc, rc2, lifecycle.state(self.db, F)), (1, 1, "SUPPRESSED"))
+        for t in (text, "\n".join(lines)):
+            self.assertEqual(t.count("refused:"), 1, t)
+            self.assertIn("refused: an assistant session may not approve or confirm a family", t)
+
+
+class CodePinBindsTheApproval(A5Base):
+    """Code pin, amendment 8 point 18 / design test 26: before every step of a family instance the spec's code_blobs
+    must be the blobs of the approval its registration cited (not the spec compared with itself), every engine file
+    must have a recorded blob, the spec must be the registered version 2, and the working family file and module must
+    still be the registered blobs (CodePin above); otherwise the step fails closed and nothing is regenerated."""
+
+    def test_the_spec_is_pinned_to_the_cited_approval_and_its_registered_version(self):
+        self.register()
+        spec, cited = pipeline._spec(self.db, F), families.cited_approval(self.db, F)
+        self.assertEqual(cited["event_id"], families.approval(self.db, "fcarry"))
+        self.assertEqual(families.pin_problems(spec, cited), [])
+        for k in families.BOUND:
+            with self.subTest(k):
+                bad = families.pin_problems({**spec, "code_blobs": {**spec["code_blobs"], k: "another-blob"}}, cited)
+                self.assertTrue(any(f"code_blobs.{k} is not the blob the family approval bound" in b for b in bad), bad)
+        bad = families.pin_problems({**spec, "code_blobs": {**spec["code_blobs"], "lab/pipeline.py": None}}, cited)
+        self.assertTrue(any("no recorded blob of lab/pipeline.py" in b for b in bad), bad)
+        self.assertTrue(families.pin_problems(spec, None))                       # no approval cited: fails closed
+        self.assertTrue(families.pin_problems(spec, {**cited, "family": "other"}))
+        add_row(self.db, F, 3, {**spec, "costs": ZERO})                         # a later version, past add-version
+        for step in (pipeline.step_data, pipeline.step_backtest, pipeline.step_report):
+            with self.subTest(step.__name__):
+                with self.assertRaises(pipeline.StepError) as c:
+                    step(self.db, {"exp_id": F}, "worker-1")
+                self.assertIn("not the registered version 2", str(c.exception))
+        self.assertEqual(lifecycle.state(self.db, F), "REGISTERED")
+        self.assertIsNone(self.db.one("SELECT 1 FROM datasets WHERE exp_id=?", F))
+        self.assertFalse(os.path.exists(os.path.join(pipeline.ARTIFACTS, F)))   # nothing was regenerated
+        self.assertTrue(any("is not the registered version 2" in b for b in families.family_pin(self.db, "fcarry")))
+
+
+# ---------- verifier findings of 2026-10-19, group 2: results, forward outcome, paper, alpha budget (points 3-16) -----
+class ForwardDecisionsOnlyFromTheSteps(A5Base):
+    """Finding protocol-statistics #2 (PoCs CliBypass C1 and C2): lab result refuses family instances, and every gate
+    edge of a family instance (lab transition and the steps alike) passes families.gate_problem: never SCREENING ->
+    SCREEN_PASSED, a result recorded by a step, and OBSERVATION is left only on a forward result of the member's cohort
+    (its cohort id and hash-matching observe.json or observe_interim.json) or a 'not selected' result. forward_outcome
+    and forward_passes count nothing else, so a forged PASS neither closes the family nor lifts the programme stop."""
+
+    def test_lab_result_and_lab_transition_never_move_a_family_instance(self):
+        self.register()
+        lifecycle.auto_transition(self.db, F, "SCREENING", "system:fixture", "screening starts in this test")
+        with mock.patch.dict(os.environ, {"CLAUDECODE": "1"}), \
+                mock.patch.object(families, "GUARD", families.interactive_human):
+            rc, text = cli(self.db_path, "result", F, "--label", "EXPLORATORY", "--verdict", "PASS forged by the CLI")
+            self.assertEqual(rc, 1, text)                                       # PoC C1 recorded it
+            self.assertIn("family instance: its results are recorded only by its steps", text)
+            self.assertIsNone(self.db.one("SELECT 1 FROM results WHERE exp_id=?", F))
+            rid = registry.record_result(self.db, F, "EXPLORATORY", "PASS (screen): a row past lab result", {}, {},
+                                         "system:fixture")
+            rc, text = cli(self.db_path, "transition", F, "SCREEN_PASSED", "--reason",
+                           "forged straight to SCREEN_PASSED", "--result-id", str(rid))
+            self.assertEqual(rc, 1, text)                                       # PoC C1 moved it
+            self.assertIn("never goes directly to SCREEN_PASSED", text)
+            typed = self.db.append("results", exp_id=F, version=2, ts=0, label="EXPLORATORY",
+                                   verdict=families.OBSERVE + ": typed past lab result", metrics={}, evidence={})
+            self.db.event("result.recorded", "human:anton", F, {"result_id": typed, "label": "EXPLORATORY"})
+            rc, text = cli(self.db_path, "transition", F, "OBSERVATION", "--reason", "forged into the forward test",
+                           "--result-id", str(typed))
+            self.assertEqual(rc, 1, text)
+            self.assertIn("cites a result recorded by its step", text)
+        with self.assertRaises(registry.RegistryError):
+            registry.record_result(self.db, F, "EXPLORATORY", "PASS forged in Python", {}, {}, "human:anton")
+        self.assertEqual(lifecycle.state(self.db, F), "SCREENING")
+        self.assertIsNone(self.db.one("SELECT 1 FROM transitions WHERE to_state IN ('SCREEN_PASSED', 'OBSERVATION')"))
+        self.assertEqual(self.screened(L)["state"], "OBSERVATION")             # the report step's own edge still works
+
+    def test_a_forged_forward_pass_neither_closes_the_family_nor_lifts_the_programme_stop(self):
+        self.register()
+        self.screened(F, sharpe=1.5)
+        for e in (L, H):
+            self.screened(e, observe=False)
+        fleet.strategy_pass(self.db)
+        cf = families.cohort(self.db, "fcarry")
+        self.assertEqual(cf["selected"], [F])
+        with mock.patch.dict(os.environ, {"CLAUDECODE": "1"}):
+            rc, text = cli(self.db_path, "result", F, "--label", "VALIDATION", "--verdict",
+                           families.FORWARD_PASS + ": forged")
+        self.assertEqual(rc, 1, text)
+        forged = pipeline.save_artifact(F, "observe", {"forged": True})
+        for metrics, evidence in (({}, {}), ({"cohort": cf["cohort"]}, {}),          # rows past lab result
+                                  ({"cohort": "fcarry:fwd209901m12"}, {"artifacts": [forged]}),
+                                  ({"cohort": cf["cohort"]}, {"artifacts": [dict(forged, sha256="0" * 64)]})):
+            with self.subTest(metrics=metrics, evidence=evidence):
+                rid = registry.record_result(self.db, F, "VALIDATION", families.FORWARD_PASS + ": forged", metrics,
+                                             evidence, "system:fixture")
+                rc, text = cli(self.db_path, "transition", F, "SCREEN_PASSED", "--reason",
+                               "forged forward pass, no window was read", "--result-id", str(rid))
+                self.assertEqual(rc, 1, text)                                   # PoC C2 moved it
+                self.assertIn("needs a forward result of the cohort that selected it", text)
+                self.assertIsNone(families.forward_outcome(self.db, F))
+        self.assertEqual(lifecycle.state(self.db, F), "OBSERVATION")
+        self.assertEqual(families.forward_passes(self.db), set())
+        st = self.status()
+        self.assertTrue(st.startswith("forward test"), st)                    # PoC C2: 'closed: PASS'
+        self.assertIsNone(families.closed(self.db, "fcarry"))
+        self.now[0] = ts(2028, 7, 2)
+        self.assertTrue(families.programme_stop(self.db))                      # PoC C2: [] (the stop lifted)
+
+
+class NoPaperTradingForFamilies(A3Base):
+    """Finding protocol-statistics #7 (PoC HumanPaper): a family instance never enters PAPER_TRADING (point 16: a live
+    spot feed and a later amendment first). lab approve issues no code, lab confirm and the dashboard refuse a code
+    issued past the guard, from VALIDATED and from PAUSED, and promotion.trading_authorized refuses a family instance
+    even in PAPER_TRADING."""
+
+    def test_a_validated_or_paused_family_instance_is_never_authorized_to_trade(self):
+        self.ready()
+        fleet.strategy_pass(self.db)
+        e, reason = L, "paper trade the family please"
+        for st in ("SCREENING", "OBSERVATION", "SCREEN_PASSED", "VALIDATION"):
+            self.db.append("transitions", exp_id=e, ts=0, from_state=None, to_state=st, actor="fixture",
+                           reason="fixture: the path to a holdout")
+        rid = registry.record_result(self.db, e, "VALIDATION", "PASS (holdout): fixture", {}, {}, "system:fixture")
+        self.db.append("transitions", exp_id=e, ts=0, from_state="VALIDATION", to_state="VALIDATED", actor="fixture",
+                       reason="fixture: holdout passed", evidence={"result_id": rid})
+        n = self.db.one("SELECT COUNT(*) FROM approvals")[0]
+        rc, text = cli(self.db_path, "approve", e, "PAPER_TRADING", "--reason", reason)
+        self.assertEqual(rc, 1, text)
+        self.assertIn(families.NO_PAPER, text)
+        self.assertEqual(self.db.one("SELECT COUNT(*) FROM approvals")[0], n)          # no code was issued
+        code = lifecycle.request_approval(self.db, e, "PAPER_TRADING", "human:anton", reason)   # past the guard
+        with self.assertRaises(lifecycle.LifecycleError) as c:                         # PoC HumanPaper's call
+            lifecycle.confirm(self.db, code, "human:anton", guards=(registry.complete_spec_guard,
+                                                                     families.terminal_guard))
+        self.assertIn(families.NO_PAPER, str(c.exception))
+        rc, text = cli(self.db_path, "confirm", code)
+        self.assertEqual(rc, 1, text)
+        with self.assertRaises(lifecycle.LifecycleError) as c:
+            lifecycle.confirm(self.db, code, "human:anton@dashboard", guards=(registry.complete_spec_guard,
+                                                                               families.no_web_guard))
+        self.assertIn(families.NO_PAPER, str(c.exception))
+        self.assertEqual(lifecycle.state(self.db, e), "VALIDATED")
+        lifecycle.confirm(self.db, code, "human:anton", guards=(registry.complete_spec_guard,))  # past every guard
+        self.assertEqual(lifecycle.state(self.db, e), "PAPER_TRADING")
+        self.assertEqual(promotion.trading_authorized(self.db, e), (False, f"{e}: {families.NO_PAPER}"))  # PoC: True
+        self.db.append("transitions", exp_id=e, ts=0, from_state="PAPER_TRADING", to_state="PAUSED",
+                       actor="system:risk-1", reason="fixture: paused by a risk rule")
+        rc, text = cli(self.db_path, "approve", e, "PAPER_TRADING", "--reason", reason, "--committed",
+                       "research/PROTOCOL_V3.md")
+        self.assertEqual(rc, 1, text)
+        self.assertIn(families.NO_PAPER, text)
+        self.assertEqual(lifecycle.state(self.db, e), "PAUSED")
+
+
+class AlphaSumsOnlyA8Rows(A3Base):
+    """Finding protocol-statistics #3 (PoC BudgetPrefix): families.alpha_reserved and reserved(fid) sum only the
+    amendment 8 rows (A8 reserve, spend and release of family:<fid>, A8 spend of instances). The PoC's family:zzz is
+    refused at lab discover, so lab add-version has nothing to version, and a negative row under any family-like id
+    written past them changes neither sum: W0 still refuses a fifth family. Budget above is the property test."""
+
+    def test_a_foreign_negative_row_never_frees_programme_wealth(self):
+        rc, text = cli(self.db_path, "discover", "family:zzz", "--hypothesis", "h", "--mechanism", "m", "--instrument",
+                       "i", "--horizon", "days", "--execution", "taker", "--source", "s")
+        self.assertEqual(rc, 1, text)
+        path = os.path.join(self.tmp, "neg.json")
+        with open(path, "w") as f:
+            json.dump(dict({k: "x" for k in registry.REQUIRED_SPEC}, code="lab/engine/data.py", alpha="-0.05"), f)
+        rc, text = cli(self.db_path, "add-version", "family:zzz", "--spec", path)
+        self.assertEqual(rc, 1, text)
+        self.assertIsNone(self.db.one("SELECT 1 FROM alpha_ledger"))
+        for e, note in (("family:zzz", "version 2"), ("family:fcarry", "version 2"), (F, "version 2"),
+                        ("family:fcarry", "exploratory screening"), ("FAMILY:fcarry", "A8 reserve"),
+                        ("E_screen_x", "A8 spend")):
+            self.db.append("alpha_ledger", exp_id=e, ts=0, alpha=-0.05, note=note)
+        self.assertEqual((families.alpha_reserved(self.db), families.reserved(self.db, "fcarry")), (0, 0))
+        for fid in ("fa", "fb", "fc", "fd"):                                   # four families hold W0 = 0.05
+            self.db.append("alpha_ledger", exp_id=f"family:{fid}", ts=0, alpha=0.0125, note="A8 reserve")
+        self.assertAlmostEqual(families.alpha_reserved(self.db), 0.05)
+        families.discover_all(self.db)
+        self.revive()
+        with self.assertRaises(families.FamilyError) as c:                     # PoC BudgetPrefix approved a fifth
+            self.approve()
+        self.assertIn("alpha budget", str(c.exception))
+        self.assertIsNone(families.approval(self.db, "fcarry"))
+        self.assertAlmostEqual(families.alpha_reserved(self.db), 0.05)
+
+
+class AlphaFReservedOncePerFamily(A5Base):
+    """Finding protocol-statistics #4 (PoCs DoubleReserve A and A2): alpha_F is reserved once per family. A second
+    approval is refused while the family holds its reservation and its last approval event is not a revocation (also
+    for a second code confirmed after the first); a void approval is revoked, which releases the reservation, before it
+    is approved again; and fix_cohort releases what a family holds above alpha_F (a second reservation written before
+    this fix) with an 'A8 release' row."""
+
+    def test_a_second_approval_is_refused_while_the_reservation_is_held(self):
+        families.discover_all(self.db)
+        self.revive()
+        codes = [families.request(self.db, "fcarry", "human:anton", "Anton approves F1 after reading it")
+                 for _ in range(2)]                                            # two codes before any confirm
+        families.confirm(self.db, codes[0], "abcdef01", "human:anton")
+        with self.assertRaises(families.FamilyError) as c:
+            families.confirm(self.db, codes[1], "abcdef01", "human:anton")
+        self.assertIn("already holds its alpha_F reservation", str(c.exception))
+        with self.assertRaises(families.FamilyError):                         # PoC A: a second request and confirm
+            self.approve()
+        self.assertEqual(self.ledger(), [("family:fcarry", 0.0125, "A8 reserve")])
+        self.assertEqual(len(self.events("family.approved")), 1)
+        self.touch()
+        self.assertEqual(sorted(fleet.strategy_pass(self.db)["registered"]), BASE)
+        self.screened(F, sharpe=1.5)
+        for e in (L, H):
+            self.screened(e, observe=False)
+        self.assertTrue(self.status().startswith("forward test: cohort fcarry:fwd202612m12, M 1"))
+        self.assertAlmostEqual(families.reserved(self.db, "fcarry"), 0.0)
+        self.assertAlmostEqual(families.alpha_reserved(self.db), 0.0125)      # PoC A: 0.025, held for good
+
+    def test_a_void_approval_is_revoked_before_it_is_approved_again(self):
+        self.ready()
+        self.blobs["family"] = {**self.blobs["family"], "committed": "abcdef01ffff", "working": "abcdef01ffff"}
+        self.assertIsNone(families.approval(self.db, "fcarry"))               # void: a bound file changed
+        with self.assertRaises(families.FamilyError) as c:                     # PoC A2 reserved alpha_F again here
+            self.approve()
+        self.assertIn("revoke-family first", str(c.exception))
+        self.assertAlmostEqual(families.revoke(self.db, "fcarry", "human:anton", "Anton withdraws the void approval"),
+                               0.0125)
+        self.approve()
+        self.assertEqual(self.ledger(), [("family:fcarry", 0.0125, "A8 reserve"),
+                                         ("family:fcarry", -0.0125, "A8 release"),
+                                         ("family:fcarry", 0.0125, "A8 reserve")])
+        self.assertAlmostEqual(families.reserved(self.db, "fcarry"), 0.0125)
+        self.assertEqual(sorted(fleet.strategy_pass(self.db)["registered"]), BASE)
+
+    def test_the_cohort_releases_a_reservation_above_alpha_f(self):
+        self.register()
+        self.db.append("alpha_ledger", exp_id="family:fcarry", ts=0, alpha=0.0125, note="A8 reserve")  # before the fix
+        self.screened(F, sharpe=1.5)
+        for e in (L, H):
+            self.screened(e, observe=False)
+        self.assertTrue(self.status().startswith("forward test: cohort fcarry:fwd202612m12, M 1"))
+        self.assertEqual(self.ledger()[-3:], [("family:fcarry", -0.0125, "A8 spend"), (F, 0.0125, "A8 spend"),
+                                              ("family:fcarry", -0.0125, "A8 release")])
+        self.assertAlmostEqual(families.cohort(self.db, "fcarry")["alpha_excess_released"], 0.0125)
+        self.assertAlmostEqual(families.reserved(self.db, "fcarry"), 0.0)
+        self.assertAlmostEqual(families.alpha_reserved(self.db), 0.0125)
+
+
+class PerTagLimits(A3Base):
+    """Finding protocol-statistics #5 (PoC PerTag), amendment 8 point 3: at most 2 families per canonical tag in the
+    whole programme and at most 1 open family per tag at a time, at approval (request and confirm) and at registration
+    (registration_block). At approval an approved family that has not registered yet is open; at registration only the
+    registered ones are, so two approvals from before the rule never block each other."""
+
+    def earlier(self, fid, closed_as=None):
+        """An earlier family on fcarry's tag with one registered instance: closed (REJECTED) or still screening."""
+        e = f"E_{fid}__x1_a8"
+        self.db.append("experiments", exp_id=e, version=1, created_ts=0, mechanism_tag="delta_neutral_funding_carry",
+                       fingerprint=e, spec_json={"execution": "taker", "family": fid})
+        for st in ("REGISTERED", "SCREENING") + (("REJECTED",) if closed_as else ()):
+            self.db.append("transitions", exp_id=e, ts=0, from_state=None, to_state=st, actor="fixture",
+                           reason="fixture: an earlier family on the same tag")
+        if closed_as:
+            self.db.event("family.closed", "system:fixture", None, {"family": fid, "outcome": closed_as})
+        return e
+
+    def acked(self, *eids):
+        """fcarry's file with graveyard acknowledgements of the earlier families' rejected instances."""
+        real = families.load
+
+        def load(path_or_fid):
+            fam = real(path_or_fid)
+            if fam.get("family_id") == "fcarry":
+                fam["graveyard_acknowledged"] = fam["graveyard_acknowledged"] + [
+                    {"exp_id": e, "match": "exact", "lessons_addressed": ["x"],
+                     "materially_different_because": "materially different because a later, separately drafted family"}
+                    for e in eids]
+            return fam
+        return mock.patch.object(families, "load", load)
+
+    def test_at_most_two_families_per_tag_in_the_whole_programme(self):
+        gone = [self.earlier(fid, "FUTILE_IN_SAMPLE") for fid in ("fone", "ftwo")]
+        with self.acked(*gone):
+            families.discover_all(self.db)
+            self.revive()
+            with self.assertRaises(families.FamilyError) as c:                # PoC PerTag approved a third family
+                self.approve()
+            self.assertIn("at most 2 families per canonical tag in the whole programme: delta_neutral_funding_carry "
+                          "already has fone, ftwo", str(c.exception))
+            force_approval(self.db)                                            # an approval from before the rule
+            self.touch()
+            self.assertEqual(fleet.strategy_pass(self.db)["registered"], [])  # PoC PerTag registered the base batch
+            why = self.events("family.waiting")[-1]["reasons"]
+            self.assertTrue(any(r.startswith("at most 2 families per canonical tag") for r in why), why)
+        self.assertFalse(families.registration_started(self.db, "fcarry"))
+
+    def test_at_most_one_open_family_per_tag_at_a_time(self):
+        e = self.earlier("fone")                                               # registered, still screening
+        families.discover_all(self.db)
+        self.revive()
+        with self.assertRaises(families.FamilyError) as c:
+            self.approve()
+        self.assertIn("at most 1 open family per tag at a time: fone on delta_neutral_funding_carry is not closed",
+                      str(c.exception))
+        force_approval(self.db)                                                # an approval from before the rule
+        self.touch()
+        self.assertEqual(fleet.strategy_pass(self.db)["registered"], [])
+        why = self.events("family.waiting")[-1]["reasons"]
+        self.assertTrue(any(r.startswith("at most 1 open family per tag") for r in why), why)
+        self.db.append("transitions", exp_id=e, ts=0, from_state="SCREENING", to_state="REJECTED", actor="fixture",
+                       reason="fixture: the earlier family's instance was rejected")
+        self.db.event("family.closed", "system:fixture", None, {"family": "fone", "outcome": "FUTILE_IN_SAMPLE"})
+        with self.acked(e):                                                    # one other family on the tag, closed
+            self.assertEqual(sorted(fleet.strategy_pass(self.db)["registered"]), BASE)
+
+    def test_an_approved_family_is_open_at_approval_but_not_at_registration(self):
+        self.ready()                                                           # fcarry approved, not registered
+        other = dict(copy.deepcopy(FCARRY), family_id="fcarr2")
+        self.assertEqual(families.tag_problems(self.db, other), [
+            "at most 1 open family per tag at a time: fcarry on delta_neutral_funding_carry is not closed (amendment 8 "
+            "point 3)"])
+        self.assertEqual(families.tag_problems(self.db, other, registration=True), [])
+        self.assertEqual(families.tag_problems(self.db, FCARRY), [])           # a family never counts itself
+
+
+# ---------- verifier findings of 2026-10-19, group 3: robustness and protocol conformance ----------
+class InterimLookResumesAfterACrash(ForwardBase):
+    """Finding engineering #3: the forward steps are idempotent across a crash or a lost lease. A retry of the interim
+    look after its 'continue' event (re)queues the final test; after its futility result it rejects with that result,
+    and once rejected it completes instead of failing for good on 'requires lifecycle OBSERVATION' (which stopped the
+    family without closing its cohort). The final forward test resumes the same way. Nothing is read or recorded
+    twice, and the look still runs once."""
+
+    def run_interim_job(self):
+        jid = f"observe_interim|{F}"
+        with self.db.tx():                                     # due now (the queue's clock is the real one), or put
+            self.db.con.execute("UPDATE jobs SET status='queued', next_run=0, lease_owner=NULL WHERE job_id=?",
+                                (jid,))                        # back by _expire after a lost lease
+        [a for a in fleet.agents(self.db_path) if a.name == "validation-1"][0](self.db)
+        return jobs.get(self.db, jid)
+
+    def test_a_crash_between_the_continue_event_and_the_final_job_is_completed_by_the_retry(self):
+        cf = self.cohort_of_one()
+        self.now[0] = cf["interim_not_before"]
+        with mock.patch.object(jobs, "enqueue", mock.Mock(side_effect=RuntimeError("the worker died"))):
+            self.assertEqual(self.run_interim_job()["status"], "queued")      # a retry; the event was written
+        ev = self.events("family.interim")
+        self.assertEqual((len(ev), ev[0]["outcome"], jobs.get(self.db, f"observe|{F}")), (1, "continue", None))
+        n = self.reads()
+        j = self.run_interim_job()
+        self.assertEqual(j["status"], "done", j["error"])                       # failed for good before ('runs once')
+        self.assertEqual(j["result"]["verdict"], pipeline.INTERIM_CONTINUE)
+        fin = jobs.get(self.db, f"observe|{F}")
+        self.assertEqual((fin["kind"], fin["status"], fin["next_run"], fin["payload"]),
+                         ("observe", "queued", cf["final_not_before"], {"start": cf["start"], "months": 12,
+                                                                        "cohort": cf["cohort"]}))
+        self.assertEqual(pipeline.frozen_artifact(self.db, F, "observe_interim")["window"], "fwd202612m06")
+        self.assertEqual(self.interim()["verdict"], pipeline.INTERIM_CONTINUE)    # idempotent
+        self.assertEqual((self.reads(), len(self.events("family.interim"))), (n, 1))
+        self.assertTrue(self.status().startswith(f"forward test: cohort {cf['cohort']}"))
+
+    def test_a_lost_lease_after_the_futility_rejection_never_stops_the_family(self):
+        cf = self.cohort_of_one()
+        self.now[0] = cf["interim_not_before"]
+        with mock.patch.object(fcarry, "carry_filter", never):
+            with mock.patch.object(jobs, "complete", lambda *a, **k: False):   # the lease was lost: result discarded
+                self.run_interim_job()
+            rid = self.db.one("SELECT id FROM results WHERE exp_id=? AND label='VALIDATION'", F)[0]
+            self.assertEqual(lifecycle.state(self.db, F), "REJECTED")
+            n = self.reads()
+            j = self.run_interim_job()
+        self.assertEqual(j["status"], "done", j["error"])                       # failed for good before
+        self.assertEqual((j["result"]["result_id"], j["result"]["state"]), (rid, "REJECTED"))
+        self.assertEqual(self.db.one("SELECT COUNT(*) FROM results WHERE exp_id=? AND label='VALIDATION'", F)[0], 1)
+        self.assertEqual(self.reads(), n)
+        self.assertIsNone(jobs.get(self.db, f"observe|{F}"))
+        self.assertEqual(self.status(), "closed: FAIL")          # before: 'stopped: 1 job(s) failed permanently'
+        self.assertEqual(self.ledger()[-1], (F, 0.0125, "A8 spend"))
+
+    def test_a_crash_between_the_futility_result_and_the_rejection_reuses_the_result(self):
+        cf = self.cohort_of_one()
+        self.now[0] = cf["interim_not_before"]
+        with mock.patch.object(fcarry, "carry_filter", never):
+            with mock.patch.object(lifecycle, "auto_transition", mock.Mock(side_effect=RuntimeError("worker died"))):
+                with self.assertRaises(RuntimeError):
+                    self.interim()
+            self.assertEqual(lifecycle.state(self.db, F), "OBSERVATION")
+            n = self.reads()
+            out = self.interim()
+        rows = [r[0] for r in self.db.q("SELECT id FROM results WHERE exp_id=? AND label='VALIDATION'", F)]
+        self.assertEqual((len(rows), out["result_id"], out["state"], lifecycle.state(self.db, F)),
+                         (1, rows[0], "REJECTED", "REJECTED"))
+        self.assertEqual(self.reads(), n)
+        self.assertEqual(families.forward_outcome(self.db, F), "FAIL")
+
+    def test_the_final_forward_test_resumes_the_same_way(self):
+        cf = self.cohort_of_one()
+        self.now[0] = cf["interim_not_before"]
+        self.interim()
+        self.now[0] = cf["final_not_before"]
+        with mock.patch.object(lifecycle, "auto_transition", mock.Mock(side_effect=RuntimeError("worker died"))):
+            with self.assertRaises(RuntimeError):
+                self.final()
+        self.assertEqual(lifecycle.state(self.db, F), "OBSERVATION")
+        n = self.reads()
+        out, again = self.final(), self.final()            # the second: 'requires lifecycle OBSERVATION' before
+        rows = [r[0] for r in self.db.q("SELECT id FROM results WHERE exp_id=? AND label='VALIDATION'", F)]
+        self.assertEqual((len(rows), out["result_id"], again["result_id"]), (1, rows[0], rows[0]))
+        self.assertEqual((out["state"], again["state"], lifecycle.state(self.db, F)), ("SCREEN_PASSED",) * 3)
+        self.assertEqual(self.reads(), n)
+        self.assertEqual(self.status(), "closed: PASS")
+
+
+class DeferredJobsLetIdleAgentsSleep(A3Base):
+    """Finding engineering #4 (PoC DeferInFleet): after an embargo deferral the downstream jobs of the deferred data
+    steps cannot unblock before it runs, so jobs.runnable_any no longer counts them and idle backtest, cost, adversarial,
+    validation and report agents skip the write-locked claim() until 2026-11-28. A blocked job that can unblock, a due
+    job and an expired lease anywhere still count (0979ef7; test_lab_step1)."""
+
+    def test_jobs_blocked_behind_a_deferred_job_are_not_runnable(self):
+        self.now[0] = ts(2026, 10, 20)
+        self.ready(files=False)
+        self.touch(kinds=("klines", "funding"))
+        self.assertEqual(sorted(fleet.strategy_pass(self.db)["registered"]), BASE)
+        self.now[0] = ts(2026, 10, 25)                                         # the embargo started before the data step
+        agent = [a for a in fleet.agents(self.db_path) if a.name == "data-1"][0]
+        for _ in BASE:
+            agent(self.db)
+        until = max(jobs.get(self.db, f"data|{e}")["next_run"] for e in BASE)
+        self.assertEqual(self.db.one("SELECT COUNT(*) FROM jobs WHERE status='blocked'")[0], 15)
+        kinds = {a.name: a.kinds for a in fleet.agents(self.db_path) if a.kinds}
+        for name in ("data-1", "backtest-1", "cost-1", "adversarial-1", "validation-1", "report-1"):
+            self.assertFalse(jobs.runnable_any(self.db, kinds[name], now=until - 1), name)   # PoC: True for backtest
+        self.assertIsNone(jobs.claim(self.db, "backtest-1", ("backtest",), now=until - 1))
+        for name in ("data-1", "backtest-1", "cost-1", "validation-1"):        # the deferral ends: claim may unblock
+            self.assertTrue(jobs.runnable_any(self.db, kinds[name], now=until), name)
+        jobs.enqueue(self.db, "diagnose|X", "diagnose", "X", {})
+        jobs.claim(self.db, "report-1", ("diagnose",))
+        with self.db.tx():
+            self.db.con.execute("UPDATE jobs SET lease_until=0 WHERE job_id='diagnose|X'")
+        self.assertTrue(jobs.runnable_any(self.db, ("backtest",), now=until - 1))   # an expired lease anywhere
+
+
+class DelistedCoinsLeaveFromTheDayAfter(ForwardBase):
+    """Finding protocol-statistics #8 (survivorship): amendment 8 point 11 cites amendment 7 point 5, which excludes a
+    coin delisted in the window from the day after. The family forward split keeps its data up to its last listed hour
+    (the same quality rule over those hours), closes its position there (the exit is charged) and gives the weight to
+    the rest; a gap followed by more data is no delisting. The data-quality gate is not loosened: min_symbols still
+    counts only coins with the whole window. A forward window's 404 is never remembered."""
+
+    def delist(self, cf, sym, first, kinds=("klines", "funding", "spot")):
+        for kind, pairs in data.expected_paths(sym, cf["window"], spot=True).items():
+            for u, p in pairs[first:]:
+                if kind in kinds:
+                    os.remove(p)
+                    families._mark_absent(u)                   # the fixture's archive answers 404 (data._fetch mock)
+
+    def forward(self, cf, spec):
+        self.now[0] = cf["final_not_before"]
+        return pipeline._forward_market(self.db, F, "validation-1", spec, families.FORWARD_MONTHS)
+
+    def test_a_delisted_coin_counts_until_its_last_listed_hour_and_then_is_flat(self):
+        cf = self.cohort_of_one()
+        self.delist(cf, "LINKUSDT", 4)                                         # delisted from 2027-04
+        spec = pipeline._spec(self.db, F)
+        with mock.patch.object(fcarry, "carry_filter", always), \
+                mock.patch.object(pipeline, "_evaluate", wraps=pipeline._evaluate) as ev, \
+                mock.patch.object(pipeline, "_bench", wraps=pipeline._bench) as be:
+            f = self.forward(cf, spec)
+        last = ts(2027, 3, 31, 23)
+        self.assertEqual((f["excluded"], f["symbols"], f["enough"]), ([], sorted(SIX), True))
+        self.assertEqual(f["delisted"], {"LINKUSDT": {"last_listed_hour": last, "excluded_from": "2027-04-01"}})
+        bars, funding, pos = ev.call_args_list[0][0][:3]
+        self.assertEqual((bars["LINKUSDT"][-1][0], max(funding["LINKUSDT"])), (last, last - 7 * HOUR))
+        self.assertEqual((pos["LINKUSDT"][-2:], pos["BNBUSDT"][-1]), ([1.0, 0.0], 1.0))   # closed at its last hour
+        fd = be.call_args_list[0][0][3]
+        self.assertEqual((fd.perp["LINKUSDT"][-1][0], max(fd.funding["LINKUSDT"])), (last, last - 7 * HOUR))
+        self.assertEqual(f["quality"]["LINKUSDT"]["listed_until"], last)
+        with mock.patch.object(fcarry, "carry_filter", always):               # not loosened: 5 whole-window coins
+            self.assertFalse(self.forward(cf, {**spec, "min_symbols": 6})["enough"])
+            self.assertTrue(self.forward(cf, {**spec, "min_symbols": 5})["enough"])
+        self.delist(cf, "LTCUSDT", 2, kinds=("spot",))                          # the spot leg delisted from 2027-02
+        with mock.patch.object(fcarry, "carry_filter", always):
+            f = self.forward(cf, spec)
+            self.assertFalse(self.forward(cf, {**spec, "min_symbols": 5})["enough"])   # LINK and LTC never count
+        self.assertEqual(sorted(f["delisted"]), ["LINKUSDT", "LTCUSDT"])
+        self.assertEqual(f["delisted"]["LTCUSDT"]["excluded_from"], "2027-02-01")
+
+    def test_a_gap_followed_by_more_data_is_no_delisting(self):
+        cf = self.cohort_of_one()
+        for kind, pairs in data.expected_paths("LINKUSDT", cf["window"], spot=True).items():
+            u, p = pairs[2]                                                    # 2027-02 missing, 2027-03 on
+            os.remove(p)
+            families._mark_absent(u)
+        f = self.forward(cf, pipeline._spec(self.db, F))
+        self.assertEqual((f["excluded"], f["delisted"]), (["LINKUSDT"], {}))   # the quality rule, as before
+        self.assertNotIn("LINKUSDT", f["symbols"])
+        self.assertFalse(f["quality"]["LINKUSDT"]["ok"])
+
+    def test_a_forward_404_is_never_remembered(self):
+        self.now[0] = ts(2027, 12, 8)
+        url, asked = f"{data.SPOT_BASE}/klines/LINKUSDT/1h/LINKUSDT-1h-2027-11.zip", []
+
+        def gone(u):
+            asked.append(u)
+            raise urllib.error.HTTPError(u, 404, "not found", None, None)
+        for _ in range(2):
+            with self.assertRaises(urllib.error.HTTPError):
+                families.guarded_get("fwd202612m12", fetch=gone)(url)
+        self.assertEqual((asked, url in families.absent()), ([url, url], False))   # a late monthly file is fetched
+        families._mark_absent(url)                                               # a 404 remembered before the fix
+        with self.assertRaises(urllib.error.HTTPError):
+            families.guarded_get("fwd202612m12", fetch=gone)(url)
+        self.assertEqual(len(asked), 3)
+        screen = f"{data.SPOT_BASE}/klines/LINKUSDT/1h/LINKUSDT-1h-2022-01.zip"   # the screening splits remember
+        with self.assertRaises(urllib.error.HTTPError):
+            families.guarded_get("train3", fetch=gone)(screen)
+        self.assertIn(screen, families.absent())
 
 
 if __name__ == "__main__":

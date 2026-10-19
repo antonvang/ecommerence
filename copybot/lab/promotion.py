@@ -186,10 +186,14 @@ def _auto_ok(db, eid, tr, ev):
 
 
 def trading_authorized(db, eid):
-    """Approved paper trading may open positions only if its current PAPER_TRADING entry is verifiable."""
+    """Approved paper trading may open positions only if its current PAPER_TRADING entry is verifiable. A family
+    instance never may (amendment 8 point 16: a live spot feed and a later amendment first)."""
+    from lab import families
     st = lifecycle.state(db, eid)
     if st != "PAPER_TRADING":
         return False, f"{eid} is {st}"
+    if families.is_instance(db, eid):
+        return False, f"{eid}: {families.NO_PAPER}"
     tr = db.one("SELECT actor, from_state, to_state, evidence FROM transitions WHERE exp_id=? ORDER BY id DESC LIMIT 1",
                 eid)
     ev = json.loads(tr["evidence"] or "{}")

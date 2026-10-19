@@ -84,9 +84,24 @@ def covering(db, mechanism_tag, execution, fp, exclude=()):
     return hits
 
 
+def _family_reserved(exp_id):
+    from lab import families
+    return families.reserved_id(exp_id)
+
+
+def _family_instance(db, exp_id):
+    from lab import families
+    return families.is_instance(db, exp_id)
+
+
 def discover(db, exp_id, hypothesis, mechanism_tag, instrument, horizon, execution, source, actor, extra=None,
-             exclude=()):
-    """Create a DISCOVERED candidate, or SUPPRESSED if it matches the graveyard. Never evaluates profitability."""
+             exclude=(), family_instance=False):
+    """Create a DISCOVERED candidate, or SUPPRESSED if it matches the graveyard. Never evaluates profitability.
+    Amendment 8 family instance ids (and ids with ':') are created only by families.discover_all (family_instance)."""
+    if not family_instance and _family_reserved(exp_id):
+        raise RegistryError(f"{exp_id}: ids of amendment 8 family instances (E_<fid>__<inst>_a8, anything ending in "
+                            "_a8) and ids with ':' are reserved; the discovery agent proposes family instances from a "
+                            "committed family file (amendment 8 point 6)")
     if db.one("SELECT 1 FROM experiments WHERE exp_id=?", exp_id):
         raise RegistryError(f"{exp_id} already exists")
     fp = fingerprint(mechanism_tag, instrument, horizon, execution)
@@ -116,6 +131,11 @@ def add_version(db, exp_id, spec_path, actor):
     cur = state(db, exp_id)
     if cur is None:
         raise RegistryError(f"{exp_id} does not exist")
+    prev = latest(db, exp_id)
+    if _family_reserved(exp_id) or (prev and json.loads(prev["spec_json"] or "{}").get("family")):
+        raise RegistryError(f"{exp_id} is an amendment 8 family instance (or a reserved id): its spec version 2 is "
+                            "built from the approved family file at registration, never added by hand (amendment 8 "
+                            "point 7)")
     if cur not in EDITABLE_STATES:
         raise RegistryError(f"{exp_id} is {cur}: its spec can no longer change; register a new experiment instead")
     if not git_committed(spec_path):
@@ -161,6 +181,10 @@ def record_result(db, exp_id, label, verdict, metrics, evidence, actor, supersed
         raise RegistryError(f"label must be one of {LABELS}")
     if state(db, exp_id) is None:
         raise RegistryError(f"{exp_id} does not exist")
+    if not actor.startswith("system:") and _family_instance(db, exp_id):
+        raise RegistryError(f"{exp_id} is an amendment 8 family instance: its results are recorded only by its steps "
+                            "(screen, forward test, holdout), never typed with lab result (amendment 8 points 8, 11 "
+                            "and 12)")
     if supersedes is not None:
         old = db.one("SELECT exp_id FROM results WHERE id=?", supersedes)
         if old is None or old["exp_id"] != exp_id:
@@ -194,7 +218,8 @@ GATE_EDGES = {("SCREENING", "SCREEN_PASSED"), ("SCREENING", "REJECTED"), ("VALID
 
 
 def make_result_guard(evidence):
-    """Gate outcomes must cite a recorded result of the same experiment; a pass must cite a PASS verdict."""
+    """Gate outcomes must cite a recorded result of the same experiment; a pass must cite a PASS verdict. A family
+    instance's gate edges also pass families.gate_problem (amendment 8 points 8, 11 and 12)."""
     def guard(db, exp_id, cur, to):
         if (cur, to) not in GATE_EDGES:
             return
@@ -209,4 +234,9 @@ def make_result_guard(evidence):
             raise LifecycleError("a rejection cannot cite a PASS result")
         if to == "OBSERVATION" and not (r["verdict"] or "").upper().startswith("OBSERVE"):
             raise LifecycleError("entering OBSERVATION must cite a result whose verdict starts with OBSERVE")
+        if _family_instance(db, exp_id):
+            from lab import families
+            why = families.gate_problem(db, exp_id, cur, to, rid)
+            if why:
+                raise LifecycleError(why)
     return guard

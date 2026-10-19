@@ -266,7 +266,8 @@ def _family_row(db, fid, now):
     for e in members:
         st = lifecycle.state(db, e)
         by_state[st] = by_state.get(st, 0) + 1
-    held = db.q("SELECT alpha, note FROM alpha_ledger WHERE exp_id=?", f"family:{fid}")
+    held = db.q("SELECT alpha, note FROM alpha_ledger WHERE exp_id=? AND note IN (?, ?, ?)", f"family:{fid}",
+                *families.A8_NOTES)                       # the A8 rows only, as families.reserved
     spent = sum(r[0] for r in db.q(f"SELECT alpha FROM alpha_ledger WHERE note=? AND exp_id IN "
                                    f"({','.join('?' * len(members))})", families.SPEND_NOTE, *members)) \
         if members else 0.0

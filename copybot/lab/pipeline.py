@@ -168,7 +168,10 @@ def register_batch(db, eids, actor="strategy-1"):
     """PROTOCOL v2 batch: register every approved instance in `eids` together. Logs `batch.registered` with the
     trials-ledger cutoff, then queues the jobs so that no member validates before every member finished its cost step.
     Instances without a valid template approval are skipped. Family instances (amendment 8) are split off: each
-    approved family registers its base instances as its own batch (see _register_family). Returns the registered ids."""
+    approved family registers its base instances as its own batch (see _register_family), a family whose registration
+    stopped part-way is completed, and an error stays inside its family (recorded once as family.waiting). Returns the
+    registered ids."""
+    from lab import families
     fams, cat = {}, []
     for e in eids:
         fid = json.loads(registry.latest(db, e)["spec_json"] or "{}").get("family")
@@ -176,12 +179,20 @@ def register_batch(db, eids, actor="strategy-1"):
             fams.setdefault(fid, []).append(e)
         else:
             cat.append(e)
+    for fid in families.unfinished(db):               # amendment 8 point 7: a batch that stopped part-way resumes
+        fams.setdefault(fid, [])
     out = []
     if cat:
         blob = templates.catalogue_blob()
         out += _batch(db, sorted(e for e in cat if templates.approval(db, _template(db, e), blob) is not None), actor)
     for fid in sorted(fams):
-        out += _register_family(db, fid, fams[fid], actor)
+        try:                                          # promotions, holdouts and diagnostics still run after an error
+            out += _register_family(db, fid, fams[fid], actor)
+        except Exception as e:
+            try:
+                families.waiting(db, fid, [f"registration error: {e!r}"[:200]], actor)
+            except Exception:
+                pass
     return out
 
 
@@ -189,7 +200,8 @@ def _batch(db, ok, actor, family=None, extra=None):
     if not ok:
         return []
     for eid in ok:
-        _register_one(db, eid, actor)
+        if not (family and lifecycle.state(db, eid) == "REGISTERED"):    # a family batch resumes where it stopped
+            _register_one(db, eid, actor)
     cutoff = db.one("SELECT COALESCE(MAX(id),0) FROM trials")[0]
     batch = "B-" + hashlib.sha256("|".join(ok).encode()).hexdigest()[:12]
     db.event("batch.registered", f"system:{actor}", None, {"batch": batch, "exp_ids": ok, "trial_cutoff_id": cutoff,
@@ -203,24 +215,28 @@ def _batch(db, ok, actor, family=None, extra=None):
 
 
 def _register_family(db, fid, eids, actor):
-    """Amendment 8 point 7: the DISCOVERED base instances of an approved family register once, as one batch, when
-    families.registration_block finds nothing in the way (approval and reserved alpha, programme stop, open families,
-    covering, graveyard re-check, embargo). Point 9: a DISCOVERED successor whose registered parent's frozen training
-    artifact meets its trigger registers as an extra batch of the family, before the cohort is fixed. An unapproved
-    family is skipped silently; any other block is recorded once as family.waiting."""
+    """Amendment 8 point 7: every approved base instance of an approved family registers once, together, as one batch:
+    only when all of them are DISCOVERED (revival comes before approve-family, point 6), every spec is the one the
+    family file and the approval bind (families.spec_problems), and families.registration_block finds nothing in the way
+    (approval and reserved alpha, programme stop, open families, covering, graveyard re-check, embargo). A batch that
+    stopped part-way is completed in a later pass (_resume_family). Point 9: a DISCOVERED successor whose registered
+    parent's frozen training artifact meets its trigger registers as an extra batch of the family, before the cohort is
+    fixed. An unapproved family is skipped silently; any other block is recorded once as family.waiting."""
     from lab import families
     p = families.approval_payload(db, fid)
     if p is None:
         return []
     fam, out, why = families.load(fid), [], []
-    base = sorted(e for e in eids if (families.instance_of(e) or (None, None))[1] in p.get("instances", [])
-                  and lifecycle.state(db, e) == "DISCOVERED")
-    if base and not families.registered(db, fid):
-        why = families.registration_block(db, fam)
-        if not why:
+    if not families.registered(db, fid):
+        base = sorted(families.exp_id(fid, i) for i in p.get("instances") or [])
+        why = families.base_waiting(db, fid, p) or families.registration_block(db, fam) or [
+            b for e in base if lifecycle.state(db, e) == "DISCOVERED" for b in families.spec_problems(db, e, fam, p)]
+        if base and not why:
             out += _batch(db, base, actor, family=fid)
+    else:
+        out += _resume_family(db, fid, actor)
     for e in sorted(families.triggered(db, fam, eids) if families.registered(db, fid) else []):
-        block = families.registration_block(db, fam, successor=e)
+        block = families.registration_block(db, fam, successor=e) or families.spec_problems(db, e, fam, p)
         if block:
             why += [f"{e}: {b}" for b in block]
         else:
@@ -228,6 +244,28 @@ def _register_family(db, fid, eids, actor):
             out += _batch(db, [e], actor, family=fid, extra={"successor_of": parent})
     if why:
         families.waiting(db, fid, why, actor)
+    return out
+
+
+def _resume_family(db, fid, actor):
+    """Amendment 8 point 7 after a pass that stopped part-way once the base batch event was written: a REGISTERED
+    successor outside every batch.registered event of its family gets its batch of one, and every batch member still in
+    REGISTERED gets the screening jobs it lacks (enqueue is idempotent). Returns the ids whose batch was written now."""
+    from lab import families
+    jobs.init(db)
+    batches = [b for b in (json.loads(r[0]) for r in db.q("SELECT payload FROM events WHERE kind='batch.registered' "
+                                                          "ORDER BY id")) if b.get("family") == fid]
+    inside, out = {e for b in batches for e in b["exp_ids"]}, []
+    for e in families.registered_members(db, fid):
+        parent = json.loads(registry.latest(db, e)["spec_json"] or "{}").get("parent")
+        if e not in inside and parent and lifecycle.state(db, e) == "REGISTERED":
+            out += _batch(db, [e], actor, family=fid, extra={"successor_of": families.exp_id(fid, parent)})
+    for b in batches:
+        for e in b["exp_ids"]:
+            if lifecycle.state(db, e) == "REGISTERED" and db.one(
+                    f"SELECT COUNT(*) FROM jobs WHERE job_id IN ({','.join('?' * len(STEPS))})",
+                    *(f"{s}|{e}" for s in STEPS))[0] < len(STEPS):
+                enqueue_pipeline(db, e, actor, batch_members=b["exp_ids"])
     return out
 
 
@@ -250,25 +288,32 @@ def _register_one(db, eid, actor):
 
 
 def _register_family_one(db, eid, v, actor):
-    """Version 2 from families.instance_spec (spec_path = the family file, code_hash = its approved blob), a screening
-    alpha row of 0 (amendment 8 point 13), then families.register_transition."""
+    """Version 2 always from families.instance_spec of the family file (spec_path = the family file, code_hash = its
+    approved blob), a screening alpha row of 0 (amendment 8 point 13) and families.register_transition, which checks it
+    field for field, in one transaction (a refusal leaves no version 2). A version 2 left by an older pass is checked
+    the same way; any other version is refused."""
     from lab import families
     fid, iid = json.loads(v["spec_json"])["family"], json.loads(v["spec_json"])["instance"]
-    if v["version"] == 1:
-        p = families.approval_payload(db, fid)
-        if p is None:
-            raise lifecycle.LifecycleError(f"family {fid} has no valid human approval")
-        rel = f"research/families/{fid}.json"
-        engine = {f: registry.blob_at(registry.last_commit(f), f) for f in ENGINE_CODE}
-        spec = families.instance_spec(families.load(fid), iid, p["blobs"], engine)
-        with db.tx():
-            db.append("experiments", exp_id=eid, version=2, created_ts=int(time.time()),
-                      mechanism_tag=v["mechanism_tag"], fingerprint=v["fingerprint"], spec_json=spec, spec_path=rel,
-                      spec_commit=registry.last_commit(rel), code_hash=p["blobs"]["family"],
-                      note=f"family {fid} instance {iid} spec (amendment 8)")
-            db.append("alpha_ledger", exp_id=eid, ts=int(time.time()), alpha=0.0, note="A8 in-sample filter")
-            db.event("exp.version_added", actor, eid, {"version": 2, "template": spec["template"], "family": fid})
-    families.register_transition(db, eid, fid, f"system:{actor}")
+    if v["version"] not in (1, 2):
+        raise lifecycle.LifecycleError(f"{eid} has spec version {v['version']}: a family instance registers only with "
+                                       f"version 2, built from the approved family file (amendment 8 point 7)")
+    if v["version"] == 2:
+        return families.register_transition(db, eid, fid, f"system:{actor}")
+    p = families.approval_payload(db, fid)
+    if p is None:
+        raise lifecycle.LifecycleError(f"family {fid} has no valid human approval")
+    rel = f"research/families/{fid}.json"
+    engine = {f: registry.blob_at(registry.last_commit(f), f) for f in ENGINE_CODE}
+    spec = families.instance_spec(families.load(fid), iid, p["blobs"], engine)
+    commit = registry.last_commit(rel)
+    with db.tx():
+        db.append("experiments", exp_id=eid, version=2, created_ts=int(time.time()),
+                  mechanism_tag=v["mechanism_tag"], fingerprint=v["fingerprint"], spec_json=spec, spec_path=rel,
+                  spec_commit=commit, code_hash=p["blobs"]["family"],
+                  note=f"family {fid} instance {iid} spec (amendment 8)")
+        db.append("alpha_ledger", exp_id=eid, ts=int(time.time()), alpha=0.0, note="A8 in-sample filter")
+        db.event("exp.version_added", actor, eid, {"version": 2, "template": spec["template"], "family": fid})
+        families.register_transition(db, eid, fid, f"system:{actor}")
 
 
 def _priority(spec):
@@ -325,8 +370,10 @@ def _spec(db, eid):
     v = registry.latest(db, eid)
     spec = json.loads(v["spec_json"])
     if spec.get("family") and v["version"] >= 2:          # amendment 8 point 18: a registered instance's code pin
-        from lab import families
-        bad = families.pin_problems(spec)
+        from lab import families                          # (before every step; fails closed, nothing is regenerated)
+        bad = ([] if v["version"] == 2 else [f"spec version {v['version']} is not the registered version 2 "
+                                             f"(amendment 8 points 7 and 18: fails closed)"]) + \
+            families.pin_problems(spec, families.cited_approval(db, eid))
         if bad:
             raise StepError(f"{eid}: {'; '.join(bad)}")
     return spec
@@ -807,6 +854,11 @@ def step_observe(db, job, worker):
     so MVRV's N stays 1."""
     eid = job["exp_id"]
     if lifecycle.state(db, eid) != "OBSERVATION":
+        from lab import families      # a family's retry after its edge was taken completes (engineering finding #3)
+        done = _forward_resume(db, eid, worker, (families.FORWARD_PASS, families.FORWARD_FAIL)) \
+            if families.is_instance(db, eid) else None
+        if done is not None:
+            return done
         raise StepError("forward test requires lifecycle OBSERVATION")
     pl = job["payload"]
     spec = _spec(db, eid)
@@ -857,7 +909,11 @@ def _forward_market(db, eid, worker, spec, months):
     """Amendment 8 points 11 and 12: the window a fixed cohort declared (months 1-12, or 1-6 for the interim look) on
     archive data, read only after it ended plus the 7-day publication lag. Coins with no perp or spot file for the first
     month are excluded before any computation, then the quality rule with min_symbols; the frozen variant runs on the
-    instrument series, the benchmark is the same perps' buy-and-hold, and the family module's attribution applies."""
+    instrument series, the benchmark is the same perps' buy-and-hold, and the family module's attribution applies.
+    A coin delisted in the window is excluded from the day after (amendment 7 point 5, which point 11 cites): its data
+    up to its last listed hour stays in, judged by the same quality rule over those hours, its position is closed at
+    that hour (the exit is charged) and the weight goes to the rest. The min_symbols count is unchanged: only coins
+    with the whole window count, so a delisting never helps the data-quality gate."""
     from lab import families
     cf = families.cohort_of(db, eid)
     if cf is None:
@@ -872,29 +928,42 @@ def _forward_market(db, eid, worker, spec, months):
     _drop(bars, funding, fd, gone, spec)
     for s in gone:
         dups.pop(s, None)
-    q, excluded, enough = _quality(bars, split, dups, spec, fd)
+    q, excluded, enough = _quality(bars, split, dups, spec, fd)      # enough: whole-window coins only, as before
+    late = families.delisted({s: bars[s] for s in excluded}, split)
+    for s, last in late.items():
+        q[s] = families.listed_quality(bars[s], split, dups[s], last)
+    kept = {s: last for s, last in late.items() if q[s]["ok"]}
+    excluded = [s for s in excluded if s not in kept]
     _drop(bars, funding, fd, excluded, spec)
+    families.listed_only(bars, funding, fd, kept)
     pos = _positions(_tpl(spec), bars, funding, v["params"], v["fit"], fd)
+    for s in kept:                                       # flat after the last listed hour: the exit is charged there
+        if pos.get(s):
+            pos[s] = list(pos[s][:-1]) + [0.0]
     m = _evaluate(bars, funding, pos, spec["costs"])
     return cf, split, {"m": m, "hi": _evaluate(bars, funding, pos, spec["costs"], catalogue.COST_HIGH_MULT),
                        "bench": _bench(bars, funding, spec, fd), "attribution": families.attribution(spec, m),
-                       "quality": q, "excluded": excluded, "unlisted": gone, "enough": enough}
+                       "quality": q, "excluded": excluded, "unlisted": gone, "enough": enough,
+                       "delisted": {s: {"last_listed_hour": t, "excluded_from": _ymd(t - t % DAY_S + DAY_S)}
+                                    for s, t in sorted(kept.items())}, "symbols": sorted(bars)}
 
 
 def step_observe_interim(db, job, worker):
     """Amendment 8 point 12: the reject-only look at months 1-6 of a family cohort's window, at the earliest 7 days
     after the sub-window ended. Net mean per day <= 0 or cash flow minus costs <= 0 is 'FAIL (forward futility)' ->
     REJECTED; otherwise the final forward test is queued (not_before = window end + 7 days). It never passes and changes
-    neither M nor alpha_i."""
+    neither M nor alpha_i. A retry after a crash or a lost lease completes what the first run decided (_interim_resume)
+    and reads nothing again."""
     from lab import families
     eid = job["exp_id"]
-    if lifecycle.state(db, eid) != "OBSERVATION":
-        raise StepError("the interim look requires lifecycle OBSERVATION")
-    spec = _spec(db, eid)
+    spec = _spec(db, eid)                                # the code pin fails closed first (amendment 8 point 18)
     if not spec.get("family"):
         raise StepError("the interim look is for amendment 8 family instances only")
-    if db.one("SELECT 1 FROM events WHERE kind='family.interim' AND exp_id=?", eid):
-        raise StepError(f"{eid}: the interim look runs once (amendment 8 point 12)")
+    done = _interim_resume(db, eid, worker)
+    if done is not None:
+        return done
+    if lifecycle.state(db, eid) != "OBSERVATION":
+        raise StepError("the interim look requires lifecycle OBSERVATION")
     cf, split, f = _forward_market(db, eid, worker, spec, families.INTERIM_MONTHS)
     m, att = f["m"], f["attribution"]
     checks = {"net_mean_daily > 0": (m.get("net_mean_daily") or 0) > 0,
@@ -903,6 +972,7 @@ def step_observe_interim(db, job, worker):
     art = save_artifact(eid, "observe_interim", {"window": split, "cohort": cf["cohort"], "metrics": _strip(m),
                                                  "attribution": att, "checks": checks, "quality": f["quality"],
                                                  "excluded": f["excluded"], "unlisted": f["unlisted"],
+                                                 "delisted": f["delisted"], "symbols": f["symbols"],
                                                  "decisional": "reject-only", "daily_net": m.get("daily_net") or []})
     if failed:
         verdict = (f"{families.FUTILITY}: failed {', '.join(failed)} on {split} (reject-only interim look, amendment 8 "
@@ -917,11 +987,60 @@ def step_observe_interim(db, job, worker):
         return {"verdict": verdict, "result_id": rid, "state": "REJECTED", "artifact": art, "tests": 1}
     db.event("family.interim", f"system:{worker}", eid, {"cohort": cf["cohort"], "window": split, "outcome": "continue",
                                                          "checks": checks, "artifact_sha256": art["sha256"]})
+    _queue_final(db, eid, cf, worker)
+    return {"verdict": INTERIM_CONTINUE, "state": "OBSERVATION", "artifact": art, "tests": 1}
+
+
+INTERIM_CONTINUE = "continue: the final forward test is queued"
+
+
+def _queue_final(db, eid, cf, worker):
+    """The deciding forward test of a selected member (not_before = window end + 7 days); enqueue is idempotent."""
+    from lab import families
     jobs.enqueue(db, f"observe|{eid}", "observe", eid, {"start": cf["start"], "months": families.FORWARD_MONTHS,
                                                         "cohort": cf["cohort"]}, priority=5, max_attempts=3,
                  timeout_s=1800, actor=f"system:{worker}", not_before=cf["final_not_before"])
-    return {"verdict": "continue: the final forward test is queued", "state": "OBSERVATION", "artifact": art,
-            "tests": 1}
+
+
+def _forward_resume(db, eid, worker, kinds):
+    """Engineering finding #3: a forward step retried after a crash or a lost lease completes what its earlier run
+    recorded instead of failing for good, and reads and records nothing again. A forward result of the member's cohort
+    (families.forward_result: recorded by the step, its cohort id, its hash-matching artifact) whose verdict starts with
+    one of `kinds` takes the OBSERVATION edge it decides, or is returned once that edge was taken. Else None."""
+    from lab import families
+    st = lifecycle.state(db, eid)
+    for r in db.q("SELECT id, verdict, metrics, evidence FROM results WHERE exp_id=? AND label='VALIDATION' ORDER BY id",
+                  eid):
+        v = r["verdict"] or ""
+        out = families.forward_result(db, eid, r) if v.startswith(kinds) else None
+        to = {"PASS": "SCREEN_PASSED", "FAIL": "REJECTED"}.get(out)
+        if to is None or st not in ("OBSERVATION", to):
+            continue
+        ev = {"result_id": r["id"]}
+        if st == "OBSERVATION":
+            lifecycle.auto_transition(db, eid, to, f"system:{worker}", v[:300], ev,
+                                      guards=(registry.make_result_guard(ev),))
+        art = next((a for a in families._obj(r["evidence"]).get("artifacts") or [] if isinstance(a, dict)), None)
+        return {"verdict": v, "result_id": r["id"], "state": to, "artifact": art, "tests": 0, "resumed": True}
+    return None
+
+
+def _interim_resume(db, eid, worker):
+    """The interim look's retry (engineering finding #3): its 'continue' event (re)queues the final test, its futility
+    result rejects (_forward_resume). The look itself runs once (amendment 8 point 12). None when it has not decided."""
+    from lab import families
+    ev = db.one("SELECT payload FROM events WHERE kind='family.interim' AND exp_id=? ORDER BY id LIMIT 1", eid)
+    if ev is None:
+        return _forward_resume(db, eid, worker, (families.FUTILITY,))
+    p, cf = json.loads(ev["payload"]), families.cohort_of(db, eid)
+    if lifecycle.state(db, eid) != "OBSERVATION" or cf is None or p.get("outcome") != "continue" or \
+            p.get("cohort") != cf["cohort"]:
+        raise StepError(f"{eid}: the interim look runs once (amendment 8 point 12)")
+    _queue_final(db, eid, cf, worker)
+    path = os.path.relpath(os.path.join(ARTIFACTS, eid, "observe_interim.json"), HERE).replace("\\", "/")
+    return {"verdict": INTERIM_CONTINUE, "state": "OBSERVATION", "artifact": {"path": path,
+                                                                             "sha256": p.get("artifact_sha256")},
+            "tests": 0, "resumed": True}
 
 
 def _family_forward(db, eid, worker, spec):
@@ -932,6 +1051,9 @@ def _family_forward(db, eid, worker, spec):
     from lab import families
     if not db.one("SELECT 1 FROM events WHERE kind='family.interim' AND exp_id=?", eid):
         raise StepError(f"{eid}: the final forward test follows the interim look (amendment 8 point 12)")
+    done = _forward_resume(db, eid, worker, (families.FORWARD_PASS, families.FORWARD_FAIL))   # a retry: no 2nd read
+    if done is not None:
+        return done
     cf, split, f = _forward_market(db, eid, worker, spec, families.FORWARD_MONTHS)
     m, hi, bench, att = f["m"], f["hi"], f["bench"], f["attribution"]
     need = 1 - cf["alpha_i"]
@@ -952,6 +1074,7 @@ def _family_forward(db, eid, worker, spec):
                                          "benchmark": _strip(bench), "psr_cons": prob, "psr": psr_detail,
                                          "attribution": att, "gates": gates, "quality": f["quality"],
                                          "excluded": f["excluded"], "unlisted": f["unlisted"],
+                                         "delisted": f["delisted"], "symbols": f["symbols"],
                                          "daily_net": m.get("daily_net") or []})
     rid = registry.record_result(db, eid, "VALIDATION", verdict, {"forward": _strip(m), "benchmark": _strip(bench),
                                                                   "psr_cons": prob, "psr": psr_detail,

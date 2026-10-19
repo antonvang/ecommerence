@@ -388,7 +388,8 @@ def strategy_pass(db):
     families (amendment 8: one batch per family); queue approved holdouts."""
     from lab import families, registry
     found = [x["exp_id"] for x in registry.status(db) if x["state"] == "DISCOVERED" and x["exp_id"].startswith("E_")]
-    registered = pipeline.register_batch(db, found, "strategy-1") if found else []     # one batch per pass (v2)
+    # one batch per pass (v2); also with nothing found, so a family batch that stopped part-way completes (amendment 8)
+    registered = pipeline.register_batch(db, found, "strategy-1")
     fams = families.pass_(db, "strategy-1")                                             # errors contained per family
     from lab import promotion
     decisions = [d for d in promotion.step(db) if d.get("applicable")]                 # amendment 4: one decision path

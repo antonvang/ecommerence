@@ -43,6 +43,8 @@ LOOKBACK_MAX_DAYS = 14
 FORWARD_MONTHS, INTERIM_MONTHS, EARLIEST_START = 12, 6, "2026-12-01"
 W0, ALPHA_F_MAX = 0.05, 0.0125             # programme wealth and the per-family reservation (point 13)
 RESERVE_NOTE, SPEND_NOTE, RELEASE_NOTE = "A8 reserve", "A8 spend", "A8 release"   # alpha_ledger notes (point 13)
+A8_NOTES = (RESERVE_NOTE, SPEND_NOTE, RELEASE_NOTE)
+TAG_MAX = 2                                # point 3: at most 2 families per canonical tag in the whole programme
 POWER_SHARPE, POWER_MIN = 3.0, 0.5         # point 14: power >= 0.5 at true Sharpe 3.0 with alpha_F / K_MAX
 DECISION_TIME = "01:00"
 ALLOWED_CLASSES = ("carry", "structural", "subsidy", "flow", "liquidity_provision")
@@ -235,10 +237,12 @@ def cache_status(fam):
 
 
 def alpha_reserved(db):
-    """Amendment 8 wealth already reserved or spent: the rows of family:<fid> plus the alpha_i rows of the instances a
-    cohort spent it on (a spend moves alpha_F from family:<fid> to its M instances, so the sum is unchanged)."""
-    return db.one("SELECT COALESCE(SUM(alpha), 0) FROM alpha_ledger WHERE exp_id LIKE 'family:%' OR note=?",
-                  SPEND_NOTE)[0]
+    """Amendment 8 wealth already reserved or spent: the A8 rows (reserve, spend, release) of family:<fid> plus the
+    alpha_i spend rows of the instances a cohort spent it on (a spend moves alpha_F from family:<fid> to its M
+    instances, so the sum is unchanged). No other row counts, whatever its id or sign: a row another path wrote under a
+    family-like id never frees W0 (finding protocol-statistics #3)."""
+    return db.one("SELECT COALESCE(SUM(alpha), 0) FROM alpha_ledger WHERE (substr(exp_id, 1, 7) = 'family:' AND note "
+                  "IN (?, ?, ?)) OR (note = ? AND exp_id GLOB 'E_*__*_a8')", *A8_NOTES, SPEND_NOTE)[0]
 
 
 def blobs(fid):
@@ -271,6 +275,7 @@ def check(db, path):
         problems.append(f"mechanism module lab/families/{fid}.py is missing")
     hits, unacked = graveyard_hits(db, fam, vocab) if db is not None else ([], [])
     problems += [f"graveyard: {e} has the same or a related tag and is not acknowledged" for e in unacked]
+    problems += tag_problems(db, fam) if db is not None else []
     alpha_f = (fam.get("alpha") or {}).get("family") or 0
     used = alpha_reserved(db) if db is not None else 0.0
     if used + alpha_f > W0 + 1e-12:
@@ -307,10 +312,10 @@ def interactive_human():
     (Policy, not proof: a faked terminal is possible; the rule and the logged actor are what bind.)"""
     import sys
     if os.environ.get("CLAUDECODE") or any(k.startswith("CLAUDE_CODE_") for k in os.environ):
-        raise FamilyError("refused: an assistant session may not approve or confirm a family (amendment 8 point 5)")
-    if not (sys.stdin.isatty() and sys.stdout.isatty()):
-        raise FamilyError("refused: family approvals and confirmations for family instances must be typed in an "
-                          "interactive terminal")
+        raise FamilyError("an assistant session may not approve or confirm a family (amendment 8 point 5)")
+    if not (sys.stdin.isatty() and sys.stdout.isatty()):           # the CLI adds the 'refused: ' prefix once
+        raise FamilyError("family approvals and confirmations for family instances must be typed in an interactive "
+                          "terminal")
 
 
 GUARD = interactive_human
@@ -326,11 +331,38 @@ def bound_blobs(fid):
 
 
 def registered(db, fid):
-    """True once an instance of the family was registered. Discovered or suppressed candidates do not count: discovery
-    and revival come before approve-family (point 6)."""
+    """True once the family's base batch is registered: its batch.registered event (point 7). A batch that stopped
+    part-way (some members REGISTERED, no event) is not registered yet: register_batch completes it in a later pass."""
+    return fid in _base_batches(db)
+
+
+def _base_batches(db):
+    """The families whose base batch.registered event exists (a successor's batch carries successor_of)."""
+    return {p.get("family") for p in (json.loads(r[0]) for r in db.q(
+        "SELECT payload FROM events WHERE kind='batch.registered'")) if p.get("family") and not p.get("successor_of")}
+
+
+def registration_started(db, fid):
+    """True once any instance of the family was registered, a batch that stopped part-way included: from then on the
+    family can be neither approved again nor revoked (point 5). Discovered or suppressed candidates do not count."""
     prefix = f"E_{fid}__"
     return db.one("SELECT 1 FROM transitions WHERE to_state='REGISTERED' AND substr(exp_id, 1, ?) = ? LIMIT 1",
                   len(prefix), prefix) is not None
+
+
+def not_discovered(db, fam):
+    """The family file's base instances that are not DISCOVERED, as 'id (state)' ('missing' if never discovered)."""
+    from lab.lifecycle import state
+    fid, out = fam.get("family_id"), []
+    for i in fam.get("instances") or []:
+        e = exp_id(fid, i.get("id"))
+        st = state(db, e)
+        if st != "DISCOVERED":
+            out.append(f"{e} ({st or 'missing'})")
+    return out
+
+
+REVIVE_FIRST = "revive before approve-family"
 
 
 def _blocking_problems(db, fam):
@@ -344,8 +376,20 @@ def _blocking_problems(db, fam):
     if alpha_reserved(db) + alpha_f > W0 + 1e-12:
         bad.append(f"alpha budget: {alpha_reserved(db):.4f} of {W0} reserved; this family needs {alpha_f}")
     bad += programme_stop(db)                              # point 15: no new approvals once the programme stopped
-    if registered(db, fid):
+    bad += tag_problems(db, fam)                           # point 3: <= 2 families per tag, <= 1 open at a time
+    if registration_started(db, fid):
         bad.append(f"{fid} is already registered: approvals and revocations are only possible before registration")
+    held = reserved(db, fid)
+    if held > 1e-12 and last_approval_kind(db, fid) != "family.revoked":     # point 13: alpha_F once per family
+        bad.append(f"{fid} already holds its alpha_F reservation ({held:.4f}) from an earlier approval: revoke-family "
+                   f"first (it releases the reservation), then approve again (amendment 8 point 13)")
+    gone = not_discovered(db, fam)
+    if gone:                                               # points 6 and 7: every base instance, revived first
+        bad.append(f"{REVIVE_FIRST}: base instance(s) not DISCOVERED: {', '.join(gone)} (amendment 8 point 6: "
+                   f"revival is a separate step before approve-family; point 7: the base instances register once, "
+                   f"together, as one batch)")
+    elif not bad:                                          # written by the discovery agent from this file (point 6)
+        bad += [b for i in fam.get("instances") or [] for b in spec_problems(db, exp_id(fid, i.get("id")), fam)]
     return bad
 
 
@@ -406,6 +450,9 @@ def confirm(db, code, blob_prefix, actor, now=None):
     if bad:
         raise FamilyError("; ".join(bad))
     with db.tx():
+        if reserved(db, fid) > 1e-12:                    # two codes confirmed at once: alpha_F is reserved once
+            raise FamilyError(f"{fid} already holds its alpha_F reservation: revoke-family first, then approve again "
+                              "(amendment 8 point 13)")
         eid = db.event("family.approved", actor, None, {"family": fid, "blobs": b, "thresholds": ev["thresholds"],
                                                         "alpha_family": ev["alpha_family"],
                                                         "instances": ev["instances"], "approval_id": a["id"],
@@ -422,15 +469,24 @@ def revoke(db, fid, actor, reason, now=None):
         raise FamilyError("only a human can revoke a family")
     if not reason or len(reason.strip()) < 10:
         raise FamilyError("a reason of at least 10 characters is required")
-    if registered(db, fid):
+    if registration_started(db, fid):
         raise FamilyError(f"{fid} is already registered: it can no longer be revoked")
-    reserved = db.one("SELECT COALESCE(SUM(alpha), 0) FROM alpha_ledger WHERE exp_id=?", f"family:{fid}")[0]
+    held = reserved(db, fid)
     with db.tx():
         db.event("family.revoked", actor, None, {"family": fid, "reason": reason.strip()})
-        if reserved > 0:
-            db.append("alpha_ledger", exp_id=f"family:{fid}", ts=int(now or time.time()), alpha=-reserved,
+        if held > 0:
+            db.append("alpha_ledger", exp_id=f"family:{fid}", ts=int(now or time.time()), alpha=-held,
                       note="A8 release")
-    return reserved
+    return held
+
+
+def last_approval_kind(db, fid):
+    """'family.approved' or 'family.revoked', whichever the family's latest approval event is, or None."""
+    for r in db.q("SELECT kind, payload FROM events WHERE kind IN ('family.approved', 'family.revoked') "
+                  "ORDER BY id DESC"):
+        if json.loads(r["payload"]).get("family") == fid:
+            return r["kind"]
+    return None
 
 
 def approval(db, fid):
@@ -558,7 +614,7 @@ def discover_all(db, actor="discovery-catalogue"):
                 text = inst.get("why") if parent else inst.get("rule")
                 st, dup = registry.discover(
                     db, eid, f"{fam['title']} - {inst['id']}: {text}", fam["mechanism"]["tag"], instrument(fam),
-                    inst["horizon"], inst["execution"], rel, actor, exclude=own,
+                    inst["horizon"], inst["execution"], rel, actor, exclude=own, family_instance=True,
                     extra={"template": f"{fid}__{inst['id']}", "family": fid, "instance": inst["id"],
                            "parent": parent, "function": inst["function"], "title": f"{fam['title']} - {inst['id']}",
                            "discovered_by": actor, "reason": text, "amendment": 8,
@@ -673,13 +729,129 @@ def instance_spec(fam, iid, blobs, engine_blobs):
 
 
 def reserved(db, fid):
-    return db.one("SELECT COALESCE(SUM(alpha), 0) FROM alpha_ledger WHERE exp_id=?", f"family:{fid}")[0]
+    """alpha_F the family still holds: the A8 rows of family:<fid> only (reserve, spend, release; point 13)."""
+    return db.one("SELECT COALESCE(SUM(alpha), 0) FROM alpha_ledger WHERE exp_id=? AND note IN (?, ?, ?)",
+                  f"family:{fid}", *A8_NOTES)[0]
+
+
+BOUND = ("family", "module", "adapter", "vocabulary")      # the files an approval binds (point 5)
+
+
+def reserved_id(eid):
+    """Ids only the discovery agent may create, from a committed family file (families.discover_all): a family
+    instance id E_<fid>__<inst>_a8 (anything containing one, in any case, or ending in _a8 after trimming), and any id
+    with ':' (family:<fid> names a family's alpha reservation, point 13)."""
+    e = (eid or "").strip()
+    return ":" in e or e.lower().endswith("_a8") or bool(re.search(INSTANCE_RE.pattern, e, re.IGNORECASE))
+
+
+def spec_problems(db, eid, fam, p=None, need_v2=False):
+    """Amendment 8 points 6 and 7: what registers is exactly what the family file and its approval bind. Version 1 was
+    written by the discovery agent from the family file (family and instance set, the agent as the actor of the first
+    transition, the file's mechanism tag and fingerprint). Version 2, when it exists (and `need_v2`), carries the same
+    tag and fingerprint, the family file as spec_path, the approved family blob as code_hash, and a spec equal field for
+    field to instance_spec(the family file, the approval's blobs, the engine blobs recorded in it); no other version.
+    Returns problems (empty = it may register)."""
+    from lab import pipeline, registry
+    from lab.db import canonical
+    fid, x = fam.get("family_id"), instance_of(eid)
+    inst = next((i for i, _ in instances(fam) if x and x[0] == fid and i.get("id") == x[1]), None)
+    if inst is None:
+        return [f"{eid} is not an instance of the family file {fid}"]
+    tag = fam["mechanism"]["tag"]
+    fp = registry.fingerprint(tag, instrument(fam), inst["horizon"], inst["execution"])
+    rows = db.q("SELECT version, mechanism_tag, fingerprint, spec_json, spec_path, code_hash FROM experiments "
+                "WHERE exp_id=? ORDER BY version", eid)
+    first = db.one("SELECT from_state, to_state, actor FROM transitions WHERE exp_id=? ORDER BY id LIMIT 1", eid)
+    v1 = json.loads(rows[0]["spec_json"] or "{}") if rows else {}
+    by = str(v1.get("discovered_by") or "")
+    bad = []
+    if not rows or rows[0]["version"] != 1 or (v1.get("family"), v1.get("instance")) != (fid, inst["id"]) or \
+            not by.startswith("discovery-") or first is None or \
+            (first["from_state"], first["to_state"], first["actor"]) != (None, "DISCOVERED", by):
+        bad.append(f"{eid}: version 1 was not written by the discovery agent from the family file (amendment 8 "
+                   f"point 6)")
+    if any((r["mechanism_tag"], r["fingerprint"]) != (tag, fp) for r in rows):
+        bad.append(f"{eid}: a spec version does not carry the family file's mechanism tag {tag} and fingerprint")
+    if len(rows) > 2:
+        bad.append(f"{eid}: spec version {rows[-1]['version']} exists; a family instance registers only with version "
+                   f"2, built from the approved family file (amendment 8 point 7)")
+    elif len(rows) == 2 and p is not None:
+        v, spec = rows[1], json.loads(rows[1]["spec_json"] or "{}")
+        engine = {f: (spec.get("code_blobs") or {}).get(f) for f in pipeline.ENGINE_CODE}
+        want = json.loads(canonical(instance_spec(fam, inst["id"], p["blobs"], engine)))
+        if spec != want or not all(engine.values()) or v["spec_path"] != f"research/families/{fid}.json" or \
+                v["code_hash"] != p["blobs"]["family"]:
+            bad.append(f"{eid}: spec version 2 is not the one built from the approved family file and blobs "
+                       f"(amendment 8 point 7)")
+    elif need_v2 and len(rows) < 2:
+        bad.append(f"{eid}: registration needs the spec version 2 built from the approved family file")
+    return bad
+
+
+def cited_approval(db, eid):
+    """The family.approved payload (plus event_id) that eid's registration cited (register_transition's evidence), or
+    None."""
+    r = db.one("SELECT evidence FROM transitions WHERE exp_id=? AND to_state='REGISTERED' ORDER BY id LIMIT 1", eid)
+    aid = json.loads((r and r["evidence"]) or "{}").get("family_approval_event")
+    ev = db.one("SELECT payload FROM events WHERE id=? AND kind='family.approved'", aid) if aid is not None else None
+    return {**json.loads(ev["payload"]), "event_id": aid} if ev else None
+
+
+def base_waiting(db, fid, p):
+    """Points 6 and 7: the approved base instances register only together, as one batch, when every one of them is
+    DISCOVERED (or REGISTERED under this approval in a batch that stopped part-way). Returns the waiting reason naming
+    the others (empty = the batch may register)."""
+    from lab.lifecycle import state
+    gone = []
+    for iid in p.get("instances") or []:
+        e = exp_id(fid, iid)
+        st = state(db, e)
+        if st == "DISCOVERED" or (st == "REGISTERED" and
+                                  (cited_approval(db, e) or {}).get("event_id") == p["event_id"]):
+            continue
+        gone.append(f"{e} ({st or 'missing'})")
+    if not gone:
+        return []
+    return [f"base instance(s) not DISCOVERED: {', '.join(gone)}. The base instances register only together, as one "
+            f"batch (amendment 8 point 7), and revival comes before approve-family (point 6)"
+            + ("" if registration_started(db, fid) else ": revoke-family, revive them in a terminal (python3 -m lab "
+                                                        "approve / confirm), then approve-family again")]
+
+
+PARTIAL_VOID = ("a registration batch stopped part-way and the family approval is no longer valid (a bound file or "
+                "gate value changed): restore the bound files exactly as approved and the batch completes (amendment 8 "
+                "points 5 and 7)")
+
+
+def unfinished(db):
+    """Families whose registration stopped part-way (point 7): a member in REGISTERED without the family's base
+    batch.registered event, or without all of its screening jobs. register_batch completes them in a later pass."""
+    import sqlite3
+    from lab.lifecycle import state
+    from lab.pipeline import STEPS
+    done, out = _base_batches(db), set()
+    for r in db.q("SELECT DISTINCT exp_id FROM transitions WHERE to_state='REGISTERED'"):
+        x = instance_of(r[0])
+        if not x or x[0] in out or state(db, r[0]) != "REGISTERED":
+            continue
+        try:
+            n = db.one(f"SELECT COUNT(*) FROM jobs WHERE job_id IN ({','.join('?' * len(STEPS))})",
+                       *(f"{s}|{r[0]}" for s in STEPS))[0]
+        except sqlite3.OperationalError:          # no job table yet
+            n = 0
+        if n < len(STEPS) or x[0] not in done:
+            out.add(x[0])
+    return sorted(out)
 
 
 def register_transition(db, eid, fid, actor):
     """DISCOVERED -> REGISTERED for an instance of an approved family (mirrors templates.register_transition; the only
-    automatic registration path for families): a valid family approval, its reserved alpha and a complete version 2
-    spec bound to the approved family file and module."""
+    registration path for families, amendment 8 point 7): a valid family approval, its reserved alpha, an approved
+    instance, and the spec version 2 built from the approved family file, equal field for field (spec_problems). Inside
+    a transaction of the caller (pipeline._register_family_one writes version 2 in the same one) it writes into it, so
+    a refusal leaves no version 2 behind."""
+    import contextlib
     import time
     from lab import lifecycle, registry
     if lifecycle.state(db, eid) != "DISCOVERED":
@@ -691,13 +863,13 @@ def register_transition(db, eid, fid, actor):
         raise lifecycle.LifecycleError(f"family {fid} has no reserved alpha")
     v = registry.latest(db, eid)
     spec = json.loads(v["spec_json"] or "{}")
-    if spec.get("family") != fid or v["version"] < 2 or any(not spec.get(k) for k in registry.REQUIRED_SPEC) or \
-            not spec.get("seed") or v["code_hash"] != p["blobs"]["family"] or \
-            (spec.get("code_blobs") or {}).get("module") != p["blobs"]["module"] or \
+    bad = spec_problems(db, eid, load(fid), p, need_v2=True)
+    if bad or spec.get("family") != fid or v["version"] != 2 or \
+            any(not spec.get(k) for k in registry.REQUIRED_SPEC) or not spec.get("seed") or \
             (spec.get("parent") or spec.get("instance")) not in p.get("instances", []):
-        raise lifecycle.LifecycleError("registration requires a complete family spec version bound to the approved "
-                                       "files and instances")
-    with db.tx():
+        raise lifecycle.LifecycleError("registration requires the family spec version 2 built from the approved file, "
+                                       "blobs and instances" + (f": {'; '.join(bad)}" if bad else ""))
+    with (contextlib.nullcontext() if db.con.in_transaction else db.tx()):
         db.append("transitions", exp_id=eid, ts=int(time.time()), from_state="DISCOVERED", to_state="REGISTERED",
                   actor=actor, reason=f"instance of approved family {fid} (amendment 8)",
                   evidence={"family_approval_event": p["event_id"]})
@@ -758,9 +930,13 @@ def _urlopen(url):
 def guarded_get(split, fetch=None):
     """The `get` given to data._fetch for every family file. Before each request: a remembered 404 is answered without
     the network, only data.binance.vision is used, and the embargo is checked (Embargoed otherwise). At most 2
-    downloads run at a time (amendment 9). `fetch(url)` is the network read (tests inject it)."""
+    downloads run at a time (amendment 9). `fetch(url)` is the network read (tests inject it). A forward window's 404 is
+    never remembered nor answered from memory: a monthly file published late is fetched by the next run (finding
+    protocol-statistics #8)."""
+    fwd = split.startswith("fwd")
+
     def get(url):
-        if url in absent():
+        if not fwd and url in absent():
             raise urllib.error.HTTPError(url, 404, "not in the archive (remembered 404)", None, None)
         src = source_of(url)
         if src is None:
@@ -771,7 +947,7 @@ def guarded_get(split, fetch=None):
             try:
                 return (fetch or _urlopen)(url)
             except urllib.error.HTTPError as e:
-                if e.code == 404:
+                if e.code == 404 and not fwd:
                     _mark_absent(url)
                 raise
     get.guarded = True
@@ -802,9 +978,10 @@ def ready(syms, splits, now=None):
 
 # ---------- registration rules (point 7) ----------
 def forward_passes(db):
-    """Family instances with a forward PASS (point 15)."""
-    passes = {r["exp_id"] for r in db.q("SELECT exp_id, verdict FROM results WHERE label='VALIDATION'")
-              if instance_of(r["exp_id"]) and (r["verdict"] or "").startswith(FORWARD_PASS)}
+    """Family instances with a forward PASS (point 15): only a forward result of its cohort counts (forward_result: the
+    step recorded it, with the cohort id and its hash-matching observe.json), never a row typed or forged past it."""
+    passes = {e for e in {r[0] for r in db.q("SELECT DISTINCT exp_id FROM results WHERE label='VALIDATION'")}
+              if instance_of(e) and "PASS" in forward_results(db, e)}
     return passes | {f"family:{p.get('family')}" for p in _closed(db) if p.get("outcome") == "PASS"}
 
 
@@ -833,6 +1010,48 @@ def open_families(db):
     return reg - {p.get("family") for p in _closed(db)}
 
 
+def family_tags(db):
+    """{fid: canonical tags} of every family in the programme (point 3): its registration started, or its latest
+    approval event is an approval (valid or void, not revoked). The tags are those its instances carry in the registry
+    (discovered from its family file and checked at registration, spec_problems), else its family file's tag."""
+    fids = {x[0] for x in (instance_of(r[0]) for r in db.q(
+        "SELECT DISTINCT exp_id FROM transitions WHERE to_state='REGISTERED'")) if x}
+    last = {}
+    for r in db.q("SELECT kind, payload FROM events WHERE kind IN ('family.approved', 'family.revoked') ORDER BY id"):
+        last[json.loads(r["payload"]).get("family")] = r["kind"]
+    fids |= {f for f, k in last.items() if f and k == "family.approved"}
+    out = {}
+    for f in sorted(fids):
+        prefix = f"E_{f}__"
+        tags = {r[0] for r in db.q("SELECT DISTINCT mechanism_tag FROM experiments WHERE substr(exp_id, 1, ?) = ?",
+                                   len(prefix), prefix) if r[0]}
+        if not tags:
+            try:
+                tags = {load(f)["mechanism"]["tag"]}
+            except Exception:                        # no family file (an id from another lab): no tag known
+                tags = set()
+        out[f] = tags
+    return out
+
+
+def tag_problems(db, fam, registration=False):
+    """Point 3: at most 2 families per canonical tag in the whole programme (family_tags), and at most 1 open family
+    per tag at a time. At approval every other family on the tag that is not closed is open (approved and waiting, or
+    registered); at registration only the registered ones without a family.closed event are (open_families), so two
+    approvals from before this rule never block each other. Returns problems (empty = allowed)."""
+    fid, tag = fam.get("family_id"), (fam.get("mechanism") or {}).get("tag")
+    others = sorted(f for f, tags in family_tags(db).items() if f != fid and tag in tags)
+    bad = []
+    if len(others) >= TAG_MAX:
+        bad.append(f"at most {TAG_MAX} families per canonical tag in the whole programme: {tag} already has "
+                   f"{', '.join(others)} (amendment 8 point 3)")
+    live = sorted(set(others) & open_families(db)) if registration else [f for f in others if closed(db, f) is None]
+    if live:
+        bad.append(f"at most 1 open family per tag at a time: {', '.join(live)} on {tag} is not closed (amendment 8 "
+                   f"point 3)")
+    return bad
+
+
 def graveyard_recheck(db, fam, vocab=None):
     """Point 6 at registration: graveyard hits (same tag and execution or fingerprint, and related tags) that the
     family file does not acknowledge. The family's own members never count."""
@@ -849,9 +1068,10 @@ def graveyard_recheck(db, fam, vocab=None):
 def registration_block(db, fam, now=None, successor=None):
     """Why the family's base instances (or, with `successor`, that successor) may not register now (empty = they may),
     point 7 with amendment 9 point 1: a valid approval with its reserved alpha, the base registered only once, no
-    programme stop, at most 3 open families, no open experiment outside the family on the same tag and execution (a
-    DISCOVERED candidate covers nothing yet), the graveyard re-check, and no screening file that is missing and may not
-    be downloaded now. A successor (point 9) registers as an extra batch of its open family: after the base batch,
+    programme stop, at most 3 open families, the per-tag limits of point 3 (tag_problems), no open experiment outside
+    the family on the same tag and execution (a DISCOVERED candidate covers nothing yet), the graveyard re-check, and
+    no screening file that is missing and may not be downloaded now. A successor (point 9) registers as an extra batch
+    of its open family: after the base batch,
     before the cohort is fixed, and only when its parent's frozen training artifact meets the trigger."""
     from lab import lifecycle, registry
     fid = fam["family_id"]
@@ -879,6 +1099,8 @@ def registration_block(db, fam, now=None, successor=None):
     others = open_families(db) - {fid}
     if successor is None and len(others) >= OPEN_MAX:
         bad.append(f"{OPEN_MAX} families are already open: {', '.join(sorted(others))}")
+    if successor is None:
+        bad += tag_problems(db, fam, registration=True)
     own, tag, cover = set(members(db, fid)), fam["mechanism"]["tag"], set()
     for inst, _ in instances(fam):
         fp = registry.fingerprint(tag, instrument(fam), inst["horizon"], inst["execution"])
@@ -912,24 +1134,26 @@ def waiting(db, fid, reasons, actor, topic=None):
 
 def pass_(db, actor="strategy-1", now=None):
     """Strategy-1's family pass (point 19: only in a fleet a human started; no timers). An approved family whose base
-    instances are not DISCOVERED waits (family.waiting); registration itself is pipeline.register_batch (base batch and
-    triggered successors). A registered family goes through cohort_pass: the cohort, its alpha, the forward jobs and the
-    family close. Errors are contained per family. Returns {family: status}."""
-    from lab.lifecycle import state
+    instances are not all DISCOVERED waits (family.waiting, the same reason register_batch writes: revival comes before
+    approve-family); registration itself is pipeline.register_batch (the base batch, completed in a later pass if it
+    stopped part-way, and triggered successors). A registered family goes through cohort_pass: the cohort, its alpha,
+    the forward jobs and the family close. Errors are contained per family. Returns {family: status}."""
     out = {}
     for fid in family_ids():
         try:
             if registered(db, fid):
                 out[fid] = cohort_pass(db, fid, actor, now)
-            elif approval(db, fid) is None:
-                out[fid] = "not approved"
-            elif any(state(db, exp_id(fid, i["id"])) == "DISCOVERED" for i in load(fid)["instances"]):
-                out[fid] = "approved: registers through register_batch when nothing blocks it"
-            else:
-                why = ["no base instance is DISCOVERED: the discovery agent proposes them, and a SUPPRESSED instance "
-                       "is revived only by a human in a terminal (python3 -m lab approve / confirm)"]
+                continue
+            p, started = approval_payload(db, fid), registration_started(db, fid)
+            why = ([PARTIAL_VOID] if started else []) if p is None else base_waiting(db, fid, p)
+            if why:
                 waiting(db, fid, why, actor)
                 out[fid] = "waiting: " + why[0]
+            elif p is None:
+                out[fid] = "not approved"
+            else:
+                out[fid] = ("registering: the base batch stopped part-way; register_batch completes it" if started else
+                            "approved: registers through register_batch when nothing blocks it")
         except Exception as e:
             out[fid] = f"error: {e!r}"[:200]
     return out
@@ -1111,18 +1335,38 @@ def registered_approval(db, fid):
     return None
 
 
-def pin_problems(spec):
-    """Point 18: the family file and the module must still be the blobs written into the registered spec; otherwise
-    every later step fails closed (also in 2027). A correction needs a dated amendment."""
-    want, b = spec.get("code_blobs") or {}, blobs(spec["family"])
-    return [f"{b[k]['path']} is not the blob registered in the spec (amendment 8 point 18: fails closed)"
-            for k in ("family", "module") if not want.get(k) or b[k]["working"] != want[k]]
+def pin_problems(spec, approved):
+    """Point 18 (design test 26), before every step of a registered instance: the spec's code_blobs of the four bound
+    files are the blobs of the family approval its registration cited (`approved`, see cited_approval), every engine
+    file has a recorded blob, and the working family file and module are still the registered blobs. Otherwise every
+    later step fails closed (also in 2027); nothing is regenerated, and a correction needs a dated amendment. Point 18
+    pins the family file and the module after registration; the engine blobs are recorded, not pinned."""
+    from lab import pipeline
+    want = spec.get("code_blobs") or {}
+    if not approved or approved.get("family") != spec.get("family"):
+        return ["the registration cites no approval of this family (amendment 8 point 18: fails closed)"]
+    bad = [f"spec code_blobs.{k} is not the blob the family approval bound (amendment 8 point 18: fails closed)"
+           for k in BOUND if not want.get(k) or want[k] != (approved.get("blobs") or {}).get(k)]
+    bad += [f"spec code_blobs has no recorded blob of {f} (amendment 8 point 18: fails closed)"
+            for f in pipeline.ENGINE_CODE if not want.get(f)]
+    b = blobs(spec["family"])
+    return bad + [f"{b[k]['path']} is not the blob registered in the spec (amendment 8 point 18: fails closed)"
+                  for k in ("family", "module") if not want.get(k) or b[k]["working"] != want[k]]
 
 
 def family_pin(db, fid):
+    """pin_problems over every registered member of the family (each against the approval its registration cited, and
+    on its registered version 2)."""
     from lab import registry
-    regs = registered_members(db, fid)
-    return pin_problems(json.loads(registry.latest(db, regs[0])["spec_json"])) if regs else []
+    out = []
+    for e in registered_members(db, fid):
+        v = registry.latest(db, e)
+        for b in ([] if v["version"] == 2 else [f"{e}: spec version {v['version']} is not the registered version 2 "
+                                                f"(amendment 8 points 7 and 18: fails closed)"]) + \
+                pin_problems(json.loads(v["spec_json"] or "{}"), cited_approval(db, e)):
+            if b not in out:
+                out.append(b)
+    return out
 
 
 def _result(db, eid, label=None):
@@ -1150,14 +1394,72 @@ def untestable(db, eid):
 
 
 def forward_outcome(db, eid):
-    """'PASS' or 'FAIL' once the forward test (or its interim look) decided eid, else None."""
+    """'PASS' or 'FAIL' once the forward test (or its interim look) decided eid, else None. Only a forward result of its
+    cohort counts (forward_result), never a row typed or forged past the step."""
     from lab.lifecycle import FINAL, state
-    vs = [r[0] or "" for r in db.q("SELECT verdict FROM results WHERE exp_id=? AND label='VALIDATION'", eid)]
-    if any(v.startswith(FORWARD_PASS) for v in vs):                  # a later holdout result never changes it
+    got = forward_results(db, eid)
+    if "PASS" in got:                                                 # a later holdout result never changes it
         return "PASS"
-    if any(v.startswith((FORWARD_FAIL, FUTILITY)) for v in vs) or state(db, eid) in FINAL:
+    if "FAIL" in got or state(db, eid) in FINAL:
         return "FAIL"
     return None
+
+
+FORWARD_ARTIFACT = {FORWARD_PASS: "observe", FORWARD_FAIL: "observe", FUTILITY: "observe_interim"}
+
+
+def _obj(text):
+    """A results row's metrics or evidence as a dict ({} for anything else)."""
+    try:
+        v = json.loads(text or "{}")
+    except ValueError:
+        return {}
+    return v if isinstance(v, dict) else {}
+
+
+def recorded_by(db, eid, rid):
+    """The actor of the result.recorded event of result rid of eid, or None."""
+    for r in db.q("SELECT actor, payload FROM events WHERE kind='result.recorded' AND exp_id=? ORDER BY id DESC", eid):
+        if json.loads(r["payload"] or "{}").get("result_id") == rid:
+            return r["actor"]
+    return None
+
+
+def cites(eid, evidence, name):
+    """True if `evidence` cites artifacts/<eid>/<name>.json (its recorded path) with the SHA-256 the file has now."""
+    import hashlib
+    from lab import pipeline
+    path = os.path.join(pipeline.ARTIFACTS, eid, f"{name}.json")
+    try:
+        rel = os.path.relpath(path, HERE).replace("\\", "/")
+        with open(path, "rb") as f:
+            sha = hashlib.sha256(f.read()).hexdigest()
+    except (OSError, ValueError):
+        return False
+    arts = evidence.get("artifacts")
+    return isinstance(arts, list) and any(isinstance(a, dict) and a.get("path") == rel and a.get("sha256") == sha
+                                          for a in arts)
+
+
+def forward_result(db, eid, r):
+    """Points 11 and 12: 'PASS', 'FAIL' or None for result row r (id, verdict, metrics, evidence) of eid. A forward
+    decision counts only if its step recorded it (a system actor; `lab result` refuses family instances), its metrics
+    carry the id of the fixed cohort that selected eid, and it cites its hash-matching artifact: observe.json for the
+    final test, observe_interim.json for the futility look (finding protocol-statistics #2)."""
+    v = r["verdict"] or ""
+    kind = next((k for k in (FORWARD_PASS, FORWARD_FAIL, FUTILITY) if v.startswith(k)), None)
+    cf = cohort_of(db, eid) if kind else None
+    if cf is None or not (recorded_by(db, eid, r["id"]) or "").startswith("system:") or \
+            _obj(r["metrics"]).get("cohort") != cf.get("cohort") or \
+            not cites(eid, _obj(r["evidence"]), FORWARD_ARTIFACT[kind]):
+        return None
+    return "PASS" if kind == FORWARD_PASS else "FAIL"
+
+
+def forward_results(db, eid):
+    """The forward decisions on eid that count (forward_result), as a set of 'PASS' / 'FAIL'."""
+    return {forward_result(db, eid, r) for r in db.q("SELECT id, verdict, metrics, evidence FROM results WHERE "
+                                                     "exp_id=? AND label='VALIDATION' ORDER BY id", eid)} - {None}
 
 
 FAMILY_KINDS = ("data", "backtest", "cost", "adversarial", "validate", "report", "observe_interim", "observe")
@@ -1194,8 +1496,10 @@ def fix_cohort(db, fid, fam, regs, actor, now):
     """Point 10 and 13, written once in one transaction: cohort.fixed with id, members, M <= 3 (the survivors with the
     highest validation net Sharpe), alpha_F, alpha_i = alpha_F / M and the windows fwdYYYYMMm12 / fwdYYYYMMm06, starting
     00:00 UTC on the 1st of the month after the close and never before 2026-12-01. M >= 1 spends alpha_F (moved from
-    family:<fid> to the M instances, alpha_i each); M = 0 releases it and closes the family FUTILE_IN_SAMPLE (UNTESTABLE
-    when every member failed for data). Returns the payload, or None when the reservation is missing (fails closed)."""
+    family:<fid> to the M instances, alpha_i each) and releases whatever the family holds above alpha_F (a second
+    reservation from before the point 13 fix: alpha_excess_released); M = 0 releases it and closes the family
+    FUTILE_IN_SAMPLE (UNTESTABLE when every member failed for data). Returns the payload, or None when the reservation
+    is missing (fails closed)."""
     from lab.engine import data
     from lab.lifecycle import state
     ap = registered_approval(db, fid)
@@ -1228,6 +1532,9 @@ def fix_cohort(db, fid, fam, regs, actor, now):
         p.update(cohort=f"{fid}:M0", window=None, sub_window=None, outcome=outcome)
     sys_actor = actor if ":" in actor else f"system:{actor}"
     with db.tx():
+        excess = reserved(db, fid) - alpha_f if m else 0.0
+        if excess > 1e-12:                   # safety net: a second reservation (before the point 13 fix) is released
+            p["alpha_excess_released"] = excess
         db.event("cohort.fixed", sys_actor, None, p)
         if m:
             db.append("alpha_ledger", exp_id=f"family:{fid}", ts=int(now), alpha=-alpha_f, note=SPEND_NOTE)
@@ -1236,6 +1543,8 @@ def fix_cohort(db, fid, fam, regs, actor, now):
                 db.event("observation.started", sys_actor, e, {"window": p["window"], "start": p["start"],
                                                                "end": p["end"], "cohort": p["cohort"],
                                                                "sub_window": p["sub_window"], "family": fid})
+            if excess > 1e-12:
+                db.append("alpha_ledger", exp_id=f"family:{fid}", ts=int(now), alpha=-excess, note=RELEASE_NOTE)
         else:
             released = reserved(db, fid)
             db.append("alpha_ledger", exp_id=f"family:{fid}", ts=int(now), alpha=-released, note=RELEASE_NOTE)
@@ -1340,6 +1649,49 @@ def unlisted(symbols, split):
     return out
 
 
+COVERAGE_MIN = 0.99                            # data.quality's coverage rule
+
+
+def delisted(bars, split):
+    """Point 11 cites amendment 7 point 5: a coin delisted in the window is excluded from the day after, not from the
+    whole window (finding protocol-statistics #8, survivorship). {coin: last listed hour} for the coins whose instrument
+    series stops before the window's last hour while the cache has no perp or no spot klines file for every later month
+    (read after the guarded download: the archive had none). A gap followed by more data is no delisting; the quality
+    rule keeps judging it over the whole window."""
+    from lab.engine import data
+    end, mon, out = data.window_bounds(split)[1] + 1 - data.HOUR, data.months(split), {}
+    for s, x in bars.items():
+        if not x or x[-1][0] >= end:
+            continue
+        d = datetime.fromtimestamp(x[-1][0], timezone.utc)
+        e = data.expected_paths(s, split, spot=True)
+        if all(not (os.path.exists(e["klines"][k][1]) and os.path.exists(e["spot"][k][1]))
+               for k, ym in enumerate(mon) if ym > (d.year, d.month)):
+            out[s] = x[-1][0]
+    return out
+
+
+def listed_quality(bars, split, dups, last):
+    """data.quality of a delisted coin over its listed hours only (window start to its last listed hour, same rule)."""
+    from lab.engine import data
+    q = data.quality(bars, split, dups)
+    exp = (last - data.window_bounds(split)[0]) // data.HOUR + 1
+    cov = len(bars) / exp if exp > 0 else 0.0
+    return {**q, "expected": exp, "coverage": cov, "listed_until": last,
+            "ok": cov >= COVERAGE_MIN and q["nonpositive_prices"] == 0 and q["monotonic"] and q["duplicates"] == 0}
+
+
+def listed_only(bars, funding, fd, last):
+    """Nothing of a delisted coin after its last listed hour: instrument bars, funding, and the benchmark's perp bars and
+    settled funding (both legs leave the book together)."""
+    for s, t in last.items():
+        bars[s] = [x for x in bars[s] if x[0] <= t]
+        funding[s] = {k: v for k, v in (funding.get(s) or {}).items() if k <= t}
+        if isinstance(fd, FamilyData):
+            fd.perp[s] = [x for x in fd.perp.get(s) or [] if x[0] <= t]
+            fd.funding[s] = {k: v for k, v in (fd.funding.get(s) or {}).items() if k <= t}
+
+
 def psr_cons(daily):
     """Point 11: PSR_cons = the smallest of the PSR with skew 0 and kurtosis 3 (as today), the PSR with the sample's skew
     and kurtosis, and the PSR with the effective n = n / max(1, 1 + 2 sum_{k=1..5} (1 - k/6) rho_k), never above n.
@@ -1365,14 +1717,57 @@ def psr_cons(daily):
                                                    "rho_1_5": rho, "sr_daily": sr}
 
 
+# ---------- gate edges of family instances (points 8, 11 and 12) ----------
+def gate_problem(db, eid, cur, to, rid):
+    """registry.make_result_guard for a family instance, so for its steps and `lab transition` alike: the cited result
+    was recorded by a step (a system actor; `lab result` refuses family instances); never SCREENING -> SCREEN_PASSED
+    (point 8); SCREENING -> OBSERVATION only on the screen's OBSERVE result; OBSERVATION -> SCREEN_PASSED / REJECTED
+    only on a forward result of the cohort that selected it (forward_result: its cohort id and hash-matching
+    observe.json, or observe_interim.json for the futility look) or, rejected, on the 'not selected' result of a member
+    the fixed cohort capped out (point 10). Returns the refusal, or None (finding protocol-statistics #2)."""
+    if (cur, to) == ("SCREENING", "SCREEN_PASSED"):
+        return (f"{eid}: a family instance never goes directly to SCREEN_PASSED; a screen survivor goes to OBSERVATION "
+                f"and only its family forward test decides (amendment 8 point 8)")
+    r = db.one("SELECT id, verdict, metrics, evidence FROM results WHERE id=? AND exp_id=?", rid, eid)
+    if r is None or not (recorded_by(db, eid, r["id"]) or "").startswith("system:"):
+        return (f"{eid}: a gate transition of a family instance cites a result recorded by its step (a system actor), "
+                f"never one typed with lab result (amendment 8 points 8, 11 and 12)")
+    v = r["verdict"] or ""
+    if (cur, to) == ("SCREENING", "OBSERVATION") and not v.startswith(OBSERVE):
+        return f"{eid}: entering OBSERVATION needs the screen's '{OBSERVE}' result (amendment 8 point 8)"
+    if cur == "OBSERVATION" and to in ("SCREEN_PASSED", "REJECTED"):
+        fid = (instance_of(eid) or (None,))[0]
+        cf = cohort(db, fid) if fid else None
+        cut = to == "REJECTED" and v.startswith(NOT_SELECTED) and cf is not None and \
+            eid in (cf.get("not_selected") or []) and _obj(r["metrics"]).get("cohort") == cf.get("cohort")
+        if not cut and forward_result(db, eid, r) != ("PASS" if to == "SCREEN_PASSED" else "FAIL"):
+            return (f"{eid}: OBSERVATION -> {to} needs a forward result of the cohort that selected it, recorded by "
+                    f"its step with the cohort id and citing its hash-matching observe.json (observe_interim.json for "
+                    f"the futility look), or the 'not selected' result of the fixed cohort (amendment 8 points 10-12)")
+    return None
+
+
 # ---------- human transitions of family instances (point 6) ----------
+REGISTER_ONLY_BATCH = ("family instances register only through register_batch with a valid family approval "
+                       "(amendment 8 point 7)")
+NO_PAPER = ("simulated trading of a family instance needs a live spot feed and a later amendment (amendment 8 point "
+            "16)")
+PAPER_EDGES = {("VALIDATED", "PAPER_TRADING"), ("PAUSED", "PAPER_TRADING")}
+
+
 def terminal_guard(db, eid, cur, to):
-    """Lifecycle guard of `lab confirm`: a human transition of a family instance (above all its revival SUPPRESSED ->
-    DISCOVERED, and the sealed 2024 holdout SCREEN_PASSED -> VALIDATION) is typed in an interactive terminal outside an
-    assistant session. Without a clean holdout in the family file the instance stops at SCREEN_PASSED (point 16)."""
+    """Lifecycle guard of `lab approve` and `lab confirm`: a human transition of a family instance (above all its
+    revival SUPPRESSED -> DISCOVERED, and the sealed 2024 holdout SCREEN_PASSED -> VALIDATION) is typed in an interactive
+    terminal outside an assistant session. DISCOVERED -> REGISTERED is never a human step for a family instance (point
+    7: register_batch), nor is paper trading (point 16: a live spot feed and a later amendment first). Without a clean
+    holdout in the family file the instance stops at SCREEN_PASSED (point 16)."""
     from lab import registry
     from lab.lifecycle import LifecycleError
     if is_instance(db, eid):
+        if (cur, to) == ("DISCOVERED", "REGISTERED"):
+            raise LifecycleError(f"{eid}: {REGISTER_ONLY_BATCH}")
+        if (cur, to) in PAPER_EDGES:
+            raise LifecycleError(f"{eid}: {NO_PAPER}")
         try:
             GUARD()
         except FamilyError as e:
@@ -1388,5 +1783,9 @@ def no_web_guard(db, eid, cur, to):
     """The dashboard has no route for the human steps of a family instance (point 5: no dashboard endpoint)."""
     from lab.lifecycle import LifecycleError
     if is_instance(db, eid):
+        if (cur, to) == ("DISCOVERED", "REGISTERED"):
+            raise LifecycleError(f"{eid} is an amendment 8 family instance: {REGISTER_ONLY_BATCH}")
+        if (cur, to) in PAPER_EDGES:
+            raise LifecycleError(f"{eid} is an amendment 8 family instance: {NO_PAPER}")
         raise LifecycleError(f"{eid} is an amendment 8 family instance: its human steps are typed in a terminal "
                              "(python3 -m lab approve / confirm)")

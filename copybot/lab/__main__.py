@@ -105,8 +105,10 @@ def family_cmd(args, db, out, ask=input):
             code = ask("approval code: ")
             prefix = ask("first 8 characters of the family file blob: ")
             fid, eid = families.confirm(db, code, prefix, human())
-            out(f"{fid}: family.approved (event {eid}); alpha reserved. Instances register through the fleet, "
-                "not before 2026-11-28 if data must be downloaded.")
+            out(f"{fid}: family.approved (event {eid}); alpha reserved. The base instances register through the fleet "
+                "(strategy-1), as one batch. Registration and the train/validation spot downloads are allowed until "
+                "2026-10-24 00:00 UTC; from then on a registration or screening that still needs files waits until "
+                "2026-11-28 00:00 UTC (amendment 9 point 1).")
             return 0
         if args.cmd == "revoke-family":
             released = families.revoke(db, args.fid, human(), args.reason)
@@ -371,22 +373,23 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
             out(f"{args.exp}: {st}" + (f" (matches rejected: {', '.join(dup)})" if dup else ""))
         elif args.cmd == "add-version":
             out(f"{args.exp}: version {registry.add_version(db, args.exp, args.spec, human())} added")
-        elif args.cmd == "approve":
+        elif args.cmd == "approve":                 # a family instance: no code for a step lab confirm would refuse
+            from lab import families
             code = lifecycle.request_approval(db, args.exp, args.to, human(), args.reason,
                                               {"committed_files": args.committed} if args.committed else None,
-                                              guards=(registry.complete_spec_guard,))
+                                              guards=(registry.complete_spec_guard, families.terminal_guard))
             out(f"approval code for {args.exp} -> {args.to}: {code}   (confirm within 15 minutes: python -m lab confirm {code})")
         elif args.cmd == "confirm":                 # a family instance (amendment 8 point 6): interactive terminal only
             from lab import families
             exp, to = lifecycle.confirm(db, args.code, human(), guards=(registry.complete_spec_guard,
                                                                          families.terminal_guard))
             out(f"{exp} -> {to}")
-        elif args.cmd == "transition":
+        elif args.cmd == "transition":              # a family instance: families.gate_problem (amendment 8 p. 8-12)
             ev = {"result_id": args.result_id} if args.result_id is not None else None
             lifecycle.auto_transition(db, args.exp, args.to, "system:cli", args.reason, ev,
                                       guards=(registry.make_result_guard(ev),))
             out(f"{args.exp} -> {args.to}")
-        elif args.cmd == "result":
+        elif args.cmd == "result":                  # refused for a family instance: only its steps record results
             rid = registry.record_result(db, args.exp, args.label, args.verdict, json.loads(args.metrics), {},
                                          human(), args.supersedes, args.reason)
             out(f"result #{rid} recorded")
