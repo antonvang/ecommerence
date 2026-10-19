@@ -3307,7 +3307,7 @@ class DelistedCoinsLeaveFromTheDayAfter(ForwardBase):
 
     def forward(self, cf, spec):
         self.now[0] = cf["final_not_before"]
-        return pipeline._forward_market(self.db, F, "validation-1", spec, families.FORWARD_MONTHS)
+        return pipeline._forward_market(self.db, F, "validation-1", spec, families.FORWARD_MONTHS)[2]
 
     def test_a_delisted_coin_counts_until_its_last_listed_hour_and_then_is_flat(self):
         cf = self.cohort_of_one()
