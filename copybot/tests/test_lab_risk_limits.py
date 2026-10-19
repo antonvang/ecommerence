@@ -195,5 +195,56 @@ class AClearNeverOverridesAnotherBlock(Base):
             self.risk.resume_simulated(L, "human:anton", "short")
 
 
+
+class ClearingFailClosedNeedsTheCauseGone(Base):
+    """A human CLEAR of FAIL_CLOSED is refused while the cause still holds: broken hash chains or missing append-only
+    triggers, an overfilled order, or a started ledger that does not reconcile. Reconciliation and disk are
+    re-checked by the fleet within seconds anyway; integrity and overfill only at the next start, so without this a
+    clear would let the lab trade on a broken registry until then."""
+
+    def trip(self, rule):
+        self.risk.trip_fail_closed(rule, f"fixture: {rule}")
+        self.assertTrue(self.risk.fail_closed())
+
+    def test_a_clean_lab_is_cleared(self):
+        self.trip("worker_failed")
+        self.risk.clear_fail_closed("human:anton", "fixture: the worker is back")
+        self.assertFalse(self.risk.fail_closed())
+
+    def test_broken_chains_or_missing_triggers_keep_it_closed(self):
+        self.db.event("fixture.row", "fixture", None, {"n": 1})
+        self.db.con.execute("DROP TRIGGER events_no_update")
+        self.db.con.execute("UPDATE events SET payload='{\"n\": 2}' WHERE kind='fixture.row'")
+        self.db.con.commit()
+        self.trip("integrity")
+        with self.assertRaises(lifecycle.LifecycleError) as c:
+            self.risk.clear_fail_closed("human:anton", "fixture: looked at it")
+        self.assertIn("integrity", str(c.exception))
+        self.assertTrue(self.risk.fail_closed())
+
+    def test_an_overfilled_order_keeps_it_closed(self):
+        self.db.append("sim_orders", order_id="o1", exp_id=L, ts=int(NOW), instrument="XUSDT", side="buy", qty=1.0,
+                       limit_px=None, style="taker", reduce_only=0, signal_ref="fixture", cost_model={})
+        for i in range(2):
+            self.db.append("sim_fills", fill_id=f"o1|{i}", order_id="o1", exp_id=L, ts=int(NOW), instrument="XUSDT",
+                           side="buy", px=1.0, qty=1.0, fee=0.0, slippage=0.0, liquidity="taker", mid=1.0,
+                           book_ts=NOW)
+        self.trip("overfill")
+        with self.assertRaises(lifecycle.LifecycleError) as c:
+            self.risk.clear_fail_closed("human:anton", "fixture: looked at it")
+        self.assertIn("overfill", str(c.exception))
+
+    def test_a_ledger_that_does_not_reconcile_keeps_it_closed(self):
+        self.db.event("paper.started", "human:anton", L, {"simulated": True})
+        self.trip("reconciliation")
+        with mock.patch.object(PaperEngine, "reconcile", lambda self, e: {"ok": False, "problems": ["fixture"]}):
+            with self.assertRaises(lifecycle.LifecycleError) as c:
+                self.risk.clear_fail_closed("human:anton", "fixture: looked at it")
+        self.assertIn("reconcil", str(c.exception))
+        with mock.patch.object(PaperEngine, "reconcile", lambda self, e: {"ok": True, "problems": []}):
+            self.risk.clear_fail_closed("human:anton", "fixture: reconciled by hand now")
+        self.assertFalse(self.risk.fail_closed())
+
+
 if __name__ == "__main__":
     unittest.main()

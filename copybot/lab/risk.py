@@ -145,11 +145,43 @@ class Risk:
         with self.db.tx():
             self._event(GLOBAL, rule, None, None, "FAIL_CLOSED", detail)
 
+    def fail_closed_causes(self):
+        """The conditions that trip FAIL_CLOSED and are not re-checked within seconds by the fleet: broken hash chains
+        or missing append-only triggers and cited evidence that does not resolve (checked at start only), an
+        overfilled order (checked at start and at that ledger's next fill), and a started ledger that does not
+        reconcile. Returns problems (empty = the cause is gone)."""
+        from lab import legacy
+        from lab.paper import PaperEngine
+        out = []
+        chains, triggers = self.db.verify()
+        broken = {t: b for t, (_, b) in chains.items() if b is not None}
+        if broken or not triggers:
+            out.append(f"integrity: broken hash chains {broken or 'none'}" + ("" if triggers else
+                                                                            ", append-only triggers missing"))
+        bad_ev = legacy.verify_evidence(self.db)
+        if bad_ev:
+            out.append(f"integrity: {len(bad_ev)} cited evidence file(s) do not resolve in git")
+        over = self.db.q("SELECT o.order_id FROM sim_orders o WHERE o.qty + 1e-9 < (SELECT COALESCE(SUM(qty),0) FROM "
+                         "sim_fills f WHERE f.order_id=o.order_id)")
+        if over:
+            out.append(f"overfill: {', '.join(r[0] for r in over[:5])}")
+        eng = PaperEngine(self.db)
+        bad = [r[0] for r in self.db.q("SELECT DISTINCT exp_id FROM events WHERE kind='paper.started'")
+               if not eng.reconcile(r[0])["ok"]]
+        if bad:
+            out.append(f"reconciliation fails for {', '.join(bad)}")
+        return out
+
     def clear_fail_closed(self, actor, reason):
+        """Only a human, and only once the cause is gone (fail_closed_causes): a CLEAR never lets the lab trade on a
+        broken registry, an overfill or an unreconciled ledger."""
         if not actor.startswith("human:"):
             raise lifecycle.LifecycleError("only a human can clear FAIL_CLOSED")
         if not reason or len(reason) < 10:
             raise lifecycle.LifecycleError("a reason is required")
+        causes = self.fail_closed_causes()
+        if causes:
+            raise lifecycle.LifecycleError("FAIL_CLOSED stays until the cause is gone: " + "; ".join(causes))
         with self.db.tx():
             self._event(GLOBAL, "manual_clear", None, None, "CLEAR", reason, actor)
 
