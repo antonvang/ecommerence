@@ -19,12 +19,14 @@ read-only families card of the dashboard (lab/command.py; no approval endpoint).
 """
 from __future__ import annotations
 
+import contextlib
 import json
 import math
 import os
 import re
 import statistics
 import threading
+import time
 import urllib.error
 import urllib.request
 from datetime import datetime, timezone
@@ -148,8 +150,8 @@ def validate(fam, vocab=None):
     if (fw.get("earliest_start") or "") < EARLIEST_START:
         bad.append(f"forward.earliest_start must be on or after {EARLIEST_START}")
     alpha_f = (fam.get("alpha") or {}).get("family")
-    if not isinstance(alpha_f, (int, float)) or not 0 < alpha_f <= ALPHA_F_MAX:
-        bad.append(f"alpha.family must be in (0, {ALPHA_F_MAX}]")
+    if not isinstance(alpha_f, (int, float)) or abs(alpha_f - ALPHA_F_MAX) > 1e-12:
+        bad.append(f"alpha.family must be {ALPHA_F_MAX} (amendment 8 point 13: alpha_F = 0,0125 per family)")
     costs = fam.get("costs") or {}
     for k in ("taker_fee", "half_spread", "slippage"):
         if not isinstance(costs.get(k), (int, float)) or costs[k] < catalogue.COSTS[k]:
@@ -200,6 +202,14 @@ def _instance_problems(i, seen, successor):
     g = i.get("grid")
     if not (isinstance(g, list) and len(g) == GRID and all(isinstance(x, dict) and x for x in g)):
         bad.append(f"{what} {iid}: grid must be exactly {GRID} parameter sets")
+    else:                                              # point 3: every lookback in the grid, not only the declared one
+        top = i.get("max_lookback_days") if isinstance(i.get("max_lookback_days"), int) else LOOKBACK_MAX_DAYS
+        for x in g:
+            for k, v in x.items():
+                if str(k).endswith("days") and (not isinstance(v, (int, float)) or not 0 < v <= min(top,
+                                                                                                    LOOKBACK_MAX_DAYS)):
+                    bad.append(f"{what} {iid}: grid {k}={v} exceeds max_lookback_days {top} (at most "
+                               f"{LOOKBACK_MAX_DAYS} days, amendment 8 point 3)")
     return bad
 
 
@@ -211,8 +221,10 @@ def graveyard_hits(db, fam, vocab=None):
     tags = (vocab or vocabulary())["tags"]
     tag = (fam.get("mechanism") or {}).get("tag")
     wanted = {tag} | set(tags.get(tag, {}).get("related", []))
+    own = set(members(db, fam.get("family_id"))) if fam.get("family_id") else set()   # siblings never count
     hits = sorted({r["exp_id"] for r in db.q("SELECT DISTINCT exp_id, mechanism_tag FROM experiments")
-                   if r["mechanism_tag"] in wanted and state(db, r["exp_id"]) in ("REJECTED", "WITHDRAWN")})
+                   if r["mechanism_tag"] in wanted and r["exp_id"] not in own and
+                   state(db, r["exp_id"]) in ("REJECTED", "WITHDRAWN")})
     acked = {a.get("exp_id") for a in fam.get("graveyard_acknowledged") or []}
     return hits, [h for h in hits if h not in acked]
 
@@ -312,10 +324,11 @@ def interactive_human():
     (Policy, not proof: a faked terminal is possible; the rule and the logged actor are what bind.)"""
     import sys
     if os.environ.get("CLAUDECODE") or any(k.startswith("CLAUDE_CODE_") for k in os.environ):
-        raise FamilyError("an assistant session may not approve or confirm a family (amendment 8 point 5)")
+        raise FamilyError("an assistant session may not take a human step of an amendment 8 family (approve, "
+                          "confirm, revive, revoke or open a holdout; amendment 8 point 5)")
     if not (sys.stdin.isatty() and sys.stdout.isatty()):           # the CLI adds the 'refused: ' prefix once
-        raise FamilyError("family approvals and confirmations for family instances must be typed in an interactive "
-                          "terminal")
+        raise FamilyError("the human steps of an amendment 8 family (approve, confirm, revive, revoke, holdout) must be "
+                          "typed in an interactive terminal")
 
 
 GUARD = interactive_human
@@ -346,8 +359,9 @@ def registration_started(db, fid):
     """True once any instance of the family was registered, a batch that stopped part-way included: from then on the
     family can be neither approved again nor revoked (point 5). Discovered or suppressed candidates do not count."""
     prefix = f"E_{fid}__"
-    return db.one("SELECT 1 FROM transitions WHERE to_state='REGISTERED' AND substr(exp_id, 1, ?) = ? LIMIT 1",
-                  len(prefix), prefix) is not None
+    return any((instance_of(r[0]) or (None,))[0] == fid for r in db.q(
+        "SELECT DISTINCT exp_id FROM transitions WHERE to_state='REGISTERED' AND substr(exp_id, 1, ?) = ?",
+        len(prefix), prefix))
 
 
 def not_discovered(db, fam):
@@ -358,7 +372,7 @@ def not_discovered(db, fam):
         e = exp_id(fid, i.get("id"))
         st = state(db, e)
         if st != "DISCOVERED":
-            out.append(f"{e} ({st or 'missing'})")
+            out.append(f"{e} ({st or 'not discovered yet: the fleet discovers it from the committed family file'})")
     return out
 
 
@@ -401,6 +415,25 @@ def _blocking_problems(db, fam):
     return bad
 
 
+def approval_summary(db, fam):
+    """Point 5: what an approval would bind, one line per instance: its id and state, and whether it is active (a base
+    instance, or a successor the approval names because it is DISCOVERED now) or dropped (a successor still SUPPRESSED
+    or missing: it never registers under this approval)."""
+    from lab.lifecycle import state
+    fid, named, out = fam.get("family_id"), set(discovered_successors(db, fam)), []
+    for i, parent in instances(fam):
+        e = exp_id(fid, i["id"])
+        st = state(db, e) or "missing"
+        if parent is None:
+            out.append(f"{e}: {st}, base instance, active")
+        elif e in named:
+            out.append(f"{e}: {st}, successor of {parent}, active (registers only if its trigger is met)")
+        else:
+            out.append(f"{e}: {st}, successor of {parent}, DROPPED: not DISCOVERED, so this approval does not name it "
+                       f"and it never registers (revive it first, then approve-family, to keep it)")
+    return out
+
+
 def discovered_successors(db, fam):
     """The family's successors that are DISCOVERED now (revived before approve-family). Only these may register later
     (point 9); the approval names them."""
@@ -433,7 +466,10 @@ def request(db, fid, actor, reason, now=None):
                   reason=reason.strip(),
                   evidence={"blobs": b, "thresholds": thresholds(), "alpha_family": fam["alpha"]["family"],
                             "instances": [i["id"] for i in fam["instances"]],
-                            "successors": discovered_successors(db, fam)})
+                            "successors": discovered_successors(db, fam),
+                            "dropped_successors": sorted(exp_id(fid, i["id"]) for i, parent in instances(fam)
+                                                         if parent and exp_id(fid, i["id"]) not in
+                                                         discovered_successors(db, fam))})
         db.event("family.approval_requested", actor, None, {"family": fid, "reason": reason.strip()})
     return code
 
@@ -467,6 +503,10 @@ def confirm(db, code, blob_prefix, actor, now=None):
     bad = _blocking_problems(db, load(fid))
     if bad:
         raise FamilyError("; ".join(bad))
+    if discovered_successors(db, load(fid)) != (ev.get("successors") or []):   # a revival since the request
+        raise FamilyError("the family's instances changed since approve-family (a successor was revived or left "
+                          "DISCOVERED): run approve-family again for a new code, so the approval names what you see "
+                          "(amendment 8 point 5)")
     with db.tx():                                        # BEGIN IMMEDIATE: another confirm waits for this one
         if reserved(db, fid) > 1e-12:                    # two codes confirmed at once: alpha_F is reserved once
             raise FamilyError(f"{fid} already holds its alpha_F reservation: revoke-family first, then approve again "
@@ -478,6 +518,7 @@ def confirm(db, code, blob_prefix, actor, now=None):
                                                         "alpha_family": ev["alpha_family"],
                                                         "instances": ev["instances"],
                                                         "successors": ev.get("successors") or [],
+                                                        "dropped_successors": ev.get("dropped_successors") or [],
                                                         "approval_id": a["id"],
                                                         "reason": a["reason"]})
         db.event("approval.used", actor, None, {"approval_id": a["id"]})
@@ -486,16 +527,19 @@ def confirm(db, code, blob_prefix, actor, now=None):
 
 
 def revoke(db, fid, actor, reason, now=None):
-    """Only a human, only before registration. A reserved alpha is released (a negative A8 release row)."""
+    """Only a human in an interactive terminal (point 5), only before registration. A reserved alpha is released (a
+    negative A8 release row). The checks run inside the write transaction, so two revokes, or a revoke and the fleet's
+    registration, cannot both pass."""
     import time
+    GUARD()
     if not actor.startswith("human:"):
         raise FamilyError("only a human can revoke a family")
     if not reason or len(reason.strip()) < 10:
         raise FamilyError("a reason of at least 10 characters is required")
-    if registration_started(db, fid):
-        raise FamilyError(f"{fid} is already registered: it can no longer be revoked")
-    held = reserved(db, fid)
-    with db.tx():
+    with db.tx():                                        # BEGIN IMMEDIATE: the registration and another revoke wait
+        if registration_started(db, fid):
+            raise FamilyError(f"{fid} is already registered: it can no longer be revoked")
+        held = reserved(db, fid)
         db.event("family.revoked", actor, None, {"family": fid, "reason": reason.strip()})
         if held > 0:
             db.append("alpha_ledger", exp_id=f"family:{fid}", ts=int(now or time.time()), alpha=-held,
@@ -517,6 +561,25 @@ def approval(db, fid):
     changed). A change to lab/engine/catalogue.py does not void a family approval."""
     p = approval_payload(db, fid)
     return p["event_id"] if p else None
+
+
+def binding_approval(db, fid):
+    """The approval that binds what registers next. Before the base batch is registered: the valid approval
+    (approval_payload; any change to a bound file or gate value voids it, point 5). Once the base batch is registered:
+    the approval its registration cited (registered_approval), so a later change to a file the steps do not pin (the
+    adapter, the vocabulary, a gate value read by thresholds) never drops a named successor or fixes the cohort early
+    (review of fdd898a), as long as the working family file and module are still the approved blobs (point 18 pins
+    those; otherwise None and the family fails closed)."""
+    if not registered(db, fid):
+        return approval_payload(db, fid)
+    p = registered_approval(db, fid)
+    try:
+        b = blobs(fid)
+    except FamilyError:
+        return None
+    if p is None or any(b[k]["working"] != (p.get("blobs") or {}).get(k) for k in ("family", "module")):
+        return None
+    return p
 
 
 def approval_payload(db, fid):
@@ -550,7 +613,8 @@ INSTANCE_RE = re.compile(r"E_([a-z0-9]{3,12})__([a-z0-9_]{2,12})_a8")
 FORWARD_PASS = "PASS (family forward test)"    # verdict prefix of a family forward PASS (point 11)
 EMBARGO_REASON = ("screening files are missing and may not be downloaded before 2026-11-28 00:00 UTC (amendment 8 "
                   "point 17, amendment 9 point 1)")
-_DOWNLOADS = threading.BoundedSemaphore(2)    # amendment 9 point 1: at most 2 downloads at a time
+_DOWNLOAD_SLOTS = 2                           # amendment 9 point 1: at most 2 downloads at a time, lab-wide
+_DOWNLOADS = threading.BoundedSemaphore(_DOWNLOAD_SLOTS)
 _ABSENT_LOCK = threading.Lock()
 
 
@@ -596,10 +660,11 @@ def instances(fam):
 
 
 def members(db, fid):
-    """Every experiment id of the family, in any state."""
+    """Every experiment id of the family, in any state: amendment 8 instance ids E_<fid>__<inst>_a8 only, never another
+    experiment whose name merely starts with E_<fid>__ (points 6, 7 and 10)."""
     prefix = f"E_{fid}__"
     return [r[0] for r in db.q("SELECT DISTINCT exp_id FROM experiments WHERE substr(exp_id, 1, ?) = ?",
-                               len(prefix), prefix)]
+                               len(prefix), prefix) if (instance_of(r[0]) or (None,))[0] == fid]
 
 
 def instrument(fam):
@@ -763,9 +828,11 @@ BOUND = ("family", "module", "adapter", "vocabulary")      # the files an approv
 def reserved_id(eid):
     """Ids only the discovery agent may create, from a committed family file (families.discover_all): a family
     instance id E_<fid>__<inst>_a8 (anything containing one, in any case, or ending in _a8 after trimming), and any id
-    with ':' (family:<fid> names a family's alpha reservation, point 13)."""
+    with ':' (family:<fid> names a family's alpha reservation, point 13), and any id that starts like a family
+    instance (E_<fid>__, in any case), so no other experiment can look like a member of a family."""
     e = (eid or "").strip()
-    return ":" in e or e.lower().endswith("_a8") or bool(re.search(INSTANCE_RE.pattern, e, re.IGNORECASE))
+    return ":" in e or e.lower().endswith("_a8") or bool(re.search(INSTANCE_RE.pattern, e, re.IGNORECASE)) or \
+        bool(re.match(r"E_[a-z0-9]{3,12}__", e, re.IGNORECASE))
 
 
 def spec_problems(db, eid, fam, p=None, need_v2=False):
@@ -880,7 +947,7 @@ def register_transition(db, eid, fid, actor):
     from lab import lifecycle, registry
     if lifecycle.state(db, eid) != "DISCOVERED":
         raise lifecycle.LifecycleError(f"{eid} is not DISCOVERED")
-    p = approval_payload(db, fid)
+    p = binding_approval(db, fid)
     if p is None:
         raise lifecycle.LifecycleError(f"family {fid} has no valid human approval")
     if reserved(db, fid) < p["alpha_family"] - 1e-12:
@@ -937,13 +1004,56 @@ def absent():
 
 
 def _mark_absent(url):
-    with _ABSENT_LOCK:
+    path = _absent_file()
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with _ABSENT_LOCK, _flock(path + ".lock"):           # heavy workers are separate processes
         urls = absent() | {url}
-        path = _absent_file()
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        with open(path + ".part", "w", encoding="utf-8") as f:
+        part = f"{path}.{os.getpid()}.{threading.get_ident()}.part"
+        with open(part, "w", encoding="utf-8") as f:
             json.dump(sorted(urls), f)
-        os.replace(path + ".part", path)
+        os.replace(part, path)
+
+
+@contextlib.contextmanager
+def _flock(path, blocking=True):
+    """An exclusive lock on `path` across processes (fcntl.flock; a no-op where fcntl does not exist). Yields True when
+    held; with blocking=False it yields False at once if another holder has it."""
+    try:
+        import fcntl
+    except ImportError:                                # not the Linux runtime host: threads only
+        yield True
+        return
+    f = open(path, "a+")
+    try:
+        try:
+            fcntl.flock(f, fcntl.LOCK_EX | (0 if blocking else fcntl.LOCK_NB))
+        except BlockingIOError:
+            yield False
+            return
+        try:
+            yield True
+        finally:
+            fcntl.flock(f, fcntl.LOCK_UN)
+    finally:
+        f.close()
+
+
+@contextlib.contextmanager
+def _download_slot():
+    """One of the 2 download slots of amendment 9 point 1, across every process of the lab (the data step runs in the
+    fleet's main process, the forward and holdout steps in heavy worker processes): a thread semaphore inside this
+    process and one of 2 slot lock files in the market cache across processes."""
+    from lab.engine import data
+    d = os.path.join(data.CACHE, ".download_slots")
+    os.makedirs(d, exist_ok=True)
+    with _DOWNLOADS:
+        while True:
+            for i in range(_DOWNLOAD_SLOTS):
+                with _flock(os.path.join(d, f"slot{i}.lock"), blocking=False) as held:
+                    if held:
+                        yield
+                        return
+            time.sleep(0.2)
 
 
 def _urlopen(url):
@@ -967,7 +1077,7 @@ def guarded_get(split, fetch=None):
             raise Embargoed(f"family data comes only from {DATA_HOST} klines and funding files: {url}")
         if not fetch_allowed(src, split):
             raise Embargoed(embargo_reason(split))
-        with _DOWNLOADS:
+        with _download_slot():
             try:
                 return (fetch or _urlopen)(url)
             except urllib.error.HTTPError as e:
@@ -1001,12 +1111,18 @@ def ready(syms, splits, now=None):
 
 
 # ---------- registration rules (point 7) ----------
-def forward_passes(db):
-    """Family instances with a forward PASS (point 15): only a forward result of its cohort counts (forward_result: the
-    step recorded it, with the cohort id and its hash-matching observe.json), never a row typed or forged past it."""
-    passes = {e for e in {r[0] for r in db.q("SELECT DISTINCT exp_id FROM results WHERE label='VALIDATION'")}
-              if instance_of(e) and "PASS" in forward_results(db, e)}
-    return passes | {f"family:{p.get('family')}" for p in _closed(db) if p.get("outcome") == "PASS"}
+def forward_passes(db, by=None):
+    """Family instances with a forward PASS, and their families as family:<fid> (point 15): only a forward result of
+    its cohort counts (forward_result: the step recorded it, with the cohort id and its hash-matching observe.json),
+    never a row typed or forged past it, nor a family.closed event on its own. `by`: only results recorded before
+    that time (point 15 c: a forward PASS by 2028-06-30)."""
+    passes = set()
+    for e in {r[0] for r in db.q("SELECT DISTINCT exp_id FROM results WHERE label='VALIDATION'")}:
+        if instance_of(e) and any(forward_result(db, e, r) == "PASS" for r in db.q(
+                "SELECT id, verdict, metrics, evidence, ts FROM results WHERE exp_id=? AND label='VALIDATION' "
+                "ORDER BY id", e) if by is None or (r["ts"] or 0) < by):
+            passes.add(e)
+    return passes | {f"family:{instance_of(e)[0]}" for e in passes}
 
 
 def _closed(db):
@@ -1016,13 +1132,19 @@ def _closed(db):
 
 def programme_stop(db, now=None):
     """Point 15 (b) and (c): 3 families in a row closed without a forward PASS, or no forward PASS by 2028-06-30. Only a
-    new dated amendment restarts the programme. (a), wealth below alpha_F, is the budget rule of an approval."""
+    new dated amendment restarts the programme, so the stop latches: (b) holds once any 3 consecutive closes lack a
+    forward PASS, whatever closes later; (c) counts only forward PASS results recorded before 2028-07-01 00:00 UTC. A
+    close counts as a PASS only when a member has a forward PASS that counts (forward_passes), never on the outcome
+    field of the event alone. (a), wealth below alpha_F, is the budget rule of an approval."""
     from lab.engine import data
     now = data.CLOCK() if now is None else now
-    last, bad = _closed(db)[-3:], []
-    if len(last) == 3 and all(p.get("outcome") != "PASS" for p in last):
-        bad.append("programme stopped: 3 families in a row closed without a forward PASS (amendment 8 point 15 b)")
-    if now >= PROGRAMME_END and not forward_passes(db):
+    passed, run, bad = forward_passes(db), 0, []
+    for p in _closed(db):
+        run = 0 if f"family:{p.get('family')}" in passed else run + 1
+        if run >= 3:
+            bad.append("programme stopped: 3 families in a row closed without a forward PASS (amendment 8 point 15 b)")
+            break
+    if now >= PROGRAMME_END and not forward_passes(db, by=PROGRAMME_END):
         bad.append("programme stopped: no forward PASS by 2028-06-30 (amendment 8 point 15 c)")
     return bad
 
@@ -1099,7 +1221,7 @@ def registration_block(db, fam, now=None, successor=None):
     before the cohort is fixed, and only when its parent's frozen training artifact meets the trigger."""
     from lab import lifecycle, registry
     fid = fam["family_id"]
-    p = approval_payload(db, fid)
+    p = binding_approval(db, fid)
     if p is None:
         return ["no valid family approval"]
     bad = []
@@ -1300,12 +1422,12 @@ def triggered(db, fam, eids):
 
 
 def successors_open(db, fam):
-    """Successors that can still register (point 10: the cohort waits for them): named by the valid approval, DISCOVERED
+    """Successors that can still register (point 10: the cohort waits for them): named by the binding approval, DISCOVERED
     with a registered, unfinished parent whose trigger artifact is not recorded yet, or triggered and not refused by a
     registration rule."""
     from lab.lifecycle import FINAL, state
     fid, out = fam["family_id"], []
-    p = approval_payload(db, fid)
+    p = binding_approval(db, fid)
     named = set((p or {}).get("successors") or [])
     for inst, parent in instances(fam):
         e, pe = exp_id(fid, inst["id"]), exp_id(fid, parent) if parent else None
@@ -1406,9 +1528,11 @@ def _result(db, eid, label=None):
 
 
 def settled(db, eid):
-    """A registered member is settled for the cohort once its screen recorded a result (or it left the family)."""
+    """A registered member is settled for the cohort once its screen took its edge: OBSERVATION (a survivor) or a final
+    state. A result recorded without its edge (a crash between the two, a pass in between) is not settled yet: the
+    report job's retry takes the edge first, so the cohort never fixes without a survivor (point 10)."""
     from lab.lifecycle import FINAL, state
-    return _result(db, eid) is not None or state(db, eid) in FINAL
+    return state(db, eid) in FINAL | {"OBSERVATION"}
 
 
 def untestable(db, eid):
@@ -1683,6 +1807,21 @@ def unlisted(symbols, split):
 COVERAGE_MIN = 0.99                            # data.quality's coverage rule
 
 
+def unpublished(symbols, split):
+    """A forward window's last month that the archive has published for none of the coins (perp klines or spot klines,
+    read after the guarded download): a publication delay, never a delisting of every coin (review of fdd898a). The
+    reason to wait, or None."""
+    from lab.engine import data
+    if not split.startswith("fwd") or not symbols:
+        return None
+    for kind in ("klines", "spot"):
+        if not any(os.path.exists(data.expected_paths(s, split, spot=True)[kind][-1][1]) for s in symbols):
+            y, m = data.months(split)[-1]
+            return (f"the archive has not published {y}-{m:02d} {kind} files for any coin of {split} yet: the forward "
+                    f"test waits a day and reads nothing before (amendment 8 point 11)")
+    return None
+
+
 def delisted(bars, split):
     """Point 11 cites amendment 7 point 5: a coin delisted in the window is excluded from the day after, not from the
     whole window (finding protocol-statistics #8, survivorship). {coin: last listed hour} for the coins whose instrument
@@ -1768,6 +1907,9 @@ def gate_problem(db, eid, cur, to, rid):
     v = r["verdict"] or ""
     if (cur, to) == ("SCREENING", "OBSERVATION") and not v.startswith(OBSERVE):
         return f"{eid}: entering OBSERVATION needs the screen's '{OBSERVE}' result (amendment 8 point 8)"
+    if (cur, to) == ("SCREENING", "REJECTED") and (not v.startswith("REJECTED") or v.startswith(NOT_SELECTED)):
+        return (f"{eid}: SCREENING -> REJECTED needs the screen's own 'REJECTED' result; a survivor goes to OBSERVATION "
+                f"and only its forward test decides (amendment 8 points 8 and 11)")
     if cur == "VALIDATION" and to in ("VALIDATED", "REJECTED"):
         want = "PASS (holdout)" if to == "VALIDATED" else "FAIL (holdout)"
         if not v.startswith(want) or not cites(eid, _obj(r["evidence"]), "holdout"):
@@ -1791,7 +1933,7 @@ REGISTER_ONLY_BATCH = ("family instances register only through register_batch wi
 NO_PAPER = ("simulated trading of a family instance needs a live spot feed and a later amendment (amendment 8 point "
             "16)")
 PAPER_EDGES = {("VALIDATED", "PAPER_TRADING"), ("PAUSED", "PAPER_TRADING")}
-MEMBERSHIP_EDGES = {("SUPPRESSED", "DISCOVERED"), ("DISCOVERED", "WITHDRAWN")}
+MEMBERSHIP_EDGES = {("SUPPRESSED", "DISCOVERED"), ("DISCOVERED", "WITHDRAWN"), ("REGISTERED", "WITHDRAWN")}
 MEMBERSHIP_FIXED = ("the family is approved (or registering): no instance is revived or withdrawn by hand any more; "
                     "revivals come before approve-family, and revoke-family first if the approval must change "
                     "(amendment 8 points 5, 6 and 9)")

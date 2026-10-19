@@ -67,7 +67,8 @@ def overview(db):
     chains, triggers = db.verify()
     return {"fail_closed": rk.fail_closed(), "heartbeats": hb, "pipeline": counts, "experiments": len(st),
             "finished": len(tested), "rejected": counts.get("REJECTED", 0), "last_scan_ts": last_obs,
-            "alpha_spent": db.one("SELECT COALESCE(SUM(alpha),0) FROM alpha_ledger")[0],
+            "alpha_spent": db.one("SELECT COALESCE(SUM(alpha),0) FROM alpha_ledger WHERE COALESCE(note, '') "
+                                  "NOT LIKE 'A8 %'")[0],     # amendment 8 rows are outside W0's screening sum
             "chain_ok": triggers and all(b is None for _, b in chains.values()),
             "rows": {t: n for t, (n, _) in chains.items()}, "finished_by_mechanism": by_mech,
             "paper_only": True, "now": int(time.time())}

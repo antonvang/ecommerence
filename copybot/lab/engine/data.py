@@ -14,6 +14,7 @@ from __future__ import annotations
 import csv
 import io
 import os
+import threading
 import time
 import urllib.error
 import urllib.request
@@ -102,9 +103,10 @@ def _fetch(url, path, get=None):
         try:
             data = get(url) if get else urllib.request.urlopen(
                 urllib.request.Request(url, headers={"User-Agent": "copybot-research/1.0"}), timeout=120).read()
-            with open(path + ".part", "wb") as f:
+            part = f"{path}.{os.getpid()}.{threading.get_ident()}.part"   # two writers never share a .part
+            with open(part, "wb") as f:
                 f.write(data)
-            os.replace(path + ".part", path)
+            os.replace(part, path)
             return path
         except urllib.error.HTTPError as e:
             if e.code == 404:

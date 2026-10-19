@@ -224,7 +224,7 @@ def _register_family(db, fid, eids, actor):
     fixed. An unapproved family is skipped silently; any other block is recorded once as family.waiting."""
     from lab import families
     out = _resume_family(db, fid, actor) if families.registered(db, fid) else []   # also under a void approval
-    p = families.approval_payload(db, fid)
+    p = families.binding_approval(db, fid)          # once registered: the approval the registration cited
     if p is None:
         return out
     fam, why = families.load(fid), []
@@ -300,7 +300,7 @@ def _register_family_one(db, eid, v, actor):
                                        f"version 2, built from the approved family file (amendment 8 point 7)")
     if v["version"] == 2:
         return families.register_transition(db, eid, fid, f"system:{actor}")
-    p = families.approval_payload(db, fid)
+    p = families.binding_approval(db, fid)
     if p is None:
         raise lifecycle.LifecycleError(f"family {fid} has no valid human approval")
     rel = f"research/families/{fid}.json"
@@ -406,10 +406,16 @@ def _symbols(spec, split):
     return _universe(spec)
 
 
+PUBLICATION_RETRY_S = 86400                      # a forward month the archive has not published for any coin yet
+DOWNLOAD_RETRY_S = 3600                          # a family download that failed (network, 5xx, 429) waits this long
+
+
 def _download(db, eid, spec, split, worker, symbols):
     """{symbol: {'klines', 'funding'[, 'spot']}} downloaded or reused (parallel threads). A family's files (spot zips in
     their own directory) go through the embargo guard; a file that may not be fetched yet defers the job with a
-    family.waiting event instead of failing it (amendment 8 point 17, amendment 9 point 1)."""
+    family.waiting event instead of failing it (amendment 8 point 17, amendment 9 point 1). A family download that
+    fails (data._fetch gave up: network, 5xx, 429; never a 404) defers the job by DOWNLOAD_RETRY_S without using an
+    attempt, so an outage never fails the job for good and stops the family (review of fdd898a)."""
     from concurrent.futures import ThreadPoolExecutor
     if not spec.get("family"):
         with ThreadPoolExecutor(DOWNLOAD_THREADS) as ex:
@@ -426,6 +432,13 @@ def _download(db, eid, spec, split, worker, symbols):
         families.waiting(db, spec["family"], [str(e)], f"system:{worker}",
                          topic=None if split in families.SCREEN_SPLITS else split)
         raise Deferred(f"{eid}: {e}", families.EMBARGO_UNTIL) from None
+    except OSError as e:                             # the archive or the network failed (never a 404): wait, retry
+        if not str(e).startswith("download failed"):
+            raise
+        families.waiting(db, spec["family"], [f"{e}; the step retries in {DOWNLOAD_RETRY_S // 60} minutes (a "
+                                              f"download failure never stops a family)"], f"system:{worker}",
+                         topic=None if split in families.SCREEN_SPLITS else split)
+        raise Deferred(f"{eid}: {e}", int(time.time()) + DOWNLOAD_RETRY_S) from None
 
 
 def _files(db, eid, split, worker, symbols=None, spec=None):
@@ -951,6 +964,10 @@ def _forward_market(db, eid, worker, spec, months):
     data.window(split)                                   # refuses an unfinished window before anything is read
     v = frozen_variant(db, eid)                          # verified against the recorded hashes
     bars, funding, dups, fd = _market(db, eid, split, worker, spec)
+    late = families.unpublished(list(bars), split)
+    if late:                                             # never a delisting of every coin: wait, read nothing yet
+        families.waiting(db, cf["family"], [late], f"system:{worker}", topic=split)
+        raise Deferred(f"{eid}: {late}", int(time.time()) + PUBLICATION_RETRY_S)
     gone = families.unlisted(list(bars), split)
     _drop(bars, funding, fd, gone, spec)
     for s in gone:
@@ -1183,10 +1200,35 @@ def _declare_holdout(db, eid, spec, worker):
                                                  _code_hash(spec))
 
 
+def _holdout_resume(db, eid, worker):
+    """A family instance's holdout job retried after a crash or a lost lease (review of fdd898a): the holdout result its
+    first run recorded (by the step, citing its hash-matching holdout.json) takes the edge it decided, or is returned
+    once that edge was taken; the sealed holdout is never read or recorded twice. None when there is none."""
+    from lab import families
+    v = registry.latest(db, eid)["version"]
+    for r in db.q("SELECT id, verdict, evidence FROM results WHERE exp_id=? AND label='VALIDATION' AND version=? "
+                  "ORDER BY id DESC", eid, v):
+        verdict = r["verdict"] or ""
+        if not verdict.startswith(("PASS (holdout)", "FAIL (holdout)")) or \
+                not str(families.recorded_by(db, eid, r["id"]) or "").startswith("system:") or \
+                not families.cites(eid, families._obj(r["evidence"]), "holdout"):
+            continue
+        if lifecycle.state(db, eid) == "VALIDATION":
+            ev = {"result_id": r["id"]}
+            lifecycle.auto_transition(db, eid, "VALIDATED" if verdict.startswith("PASS") else "REJECTED",
+                                      f"system:{worker}", verdict, ev, guards=(registry.make_result_guard(ev),))
+        return {"verdict": verdict, "result_id": r["id"], "state": lifecycle.state(db, eid), "resumed": True}
+    return None
+
+
 def step_holdout(db, job, worker):
     """Sealed 2024 holdout, only reachable after a human-approved SCREEN_PASSED -> VALIDATION transition (a family
     instance: typed in a terminal, never the automatic path or the dashboard, amendment 8 point 16)."""
     eid = job["exp_id"]
+    if json.loads((registry.latest(db, eid) or {"spec_json": "{}"})["spec_json"] or "{}").get("family"):
+        done = _holdout_resume(db, eid, worker)          # a retry never reads the sealed holdout twice
+        if done is not None:
+            return done
     if lifecycle.state(db, eid) != "VALIDATION":
         raise StepError("holdout requires lifecycle VALIDATION")
     spec = _spec(db, eid)

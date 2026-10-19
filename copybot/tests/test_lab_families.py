@@ -479,13 +479,14 @@ class TerminalOnly(A3Base):
         self.assertEqual(rc, 0, text)
         self.assertEqual(lifecycle.state(self.db, "E_taker_pressure_p3"), "DISCOVERED")
 
-    def test_a_family_code_is_an_unknown_state_for_lab_confirm(self):
+    def test_a_family_code_is_refused_by_lab_confirm_with_the_right_command(self):
         families.discover_all(self.db)
         self.revive()                                                         # revival before approve-family
         code = families.request(self.db, "fcarry", "human:anton", "Anton approves F1 after reading it")
         rc, text = self.cli("confirm", code)
         self.assertEqual(rc, 1)
-        self.assertIn("unknown state", text)
+        self.assertIn("python3 -m lab confirm-family", text)
+        self.assertIsNone(families.approval(self.db, "fcarry"))
 
     def test_the_dashboard_has_no_route_for_family_instances(self):
         import threading
@@ -2254,6 +2255,33 @@ class Holdout(A5Base):
         self.assertEqual(families.forward_outcome(self.db, F), "PASS")           # the holdout never rewrites it
         self.assertEqual(json.dumps({k: sorted(v) for k, v in catalogue.TEMPLATES.items()}, sort_keys=True), snapshot)
 
+    def test_a_retried_holdout_never_reads_the_sealed_holdout_twice(self):
+        """Review of fdd898a (engineering #5a): a crash between the holdout result and its edge is completed by the
+        retry from the recorded result; the holdout is not opened, read or recorded a second time."""
+        code = self.forward_pass()
+        rc, text = self.cli("confirm", code)
+        self.assertEqual((rc, lifecycle.state(self.db, F)), (0, "VALIDATION"), text)
+        self.now[0] = ts(2026, 11, 29)
+        shutil.copytree(self.market, self.hold, dirs_exist_ok=True)
+        real = lifecycle.auto_transition
+
+        def crash(db, eid, to, *a, **k):
+            if to in ("VALIDATED", "REJECTED"):
+                raise RuntimeError("the worker died after the holdout result")
+            return real(db, eid, to, *a, **k)
+        with mock.patch.object(lifecycle, "auto_transition", crash):
+            with self.assertRaises(RuntimeError):
+                pipeline.step_holdout(self.db, {"exp_id": F}, "validation-1")
+        n = (self.db.one("SELECT COUNT(*) FROM results WHERE exp_id=?", F)[0], len(self.events("holdout.opened")),
+             len(self.fetched), self.db.one("SELECT COUNT(*) FROM datasets WHERE split='holdout'")[0])
+        out = pipeline.step_holdout(self.db, {"exp_id": F}, "validation-1")
+        self.assertTrue(out["resumed"])
+        self.assertEqual(lifecycle.state(self.db, F), "VALIDATED")
+        self.assertEqual((self.db.one("SELECT COUNT(*) FROM results WHERE exp_id=?", F)[0],
+                          len(self.events("holdout.opened")), len(self.fetched),
+                          self.db.one("SELECT COUNT(*) FROM datasets WHERE split='holdout'")[0]), n)
+        self.assertEqual(pipeline.step_holdout(self.db, {"exp_id": F}, "validation-1")["state"], "VALIDATED")
+
     def test_without_a_clean_holdout_the_instance_stops_at_screen_passed(self):
         """Changed with finding end-to-end #3: `lab approve` runs the terminal guard too, so it issues no code for this
         step; a code issued past the guard is still refused by `lab confirm`."""
@@ -2897,7 +2925,7 @@ class FamilyCliTexts(A3Base):
         self.assertEqual((rc, rc2, lifecycle.state(self.db, F)), (1, 1, "SUPPRESSED"))
         for t in (text, "\n".join(lines)):
             self.assertEqual(t.count("refused:"), 1, t)
-            self.assertIn("refused: an assistant session may not approve or confirm a family", t)
+            self.assertIn("refused: an assistant session may not take a human step of an amendment 8 family", t)
 
 
 class CodePinBindsTheApproval(A5Base):
@@ -3378,6 +3406,18 @@ class DelistedCoinsLeaveFromTheDayAfter(ForwardBase):
         self.assertEqual(sorted(f["delisted"]), ["LINKUSDT", "LTCUSDT"])
         self.assertEqual(f["delisted"]["LTCUSDT"]["excluded_from"], "2027-02-01")
 
+    def test_a_month_published_for_no_coin_is_a_delay_not_a_delisting(self):
+        """Review of fdd898a (engineering #5b): the archive has not published the window's last month for any coin
+        yet: the forward test waits a day and decides nothing, instead of treating every coin as delisted."""
+        cf = self.cohort_of_one()
+        for s in SIX:
+            self.delist(cf, s, 11)                                             # 2027-11 missing for every coin
+        with self.assertRaises(pipeline.Deferred) as c:
+            self.forward(cf, pipeline._spec(self.db, F))
+        self.assertIn("has not published 2027-11", str(c.exception))
+        self.assertTrue(any("has not published" in r for w in self.events("family.waiting") for r in w["reasons"]))
+        self.assertIsNone(self.db.one("SELECT 1 FROM results WHERE exp_id=? AND label='VALIDATION'", F))
+
     def test_a_gap_followed_by_more_data_is_no_delisting(self):
         cf = self.cohort_of_one()
         for kind, pairs in data.expected_paths("LINKUSDT", cf["window"], spot=True).items():
@@ -3600,19 +3640,34 @@ class SuccessorsAreFixedAtTheApproval(A5Base):
         self.assertNotIn(S, families.cohort(self.db, "fcarry")["members"])
         self.assertEqual(lifecycle.state(self.db, S), "SUPPRESSED")
 
-    def test_a_successor_revived_between_request_and_confirm_never_registers(self):
+    def test_a_successor_revived_between_request_and_confirm_needs_a_new_code(self):
+        """Review of fdd898a (end-to-end #1): the confirm is refused, so the successor is not dropped silently; a new
+        approve-family names it."""
         families.discover_all(self.db)
         self.revive(BASE)
         code = families.request(self.db, "fcarry", "human:anton", "Anton approves F1 after reading it")
         self.revive([S])                                                      # after the request, before the confirm
-        families.confirm(self.db, code, "abcdef01", "human:anton")
-        self.assertEqual(families.approval_payload(self.db, "fcarry")["successors"], [])
+        with self.assertRaises(families.FamilyError) as c:
+            families.confirm(self.db, code, "abcdef01", "human:anton")
+        self.assertIn("run approve-family again", str(c.exception))
+        self.assertIsNone(families.approval(self.db, "fcarry"))
+        self.assertAlmostEqual(families.reserved(self.db, "fcarry"), 0.0)
+        self.approve()
+        self.assertEqual(families.approval_payload(self.db, "fcarry")["successors"], [S])
         self.touch()
         self.assertEqual(sorted(fleet.strategy_pass(self.db)["registered"]), BASE)
         self.screened(F, early=True, funding=-0.005)
-        self.assertEqual(fleet.strategy_pass(self.db)["registered"], [])
-        self.assertTrue(any(S in r and "approval" in r for r in self.events("family.waiting")[-1]["reasons"]))
-        self.assertEqual(lifecycle.state(self.db, S), "DISCOVERED")
+        self.assertEqual(fleet.strategy_pass(self.db)["registered"], [S])
+
+    def test_a_successor_still_suppressed_at_approval_is_shown_and_recorded_as_dropped(self):
+        families.discover_all(self.db)
+        self.revive(BASE)
+        summary = families.approval_summary(self.db, families.load("fcarry"))
+        self.assertTrue(any(line.startswith(f"{S}: SUPPRESSED") and "DROPPED" in line for line in summary), summary)
+        self.assertTrue(all("active" in line for line in summary if not line.startswith(S)), summary)
+        self.approve()
+        p = families.approval_payload(self.db, "fcarry")
+        self.assertEqual((p["successors"], p["dropped_successors"]), ([], [S]))
 
     def test_a_successor_revived_before_the_request_is_named_by_the_approval(self):
         self.ready()
@@ -3624,6 +3679,366 @@ class SuccessorsAreFixedAtTheApproval(A5Base):
             with self.assertRaises(lifecycle.LifecycleError):
                 lifecycle.request_approval(self.db, e, "WITHDRAWN", "human:anton", "withdraw it now", guards=self.GUARDS)
             self.assertEqual(lifecycle.state(self.db, e), "DISCOVERED")
+
+
+
+# ---------- review of fdd898a: three adversarial verifiers (protocol-statistics, engineering, end-to-end) ----------
+_REAL_FETCH = data._fetch                          # A3Base replaces it with one that refuses every fetch
+
+
+def _outage(error):
+    """data._fetch during an outage: a cached file is reused, anything else raises `error(url)`."""
+    def fetch(url, path, get=None):
+        if os.path.exists(path):
+            return path
+        raise error(url)
+    return fetch
+
+
+def _cli(db_path, *argv):
+    out = []
+    rc = main(list(argv), db_path=db_path, out=out.append)
+    return rc, "\n".join(map(str, out))
+
+
+def _assistant_env():
+    clean = {k: v for k, v in os.environ.items() if k != "CLAUDECODE" and not k.startswith("CLAUDE_CODE_")}
+    return {**clean, "CLAUDECODE": "1"}
+
+
+class MembershipIsTheInstanceId(A3Base):
+    """Review of fdd898a, protocol #1: family membership is an amendment 8 instance id, never a name prefix. An id
+    that starts like a family instance cannot be created, and one written past that guard is neither a member (no
+    cohort, no 'registration started') nor exempt from the covering rule of point 7."""
+
+    def test_an_id_that_looks_like_a_family_instance_is_reserved(self):
+        for e in ("E_fcarry__x", "e_FCARRY__y", "E_other__thing"):
+            self.assertTrue(families.reserved_id(e), e)
+        for e in ("E_mvrv_value_p3", "E_day_of_week_p2", "E_tsmom_v1"):
+            self.assertFalse(families.reserved_id(e), e)
+        rc, text = _cli(self.db_path, "discover", "E_fcarry__x", "--hypothesis", "h", "--mechanism", "m",
+                        "--instrument", "i", "--horizon", "days", "--execution", "taker", "--source", "s")
+        self.assertTrue(text.startswith("refused"), text)
+
+    def test_a_prefix_id_written_past_the_guard_is_no_member_and_still_covers(self):
+        families.discover_all(self.db)
+        self.revive()
+        Y = "E_fcarry__y"
+        self.db.append("experiments", exp_id=Y, version=1, created_ts=0, mechanism_tag="delta_neutral_funding_carry",
+                       fingerprint=Y, spec_json={"execution": "taker"})
+        self.db.append("transitions", exp_id=Y, ts=0, from_state=None, to_state="REGISTERED", actor="human:anton",
+                       reason="fixture: an ordinary experiment written past the reserved-id guard")
+        self.assertNotIn(Y, families.members(self.db, "fcarry"))
+        self.assertFalse(families.registration_started(self.db, "fcarry"))
+        self.approve()                                       # not 'already registered' (PoC P5b)
+        self.touch()
+        block = families.registration_block(self.db, families.load("fcarry"))
+        self.assertTrue(any("open experiment(s) outside the family" in b and Y in b for b in block), block)
+        self.assertEqual(fleet.strategy_pass(self.db)["registered"], [])
+
+
+class TheCohortWaitsForTheScreensEdge(A5Base):
+    """Review of fdd898a, protocol #2: a member whose report recorded its result but has not taken its edge yet (a
+    crash between the two, or a strategy pass in between) is not settled: the cohort waits for the retry, so M and
+    alpha_i are never computed without a survivor."""
+
+    def test_a_crash_between_the_result_and_the_edge_holds_the_cohort(self):
+        self.register()
+        real = lifecycle.auto_transition
+
+        def crash(db, eid, to, *a, **k):
+            if to == "OBSERVATION" and eid == F:
+                raise RuntimeError("the fleet died between the result and the edge")
+            return real(db, eid, to, *a, **k)
+        with mock.patch.object(lifecycle, "auto_transition", crash):
+            with self.assertRaises(RuntimeError):
+                self.screened(F, sharpe=3.0)                  # the best survivor
+        self.screened(L, sharpe=2.0)
+        self.screened(H, sharpe=1.0)
+        self.assertEqual(self.status(), "screening: 2 of 3 registered members have a result")
+        self.assertIsNone(families.cohort(self.db, "fcarry"))
+        pipeline.step_report(self.db, {"exp_id": F}, "report-1")         # the retry takes the edge
+        self.assertTrue(self.status().startswith("forward test"))
+        cf = families.cohort(self.db, "fcarry")
+        self.assertEqual((cf["M"], sorted(cf["selected"])), (3, sorted(BASE)))
+
+
+class TheProgrammeStopLatches(A3Base):
+    """Review of fdd898a, protocol #3 (point 15: only a new dated amendment restarts the programme)."""
+
+    def closed(self, fid, outcome):
+        self.db.event("family.closed", "system:strategy-1", None, {"family": fid, "outcome": outcome})
+
+    def counted_pass(self, fid, ts_):
+        e = f"E_{fid}__x1_a8"
+        self.db.append("experiments", exp_id=e, version=1, created_ts=0, mechanism_tag="t", fingerprint=e,
+                       spec_json={"family": fid})
+        self.db.append("results", exp_id=e, version=1, ts=ts_, label="VALIDATION",
+                       verdict=families.FORWARD_PASS + ": fixture", metrics={}, evidence={}, supersedes=None)
+
+    def test_three_closes_without_a_pass_stop_it_for_good(self):
+        for f in ("aaa", "bbb", "ccc"):
+            self.closed(f, "FUTILE_IN_SAMPLE")
+        self.assertTrue(families.programme_stop(self.db))
+        self.closed("ddd", "PASS")                           # an outcome field alone never counts
+        self.assertTrue(families.programme_stop(self.db))
+        with mock.patch.object(families, "forward_result", lambda db, e, r: "PASS"):
+            self.counted_pass("ddd", 0)                       # even a counted PASS of a later close
+            self.assertIn("family:ddd", families.forward_passes(self.db))
+            self.assertTrue(families.programme_stop(self.db))
+            self.assertTrue(families._programme_limits(self.db, FCARRY))
+
+    def test_a_pass_recorded_after_2028_06_30_never_lifts_the_stop(self):
+        late = ts(2028, 9, 10)
+        with mock.patch.object(families, "forward_result", lambda db, e, r: "PASS"):
+            self.counted_pass("eee", late)
+            self.assertIn("family:eee", families.forward_passes(self.db))
+            self.assertTrue(families.programme_stop(self.db, late))
+            self.counted_pass("fff", ts(2028, 6, 30, 12))
+            self.assertEqual(families.programme_stop(self.db, late), [])
+
+
+class NoHumanMembershipChangeAfterTheApproval(A5Base):
+    """Review of fdd898a, protocol #4 and #5: a registered member is never withdrawn by hand, and `lab transition`
+    never rejects a screen survivor on its OBSERVE result (SCREENING -> REJECTED needs the screen's REJECTED result)."""
+    GUARDS = (registry.complete_spec_guard, families.terminal_guard)
+
+    def test_a_registered_member_is_never_withdrawn(self):
+        self.register()
+        for e in BASE:
+            with self.assertRaises(lifecycle.LifecycleError):
+                lifecycle.request_approval(self.db, e, "WITHDRAWN", "human:anton", "withdraw it now",
+                                           guards=self.GUARDS)
+            self.assertEqual(lifecycle.state(self.db, e), "REGISTERED")
+
+    def test_lab_transition_never_rejects_a_survivor_on_its_observe_result(self):
+        self.register()
+        real = lifecycle.auto_transition
+
+        def crash(db, eid, to, *a, **k):
+            if to == "OBSERVATION":
+                raise RuntimeError("the fleet died between the result and the edge")
+            return real(db, eid, to, *a, **k)
+        with mock.patch.object(lifecycle, "auto_transition", crash):
+            with self.assertRaises(RuntimeError):
+                self.screened(F, sharpe=3.0)
+        rid = self.db.one("SELECT id FROM results WHERE exp_id=? ORDER BY id DESC", F)[0]
+        with mock.patch.dict(os.environ, _assistant_env(), clear=True):
+            rc, text = _cli(self.db_path, "transition", F, "REJECTED", "--result-id", str(rid), "--reason",
+                            "pick who survives")
+        self.assertEqual(rc, 1, text)
+        self.assertIn("SCREENING -> REJECTED needs the screen's own 'REJECTED' result", text)
+        self.assertEqual(lifecycle.state(self.db, F), "SCREENING")
+
+
+class RevokeIsAHumanTerminalStepInsideItsTransaction(A3Base):
+    """Review of fdd898a, protocol #6 and #7, engineering #3: revoke-family needs the terminal guard, and its checks run
+    inside the transaction that writes, so two revokes, or a revoke and the registration, cannot both pass."""
+
+    def test_an_assistant_session_cannot_revoke(self):
+        self.ready()
+        self.p[0].stop()                                     # the real guard
+        try:
+            with mock.patch.dict(os.environ, _assistant_env(), clear=True):
+                rc, text = _cli(self.db_path, "revoke-family", "fcarry", "--reason", "an assistant revokes it")
+        finally:
+            self.p[0].start()
+        self.assertEqual(rc, 1, text)
+        self.assertIsNotNone(families.approval(self.db, "fcarry"))
+        self.assertAlmostEqual(families.alpha_reserved(self.db), 0.0125)
+
+    def test_two_revokes_at_once_release_alpha_f_once(self):
+        self.ready()
+        other, real_tx, fired = DB(self.db_path), self.db.tx, []
+
+        def tx():
+            if not fired:
+                fired.append(1)
+                families.revoke(other, "fcarry", "human:anton", "the second terminal revokes too")
+            return real_tx()
+        with mock.patch.object(self.db, "tx", tx):
+            families.revoke(self.db, "fcarry", "human:anton", "the first terminal revokes")
+        other.close()
+        self.assertAlmostEqual(families.reserved(self.db, "fcarry"), 0.0)
+        self.assertAlmostEqual(families.alpha_reserved(self.db), 0.0)
+
+    def test_a_revoke_racing_the_registration_is_refused(self):
+        self.ready()
+        real_tx, fired = self.db.tx, []
+
+        def tx():
+            if not fired:                                    # the fleet registers between the check and the write
+                fired.append(1)
+                self.db.append("transitions", exp_id=F, ts=0, from_state="DISCOVERED", to_state="REGISTERED",
+                               actor="system:strategy-1", reason="fixture: the registration got there first")
+            return real_tx()
+        with mock.patch.object(self.db, "tx", tx):
+            with self.assertRaises(families.FamilyError):
+                families.revoke(self.db, "fcarry", "human:anton", "revoke while the batch registers")
+        self.assertAlmostEqual(families.reserved(self.db, "fcarry"), 0.0125)
+
+
+class FamilyFileRulesAreExact(unittest.TestCase):
+    """Review of fdd898a, protocol #8 and #9: alpha_F is exactly 0.0125 (point 13) and every lookback in a grid is
+    within max_lookback_days <= 14 (point 3)."""
+
+    def test_alpha_f_is_exactly_0_0125(self):
+        for a in (0.005, 0.008, 0.01, 0.0124):
+            self.assertTrue(any("alpha.family" in p for p in problems_of(alpha__family=a)), a)
+        self.assertEqual(problems_of(), [])
+
+    def test_every_grid_lookback_is_within_14_days(self):
+        g = [{"lookback_days": 60, "enter_apr": 0.1}, {"lookback_days": 7, "enter_apr": 0.2}]
+        self.assertTrue(any("lookback" in p for p in problems_of(instances__0__grid=g)))
+        f = [{"days": 14, "q": 0.8}, {"days": 90, "q": 0.95}]
+        self.assertTrue(any("days=90" in p for p in problems_of(instances__2__grid=f)))
+        h = [{"lookback_days": 8, "exit_apr": 0.0}, {"lookback_days": 7, "exit_apr": 0.1}]   # above its own 7
+        self.assertTrue(any("lookback_days=8" in p for p in problems_of(instances__1__grid=h)))
+
+
+class ADownloadFailureNeverStopsAFamily(A3Base):
+    """Review of fdd898a, engineering #1: a family download that fails (network, 5xx, 429) defers the job by an hour
+    without using an attempt and records why; it never fails the job for good and stops the family."""
+
+    def test_the_data_job_waits_and_retries(self):
+        self.now[0] = ts(2026, 10, 20)
+        self.queue_on_the_fixture_clock()
+        self.ready(files=False)
+        self.touch(kinds=("klines", "funding"))
+        self.assertEqual(sorted(fleet.strategy_pass(self.db)["registered"]), BASE)
+        agent = [a for a in fleet.agents(self.db_path) if a.name == "data-1"][0]
+
+        with mock.patch.object(data, "_fetch", _outage(lambda url: IOError(f"download failed: {url}"))), \
+                mock.patch.object(pipeline.time, "time", lambda: self.now[0]):
+            for _ in BASE:
+                agent(self.db)
+        for e in BASE:
+            j = jobs.get(self.db, f"data|{e}")
+            self.assertEqual((j["status"], j["attempts"], j["next_run"]),
+                             ("queued", 0, self.now[0] + pipeline.DOWNLOAD_RETRY_S), e)
+        self.assertEqual(self.db.one("SELECT COUNT(*) FROM events WHERE kind='job.failed'")[0], 0)
+        self.assertTrue(any("retries in 60 minutes" in r for w in self.events("family.waiting") for r in w["reasons"]))
+        self.assertFalse(fleet.strategy_pass(self.db)["families"]["fcarry"].startswith("stopped"))
+
+    def test_any_other_error_still_fails_as_before(self):
+        self.now[0] = ts(2026, 10, 20)
+        self.ready(files=False)
+        self.touch(kinds=("klines", "funding"))
+        fleet.strategy_pass(self.db)
+        spec = pipeline._spec(self.db, F)
+        with mock.patch.object(data, "_fetch", _outage(lambda url: OSError("disk full"))):
+            with self.assertRaises(OSError):
+                pipeline._download(self.db, F, spec, "train3", "data-1", ["BTCUSDT"])
+
+
+class TheDownloadLimitHoldsAcrossProcesses(A3Base):
+    """Review of fdd898a, engineering #4: the 2 download slots of amendment 9 are lock files shared by every process
+    (heavy workers are separate processes); and two writers of one file never share a .part file."""
+
+    def test_a_third_download_waits_for_a_slot(self):
+        import fcntl
+        import threading
+        d = os.path.join(self.cache, ".download_slots")
+        os.makedirs(d, exist_ok=True)
+        held = [open(os.path.join(d, f"slot{i}.lock"), "a+") for i in range(2)]
+        for f in held:                                       # another process holds both slots
+            fcntl.flock(f, fcntl.LOCK_EX)
+        calls = []
+        get = families.guarded_get("train3", fetch=lambda url: calls.append(url) or b"zip")
+        url = f"{data.SPOT_BASE}/klines/BTCUSDT/1h/BTCUSDT-1h-2023-01.zip"
+        self.now[0] = ts(2026, 10, 20)
+        t = threading.Thread(target=get, args=(url,))
+        t.start()
+        t.join(0.6)
+        self.assertEqual(calls, [])                          # waiting for a slot
+        fcntl.flock(held[0], fcntl.LOCK_UN)
+        t.join(5)
+        self.assertEqual(calls, [url])
+        for f in held:
+            f.close()
+
+    def test_two_writers_never_share_a_part_file(self):
+        seen = []
+        real = os.replace
+        with mock.patch.object(data.os, "replace", lambda a, b: seen.append(a) or real(a, b)):
+            p = _REAL_FETCH("https://example.invalid/x.zip", os.path.join(self.cache, "x", "x.zip"),
+                            get=lambda url: b"zip")
+        self.assertTrue(os.path.exists(p))
+        self.assertIn(f".{os.getpid()}.", seen[0])
+
+
+class SuccessorsKeepTheApprovalTheRegistrationCited(A5Base):
+    """Review of fdd898a, engineering #2: once the base batch is registered, a change to a bound file the steps do not
+    pin (the adapter, the vocabulary, a gate value) no longer drops a named successor or fixes the cohort early: what
+    registers is bound by the approval the registration cited. A changed family file or module still fails closed."""
+
+    def test_an_adapter_change_after_registration_keeps_the_successor(self):
+        self.register()
+        self.blobs["adapter"] = {**self.blobs["adapter"], "committed": "9999", "working": "9999"}
+        self.assertIsNone(families.approval(self.db, "fcarry"))               # void for a new registration
+        self.screened(F, early=True, funding=-0.005)                          # filt rejected at train: triggered
+        self.assertEqual(fleet.strategy_pass(self.db)["registered"], [S])
+        for e in (L, H):
+            self.screened(e)
+        self.screened(S, sharpe=0.5)
+        self.assertTrue(self.status().startswith("forward test"))
+        self.assertIn(S, families.cohort(self.db, "fcarry")["members"])
+
+    def test_a_changed_family_file_after_registration_fails_closed(self):
+        self.register()
+        self.screened(F, early=True, funding=-0.005)                          # triggered
+        self.blobs["family"] = {**self.blobs["family"], "committed": "abcdef01ffff", "working": "abcdef01ffff"}
+        self.assertIsNone(families.binding_approval(self.db, "fcarry"))
+        self.assertEqual(fleet.strategy_pass(self.db)["registered"], [])
+        self.assertEqual(lifecycle.state(self.db, S), "DISCOVERED")
+
+
+class TheHumanTextsAndSmallGuards(A5Base):
+    """Review of fdd898a, end-to-end #3-#6 and protocol #10: python3 in the printed commands, the family's own members
+    are no graveyard hit, shadow-start refuses a family instance, and the dashboard's screening alpha leaves out the
+    amendment 8 rows."""
+
+    def test_the_printed_confirm_command_runs_on_this_pc(self):
+        families.discover_all(self.db)
+        rc, text = _cli(self.db_path, "approve", F, "DISCOVERED", "--reason", WHY)
+        self.assertEqual(rc, 0, text)
+        self.assertIn("python3 -m lab confirm ", text)
+
+    def test_the_familys_own_members_are_no_graveyard_hit(self):
+        self.register()
+        self.screened(F, observe=False)
+        self.assertEqual(lifecycle.state(self.db, F), "REJECTED")
+        hits, unacked = families.graveyard_hits(self.db, families.load("fcarry"))
+        self.assertNotIn(F, hits)
+        self.assertNotIn(F, unacked)
+
+    def test_shadow_start_refuses_a_family_instance(self):
+        self.register()
+        self.screened(F, sharpe=1.5)
+        self.assertEqual(lifecycle.state(self.db, F), "OBSERVATION")
+        rc, text = _cli(self.db_path, "shadow-start", F, "--reason", "shadow trade the family member")
+        self.assertEqual(rc, 1, text)
+        self.assertIn(families.NO_PAPER, text)
+        self.assertEqual(self.db.one("SELECT COUNT(*) FROM events WHERE kind='shadow.approved'")[0], 0)
+
+    def test_the_card_shows_danish_waiting_reasons_and_the_instance_states(self):
+        self.now[0] = ts(2026, 10, 25)                                      # the embargo: registration waits
+        self.ready(files=False)
+        self.assertEqual(fleet.strategy_pass(self.db)["registered"], [])
+        row = next(r for r in command.families_card(self.db, self.now[0])["families"] if r["family"] == "fcarry")
+        self.assertTrue(row["waiting"]["current"])
+        self.assertTrue(row["waiting"]["reasons_da"][0].startswith("filer mangler og må først hentes fra 2026-11-28"),
+                        row["waiting"])
+        self.assertIn("may not be downloaded before 2026-11-28", row["waiting"]["reasons"][0])   # the registry text
+        self.assertEqual(row["members"], {"DISCOVERED": 4})
+        self.assertEqual(command.reason_da("something new"), "something new")                 # unknown: as recorded
+
+    def test_the_dashboard_screening_alpha_leaves_out_amendment_8_rows(self):
+        from lab import web
+        before = web.overview(self.db)["alpha_spent"]
+        self.register()
+        self.assertAlmostEqual(families.alpha_reserved(self.db), 0.0125)
+        self.assertAlmostEqual(web.overview(self.db)["alpha_spent"], before)
 
 
 if __name__ == "__main__":

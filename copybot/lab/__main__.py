@@ -1,32 +1,32 @@
 """Command line for the research registry (run from copybot/):
 
-  python -m lab init | import-legacy | status | show EXP | verify
-  python -m lab discover EXP --hypothesis .. --mechanism .. --instrument .. --horizon .. --execution .. --source ..
-  python -m lab add-version EXP --spec research/registry/EXP/SPEC.json     (committed file; complete spec)
-  python -m lab approve EXP TO_STATE --reason ".." [--committed FILE ...]   -> prints a one-time code (15 min)
-  python -m lab confirm CODE
-  python -m lab transition EXP TO_STATE --reason ".." --result-id N         (automatic edges only)
-  python -m lab result EXP --label EXPLORATORY --verdict ".." [--metrics JSON] [--supersedes ID --reason ..]
-  python -m lab reproduce tsmom|pmcal|all                                  (S2 acceptance: dev results through the lab)
-  python -m lab datasets [EXP]                                             (data read through the gateway)
-  python -m lab scan [--detector venue_subsidy|pricing_constraint]         (read-only public data; candidates only)
-  python -m lab candidates                                                 (discovered, suppressed, covered, seen again)
-  python -m lab supervise [--duration S] [--worker module:factory ...] [--no-default]   (manual start only)
-  python -m lab health                                                     (heartbeats, FAIL_CLOSED, pauses, warm-up)
-  python -m lab web [--port 8770] [--duration S]                           (dashboard on 127.0.0.1; manual start only)
-  python -m lab gate [--require]                                           (S7 automation gate: 7 days of clean operation)
-  python -m lab fleet [--duration S]                                       (research agent fleet under the supervisor; manual)
-  python -m lab pause|resume|stop --reason ".."                           (fleet control, logged in the event chain)
-  python -m lab jobs [--status S]                                          (persistent job queue)
-  python -m lab approve-template TEMPLATE --reason ".."  -> code;  python -m lab confirm-template CODE
-  python -m lab revoke-template TEMPLATE --reason ".."
-  python -m lab shadow-start EXP --reason ".." | shadow-stop EXP --reason ".."   (simulated shadow ledger, OBSERVATION only)
-  python -m lab forward-start --reason ".." | forward-stop [--exp EXP] --reason ".."   (amendment 7 forward tests)
-  python -m lab sim-resume LEDGER --reason ".."                          (resume a paused SHADOW_/FWD_ ledger)
-  python -m lab family-check FILE                                        (amendment 8; read-only, no network)
-  python -m lab approve-family FID --reason ".." -> code;  python -m lab confirm-family   (typed by the user)
-  python -m lab revoke-family FID --reason ".." | families                 (amendment 8)
-  python -m lab autopromote on|off --reason ".."                         (automatic promotion policy, amendment 4)
+  python3 -m lab init | import-legacy | status | show EXP | verify
+  python3 -m lab discover EXP --hypothesis .. --mechanism .. --instrument .. --horizon .. --execution .. --source ..
+  python3 -m lab add-version EXP --spec research/registry/EXP/SPEC.json     (committed file; complete spec)
+  python3 -m lab approve EXP TO_STATE --reason ".." [--committed FILE ...]   -> prints a one-time code (15 min)
+  python3 -m lab confirm CODE
+  python3 -m lab transition EXP TO_STATE --reason ".." --result-id N         (automatic edges only)
+  python3 -m lab result EXP --label EXPLORATORY --verdict ".." [--metrics JSON] [--supersedes ID --reason ..]
+  python3 -m lab reproduce tsmom|pmcal|all                                  (S2 acceptance: dev results through the lab)
+  python3 -m lab datasets [EXP]                                             (data read through the gateway)
+  python3 -m lab scan [--detector venue_subsidy|pricing_constraint]         (read-only public data; candidates only)
+  python3 -m lab candidates                                                 (discovered, suppressed, covered, seen again)
+  python3 -m lab supervise [--duration S] [--worker module:factory ...] [--no-default]   (manual start only)
+  python3 -m lab health                                                     (heartbeats, FAIL_CLOSED, pauses, warm-up)
+  python3 -m lab web [--port 8770] [--duration S]                           (dashboard on 127.0.0.1; manual start only)
+  python3 -m lab gate [--require]                                           (S7 automation gate: 7 days of clean operation)
+  python3 -m lab fleet [--duration S]                                       (research agent fleet under the supervisor; manual)
+  python3 -m lab pause|resume|stop --reason ".."                           (fleet control, logged in the event chain)
+  python3 -m lab jobs [--status S]                                          (persistent job queue)
+  python3 -m lab approve-template TEMPLATE --reason ".."  -> code;  python3 -m lab confirm-template CODE
+  python3 -m lab revoke-template TEMPLATE --reason ".."
+  python3 -m lab shadow-start EXP --reason ".." | shadow-stop EXP --reason ".."   (simulated shadow ledger, OBSERVATION only)
+  python3 -m lab forward-start --reason ".." | forward-stop [--exp EXP] --reason ".."   (amendment 7 forward tests)
+  python3 -m lab sim-resume LEDGER --reason ".."                          (resume a paused SHADOW_/FWD_ ledger)
+  python3 -m lab family-check FILE                                        (amendment 8; read-only, no network)
+  python3 -m lab approve-family FID --reason ".." -> code;  python3 -m lab confirm-family   (typed by the user)
+  python3 -m lab revoke-family FID --reason ".." | families                 (amendment 8)
+  python3 -m lab autopromote on|off --reason ".."                         (automatic promotion policy, amendment 4)
 """
 from __future__ import annotations
 
@@ -96,6 +96,9 @@ def family_cmd(args, db, out, ask=input):
                 return 1
             code = families.request(db, args.fid, human(), args.reason)
             b = families.bound_blobs(args.fid)["family"]
+            out("This approval binds (amendment 8 point 5):")
+            for line in families.approval_summary(db, families.load(args.fid)):
+                out(f"  {line}")
             out(f"approval code {code} (valid 15 min). Family file blob {b[:12]}.")
             out("Confirm by typing: python3 -m lab confirm-family   (it asks for the code and the first 8 "
                 "characters of the blob)")
@@ -124,6 +127,8 @@ def family_cmd(args, db, out, ask=input):
                     f"{', registered' if families.registered(db, fid) else ''}"
                     f"{', cohort ' + cf['cohort'] + ' M ' + str(cf['M']) if cf else ''}"
                     f"{', closed ' + str(c.get('outcome')) if c else ''}")
+                for e in sorted(families.members(db, fid)):
+                    out(f"    {e}: {lifecycle.state(db, e)}")
         return 0
     except families.FamilyError as e:
         out(f"refused: {e}")
@@ -131,7 +136,7 @@ def family_cmd(args, db, out, ask=input):
 
 
 def main(argv=None, db_path=DEFAULT_DB, out=print):
-    ap = argparse.ArgumentParser(prog="python -m lab")
+    ap = argparse.ArgumentParser(prog="python3 -m lab")
     ap.add_argument("--db", help="registry path (default data/lab/lab.db)")
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("init")
@@ -272,6 +277,10 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
             if args.cmd == "shadow-start" and lifecycle.state(db, args.exp) != "OBSERVATION":
                 out(f"refused: {args.exp} is not in OBSERVATION")
                 return 1
+            from lab import families
+            if args.cmd == "shadow-start" and families.is_instance(db, args.exp):   # amendment 8 point 16
+                out(f"refused: {args.exp}: {families.NO_PAPER}")
+                return 1
             kind = "shadow.approved" if args.cmd == "shadow-start" else "shadow.stopped"
             db.event(kind, human(), args.exp, {"reason": args.reason, "simulated": True})
             out(f"{args.exp}: {kind} (simulated shadow ledger SHADOW_{args.exp}; no effect on the formal tests)")
@@ -318,7 +327,7 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
             try:
                 if args.cmd == "approve-template":
                     code = templates.request(db, args.template, human(), args.reason)
-                    out(f"confirm within 15 min: python -m lab confirm-template {code}")
+                    out(f"confirm within 15 min: python3 -m lab confirm-template {code}")
                 elif args.cmd == "confirm-template":
                     tpl, _ = templates.confirm(db, args.code, human())
                     out(f"template {tpl} approved for exploratory screening (catalogue blob bound)")
@@ -378,7 +387,7 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
             code = lifecycle.request_approval(db, args.exp, args.to, human(), args.reason,
                                               {"committed_files": args.committed} if args.committed else None,
                                               guards=(registry.complete_spec_guard, families.terminal_guard))
-            out(f"approval code for {args.exp} -> {args.to}: {code}   (confirm within 15 minutes: python -m lab confirm {code})")
+            out(f"approval code for {args.exp} -> {args.to}: {code}   (confirm within 15 minutes: python3 -m lab confirm {code})")
         elif args.cmd == "confirm":                 # a family instance (amendment 8 point 6): interactive terminal only
             from lab import families
             exp, to = lifecycle.confirm(db, args.code, human(), guards=(registry.complete_spec_guard,

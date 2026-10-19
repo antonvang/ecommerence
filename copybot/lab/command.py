@@ -234,6 +234,37 @@ def kpis(db, window_s=900, now=None):
 # ---------- amendment 8 hypothesis families (read-only) ----------
 FAMILY_VERIFY_S = 60          # the approval binding is checked with git at most once a minute (dashboard polls: 10 s)
 _family_verified = {}         # (db path, approval event id, family) -> (checked ts, still valid)
+REASON_DA = (                                   # the dashboard is Danish; the registry keeps the English reasons
+    ("may not be downloaded before 2026-11-28", "filer mangler og må først hentes fra 2026-11-28 (ændring 8 punkt 17, "
+                                                 "ændring 9 punkt 1)"),
+    ("download failed", "en download fejlede; trinnet prøver igen om en time (familien stopper ikke)"),
+    ("has not published", "arkivet har ikke udgivet vinduets sidste måned endnu; fremadtesten venter en dag"),
+    ("base instance(s) not DISCOVERED", "basisinstanser er ikke genoplivet; genoplivning sker før approve-family "
+                                        "(ændring 8 punkt 6)"),
+    ("failed permanently", "et job fejlede permanent; familien er stoppet uden at lukke kohorten (ændring 8 punkt 15)"),
+    ("fails closed", "en låst fil er ændret efter registreringen; familien fejler lukket (ændring 8 punkt 18)"),
+    ("registration error", "fejl under registreringen; den prøves igen i næste gennemløb"),
+    ("not acknowledged", "et kirkegårdsfund er ikke kvitteret i familiefilen (ændring 8 punkt 6)"),
+    ("open experiment(s) outside the family", "et åbent eksperiment uden for familien dækker samme mekanisme "
+                                              "(ændring 8 punkt 7)"),
+    ("programme stopped", "programmet er stoppet; kun en ny dateret ændring genstarter det (ændring 8 punkt 15)"),
+    ("families are already open", "der er allerede 3 åbne familier (ændring 8 punkt 3)"),
+    ("per canonical tag", "grænsen for familier pr. mekanisme er nået (ændring 8 punkt 3)"),
+    ("open family per tag", "en anden familie på samme mekanisme er stadig åben (ændring 8 punkt 3)"),
+    ("approval is no longer valid", "registreringen stoppede halvvejs, og godkendelsen er ikke længere gyldig "
+                                    "(ændring 8 punkt 5 og 7)"),
+    ("successor trigger", "en efterfølger venter på sin udløser"),
+    ("was not DISCOVERED when approve-family was requested", "en efterfølger blev genoplivet efter godkendelsen og "
+                                                             "registreres aldrig (ændring 8 punkt 5, 6 og 9)"),
+)
+
+
+def reason_da(reason):
+    """The Danish dashboard text of a family.waiting reason (the English reason stays in the registry and the tooltip)."""
+    r = str(reason or "")
+    return next((da for key, da in REASON_DA if key in r), r)
+
+
 FAMILY_PROGRESS = ("family.approved", "family.revoked", "batch.registered", "cohort.fixed", "family.closed")
 MEMBER_PROGRESS = ("job.done", "lifecycle.transition", "result.recorded", "family.interim", "holdout.opened")
 
@@ -280,7 +311,8 @@ def _family_row(db, fid, now):
             later.append(db.one(f"SELECT COALESCE(MAX(id), 0) FROM events WHERE kind IN "
                                 f"({','.join('?' * len(MEMBER_PROGRESS))}) AND exp_id IN "
                                 f"({','.join('?' * len(members))})", *MEMBER_PROGRESS, *members)[0])
-        waiting = {"reasons": p.get("reasons"), "topic": p.get("topic") or "registration", "ts": w[-1]["ts"],
+        waiting = {"reasons": p.get("reasons"), "reasons_da": [reason_da(r) for r in p.get("reasons") or []],
+                   "topic": p.get("topic") or "registration", "ts": w[-1]["ts"],
                    "current": w[-1]["id"] > max(later, default=0)}     # until a later step of the family
     return {"family": fid, "title": fam.get("title"), "tag": (fam.get("mechanism") or {}).get("tag"),
             "approval": state, "approval_event": ev["id"] if ev else None, "approval_ts": ev["ts"] if ev else None,

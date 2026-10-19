@@ -1,5 +1,5 @@
 """Supervisor (ENGINE_PROPOSAL.md §8, stage S5): one instance, worker threads with heartbeats, restart with exponential
-backoff, and a fail-closed startup recovery. It is started only by hand (`python -m lab supervise`); there is no
+backoff, and a fail-closed startup recovery. It is started only by hand (`python3 -m lab supervise`); there is no
 autostart and it never changes experiment rules or promotes anything.
 
 Startup recovery, before any worker runs:
