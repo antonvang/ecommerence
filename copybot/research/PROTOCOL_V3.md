@@ -1338,3 +1338,38 @@ simuleret handel; strengere, ikke lempeligere. Ingen ny datakilde: de to bøger,
    overstiger et estimeret spread.
 5. **Ærligt:** gebyrerne er VIP0-satser (antaget, ikke målt); dybden er kun de 20 niveauer, børsen viser; basisændring
    gennem holdeperioden måles på aktive konti fra deres opgørelser, ikke forudsagt.
+
+## Ændring 14 (2026-10-20): nye gratis datakilder — handelsstørrelser, historisk bogdybde, opmærksomhed og makrokalender — før kode
+
+**Beslutning:** Claude efter brugerens ja 2026-10-20 ("Lad os klare dette" til nyheds/makrodata og trade-historik).
+Kun data; ingen ny strategi, ingen gate ændres, intet handles. Alle kilder er offentlige og gratis uden nøgle;
+ingen konto oprettes og intet betales.
+
+1. **Kilder og indhold:**
+   - `aggTrades` (data.binance.vision, USD-M, månedlige filer): hver handel med pris, mængde, tid og hvem der tog
+     likviditeten. Sammenfattes pr. time og mønt: antal, købt og solgt mængde og notional, købt og solgt notional i
+     fire størrelsesklasser (< 1.000, 1.000–10.000, 10.000–100.000, ≥ 100.000 USD), største handel, VWAP. Klines har
+     allerede antal og taker-køb pr. time; det nye er størrelsesfordelingen.
+   - `bookDepth` (data.binance.vision, USD-M, daglige filer, findes fra 2023-01): samlet dybde i notional ved ±1…5 % fra
+     midten, cirka hvert 30. sekund. Sammenfattes pr. time: gennemsnit og minimum pr. niveau og antal øjebliksbilleder.
+     Formål: historisk likviditet til omkostningsmodellen i stedet for antagelser.
+   - Wikipedia-sidevisninger (wikimedia.org REST, dagligt, menneskelige brugere) for Bitcoin, Ethereum,
+     Cryptocurrency og de 8 universmønter. Formål: opmærksomhed som tidsstemplet nyhedsproxy.
+   - Makrokalender: FOMC-møders erklæringstidspunkt (federalreserve.gov, historiske sider pr. år) og BLS'
+     udgivelsestidspunkter for CPI og Employment Situation (bls.gov, plan pr. år). Kun tidspunkterne; udfaldet (tallene,
+     overraskelsen) hentes ikke.
+   - GDELT og andre nyhedskilder hentes ikke nu (GDELT tillader én forespørgsel pr. 5 s og dækker ikke 2020–2023
+     pålideligt i det gratis API; licenserede nyhedsfeeds kræver nøgle eller betaling og kræver brugerens ja).
+2. **Perioder:** kun til og med 2023-12-31. 2024 er holdout, 2025-01-01 og frem er reserveret; begge hentes aldrig af
+   denne indsamling, og koden afviser en enhed, der slutter efter 2023-12-31.
+3. **Point-in-time:** en timesammenfatning må kun bruges fra timens slutning. En daglig sidevisning for dag D må kun
+   bruges fra D+2 00:00 UTC (offentliggøres med op til et døgns forsinkelse; antaget, konservativt). Kalendertidspunkter
+   er kendt på forhånd (planerne offentliggøres før året) og må bruges før begivenheden; intet udfald gemmes.
+4. **Omfang og budget:** pilot = de 8 universmønter (BNB, XRP, DOGE, ADA, LINK, LTC, AVAX, DOT) for 2023 (train og
+   validation): aggTrades cirka 6,5 GB og bookDepth cirka 1,3 GB download (målt i S3-listen 2026-10-20). Et samlet
+   downloadbudget på 10 GB håndhæves af koden; derudover kræves brugerens ja (alle 32 mønter 2020–2023 er 151 GB).
+5. **Integritet og plads:** hver Binance-fil kontrolleres mod sin `.CHECKSUM` (sha256); en fil, der ikke matcher,
+   afvises. Råfilen slettes efter sammenfatning; filens sha256, størrelse og URL registreres i hændelseskæden
+   (`ingest.done`). Der hentes kun, når der er mindst 2 GB fri disk ud over filens størrelse. Én fil ad gangen.
+6. **Brug:** dataene er ikke bevis for noget. En strategi, der bruger dem, kræver sin egen hypotese skrevet og committet
+   før test, og læses gennem datagatewayen som al anden forskningsdata.
