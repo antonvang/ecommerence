@@ -1126,3 +1126,14 @@ der kan betale, er vedvarende høj funding (kun EPIC havde cirka 0,25 % pr. afre
    prøves igen efter 1 time.
 5. **Ærligt:** høj funding følger ofte stærk efterspørgsel efter lange positioner; spot/perp-forholdet kan bevæge sig
    imod kontoen, og en mønt kan blive afnoteret. Tabsreglen (5 %) gælder. Intet afkast er beregnet.
+
+### Præcisering af ændring 12e (2026-10-20): markedets funding vises — ikke-afgørende
+
+Claude efter brugerens mandat 2026-10-20 ("det er beslutninger som denne du også skal tage"), fordi dashboardet ikke
+viste, hvorfor scannerkontiene står stille. Ingen regel ændres; intet her starter, stopper eller vælger en konto.
+
+1. `premium-watch` skriver ved hver måling tre ikke-markerede rækker i `observations` (instrument `binance_perps`):
+   `funding_median` (median af forventet funding over alle handlede perps), `funding_above_floor` (andelen strengt
+   over 0,01 %) og `funding_top` (højeste forventede funding; mønten står i rækkens payload).
+2. Forsidens panel viser de seneste tre tal og, når ingen mønt opfylder 12e punkt 2, at systemet venter, og hvorfor.
+3. Cirka 4.300 rækker pr. døgn. Ingen ny forespørgsel.
