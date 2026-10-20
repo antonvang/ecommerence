@@ -169,9 +169,27 @@ _PERPS = {}                                     # premium-watch: url -> (fetched
 FUNDING_MIN = 0.001                             # 12e: predicted funding >= 0.10 % per settlement is recorded, flagged
 FLOOR = 0.0001                                  # the 0.01 % interest floor per settlement
 LIVE = {}                                       # 12e: url -> (measured at, {symbol: predicted funding}), in memory only
+HL_LIVE = {}                                    # 13: url -> (measured at, {coin: predicted funding x 8}), in memory only
+HL_EIGHT = 8                                    # 13: Hyperliquid settles hourly; x 8 compares with Binance's 8-hour rate
 
 
-def premium_watch(db, get=http_get, now=None):
+def hl_obs(res, now):
+    """Amendment 13: Hyperliquid metaAndAssetCtxs -> rows (predicted funding x 8 >= FUNDING_MIN, flagged, plus the
+    count compared) and {coin: predicted funding x 8} for every listed perp (no k- or @-prefixed or delisted coin)."""
+    meta, ctxs = res
+    live = {}
+    for a, c in zip(meta.get("universe") or [], ctxs):
+        name = a.get("name") or ""
+        if not name or name.startswith(("k", "@")) or a.get("isDelisted") or c.get("funding") in (None, ""):
+            continue
+        live[name] = float(c["funding"]) * HL_EIGHT
+    rows = [obs("pricing_constraint", HL_INFO, name, "hl_predicted_funding", r, FUNDING_MIN, True)
+            for name, r in sorted(live.items()) if r >= FUNDING_MIN]
+    rows.append(obs("pricing_constraint", HL_INFO, "hyperliquid_perps", "hl_symbols_compared", len(live)))
+    return rows, live
+
+
+def premium_watch(db, get=http_get, now=None, post=None):
     """Amendment 12a: measurement (b) every minute, written as observations only (no market.event, no candidate);
     12e: plus predicted funding >= FUNDING_MIN as flagged rows, and every perp's predicted funding in LIVE."""
     now = int(now or time.time())
@@ -190,6 +208,14 @@ def premium_watch(db, get=http_get, now=None):
                      sum(1 for v in vals if v > FLOOR + 1e-12) / len(vals)),
                  obs("pricing_constraint", src, "binance_perps", "funding_top", funding[top], payload={"symbol": top})]
     LIVE[BN] = (now, funding)
+    body = {"type": "metaAndAssetCtxs"}             # amendment 13: Hyperliquid's predicted funding, same minute
+    try:
+        hl_rows, live = hl_obs(post(HL_INFO, body) if post else http_post(HL_INFO, body), now)
+        rows += hl_rows
+        HL_LIVE[HL_INFO] = (now, live)
+    except Exception as e:                          # Binance's measurement stands; the next minute tries again
+        rows.append(obs("pricing_constraint", HL_INFO, "hyperliquid_perps", "error", None,
+                        payload={"error": repr(e)[:300]}))
     with db.tx():
         for o in rows:
             db.append("observations", ts=now, **o)

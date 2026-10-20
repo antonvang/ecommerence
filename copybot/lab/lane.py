@@ -65,6 +65,12 @@ SCAN_SOURCE_S = 3 * DAY
 SCAN_FLAT_S = 2 * DAY
 SCAN_MAX_AGE_S = 30 * DAY
 SCAN_HOLD_S = 12 * HOUR                         # 12c: without a booked settlement, a position may close after 12 h
+# amendment 13: Hyperliquid funding accounts (source "hl"): long Binance spot, short Hyperliquid perp
+HL_LABEL = "HL-KONTO (Hyperliquid-funding, simuleret, aldrig bevis)"
+HL_PERP = "HL:"                                 # the perp leg's instrument prefix (paper_runner.HL_PREFIX)
+HL_SLOTS = 10
+HL_HOLD_S = 8 * HOUR                            # 13 point 5: out no earlier than 8 h after the entry
+HL_PERSIST_HOURS = 24                           # 13 point 4: mean of the last 24 settled hours x 8 >= SCAN_FUND_PERSIST
 _CANDIDATES = {}                                # (registry, last research.explore id, families) -> candidates
 
 
@@ -72,12 +78,26 @@ def is_scanner(info):
     return (info or {}).get("source") == "scanner"
 
 
+def is_hl(info):
+    return (info or {}).get("source") == "hl"
+
+
+def is_lane(info):
+    """An account of the lane itself (amendment 11), not a scanner (12) or Hyperliquid (13) account."""
+    return not (info or {}).get("source")
+
+
 def label(info):
-    return SCAN_LABEL if is_scanner(info) else LABEL
+    return HL_LABEL if is_hl(info) else SCAN_LABEL if is_scanner(info) else LABEL
 
 
 def rules_text(info):
     """The automatic stop rules, in Danish, for the dashboard."""
+    if is_hl(info):
+        return (f"ind ved Hyperliquid-funding ×8 ≥ {SCAN_FUND_MIN:.2%} og snit af {HL_PERSIST_HOURS} timer ×8 ≥ "
+                f"{SCAN_FUND_PERSIST:.2%}; ud ved < {SCAN_FUND_EXIT:.2%} to gange og mindst {HL_HOLD_S // HOUR} t; "
+                f"stoppes ved tab ≥ {SCAN_LOSS:.0%}, 24 t pause, funding − gebyrer ≤ 0 efter {SCAN_SOURCE_S // DAY} "
+                f"dage, {SCAN_FLAT_S // DAY} døgn uden position eller {SCAN_MAX_AGE_S // DAY} dage")
     if is_scanner(info):
         return (f"ind ved forventet funding ≥ {SCAN_FUND_MIN:.2%} og snit af 3 afregninger ≥ {SCAN_FUND_PERSIST:.2%}; "
                 f"ud ved < {SCAN_FUND_EXIT:.2%} to gange og en afregning bogført (højst {SCAN_HOLD_S // HOUR} t); "
@@ -268,7 +288,7 @@ def _tested_coins(info):
 
 
 def _retire_reason(db, ledger, info, now, fids):
-    if is_scanner(info):
+    if is_scanner(info) or is_hl(info):
         return _scan_retire_reason(db, ledger, info, now)
     st, risk = stats(db, ledger, now, info), Risk(db, lambda: now)
     tested = _tested_coins(info)
@@ -353,7 +373,7 @@ def manage(db, now=None, get=None, fids=None):
         if rule:
             retire(db, led, rule, detail, st, now)
             out["retired"].append(led)
-        elif (not is_scanner(info[led]) and st["days"] >= PROMISING_DAYS and st["mean"] is not None and st["mean"] > 0 and st["z"] is not None
+        elif (is_lane(info[led]) and st["days"] >= PROMISING_DAYS and st["mean"] is not None and st["mean"] > 0 and st["z"] is not None
               and st["z"] > PROMISING_Z and not db.one("SELECT 1 FROM events WHERE kind='lane.promising' AND "
                                                        "exp_id=?", led)):
             db.event("lane.promising", ACTOR, led, {"stats": st, "decisional": False, "label": LABEL,
@@ -362,9 +382,10 @@ def manage(db, now=None, get=None, fids=None):
     if not on or get is None or Risk(db, lambda: now).fail_closed():
         return out
     out["scanner"] = manage_scanner(db, now, get)
+    out["hl"] = manage_hl(db, now, get)
     info = started(db)
-    act = [a for a in active(db) if not is_scanner(info[a])]
-    last = max((i["ts"] for i in info.values() if not is_scanner(i)), default=None)
+    act = [a for a in active(db) if is_lane(info[a])]
+    last = max((i["ts"] for i in info.values() if is_lane(i)), default=None)
     if len(act) >= SLOTS or (last is not None and now - last < START_EVERY):
         return out
     busy = collections.Counter((info[a]["family"], info[a]["function"]) for a in act)
@@ -438,7 +459,8 @@ def entry_ts(db, ledger, inst):
 
 
 def settled_since_entry(db, ledger, coin, now):
-    """12c: a funding settlement after the entry is booked for the perp leg, or SCAN_HOLD_S has passed."""
+    """12c: a funding settlement after the entry is booked for the perp leg (instrument `coin`), or SCAN_HOLD_S has
+    passed."""
     t = entry_ts(db, ledger, coin)
     if t is None:
         return True
@@ -471,13 +493,14 @@ def scan_candidates(db, now):
     return sorted((c for c, v in fs[0].items() if v >= SCAN_FUND_MIN), key=lambda c: (-fs[0][c], c))
 
 
-def _cooling(db, coin, now):
-    """A coin gets a new account SCAN_COOLDOWN_S after its last one stopped, SCAN_SKIP_COOLDOWN_S after a skip."""
+def _cooling(db, coin, now, source="scanner"):
+    """A coin gets a new account SCAN_COOLDOWN_S after its last one (of this source) stopped, SCAN_SKIP_COOLDOWN_S
+    after a skip."""
     info = started(db)
     for kind, wait in (("lane.retired", SCAN_COOLDOWN_S), ("lane.skipped", SCAN_SKIP_COOLDOWN_S)):
         for _, ts, _, led, p in _events(db, kind):
             i = p if kind == "lane.skipped" else info.get(led, {})
-            if is_scanner(i) and coin in (i.get("coins") or []) and now - p.get("t", ts) < wait:
+            if i.get("source") == source and coin in (i.get("coins") or []) and now - p.get("t", ts) < wait:
                 return True
     return False
 
@@ -522,6 +545,107 @@ def manage_scanner(db, now, get):
     return out
 
 
+# ---------- Hyperliquid funding accounts (amendment 13) ----------
+def hl_scans(db, now, n=2):
+    """The latest n Hyperliquid measurement times (hl_symbols_compared is written every time)."""
+    return [r[0] for r in db.q("SELECT DISTINCT ts FROM observations WHERE metric='hl_symbols_compared' AND ts<=? "
+                               "ORDER BY ts DESC LIMIT ?", int(now), n)]
+
+
+def hl_fundings(db, ts):
+    """{coin: predicted funding x 8} flagged (>= SCAN_FUND_MIN) at Hyperliquid measurement time ts."""
+    return {r["instrument"]: r["value"] for r in db.q("SELECT instrument, value FROM observations WHERE "
+                                                      "metric='hl_predicted_funding' AND flagged=1 AND ts=?", ts)}
+
+
+def hl_live(coin, now):
+    """The latest in-memory Hyperliquid predicted funding x 8 of `coin` and its time, or (None, None) when stale."""
+    from lab import scanner
+    hit = scanner.HL_LIVE.get(scanner.HL_INFO)
+    if not hit or now - hit[0] > SCAN_LIVE_MAX_S:
+        return None, None
+    return hit[1].get(coin), hit[0]
+
+
+def _hl_low_twice(ledger, coin, now):
+    r, t = hl_live(coin, now)
+    if r is None:
+        return False
+    last_t, n = _LOW.get(ledger, (None, 0))
+    if t != last_t:
+        _LOW[ledger] = (t, n + 1 if r < SCAN_FUND_EXIT else 0)
+    return _LOW[ledger][1] >= 2
+
+
+def hl_signal(db, coin, holding, now, ledger=None):
+    """13 points 4-5. Holding: out after two low live readings and HL_HOLD_S since the entry; without a fresh reading
+    the position is held. Flat: in on the latest (a new account) or the two latest (a reopening) flagged
+    measurements; nothing opens on a measurement older than SCAN_STALE_S."""
+    if holding:
+        if ledger is None:
+            return 1.0
+        t = entry_ts(db, ledger, HL_PERP + coin)
+        return 0.0 if (_hl_low_twice(ledger, coin, now) and (t is None or now - t >= HL_HOLD_S)) else 1.0
+    ts = hl_scans(db, now)
+    fs = [hl_fundings(db, t) for t in ts]
+    if not ts or now - ts[0] > SCAN_STALE_S or fs[0].get(coin, 0) < SCAN_FUND_MIN:
+        return 0.0
+    fresh = ledger is None or not db.one("SELECT 1 FROM sim_fills WHERE exp_id=? LIMIT 1", ledger)
+    return 1.0 if fresh or (len(fs) > 1 and fs[1].get(coin, 0) >= SCAN_FUND_MIN) else 0.0
+
+
+def hl_candidates(db, now):
+    ts = hl_scans(db, now, 1)
+    if not ts or now - ts[0] > SCAN_STALE_S:
+        return [], {}
+    fs = hl_fundings(db, ts[0])
+    return sorted((c for c, v in fs.items() if v >= SCAN_FUND_MIN), key=lambda c: (-fs[c], c)), fs
+
+
+def manage_hl(db, now, get):
+    """Start Hyperliquid funding accounts for every coin that meets 13 point 4, up to HL_SLOTS."""
+    from lab import paper_runner
+    info = started(db)
+    held = {info[a]["coins"][0] for a in active(db) if is_hl(info[a])}
+    out, probes = {"started": [], "skipped": []}, 0
+    cands, fs = hl_candidates(db, now)
+    for coin in cands:
+        if len(held) >= HL_SLOTS or probes >= PROBES:
+            break
+        if coin in held or _cooling(db, coin, now, "hl"):
+            continue
+        probes += 1
+        key, hour = f"hl|{coin}|{int(now) // HOUR * HOUR}", int(now) // HOUR * HOUR
+        led = ledger_id(key)
+        trigger = {"funding": fs.get(coin), "rule": "research/PROTOCOL_V3.md amendment 13"}
+        base = {"key": key, "source": "hl", "family": "fcarry", "function": "hl_funding", "params": {},
+                "coin": coin, "trigger": trigger, "label": HL_LABEL, "simulated": True, "decisional": False,
+                "t": int(now)}
+        try:
+            settled, _ = paper_runner.hl_hourly(coin, now)
+            last = [settled[t] for t in sorted(settled)[-HL_PERSIST_HOURS:]]
+            avg = sum(last) / len(last) * 8 if len(last) == HL_PERSIST_HOURS else None
+            trigger["settled_avg3"] = avg                  # shown like the scanner's (here: 24 hours x 8)
+            trigger["settled_hours"] = len(last)
+            if avg is None or avg < SCAN_FUND_PERSIST:
+                raise ValueError(f"funding not persistent: mean of last {len(last)} settled hours x 8 = {avg}")
+            p_inst, s_inst = HL_PERP + coin, f"{coin}USDT{SPOT}"
+            for inst in (p_inst, s_inst):
+                if paper_runner.fetch_book(inst, now, get).crossed():
+                    raise ValueError(f"{inst}: crossed or empty book")
+        except Exception as e:
+            db.event("lane.skipped", ACTOR, led, {**base, "coins": [coin], "reason": f"{e!r}"[:200]})
+            out["skipped"].append(coin)
+            continue
+        db.event("lane.started", ACTOR, led, {**base, "coins": [coin], "expectation": None, "capital": CAPITAL,
+                                              "costs": COSTS.__dict__, "hour": hour,
+                                              "legs": {"perp": p_inst, "spot": s_inst},
+                                              "rule": "research/PROTOCOL_V3.md amendment 13"})
+        held.add(coin)
+        out["started"].append(led)
+    return out
+
+
 # ---------- trading (point 4) ----------
 def _signal(info, market):
     """The family function's position for the hour that is starting, per coin (0 or +1)."""
@@ -530,6 +654,13 @@ def _signal(info, market):
     fund = {s: {t: -r for t, r in f.items()} for s, (_, f) in market.items()}   # cost convention (fcarry.py)
     pos = getattr(mod, info["function"])(nxt, fund, info["params"], None)
     return {s: (pos.get(s) or [0.0])[-1] for s in market}
+
+
+def legs(info, coin):
+    """(perp instrument, spot instrument) of one coin: USD-M and Binance spot, or (13) Hyperliquid and Binance spot."""
+    if is_hl(info):
+        return HL_PERP + coin, f"{coin}USDT{SPOT}"
+    return coin, coin + SPOT
 
 
 def run_one(db, ledger, get, now, cache=None, books=None):
@@ -541,39 +672,48 @@ def run_one(db, ledger, get, now, cache=None, books=None):
         return {"status": "fail_closed"}
     if risk.paused(ledger):
         return pr.mark_only(db, ledger, get, now, books, cache)
-    hour, market, opens = int(now) // HOUR * HOUR, {}, {}
+    hour, market, opens, price = int(now) // HOUR * HOUR, {}, {}, {}
     try:
         for s in info["coins"]:
-            bars, funding, _, op = pr.hourly(s, now, get, cache)
-            market[s], opens[s] = (bars, funding), op
+            if is_hl(info):                              # amendment 13: Hyperliquid funding and 1h opens
+                funding, op = pr.hl_hourly(s, now)
+                market[s], opens[s] = (None, funding), op
+            else:
+                bars, funding, _, op = pr.hourly(s, now, get, cache)
+                market[s], opens[s] = (bars, funding), op
     except Exception as e:
         risk.pause(ledger, "data_fetch", None, None, f"public market data fetch failed: {e!r}"[:300],
                    eng.cancel_entries)
         return {"status": "paused", "reason": "data fetch failed"}
     for s, (bars, _) in market.items():
-        if not bars or now - (bars[-1][0] + HOUR) > pr.MAX_BAR_AGE:
+        last = (max(opens[s]) if opens[s] else None) if bars is None else (bars[-1][0] + HOUR if bars else None)
+        if last is None or now - last > pr.MAX_BAR_AGE:
             risk.pause(ledger, "data_stale", None, pr.MAX_BAR_AGE, f"{s}: stale bars", eng.cancel_entries)
             return {"status": "paused", "reason": f"{s} data stale"}
+        price[s] = opens[s][max(opens[s])] if bars is None else bars[-1][2]
+    perp = {legs(info, s)[0]: s for s in market}
     funded = pr.book_funding(db, eng, ledger, now, lambda syms: {
-        x: (market[x][1], opens[x]) if x in market else ({}, {}) for x in syms})     # the spot leg has no funding
-    if is_scanner(info):                                 # amendment 12: the scanner's premium decides
+        x: (market[perp[x]][1], opens[perp[x]]) if x in perp else ({}, {}) for x in syms})   # spot: no funding
+    pos = eng.ledger(ledger)["positions"]
+    if is_scanner(info) or is_hl(info):                  # amendments 12e and 13: one coin, live funding decides
         c = info["coins"][0]
-        pos0 = eng.ledger(ledger)["positions"]
-        want = {c: scan_signal(db, c, pos0.get(c + SPOT, 0.0) > 0 or pos0.get(c, 0.0) < 0, now, ledger)}
+        p_inst, s_inst = legs(info, c)
+        holding = pos.get(s_inst, 0.0) > 0 or pos.get(p_inst, 0.0) < 0
+        want = {c: (hl_signal if is_hl(info) else scan_signal)(db, c, holding, now, ledger)}
     else:
         want = _signal(info, market)
-    pos = eng.ledger(ledger)["positions"]
     last = db.one("SELECT equity FROM sim_equity WHERE exp_id=? ORDER BY id DESC LIMIT 1", ledger)
     size = (last["equity"] if last else CAPITAL) / (UNIT_CAPITAL * len(info["coins"]))
     orders = []
     for s in info["coins"]:
-        sq, pq, px = pos.get(s + SPOT, 0.0), pos.get(s, 0.0), market[s][0][-1][2]
+        p_inst, s_inst = legs(info, s)
+        sq, pq, px = pos.get(s_inst, 0.0), pos.get(p_inst, 0.0), price[s]
         q = max(sq, -pq, 0.0) if want[s] > 0 else 0.0
         fresh = want[s] > 0 and q == 0.0
         if not fresh and abs(sq - q) * px < MIN_NOTIONAL and abs(pq + q) * px < MIN_NOTIONAL:
             continue
         try:
-            bk = {s: pr.fetch_book(s, now, get), s + SPOT: pr.fetch_book(s + SPOT, now, get)}
+            bk = {p_inst: pr.fetch_book(p_inst, now, get), s_inst: pr.fetch_book(s_inst, now, get)}
         except Exception as e:
             orders.append({"symbol": s, "status": f"not sent: book unavailable ({e!r})"[:120]})
             continue                                    # same order ids: the next pass this hour retries
@@ -585,8 +725,8 @@ def run_one(db, ledger, get, now, cache=None, books=None):
             if books is not None:
                 books[inst] = b
         if fresh:
-            q = size / bk[s].mid()
-        for inst, target, cur in ((s + SPOT, q, sq), (s, -q, pq)):
+            q = size / bk[p_inst].mid()
+        for inst, target, cur in ((s_inst, q, sq), (p_inst, -q, pq)):
             delta = target - cur
             if abs(delta) * bk[inst].mid() < MIN_NOTIONAL:
                 continue
@@ -648,7 +788,7 @@ def account_row(db, ledger, info, gone, end):
             "funding - gebyrer > 0": funding - fees > 0, f"største fald < {PILOT_DD:.0%}": dd < PILOT_DD,
             "ikke stoppet": not status.startswith("stoppet"), "slippage mod modellen": "ikke målt"}
     met = all(v is True for k, v in crit.items() if k != "slippage mod modellen")
-    return {"ledger": ledger, "source": "scanner" if is_scanner(info) else "lane", "function": info.get("function"),
+    return {"ledger": ledger, "source": info.get("source") or "lane", "function": info.get("function"),
             "params": info.get("params"), "coins": info.get("coins"), "started": info["ts"], "status": status,
             "equity": equity, "net": equity - CAPITAL, "net_pct": (equity - CAPITAL) / CAPITAL, "funding": funding,
             "fees": fees, "funding_minus_fees": funding - fees, "max_drawdown": dd, "days_live": days,

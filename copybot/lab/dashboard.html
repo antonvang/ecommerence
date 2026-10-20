@@ -750,12 +750,12 @@ const day = ts => new Date(ts*1000).toISOString().slice(5,16).replace("T"," ");
 
 function renderLanes(l){
   const c = l.counts, r = l.report, sgn = v => `<span class="${v > 0 ? "good" : v < 0 ? "bad" : ""}">${v > 0 ? "+" : ""}${num(v)}</span>`;
-  $("#lanes-sum").innerHTML = metric("Aktive konti", `${c.lane} bane · ${c.scanner} scanner`, `pladser: ${c.lane_slots} bane · ${c.scanner_slots} scanner` + (l.policy_on ? "" : " · SLÅET FRA (lane-off)"))
+  $("#lanes-sum").innerHTML = metric("Aktive konti", `${c.lane} bane · ${c.scanner} scanner · ${c.hl ?? 0} HL`, `pladser: ${c.lane_slots} bane · ${c.scanner_slots} scanner · ${c.hl_slots ?? 0} Hyperliquid` + (l.policy_on ? "" : " · SLÅET FRA (lane-off)"))
     + metric("Netto, aktive konti (sim.)", sgn(l.net_active) + " USD", `alle konti nogensinde: ${l.net_all > 0 ? "+" : ""}${num(l.net_all)} USD · ${l.stopped_total} stoppet`)
     + (l.market ? metric("Funding på markedet nu", `${(l.market.median*100).toFixed(4)}% median`, `${pct(l.market.above_floor, 0)} af perps over rentegulvet · højest ${esc(l.market.top_symbol || "?")} ${(l.market.top*100).toFixed(3)}% · scannerkonti kræver ${(l.market.entry_min*100).toFixed(2)}%` + (c.scanner === 0 && l.market.top < l.market.entry_min ? " · <b>venter: ingen mønt er høj nok</b>" : "")) : "")
     + metric("Seneste døgnrapport", r ? esc(r.day) : `<span class="na">${NA}</span>`, r ? `${r.accounts} konti · netto ${num(r.net_total)} USD · pilotens papirkrav opfyldt: ${(r.met || []).length ? esc(r.met.join(", ")) : "ingen endnu"}` : "skrives kl. 00:30 UTC");
   const cols = [
-    {h:"Konto", f:x => `<div style="font-weight:700">${esc(x.name)}</div><div class="dim">${x.scanner ? "scanner" : "bane"} · ${esc(x.ledger)}</div>`},
+    {h:"Konto", f:x => `<div style="font-weight:700">${esc(x.name)}</div><div class="dim">${x.hl ? "Hyperliquid" : x.scanner ? "scanner" : "bane"} · ${esc(x.ledger)}</div>`},
     {h:"Mønter", f:x => esc(x.coins.slice(0, 6).join(", ") + (x.coins.length > 6 ? ` +${x.coins.length - 6}` : "")) + (x.held.length ? `<div class="dim">position i ${x.held.length}</div>` : `<div class="dim">ingen position</div>`)},
     {h:"Status", f:x => esc(x.status) + (x.stop_detail ? `<div class="dim">${esc(x.stop_detail)}</div>` : "")},
     {h:"Netto (USD)", num:1, f:x => sgn(x.net) + `<div class="dim">${pct(x.net_pct)}</div>`},
@@ -789,7 +789,7 @@ function renderPaper(p){
 function laneRow(l){
   if (!l) return "";
   const st = l.stats || {}, x = st.expectation, z = l.scanner ? `<span class="na">gælder ikke</span>` : st.z != null ? st.z.toFixed(2) : `<span class="na">z fra 7 hele dage</span>`;
-  const tg = l.trigger || {}, trig = !l.scanner ? "" : tg.funding != null ? `<div class="cap">Udløser: forventet funding ${(tg.funding*100).toFixed(3)}%${tg.settled_avg3 != null ? ` · snit af 3 afregninger ${(tg.settled_avg3*100).toFixed(3)}%` : ""}</div>` : tg.premium ? `<div class="cap">Udløser: præmie ${tg.premium.map(v => v == null ? "–" : (v*100).toFixed(2) + "%").join(" → ")}</div>` : "";
+  const tg = l.trigger || {}, trig = !l.scanner ? "" : tg.settled_hours ? `<div class="cap">Udløser: Hyperliquid-funding ×8 ${(tg.funding*100).toFixed(3)}%${tg.settled_avg3 != null ? ` · snit af ${tg.settled_hours} timer ×8 ${(tg.settled_avg3*100).toFixed(3)}%` : ""}</div>` : tg.funding != null ? `<div class="cap">Udløser: forventet funding ${(tg.funding*100).toFixed(3)}%${tg.settled_avg3 != null ? ` · snit af 3 afregninger ${(tg.settled_avg3*100).toFixed(3)}%` : ""}</div>` : tg.premium ? `<div class="cap">Udløser: præmie ${tg.premium.map(v => v == null ? "–" : (v*100).toFixed(2) + "%").join(" → ")}</div>` : "";
   const stop = l.retired ? `<div class="cap" style="color:var(--amber)">Stoppet automatisk: ${esc(l.retired.detail || l.retired.rule || "")}</div>` : "";
   return trig + `<div class="grid3">${metric("Dage live", num(st.age_days, 1), `${st.days ?? 0} hele døgn målt · ${(l.coins || []).length} mønter`)}${metric("Netto pr. dag (sim.)", st.mean == null ? `<span class="na">${NA}</span>` : `${(st.mean*100).toFixed(3)}%`, "efter omkostninger, inkl. funding")}${metric("Edge mod udforskning (z)", z, (x ? `forventning ${(x.mean*100).toFixed(3)}% ± ${(x.sd*100).toFixed(3)}% pr. dag (2020-2021, 2x omkostninger)` : "ingen historisk forventning") + " · " + esc(l.rules || ""))}</div>${stop}`;
 }

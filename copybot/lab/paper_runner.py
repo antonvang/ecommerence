@@ -24,6 +24,36 @@ from lab.risk import Risk
 REST = "https://fapi.binance.com"
 SPOT_REST = "https://data-api.binance.vision"   # amendment 11 point 8: spot public book, a market-data-only host
 SPOT_SUFFIX = ".SPOT"
+HL_PREFIX = "HL:"                       # amendment 13: a Hyperliquid perp leg (public /info only)
+HL_POST = None                          # tests replace the Hyperliquid /info call; live it is scanner.http_post
+_HL_HOURLY = {}                         # coin -> (hour, settled funding, opens): read once per clock hour
+
+
+def hl_info(body):
+    """One public Hyperliquid /info request through the scanner's only body sender (tests: HL_POST)."""
+    if HL_POST is not None:
+        return HL_POST(body)
+    from lab import scanner
+    return scanner.http_post(scanner.HL_INFO, body)
+
+
+def hl_hourly(coin, now):
+    """Amendment 13: Hyperliquid settled funding {settle_ts: rate per hour} and 1h opens {open_ts: open} of the last
+    48 hours (the bar in progress included), read once per clock hour when live."""
+    hour = int(now) // HOUR * HOUR
+    hit = _HL_HOURLY.get(coin) if HL_POST is None else None
+    if hit and hit[0] == hour:
+        return hit[1], hit[2]
+    start = (hour - 48 * HOUR) * 1000
+    fh = hl_info({"type": "fundingHistory", "coin": coin, "startTime": start})
+    funding = {int(x["time"]) // 1000 // HOUR * HOUR: float(x["fundingRate"]) for x in fh
+               if int(x["time"]) // 1000 <= now}
+    cs = hl_info({"type": "candleSnapshot", "req": {"coin": coin, "interval": "1h", "startTime": start,
+                                                     "endTime": int(now) * 1000}})
+    opens = {int(c["t"]) // 1000: float(c["o"]) for c in cs if int(c["t"]) // 1000 <= now}
+    if HL_POST is None and opens and max(opens) == hour:
+        _HL_HOURLY[coin] = (hour, funding, opens)
+    return funding, opens
 CAPITAL = 10_000.0                      # simulated USD
 MIN_NOTIONAL = 10.0
 HOUR = 3600
@@ -41,7 +71,11 @@ _CM_HOURLY = {}     # (metrics, symbols) -> (hour, values): CoinMetrics daily va
 
 
 def fetch_book(sym, now, get=_get):
-    """20-level public book: USD-M, or Binance spot for an instrument `<SYM>.SPOT` (amendment 11)."""
+    """20-level public book: USD-M, Binance spot for `<SYM>.SPOT` (amendment 11), Hyperliquid for `HL:<COIN>` (13)."""
+    if sym.startswith(HL_PREFIX):
+        lv = hl_info({"type": "l2Book", "coin": sym[len(HL_PREFIX):]})["levels"]
+        return Book(ts=now, bids=tuple((float(x["px"]), float(x["sz"])) for x in lv[0][:20]),
+                    asks=tuple((float(x["px"]), float(x["sz"])) for x in lv[1][:20]))
     if sym.endswith(SPOT_SUFFIX):
         d = get(f"{SPOT_REST}/api/v3/depth?symbol={sym[:-len(SPOT_SUFFIX)]}&limit=20")
     else:
@@ -189,6 +223,9 @@ def _cached_funding(get, now, cache):
         for s in syms:
             if s.endswith(SPOT_SUFFIX):                 # a spot leg has no funding (amendment 11 point 4)
                 out[s] = ({}, {})
+                continue
+            if s.startswith(HL_PREFIX):                 # amendment 13: Hyperliquid funding, hourly
+                out[s] = hl_hourly(s[len(HL_PREFIX):], now)
                 continue
             _, funding, _, opens = hourly(s, now, get, cache)
             out[s] = (funding, opens)

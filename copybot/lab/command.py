@@ -606,6 +606,10 @@ def _lane_trigger(t):
     """What started a scanner account, in Danish: predicted funding (12e) or, for older accounts, the premium (12)."""
     if not t:
         return None
+    if t.get("funding") is not None and t.get("settled_hours"):                     # amendment 13
+        avg = t.get("settled_avg3")
+        return (f"Hyperliquid-funding ×8 {t['funding']:.3%}" +
+                (f" · snit af {t['settled_hours']} timer ×8 {avg:.3%}" if avg is not None else ""))
     if t.get("funding") is not None:
         avg = t.get("settled_avg3")
         return f"forventet funding {t['funding']:.3%}" + (f" · snit af 3 afregninger {avg:.3%}" if avg is not None else "")
@@ -631,8 +635,9 @@ def lane_view(db, now=None):
         g = gone.get(led)
         p = rk._last(led, ("PAUSE",)) if rk.paused(led) else None
         status = (f"stoppet: {g.get('rule')}" if g else f"pause: {p['rule']}" if p is not None else "aktiv")
-        coins_held = sorted({k.replace(lane.SPOT, "") for k in book["positions"]})
-        rows.append({"ledger": led, "name": plain(db, led)[0], "scanner": lane.is_scanner(i),
+        coins_held = [c for c in i.get("coins") or [] if any(abs(book["positions"].get(x, 0.0)) > 1e-12
+                                                             for x in lane.legs(i, c))]
+        rows.append({"ledger": led, "name": plain(db, led)[0], "scanner": lane.is_scanner(i), "hl": lane.is_hl(i),
                      "function": i.get("function"), "params": i.get("params"), "coins": i.get("coins") or [],
                      "held": coins_held, "status": status, "active": g is None, "started": i.get("ts"),
                      "stopped": g.get("ts") if g else None, "stop_detail": g.get("detail") if g else None,
@@ -656,8 +661,9 @@ def lane_view(db, now=None):
                   "top_symbol": (_j(top["payload"]) or {}).get("symbol") if top else None,
                   "entry_min": lane.SCAN_FUND_MIN}
     return {"active": act, "recent": old[:LANE_RECENT], "stopped_total": len(old),
-            "counts": {"lane": sum(1 for r in act if not r["scanner"]), "lane_slots": lane.SLOTS,
-                       "scanner": sum(1 for r in act if r["scanner"]), "scanner_slots": lane.SCAN_SLOTS},
+            "counts": {"lane": sum(1 for r in act if not r["scanner"] and not r["hl"]), "lane_slots": lane.SLOTS,
+                       "scanner": sum(1 for r in act if r["scanner"]), "scanner_slots": lane.SCAN_SLOTS,
+                       "hl": sum(1 for r in act if r["hl"]), "hl_slots": lane.HL_SLOTS},
             "net_active": sum(r["net"] for r in act), "net_all": sum(r["net"] for r in rows),
             "report": _j(rep["payload"]) if rep else None, "policy_on": lane.policy_on(db), "market": market,
             "simulated": True, "evidence": False, "label": "BANE- OG SCANNERKONTI (simuleret, aldrig bevis)"}
@@ -708,7 +714,8 @@ def paper_view(db, reconcile=True, edges=True, now=None):
                     "active": forward_active(db, base) if forward else lane.is_active(db, eid) if is_lane else None,
                     "state": None if is_lane else lifecycle.state(db, base), "simulated": True,
                     "lane_info": ({**lanes.get(eid, {}), "stats": lane.stats(db, eid, now, lanes.get(eid)),
-                                   "rules": lane.rules_text(lanes.get(eid)), "scanner": lane.is_scanner(lanes.get(eid)),
+                                   "rules": lane.rules_text(lanes.get(eid)),
+                                   "scanner": lane.is_scanner(lanes.get(eid)) or lane.is_hl(lanes.get(eid)),
                                    "retired": (lane.retired(db).get(eid) if not lane.is_active(db, eid) else None)}
                                   if is_lane else None),
                     "label": (lane.label(lanes.get(eid)) if is_lane else
@@ -1063,6 +1070,9 @@ def plain(db, eid):
     if eid and eid.startswith("LANE_"):
         r = db.one("SELECT payload FROM events WHERE kind='lane.started' AND exp_id=? ORDER BY id LIMIT 1", eid)
         p = _j(r["payload"]) if r else {}
+        if (p or {}).get("source") == "hl":
+            return (f"HL-konto {((p.get('coins') or ['?'])[0])}", "Hyperliquid-funding: lang Binance spot, kort "
+                    "Hyperliquid perp, på papir; aldrig bevis", None)
         if (p or {}).get("source") == "scanner":
             return (f"Scannerkonto {((p.get('coins') or ['?'])[0])}", "Scannerens perp-præmie handlet live på papir; "
                     "aldrig bevis", None)

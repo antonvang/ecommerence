@@ -65,7 +65,9 @@ class Base(unittest.TestCase):
         self.p = [mock.patch.object(pipeline, "ARTIFACTS", os.path.join(self.tmp, "artifacts")),
                   mock.patch("lab.promotion.supervisor_ok", lambda db, now=None: True),
                   mock.patch.object(explore, "eligible", lambda db: ["fcarry"]),
-                  mock.patch.object(explore, "universe", lambda fam: tuple(COINS))]
+                  mock.patch.object(explore, "universe", lambda fam: tuple(COINS)),
+                  mock.patch.object(paper_runner, "HL_POST", self.no_network),          # no test reaches Hyperliquid
+                  mock.patch.object(scanner, "http_post", self.no_network)]
         for p in self.p:
             p.start()
         lane._CANDIDATES.clear()
@@ -75,6 +77,10 @@ class Base(unittest.TestCase):
             p.stop()
         self.db.close()
         shutil.rmtree(self.tmp, ignore_errors=True)
+
+    @staticmethod
+    def no_network(*a, **k):
+        raise AssertionError(f"network call in a test: {a}")
 
     def publish(self, results, name="fcarry_1", record=True):
         art = pipeline.save_artifact(os.path.join(explore.DIR, "2026-10-19"), name,
@@ -544,32 +550,157 @@ class PremiumWatch(Base):
             raise AssertionError(url)
         return g
 
+    def post(self, url, body):
+        self.urls.append(url)
+        assert url == scanner.HL_INFO and body == {"type": "metaAndAssetCtxs"}, (url, body)
+        return [{"universe": [{"name": "AAA"}, {"name": "kPEPE"}, {"name": "OLD", "isDelisted": True}]},
+                [{"funding": "0.0002"}, {"funding": "0.01"}, {"funding": "0.01"}]]
+
     def test_writes_observations_only_and_reads_the_perp_list_hourly(self):
         events = self.db.one("SELECT COUNT(*) FROM events")[0]
         out = scanner.premium_watch(self.db, self.get({"AAAUSDT": (0.012, 0.0025), "BBBUSDT": (0.001, 0.0002),
-                                                       "ZZZUSDT": (0.05, 0.01)}), NOW - 60)
+                                                       "ZZZUSDT": (0.05, 0.01)}), NOW - 60, self.post)
         # premium AAA flagged, symbols_compared, predicted funding AAA flagged; ZZZ is not a traded perp
-        self.assertEqual((out["observations"], out["flagged"]), (6, 2))           # + median, share, top (12e)
+        # + median, share, top (12e); + Hyperliquid AAA x 8 = 0.16 % flagged and the count compared (13)
+        self.assertEqual((out["observations"], out["flagged"]), (8, 3))
+        self.assertEqual(scanner.HL_LIVE[scanner.HL_INFO], (int(NOW - 60), {"AAA": 0.0016}))
         self.assertEqual(scanner.LIVE[scanner.BN], (int(NOW - 60), {"AAAUSDT": 0.0025, "BBBUSDT": 0.0002}))
-        scanner.premium_watch(self.db, self.get({"AAAUSDT": (0.006, 0.0012)}), NOW - 30)
+        scanner.premium_watch(self.db, self.get({"AAAUSDT": (0.006, 0.0012)}), NOW - 30, self.post)
         self.assertEqual(sum(u.endswith("exchangeInfo") for u in self.urls), 1)
         self.assertEqual(self.db.one("SELECT COUNT(*) FROM events")[0], events)   # no market.event, no candidate
-        self.assertTrue(all(u.startswith("https://fapi.binance.com/") for u in self.urls))
+        self.assertTrue(all(u.startswith("https://fapi.binance.com/") or u == scanner.HL_INFO for u in self.urls))
         self.assertEqual(lane.scans(self.db, NOW), [int(NOW - 30), int(NOW - 60)])
         self.assertEqual(lane.scan_candidates(self.db, NOW), ["AAAUSDT"])
         self.assertEqual(lane.live_funding("AAAUSDT", NOW), (0.0012, int(NOW - 30)))
         led = lane.manage(self.db, NOW, market(rate=0.0008), fids=[])["scanner"]["started"][0]
         self.assertEqual(lane.started(self.db)[led]["coins"], ["AAAUSDT"])
-        scanner.premium_watch(self.db, self.get({}), NOW + 3600 + 1)
+        scanner.premium_watch(self.db, self.get({}), NOW + 3600 + 1, self.post)
         self.assertEqual(sum(u.endswith("exchangeInfo") for u in self.urls), 2)   # the list again after an hour
         self.assertEqual(lane.live_funding("AAAUSDT", NOW + 3600 + 1 + lane.SCAN_LIVE_MAX_S + 1), (None, None))
 
     def test_market_funding_is_recorded_and_shown(self):
-        out = scanner.premium_watch(self.db, self.get({"AAAUSDT": (0.0, 0.0004), "BBBUSDT": (0.0, 0.0001)}), NOW - 60)
-        self.assertEqual(out["flagged"], 0)
+        out = scanner.premium_watch(self.db, self.get({"AAAUSDT": (0.0, 0.0004), "BBBUSDT": (0.0, 0.0001)}), NOW - 60, self.post)
+        self.assertEqual(out["flagged"], 1)                                       # Hyperliquid AAA only
         m = command.lane_view(self.db, now=NOW)["market"]
         self.assertEqual((m["median"], m["above_floor"], m["top"], m["top_symbol"]), (0.0004, 0.5, 0.0004, "AAAUSDT"))
         self.assertEqual(m["entry_min"], lane.SCAN_FUND_MIN)
+
+
+def hl_post(rate=0.0002, fail=(), now=lambda: NOW, log=None):
+    """Fake Hyperliquid /info: hourly settled funding at `rate` per hour for 48 h, 1h candles (the one in progress
+    last), and a book around 100. `fail`: coins whose book fails."""
+    def post(body):
+        if log is not None:
+            log.append(body)
+        t, hour = body["type"], int(now()) // HOUR * HOUR
+        if t == "fundingHistory":
+            return [{"coin": body["coin"], "fundingRate": str(rate), "premium": "0", "time": (hour - k * HOUR) * 1000 + 7}
+                    for k in range(48, -1, -1)]
+        if t == "candleSnapshot":
+            return [{"t": (hour - k * HOUR) * 1000, "o": "100", "c": "100"} for k in range(48, -1, -1)]
+        if t == "l2Book":
+            if body["coin"] in fail:
+                raise OSError("no such coin")
+            return {"levels": [[{"px": "99.99", "sz": "1000", "n": 1}], [{"px": "100.01", "sz": "1000", "n": 1}]]}
+        raise AssertionError(body)
+    return post
+
+
+class Hyperliquid(Base):
+    """Amendment 13: long Binance spot, short Hyperliquid perp, decided by Hyperliquid's funding."""
+    def setUp(self):
+        super().setUp()
+        scanner.HL_LIVE.clear()
+        lane._LOW.clear()
+        self.clock = [NOW]
+        self.p.append(mock.patch.object(paper_runner, "HL_POST", hl_post(now=lambda: self.clock[0])))
+        self.p[-1].start()
+
+    def scan(self, ts, fund):
+        self.db.append("observations", ts=int(ts), detector="pricing_constraint/2", source="hl",
+                       instrument="hyperliquid_perps", metric="hl_symbols_compared", value=100, threshold=None,
+                       flagged=0, payload=None)
+        for coin, v in fund.items():
+            self.db.append("observations", ts=int(ts), detector="pricing_constraint/2", source="hl", instrument=coin,
+                           metric="hl_predicted_funding", value=v, threshold=0.001, flagged=1, payload=None)
+
+    def at(self, t):
+        self.clock[0] = t
+        g = market()
+        g.now = t
+        return g
+
+    def test_obs_parsing(self):
+        rows, live = scanner.hl_obs(({"universe": [{"name": "AAA"}, {"name": "kBONK"}, {"name": "@12"},
+                                                    {"name": "OLD", "isDelisted": True}, {"name": "BBB"}]},
+                                     [{"funding": "0.0002"}, {"funding": "1"}, {"funding": "1"}, {"funding": "1"},
+                                      {"funding": "0.00001"}]), NOW)
+        self.assertEqual(live, {"AAA": 0.0016, "BBB": 0.00008})
+        self.assertEqual([(r["instrument"], r["metric"]) for r in rows],
+                         [("AAA", "hl_predicted_funding"), ("hyperliquid_perps", "hl_symbols_compared")])
+
+    def test_starts_trades_and_books_hourly_funding_on_the_hl_leg(self):
+        self.scan(NOW - 60, {"AAA": 0.002})
+        led = lane.manage(self.db, NOW, self.at(NOW), fids=[])["hl"]["started"][0]
+        info = lane.started(self.db)[led]
+        self.assertEqual((info["source"], info["coins"], info["legs"]), ("hl", ["AAA"],
+                                                                         {"perp": "HL:AAA", "spot": "AAAUSDT.SPOT"}))
+        self.assertAlmostEqual(info["trigger"]["settled_avg3"], 0.0016)
+        r = lane.run_one(self.db, led, self.at(NOW), NOW)
+        self.assertEqual(r["signal"], {"AAA": 1.0})
+        pos = PaperEngine(self.db).ledger(led)["positions"]
+        self.assertAlmostEqual(pos["AAAUSDT.SPOT"], -pos["HL:AAA"])
+        self.assertAlmostEqual(pos["AAAUSDT.SPOT"] * 100.0, 5_000, delta=5.0)
+        lane.run_one(self.db, led, self.at(NOW + 2 * HOUR), NOW + 2 * HOUR)
+        rows = self.db.q("SELECT instrument, amount FROM sim_funding WHERE exp_id=?", led)
+        self.assertEqual({x["instrument"] for x in rows}, {"HL:AAA"})
+        self.assertEqual(len(rows), 2)                                               # 03:00 and 04:00
+        self.assertTrue(all(x["amount"] > 0 for x in rows))                         # the short receives
+        self.assertTrue(PaperEngine(self.db).reconcile(led)["ok"])
+
+    def test_not_persistent_or_no_book_is_skipped(self):
+        self.scan(NOW - 60, {"AAA": 0.002, "BBB": 0.003})
+        with mock.patch.object(paper_runner, "HL_POST", hl_post(rate=0.00001, now=lambda: NOW)):
+            out = lane.manage(self.db, NOW, self.at(NOW), fids=[])["hl"]
+        self.assertEqual((out["started"], sorted(out["skipped"])), ([], ["AAA", "BBB"]))
+        with mock.patch.object(paper_runner, "HL_POST", hl_post(fail=("BBB",), now=lambda: NOW + HOUR)):
+            out = lane.manage(self.db, NOW + HOUR, self.at(NOW + HOUR), fids=[])["hl"]
+        self.assertEqual(out["skipped"], ["BBB"])
+        self.assertEqual(len(out["started"]), 1)
+
+    def test_holds_eight_hours_then_leaves_after_two_low_readings(self):
+        self.scan(NOW - 60, {"AAA": 0.002})
+        led = lane.manage(self.db, NOW, self.at(NOW), fids=[])["hl"]["started"][0]
+        lane.run_one(self.db, led, self.at(NOW), NOW)
+        for t in (NOW + HOUR, NOW + HOUR + 60):                                      # low twice, but before 8 h
+            scanner.HL_LIVE[scanner.HL_INFO] = (int(t), {"AAA": 0.00002})
+            self.assertEqual(lane.run_one(self.db, led, self.at(t), t)["signal"], {"AAA": 1.0})
+        for k, t in enumerate((NOW + 8 * HOUR, NOW + 8 * HOUR + 60)):
+            scanner.HL_LIVE[scanner.HL_INFO] = (int(t), {"AAA": 0.00002})
+            self.assertEqual(lane.run_one(self.db, led, self.at(t), t)["signal"], {"AAA": 0.0})
+        self.assertEqual(PaperEngine(self.db).ledger(led)["positions"], {})
+        self.assertTrue(PaperEngine(self.db).reconcile(led)["ok"])
+
+    def test_retired_hl_account_is_closed_by_the_runner(self):
+        self.scan(NOW - 60, {"AAA": 0.002})
+        led = lane.manage(self.db, NOW, self.at(NOW), fids=[])["hl"]["started"][0]
+        lane.run_one(self.db, led, self.at(NOW), NOW)
+        lane.retire(self.db, led, "loss", "fixture", now=NOW + 60)
+        paper_runner.run(self.db, get=self.at(NOW + HOUR), now=NOW + HOUR)
+        self.assertEqual(PaperEngine(self.db).ledger(led)["positions"], {})
+        self.assertTrue(PaperEngine(self.db).reconcile(led)["ok"])
+        self.assertFalse(Risk(self.db).fail_closed())
+
+    def test_views(self):
+        self.scan(NOW - 60, {"AAA": 0.002})
+        led = lane.manage(self.db, NOW, self.at(NOW), fids=[])["hl"]["started"][0]
+        lane.run_one(self.db, led, self.at(NOW), NOW)
+        v = command.lane_view(self.db, now=NOW + 60)
+        self.assertEqual(v["counts"]["hl"], 1)
+        r = v["active"][0]
+        self.assertEqual((r["name"], r["held"], r["hl"]), ("HL-konto AAA", ["AAA"], True))
+        self.assertEqual(r["trigger"], "Hyperliquid-funding ×8 0.200% · snit af 24 timer ×8 0.160%")
+        self.assertEqual(lane.label(lane.started(self.db)[led]), lane.HL_LABEL)
 
 
 class LaneView(Base):
@@ -583,7 +714,7 @@ class LaneView(Base):
         self.assertEqual([r["ledger"] for r in v["active"]], [led])
         self.assertEqual([r["ledger"] for r in v["recent"]], [led2])
         self.assertEqual(v["counts"], {"lane": 1, "lane_slots": lane.SLOTS, "scanner": 0,
-                                       "scanner_slots": lane.SCAN_SLOTS})
+                                       "scanner_slots": lane.SCAN_SLOTS, "hl": 0, "hl_slots": lane.HL_SLOTS})
         r = v["active"][0]
         self.assertEqual((r["status"], len(r["held"])), ("aktiv", len(COINS)))
         self.assertAlmostEqual(r["funding_minus_fees"], r["funding"] - r["fees"])
