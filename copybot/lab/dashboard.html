@@ -806,6 +806,8 @@ function renderCoverage(c, h){
     + metric("Datapauser (24 t)", String(c.fetch_pauses_24h.length), c.fetch_pauses_24h.length ? esc(c.fetch_pauses_24h[c.fetch_pauses_24h.length - 1].detail.slice(0, 90)) : "ingen hentefejl")
     + metric("Hypoteser", `${h.total_mechanisms} mekanismer`, `${h.total_experiments} eksperimenter · ${h.total_variants_tested} varianter testet formelt · alfa brugt ${num(h.alpha_spent, 4)} · banen: ${h.lane_variants_evaluated} varianter (udforskning, aldrig bevis)`)
     + metric("Status", Object.entries(st).map(([k, v]) => `${esc(k)} ${v}`).join(" · ") || na(), "PASS her er kun et screeningstrin; ingen strategi har dokumenteret fordel");
+  const lr = h.lane_reviews;
+  if (lr && lr.tests) $("#cov-sum").innerHTML += metric("Banegennemgange (11d)", `${lr.passed_rule} af ${lr.tests} består`, `tilfældighed alene giver ca. ${num(lr.expected_by_chance, 1)} · efter korrektion for mange tests (BH, q ${lr.bh_q}): <b>${lr.bh_significant}</b> · testene overlapper, så tallene er omtrentlige`);
   $("#cov-src").innerHTML = table([
     {h:"Kilde", f:x => `<b>${esc(x.source)}</b><div class="dim">${esc(x.content)}</div>`},
     {h:"Type", f:x => (x.kind === "live" ? "live" : "historik") + `<div class="dim">${esc(x.resolution)}</div>`},

@@ -5,6 +5,7 @@ import sys
 import tempfile
 import threading
 import unittest
+from unittest import mock
 import urllib.request
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -134,6 +135,31 @@ class Hypotheses(Base):
         self.assertEqual(m["untested"]["status"], "NO RESULT")
         self.assertEqual(h["mechanisms"][0]["mechanism"], "funding_carry")       # strongest status first
         self.assertEqual((h["total_mechanisms"], h["total_experiments"], h["lane_variants_evaluated"]), (3, 4, 50))
+
+
+class LaneMultipleTesting(Base):
+    def review(self, p, ok, method="11d"):
+        self.db.event("research.lane_review", "system:adversarial-1", None,
+                      {"key": f"k{p}{ok}", "ok": ok, "placebo_p": p, "method": method})
+
+    def test_chance_and_bh(self):
+        from lab import lane
+        n = lane.REVIEW_PLACEBO_N
+        for _ in range(18):
+            self.review(0.5, False)
+        self.review(2 / n, True)
+        self.review(0.0, True)
+        self.review(0.0, True, method=None)                     # an old-method review does not count
+        r = coverage.lane_multiple_testing(self.db)
+        self.assertEqual((r["tests"], r["passed_rule"], r["expected_by_chance"]), (20, 2, 2.0))
+        # conservative p: (0+1)/(n+1) and (2+1)/(n+1); BH needs p_(1) <= 0.1/20 = 0.005 -> none at n = 60
+        self.assertEqual(r["bh_significant"], 0)
+
+    def test_bh_passes_a_strong_result(self):
+        with mock.patch("lab.lane.REVIEW_PLACEBO_N", 1000):
+            self.review(0.0, True)
+            self.review(0.9, False)
+            self.assertEqual(coverage.lane_multiple_testing(self.db)["bh_significant"], 1)   # 1/1001 <= 0.05
 
 
 class Api(unittest.TestCase):

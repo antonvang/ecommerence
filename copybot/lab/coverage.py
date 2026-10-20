@@ -206,7 +206,37 @@ def hypotheses(db):
             "total_experiments": sum(len(m["experiments"]) for m in rows),
             "total_variants_tested": sum(m["variants_tested"] for m in rows),
             "alpha_spent": sum(m["alpha_spent"] for m in rows), "by_status": counts,
-            "lane_variants_evaluated": lane,
+            "lane_variants_evaluated": lane, "lane_reviews": lane_multiple_testing(db),
             "multiple_testing": "formal tests spend alpha from the ledger (amendment 8); the exploration lane is "
                                 "exploratory, never decisional, and its candidates must pass lane_review (11d) and a "
                                 "separate forward test"}
+
+
+LANE_ALPHA = 0.10                     # amendment 11c/11d: placebo p < 0.10 per candidate
+FDR_Q = 0.10
+
+
+def lane_multiple_testing(db, method="11d"):
+    """Display only, decides nothing: how many lane reviews pass by the per-candidate rule, how many chance alone would
+    pass, and how many survive Benjamini-Hochberg at q = 0.10 with the conservative permutation p (k + 1) / (n + 1).
+    Candidates overlap (variants of one family on shared coins), so the tests are dependent and both figures are
+    approximate."""
+    from lab import lane
+    ps = []
+    for r in db.q("SELECT payload FROM events WHERE kind='research.lane_review'"):
+        try:
+            d = json.loads(r["payload"] or "{}")
+        except ValueError:
+            continue
+        if d.get("method") != method or d.get("placebo_p") is None:
+            continue
+        n = int(d.get("placebo_n") or lane.REVIEW_PLACEBO_N)    # the review records p only; n is the lane's fixed n
+        ps.append(((round(d["placebo_p"] * n) + 1) / (n + 1), d.get("ok"), d.get("key")))
+    m = len(ps)
+    bh = 0
+    for i, (p, _ok, _k) in enumerate(sorted(ps), 1):
+        if p <= FDR_Q * i / m:
+            bh = i
+    return {"method": method, "tests": m, "passed_rule": sum(1 for _p, ok, _k in ps if ok),
+            "expected_by_chance": round(m * LANE_ALPHA, 1), "bh_q": FDR_Q, "bh_significant": bh,
+            "note": "per-candidate rule p < 0.10; BH with p = (k+1)/(n+1); dependent tests, approximate"}
