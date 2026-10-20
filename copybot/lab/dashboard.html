@@ -75,6 +75,9 @@ a{color:var(--amber);text-decoration:none} a:hover{text-decoration:underline}
 .metric .s{grid-column:1/-1;font:11px var(--mono);color:var(--dim);margin-top:-2px}
 .metric .v.hot{color:var(--orange)} .metric .v.good{color:var(--green)} .metric .v.bad{color:var(--red)}
 #lanes .good{color:var(--green)} #lanes .bad{color:var(--red)}
+#lanes-sum{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media (max-width:1100px){#lanes-sum{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+@media (max-width:760px){#lanes-sum{grid-template-columns:minmax(0,1fr)}}
 .wk{display:flex;align-items:center;justify-content:space-between;gap:8px;font:12px var(--mono);padding:6px 0;border-bottom:1px solid var(--line2)}
 .wk:last-child{border-bottom:0}
 .state{font:700 10px var(--mono);letter-spacing:.08em;text-transform:uppercase;border:1px solid currentColor;border-radius:5px;padding:1px 6px;white-space:nowrap}
@@ -749,6 +752,7 @@ function renderLanes(l){
   const c = l.counts, r = l.report, sgn = v => `<span class="${v > 0 ? "good" : v < 0 ? "bad" : ""}">${v > 0 ? "+" : ""}${num(v)}</span>`;
   $("#lanes-sum").innerHTML = metric("Aktive konti", `${c.lane} bane · ${c.scanner} scanner`, `pladser: ${c.lane_slots} bane · ${c.scanner_slots} scanner` + (l.policy_on ? "" : " · SLÅET FRA (lane-off)"))
     + metric("Netto, aktive konti (sim.)", sgn(l.net_active) + " USD", `alle konti nogensinde: ${l.net_all > 0 ? "+" : ""}${num(l.net_all)} USD · ${l.stopped_total} stoppet`)
+    + (l.market ? metric("Funding på markedet nu", `${(l.market.median*100).toFixed(4)}% median`, `${pct(l.market.above_floor, 0)} af perps over rentegulvet · højest ${esc(l.market.top_symbol || "?")} ${(l.market.top*100).toFixed(3)}% · scannerkonti kræver ${(l.market.entry_min*100).toFixed(2)}%` + (c.scanner === 0 && l.market.top < l.market.entry_min ? " · <b>venter: ingen mønt er høj nok</b>" : "")) : "")
     + metric("Seneste døgnrapport", r ? esc(r.day) : `<span class="na">${NA}</span>`, r ? `${r.accounts} konti · netto ${num(r.net_total)} USD · pilotens papirkrav opfyldt: ${(r.met || []).length ? esc(r.met.join(", ")) : "ingen endnu"}` : "skrives kl. 00:30 UTC");
   const cols = [
     {h:"Konto", f:x => `<div style="font-weight:700">${esc(x.name)}</div><div class="dim">${x.scanner ? "scanner" : "bane"} · ${esc(x.ledger)}</div>`},

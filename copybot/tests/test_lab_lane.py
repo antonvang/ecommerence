@@ -549,7 +549,7 @@ class PremiumWatch(Base):
         out = scanner.premium_watch(self.db, self.get({"AAAUSDT": (0.012, 0.0025), "BBBUSDT": (0.001, 0.0002),
                                                        "ZZZUSDT": (0.05, 0.01)}), NOW - 60)
         # premium AAA flagged, symbols_compared, predicted funding AAA flagged; ZZZ is not a traded perp
-        self.assertEqual((out["observations"], out["flagged"]), (3, 2))
+        self.assertEqual((out["observations"], out["flagged"]), (6, 2))           # + median, share, top (12e)
         self.assertEqual(scanner.LIVE[scanner.BN], (int(NOW - 60), {"AAAUSDT": 0.0025, "BBBUSDT": 0.0002}))
         scanner.premium_watch(self.db, self.get({"AAAUSDT": (0.006, 0.0012)}), NOW - 30)
         self.assertEqual(sum(u.endswith("exchangeInfo") for u in self.urls), 1)
@@ -563,6 +563,13 @@ class PremiumWatch(Base):
         scanner.premium_watch(self.db, self.get({}), NOW + 3600 + 1)
         self.assertEqual(sum(u.endswith("exchangeInfo") for u in self.urls), 2)   # the list again after an hour
         self.assertEqual(lane.live_funding("AAAUSDT", NOW + 3600 + 1 + lane.SCAN_LIVE_MAX_S + 1), (None, None))
+
+    def test_market_funding_is_recorded_and_shown(self):
+        out = scanner.premium_watch(self.db, self.get({"AAAUSDT": (0.0, 0.0004), "BBBUSDT": (0.0, 0.0001)}), NOW - 60)
+        self.assertEqual(out["flagged"], 0)
+        m = command.lane_view(self.db, now=NOW)["market"]
+        self.assertEqual((m["median"], m["above_floor"], m["top"], m["top_symbol"]), (0.0004, 0.5, 0.0004, "AAAUSDT"))
+        self.assertEqual(m["entry_min"], lane.SCAN_FUND_MIN)
 
 
 class LaneView(Base):

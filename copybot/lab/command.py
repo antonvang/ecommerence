@@ -643,11 +643,23 @@ def lane_view(db, now=None):
     act = sorted((r for r in rows if r["active"]), key=lambda r: -(r["started"] or 0))
     old = sorted((r for r in rows if not r["active"]), key=lambda r: -(r["stopped"] or 0))
     rep = db.one("SELECT payload FROM events WHERE kind='research.lane_report' ORDER BY id DESC LIMIT 1")
+    mts = db.one("SELECT MAX(ts) FROM observations WHERE instrument='binance_perps' AND metric='funding_median'")[0]
+    market = None
+    if mts is not None:
+        m = {r["metric"]: r for r in db.q("SELECT metric, value, payload FROM observations WHERE ts=? AND "
+                                           "instrument='binance_perps' AND metric IN ('funding_median', "
+                                           "'funding_above_floor', 'funding_top')", mts)}
+        top = m.get("funding_top")
+        market = {"ts": mts, "median": (m.get("funding_median") or {"value": None})["value"],
+                  "above_floor": (m.get("funding_above_floor") or {"value": None})["value"],
+                  "top": top["value"] if top else None,
+                  "top_symbol": (_j(top["payload"]) or {}).get("symbol") if top else None,
+                  "entry_min": lane.SCAN_FUND_MIN}
     return {"active": act, "recent": old[:LANE_RECENT], "stopped_total": len(old),
             "counts": {"lane": sum(1 for r in act if not r["scanner"]), "lane_slots": lane.SLOTS,
                        "scanner": sum(1 for r in act if r["scanner"]), "scanner_slots": lane.SCAN_SLOTS},
             "net_active": sum(r["net"] for r in act), "net_all": sum(r["net"] for r in rows),
-            "report": _j(rep["payload"]) if rep else None, "policy_on": lane.policy_on(db),
+            "report": _j(rep["payload"]) if rep else None, "policy_on": lane.policy_on(db), "market": market,
             "simulated": True, "evidence": False, "label": "BANE- OG SCANNERKONTI (simuleret, aldrig bevis)"}
 
 

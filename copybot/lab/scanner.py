@@ -167,6 +167,7 @@ def premium_obs(get, perps, funding=None):
 PERPS_EVERY = 3600
 _PERPS = {}                                     # premium-watch: url -> (fetched at, perps); exchangeInfo once an hour
 FUNDING_MIN = 0.001                             # 12e: predicted funding >= 0.10 % per settlement is recorded, flagged
+FLOOR = 0.0001                                  # the 0.01 % interest floor per settlement
 LIVE = {}                                       # 12e: url -> (measured at, {symbol: predicted funding}), in memory only
 
 
@@ -181,6 +182,13 @@ def premium_watch(db, get=http_get, now=None):
     rows = premium_obs(get, hit[1], funding)
     rows += [obs("pricing_constraint", f"{BN}/fapi/v1/premiumIndex", sym, "predicted_funding", r, FUNDING_MIN, True)
              for sym, r in sorted(funding.items()) if r >= FUNDING_MIN]
+    if funding:                                 # 12e precision: the market's funding, for display only
+        src, vals = f"{BN}/fapi/v1/premiumIndex", sorted(funding.values())
+        top = max(funding, key=lambda k: (funding[k], k))
+        rows += [obs("pricing_constraint", src, "binance_perps", "funding_median", vals[len(vals) // 2]),
+                 obs("pricing_constraint", src, "binance_perps", "funding_above_floor",
+                     sum(1 for v in vals if v > FLOOR + 1e-12) / len(vals)),
+                 obs("pricing_constraint", src, "binance_perps", "funding_top", funding[top], payload={"symbol": top})]
     LIVE[BN] = (now, funding)
     with db.tx():
         for o in rows:
