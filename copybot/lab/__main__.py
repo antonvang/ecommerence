@@ -47,10 +47,20 @@ def human():
     return "human:" + (getpass.getuser() or "unknown")
 
 
+def assistant_session():
+    return bool(os.environ.get("CLAUDECODE")) or any(k.startswith("CLAUDE_CODE_") for k in os.environ)
+
+
+def operator():
+    """Who runs a fleet control command: the human, or an AI assistant acting for them (recorded as such, so the
+    event chain never shows an assistant's stop as the human's own)."""
+    return f"ai:claude-code for {human()}" if assistant_session() else human()
+
+
 def terminal_human(step):
     """A human step typed in an interactive terminal outside an assistant session (amendment 7 point 1: only a human
     resumes a simulated ledger). Policy, not proof; the logged actor and this rule bind. Returns the refusal or None."""
-    if os.environ.get("CLAUDECODE") or any(k.startswith("CLAUDE_CODE_") for k in os.environ):
+    if assistant_session():
         return f"an assistant session may not {step}: type it yourself in a terminal"
     if not (sys.stdin.isatty() and sys.stdout.isatty()):
         return f"{step} must be typed in an interactive terminal"
@@ -249,11 +259,11 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
     try:
         if args.cmd == "stop":
             from lab import control
-            return control.stop(db, human(), args.reason, force=args.force, out=out)
+            return control.stop(db, operator(), args.reason, force=args.force, out=out)
         if args.cmd in ("pause", "resume"):
             from lab import control
             fn = {"pause": control.pause, "resume": control.resume}[args.cmd]
-            out(f"{args.cmd}: {'recorded' if fn(db, human(), args.reason) else 'already in that state (no-op)'}")
+            out(f"{args.cmd}: {'recorded' if fn(db, operator(), args.reason) else 'already in that state (no-op)'}")
             return 0
         if args.cmd == "export-db":                 # hand the lab over to another machine (research/LINUX_FLYT.md)
             import sqlite3
