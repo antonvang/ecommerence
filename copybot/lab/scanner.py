@@ -143,10 +143,12 @@ def _perps(get):
             and s.get("underlyingType") == "COIN" and s.get("status") == "TRADING" and s.get("quoteAsset") == "USDT"}
 
 
-def premium_obs(get, perps, funding=None):
+def premium_obs(get, perps, funding=None, intervals=None, raw=None):
     """Measurement (b): |mark/index - 1| >= PREMIUM_MIN per perp, flagged, plus the count compared. funding: if given,
-    receives {symbol: predicted funding (lastFundingRate)} of every compared perp (amendment 12e)."""
+    receives {symbol: predicted funding per 8 hours} of every compared perp (12e; 12i: lastFundingRate x 8 / the
+    symbol's settlement interval from `intervals`, 8 hours when unknown); raw: if given, receives the raw rates."""
     out, n = [], 0
+    intervals = intervals or {}
     for x in get(f"{BN}/fapi/v1/premiumIndex"):
         if x.get("symbol") not in perps:
             continue
@@ -155,7 +157,10 @@ def premium_obs(get, perps, funding=None):
             continue
         n += 1
         if funding is not None and x.get("lastFundingRate") not in (None, ""):
-            funding[x["symbol"]] = float(x["lastFundingRate"])
+            r = float(x["lastFundingRate"])
+            funding[x["symbol"]] = r * EIGHT_HOURS / intervals.get(x["symbol"], EIGHT_HOURS)
+            if raw is not None:
+                raw[x["symbol"]] = r
         p = m / i - 1
         if abs(p) >= PREMIUM_MIN:
             out.append(obs("pricing_constraint", f"{BN}/fapi/v1/premiumIndex", x["symbol"], "perp_premium", p,
@@ -167,7 +172,26 @@ def premium_obs(get, perps, funding=None):
 PERPS_EVERY = 3600
 _PERPS = {}                                     # premium-watch: url -> (fetched at, perps); exchangeInfo once an hour
 FUNDING_MIN = 0.0005                            # 12f: predicted funding >= 0.05 % per 8 h is recorded, flagged
-FLOOR = 0.0001                                  # the 0.01 % interest floor per settlement
+FLOOR = 0.0001                                  # the 0.01 % interest floor per 8 hours (12i: rates are per 8 h)
+EIGHT_HOURS = 8                                 # 12i: Binance thresholds are per 8 hours
+INTERVALS = {}                                  # 12i: symbol -> settlement interval in hours (fundingInfo); others 8
+_INTERVALS_AT = {}                              # url -> when fundingInfo was last fetched (at most hourly)
+
+
+def intervals(get, now):
+    """12i: Binance fundingInfo (public GET, at most once an hour). Symbols not listed settle every 8 hours. A failed
+    fetch keeps what is known (and 8 hours for the rest: the stricter reading)."""
+    at = _INTERVALS_AT.get(BN)
+    if at is None or now - at >= PERPS_EVERY:
+        _INTERVALS_AT[BN] = now
+        try:
+            got = {x["symbol"]: int(x["fundingIntervalHours"]) for x in get(f"{BN}/fapi/v1/fundingInfo")
+                   if x.get("symbol") and int(x.get("fundingIntervalHours") or 0) > 0}
+            INTERVALS.clear()
+            INTERVALS.update(got)
+        except Exception:
+            pass
+    return INTERVALS
 LIVE = {}                                       # 12e: url -> (measured at, {symbol: predicted funding}), in memory only
 HL_LIVE = {}                                    # 13: url -> (measured at, {coin: predicted funding x 8}), in memory only
 HL_EIGHT = 8                                    # 13: Hyperliquid settles hourly; x 8 compares with Binance's 8-hour rate
@@ -201,9 +225,11 @@ def premium_watch(db, get=http_get, now=None, post=None):
     hit = _PERPS.get(BN)
     if hit is None or now - hit[0] >= PERPS_EVERY or not hit[1]:
         _PERPS[BN] = hit = (now, _perps(get))
-    funding = {}
-    rows = premium_obs(get, hit[1], funding)
-    rows += [obs("pricing_constraint", f"{BN}/fapi/v1/premiumIndex", sym, "predicted_funding", r, FUNDING_MIN, True)
+    funding, raw = {}, {}
+    iv = intervals(get, now)
+    rows = premium_obs(get, hit[1], funding, iv, raw)
+    rows += [obs("pricing_constraint", f"{BN}/fapi/v1/premiumIndex", sym, "predicted_funding", r, FUNDING_MIN, True,
+                 {"raw": raw.get(sym), "interval_h": iv.get(sym, EIGHT_HOURS), "per": "8h"})
              for sym, r in sorted(funding.items()) if r >= FUNDING_MIN]
     if funding:                                 # 12e precision: the market's funding, for display only
         src, vals = f"{BN}/fapi/v1/premiumIndex", sorted(funding.values())

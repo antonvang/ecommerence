@@ -73,7 +73,8 @@ HL_PERP = "HL:"                                 # the perp leg's instrument pref
 HL_SLOTS = 10
 HL_HOLD_S = 8 * HOUR                            # 13 point 5: out no earlier than 8 h after the entry
 HL_PERSIST_HOURS = 24                           # 13 point 4: mean of the last 24 settled hours x 8 >= HL_FUND_PERSIST
-HL_FUND_MIN = 0.001                             # 13a: predicted funding x 8 >= 0.10 % (2026 study: +0.51 %, 61 % won)
+HL_FUND_MIN = 0.001                             # 13a: predicted funding x 8 >= 0.10 % (13a's study figures are not
+                                                # reproducible; corrected study: research/studies/CARRY_COST_2026-10-21.md)
 HL_FUND_PERSIST = 0.0005                        # 13a: the 24-hour mean x 8 >= 0.05 %
 _CANDIDATES = {}                                # (registry, last research.explore id, families) -> candidates
 
@@ -528,7 +529,7 @@ def _cost_gate(trigger, spot_book, perp_book, funding_8h, at=None, insts=(None, 
     size = CAPITAL / UNIT_CAPITAL
     qty = size / perp_book.mid()
     cost = round_trip_cost(spot_book, perp_book, size)
-    earn = (funding_8h or 0.0) * 3 * COST_DAYS
+    earn = (funding_8h or 0.0) * 3 * COST_DAYS          # 12i: funding_8h is per 8 hours for every interval
     skew = abs(at[insts[0]] - at[insts[1]]) if at and None not in insts else None
     trigger["round_trip_cost"], trigger["funding_3d"] = cost, earn
     trigger["execution"] = {
@@ -570,6 +571,18 @@ def settled_since_entry(db, ledger, coin, now):
     return db.one("SELECT 1 FROM sim_funding WHERE exp_id=? AND instrument=? AND settle_ts>?", ledger, coin, t) is not None
 
 
+def per8h(settled):
+    """12i: {settle ts: rate per 8 hours}, each Binance settlement scaled by the hours since the previous one (the first
+    by the hours to the next; a single settlement is taken as 8-hourly)."""
+    ts = sorted(settled or {})
+    out = {}
+    for i, t in enumerate(ts):
+        gap = (t - ts[i - 1]) if i else ((ts[1] - t) if len(ts) > 1 else 8 * HOUR)
+        h = max(1, round(gap / HOUR))
+        out[t] = settled[t] * 8 / h
+    return out
+
+
 def _two_settled_low(settled, mult=1):
     """12f: the last two settled rates (x mult) are both below SCAN_FUND_EXIT."""
     last = [settled[t] * mult for t in sorted(settled or {})[-2:]]
@@ -584,7 +597,7 @@ def scan_signal(db, coin, holding, now, ledger=None, settled=None):
     if holding:
         if ledger is None:
             return 1.0
-        return 0.0 if (_two_settled_low(settled) and settled_since_entry(db, ledger, coin, now)) else 1.0
+        return 0.0 if (_two_settled_low(per8h(settled)) and settled_since_entry(db, ledger, coin, now)) else 1.0
     ts, fs = _last_two(db, now)
     if not ts or now - ts[0] > SCAN_STALE_S or fs[0].get(coin, 0) < SCAN_FUND_MIN:
         return 0.0
@@ -633,7 +646,9 @@ def manage_scanner(db, now, get):
                 "t": int(now)}
         try:
             _, settled, _, _ = paper_runner.hourly(coin, now, get)
-            last3 = [settled[t] for t in sorted(settled)[-3:]]
+            norm = per8h(settled)                                                      # 12i: per 8 hours
+            last3 = [norm[t] for t in sorted(norm)[-3:]]
+            trigger["settled_raw3"] = [settled[t] for t in sorted(settled)[-3:]]
             trigger["settled_avg3"] = sum(last3) / len(last3) if len(last3) == 3 else None
             if trigger["settled_avg3"] is None or trigger["settled_avg3"] < SCAN_FUND_PERSIST:
                 raise ValueError(f"funding not persistent: last 3 settled {last3}")

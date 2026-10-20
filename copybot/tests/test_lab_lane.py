@@ -563,6 +563,8 @@ class PremiumWatch(Base):
             if url.endswith("/fapi/v1/premiumIndex"):
                 return [{"symbol": s, "markPrice": str(100 * (1 + p)), "indexPrice": "100", "lastFundingRate": str(f)}
                         for s, (p, f) in rows.items()]
+            if url.endswith("/fapi/v1/fundingInfo"):                       # 12i: settlement intervals
+                return [{"symbol": s, "fundingIntervalHours": h} for s, h in getattr(self, "intervals", {}).items()]
             raise AssertionError(url)
         return g
 
@@ -571,6 +573,35 @@ class PremiumWatch(Base):
         assert url == scanner.HL_INFO and body == {"type": "metaAndAssetCtxs"}, (url, body)
         return [{"universe": [{"name": "AAA"}, {"name": "kPEPE"}, {"name": "OLD", "isDelisted": True}]},
                 [{"funding": "0.0002"}, {"funding": "0.01"}, {"funding": "0.01"}]]
+
+    def test_12i_a_4_hour_coin_is_measured_per_8_hours(self):
+        scanner.INTERVALS.clear()
+        scanner._INTERVALS_AT.clear()
+        self.addCleanup(scanner.INTERVALS.clear)
+        self.addCleanup(scanner._INTERVALS_AT.clear)
+        self.intervals = {"AAAUSDT": 4}
+        scanner.premium_watch(self.db, self.get({"AAAUSDT": (0.0, 0.0003), "BBBUSDT": (0.0, 0.0003)}), NOW, self.post)
+        rows = {r["instrument"]: r for r in self.db.q("SELECT instrument, value, payload FROM observations WHERE "
+                                                      "metric='predicted_funding'")}
+        self.assertEqual(set(rows), {"AAAUSDT"})                       # 0.03 % per 4 h = 0.06 % per 8 h >= 0.05 %
+        self.assertAlmostEqual(rows["AAAUSDT"]["value"], 0.0006)
+        p = json.loads(rows["AAAUSDT"]["payload"])
+        self.assertEqual((p["raw"], p["interval_h"], p["per"]), (0.0003, 4, "8h"))
+        self.assertAlmostEqual(scanner.LIVE[scanner.BN][1]["BBBUSDT"], 0.0003)   # 8-hourly: unchanged
+
+    def test_12i_funding_info_is_read_hourly_and_a_failure_keeps_what_is_known(self):
+        scanner.INTERVALS.clear()
+        scanner._INTERVALS_AT.clear()
+        self.addCleanup(scanner.INTERVALS.clear)
+        self.addCleanup(scanner._INTERVALS_AT.clear)
+        self.intervals = {"AAAUSDT": 4}
+        scanner.intervals(self.get({}), NOW)
+        self.intervals = {"AAAUSDT": 1}
+        scanner.intervals(self.get({}), NOW + 60)                        # within the hour: not read again
+        self.assertEqual(scanner.INTERVALS, {"AAAUSDT": 4})
+        boom = lambda url: (_ for _ in ()).throw(OSError("down"))       # noqa: E731
+        scanner.intervals(boom, NOW + 3601)
+        self.assertEqual(scanner.INTERVALS, {"AAAUSDT": 4})
 
     def test_writes_observations_only_and_reads_the_perp_list_hourly(self):
         events = self.db.one("SELECT COUNT(*) FROM events")[0]
@@ -1010,6 +1041,31 @@ class Report(Base):
         ev = self.db.one("SELECT payload FROM events WHERE kind='research.lane_report'")
         self.assertIn('"decisional": false', ev["payload"].replace('"decisional":false', '"decisional": false'))
         self.assertTrue(os.path.exists(os.path.join(pipeline.ARTIFACTS, lane.REPORT_DIR, f"{day}.json")))
+
+
+
+class PerEightHours(unittest.TestCase):
+    """12i: Binance settlements are compared per 8 hours, whatever the coin's interval."""
+    H = 3600
+
+    def test_per8h_scales_by_the_interval(self):
+        t0 = 1_790_000_000 // (8 * self.H) * (8 * self.H)
+        four = {t0 + k * 4 * self.H: 0.00005 for k in range(4)}
+        self.assertTrue(all(abs(v - 0.0001) < 1e-15 for v in lane.per8h(four).values()))
+        eight = {t0 + k * 8 * self.H: 0.0001 for k in range(3)}
+        self.assertEqual(set(lane.per8h(eight).values()), {0.0001})
+        mixed = {t0: 0.0001, t0 + 8 * self.H: 0.0001, t0 + 9 * self.H: 0.0001}  # switched to 1 h
+        self.assertAlmostEqual(lane.per8h(mixed)[t0 + 9 * self.H], 0.0008)
+        self.assertEqual(lane.per8h({t0: 0.0002}), {t0: 0.0002})              # a single settlement: 8-hourly
+        self.assertEqual(lane.per8h({}), {})
+
+    def test_the_floor_rate_on_a_4_hour_coin_is_not_below_the_floor(self):
+        t0 = 1_790_000_000 // (8 * self.H) * (8 * self.H)
+        four = {t0 + k * 4 * self.H: 0.00005 for k in range(4)}             # 0.005 % per 4 h = 0.01 % per 8 h
+        self.assertTrue(lane._two_settled_low(four))                        # the old raw comparison exited here
+        self.assertFalse(lane._two_settled_low(lane.per8h(four)))           # 12i: held at the floor
+        low = {t0 + k * 4 * self.H: 0.00002 for k in range(4)}
+        self.assertTrue(lane._two_settled_low(lane.per8h(low)))
 
 
 if __name__ == "__main__":

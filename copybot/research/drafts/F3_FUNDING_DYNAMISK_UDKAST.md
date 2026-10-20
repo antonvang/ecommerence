@@ -59,6 +59,8 @@ observeret, beregnet eller antaget.
   handel > 0 (bootstrap over handler, 2.000 træk, seed 7), median > 0, og attribution: funding − omkostninger > 0
   og pris-P&L ≤ funding.
 - Multiple testing: én konfiguration (tallene ovenfor), ingen gitter; tæller som én familie i alfa-budgettet.
+- **UGYLDIG (INVALIDATED 2026-10-21):** styrkeberegningen herunder bygger på det for høje gennemsnit 0,8 % netto;
+  rettet er netto ved realistiske omkostninger ikke positiv (`research/studies/CARRY_BASIS_PLAN.md`).
 - **Statistisk styrke (antaget):** med gennemsnit 0,8 % og spredning cirka 1,5 % pr. handel kræver en nedre grænse
   > 0 cirka 10-15 handler; 60 handler giver margin for et mindre resultat end studiet.
 
@@ -69,6 +71,7 @@ observeret, beregnet eller antaget.
 
 ## 9. Det ærlige billede
 
+- **UGYLDIG (INVALIDATED 2026-10-21):** næste punkt bygger på det for høje studietal.
 - Den forventede fordel er lille (cirka +0,4 % af kontoens kapital pr. handel over cirka 3 uger efter studiet) og kan
   forsvinde efter basis og den enkelte mønts spread. Papirkontiene (12e-12g) måler netop det fra nu.
 - En formel afgørelse kræver måneder af fremadtest; det kan ikke gøres hurtigere uden at miste sin værdi.
