@@ -1277,3 +1277,26 @@ var cirka 0,2 % og resten spread og slippage i tynde bøger. Stopreglen "kilden 
 2. **Krav:** forventet funding × 9 (3 døgn à 3 afregninger; HL: forventet × 8 × 9) ≥ den beregnede omkostning i
    procent af ét bens værdi. Ellers `lane.skipped` med tallene, og mønten kan prøves igen efter 1 time.
 3. **Ærligt:** bogen kan ændre sig, og funding kan falde; kravet sorterer kun handler fra, der er tabt på forhånd.
+
+## Ændring 11d (2026-10-20): banegennemgangens placebo og forsinkelse rettes — før kode
+
+**Beslutning:** Claude efter brugerens mandat 2026-10-20 og ønske om at undersøge, hvorfor 11c altid bestod ("en
+kandidat må ikke bestå, blot fordi alle tests bruger den samme fejlbehæftede antagelse"). Kun banens gennemgang
+(11c); den formelle pipelines adversarielle trin ændres ikke.
+
+**Data (`research/tools/placebo_study.py`, 5 tilfældige af 667 kandidater, `explore0`, 20 træk):**
+- Placebo i blokke af 24 bars: snit −28 til −37 i netto-Sharpe mod kandidaternes 4,1-6,5. Blandingen giver langt
+  flere skift og dermed omkostninger; den måler omsætning, ikke timing, og p er altid 0.
+- Cirkulær forskydning (samme positioner, omsætning og eksponering, forskudt mindst 7 døgn mod fundingen): snit −1,7
+  til 4,6; én af fem fik p = 0,20.
+- Forsinkelse 1 time mod 24 timer: næsten ens (reglerne beslutter én gang i døgnet), så 1 time tester intet.
+
+1. **Placebo (erstatter 11c punkt 1, fjerde led):** hver mønts position forskydes cirkulært med et tilfældigt antal
+   bars mellem 168 og længden − 168 (60 træk, seed 17); p = andelen af træk med netto-Sharpe ≥ kandidatens ved 2×
+   omkostninger; krav p < 0,10.
+2. **Forsinkelse (erstatter 11c punkt 1, tredje led):** 24 bars (én beslutningsperiode) i stedet for én; netto-Sharpe
+   ved 2× omkostninger ≥ 1,0.
+3. **Gennemgange efter den gamle metode tæller ikke:** en kandidat uden en 11d-gennemgang gennemgås igen, før den kan
+   blive en banekonto. Aktive konti berøres ikke.
+4. **Ærligt:** fem kandidater er en lille stikprøve; ændringen er begrundet i metoden (blokplaceboen er skæv for
+   strategier med lav omsætning), ikke i at få færre kandidater.
