@@ -1388,3 +1388,25 @@ kan ikke genskabes fra koden (dagens kode giver en anden stikprøve); det står 
 
 Reglerne i 12e, 12f, 12g og 13a beholdes: 12g kræver i forvejen, at 3 døgns forventet funding dækker de live bøgers
 omkostning, og stopper netop de tynde mønter, hvor studiet viser tab.
+
+## Ændring 12i (2026-10-21): scanner-kontiens funding-tal regnes pr. 8 timer, som 12f skriver — før kode
+
+**Beslutning:** Claude under brugerens mandat 2026-10-21 ("FJERN TEKNISK GÆLD", "følg dens konsekvenser helt
+igennem systemet"). Kun simuleret handel. Ingen tærskel ændres: koden bringes i overensstemmelse med den godkendte tekst.
+
+**Fejlen (verificeret i en uafhængig revision 2026-10-21):** 12e/12f/12g skriver tærsklerne pr. 8 timer (ind ved
+forventet funding ≥ 0,05 %, vedvarende snit ≥ 0,025 %, ud under 0,01 %, 3 døgns funding = rate × 3 × 3). Koden
+sammenlignede Binance' rå rate pr. afregning med tallene. For mønter med 4-timers afregning (de fleste i 2026) var
+indgangen dermed dobbelt så streng, udgangen udløstes allerede ved rentegulvet (0,005 % pr. 4 t = 0,01 % pr. 8 t), og
+12g undervurderede 3 døgns funding med faktor 2 (1-timers mønter: faktor 8). Bogført funding (`sim_funding`) brugte
+den rå rate og var korrekt. Hyperliquid (× 8) var korrekt.
+
+1. **Afregningsinterval:** Binance' `fapi/v1/fundingInfo` (offentlig, GET, højst én gang i timen) giver hver mønts
+   interval; mønter uden for listen har 8 timer. Afregnede rater omregnes med intervallet mellem afregningerne.
+2. **Pr. 8 timer:** forventet funding, de afregnede rater i vedvarende- og ud-reglen og 12g's 3-døgns indtægt regnes
+   som rate × 8 / interval. Rå rate og interval registreres ved siden af i målingen og i startforsøget.
+3. **Ukendt interval** (fundingInfo kan ikke hentes og intet kendt): 8 timer (den hidtidige, strengere adfærd).
+4. **Visning:** markedets funding-median og andel over gulvet vises pr. 8 timer, sammenlignelig med HL × 8.
+5. **Ærligt:** det rettede studie (`research/studies/CARRY_BASIS_PLAN.md`) viser ingen fordel ved realistiske
+   omkostninger; rettelsen gør reglen korrekt, ikke profitabel. 12g stopper fortsat starter, hvis 3 døgns funding ikke
+   dækker de live bøgers omkostning.
