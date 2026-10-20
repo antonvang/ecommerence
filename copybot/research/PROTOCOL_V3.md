@@ -1300,3 +1300,17 @@ kandidat må ikke bestå, blot fordi alle tests bruger den samme fejlbehæftede 
    blive en banekonto. Aktive konti berøres ikke.
 4. **Ærligt:** fem kandidater er en lille stikprøve; ændringen er begrundet i metoden (blokplaceboen er skæv for
    strategier med lav omsætning), ikke i at få færre kandidater.
+
+### Præcisering af ændring 11d (2026-10-20, før kode): markedet forskydes, ikke positionerne; Sharpe pr. beslutningsperiode
+
+Under kodningen viste en kontrol på syntetisk støj-funding (ingen timing at finde), at forskydning af positionerne
+stadig var skæv: omslaget giver ét ekstra skift pr. mønt, og opdelingen i UTC-døgn lægger kl. 00:00-afregningen og
+skiftet kl. 01:00 i samme døgn. Over 8 støjserier fik en regel med 1 dags tilbageblik p = 0,0 i 7 af 8.
+
+1. Placeboen forskyder hver mønts **marked** (bars og afregnet funding) cirkulært med et tilfældigt antal hele døgn
+   (mindst 7, højst længden − 7); positionerne, omsætningen og omkostningerne er uændrede.
+2. Sharpe beregnes over **beslutningsperioder** (døgn fra kl. 01:00 UTC, familiernes beslutningstidspunkt) for både
+   kandidaten og placeboerne.
+3. Kontrol (syntetisk, 20 træk): ægte regimer p = 0,0; konstant funding p = 1,0; støj med 3 dages tilbageblik p fordelt
+   over 0,15-1,0 (0 af 8 under 0,10); støj med 1 dags tilbageblik 3 af 8 under 0,10 — de strategier har netto-Sharpe
+   omkring −27 og falder på forsinkelseskravet.
