@@ -285,6 +285,17 @@ class Handler(BaseHTTPRequestHandler):
                 "/api/paper2": lambda: command.paper_view(db), "/api/rejected": lambda: command.rejected(db),
                 "/api/balance": lambda: command.balance(db), "/api/lanes": lambda: command.lane_view(db), "/api/feed": lambda: command.feed(db, int(one("limit", 40))),
                 "/api/approvals": lambda: command.approvals(db)})
+            if u.path == "/api/capital":                    # planning only: the user's own amount, never an order
+                from lab import capital
+                opt = lambda k: None if one(k) in (None, "") else one(k)  # noqa: E731
+                try:
+                    p = capital.plan(one("amount"), one("coins", 5), one("leverage", 1), opt("funding"),
+                                     opt("min_order"))
+                    return self._send(200, {"plan": p, "sensitivity": capital.sensitivity(
+                        leverage=p["inputs"]["leverage"], funding_8h=p["inputs"]["funding_8h"] or 0.0005,
+                        min_order=p["inputs"]["min_order_usd"])})
+                except capital.CapitalError as e:
+                    return self._send(400, {"error": str(e)})
             if u.path.startswith("/api/agent/"):
                 return self._send(200, command.agent_log(db, u.path.rsplit("/", 1)[1], int(one("limit", 50))))
             if u.path == "/api/stream":

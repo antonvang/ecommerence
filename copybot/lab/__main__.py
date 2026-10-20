@@ -24,6 +24,7 @@
   python3 -m lab forward-start --reason ".." | forward-stop [--exp EXP] --reason ".."   (amendment 7 forward tests)
   python3 -m lab sim-resume LEDGER --reason ".."                          (resume a paused SHADOW_/FWD_/LANE_ ledger)
   python3 -m lab lane-off|lane-on --reason ".."                          (amendment 11 lane accounts; terminal only)
+  python3 -m lab capital --amount USD [--coins N --leverage L --funding RATE_8H --min-order USD]  (planning only)
   python3 -m lab clear-fail-closed --reason ".."                         (terminal only; refused while the cause holds)
   python3 -m lab family-check FILE                                        (amendment 8; read-only, no network)
   python3 -m lab approve-family FID --reason ".." -> code;  python3 -m lab confirm-family   (typed by the user)
@@ -208,6 +209,10 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
     sr = sub.add_parser("sim-resume"); sr.add_argument("ledger"); sr.add_argument("--reason", required=True)
     for c in ("lane-off", "lane-on"):
         sub.add_parser(c).add_argument("--reason", required=True)
+    cp = sub.add_parser("capital")
+    cp.add_argument("--amount", required=True); cp.add_argument("--coins", default=5)
+    cp.add_argument("--leverage", default=1); cp.add_argument("--funding", default=None)
+    cp.add_argument("--min-order", default=None)
     cf = sub.add_parser("clear-fail-closed"); cf.add_argument("--reason", required=True)   # terminal only
     fc = sub.add_parser("family-check"); fc.add_argument("file")
     af = sub.add_parser("approve-family"); af.add_argument("fid"); af.add_argument("--reason", required=True)
@@ -367,6 +372,15 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
                 out(f"refused: {e}")
                 return 1
             out(f"{args.ledger}: {'resumed (CLEAR recorded)' if done else 'not paused: nothing to resume'}")
+            return 0
+        if args.cmd == "capital":                     # planning only: the user's own amount; no order, no account
+            from lab import capital
+            try:
+                out(json.dumps(capital.plan(args.amount, args.coins, args.leverage, args.funding, args.min_order),
+                               indent=1, default=str))
+            except capital.CapitalError as e:
+                out(f"refused: {e}")
+                return 1
             return 0
         if args.cmd in ("lane-off", "lane-on"):       # amendment 11 point 5: a human switches the lane accounts
             from lab import lane

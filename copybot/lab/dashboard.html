@@ -294,6 +294,16 @@ details.more[open]>summary{margin-bottom:12px}
     <div class="grid3" id="lanes-sum"></div><div class="scroll" id="lanes-act" style="max-height:520px"></div>
     <div class="note" style="margin:10px 0 4px;font-size:12px;color:var(--sand)">SENEST STOPPET</div><div class="scroll" id="lanes-old" style="max-height:300px"></div></section>
 
+  <section class="panel corner" id="capital"><h2>Kapitalmodel <span class="tagx">dit eget beløb · planlægning, ingen handel, ingen konto</span></h2>
+    <div class="crow" style="flex-wrap:wrap;gap:8px">
+      <label>Beløb (USD) <input id="cap-amount" type="number" min="1" step="any" placeholder="fx 500" size="8"></label>
+      <label>Mønter <input id="cap-coins" type="number" min="1" max="200" value="5" size="4"></label>
+      <label>Gearing på perp <input id="cap-lev" type="number" min="1" max="20" step="0.5" value="1" size="4"></label>
+      <label>Antaget funding pr. 8 t (%) <input id="cap-fund" type="number" step="any" value="0.05" size="6"></label>
+      <label>Min. ordre (USD, valgfri) <input id="cap-min" type="number" min="0" step="any" size="6"></label>
+      <button class="btn" id="cap-go">Beregn</button></div>
+    <div id="cap-out"><div class="empty">Indtast det beløb, du faktisk har. Papirkontiene bruger 10.000 USD hver; det er simuleret og ikke din kapital.</div></div></section>
+
   <section class="panel corner" id="approvals"><h2>Godkendelser <span class="tagx">hvad der er godkendt, og hvad der venter på dig</span></h2>
     <div class="appr"><div><div class="note" style="margin:0 0 8px;font-size:12px;color:var(--sand)">VENTER PÅ DIG</div><div id="waiting"></div></div>
       <div><div class="note" style="margin:0 0 4px;font-size:12px;color:var(--sand)">STRATEGITYPER</div><div id="tpls"></div></div></div>
@@ -765,6 +775,30 @@ function renderLanes(l){
   $("#lanes-act").innerHTML = table(cols, l.active, "Ingen aktive konti lige nu: de starter af sig selv, når banen eller scanneren finder noget.");
   $("#lanes-old").innerHTML = table(cols, l.recent, "Ingen konti er stoppet endnu.");
 }
+async function runCapital(){
+  const v = id => $(id).value.trim(), q = new URLSearchParams({amount: v("#cap-amount"), coins: v("#cap-coins"), leverage: v("#cap-lev")});
+  if (v("#cap-fund") !== "") q.set("funding", String(Number(v("#cap-fund")) / 100));
+  if (v("#cap-min") !== "") q.set("min_order", v("#cap-min"));
+  let r, body;
+  try { r = await fetch("/api/capital?" + q, {cache: "no-store"}); body = await r.json(); }
+  catch (e) { $("#cap-out").innerHTML = `<div class="empty">Kunne ikke beregne: ${esc(String(e))}</div>`; return; }
+  if (!r.ok) { $("#cap-out").innerHTML = `<div class="empty">Ugyldigt input: ${esc(body.error || r.status)}</div>`; return; }
+  const p = body.plan, pc = p.per_coin, inc = p.income, u = x => x === "UNKNOWN" ? `<span class="na">UKENDT</span>` : x;
+  const usd = x => typeof x === "number" ? num(x, 2) + " USD" : u(x);
+  const adv = p.scenarios.adverse_price.map(a => `+${(a.price_rise*100).toFixed(0)} %: perp-tab ${num(a.perp_loss_usd_per_coin)} USD pr. mønt (spot vinder det samme) · ${a.covered_without_topup ? "dækket af margin" : "<b>kræver mere margin</b>"}`).join("<br>");
+  $("#cap-out").innerHTML = `<div class="grid3">${metric("Pr. mønt", usd(pc.capital_usd), `spot ${num(pc.spot_notional_usd)} USD · perp ${num(pc.perp_notional_usd)} USD kort · margin ${num(pc.perp_margin_usd)} + buffer ${num(pc.margin_buffer_usd)} USD`)}
+     ${metric("Omkostning, ind og ud", pct(p.costs.round_trip_pct_of_capital, 3) + " af kapitalen", `${num(p.costs.round_trip_usd_book)} USD for hele bogen · ×2 i stressscenarie: ${num(p.scenarios.costs_x2_round_trip_usd_book)} USD`)}
+     ${metric("Funding-indtægt (antaget)", usd(inc.per_day_usd_book) + (typeof inc.per_day_usd_book === "number" ? " pr. dag" : ""), typeof inc.break_even_days === "number" ? `break-even efter ${num(inc.break_even_days, 1)} dage · ${pct(inc.apr_on_capital, 1)} om året på kapitalen · ved rentegulvet ${num(p.scenarios.funding_at_floor_per_day_usd_book)} USD/dag · ved −0,01 % ${num(p.scenarios.funding_negative_0_01pct_per_day_usd_book)} USD/dag` : esc(inc.note || "ingen break-even ved funding ≤ 0"))}</div>
+   <div class="grid3">${metric("Største andel pr. mønt", pct(p.book.max_share_per_coin, 0), `brutto eksponering ${num(p.book.gross_exposure_usd)} USD · netto prisrisiko 0 (afdækket)`)}
+     ${metric("Likvidation (omtrent)", "+" + pct(p.liquidation_rise_approx, 0) + " prisstigning", "uden vedligeholdelsesmargin og gebyrer")}
+     ${metric("Minimumsordre", p.min_order_ok === "UNKNOWN" ? `<span class="na">UKENDT</span>` : (p.min_order_ok ? "OK" : "<b>for lille</b>"), p.max_coins_at_min_order != null ? `højst ${p.max_coins_at_min_order} mønter ved den minimumsordre` : "angiv børsens minimum for at tjekke")}</div>
+   <div class="cap">${adv}</div>
+   <div class="cap" style="color:var(--amber)">${p.unknown.map(x => `UKENDT: ${esc(x.item)} — ${esc(x.consequence)}`).join("<br>")}</div>
+   ${table([{h:"Beløb (USD)",num:1,f:x=>num(x.amount_usd,0)},{h:"Mønter",num:1,f:x=>x.coins},{h:"Pr. ben pr. mønt",num:1,f:x=>num(x.notional_per_coin_usd)},{h:"Ind og ud (% af kapital)",num:1,f:x=>pct(x.round_trip_pct_of_capital,3)},{h:"Break-even (dage)",num:1,f:x=>x.break_even_days == null ? na() : num(x.break_even_days,1)},{h:"Min. ordre",f:x=>x.min_order_ok === "UNKNOWN" ? "ukendt" : (x.min_order_ok ? "ok" : "for lille")}], body.sensitivity.rows, "")}
+   <div class="cap" style="color:var(--amber)">Indtægten er kun regnestykket ved den funding, du har antaget — ikke en prognose. Årets data (ændring 13a): medianen på Binance var 0,01 % pr. 8 t, og de handler, reglen ville have taget, gav i snit +0,8 % netto pr. tur over cirka 3 uger (57 % vundet).</div>
+   <div class="cap">Antagelser: spot-gebyr ${pct(p.inputs.costs.spot_taker_fee, 2)}, perp-gebyr ${pct(p.inputs.costs.perp_taker_fee, 2)}, slippage og halv spread ${pct(p.inputs.costs.slippage + p.inputs.costs.half_spread, 2)} pr. fill, buffer ${pct(p.inputs.costs.buffer, 0)}. Planlægning: ingen ordre, ingen konto, ikke bevis for afkast.</div>`;
+}
+$("#cap-go").addEventListener("click", runCapital);
 function renderPaper(p){
   const head = `<div class="grid3" style="margin-bottom:8px">${metric("Real account profit", `<span class="na">${NA}</span>`, esc(p.real_account_profit.reason))}
      ${metric("Paper-eligible (VALIDATED)", num(p.eligible.length, 0), p.eligible.length ? esc(p.eligible.join(", ")) + " — start only via the approved transition in the experiment drawer" : "none: needs a passed sealed holdout")}
