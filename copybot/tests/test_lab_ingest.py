@@ -230,6 +230,15 @@ class Queue(Base):
                          ingest.plan()[1])
         self.assertEqual(ingest.status(self.db)["done"], 1)
 
+    def test_leftovers_of_an_interrupted_unit_are_removed(self):
+        raw = os.path.join(self.root, ".raw")
+        os.makedirs(raw)
+        for name in ("BNBUSDT-bookDepth-2023-01-01.zip", "x.zip.123.part"):
+            open(os.path.join(raw, name), "wb").close()
+        ingest.enqueue(self.db)
+        self.step(Fake({ingest.FOMC_HIST.format(year=2020): FOMC_2020.encode()}))
+        self.assertEqual(os.listdir(raw), [])
+
     def test_refused_unit_is_recorded_and_skipped(self):
         ingest.enqueue(self.db)
         self.assertIsNone(self.step(Fake({ingest.FOMC_HIST.format(year=2020): b"nothing"})))

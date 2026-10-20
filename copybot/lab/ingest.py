@@ -397,11 +397,24 @@ def spent(db):
     return sum(int(p.get("bytes") or 0) for p in done_units(db).values())
 
 
+def clear_raw(root=None):
+    """Remove raw files left by an interrupted unit (a stopped fleet never reaches the unit's own cleanup). Safe because
+    only one ingest job runs at a time (enqueue). Returns the number of files removed."""
+    raw, n = os.path.join(root or ROOT, ".raw"), 0
+    if os.path.isdir(raw):
+        for f in os.scandir(raw):
+            if f.is_file():
+                os.remove(f.path)
+                n += 1
+    return n
+
+
 def step_ingest(db, job, worker, opener=None, free=None, root=None):
     from lab import pipeline
     unit = (job.get("payload") or {}).get("unit")
     if unit in done_units(db):
         return {"unit": unit, "skipped": "already done"}
+    clear_raw(root)
     left = BUDGET_BYTES - spent(db)
     try:
         out = run_unit(unit, left, opener, free, root)
