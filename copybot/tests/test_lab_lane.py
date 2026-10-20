@@ -811,6 +811,18 @@ class CostGate(Base):
         self.assertIn("too thin", self.db.one("SELECT payload FROM events WHERE kind='lane.skipped'")["payload"])
 
 
+class Symbols(unittest.TestCase):
+    def test_non_ascii_symbols_are_url_encoded(self):
+        seen = []
+        def get(url):
+            seen.append(url)
+            url.encode("ascii")                          # what urllib needs; raises for a raw non-ASCII URL
+            return {"bids": [["1", "1"]], "asks": [["1.1", "1"]]}
+        paper_runner.fetch_book("我踏马来了USDT", NOW, get)
+        paper_runner.fetch_book("我踏马来了USDT.SPOT", NOW, get)
+        self.assertTrue(all("%E6%88%91" in u for u in seen))
+
+
 class Execution(Base):
     """Amendment 12h: execution measured per leg, unsynchronised books refused, decomposition and classes."""
     def scan(self, ts, fund):

@@ -76,6 +76,9 @@ a{color:var(--amber);text-decoration:none} a:hover{text-decoration:underline}
 .metric .v.hot{color:var(--orange)} .metric .v.good{color:var(--green)} .metric .v.bad{color:var(--red)}
 #lanes .good{color:var(--green)} #lanes .bad{color:var(--red)}
 #lanes-sum{grid-template-columns:repeat(4,minmax(0,1fr))}
+#cov-sum{grid-template-columns:repeat(4,minmax(0,1fr))} #coverage .good{color:var(--green)} #coverage .bad{color:var(--red)}
+@media (max-width:1100px){#cov-sum{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+@media (max-width:760px){#cov-sum{grid-template-columns:minmax(0,1fr)}}
 @media (max-width:1100px){#lanes-sum{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
 @media (max-width:760px){#lanes-sum{grid-template-columns:minmax(0,1fr)}}
 .wk{display:flex;align-items:center;justify-content:space-between;gap:8px;font:12px var(--mono);padding:6px 0;border-bottom:1px solid var(--line2)}
@@ -304,6 +307,12 @@ details.more[open]>summary{margin-bottom:12px}
       <label>Min. ordre (USD, valgfri) <input id="cap-min" type="number" min="0" step="any" size="6"></label>
       <button class="btn" id="cap-go">Beregn</button></div>
     <div id="cap-out"><div class="empty">Indtast det beløb, du faktisk har. Papirkontiene bruger 10.000 USD hver; det er simuleret og ikke din kapital.</div></div></section>
+
+  <section class="panel corner" id="coverage"><h2>Data og hypoteser <span class="tagx" id="cov-note">kun gratis, offentlige kilder · ingen nøgler · data fra 2025-01-01 læses aldrig</span></h2>
+    <div class="grid3" id="cov-sum"></div>
+    <div class="note" style="margin:10px 0 4px;font-size:12px;color:var(--sand)">KILDER: DÆKNING OG SUNDHED</div><div class="scroll" id="cov-src" style="max-height:420px"></div>
+    <div class="note" style="margin:10px 0 4px;font-size:12px;color:var(--sand)">HULLER (DATA LABORATORIET IKKE HAR)</div><div class="scroll" id="cov-gaps" style="max-height:260px"></div>
+    <div class="note" style="margin:10px 0 4px;font-size:12px;color:var(--sand)">HYPOTESEREGISTER (ÉN RÆKKE PR. MEKANISME)</div><div class="scroll" id="hyp" style="max-height:520px"></div></section>
 
   <section class="panel corner" id="approvals"><h2>Godkendelser <span class="tagx">hvad der er godkendt, og hvad der venter på dig</span></h2>
     <div class="appr"><div><div class="note" style="margin:0 0 8px;font-size:12px;color:var(--sand)">VENTER PÅ DIG</div><div id="waiting"></div></div>
@@ -788,6 +797,33 @@ function renderLanes(l){
     {h:"3 døgns funding", num:1, f:x => x.execution ? pct(x.execution.funding_3d, 3) : na()}],
     l.probes || [], "Ingen startforsøg endnu.");
 }
+const HEALTH = {ok: ["good", "ok"], cached: ["", "i cache"], stale: ["bad", "forældet"], errors: ["bad", "fejl"], "never seen": ["bad", "aldrig set"], missing: ["bad", "mangler"]};
+function renderCoverage(c, h){
+  const live = c.sources.filter(x => x.kind === "live"), bad = c.sources.filter(x => ["stale", "errors", "never seen", "missing"].includes(x.health));
+  const st = h.by_status || {};
+  $("#cov-sum").innerHTML = metric("Kilder", `${c.sources.length} · ${bad.length ? `<span class="bad">${bad.length} med problem</span>` : `<span class="good">alle sunde</span>`}`, `${live.length} live · ${c.sources.length - live.length} historiske · betalte kilder: ${c.paid_sources_active} · nøgler: ${c.keys_used}`)
+    + metric("Datapauser (24 t)", String(c.fetch_pauses_24h.length), c.fetch_pauses_24h.length ? esc(c.fetch_pauses_24h[c.fetch_pauses_24h.length - 1].detail.slice(0, 90)) : "ingen hentefejl")
+    + metric("Hypoteser", `${h.total_mechanisms} mekanismer`, `${h.total_experiments} eksperimenter · ${h.total_variants_tested} varianter testet formelt · alfa brugt ${num(h.alpha_spent, 4)} · banen: ${h.lane_variants_evaluated} varianter (udforskning, aldrig bevis)`)
+    + metric("Status", Object.entries(st).map(([k, v]) => `${esc(k)} ${v}`).join(" · ") || na(), "PASS her er kun et screeningstrin; ingen strategi har dokumenteret fordel");
+  $("#cov-src").innerHTML = table([
+    {h:"Kilde", f:x => `<b>${esc(x.source)}</b><div class="dim">${esc(x.content)}</div>`},
+    {h:"Type", f:x => (x.kind === "live" ? "live" : "historik") + `<div class="dim">${esc(x.resolution)}</div>`},
+    {h:"Dækning", f:x => x.kind === "live" ? `${num(x.rows_24h, 0)} rækker / 24 t` + (x.errors_24h ? `<div class="bad">${x.errors_24h} fejl</div>` : "") : `${esc(x.period || "?")}<div class="dim">${num(x.files, 0)} filer · ${num(x.coins, 0)} serier</div>`},
+    {h:"Senest", f:x => x.last_ts ? esc(ago(x.last_ts)) : na()},
+    {h:"Sundhed", f:x => { const [cls, t] = HEALTH[x.health] || ["", x.health]; return `<span class="${cls}">${esc(t)}</span>`; }},
+    {h:"Pris / nøgle", f:x => `${esc(x.cost)}<div class="dim">nøgle: ${x.key_needed === "no" ? "nej" : esc(x.key_needed)}</div>`}],
+    c.sources, "Ingen kilder.");
+  $("#cov-gaps").innerHTML = table([
+    {h:"Data", f:x => `<b>${esc(x.data)}</b>`}, {h:"Hvorfor", f:x => esc(x.why)}, {h:"Status", f:x => esc(x.status)}],
+    c.gaps, "Ingen kendte huller.");
+  $("#hyp").innerHTML = table([
+    {h:"Mekanisme", f:x => `<b>${esc(x.mechanism.replaceAll("_", " "))}</b><div class="dim">${esc((x.hypothesis || "").slice(0, 160))}</div>`},
+    {h:"Status", f:x => `<span class="${x.status === "REJECTED" ? "bad" : ["PASS", "OBSERVE"].includes(x.status) ? "good" : ""}">${esc(x.status)}</span>`},
+    {h:"Eksperimenter", f:x => x.experiments.map(e => `${esc(e.exp_id)} <span class="dim">${esc(e.verdict)}</span>`).join("<br>")},
+    {h:"Varianter", num:1, f:x => num(x.variants_tested, 0)},
+    {h:"Alfa", num:1, f:x => num(x.alpha_spent, 4)}],
+    h.mechanisms, "Ingen hypoteser registreret.");
+}
 async function runCapital(){
   const v = id => $(id).value.trim(), q = new URLSearchParams({amount: v("#cap-amount"), coins: v("#cap-coins"), leverage: v("#cap-lev")});
   if (v("#cap-fund") !== "") q.set("funding", String(Number(v("#cap-fund")) / 100));
@@ -940,8 +976,8 @@ async function refresh(full){
     await loadExperiments();
     if (full || Date.now() - slowAt > 20000) {
       slowAt = Date.now();
-      const [p, d, c, r] = await Promise.all(["/api/paper2", "/api/distribution", "/api/costs", "/api/rejected"].map(api));
-      renderPaper(p); renderDist(d); renderCosts(c); renderRejected(r);
+      const [p, d, c, r, cv, hy] = await Promise.all(["/api/paper2", "/api/distribution", "/api/costs", "/api/rejected", "/api/coverage", "/api/hypotheses"].map(api));
+      renderPaper(p); renderDist(d); renderCosts(c); renderRejected(r); renderCoverage(cv, hy);
       if ($("#more").open) await Promise.all([loadJobs(), loadLog(), loadRisk(), refreshAudit()]);
       else await refreshAudit();
     }

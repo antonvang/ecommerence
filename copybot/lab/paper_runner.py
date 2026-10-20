@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import time
+import urllib.parse
 import urllib.request
 
 from lab import lifecycle, pipeline, registry
@@ -60,6 +61,12 @@ HOUR = 3600
 MAX_BAR_AGE = 2 * HOUR
 
 
+def _q(sym):
+    """A symbol as a URL query value: Binance lists perps with non-ASCII names (e.g. Chinese), which a raw URL
+    cannot carry (UnicodeEncodeError)."""
+    return urllib.parse.quote(sym, safe="")
+
+
 def _get(path):
     req = urllib.request.Request(path if path.startswith("https://") else REST + path, headers={"User-Agent": "copybot-lab/paper (read-only)"})
     with urllib.request.urlopen(req, timeout=20) as r:
@@ -77,9 +84,9 @@ def fetch_book(sym, now, get=_get):
         return Book(ts=now, bids=tuple((float(x["px"]), float(x["sz"])) for x in lv[0][:20]),
                     asks=tuple((float(x["px"]), float(x["sz"])) for x in lv[1][:20]))
     if sym.endswith(SPOT_SUFFIX):
-        d = get(f"{SPOT_REST}/api/v3/depth?symbol={sym[:-len(SPOT_SUFFIX)]}&limit=20")
+        d = get(f"{SPOT_REST}/api/v3/depth?symbol={_q(sym[:-len(SPOT_SUFFIX)])}&limit=20")
     else:
-        d = get(f"/fapi/v1/depth?symbol={sym}&limit=20")
+        d = get(f"/fapi/v1/depth?symbol={_q(sym)}&limit=20")
     return Book(ts=now, bids=tuple((float(p), float(q)) for p, q in d["bids"]),
                 asks=tuple((float(p), float(q)) for p, q in d["asks"]))
 
@@ -93,11 +100,11 @@ def hourly(sym, now, get=_get, cache=None):
     hit = cache.get(sym) if cache is not None else None
     if hit and hit[0] == hour:
         return hit[1:]
-    kl = get(f"/fapi/v1/klines?symbol={sym}&interval=1h&limit=1000")
+    kl = get(f"/fapi/v1/klines?symbol={_q(sym)}&interval=1h&limit=1000")
     bars = [(int(k[0]) // 1000, float(k[1]), float(k[4])) for k in kl if int(k[6]) // 1000 < now]
     volume = {int(k[0]) // 1000: float(k[7]) for k in kl if int(k[6]) // 1000 < now and len(k) > 7}
     opens = {int(k[0]) // 1000: float(k[1]) for k in kl if int(k[0]) // 1000 <= now}
-    fr = get(f"/fapi/v1/fundingRate?symbol={sym}&limit=200")
+    fr = get(f"/fapi/v1/fundingRate?symbol={_q(sym)}&limit=200")
     funding = {int(f["fundingTime"]) // 1000 // HOUR * HOUR: float(f["fundingRate"]) for f in fr
                if int(f["fundingTime"]) // 1000 < now}
     if cache is not None and bars and bars[-1][0] + HOUR == hour:     # the latest closed bar is in
