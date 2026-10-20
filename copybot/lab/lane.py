@@ -53,9 +53,9 @@ SOURCE_DAYS = 14                                # point 5: funding booked - fees
 # amendment 12: scanner accounts (source "scanner"): one coin, the scanner's perp premium decides in and out
 SCAN_LABEL = "SCANNERKONTO (scannerfund, simuleret, aldrig bevis)"
 SCAN_SLOTS = 10                                 # 12b
-SCAN_FUND_MIN = 0.001                           # 12e: predicted funding >= 0.10 % per settlement to enter
-SCAN_FUND_PERSIST = 0.0005                      # 12e: mean of the last 3 settled rates >= 0.05 %
-SCAN_FUND_EXIT = 0.0001                         # 12e: out below the 0.01 % interest floor (two readings in a row)
+SCAN_FUND_MIN = 0.0005                          # 12f: predicted funding >= 0.05 % per 8 h to enter (was 0.10 %)
+SCAN_FUND_PERSIST = 0.00025                     # 12f: mean of the last 3 settled rates >= 0.025 % (was 0.05 %)
+SCAN_FUND_EXIT = 0.0001                         # 12f: out after two SETTLED rates in a row below the 0.01 % floor
 SCAN_LIVE_MAX_S = 300                           # 12e: an in-memory reading older than this is not used
 SCAN_SKIP_COOLDOWN_S = HOUR                     # 12e point 4: a skipped coin may be tried again after an hour
 SCAN_STALE_S = 3 * HOUR                         # an older latest scan: nothing new opens, a position is held
@@ -63,7 +63,7 @@ SCAN_COOLDOWN_S = DAY
 SCAN_LOSS = 0.05
 SCAN_SOURCE_S = 3 * DAY
 SCAN_FLAT_S = 2 * DAY
-SCAN_MAX_AGE_S = 30 * DAY
+SCAN_MAX_AGE_S = 60 * DAY                       # 12f: winners hold for weeks (study median 58-89 settlements)
 SCAN_HOLD_S = 12 * HOUR                         # 12c: without a booked settlement, a position may close after 12 h
 # amendment 13: Hyperliquid funding accounts (source "hl"): long Binance spot, short Hyperliquid perp
 HL_LABEL = "HL-KONTO (Hyperliquid-funding, simuleret, aldrig bevis)"
@@ -95,12 +95,14 @@ def rules_text(info):
     """The automatic stop rules, in Danish, for the dashboard."""
     if is_hl(info):
         return (f"ind ved Hyperliquid-funding ×8 ≥ {SCAN_FUND_MIN:.2%} og snit af {HL_PERSIST_HOURS} timer ×8 ≥ "
-                f"{SCAN_FUND_PERSIST:.2%}; ud ved < {SCAN_FUND_EXIT:.2%} to gange og mindst {HL_HOLD_S // HOUR} t; "
+                f"{SCAN_FUND_PERSIST:.3%}; ud når to afregnede timer ×8 er < {SCAN_FUND_EXIT:.2%} og efter mindst "
+                f"{HL_HOLD_S // HOUR} t; "
                 f"stoppes ved tab ≥ {SCAN_LOSS:.0%}, 24 t pause, funding − gebyrer ≤ 0 efter {SCAN_SOURCE_S // DAY} "
                 f"dage, {SCAN_FLAT_S // DAY} døgn uden position eller {SCAN_MAX_AGE_S // DAY} dage")
     if is_scanner(info):
-        return (f"ind ved forventet funding ≥ {SCAN_FUND_MIN:.2%} og snit af 3 afregninger ≥ {SCAN_FUND_PERSIST:.2%}; "
-                f"ud ved < {SCAN_FUND_EXIT:.2%} to gange og en afregning bogført (højst {SCAN_HOLD_S // HOUR} t); "
+        return (f"ind ved forventet funding ≥ {SCAN_FUND_MIN:.2%} og snit af 3 afregninger ≥ {SCAN_FUND_PERSIST:.3%}; "
+                f"ud når to afregnede rater er < {SCAN_FUND_EXIT:.2%} og en afregning er bogført (højst "
+                f"{SCAN_HOLD_S // HOUR} t); "
                 f"stoppes ved tab ≥ {SCAN_LOSS:.0%}, 24 t pause, funding − gebyrer ≤ 0 efter {SCAN_SOURCE_S // DAY} "
                 f"dage, {SCAN_FLAT_S // DAY} døgn uden position eller {SCAN_MAX_AGE_S // DAY} dage")
     return (f"stoppes ved funding − gebyrer ≤ 0 efter {SOURCE_DAYS} dage, tab ≥ {LOSS_RETIRE:.0%}, 24 t pause, "
@@ -433,20 +435,6 @@ def live_funding(coin, now):
     return hit[1].get(coin), hit[0]
 
 
-_LOW = {}                                       # ledger -> (last counted measurement time, consecutive low readings)
-
-
-def _low_twice(ledger, coin, now):
-    """12e point 3: two measurements in a row with predicted funding below SCAN_FUND_EXIT."""
-    r, t = live_funding(coin, now)
-    if r is None:
-        return False
-    last_t, n = _LOW.get(ledger, (None, 0))
-    if t != last_t:
-        _LOW[ledger] = (t, n + 1 if r < SCAN_FUND_EXIT else 0)
-    return _LOW[ledger][1] >= 2
-
-
 def entry_ts(db, ledger, inst):
     """When `inst` last went from flat to a position in `ledger` (the fill that opened it), or None."""
     pos, t = 0.0, None
@@ -469,15 +457,21 @@ def settled_since_entry(db, ledger, coin, now):
     return db.one("SELECT 1 FROM sim_funding WHERE exp_id=? AND instrument=? AND settle_ts>?", ledger, coin, t) is not None
 
 
-def scan_signal(db, coin, holding, now, ledger=None):
-    """12e points 2-3. Holding: out only after two low live readings and a settlement since entry (or 12 h); without a
-    fresh reading the position is held. Flat: in when the latest measurement (a new account) or the two latest
-    measurements (a reopening) flag predicted funding >= SCAN_FUND_MIN; nothing opens on a measurement older than
-    SCAN_STALE_S."""
+def _two_settled_low(settled, mult=1):
+    """12f: the last two settled rates (x mult) are both below SCAN_FUND_EXIT."""
+    last = [settled[t] * mult for t in sorted(settled or {})[-2:]]
+    return len(last) == 2 and all(v < SCAN_FUND_EXIT for v in last)
+
+
+def scan_signal(db, coin, holding, now, ledger=None, settled=None):
+    """12e/12f. Holding: out after two settled rates in a row below the floor and a settlement since the entry (or
+    12 h); without settled data the position is held. Flat: in when the latest measurement (a new account) or the two
+    latest measurements (a reopening) flag predicted funding >= SCAN_FUND_MIN; nothing opens on a measurement older
+    than SCAN_STALE_S."""
     if holding:
         if ledger is None:
             return 1.0
-        return 0.0 if (_low_twice(ledger, coin, now) and settled_since_entry(db, ledger, coin, now)) else 1.0
+        return 0.0 if (_two_settled_low(settled) and settled_since_entry(db, ledger, coin, now)) else 1.0
     ts, fs = _last_two(db, now)
     if not ts or now - ts[0] > SCAN_STALE_S or fs[0].get(coin, 0) < SCAN_FUND_MIN:
         return 0.0
@@ -546,6 +540,11 @@ def manage_scanner(db, now, get):
 
 
 # ---------- Hyperliquid funding accounts (amendment 13) ----------
+def scanner_eight():
+    from lab import scanner
+    return scanner.HL_EIGHT
+
+
 def hl_scans(db, now, n=2):
     """The latest n Hyperliquid measurement times (hl_symbols_compared is written every time)."""
     return [r[0] for r in db.q("SELECT DISTINCT ts FROM observations WHERE metric='hl_symbols_compared' AND ts<=? "
@@ -567,25 +566,15 @@ def hl_live(coin, now):
     return hit[1].get(coin), hit[0]
 
 
-def _hl_low_twice(ledger, coin, now):
-    r, t = hl_live(coin, now)
-    if r is None:
-        return False
-    last_t, n = _LOW.get(ledger, (None, 0))
-    if t != last_t:
-        _LOW[ledger] = (t, n + 1 if r < SCAN_FUND_EXIT else 0)
-    return _LOW[ledger][1] >= 2
-
-
-def hl_signal(db, coin, holding, now, ledger=None):
-    """13 points 4-5. Holding: out after two low live readings and HL_HOLD_S since the entry; without a fresh reading
-    the position is held. Flat: in on the latest (a new account) or the two latest (a reopening) flagged
-    measurements; nothing opens on a measurement older than SCAN_STALE_S."""
+def hl_signal(db, coin, holding, now, ledger=None, settled=None):
+    """13/12f. Holding: out after two settled hours in a row (x 8) below the floor and HL_HOLD_S since the entry;
+    without settled data the position is held. Flat: in on the latest (a new account) or the two latest (a
+    reopening) flagged measurements; nothing opens on a measurement older than SCAN_STALE_S."""
     if holding:
         if ledger is None:
             return 1.0
         t = entry_ts(db, ledger, HL_PERP + coin)
-        return 0.0 if (_hl_low_twice(ledger, coin, now) and (t is None or now - t >= HL_HOLD_S)) else 1.0
+        return 0.0 if (_two_settled_low(settled, scanner_eight()) and (t is None or now - t >= HL_HOLD_S)) else 1.0
     ts = hl_scans(db, now)
     fs = [hl_fundings(db, t) for t in ts]
     if not ts or now - ts[0] > SCAN_STALE_S or fs[0].get(coin, 0) < SCAN_FUND_MIN:
@@ -699,7 +688,7 @@ def run_one(db, ledger, get, now, cache=None, books=None):
         c = info["coins"][0]
         p_inst, s_inst = legs(info, c)
         holding = pos.get(s_inst, 0.0) > 0 or pos.get(p_inst, 0.0) < 0
-        want = {c: (hl_signal if is_hl(info) else scan_signal)(db, c, holding, now, ledger)}
+        want = {c: (hl_signal if is_hl(info) else scan_signal)(db, c, holding, now, ledger, market[c][1])}
     else:
         want = _signal(info, market)
     last = db.one("SELECT equity FROM sim_equity WHERE exp_id=? ORDER BY id DESC LIMIT 1", ledger)

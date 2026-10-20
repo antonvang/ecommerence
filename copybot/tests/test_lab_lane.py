@@ -370,7 +370,6 @@ class Scanner(Base):
     def setUp(self):
         super().setUp()
         scanner.LIVE.clear()
-        lane._LOW.clear()
 
     def scan(self, ts, fund):
         """One premium-watch measurement: symbols_compared plus flagged predicted_funding rows."""
@@ -416,7 +415,7 @@ class Scanner(Base):
         self.publish([result()])                                                     # the lane still starts its own
         self.assertIsNotNone(lane.manage(self.db, NOW + 600, hi(), fids=["fcarry"])["started"])
 
-    def test_holds_until_funding_is_gone_twice_and_a_settlement_is_booked(self):
+    def test_holds_until_two_settled_rates_are_low_and_a_settlement_is_booked(self):
         self.scan(NOW - 60, {"BBBUSDT": 0.003})
         led = lane.manage(self.db, NOW, hi(), fids=[])["scanner"]["started"][0]
         r = lane.run_one(self.db, led, hi(), NOW)
@@ -424,52 +423,33 @@ class Scanner(Base):
         pos = PaperEngine(self.db).ledger(led)["positions"]
         self.assertAlmostEqual(pos["BBBUSDT.SPOT"], -pos["BBBUSDT"])
         self.assertAlmostEqual(pos["BBBUSDT.SPOT"] * 100.0, 5_000, delta=2.0)       # half the account per leg
-        g = hi()
-        for k, (rate, want) in enumerate([(0.00005, 1.0), (0.00005, 1.0)]):        # low twice, no settlement yet
-            self.live(NOW + HOUR + 60 * k, {"BBBUSDT": rate})
-            g.now = NOW + HOUR + 60 * k
-            self.assertEqual(lane.run_one(self.db, led, g, g.now)["signal"], {"BBBUSDT": want}, k)
-        self.live(NOW + 6 * HOUR, {"BBBUSDT": 0.00005})                            # 08:30: 08:00 is booked
-        g.now = NOW + 6 * HOUR
-        self.assertEqual(lane.run_one(self.db, led, g, g.now)["signal"], {"BBBUSDT": 0.0})
+        low = market(rate=0.00005)                                                  # settled below the floor
+        low.now = NOW + HOUR
+        self.assertEqual(lane.run_one(self.db, led, low, low.now)["signal"], {"BBBUSDT": 1.0})   # no settlement yet
+        low.now = NOW + 6 * HOUR                                                    # 08:30: 08:00 is booked
+        self.assertEqual(lane.run_one(self.db, led, low, low.now)["signal"], {"BBBUSDT": 0.0})
         self.assertTrue(self.db.one("SELECT 1 FROM sim_funding WHERE exp_id=? AND instrument='BBBUSDT'", led))
         self.assertEqual(PaperEngine(self.db).ledger(led)["positions"], {})
         self.assertTrue(PaperEngine(self.db).reconcile(led)["ok"])
 
-    def test_one_low_reading_or_no_fresh_reading_holds(self):
+    def test_high_settled_rates_or_no_settled_data_hold(self):
         self.scan(NOW - 60, {"BBBUSDT": 0.003})
         led = lane.manage(self.db, NOW, hi(), fids=[])["scanner"]["started"][0]
         lane.run_one(self.db, led, hi(), NOW)
         g = hi()
-        for k, rate in enumerate([0.00005, 0.002, 0.00005]):                        # low, high, low: never twice
-            self.live(NOW + 13 * HOUR + 60 * k, {"BBBUSDT": rate})
-            g.now = NOW + 13 * HOUR + 60 * k
-            self.assertEqual(lane.run_one(self.db, led, g, g.now)["signal"], {"BBBUSDT": 1.0}, k)
-        g.now = NOW + 14 * HOUR                                                     # the reading is 1 h old
+        g.now = NOW + 13 * HOUR
         self.assertEqual(lane.run_one(self.db, led, g, g.now)["signal"], {"BBBUSDT": 1.0})
-
-    def test_without_a_settlement_the_position_may_close_after_12_hours(self):
-        self.scan(NOW - 60, {"BBBUSDT": 0.003})
-        led = lane.manage(self.db, NOW, hi(), fids=[])["scanner"]["started"][0]
-        g = market(rate=None)
-        lane.run_one(self.db, led, g, NOW)
-        for h in (11, 12):
-            for k in (0, 1):
-                self.live(NOW + h * HOUR + 60 * k, {"BBBUSDT": 0.00005})
-                g.now = NOW + h * HOUR + 60 * k
-                sig = lane.run_one(self.db, led, g, g.now)["signal"]["BBBUSDT"]
-            self.assertEqual(sig, 1.0 if h == 11 else 0.0, h)
-        self.assertEqual(PaperEngine(self.db).ledger(led)["positions"], {})
+        none = market(rate=None)
+        none.now = NOW + 20 * HOUR
+        self.assertEqual(lane.run_one(self.db, led, none, none.now)["signal"], {"BBBUSDT": 1.0})
 
     def test_reopens_only_on_two_high_measurements(self):
         self.scan(NOW - 60, {"BBBUSDT": 0.003})
         led = lane.manage(self.db, NOW, hi(), fids=[])["scanner"]["started"][0]
         lane.run_one(self.db, led, hi(), NOW)
-        g = hi()
-        for k in (0, 1):
-            self.live(NOW + 13 * HOUR + 60 * k, {"BBBUSDT": 0.00005})
-            g.now = NOW + 13 * HOUR + 60 * k
-            lane.run_one(self.db, led, g, g.now)
+        low = market(rate=0.00005)
+        low.now = NOW + 6 * HOUR
+        lane.run_one(self.db, led, low, low.now)
         self.assertEqual(PaperEngine(self.db).ledger(led)["positions"], {})
         self.scan(NOW + 13 * HOUR + 120, {})                                       # funding no longer high
         self.scan(NOW + 14 * HOUR, {"BBBUSDT": 0.002})
@@ -561,8 +541,8 @@ class PremiumWatch(Base):
         out = scanner.premium_watch(self.db, self.get({"AAAUSDT": (0.012, 0.0025), "BBBUSDT": (0.001, 0.0002),
                                                        "ZZZUSDT": (0.05, 0.01)}), NOW - 60, self.post)
         # premium AAA flagged, symbols_compared, predicted funding AAA flagged; ZZZ is not a traded perp
-        # + median, share, top (12e); + Hyperliquid AAA x 8 = 0.16 % flagged and the count compared (13)
-        self.assertEqual((out["observations"], out["flagged"]), (8, 3))
+        # + median, share, top (12e); + Hyperliquid AAA x 8 = 0.16 % flagged, the count, median and top (13)
+        self.assertEqual((out["observations"], out["flagged"]), (10, 3))
         self.assertEqual(scanner.HL_LIVE[scanner.HL_INFO], (int(NOW - 60), {"AAA": 0.0016}))
         self.assertEqual(scanner.LIVE[scanner.BN], (int(NOW - 60), {"AAAUSDT": 0.0025, "BBBUSDT": 0.0002}))
         scanner.premium_watch(self.db, self.get({"AAAUSDT": (0.006, 0.0012)}), NOW - 30, self.post)
@@ -584,6 +564,7 @@ class PremiumWatch(Base):
         m = command.lane_view(self.db, now=NOW)["market"]
         self.assertEqual((m["median"], m["above_floor"], m["top"], m["top_symbol"]), (0.0004, 0.5, 0.0004, "AAAUSDT"))
         self.assertEqual(m["entry_min"], lane.SCAN_FUND_MIN)
+        self.assertEqual((m["hl_top"], m["hl_top_symbol"]), (0.0016, "AAA"))
 
 
 def hl_post(rate=0.0002, fail=(), now=lambda: NOW, log=None):
@@ -611,7 +592,6 @@ class Hyperliquid(Base):
     def setUp(self):
         super().setUp()
         scanner.HL_LIVE.clear()
-        lane._LOW.clear()
         self.clock = [NOW]
         self.p.append(mock.patch.object(paper_runner, "HL_POST", hl_post(now=lambda: self.clock[0])))
         self.p[-1].start()
@@ -637,7 +617,8 @@ class Hyperliquid(Base):
                                       {"funding": "0.00001"}]), NOW)
         self.assertEqual(live, {"AAA": 0.0016, "BBB": 0.00008})
         self.assertEqual([(r["instrument"], r["metric"]) for r in rows],
-                         [("AAA", "hl_predicted_funding"), ("hyperliquid_perps", "hl_symbols_compared")])
+                         [("AAA", "hl_predicted_funding"), ("hyperliquid_perps", "hl_symbols_compared"),
+                          ("hyperliquid_perps", "hl_funding_median"), ("hyperliquid_perps", "hl_funding_top")])
 
     def test_starts_trades_and_books_hourly_funding_on_the_hl_leg(self):
         self.scan(NOW - 60, {"AAA": 0.002})
@@ -668,15 +649,14 @@ class Hyperliquid(Base):
         self.assertEqual(out["skipped"], ["BBB"])
         self.assertEqual(len(out["started"]), 1)
 
-    def test_holds_eight_hours_then_leaves_after_two_low_readings(self):
+    def test_holds_eight_hours_then_leaves_after_two_low_settled_hours(self):
         self.scan(NOW - 60, {"AAA": 0.002})
         led = lane.manage(self.db, NOW, self.at(NOW), fids=[])["hl"]["started"][0]
         lane.run_one(self.db, led, self.at(NOW), NOW)
-        for t in (NOW + HOUR, NOW + HOUR + 60):                                      # low twice, but before 8 h
-            scanner.HL_LIVE[scanner.HL_INFO] = (int(t), {"AAA": 0.00002})
+        with mock.patch.object(paper_runner, "HL_POST", hl_post(rate=0.00001, now=lambda: self.clock[0])):
+            t = NOW + HOUR                                                          # low, but before 8 h
             self.assertEqual(lane.run_one(self.db, led, self.at(t), t)["signal"], {"AAA": 1.0})
-        for k, t in enumerate((NOW + 8 * HOUR, NOW + 8 * HOUR + 60)):
-            scanner.HL_LIVE[scanner.HL_INFO] = (int(t), {"AAA": 0.00002})
+            t = NOW + 8 * HOUR
             self.assertEqual(lane.run_one(self.db, led, self.at(t), t)["signal"], {"AAA": 0.0})
         self.assertEqual(PaperEngine(self.db).ledger(led)["positions"], {})
         self.assertTrue(PaperEngine(self.db).reconcile(led)["ok"])

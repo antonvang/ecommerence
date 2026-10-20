@@ -166,7 +166,7 @@ def premium_obs(get, perps, funding=None):
 
 PERPS_EVERY = 3600
 _PERPS = {}                                     # premium-watch: url -> (fetched at, perps); exchangeInfo once an hour
-FUNDING_MIN = 0.001                             # 12e: predicted funding >= 0.10 % per settlement is recorded, flagged
+FUNDING_MIN = 0.0005                            # 12f: predicted funding >= 0.05 % per 8 h is recorded, flagged
 FLOOR = 0.0001                                  # the 0.01 % interest floor per settlement
 LIVE = {}                                       # 12e: url -> (measured at, {symbol: predicted funding}), in memory only
 HL_LIVE = {}                                    # 13: url -> (measured at, {coin: predicted funding x 8}), in memory only
@@ -186,6 +186,11 @@ def hl_obs(res, now):
     rows = [obs("pricing_constraint", HL_INFO, name, "hl_predicted_funding", r, FUNDING_MIN, True)
             for name, r in sorted(live.items()) if r >= FUNDING_MIN]
     rows.append(obs("pricing_constraint", HL_INFO, "hyperliquid_perps", "hl_symbols_compared", len(live)))
+    if live:                                    # display only: the market's funding on Hyperliquid (x 8)
+        vals, top = sorted(live.values()), max(live, key=lambda k: (live[k], k))
+        rows += [obs("pricing_constraint", HL_INFO, "hyperliquid_perps", "hl_funding_median", vals[len(vals) // 2]),
+                 obs("pricing_constraint", HL_INFO, "hyperliquid_perps", "hl_funding_top", live[top],
+                     payload={"symbol": top})]
     return rows, live
 
 

@@ -660,6 +660,15 @@ def lane_view(db, now=None):
                   "top": top["value"] if top else None,
                   "top_symbol": (_j(top["payload"]) or {}).get("symbol") if top else None,
                   "entry_min": lane.SCAN_FUND_MIN}
+    hts = db.one("SELECT MAX(ts) FROM observations WHERE instrument='hyperliquid_perps' AND metric='hl_funding_top'")[0]
+    if hts is not None:
+        h = {r["metric"]: r for r in db.q("SELECT metric, value, payload FROM observations WHERE ts=? AND "
+                                           "instrument='hyperliquid_perps' AND metric IN ('hl_funding_median', "
+                                           "'hl_funding_top')", hts)}
+        market = {**(market or {"entry_min": lane.SCAN_FUND_MIN}), "hl_ts": hts,
+                  "hl_median": (h.get("hl_funding_median") or {"value": None})["value"],
+                  "hl_top": h["hl_funding_top"]["value"],
+                  "hl_top_symbol": (_j(h["hl_funding_top"]["payload"]) or {}).get("symbol")}
     return {"active": act, "recent": old[:LANE_RECENT], "stopped_total": len(old),
             "counts": {"lane": sum(1 for r in act if not r["scanner"] and not r["hl"]), "lane_slots": lane.SLOTS,
                        "scanner": sum(1 for r in act if r["scanner"]), "scanner_slots": lane.SCAN_SLOTS,
