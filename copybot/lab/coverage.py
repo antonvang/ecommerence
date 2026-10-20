@@ -30,6 +30,14 @@ SOURCES = (
     ("FRED", "history", "DFII10 real rate", "1 d", "free", "no", ("fred",), "https://fred.stlouisfed.org", None),
     ("DefiLlama stablecoins", "history", "stablecoin supply", "1 d", "free", "no", ("stable",),
      "https://stablecoins.llama.fi", None),
+    ("Binance aggTrades (amendment 14)", "history", "trades per hour by size class (<1k, 1k-10k, 10k-100k, >=100k USD)",
+     "1 h", "free", "no", ("ingest/aggtrades_1h",), None, None),
+    ("Binance bookDepth (amendment 14)", "history", "notional at +-1..5 % from the mid, mean and minimum", "1 h",
+     "free", "no", ("ingest/bookdepth_1h",), None, None),
+    ("Wikipedia pageviews (amendment 14)", "history", "daily human views of 11 crypto articles (attention proxy)",
+     "1 d", "free", "no", ("ingest/pageviews",), None, None),
+    ("FOMC and BLS calendar (amendment 14)", "history", "scheduled FOMC, CPI and jobs-report times (no figures)",
+     "event", "free", "no", ("ingest/calendar",), None, None),
     ("Binance fapi premiumIndex (live)", "live", "mark/index premium, predicted funding", "60 s",
      "free (weight limit 2,400/min)", "no", (), "https://fapi.binance.com/fapi/v1/premiumIndex", 900),
     ("Hyperliquid info (live)", "live", "predicted funding, mids, books", "60 s", "free (1,200 weight/min)", "no", (),
@@ -38,17 +46,20 @@ SOURCES = (
      "https://gamma-api.polymarket.com", 7200),
 )
 GAPS = (
-    ("news and event timestamps", "needs a licensed feed or API key in most cases; would need point-in-time "
-                                  "timestamps to avoid look-ahead", "ask the user before any key or payment"),
-    ("macro calendar (CPI, FOMC)", "FRED has release dates for some series; not fetched", "free, not built"),
+    ("news articles and headlines", "licensed feeds need a key or payment; GDELT's free API allows one request per "
+                                    "5 s; Wikipedia pageviews are the proxy (amendment 14)", "ask the user before any "
+                                                                                              "key or payment"),
+    ("released macro figures (CPI value, surprise)", "only the scheduled times are fetched (amendment 14 point 1)",
+     "not fetched"),
     ("liquidations history", "no free historical source on data.binance.vision", "not available free"),
-    ("trade history (aggTrades)", "free on data.binance.vision, large (assumed 10+ GB for 32 coins x 4 years)",
-     "free, not fetched (disk)"),
-    ("historical order books", "only live snapshots at each start attempt (12h)", "not available free"),
+    ("trade history beyond the pilot", "pilot: 8 coins in 2023 (amendment 14); all 32 coins 2020-2023 are 151 GB "
+                                       "zipped (measured 2026-10-20)", "needs the user's yes (budget 10 GB)"),
+    ("full historical order books", "bookDepth gives aggregate depth at +-1..5 % from 2023 only; no levels or queue",
+     "not available free"),
     ("Hyperliquid history", "live API only (fundingHistory per coin), not cached", "free, not fetched"),
     ("data after 2023-12", "2024 not fetched; 2025-01-01 onwards is reserved and never read", "reserved"),
 )
-_MONTH = re.compile(r"(\d{4}-\d{2})(?:-\d{2})?\.zip$")
+_MONTH = re.compile(r"(\d{4}-\d{2})(?:-\d{2})?\.(?:zip|csv\.gz)$")
 
 
 _SCANNED = {}
@@ -113,7 +124,7 @@ def sources(db, now=None, root=None):
             row |= {"files": files, "coins": max((p["coins"] for p in parts), default=0),
                     "period": f"{min(firsts)} .. {max(lasts)}" if firsts else None, "parts": parts,
                     "last_ts": max((p["mtime"] or 0 for p in parts), default=0) or None,
-                    "health": "cached" if files else "missing"}
+                    "health": "cached" if files else "pending" if subs[0].startswith("ingest/") else "missing"}
             w = [x for x in windows if prefix and (x["source"] or "").startswith(prefix)]
             if w:
                 a, b = min(x["a"] for x in w), max(x["b"] for x in w)
@@ -131,7 +142,8 @@ def sources(db, now=None, root=None):
                     "health": ("never seen" if last is None else "stale" if age > stale_s else
                                "errors" if err else "ok")}
         rows.append(row)
-    return {"sources": rows, "gaps": [{"data": g, "why": w, "status": s} for g, w, s in GAPS],
+    from lab import ingest
+    return {"sources": rows, "ingest": ingest.status(db), "gaps": [{"data": g, "why": w, "status": s} for g, w, s in GAPS],
             "fetch_pauses_24h": _fetch_pauses(db, now),
             "paid_sources_active": 0, "keys_used": 0,
             "note": "free public sources only; no key or payment is used. Reserved data from 2025-01-01 is never read."}

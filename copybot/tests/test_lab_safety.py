@@ -28,6 +28,10 @@ ALLOWED_HOSTS = {
     "api.hyperliquid.xyz",            # Hyperliquid /info (public, read-only; /exchange is never used)
     "clob.polymarket.com",            # Polymarket public order books
     "gamma-api.polymarket.com",       # Polymarket public market list
+    "wikimedia.org",                  # Wikipedia pageviews REST, GET only (amendment 14, approved by the user
+                                      # 2026-10-20)
+    "www.federalreserve.gov",         # FOMC meeting calendar pages, GET only (amendment 14)
+    "www.bls.gov",                    # BLS release schedule pages, GET only (amendment 14)
     "doi.org", "www.bis.org",         # citations in catalogue evidence
     "127.0.0.1", "localhost",         # the local dashboard
 }

@@ -393,13 +393,14 @@ def strategy_pass(db):
     fams = families.pass_(db, "strategy-1")                                             # errors contained per family
     from lab import promotion
     decisions = [d for d in promotion.step(db) if d.get("applicable")]                 # amendment 4: one decision path
-    from lab import explore, lane, scanresearch
+    from lab import explore, ingest, lane, scanresearch
     return {"registered": registered, "promotions": [(d["exp_id"], d["to"], d["allowed"]) for d in decisions],
             "holdouts_queued": pipeline.enqueue_holdouts(db), "diagnostics_queued": pipeline.enqueue_diagnostics(db),
             "scan_research_queued": scanresearch.enqueue(db),           # amendment 9 section 3: digest and dossiers
             "explore_queued": explore.enqueue(db),          # amendments 10/10a: one lane job at a time, hourly
             "lane_report_queued": lane.enqueue_report(db),  # amendment 12d: the daily account report
             "lane_reviews_queued": lane.enqueue_reviews(db),  # amendment 11c: adversarial review of candidates
+            "ingest_queued": ingest.enqueue(db) if ingest.auto(db) else 0,   # amendment 14: one unit at a time
             **({"families": fams} if fams else {})}
 
 
@@ -479,7 +480,8 @@ def premium_pass(db):
 # ---------- roster ----------
 ROSTER = (
     # name, role, kinds, periodic fn, every s, heavy
-    ("data-1", "Data agent: downloads and quality-checks market data per experiment", ("data",), None, None, False),
+    ("data-1", "Data agent: downloads and quality-checks market data per experiment; free new sources (amendment 14)",
+     ("data", "ingest"), None, None, False),
     ("discovery-scanner", "Discovery agent: live-market anomaly scanner (S3 detectors)", None, scanner_pass, 3600, False),
     ("premium-watch", "Discovery agent: Binance perp premium every minute (amendment 12a)", None, premium_pass, 60,
      False),
