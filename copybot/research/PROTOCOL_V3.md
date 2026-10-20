@@ -1083,3 +1083,20 @@ forsvandt på få timer, så mekanismen (funding) nåede ikke at betale.
 3. **Ærligt:** at vente på afregningen kan give højere tab, hvis spot/perp-forholdet bevæger sig imod kontoen;
    tabsreglen (5 %) og risikoreglerne gælder uændret.
 4. **Ikke ændret:** pauser genoptages fortsat kun af et menneske (ændring 7 punkt 1).
+
+## Ændring 12d (2026-10-20): daglig rapport over bane- og scannerkonti — ikke-afgørende — før kode
+
+**Beslutning:** Claude lovede brugeren 2026-10-19/20 en daglig rapport, så brugeren kan se, om en konto nærmer sig
+pilotudkastets krav (`research/PILOT_BANE_UDKAST.md` punkt 1); brugeren svarede "kør videre automatisk". Rapporten
+afgør intet, ændrer ingen tilstand, handler ikke og henter ingen data.
+
+1. **Job.** `lane_report|<dag>` (report-1) for hvert afsluttet UTC-døgn, tidligst kl. 00:30 UTC dagen efter, som
+   `scan_digest`. Det skriver `artifacts/_lane/<dag>.json` og hændelsen `research.lane_report` (decisional false).
+2. **Indhold pr. konto** (alle `LANE_`-konti, der var aktive i døgnet): kilde (bane/scanner), mekanismefunktion,
+   mønter, start, status (aktiv/pause/stoppet med regel), værdi og netto ved døgnets sidste opgørelse, bogført
+   funding, betalte gebyrer, funding − gebyrer, største fald fra top og hele døgn live.
+3. **Pilotens papirkrav** (udkastet punkt 1, med brugerens 3 døgn): hele døgn live ≥ 3, netto > 0, funding − gebyrer
+   > 0, største fald < 3 %, ikke stoppet. Rapporten viser hvert krav som opfyldt eller ej. Slippage-kravet kræver
+   en sammenligning med modellen, som ikke er bygget; det vises som "ikke målt".
+4. **Ingen virkning.** Et opfyldt krav starter intet. En pilot kræver stadig brugerens tal, nøgle og en dateret
+   protokol.
