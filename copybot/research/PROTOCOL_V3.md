@@ -1373,3 +1373,18 @@ ingen konto oprettes og intet betales.
    (`ingest.done`). Der hentes kun, når der er mindst 2 GB fri disk ud over filens størrelse. Én fil ad gangen.
 6. **Brug:** dataene er ikke bevis for noget. En strategi, der bruger dem, kræver sin egen hypotese skrevet og committet
    før test, og læses gennem datagatewayen som al anden forskningsdata.
+
+## Rettelse 2026-10-21 til ændring 12e, 12f og 13a og til udkastet F3: studiets indtægt var for høj
+
+**Beslutning:** Claude under brugerens mandat 2026-10-21. Kun tekst; ingen regel ændres.
+
+`research/tools/recent_study.py` summerede funding normaliseret til 8 timer i stedet for den betalte rate. Det
+fordoblede indtægten for 4-timers mønter og ottedoblede den for Hyperliquid. Tallene "+0,81 % i snit pr. handel
+(median +0,44 %, 57 % vundet)" i ændring 12f/13a punkt 1 og i `research/drafts/F3_FUNDING_DYNAMISK_UDKAST.md` er
+derfor for høje. Med rettet kode og data hentet 2026-10-21 (`research/studies/CARRY_COST_2026-10-21.md`) er den
+gennemsnitlige brutto-funding pr. handel +0,79 % for Binance-reglen (64 handler) og +1,11 % for HL-reglen (36);
+netto er positiv ved 0,3 % omkostning (gebyrer alene) og negativ ved den observerede 1,5 %. HL-tallet i 13a punkt 3
+kan ikke genskabes fra koden (dagens kode giver en anden stikprøve); det står som ikke-reproducerbart.
+
+Reglerne i 12e, 12f, 12g og 13a beholdes: 12g kræver i forvejen, at 3 døgns forventet funding dækker de live bøgers
+omkostning, og stopper netop de tynde mønter, hvor studiet viser tab.

@@ -50,6 +50,9 @@ observeret, beregnet eller antaget.
 ## 7. Statistisk metode og krav (fastlåst nu)
 
 - Enhed: én handel (ind → ud). Netto pr. handel i procent af ét bens værdi efter alle omkostninger.
+- **RETTET 2026-10-21:** tallene i næste punkt er for høje (studiet summerede funding normaliseret til 8 t; se
+  `research/studies/CARRY_COST_2026-10-21.md`). Rettet: brutto +0,79 % pr. handel (64 handler); netto +0,19 % ved
+  0,6 % omkostning og −0,71 % ved de observerede 1,5 %.
 - **Observeret i 2026-studiet (beregnet på offentlige data, ikke en test):** 68 handler på 356 mønter over cirka 3
   måneder, gennemsnit +0,81 %, median +0,44 %, 57 % vundet. Studiet ser bort fra basis og den enkelte mønts spread.
 - **Fremadtest:** mindst 60 afsluttede handler og mindst 6 måneder. Krav: ensidet 95 % nedre grænse for netto pr.
