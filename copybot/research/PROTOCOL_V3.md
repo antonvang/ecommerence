@@ -1262,3 +1262,18 @@ havde 0 jobs på et døgn.
 3. **Kø:** højst 6 gennemgange i kø ad gangen, bedste netto-Sharpe først, hver kandidat én gang.
 4. **Start (ændrer ændring 11 punkt 3 og 11b):** en banekonto startes kun for en kandidat med bestået gennemgang.
    Aktive konti berøres ikke.
+
+## Ændring 12g (2026-10-20): scanner- og HL-konti åbnes kun, hvis 3 døgns funding dækker bøgernes omkostning — før kode
+
+**Beslutning:** Claude efter brugerens mandat 2026-10-20. Kun simuleret handel; strengere, ikke lempeligere.
+
+**Data (registret):** scannerkontiene EPIC, HOT og MITO (2026-10-19/20) endte hver cirka 0,62-0,69 % under start; gebyrerne
+var cirka 0,2 % og resten spread og slippage i tynde bøger. Stopreglen "kilden betaler ikke" vurderer efter 3 døgn.
+
+1. **Ved start** (ændring 12e punkt 2 og 13a): de to bøger, der allerede hentes for at se, om mønten kan handles,
+   bruges til at beregne omkostningen for en rundtur af kontoens faktiske størrelse (halvdelen af 10.000 USD pr. ben):
+   gebyrer (0,10 % pr. ben, som kontiene bogfører) plus for hvert ben prisforskellen mellem midten og den
+   gennemsnitlige fyldpris ved at gå bogen igennem, købt og solgt (indgang og udgang), plus 0,02 % slippage pr. fill.
+2. **Krav:** forventet funding × 9 (3 døgn à 3 afregninger; HL: forventet × 8 × 9) ≥ den beregnede omkostning i
+   procent af ét bens værdi. Ellers `lane.skipped` med tallene, og mønten kan prøves igen efter 1 time.
+3. **Ærligt:** bogen kan ændre sig, og funding kan falde; kravet sorterer kun handler fra, der er tabt på forhånd.
