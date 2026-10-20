@@ -1314,3 +1314,27 @@ skiftet kl. 01:00 i samme døgn. Over 8 støjserier fik en regel med 1 dags tilb
 3. Kontrol (syntetisk, 20 træk): ægte regimer p = 0,0; konstant funding p = 1,0; støj med 3 dages tilbageblik p fordelt
    over 0,15-1,0 (0 af 8 under 0,10); støj med 1 dags tilbageblik 3 af 8 under 0,10 — de strategier har netto-Sharpe
    omkring −27 og falder på forsinkelseskravet.
+
+## Ændring 12h (2026-10-20): eksekvering måles pr. mønt og ben; usynkroniserede bøger afvises; kandidater klassificeres — før kode
+
+**Beslutning:** Claude efter brugerens mandat 2026-10-20 (prioritet 3: realistisk eksekveringsmodel pr. mønt). Kun
+simuleret handel; strengere, ikke lempeligere. Ingen ny datakilde: de to bøger, 12g allerede henter.
+
+1. **Måling ved hvert startforsøg (scanner- og HL-konti):** for hvert ben registreres i hændelsen (`lane.started` eller
+   `lane.skipped`, feltet `execution`): kilde, symbol, tidspunkt for hentningen, spread (ask − bid i procent af
+   midten), dybde i de 20 niveauer på hver side (USD), gennemsnitlig fyldpris (VWAP) for den planlagte størrelse købt og
+   solgt i procent fra midten, samt basis (spot-midte / perp-midte − 1) og tiden mellem de to hentninger. Midten bruges
+   kun som referencepunkt, aldrig som fyldpris.
+2. **Synkronisering:** er der mere end 5 sekunder mellem de to bøger, afvises forsøget som "usynkroniserede bøger"
+   (`lane.skipped`), og omkostningen registreres som UKENDT. En bog, der ikke kan fylde størrelsen, giver UKENDT og
+   afvisning (som i 12g).
+3. **Observeret dekomponering pr. konto (visning):** for hver bane-, scanner- og HL-konto vises netto opdelt i funding,
+   gebyrer, betalt forskel mellem fyldpris og midte (spread og slippage) og resten (pris- og basisbevægelse målt ved
+   midten). Delene summerer til netto og tælles kun én gang.
+4. **Klassifikation pr. kandidat (visning, afgør intet nyt):** "afvist af omkostninger" (12g), "utilstrækkelige data"
+   (tynd eller usynkroniseret bog, eller funding ikke vedvarende), "afventer fremadtest" (en aktiv eller stoppet
+   konto) og "klar til formel, menneskegodkendt validering" (en konto, der opfylder pilotudkastets papirkrav og har
+   mindst 30 afsluttede handler for samme mekanisme; i dag ingen). Ingen kandidat kaldes profitabel, fordi funding
+   overstiger et estimeret spread.
+5. **Ærligt:** gebyrerne er VIP0-satser (antaget, ikke målt); dybden er kun de 20 niveauer, børsen viser; basisændring
+   gennem holdeperioden måles på aktive konti fra deres opgørelser, ikke forudsagt.
