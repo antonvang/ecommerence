@@ -1100,3 +1100,29 @@ afgør intet, ændrer ingen tilstand, handler ikke og henter ingen data.
    en sammenligning med modellen, som ikke er bygget; det vises som "ikke målt".
 4. **Ingen virkning.** Et opfyldt krav starter intet. En pilot kræver stadig brugerens tal, nøgle og en dateret
    protokol.
+
+## Ændring 12e (2026-10-20): scannerkonti går efter vedvarende høj funding, ikke præmie — før kode
+
+**Beslutning:** brugeren svarede 2026-10-20 "Ja til 12e" og bad Claude træffe den slags datadrevne beslutninger selv.
+Kun simuleret handel; ændring 11, 12, 12a-12d gælder ud over dette.
+
+**Data (registret, read-only, 24 timer til 2026-10-20 ca. 08:15 UTC):** 665 målinger, 87 markerede mønter, 248
+episoder med positiv præmie. Median varighed 1 minut; ingen varede 60 minutter. Forventet funding under episoderne:
+median 0,04 %, p90 0,25 % pr. afregning. En rundtur koster cirka 0,6 %. Præmien er derfor et dårligt signal; det,
+der kan betale, er vedvarende høj funding (kun EPIC havde cirka 0,25 % pr. afregning).
+
+1. **Måling.** `premium-watch` gemmer desuden `predicted_funding` (Binances `lastFundingRate` fra samme
+   `premiumIndex`-svar) som markeret række for hver handlet perp med forventet funding ≥ 0,10 % pr. afregning. De
+   seneste værdier for alle perps holdes i flådens hukommelse (ingen række), til brug for udreglen. Ingen ny
+   forespørgsel.
+2. **Ind** (erstatter ændring 12 punkt 2 og 12b punkt 1). En mønt får en scannerkonto, når den seneste måling har
+   forventet funding ≥ 0,10 %, og gennemsnittet af de 3 seneste afregnede rater (USD-M `fundingRate`, som i dag) er
+   ≥ 0,05 %. En lukket konto åbner igen, når de to seneste målinger begge har forventet funding ≥ 0,10 %.
+3. **Ud** (erstatter ændring 12 punkt 3 og 12c punkt 1). En position lukkes, når to målinger i træk viser forventet
+   funding under 0,01 % (rentegulvet), og en afregning efter indgangen er bogført eller der er gået 12 timer. Uden en
+   frisk måling (højst 5 minutter gammel) holdes positionen.
+4. **Uændret:** 10 pladser, én pr. mønt, kun mønter med begge live-bøger, stopreglerne i 12 punkt 5, 24 timers
+   pause før en stoppet mønt kan få en ny konto. En mønt, der springes over, fordi fundingen ikke er vedvarende, kan
+   prøves igen efter 1 time.
+5. **Ærligt:** høj funding følger ofte stærk efterspørgsel efter lange positioner; spot/perp-forholdet kan bevæge sig
+   imod kontoen, og en mønt kan blive afnoteret. Tabsreglen (5 %) gælder. Intet afkast er beregnet.
