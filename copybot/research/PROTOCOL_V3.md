@@ -1065,3 +1065,21 @@ er uændrede, så det, der ikke virker, stoppes lige så hurtigt.
 4. **Ærligt:** flere konti og lavere indgang betyder flere rundture og mere betalt spread i små mønter. Det giver
    hurtigere svar på, hvad der betaler sig, ikke mere bevis. Intet er afkastvalgt.
 5. **Netværk:** ingen nye værter. Højst 10 + 6 konti; bøger hentes ved start, ved timens opgørelse og før ordrer.
+
+## Ændring 12c (2026-10-20): scannerkonti holder gennem mindst én funding-afregning — før kode
+
+**Beslutning:** brugeren svarede 2026-10-20 "Ja" på Claudes forslag efter nattens resultater. Kun simuleret handel;
+ændring 11, 12, 12a og 12b gælder ud over dette.
+
+**Hvad natten viste (registret, read-only):** tre scannerkonti (EPIC, HOT, MITO) gik ind og ud igen inden næste
+funding-afregning; hver endte cirka 0,62-0,69 % under start (gebyrer cirka 20 USD, funding 0-1,70 USD). Præmierne
+forsvandt på få timer, så mekanismen (funding) nåede ikke at betale.
+
+1. **Scannerkonti holder gennem mindst én afregning** (ændrer ændring 12 punkt 3). En åben position lukkes først, når
+   præmien er væk i to målinger i træk **og** enten en funding-afregning efter indgangen er bogført for perp-benet,
+   eller der er gået 12 timer siden indgangen (Binance afregner højst hver 8. time). Indgangen er den seneste fill,
+   der åbnede perp-benet fra 0.
+2. **12b og 12c deployes samlet.**
+3. **Ærligt:** at vente på afregningen kan give højere tab, hvis spot/perp-forholdet bevæger sig imod kontoen;
+   tabsreglen (5 %) og risikoreglerne gælder uændret.
+4. **Ikke ændret:** pauser genoptages fortsat kun af et menneske (ændring 7 punkt 1).
