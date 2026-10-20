@@ -1,0 +1,525 @@
+{
+ "plan": "research/studies/CARRY_BASIS_PLAN.md",
+ "closed_trades": 46,
+ "open_trades": 16,
+ "no_price": 2,
+ "coins": 24,
+ "median_hold_hours": 158.0,
+ "funding": {
+  "n": 46,
+  "mean_pct": 0.3398029130434776,
+  "median_pct": 0.2954754999999999,
+  "win": 0.8478260869565217,
+  "lower95_pct": 0.1315688043478253
+ },
+ "price": {
+  "n": 46,
+  "mean_pct": 0.7624285575877134,
+  "median_pct": 0.2453491352927828,
+  "win": 0.7391304347826086,
+  "lower95_pct": 0.25281751261136914
+ },
+ "gross": {
+  "n": 46,
+  "mean_pct": 1.102231470631191,
+  "median_pct": 0.7629808998327317,
+  "win": 0.782608695652174,
+  "lower95_pct": 0.6288954874055664
+ },
+ "net_0.30pct": {
+  "n": 46,
+  "mean_pct": 0.802231470631191,
+  "median_pct": 0.4629808998327316,
+  "win": 0.6521739130434783,
+  "lower95_pct": 0.32889548740556646
+ },
+ "net_0.60pct": {
+  "n": 46,
+  "mean_pct": 0.5022314706311911,
+  "median_pct": 0.16298089983273162,
+  "win": 0.5434782608695652,
+  "lower95_pct": 0.02889548740556643
+ },
+ "net_1.00pct": {
+  "n": 46,
+  "mean_pct": 0.10223147063119101,
+  "median_pct": -0.2370191001672684,
+  "win": 0.41304347826086957,
+  "lower95_pct": -0.37110451259443356
+ },
+ "net_1.35pct": {
+  "n": 46,
+  "mean_pct": -0.24776852936880894,
+  "median_pct": -0.5870191001672683,
+  "win": 0.30434782608695654,
+  "lower95_pct": -0.7211045125944335
+ },
+ "net_1.50pct": {
+  "n": 46,
+  "mean_pct": -0.3977685293688089,
+  "median_pct": -0.7370191001672682,
+  "win": 0.21739130434782608,
+  "lower95_pct": -0.8711045125944336
+ },
+ "net_1.60pct": {
+  "n": 46,
+  "mean_pct": -0.497768529368809,
+  "median_pct": -0.8370191001672685,
+  "win": 0.21739130434782608,
+  "lower95_pct": -0.9711045125944336
+ },
+ "top3_gross_coins": [
+  "SOPHUSDT",
+  "GTCUSDT",
+  "NOMUSDT"
+ ],
+ "net_1.35pct_without_top3": {
+  "n": 33,
+  "mean_pct": -0.5642302965840974,
+  "median_pct": -0.6005987927661519,
+  "win": 0.2727272727272727,
+  "lower95_pct": -0.8145129529791166
+ },
+ "net_1.35pct_by_month": {
+  "2026-05": {
+   "n": 1,
+   "mean_pct": -1.9460236764399945
+  },
+  "2026-06": {
+   "n": 3,
+   "mean_pct": -0.5491728925840262
+  },
+  "2026-07": {
+   "n": 6,
+   "mean_pct": -0.40309269455384006
+  },
+  "2026-08": {
+   "n": 21,
+   "mean_pct": -0.35184347450847125
+  },
+  "2026-09": {
+   "n": 13,
+   "mean_pct": 0.30295461438223625
+  },
+  "2026-10": {
+   "n": 2,
+   "mean_pct": -0.967475425870636
+  }
+ },
+ "trades": [
+  {
+   "signal_ts": 1786608000,
+   "entry": 1786611600,
+   "exit": 1788123600,
+   "funding": 0.007396,
+   "symbol": "1000CATUSDT",
+   "price": 0.003772,
+   "hours": 420
+  },
+  {
+   "signal_ts": 1788494400,
+   "entry": 1788498000,
+   "exit": 1788944400,
+   "funding": 0.003477,
+   "symbol": "BANKUSDT",
+   "price": 0.004432,
+   "hours": 124
+  },
+  {
+   "signal_ts": 1785398400,
+   "entry": 1785402000,
+   "exit": 1786107600,
+   "funding": 0.007123,
+   "symbol": "COOKIEUSDT",
+   "price": -0.009143,
+   "hours": 196
+  },
+  {
+   "signal_ts": 1787371200,
+   "entry": 1787374800,
+   "exit": 1787734800,
+   "funding": 0.002864,
+   "symbol": "COOKIEUSDT",
+   "price": -0.003031,
+   "hours": 100
+  },
+  {
+   "signal_ts": 1787976000,
+   "entry": 1787979600,
+   "exit": 1788397200,
+   "funding": 0.002356,
+   "symbol": "COOKIEUSDT",
+   "price": 0.001445,
+   "hours": 116
+  },
+  {
+   "signal_ts": 1788537600,
+   "entry": 1788541200,
+   "exit": 1789304400,
+   "funding": 0.005156,
+   "symbol": "COOKIEUSDT",
+   "price": -0.006279,
+   "hours": 212
+  },
+  {
+   "signal_ts": 1787529600,
+   "entry": 1787533200,
+   "exit": 1792256400,
+   "funding": 0.017555,
+   "symbol": "EDUUSDT",
+   "price": 0.004584,
+   "hours": 1312
+  },
+  {
+   "signal_ts": 1791244800,
+   "entry": 1791248400,
+   "exit": 1791378000,
+   "funding": 0.000414,
+   "symbol": "ERAUSDT",
+   "price": 0.002366,
+   "hours": 36
+  },
+  {
+   "signal_ts": 1786377600,
+   "entry": 1786381200,
+   "exit": 1789203600,
+   "funding": 0.01145,
+   "symbol": "FFUSDT",
+   "price": 0.007954,
+   "hours": 784
+  },
+  {
+   "signal_ts": 1780128000,
+   "entry": 1780131600,
+   "exit": 1780333200,
+   "funding": 0.000155,
+   "symbol": "GTCUSDT",
+   "price": -0.006115,
+   "hours": 56
+  },
+  {
+   "signal_ts": 1781164800,
+   "entry": 1781168400,
+   "exit": 1781254800,
+   "funding": -0.000755,
+   "symbol": "GTCUSDT",
+   "price": 0.00116,
+   "hours": 24
+  },
+  {
+   "signal_ts": 1781366400,
+   "entry": 1781370000,
+   "exit": 1782061200,
+   "funding": 0.004909,
+   "symbol": "GTCUSDT",
+   "price": 0.003938,
+   "hours": 192
+  },
+  {
+   "signal_ts": 1782576000,
+   "entry": 1782579600,
+   "exit": 1782723600,
+   "funding": 0.000316,
+   "symbol": "GTCUSDT",
+   "price": 0.014456,
+   "hours": 40
+  },
+  {
+   "signal_ts": 1782921600,
+   "entry": 1782925200,
+   "exit": 1783530000,
+   "funding": 0.003046,
+   "symbol": "GTCUSDT",
+   "price": 0.008438,
+   "hours": 168
+  },
+  {
+   "signal_ts": 1783641600,
+   "entry": 1783645200,
+   "exit": 1784106000,
+   "funding": -0.000897,
+   "symbol": "GTCUSDT",
+   "price": -0.001175,
+   "hours": 128
+  },
+  {
+   "signal_ts": 1784419200,
+   "entry": 1784422800,
+   "exit": 1786611600,
+   "funding": 0.010422,
+   "symbol": "GTCUSDT",
+   "price": 0.016862,
+   "hours": 608
+  },
+  {
+   "signal_ts": 1789732800,
+   "entry": 1789736400,
+   "exit": 1789909200,
+   "funding": -0.030824,
+   "symbol": "GUSDT",
+   "price": 0.024776,
+   "hours": 48
+  },
+  {
+   "signal_ts": 1787284800,
+   "entry": 1787288400,
+   "exit": 1787662800,
+   "funding": 0.001688,
+   "symbol": "HEMIUSDT",
+   "price": 0.002883,
+   "hours": 104
+  },
+  {
+   "signal_ts": 1788091200,
+   "entry": 1788094800,
+   "exit": 1788642000,
+   "funding": 0.001485,
+   "symbol": "HEMIUSDT",
+   "price": 0.006281,
+   "hours": 152
+  },
+  {
+   "signal_ts": 1784188800,
+   "entry": 1784192400,
+   "exit": 1786294800,
+   "funding": -0.002304,
+   "symbol": "IOTXUSDT",
+   "price": 0.020754,
+   "hours": 584
+  },
+  {
+   "signal_ts": 1787299200,
+   "entry": 1787302800,
+   "exit": 1788944400,
+   "funding": 0.00695,
+   "symbol": "KATUSDT",
+   "price": 0.005364,
+   "hours": 456
+  },
+  {
+   "signal_ts": 1790539200,
+   "entry": 1790542800,
+   "exit": 1792400400,
+   "funding": 0.006922,
+   "symbol": "KATUSDT",
+   "price": 0.000906,
+   "hours": 516
+  },
+  {
+   "signal_ts": 1790121600,
+   "entry": 1790125200,
+   "exit": 1792054800,
+   "funding": 0.007946,
+   "symbol": "KITEUSDT",
+   "price": 0.002803,
+   "hours": 536
+  },
+  {
+   "signal_ts": 1785772800,
+   "entry": 1785776400,
+   "exit": 1785862800,
+   "funding": 0.00039,
+   "symbol": "MOVEUSDT",
+   "price": -0.001348,
+   "hours": 24
+  },
+  {
+   "signal_ts": 1786262400,
+   "entry": 1786266000,
+   "exit": 1786597200,
+   "funding": 0.000636,
+   "symbol": "MOVEUSDT",
+   "price": -0.001708,
+   "hours": 92
+  },
+  {
+   "signal_ts": 1787169600,
+   "entry": 1787173200,
+   "exit": 1787389200,
+   "funding": -0.001008,
+   "symbol": "MOVEUSDT",
+   "price": 0.02038,
+   "hours": 60
+  },
+  {
+   "signal_ts": 1788681600,
+   "entry": 1788685200,
+   "exit": 1788800400,
+   "funding": -0.001288,
+   "symbol": "MOVEUSDT",
+   "price": -0.010059,
+   "hours": 32
+  },
+  {
+   "signal_ts": 1789200000,
+   "entry": 1789203600,
+   "exit": 1789419600,
+   "funding": 0.000989,
+   "symbol": "MOVEUSDT",
+   "price": 0.000849,
+   "hours": 60
+  },
+  {
+   "signal_ts": 1789660800,
+   "entry": 1789664400,
+   "exit": 1790240400,
+   "funding": 0.004431,
+   "symbol": "MOVEUSDT",
+   "price": 0.013034,
+   "hours": 160
+  },
+  {
+   "signal_ts": 1790064000,
+   "entry": 1790067600,
+   "exit": 1791968400,
+   "funding": 0.008437,
+   "symbol": "MUBARAKUSDT",
+   "price": 0.004562,
+   "hours": 528
+  },
+  {
+   "signal_ts": 1785600000,
+   "entry": 1785603600,
+   "exit": 1785834000,
+   "funding": 0.000972,
+   "symbol": "NOMUSDT",
+   "price": -0.002859,
+   "hours": 64
+  },
+  {
+   "signal_ts": 1786608000,
+   "entry": 1786611600,
+   "exit": 1787014800,
+   "funding": 0.002381,
+   "symbol": "NOMUSDT",
+   "price": 0.01118,
+   "hours": 112
+  },
+  {
+   "signal_ts": 1787328000,
+   "entry": 1787331600,
+   "exit": 1789088400,
+   "funding": 0.011615,
+   "symbol": "NOMUSDT",
+   "price": 0.002296,
+   "hours": 488
+  },
+  {
+   "signal_ts": 1789300800,
+   "entry": 1789304400,
+   "exit": 1789578000,
+   "funding": 0.000773,
+   "symbol": "NOMUSDT",
+   "price": 0.002227,
+   "hours": 76
+  },
+  {
+   "signal_ts": 1789704000,
+   "entry": 1789707600,
+   "exit": 1790269200,
+   "funding": 0.004432,
+   "symbol": "NOMUSDT",
+   "price": -0.0015,
+   "hours": 156
+  },
+  {
+   "signal_ts": 1790136000,
+   "entry": 1790139600,
+   "exit": 1792357200,
+   "funding": 0.007289,
+   "symbol": "SANTOSUSDT",
+   "price": -5.2e-05,
+   "hours": 616
+  },
+  {
+   "signal_ts": 1791100800,
+   "entry": 1791104400,
+   "exit": 1792054800,
+   "funding": 0.003282,
+   "symbol": "SFPUSDT",
+   "price": 0.001588,
+   "hours": 264
+  },
+  {
+   "signal_ts": 1785484800,
+   "entry": 1785488400,
+   "exit": 1786064400,
+   "funding": 0.002091,
+   "symbol": "SHELLUSDT",
+   "price": 0.001598,
+   "hours": 160
+  },
+  {
+   "signal_ts": 1786651200,
+   "entry": 1786654800,
+   "exit": 1789534800,
+   "funding": 0.014823,
+   "symbol": "SHELLUSDT",
+   "price": 0.006295,
+   "hours": 800
+  },
+  {
+   "signal_ts": 1788811200,
+   "entry": 1788814800,
+   "exit": 1788872400,
+   "funding": -0.021779,
+   "symbol": "SOPHUSDT",
+   "price": 0.183225,
+   "hours": 16
+  },
+  {
+   "signal_ts": 1786752000,
+   "entry": 1786755600,
+   "exit": 1789102800,
+   "funding": 0.009979,
+   "symbol": "STOUSDT",
+   "price": 0.004409,
+   "hours": 652
+  },
+  {
+   "signal_ts": 1786003200,
+   "entry": 1786006800,
+   "exit": 1786352400,
+   "funding": 0.002335,
+   "symbol": "THEUSDT",
+   "price": 0.002541,
+   "hours": 96
+  },
+  {
+   "signal_ts": 1786910400,
+   "entry": 1786914000,
+   "exit": 1789650000,
+   "funding": 0.013687,
+   "symbol": "THEUSDT",
+   "price": 0.005074,
+   "hours": 760
+  },
+  {
+   "signal_ts": 1786348800,
+   "entry": 1786352400,
+   "exit": 1787547600,
+   "funding": 0.017463,
+   "symbol": "TSTUSDT",
+   "price": 0.00082,
+   "hours": 332
+  },
+  {
+   "signal_ts": 1786262400,
+   "entry": 1786266000,
+   "exit": 1786582800,
+   "funding": 0.006014,
+   "symbol": "TUTUSDT",
+   "price": 0.00148,
+   "hours": 88
+  },
+  {
+   "signal_ts": 1787328000,
+   "entry": 1787331600,
+   "exit": 1788411600,
+   "funding": 0.001516,
+   "symbol": "WAXPUSDT",
+   "price": -0.000748,
+   "hours": 300
+  }
+ ]
+}
