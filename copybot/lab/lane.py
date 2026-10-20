@@ -53,7 +53,11 @@ SOURCE_DAYS = 14                                # point 5: funding booked - fees
 # amendment 12: scanner accounts (source "scanner"): one coin, the scanner's perp premium decides in and out
 SCAN_LABEL = "SCANNERKONTO (scannerfund, simuleret, aldrig bevis)"
 SCAN_SLOTS = 10                                 # 12b
-SCAN_MIN = 0.005                                # 12b: in on the first positive premium >= 0.5 %
+SCAN_FUND_MIN = 0.001                           # 12e: predicted funding >= 0.10 % per settlement to enter
+SCAN_FUND_PERSIST = 0.0005                      # 12e: mean of the last 3 settled rates >= 0.05 %
+SCAN_FUND_EXIT = 0.0001                         # 12e: out below the 0.01 % interest floor (two readings in a row)
+SCAN_LIVE_MAX_S = 300                           # 12e: an in-memory reading older than this is not used
+SCAN_SKIP_COOLDOWN_S = HOUR                     # 12e point 4: a skipped coin may be tried again after an hour
 SCAN_STALE_S = 3 * HOUR                         # an older latest scan: nothing new opens, a position is held
 SCAN_COOLDOWN_S = DAY
 SCAN_LOSS = 0.05
@@ -75,8 +79,8 @@ def label(info):
 def rules_text(info):
     """The automatic stop rules, in Danish, for the dashboard."""
     if is_scanner(info):
-        return (f"ind ved første præmie ≥ {SCAN_MIN:.1%}, ud når den er væk i to målinger og en afregning er bogført "
-                f"(højst {SCAN_HOLD_S // HOUR} t); "
+        return (f"ind ved forventet funding ≥ {SCAN_FUND_MIN:.2%} og snit af 3 afregninger ≥ {SCAN_FUND_PERSIST:.2%}; "
+                f"ud ved < {SCAN_FUND_EXIT:.2%} to gange og en afregning bogført (højst {SCAN_HOLD_S // HOUR} t); "
                 f"stoppes ved tab ≥ {SCAN_LOSS:.0%}, 24 t pause, funding − gebyrer ≤ 0 efter {SCAN_SOURCE_S // DAY} "
                 f"dage, {SCAN_FLAT_S // DAY} døgn uden position eller {SCAN_MAX_AGE_S // DAY} dage")
     return (f"stoppes ved funding − gebyrer ≤ 0 efter {SOURCE_DAYS} dage, tab ≥ {LOSS_RETIRE:.0%}, 24 t pause, "
@@ -380,27 +384,46 @@ def manage(db, now=None, get=None, fids=None):
     return out
 
 
-# ---------- scanner accounts (amendment 12) ----------
+# ---------- scanner accounts (amendments 12, 12c, 12e) ----------
 def scans(db, now, n=2):
-    """The latest n scan times with a USD-M premium read (the scanner writes symbols_compared every such scan)."""
+    """The latest n measurement times with a USD-M premiumIndex read (symbols_compared is written every time)."""
     return [r[0] for r in db.q("SELECT DISTINCT ts FROM observations WHERE metric='symbols_compared' AND "
                                "instrument='binance_perps' AND ts<=? ORDER BY ts DESC LIMIT ?", int(now), n)]
 
 
-def premiums(db, ts):
-    """{symbol: premium} of the positive premiums the scanner flagged at scan time ts."""
+def fundings(db, ts):
+    """12e: {symbol: predicted funding} flagged (>= SCAN_FUND_MIN) at measurement time ts."""
     return {r["instrument"]: r["value"] for r in db.q("SELECT instrument, value FROM observations WHERE "
-                                                      "metric='perp_premium' AND flagged=1 AND ts=? AND value>0", ts)}
+                                                      "metric='predicted_funding' AND flagged=1 AND ts=?", ts)}
 
 
 def _last_two(db, now):
     ts = scans(db, now)
-    return ts, [premiums(db, t) for t in ts]
+    return ts, [fundings(db, t) for t in ts]
 
 
-def scan_entry(p_now, p_prev=None):
-    """12b: the latest measurement alone decides the entry (p_prev is kept for the record)."""
-    return p_now is not None and p_now >= SCAN_MIN
+def live_funding(coin, now):
+    """12e: the latest in-memory predicted funding of `coin` and when it was measured, or (None, None) if older than
+    SCAN_LIVE_MAX_S (premium-watch fills it in the same process)."""
+    from lab import scanner
+    hit = scanner.LIVE.get(scanner.BN)
+    if not hit or now - hit[0] > SCAN_LIVE_MAX_S:
+        return None, None
+    return hit[1].get(coin), hit[0]
+
+
+_LOW = {}                                       # ledger -> (last counted measurement time, consecutive low readings)
+
+
+def _low_twice(ledger, coin, now):
+    """12e point 3: two measurements in a row with predicted funding below SCAN_FUND_EXIT."""
+    r, t = live_funding(coin, now)
+    if r is None:
+        return False
+    last_t, n = _LOW.get(ledger, (None, 0))
+    if t != last_t:
+        _LOW[ledger] = (t, n + 1 if r < SCAN_FUND_EXIT else 0)
+    return _LOW[ledger][1] >= 2
 
 
 def entry_ts(db, ledger, inst):
@@ -425,47 +448,47 @@ def settled_since_entry(db, ledger, coin, now):
 
 
 def scan_signal(db, coin, holding, now, ledger=None):
-    """Point 2-3: in on the entry rule; out when neither of the two latest scans flags a positive premium and (12c) a
-    settlement after the entry is booked or 12 h have passed; with no scan in SCAN_STALE_S nothing new opens and a
-    position is held."""
-    ts, ps = _last_two(db, now)
-    if not ts or now - ts[0] > SCAN_STALE_S:
-        return 1.0 if holding else 0.0
-    vals = [p.get(coin) for p in ps] + [None]
+    """12e points 2-3. Holding: out only after two low live readings and a settlement since entry (or 12 h); without a
+    fresh reading the position is held. Flat: in when the latest measurement (a new account) or the two latest
+    measurements (a reopening) flag predicted funding >= SCAN_FUND_MIN; nothing opens on a measurement older than
+    SCAN_STALE_S."""
     if holding:
-        if any(v is not None and v > 0 for v in vals[:2]):
+        if ledger is None:
             return 1.0
-        return 0.0 if (ledger is None or settled_since_entry(db, ledger, coin, now)) else 1.0
-    return 1.0 if scan_entry(vals[0], vals[1]) else 0.0
+        return 0.0 if (_low_twice(ledger, coin, now) and settled_since_entry(db, ledger, coin, now)) else 1.0
+    ts, fs = _last_two(db, now)
+    if not ts or now - ts[0] > SCAN_STALE_S or fs[0].get(coin, 0) < SCAN_FUND_MIN:
+        return 0.0
+    fresh = ledger is None or not db.one("SELECT 1 FROM sim_fills WHERE exp_id=? LIMIT 1", ledger)
+    return 1.0 if fresh or (len(fs) > 1 and fs[1].get(coin, 0) >= SCAN_FUND_MIN) else 0.0
 
 
 def scan_candidates(db, now):
-    """Coins meeting the entry rule now, largest latest premium first."""
-    ts, ps = _last_two(db, now)
+    """Coins whose latest measurement flags predicted funding >= SCAN_FUND_MIN, highest first."""
+    ts, fs = _last_two(db, now)
     if not ts or now - ts[0] > SCAN_STALE_S:
         return []
-    prev = ps[1] if len(ps) > 1 else {}
-    return sorted((c for c, v in ps[0].items() if scan_entry(v, prev.get(c))), key=lambda c: (-ps[0][c], c))
+    return sorted((c for c, v in fs[0].items() if v >= SCAN_FUND_MIN), key=lambda c: (-fs[0][c], c))
 
 
 def _cooling(db, coin, now):
-    """Point 4: a coin gets a new account SCAN_COOLDOWN_S after its last one stopped or was skipped."""
+    """A coin gets a new account SCAN_COOLDOWN_S after its last one stopped, SCAN_SKIP_COOLDOWN_S after a skip."""
     info = started(db)
-    for kind in ("lane.retired", "lane.skipped"):
+    for kind, wait in (("lane.retired", SCAN_COOLDOWN_S), ("lane.skipped", SCAN_SKIP_COOLDOWN_S)):
         for _, ts, _, led, p in _events(db, kind):
             i = p if kind == "lane.skipped" else info.get(led, {})
-            if is_scanner(i) and coin in (i.get("coins") or []) and now - p.get("t", ts) < SCAN_COOLDOWN_S:
+            if is_scanner(i) and coin in (i.get("coins") or []) and now - p.get("t", ts) < wait:
                 return True
     return False
 
 
 def manage_scanner(db, now, get):
-    """Start scanner accounts for every coin that meets the entry rule, up to SCAN_SLOTS (point 4)."""
+    """Start scanner accounts for every coin that meets 12e point 2, up to SCAN_SLOTS."""
     from lab import paper_runner
     info = started(db)
     held = {info[a]["coins"][0] for a in active(db) if is_scanner(info[a])}
     out, probes = {"started": [], "skipped": []}, 0
-    ts, ps = _last_two(db, now)
+    ts, fs = _last_two(db, now)
     for coin in scan_candidates(db, now):
         if len(held) >= SCAN_SLOTS or probes >= PROBES:
             break
@@ -474,22 +497,26 @@ def manage_scanner(db, now, get):
         probes += 1
         key, hour = f"scan|{coin}|{int(now) // HOUR * HOUR}", int(now) // HOUR * HOUR
         led = ledger_id(key)
-        trigger = {"scan_ts": ts[:2], "premium": [p.get(coin) for p in ps], "rule": "research/PROTOCOL_V3.md "
-                   "amendment 12 point 2"}
-        base = {"key": key, "source": "scanner", "family": "fcarry", "function": "scanner_premium", "params": {},
+        trigger = {"scan_ts": ts[:2], "funding": fs[0].get(coin), "rule": "research/PROTOCOL_V3.md amendment 12e"}
+        base = {"key": key, "source": "scanner", "family": "fcarry", "function": "scanner_funding", "params": {},
                 "coin": coin, "trigger": trigger, "label": SCAN_LABEL, "simulated": True, "decisional": False,
                 "t": int(now)}
         try:
+            _, settled, _, _ = paper_runner.hourly(coin, now, get)
+            last3 = [settled[t] for t in sorted(settled)[-3:]]
+            trigger["settled_avg3"] = sum(last3) / len(last3) if len(last3) == 3 else None
+            if trigger["settled_avg3"] is None or trigger["settled_avg3"] < SCAN_FUND_PERSIST:
+                raise ValueError(f"funding not persistent: last 3 settled {last3}")
             for inst in (coin, coin + SPOT):
                 if paper_runner.fetch_book(inst, now, get).crossed():
                     raise ValueError("crossed or empty book")
         except Exception as e:
-            db.event("lane.skipped", ACTOR, led, {**base, "coins": [coin], "reason": f"book unavailable: {e!r}"[:160]})
+            db.event("lane.skipped", ACTOR, led, {**base, "coins": [coin], "reason": f"{e!r}"[:200]})
             out["skipped"].append(coin)
             continue
         db.event("lane.started", ACTOR, led, {**base, "coins": [coin], "expectation": None, "capital": CAPITAL,
                                               "costs": COSTS.__dict__, "hour": hour,
-                                              "rule": "research/PROTOCOL_V3.md amendment 12"})
+                                              "rule": "research/PROTOCOL_V3.md amendments 12 and 12e"})
         held.add(coin)
         out["started"].append(led)
     return out

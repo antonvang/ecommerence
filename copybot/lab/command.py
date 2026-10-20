@@ -602,6 +602,18 @@ def edge(db, ledger, now=None, expectation=True):
 LANE_RECENT = 10                # stopped lane/scanner accounts shown on the main page
 
 
+def _lane_trigger(t):
+    """What started a scanner account, in Danish: predicted funding (12e) or, for older accounts, the premium (12)."""
+    if not t:
+        return None
+    if t.get("funding") is not None:
+        avg = t.get("settled_avg3")
+        return f"forventet funding {t['funding']:.3%}" + (f" · snit af 3 afregninger {avg:.3%}" if avg is not None else "")
+    if t.get("premium"):
+        return "præmie " + " → ".join("–" if v is None else f"{v:.2%}" for v in t["premium"])
+    return None
+
+
 def lane_view(db, now=None):
     """Amendments 11-12d, display only: every active lane and scanner account and the latest stopped ones, with the
     latest daily report. Simulated, never evidence; nothing here is in the formal balance."""
@@ -627,7 +639,7 @@ def lane_view(db, now=None):
                      "equity": equity, "net": equity - lane.CAPITAL, "net_pct": (equity - lane.CAPITAL) / lane.CAPITAL,
                      "funding": book["funding"], "fees": book["fees"], "funding_minus_fees": book["funding"] - book["fees"],
                      "days": (now - i["ts"]) / 86400 if i.get("ts") else None,
-                     "trigger": (i.get("trigger") or {}).get("premium"), "rules": lane.rules_text(i)})
+                     "trigger": _lane_trigger(i.get("trigger")), "rules": lane.rules_text(i)})
     act = sorted((r for r in rows if r["active"]), key=lambda r: -(r["started"] or 0))
     old = sorted((r for r in rows if not r["active"]), key=lambda r: -(r["stopped"] or 0))
     rep = db.one("SELECT payload FROM events WHERE kind='research.lane_report' ORDER BY id DESC LIMIT 1")

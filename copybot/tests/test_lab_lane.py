@@ -355,94 +355,140 @@ class Views(Base):
         self.assertIn("BANEKONTO", kinds)
 
 
+def hi():
+    return market(rate=0.0008)                         # settled funding persistent above 0.05 %
+
+
 class Scanner(Base):
-    """Amendment 12: scanner accounts."""
-    def scan(self, ts, prems):
+    """Amendments 12, 12c and 12e: scanner accounts follow persistent high predicted funding."""
+    def setUp(self):
+        super().setUp()
+        scanner.LIVE.clear()
+        lane._LOW.clear()
+
+    def scan(self, ts, fund):
+        """One premium-watch measurement: symbols_compared plus flagged predicted_funding rows."""
         self.db.append("observations", ts=int(ts), detector="pricing_constraint/2", source="premiumIndex",
                        instrument="binance_perps", metric="symbols_compared", value=100, threshold=None, flagged=0,
                        payload=None)
-        for sym, v in prems.items():
+        for sym, v in fund.items():
             self.db.append("observations", ts=int(ts), detector="pricing_constraint/2", source="premiumIndex",
-                           instrument=sym, metric="perp_premium", value=v, threshold=0.005, flagged=1, payload=None)
+                           instrument=sym, metric="predicted_funding", value=v, threshold=0.001, flagged=1,
+                           payload=None)
 
-    def test_entry_rule(self):
-        self.scan(NOW - 2 * HOUR, {"AAAUSDT": 0.006, "CCCUSDT": 0.006, "DDDUSDT": -0.02})
-        self.scan(NOW - HOUR, {"AAAUSDT": 0.007, "BBBUSDT": 0.012, "EEEUSDT": 0.006, "DDDUSDT": -0.03})
-        self.assertEqual(lane.scan_candidates(self.db, NOW), ["BBBUSDT", "AAAUSDT", "EEEUSDT"])   # 12b: one >= 0.5 %
+    def live(self, ts, fund):
+        scanner.LIVE[scanner.BN] = (int(ts), dict(fund))
 
-    def test_stale_scans_open_nothing_and_hold(self):
-        self.scan(NOW - 4 * HOUR, {"BBBUSDT": 0.02})
+    def test_entry_candidates(self):
+        self.scan(NOW - 120, {"AAAUSDT": 0.0011, "CCCUSDT": 0.002})
+        self.scan(NOW - 60, {"AAAUSDT": 0.0012, "BBBUSDT": 0.003})
+        self.assertEqual(lane.scan_candidates(self.db, NOW), ["BBBUSDT", "AAAUSDT"])   # latest measurement only
+
+    def test_stale_measurements_open_nothing_and_hold(self):
+        self.scan(NOW - 4 * HOUR, {"BBBUSDT": 0.003})
         self.assertEqual(lane.scan_candidates(self.db, NOW), [])
         self.assertEqual(lane.scan_signal(self.db, "BBBUSDT", True, NOW), 1.0)
         self.assertEqual(lane.scan_signal(self.db, "BBBUSDT", False, NOW), 0.0)
 
+    def test_settled_funding_must_be_persistent(self):
+        self.scan(NOW - 60, {"BBBUSDT": 0.003})
+        out = lane.manage(self.db, NOW, market(rate=0.0001), fids=[])["scanner"]
+        self.assertEqual((out["started"], out["skipped"]), ([], ["BBBUSDT"]))
+        self.assertEqual(lane.manage(self.db, NOW + 600, hi(), fids=[])["scanner"]["started"], [])   # 1 h wait
+        led = lane.manage(self.db, NOW + HOUR, hi(), fids=[])["scanner"]["started"][0]
+        t = lane.started(self.db)[led]["trigger"]
+        self.assertEqual((t["funding"], round(t["settled_avg3"], 6)), (0.003, 0.0008))
+
     def test_starts_at_once_up_to_ten_independent_of_lane_slots(self):
-        self.scan(NOW - 60, {f"C{i:02d}USDT": 0.01 + i / 1000 for i in range(12)})
-        per_pass = [len(lane.manage(self.db, NOW + 60 * k, market(), fids=[])["scanner"]["started"])
-                    for k in range(5)]
+        self.scan(NOW - 60, {f"C{i:02d}USDT": 0.001 + i / 10000 for i in range(12)})
+        per_pass = [len(lane.manage(self.db, NOW + 60 * k, hi(), fids=[])["scanner"]["started"]) for k in range(5)]
         self.assertEqual(per_pass, [lane.PROBES, lane.PROBES, lane.PROBES, 1, 0])      # probes per pass, ten in all
         info = lane.started(self.db)
         self.assertEqual(len(info), lane.SCAN_SLOTS)
         self.assertTrue(all(lane.is_scanner(i) and len(i["coins"]) == 1 for i in info.values()))
         self.assertEqual(sorted(i["coins"][0] for i in info.values()), [f"C{i:02d}USDT" for i in range(2, 12)])
         self.publish([result()])                                                     # the lane still starts its own
-        self.assertIsNotNone(lane.manage(self.db, NOW + 600, market(), fids=["fcarry"])["started"])
+        self.assertIsNotNone(lane.manage(self.db, NOW + 600, hi(), fids=["fcarry"])["started"])
 
-    def test_trades_both_legs_and_closes_when_the_premium_is_gone(self):
-        self.scan(NOW - 60, {"BBBUSDT": 0.015})
-        led = lane.manage(self.db, NOW, market(), fids=[])["scanner"]["started"][0]
-        r = lane.run_one(self.db, led, market(), NOW)
+    def test_holds_until_funding_is_gone_twice_and_a_settlement_is_booked(self):
+        self.scan(NOW - 60, {"BBBUSDT": 0.003})
+        led = lane.manage(self.db, NOW, hi(), fids=[])["scanner"]["started"][0]
+        r = lane.run_one(self.db, led, hi(), NOW)
         self.assertEqual(r["signal"], {"BBBUSDT": 1.0})
         pos = PaperEngine(self.db).ledger(led)["positions"]
         self.assertAlmostEqual(pos["BBBUSDT.SPOT"], -pos["BBBUSDT"])
         self.assertAlmostEqual(pos["BBBUSDT.SPOT"] * 100.0, 5_000, delta=2.0)       # half the account per leg
-        self.scan(NOW + HOUR - 60, {})                                               # not flagged in this scan
-        g = market()
-        g.now = NOW + HOUR
-        self.assertEqual(lane.run_one(self.db, led, g, NOW + HOUR)["signal"], {"BBBUSDT": 1.0})   # one scan gone
-        self.scan(NOW + 2 * HOUR - 60, {})
-        g.now = NOW + 2 * HOUR
-        self.assertEqual(lane.run_one(self.db, led, g, NOW + 2 * HOUR)["signal"], {"BBBUSDT": 1.0})   # 12c: no
-        self.scan(NOW + 6 * HOUR - 60, {})                                          # settlement yet (next 08:00)
-        g.now = NOW + 6 * HOUR                                                      # 08:30: 08:00 is booked
-        self.assertEqual(lane.run_one(self.db, led, g, NOW + 6 * HOUR)["signal"], {"BBBUSDT": 0.0})
+        g = hi()
+        for k, (rate, want) in enumerate([(0.00005, 1.0), (0.00005, 1.0)]):        # low twice, no settlement yet
+            self.live(NOW + HOUR + 60 * k, {"BBBUSDT": rate})
+            g.now = NOW + HOUR + 60 * k
+            self.assertEqual(lane.run_one(self.db, led, g, g.now)["signal"], {"BBBUSDT": want}, k)
+        self.live(NOW + 6 * HOUR, {"BBBUSDT": 0.00005})                            # 08:30: 08:00 is booked
+        g.now = NOW + 6 * HOUR
+        self.assertEqual(lane.run_one(self.db, led, g, g.now)["signal"], {"BBBUSDT": 0.0})
         self.assertTrue(self.db.one("SELECT 1 FROM sim_funding WHERE exp_id=? AND instrument='BBBUSDT'", led))
         self.assertEqual(PaperEngine(self.db).ledger(led)["positions"], {})
         self.assertTrue(PaperEngine(self.db).reconcile(led)["ok"])
 
+    def test_one_low_reading_or_no_fresh_reading_holds(self):
+        self.scan(NOW - 60, {"BBBUSDT": 0.003})
+        led = lane.manage(self.db, NOW, hi(), fids=[])["scanner"]["started"][0]
+        lane.run_one(self.db, led, hi(), NOW)
+        g = hi()
+        for k, rate in enumerate([0.00005, 0.002, 0.00005]):                        # low, high, low: never twice
+            self.live(NOW + 13 * HOUR + 60 * k, {"BBBUSDT": rate})
+            g.now = NOW + 13 * HOUR + 60 * k
+            self.assertEqual(lane.run_one(self.db, led, g, g.now)["signal"], {"BBBUSDT": 1.0}, k)
+        g.now = NOW + 14 * HOUR                                                     # the reading is 1 h old
+        self.assertEqual(lane.run_one(self.db, led, g, g.now)["signal"], {"BBBUSDT": 1.0})
+
     def test_without_a_settlement_the_position_may_close_after_12_hours(self):
-        self.scan(NOW - 60, {"BBBUSDT": 0.015})
-        led = lane.manage(self.db, NOW, market(), fids=[])["scanner"]["started"][0]
+        self.scan(NOW - 60, {"BBBUSDT": 0.003})
+        led = lane.manage(self.db, NOW, hi(), fids=[])["scanner"]["started"][0]
         g = market(rate=None)
         lane.run_one(self.db, led, g, NOW)
         for h in (11, 12):
-            self.scan(NOW + h * HOUR - 120, {})
-            self.scan(NOW + h * HOUR - 60, {})
-            g.now = NOW + h * HOUR
-            sig = lane.run_one(self.db, led, g, NOW + h * HOUR)["signal"]["BBBUSDT"]
+            for k in (0, 1):
+                self.live(NOW + h * HOUR + 60 * k, {"BBBUSDT": 0.00005})
+                g.now = NOW + h * HOUR + 60 * k
+                sig = lane.run_one(self.db, led, g, g.now)["signal"]["BBBUSDT"]
             self.assertEqual(sig, 1.0 if h == 11 else 0.0, h)
         self.assertEqual(PaperEngine(self.db).ledger(led)["positions"], {})
 
+    def test_reopens_only_on_two_high_measurements(self):
+        self.scan(NOW - 60, {"BBBUSDT": 0.003})
+        led = lane.manage(self.db, NOW, hi(), fids=[])["scanner"]["started"][0]
+        lane.run_one(self.db, led, hi(), NOW)
+        g = hi()
+        for k in (0, 1):
+            self.live(NOW + 13 * HOUR + 60 * k, {"BBBUSDT": 0.00005})
+            g.now = NOW + 13 * HOUR + 60 * k
+            lane.run_one(self.db, led, g, g.now)
+        self.assertEqual(PaperEngine(self.db).ledger(led)["positions"], {})
+        self.scan(NOW + 13 * HOUR + 120, {})                                       # funding no longer high
+        self.scan(NOW + 14 * HOUR, {"BBBUSDT": 0.002})
+        self.assertEqual(lane.scan_signal(self.db, "BBBUSDT", False, NOW + 14 * HOUR + 10, led), 0.0)   # one only
+        self.scan(NOW + 14 * HOUR + 60, {"BBBUSDT": 0.002})
+        self.assertEqual(lane.scan_signal(self.db, "BBBUSDT", False, NOW + 14 * HOUR + 70, led), 1.0)
+
     def test_retire_rules_and_cooldown(self):
-        self.scan(NOW - 60, {"BBBUSDT": 0.015})
-        led = lane.manage(self.db, NOW, market(), fids=[])["scanner"]["started"][0]
-        lane.run_one(self.db, led, market(), NOW)
+        self.scan(NOW - 60, {"BBBUSDT": 0.003})
+        led = lane.manage(self.db, NOW, hi(), fids=[])["scanner"]["started"][0]
+        lane.run_one(self.db, led, hi(), NOW)
         self.mark(led, NOW + 30, 9_600.0)                                            # -4 %: below the 5 % stop
         self.assertEqual(lane.manage(self.db, NOW + 60, None, fids=[])["retired"], [])
         self.mark(led, NOW + 90, 9_450.0)
         self.assertEqual(lane.manage(self.db, NOW + 120, None, fids=[])["retired"], [led])
         self.assertEqual(lane.retired(self.db)[led]["rule"], "loss")
-        self.scan(NOW + 180, {"BBBUSDT": 0.015})
-        self.assertEqual(lane.manage(self.db, NOW + 240, market(), fids=[])["scanner"]["started"], [])   # cooldown
-        out = lane.manage(self.db, NOW + 240 + lane.SCAN_COOLDOWN_S, market(), fids=[])
-        self.assertEqual(out["scanner"]["started"], [])                              # the scan is stale by then
-        self.scan(NOW + lane.SCAN_COOLDOWN_S + 200, {"BBBUSDT": 0.015})
-        out = lane.manage(self.db, NOW + 240 + lane.SCAN_COOLDOWN_S, market(), fids=[])
+        self.scan(NOW + 180, {"BBBUSDT": 0.003})
+        self.assertEqual(lane.manage(self.db, NOW + 240, hi(), fids=[])["scanner"]["started"], [])   # cooldown
+        self.scan(NOW + lane.SCAN_COOLDOWN_S + 200, {"BBBUSDT": 0.003})
+        out = lane.manage(self.db, NOW + 240 + lane.SCAN_COOLDOWN_S, hi(), fids=[])
         self.assertEqual(len(out["scanner"]["started"]), 1)
 
     def test_flat_and_source_rules(self):
-        self.scan(NOW - 60, {"BBBUSDT": 0.015, "CCCUSDT": 0.02})
-        out = lane.manage(self.db, NOW, market(), fids=[])["scanner"]["started"]
+        self.scan(NOW - 60, {"BBBUSDT": 0.003, "CCCUSDT": 0.004})
+        out = lane.manage(self.db, NOW, hi(), fids=[])["scanner"]["started"]
         info = lane.started(self.db)
         flat = next(x for x in out if info[x]["coins"] == ["BBBUSDT"])
         held = next(x for x in out if info[x]["coins"] == ["CCCUSDT"])
@@ -454,60 +500,69 @@ class Scanner(Base):
         self.assertEqual(lane.retired(self.db)[held]["rule"], "source")
 
     def test_human_off_stops_scanner_accounts_too(self):
-        self.scan(NOW - 60, {"BBBUSDT": 0.015})
-        led = lane.manage(self.db, NOW, market(), fids=[])["scanner"]["started"][0]
+        self.scan(NOW - 60, {"BBBUSDT": 0.003})
+        led = lane.manage(self.db, NOW, hi(), fids=[])["scanner"]["started"][0]
         lane.set_policy(self.db, False, "human:test", "stop all lane accounts now")
-        self.assertEqual(lane.manage(self.db, NOW + 60, market(), fids=[])["retired"], [led])
-        self.assertEqual(lane.manage(self.db, NOW + 120, market(), fids=[]).get("scanner"), None)
+        self.assertEqual(lane.manage(self.db, NOW + 60, hi(), fids=[])["retired"], [led])
+        self.assertEqual(lane.manage(self.db, NOW + 120, hi(), fids=[]).get("scanner"), None)
 
-    def test_view_names_and_labels(self):
-        self.scan(NOW - 60, {"BBBUSDT": 0.015})
-        led = lane.manage(self.db, NOW, market(), fids=[])["scanner"]["started"][0]
-        lane.run_one(self.db, led, market(), NOW)
+    def test_view_names_labels_and_trigger(self):
+        self.scan(NOW - 60, {"BBBUSDT": 0.003})
+        led = lane.manage(self.db, NOW, hi(), fids=[])["scanner"]["started"][0]
+        lane.run_one(self.db, led, hi(), NOW)
         with mock.patch("time.time", lambda: NOW + 60):
             v = command.paper_view(self.db, now=NOW + 60)
             b = command.balance(self.db, now=NOW + 60)
+            ln = command.lane_view(self.db, now=NOW + 60)
         s = next(x for x in v["strategies"] if x["exp_id"] == led)
         self.assertEqual(s["label"], lane.SCAN_LABEL)
         self.assertEqual(s["name"], "Scannerkonto BBBUSDT")
         self.assertTrue(s["lane_info"]["scanner"])
         self.assertEqual(b["lane"]["scanner"], 1)
         self.assertIsNone(b["capital"])
+        self.assertEqual(ln["active"][0]["trigger"], "forventet funding 0.300% · snit af 3 afregninger 0.080%")
 
 
 class PremiumWatch(Base):
-    """Amendment 12a: the perp premium every minute, observations only."""
+    """Amendments 12a and 12e: the premium and predicted funding every minute, observations only."""
     def setUp(self):
         super().setUp()
         scanner._PERPS.clear()
+        scanner.LIVE.clear()
         self.urls = []
 
-    def get(self, prem):
+    def get(self, rows):
+        """rows: {symbol: (premium, predicted funding)}."""
         def g(url):
             self.urls.append(url)
             if url.endswith("/fapi/v1/exchangeInfo"):
                 return {"symbols": [{"symbol": s, "contractType": "PERPETUAL", "underlyingType": "COIN",
                                      "status": "TRADING", "quoteAsset": "USDT"} for s in ("AAAUSDT", "BBBUSDT")]}
             if url.endswith("/fapi/v1/premiumIndex"):
-                return [{"symbol": s, "markPrice": str(100 * (1 + v)), "indexPrice": "100", "lastFundingRate": "0.001"}
-                        for s, v in prem.items()]
+                return [{"symbol": s, "markPrice": str(100 * (1 + p)), "indexPrice": "100", "lastFundingRate": str(f)}
+                        for s, (p, f) in rows.items()]
             raise AssertionError(url)
         return g
 
     def test_writes_observations_only_and_reads_the_perp_list_hourly(self):
         events = self.db.one("SELECT COUNT(*) FROM events")[0]
-        out = scanner.premium_watch(self.db, self.get({"AAAUSDT": 0.012, "BBBUSDT": 0.001, "ZZZUSDT": 0.05}), NOW - 60)
-        self.assertEqual((out["observations"], out["flagged"]), (2, 1))           # ZZZ is not a traded perp
-        scanner.premium_watch(self.db, self.get({"AAAUSDT": 0.006}), NOW - 30)
+        out = scanner.premium_watch(self.db, self.get({"AAAUSDT": (0.012, 0.0025), "BBBUSDT": (0.001, 0.0002),
+                                                       "ZZZUSDT": (0.05, 0.01)}), NOW - 60)
+        # premium AAA flagged, symbols_compared, predicted funding AAA flagged; ZZZ is not a traded perp
+        self.assertEqual((out["observations"], out["flagged"]), (3, 2))
+        self.assertEqual(scanner.LIVE[scanner.BN], (int(NOW - 60), {"AAAUSDT": 0.0025, "BBBUSDT": 0.0002}))
+        scanner.premium_watch(self.db, self.get({"AAAUSDT": (0.006, 0.0012)}), NOW - 30)
         self.assertEqual(sum(u.endswith("exchangeInfo") for u in self.urls), 1)
         self.assertEqual(self.db.one("SELECT COUNT(*) FROM events")[0], events)   # no market.event, no candidate
         self.assertTrue(all(u.startswith("https://fapi.binance.com/") for u in self.urls))
         self.assertEqual(lane.scans(self.db, NOW), [int(NOW - 30), int(NOW - 60)])
         self.assertEqual(lane.scan_candidates(self.db, NOW), ["AAAUSDT"])
-        led = lane.manage(self.db, NOW, market(), fids=[])["scanner"]["started"][0]
+        self.assertEqual(lane.live_funding("AAAUSDT", NOW), (0.0012, int(NOW - 30)))
+        led = lane.manage(self.db, NOW, market(rate=0.0008), fids=[])["scanner"]["started"][0]
         self.assertEqual(lane.started(self.db)[led]["coins"], ["AAAUSDT"])
         scanner.premium_watch(self.db, self.get({}), NOW + 3600 + 1)
         self.assertEqual(sum(u.endswith("exchangeInfo") for u in self.urls), 2)   # the list again after an hour
+        self.assertEqual(lane.live_funding("AAAUSDT", NOW + 3600 + 1 + lane.SCAN_LIVE_MAX_S + 1), (None, None))
 
 
 class LaneView(Base):

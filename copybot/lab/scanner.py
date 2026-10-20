@@ -143,8 +143,9 @@ def _perps(get):
             and s.get("underlyingType") == "COIN" and s.get("status") == "TRADING" and s.get("quoteAsset") == "USDT"}
 
 
-def premium_obs(get, perps):
-    """Measurement (b): |mark/index - 1| >= PREMIUM_MIN per perp, flagged, plus the count compared."""
+def premium_obs(get, perps, funding=None):
+    """Measurement (b): |mark/index - 1| >= PREMIUM_MIN per perp, flagged, plus the count compared. funding: if given,
+    receives {symbol: predicted funding (lastFundingRate)} of every compared perp (amendment 12e)."""
     out, n = [], 0
     for x in get(f"{BN}/fapi/v1/premiumIndex"):
         if x.get("symbol") not in perps:
@@ -153,6 +154,8 @@ def premium_obs(get, perps):
         if m <= 0 or i <= 0:
             continue
         n += 1
+        if funding is not None and x.get("lastFundingRate") not in (None, ""):
+            funding[x["symbol"]] = float(x["lastFundingRate"])
         p = m / i - 1
         if abs(p) >= PREMIUM_MIN:
             out.append(obs("pricing_constraint", f"{BN}/fapi/v1/premiumIndex", x["symbol"], "perp_premium", p,
@@ -163,15 +166,22 @@ def premium_obs(get, perps):
 
 PERPS_EVERY = 3600
 _PERPS = {}                                     # premium-watch: url -> (fetched at, perps); exchangeInfo once an hour
+FUNDING_MIN = 0.001                             # 12e: predicted funding >= 0.10 % per settlement is recorded, flagged
+LIVE = {}                                       # 12e: url -> (measured at, {symbol: predicted funding}), in memory only
 
 
 def premium_watch(db, get=http_get, now=None):
-    """Amendment 12a: measurement (b) every minute, written as observations only (no market.event, no candidate)."""
+    """Amendment 12a: measurement (b) every minute, written as observations only (no market.event, no candidate);
+    12e: plus predicted funding >= FUNDING_MIN as flagged rows, and every perp's predicted funding in LIVE."""
     now = int(now or time.time())
     hit = _PERPS.get(BN)
     if hit is None or now - hit[0] >= PERPS_EVERY or not hit[1]:
         _PERPS[BN] = hit = (now, _perps(get))
-    rows = premium_obs(get, hit[1])
+    funding = {}
+    rows = premium_obs(get, hit[1], funding)
+    rows += [obs("pricing_constraint", f"{BN}/fapi/v1/premiumIndex", sym, "predicted_funding", r, FUNDING_MIN, True)
+             for sym, r in sorted(funding.items()) if r >= FUNDING_MIN]
+    LIVE[BN] = (now, funding)
     with db.tx():
         for o in rows:
             db.append("observations", ts=now, **o)

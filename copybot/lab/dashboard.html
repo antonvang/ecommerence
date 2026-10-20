@@ -757,7 +757,7 @@ function renderLanes(l){
     {h:"Netto (USD)", num:1, f:x => sgn(x.net) + `<div class="dim">${pct(x.net_pct)}</div>`},
     {h:"Funding − gebyrer", num:1, f:x => sgn(x.funding_minus_fees) + `<div class="dim">${num(x.funding)} − ${num(x.fees)}</div>`},
     {h:"Dage", num:1, f:x => num(x.days, 1)},
-    {h:"Udløser / regler", f:x => (x.trigger ? `præmie ${x.trigger.map(v => v == null ? "–" : (v*100).toFixed(2) + "%").join(" → ")}<br>` : "") + `<span class="dim">${esc(x.rules)}</span>`}];
+    {h:"Udløser / regler", f:x => (x.trigger ? `${esc(x.trigger)}<br>` : "") + `<span class="dim">${esc(x.rules)}</span>`}];
   $("#lanes-act").innerHTML = table(cols, l.active, "Ingen aktive konti lige nu: de starter af sig selv, når banen eller scanneren finder noget.");
   $("#lanes-old").innerHTML = table(cols, l.recent, "Ingen konti er stoppet endnu.");
 }
@@ -785,7 +785,7 @@ function renderPaper(p){
 function laneRow(l){
   if (!l) return "";
   const st = l.stats || {}, x = st.expectation, z = l.scanner ? `<span class="na">gælder ikke</span>` : st.z != null ? st.z.toFixed(2) : `<span class="na">z fra 7 hele dage</span>`;
-  const trig = l.scanner && l.trigger ? `<div class="cap">Udløser: præmie ${(l.trigger.premium || []).map(v => v == null ? "–" : (v*100).toFixed(2) + "%").join(" → ")} i de seneste scanninger</div>` : "";
+  const tg = l.trigger || {}, trig = !l.scanner ? "" : tg.funding != null ? `<div class="cap">Udløser: forventet funding ${(tg.funding*100).toFixed(3)}%${tg.settled_avg3 != null ? ` · snit af 3 afregninger ${(tg.settled_avg3*100).toFixed(3)}%` : ""}</div>` : tg.premium ? `<div class="cap">Udløser: præmie ${tg.premium.map(v => v == null ? "–" : (v*100).toFixed(2) + "%").join(" → ")}</div>` : "";
   const stop = l.retired ? `<div class="cap" style="color:var(--amber)">Stoppet automatisk: ${esc(l.retired.detail || l.retired.rule || "")}</div>` : "";
   return trig + `<div class="grid3">${metric("Dage live", num(st.age_days, 1), `${st.days ?? 0} hele døgn målt · ${(l.coins || []).length} mønter`)}${metric("Netto pr. dag (sim.)", st.mean == null ? `<span class="na">${NA}</span>` : `${(st.mean*100).toFixed(3)}%`, "efter omkostninger, inkl. funding")}${metric("Edge mod udforskning (z)", z, (x ? `forventning ${(x.mean*100).toFixed(3)}% ± ${(x.sd*100).toFixed(3)}% pr. dag (2020-2021, 2x omkostninger)` : "ingen historisk forventning") + " · " + esc(l.rules || ""))}</div>${stop}`;
 }
