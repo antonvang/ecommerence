@@ -216,7 +216,7 @@ class Queue(Base):
         self.assertTrue({"scan_digest", "scan_dossier"} <= set(pipeline.HANDLERS))
         kinds = {n: k for n, _r, k, *_ in fleet.ROSTER}
         self.assertEqual(kinds["report-1"], ("report", "diagnose", "scan_digest", "scan_dossier",
-                                             "explore_report"))              # amendment 10: the lane's weekly list
+                                             "explore_report", "lane_report"))   # amendments 10 and 12d
 
 
 class Dossier(Base):

@@ -24,7 +24,7 @@ import os
 import statistics
 import time
 
-from lab import explore, families, lifecycle, pipeline
+from lab import explore, families, jobs, lifecycle, pipeline
 from lab.paper import CostModel, PaperEngine
 from lab.risk import Risk
 
@@ -577,3 +577,76 @@ def run_one(db, ledger, get, now, cache=None, books=None):
         risk.trip_fail_closed("reconciliation", f"{ledger}: {rec['problems']}"[:500])
     return {"status": "ok", "orders": orders, "marked": marked, "reconciled": rec["ok"], "funding": len(funded),
             "signal": want}
+
+
+# ---------- daily report (amendment 12d; decides nothing) ----------
+REPORT_DIR = "_lane"
+REPORT_JOB = {"priority": 60, "max_attempts": 3, "timeout_s": 300}
+REPORT_DELAY_S = 1800                           # day D is reported from D+1 00:30 UTC (the day's last mark is in)
+PILOT_DAYS, PILOT_DD = 3, 0.03                  # research/PILOT_BANE_UDKAST.md point 1 (the user's 3 days)
+
+
+def _in_day(info, gone, a):
+    """Started before the day ended and not retired before it began."""
+    return info["ts"] < a + DAY and (gone is None or gone["ts"] >= a)
+
+
+def enqueue_report(db, now=None, actor="strategy-1"):
+    """lane_report|<day> for the last ended UTC day if a lane account was active in it. Returns the number of new jobs."""
+    now = now or time.time()
+    day = explore._day(now - DAY)
+    a, gone = explore._day_start(day), retired(db)
+    if not any(_in_day(i, gone.get(led), a) for led, i in started(db).items()):
+        return 0
+    jobs.init(db)
+    return jobs.enqueue(db, f"lane_report|{day}", "lane_report", None, {"day": day}, actor=f"system:{actor}",
+                        not_before=a + DAY + REPORT_DELAY_S, **REPORT_JOB)[1]
+
+
+def account_row(db, ledger, info, gone, end):
+    """One account as of `end` (the day's end): the figures of point 2 and the pilot's paper criteria (point 3)."""
+    eq = db.one("SELECT equity FROM sim_equity WHERE exp_id=? AND ts<? ORDER BY id DESC LIMIT 1", ledger, end)
+    dd = db.one("SELECT MAX(drawdown) FROM sim_equity WHERE exp_id=? AND ts<?", ledger, end)[0] or 0.0
+    funding = db.one("SELECT COALESCE(SUM(amount), 0) FROM sim_funding WHERE exp_id=? AND ts<?", ledger, end)[0]
+    fees = db.one("SELECT COALESCE(SUM(fee), 0) FROM sim_fills WHERE exp_id=? AND ts<?", ledger, end)[0]
+    p = db.one("SELECT action, rule FROM risk_events WHERE exp_id=? AND action IN ('PAUSE','CLEAR') AND ts<? "
+               "ORDER BY id DESC LIMIT 1", ledger, end)
+    if gone is not None and gone["ts"] < end:
+        status = f"stoppet: {gone.get('rule')}"
+    else:
+        status = f"pause: {p['rule']}" if p is not None and p["action"] == "PAUSE" else "aktiv"
+    equity = eq["equity"] if eq else CAPITAL
+    days = int(max(0, end - info["ts"]) // DAY)
+    crit = {f"hele døgn live >= {PILOT_DAYS}": days >= PILOT_DAYS, "netto > 0": equity > CAPITAL,
+            "funding - gebyrer > 0": funding - fees > 0, f"største fald < {PILOT_DD:.0%}": dd < PILOT_DD,
+            "ikke stoppet": not status.startswith("stoppet"), "slippage mod modellen": "ikke målt"}
+    met = all(v is True for k, v in crit.items() if k != "slippage mod modellen")
+    return {"ledger": ledger, "source": "scanner" if is_scanner(info) else "lane", "function": info.get("function"),
+            "params": info.get("params"), "coins": info.get("coins"), "started": info["ts"], "status": status,
+            "equity": equity, "net": equity - CAPITAL, "net_pct": (equity - CAPITAL) / CAPITAL, "funding": funding,
+            "fees": fees, "funding_minus_fees": funding - fees, "max_drawdown": dd, "days_live": days,
+            "pilot_paper_criteria": crit, "pilot_paper_criteria_met": met, "simulated": True}
+
+
+def report(db, day):
+    a = explore._day_start(day)
+    gone = retired(db)
+    rows = [account_row(db, led, i, gone.get(led), a + DAY) for led, i in sorted(started(db).items())
+            if _in_day(i, gone.get(led), a)]
+    return {"day": day, "accounts": rows, "met": [r["ledger"] for r in rows if r["pilot_paper_criteria_met"]],
+            "net_total": sum(r["net"] for r in rows), "decisional": False, "simulated": True,
+            "rule": "research/PROTOCOL_V3.md amendment 12d: decides nothing; a pilot needs the user's numbers, key and "
+                    "a dated protocol"}
+
+
+def step_report(db, job, worker):
+    day = (job.get("payload") or {}).get("day")
+    end = explore._day_start(day) + DAY
+    if time.time() < end + REPORT_DELAY_S:
+        raise pipeline.Deferred(f"{day} is not over (+{REPORT_DELAY_S // 60} min)", end + REPORT_DELAY_S)
+    out = report(db, day)
+    art = pipeline.save_artifact(REPORT_DIR, day, out)
+    db.event("research.lane_report", f"system:{worker}", None,
+             {"day": day, "accounts": len(out["accounts"]), "met": out["met"], "net_total": out["net_total"],
+              "decisional": False, "artifact_sha256": art["sha256"]})
+    return {"day": day, "accounts": len(out["accounts"]), "met": out["met"], "artifact": art}

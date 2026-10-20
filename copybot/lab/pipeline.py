@@ -1337,6 +1337,9 @@ HANDLERS = {"data": step_data, "backtest": step_backtest, "cost": step_cost, "ad
             "explore": lambda db, job, worker: __import__("lab.explore", fromlist=["step_explore"])
             .step_explore(db, job, worker),
             "explore_report": lambda db, job, worker: __import__("lab.explore", fromlist=["step_report"])
+            .step_report(db, job, worker),
+            # amendment 12d: the daily report on lane and scanner accounts (decides nothing)
+            "lane_report": lambda db, job, worker: __import__("lab.lane", fromlist=["step_report"])
             .step_report(db, job, worker)}
 
 

@@ -178,12 +178,12 @@ def _progress(con_path, now, sup):
             return (None, "not judged (fleet up less than 2 h)")
         last = con.execute("SELECT MAX(ts) FROM events WHERE kind='job.done' AND COALESCE(json_extract(payload, "
                            "'$.kind'), '') NOT IN ('diagnose', 'scan_digest', 'scan_dossier', 'explore', "
-                           "'explore_report')").fetchone()[0]
+                           "'explore_report', 'lane_report')").fetchone()[0]
         # (non-decisional side jobs run daily; they must not hide an idle hypothesis pipeline)
         try:
             runnable, running = con.execute("SELECT COALESCE(SUM(status='queued' AND next_run<=?), 0), "
                                             "COALESCE(SUM(status='running'), 0) FROM jobs WHERE kind NOT IN "
-                                            "('explore', 'explore_report')", (now,)).fetchone()   # amendment 10
+                                            "('explore', 'explore_report', 'lane_report')", (now,)).fetchone()
         except sqlite3.OperationalError:                 # no jobs table yet: nothing was ever queued
             runnable = running = 0
     finally:

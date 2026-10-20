@@ -12,7 +12,7 @@ from unittest import mock
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from lab import __main__ as cli, command, explore, lane, lifecycle, paper_runner, pipeline, promotion, scanner  # noqa: E402
-from lab import watch  # noqa: E402
+from lab import jobs, watch  # noqa: E402
 from lab.db import DB  # noqa: E402
 from lab.paper import PaperEngine  # noqa: E402
 from lab.risk import Risk  # noqa: E402
@@ -508,6 +508,54 @@ class PremiumWatch(Base):
         self.assertEqual(lane.started(self.db)[led]["coins"], ["AAAUSDT"])
         scanner.premium_watch(self.db, self.get({}), NOW + 3600 + 1)
         self.assertEqual(sum(u.endswith("exchangeInfo") for u in self.urls), 2)   # the list again after an hour
+
+
+class Report(Base):
+    """Amendment 12d: the daily account report decides nothing."""
+    def test_queued_only_after_a_day_with_an_account(self):
+        jobs.init(self.db)
+        self.assertEqual(lane.enqueue_report(self.db, NOW + DAY), 0)
+        self.started()
+        self.assertEqual(lane.enqueue_report(self.db, NOW + DAY), 1)
+        j = jobs.get(self.db, f"lane_report|{explore._day(NOW)}")
+        self.assertEqual(j["kind"], "lane_report")
+        self.assertEqual(j["next_run"], explore._day_start(explore._day(NOW)) + DAY + lane.REPORT_DELAY_S)
+
+    def test_rows_and_pilot_paper_criteria(self):
+        led = self.started()
+        lane.run_one(self.db, led, market(), NOW)
+        g = market()
+        g.now = NOW + 4 * DAY
+        lane.run_one(self.db, led, g, NOW + 4 * DAY)                         # funding pays the fees
+        day0 = int(NOW) // DAY * DAY
+        self.mark(led, day0 + 4 * DAY + 23 * HOUR, 10_050.0)
+        day = explore._day(day0 + 4 * DAY)
+        r = lane.report(self.db, day)
+        row = r["accounts"][0]
+        self.assertEqual((row["ledger"], row["source"], row["status"]), (led, "lane", "aktiv"))
+        self.assertGreater(row["funding_minus_fees"], 0)
+        self.assertTrue(row["pilot_paper_criteria_met"], row["pilot_paper_criteria"])
+        self.assertEqual(r["met"], [led])
+        early = lane.report(self.db, explore._day(day0 + DAY))["accounts"][0]   # day 1: too few days, fees unpaid
+        self.assertFalse(early["pilot_paper_criteria_met"])
+        lane.retire(self.db, led, "edge", "fixture", now=day0 + 5 * DAY + HOUR)
+        late = lane.report(self.db, explore._day(day0 + 5 * DAY))["accounts"][0]
+        self.assertEqual(late["status"], "stoppet: edge")
+        self.assertFalse(late["pilot_paper_criteria_met"])
+
+    def test_step_waits_for_the_day_then_writes_artifact_and_event(self):
+        self.started()
+        day = explore._day(NOW)
+        job = {"payload": {"day": day}}
+        with mock.patch("time.time", lambda: NOW + 60):
+            with self.assertRaises(pipeline.Deferred):
+                lane.step_report(self.db, job, "report-1")
+        with mock.patch("time.time", lambda: explore._day_start(day) + DAY + lane.REPORT_DELAY_S + 1):
+            out = lane.step_report(self.db, job, "report-1")
+        self.assertEqual(out["accounts"], 1)
+        ev = self.db.one("SELECT payload FROM events WHERE kind='research.lane_report'")
+        self.assertIn('"decisional": false', ev["payload"].replace('"decisional":false', '"decisional": false'))
+        self.assertTrue(os.path.exists(os.path.join(pipeline.ARTIFACTS, lane.REPORT_DIR, f"{day}.json")))
 
 
 if __name__ == "__main__":

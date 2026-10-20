@@ -393,11 +393,12 @@ def strategy_pass(db):
     fams = families.pass_(db, "strategy-1")                                             # errors contained per family
     from lab import promotion
     decisions = [d for d in promotion.step(db) if d.get("applicable")]                 # amendment 4: one decision path
-    from lab import explore, scanresearch
+    from lab import explore, lane, scanresearch
     return {"registered": registered, "promotions": [(d["exp_id"], d["to"], d["allowed"]) for d in decisions],
             "holdouts_queued": pipeline.enqueue_holdouts(db), "diagnostics_queued": pipeline.enqueue_diagnostics(db),
             "scan_research_queued": scanresearch.enqueue(db),           # amendment 9 section 3: digest and dossiers
             "explore_queued": explore.enqueue(db),          # amendments 10/10a: one lane job at a time, hourly
+            "lane_report_queued": lane.enqueue_report(db),  # amendment 12d: the daily account report
             **({"families": fams} if fams else {})}
 
 
@@ -499,7 +500,7 @@ ROSTER = (
     ("validation-2", "Validation agent: frozen variant on validation; forward test; sealed holdout after approval",
      ("validate", "holdout", "observe", "observe_interim"), None, None, True),
     ("report-1", "Reporting agent: results, lifecycle verdicts, markdown reports; diagnostics of finished experiments",
-     ("report", "diagnose", "scan_digest", "scan_dossier", "explore_report"), None, None, False),
+     ("report", "diagnose", "scan_digest", "scan_dossier", "explore_report", "lane_report"), None, None, False),
     ("paper-1", "Paper execution agent: simulated orders for PAPER_TRADING experiments only", None, paper_pass, 60,
      False),
     ("risk-1", "Risk supervisor agent: RAM/disk holds, paper reconciliation", None, None, 15, False),
