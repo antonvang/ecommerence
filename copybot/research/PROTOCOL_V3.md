@@ -1199,3 +1199,25 @@ i træk er under 0,01 %; 0,6 % omkostning pr. rundtur. Script: `research/tools/f
 4. **Ærligt:** 2020-2021 havde usædvanligt høj funding; studiet ser bort fra bevægelser i spot/perp-forholdet og fra
    afnoteringer. Det er ikke bevis for 2026; det vælger blot tærsklen og udreglen på data i stedet for skøn.
    Stopreglerne (tab ≥ 5 %, 24 t pause, kilden betaler ikke efter 3 dage, 2 døgn uden position) er uændrede.
+
+## Ændring 10d og 11b (2026-10-20): banen må hente data når som helst; banekonti skal handle nu — før kode
+
+**Beslutning:** brugeren 2026-10-20: "lad vær med at begrænse af pm_lp osv" (10d) og mandatet til datadrevne
+papirbeslutninger (11b). Kun simuleret handel og banens eget vindue; F1, F2 og pm_lp's protokol er uændrede.
+
+**10d.** Ændring 10b punkt 2's netværksvindue for banen (før 2026-10-24 og fra 2026-11-14) ophæves: banen må hente
+sine `explore0`-filer fra `data.binance.vision` når som helst, stadig højst 2 samtidige downloads i hele lab'en.
+COIN-M-filer følger fortsat ændring 8 punkt 17 (fra 2026-11-28), fordi den regel står i en fil, F1's godkendelse er
+bundet til.
+
+**11b. Data (produktionens register 2026-10-20 ca. 10:07 UTC):** banen havde evalueret 450 varianter, og 433 opfyldte
+de tre krav i ændring 10 punkt 5 (2020-2021 betalte høj funding for næsten alt). 4 af 6 aktive banekonti havde ingen
+position, fordi deres regel ikke går ind ved 2026's funding (fx hysteresis kræver 21,9 % APR).
+
+1. **Start (ændrer ændring 11 punkt 3):** en banekonto startes kun, hvis variantens egen funktion på de live data
+   (samme som kontoen handler på) giver +1 i mindst én mønt i kurven lige nu. Ellers registreres `lane.skipped` med
+   grunden "ville ikke holde noget nu", og varianten kan prøves igen 24 timer senere (ikke permanent).
+2. **Stop (tilføjes ændring 11 punkt 5):** en banekonto uden position i 3 sammenhængende døgn stoppes (`flat`), så
+   pladsen går til en variant, der handler. De øvrige stopregler er uændrede.
+3. **Ærligt:** det vælger varianter efter, at de handler nu, ikke efter, at de tjener nu; kontiene er stadig aldrig
+   bevis.
