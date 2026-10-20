@@ -510,6 +510,25 @@ class PremiumWatch(Base):
         self.assertEqual(sum(u.endswith("exchangeInfo") for u in self.urls), 2)   # the list again after an hour
 
 
+class LaneView(Base):
+    def test_main_page_view_lists_active_and_stopped_accounts(self):
+        led = self.started()
+        lane.run_one(self.db, led, market(), NOW)
+        self.publish([result("k2", fn="carry_floor", params={"days": 7, "q": 0.8})], name="fcarry_2")
+        led2 = lane.manage(self.db, NOW + lane.START_EVERY, market(), fids=["fcarry"])["started"]
+        lane.retire(self.db, led2, "edge", "fixture", now=NOW + lane.START_EVERY + 60)
+        v = command.lane_view(self.db, now=NOW + 2 * HOUR)
+        self.assertEqual([r["ledger"] for r in v["active"]], [led])
+        self.assertEqual([r["ledger"] for r in v["recent"]], [led2])
+        self.assertEqual(v["counts"], {"lane": 1, "lane_slots": lane.SLOTS, "scanner": 0,
+                                       "scanner_slots": lane.SCAN_SLOTS})
+        r = v["active"][0]
+        self.assertEqual((r["status"], len(r["held"])), ("aktiv", len(COINS)))
+        self.assertAlmostEqual(r["funding_minus_fees"], r["funding"] - r["fees"])
+        self.assertEqual(v["recent"][0]["status"], "stoppet: edge")
+        self.assertFalse(v["evidence"])
+
+
 class Report(Base):
     """Amendment 12d: the daily account report decides nothing."""
     def test_queued_only_after_a_day_with_an_account(self):

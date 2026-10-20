@@ -599,6 +599,46 @@ def edge(db, ledger, now=None, expectation=True):
     return out
 
 
+LANE_RECENT = 10                # stopped lane/scanner accounts shown on the main page
+
+
+def lane_view(db, now=None):
+    """Amendments 11-12d, display only: every active lane and scanner account and the latest stopped ones, with the
+    latest daily report. Simulated, never evidence; nothing here is in the formal balance."""
+    from lab import lane
+    from lab.paper import PaperEngine
+    now = now or time.time()
+    info, gone, rk, pe, rows = lane.started(db), lane.retired(db), Risk(db), PaperEngine(db), []
+    for led, i in info.items():
+        try:
+            book = pe.ledger(led)
+        except lifecycle.LifecycleError:                  # started, not yet traded
+            book = {"positions": {}, "funding": 0.0, "fees": 0.0}
+        eq = db.one("SELECT equity FROM sim_equity WHERE exp_id=? ORDER BY id DESC LIMIT 1", led)
+        equity = eq["equity"] if eq else lane.CAPITAL
+        g = gone.get(led)
+        p = rk._last(led, ("PAUSE",)) if rk.paused(led) else None
+        status = (f"stoppet: {g.get('rule')}" if g else f"pause: {p['rule']}" if p is not None else "aktiv")
+        coins_held = sorted({k.replace(lane.SPOT, "") for k in book["positions"]})
+        rows.append({"ledger": led, "name": plain(db, led)[0], "scanner": lane.is_scanner(i),
+                     "function": i.get("function"), "params": i.get("params"), "coins": i.get("coins") or [],
+                     "held": coins_held, "status": status, "active": g is None, "started": i.get("ts"),
+                     "stopped": g.get("ts") if g else None, "stop_detail": g.get("detail") if g else None,
+                     "equity": equity, "net": equity - lane.CAPITAL, "net_pct": (equity - lane.CAPITAL) / lane.CAPITAL,
+                     "funding": book["funding"], "fees": book["fees"], "funding_minus_fees": book["funding"] - book["fees"],
+                     "days": (now - i["ts"]) / 86400 if i.get("ts") else None,
+                     "trigger": (i.get("trigger") or {}).get("premium"), "rules": lane.rules_text(i)})
+    act = sorted((r for r in rows if r["active"]), key=lambda r: -(r["started"] or 0))
+    old = sorted((r for r in rows if not r["active"]), key=lambda r: -(r["stopped"] or 0))
+    rep = db.one("SELECT payload FROM events WHERE kind='research.lane_report' ORDER BY id DESC LIMIT 1")
+    return {"active": act, "recent": old[:LANE_RECENT], "stopped_total": len(old),
+            "counts": {"lane": sum(1 for r in act if not r["scanner"]), "lane_slots": lane.SLOTS,
+                       "scanner": sum(1 for r in act if r["scanner"]), "scanner_slots": lane.SCAN_SLOTS},
+            "net_active": sum(r["net"] for r in act), "net_all": sum(r["net"] for r in rows),
+            "report": _j(rep["payload"]) if rep else None, "policy_on": lane.policy_on(db),
+            "simulated": True, "evidence": False, "label": "BANE- OG SCANNERKONTI (simuleret, aldrig bevis)"}
+
+
 def _pause_info(rk, eid):
     """Why a paused ledger is paused (its last PAUSE risk event) and how a human resumes a simulated one, or None."""
     if not rk.paused(eid):

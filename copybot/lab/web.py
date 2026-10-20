@@ -283,7 +283,7 @@ class Handler(BaseHTTPRequestHandler):
                                                                    one("catalogue") == "1"),
                 "/api/distribution": lambda: command.distribution(db), "/api/costs": lambda: command.costs(db),
                 "/api/paper2": lambda: command.paper_view(db), "/api/rejected": lambda: command.rejected(db),
-                "/api/balance": lambda: command.balance(db), "/api/feed": lambda: command.feed(db, int(one("limit", 40))),
+                "/api/balance": lambda: command.balance(db), "/api/lanes": lambda: command.lane_view(db), "/api/feed": lambda: command.feed(db, int(one("limit", 40))),
                 "/api/approvals": lambda: command.approvals(db)})
             if u.path.startswith("/api/agent/"):
                 return self._send(200, command.agent_log(db, u.path.rsplit("/", 1)[1], int(one("limit", 50))))
