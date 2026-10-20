@@ -1137,3 +1137,38 @@ viste, hvorfor scannerkontiene står stille. Ingen regel ændres; intet her star
    over 0,01 %) og `funding_top` (højeste forventede funding; mønten står i rækkens payload).
 2. Forsidens panel viser de seneste tre tal og, når ingen mønt opfylder 12e punkt 2, at systemet venter, og hvorfor.
 3. Cirka 4.300 rækker pr. døgn. Ingen ny forespørgsel.
+
+## Ændring 13 (2026-10-20): Hyperliquid-funding-konti — lang Binance spot, kort Hyperliquid perp — før kode
+
+**Beslutning:** brugeren svarede 2026-10-20 "ja til 13 gør alt for at det kan lykkes" på Claudes forslag, efter at
+Binance-funding var lav (median 0,005 % pr. afregning, 18 % af perps over rentegulvet). Kun simuleret handel; ingen
+ordrer, nøgler eller penge på nogen børs. Ændring 10 punkt 1 og ændring 11 gælder: aldrig bevis, ingen formelle
+rækker, ingen saldo, ingen alfa. Mekanismen er F1's (funding modtaget af et kort perp-ben, afdækket med spot i samme
+mønt, ikke prisforudsigende), men perp-benet ligger på en anden børs, så kontiene kan aldrig blive en F1-instans.
+
+1. **Konto.** En banekonto (ændring 11) med kilden `hl`: `LANE_<10 hex>` af nøglen `hl|<mønt>|<time>`, 10.000 USD,
+   én mønt, mærket "HL-KONTO (Hyperliquid-funding, simuleret, aldrig bevis)". Ben: Binance spot `<MØNT>USDT.SPOT`
+   (lang) og Hyperliquid perp `HL:<MØNT>` (kort), samme mængde, halvdelen af kontoens værdi pr. ben.
+2. **Data (kun offentlige, ingen nøgle).** Hyperliquid `POST https://api.hyperliquid.xyz/info` (allerede tilladt for
+   scanneren, gennem samme funktion): `metaAndAssetCtxs` (forventet funding pr. time for alle perps), `fundingHistory`
+   (afregnet funding pr. time), `candleSnapshot` (1h-åbningskurser til at prissætte afregninger) og `l2Book`
+   (ordrebog). Spot-bogen fra `data-api.binance.vision` som i ændring 11 punkt 8. Mønter med præfikset `k` eller
+   `@` og afnoterede mønter udelades.
+3. **Måling.** `premium-watch` henter `metaAndAssetCtxs` hvert minut, skriver `hl_predicted_funding` (forventet funding
+   × 8, så tallet kan sammenlignes med Binances 8-timers afregning) som markeret række for mønter ≥ 0,10 %, og holder
+   alle værdier i flådens hukommelse.
+4. **Ind.** Forventet funding × 8 ≥ 0,10 %, gennemsnittet af de seneste 24 afregnede timer × 8 ≥ 0,05 %, og begge
+   bøger (Binance spot og Hyperliquid) kan hentes. En lukket konto åbner igen, når de to seneste målinger begge er
+   ≥ 0,10 %.
+5. **Ud.** To målinger i træk med forventet funding × 8 under 0,01 %, og mindst 8 timer siden indgangen. Uden en frisk
+   måling (højst 5 minutter) holdes positionen.
+6. **Omkostninger og funding.** Gebyr 0,10 % pr. ben (Binance spot; forsigtigt også for Hyperliquid, hvis gebyr er
+   cirka 0,045 %), ekstra slippage 0,02 %, ordrer gennem bøgernes niveauer. Funding bogføres for `HL:`-benet pr. time
+   efter ændring 9 punkt 2 (beløb = − position × pris × rate; prisen er åbningskursen for den time, der starter ved
+   afregningen).
+7. **Antal og stop.** Højst 10 aktive HL-konti, én pr. mønt, uafhængigt af bane- og scannerkonti. Stopreglerne er
+   scannerkontiens (ændring 12 punkt 5): tab ≥ 5 %, 24 timers pause, funding − gebyrer ≤ 0 efter 3 dage, 2 døgn uden
+   position, 30 dage, `lane-off`. 24 timers ventetid for en stoppet mønt, 1 time for en mønt, der blev sprunget over.
+8. **Ærlige forbehold.** To børser: kursen på Hyperliquid kan afvige fra Binances spot (basisrisiko), og en rigtig
+   konto ville kræve kapital på begge børser og overførsler. Hyperliquid kan ændre gebyrer, funding-formel eller
+   afnotere. Intet afkast er beregnet.
