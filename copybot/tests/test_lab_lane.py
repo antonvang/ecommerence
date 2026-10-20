@@ -258,6 +258,21 @@ class Retire(Base):
         self.assertTrue(all(o["reduce_only"] for o in self.db.q("SELECT reduce_only FROM sim_orders WHERE exp_id=? "
                                                                  "AND order_id LIKE '%close%'", led)))
 
+    def test_a_closed_ledger_gets_a_final_mark_in_the_same_hour(self):
+        led = self.started()
+        lane.run_one(self.db, led, market(), NOW)                      # opens and marks this hour
+        lane.retire(self.db, led, "edge", "fixture", now=NOW + 60)
+        g = market(spread=2.0)                                         # a wide book: the close costs money
+        g.now = NOW + 600                                              # same clock hour as the mark
+        paper_runner.run(self.db, get=g, now=NOW + 600)
+        eng = PaperEngine(self.db)
+        self.assertEqual(eng.ledger(led)["positions"], {})
+        last = self.db.one("SELECT equity, ts FROM sim_equity WHERE exp_id=? ORDER BY id DESC LIMIT 1", led)
+        self.assertEqual(last["ts"], int(NOW + 600))
+        self.assertAlmostEqual(last["equity"], eng.ledger(led)["cash"])
+        self.assertEqual(paper_runner.closing_ledgers(self.db), [])   # done: not processed again
+        self.assertTrue(eng.reconcile(led)["ok"])
+
     def test_edge_missing_after_seven_days(self):
         led = self.started(sharpe=10.0)                   # sd 0.1 %/day on capital
         lane.run_one(self.db, led, market(), NOW)         # holds positions (not flat)

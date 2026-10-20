@@ -190,9 +190,16 @@ def closing_ledgers(db):
         else:
             base = led
             done = lifecycle.state(db, base) in ("REJECTED", "RETIRED")
-        if done and eng.ledger(led)["positions"]:
+        if done and (eng.ledger(led)["positions"] or _stale_flat(db, led)):
             out.append((led, base))
     return out
+
+
+def _stale_flat(db, led):
+    """A ledger whose last fill came after its last equity mark (its final close was never marked)."""
+    last_fill = db.one("SELECT MAX(ts) FROM sim_fills WHERE exp_id=?", led)[0]
+    last_mark = db.one("SELECT MAX(ts) FROM sim_equity WHERE exp_id=?", led)[0]
+    return last_fill is not None and (last_mark is None or last_fill > last_mark)
 
 
 def funding_start(db, now):
@@ -263,6 +270,9 @@ def close_ledger(db, led, base, get, now, books=None, cache=None):
         orders.append({"symbol": s, "status": r["status"]})
     if orders:
         db.event("paper.closing", "agent:paper-1", led, {"orders": orders, "simulated": True})
+    if not eng.ledger(led)["positions"] and _stale_flat(db, led):
+        eng.mark(led, {})                               # the final mark of a flat ledger: equity = cash, at once
+        return {"status": "closing", "orders": orders, "marked": True, "final_mark": True, "funding": funding}
     try:
         marked = _mark_hourly(db, eng, led, get, now, books)
     except Exception:
