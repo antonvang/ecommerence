@@ -654,6 +654,10 @@ class Hyperliquid(Base):
         self.assertTrue(all(x["amount"] > 0 for x in rows))                         # the short receives
         self.assertTrue(PaperEngine(self.db).reconcile(led)["ok"])
 
+    def test_13a_needs_ten_basis_points_on_hyperliquid(self):
+        self.scan(NOW - 60, {"AAA": 0.0007, "BBB": 0.0012})                          # x8: 0.07 % and 0.12 %
+        self.assertEqual(lane.hl_candidates(self.db, NOW)[0], ["BBB"])
+
     def test_not_persistent_or_no_book_is_skipped(self):
         self.scan(NOW - 60, {"AAA": 0.002, "BBB": 0.003})
         with mock.patch.object(paper_runner, "HL_POST", hl_post(rate=0.00001, now=lambda: NOW)):

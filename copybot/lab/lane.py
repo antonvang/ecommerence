@@ -72,7 +72,9 @@ HL_LABEL = "HL-KONTO (Hyperliquid-funding, simuleret, aldrig bevis)"
 HL_PERP = "HL:"                                 # the perp leg's instrument prefix (paper_runner.HL_PREFIX)
 HL_SLOTS = 10
 HL_HOLD_S = 8 * HOUR                            # 13 point 5: out no earlier than 8 h after the entry
-HL_PERSIST_HOURS = 24                           # 13 point 4: mean of the last 24 settled hours x 8 >= SCAN_FUND_PERSIST
+HL_PERSIST_HOURS = 24                           # 13 point 4: mean of the last 24 settled hours x 8 >= HL_FUND_PERSIST
+HL_FUND_MIN = 0.001                             # 13a: predicted funding x 8 >= 0.10 % (2026 study: +0.51 %, 61 % won)
+HL_FUND_PERSIST = 0.0005                        # 13a: the 24-hour mean x 8 >= 0.05 %
 _CANDIDATES = {}                                # (registry, last research.explore id, families) -> candidates
 
 
@@ -96,8 +98,8 @@ def label(info):
 def rules_text(info):
     """The automatic stop rules, in Danish, for the dashboard."""
     if is_hl(info):
-        return (f"ind ved Hyperliquid-funding ×8 ≥ {SCAN_FUND_MIN:.2%} og snit af {HL_PERSIST_HOURS} timer ×8 ≥ "
-                f"{SCAN_FUND_PERSIST:.3%}; ud når to afregnede timer ×8 er < {SCAN_FUND_EXIT:.2%} og efter mindst "
+        return (f"ind ved Hyperliquid-funding ×8 ≥ {HL_FUND_MIN:.2%} og snit af {HL_PERSIST_HOURS} timer ×8 ≥ "
+                f"{HL_FUND_PERSIST:.3%}; ud når to afregnede timer ×8 er < {SCAN_FUND_EXIT:.2%} og efter mindst "
                 f"{HL_HOLD_S // HOUR} t; "
                 f"stoppes ved tab ≥ {SCAN_LOSS:.0%}, 24 t pause, funding − gebyrer ≤ 0 efter {SCAN_SOURCE_S // DAY} "
                 f"dage, {SCAN_FLAT_S // DAY} døgn uden position eller {SCAN_MAX_AGE_S // DAY} dage")
@@ -585,7 +587,7 @@ def hl_scans(db, now, n=2):
 
 
 def hl_fundings(db, ts):
-    """{coin: predicted funding x 8} flagged (>= SCAN_FUND_MIN) at Hyperliquid measurement time ts."""
+    """{coin: predicted funding x 8} flagged (>= HL_FUND_MIN) at Hyperliquid measurement time ts."""
     return {r["instrument"]: r["value"] for r in db.q("SELECT instrument, value FROM observations WHERE "
                                                       "metric='hl_predicted_funding' AND flagged=1 AND ts=?", ts)}
 
@@ -610,10 +612,10 @@ def hl_signal(db, coin, holding, now, ledger=None, settled=None):
         return 0.0 if (_two_settled_low(settled, scanner_eight()) and (t is None or now - t >= HL_HOLD_S)) else 1.0
     ts = hl_scans(db, now)
     fs = [hl_fundings(db, t) for t in ts]
-    if not ts or now - ts[0] > SCAN_STALE_S or fs[0].get(coin, 0) < SCAN_FUND_MIN:
+    if not ts or now - ts[0] > SCAN_STALE_S or fs[0].get(coin, 0) < HL_FUND_MIN:
         return 0.0
     fresh = ledger is None or not db.one("SELECT 1 FROM sim_fills WHERE exp_id=? LIMIT 1", ledger)
-    return 1.0 if fresh or (len(fs) > 1 and fs[1].get(coin, 0) >= SCAN_FUND_MIN) else 0.0
+    return 1.0 if fresh or (len(fs) > 1 and fs[1].get(coin, 0) >= HL_FUND_MIN) else 0.0
 
 
 def hl_candidates(db, now):
@@ -621,7 +623,7 @@ def hl_candidates(db, now):
     if not ts or now - ts[0] > SCAN_STALE_S:
         return [], {}
     fs = hl_fundings(db, ts[0])
-    return sorted((c for c, v in fs.items() if v >= SCAN_FUND_MIN), key=lambda c: (-fs[c], c)), fs
+    return sorted((c for c, v in fs.items() if v >= HL_FUND_MIN), key=lambda c: (-fs[c], c)), fs
 
 
 def manage_hl(db, now, get):
@@ -649,7 +651,7 @@ def manage_hl(db, now, get):
             avg = sum(last) / len(last) * 8 if len(last) == HL_PERSIST_HOURS else None
             trigger["settled_avg3"] = avg                  # shown like the scanner's (here: 24 hours x 8)
             trigger["settled_hours"] = len(last)
-            if avg is None or avg < SCAN_FUND_PERSIST:
+            if avg is None or avg < HL_FUND_PERSIST:
                 raise ValueError(f"funding not persistent: mean of last {len(last)} settled hours x 8 = {avg}")
             p_inst, s_inst = HL_PERP + coin, f"{coin}USDT{SPOT}"
             for inst in (p_inst, s_inst):
