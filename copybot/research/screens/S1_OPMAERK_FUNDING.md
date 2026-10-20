@@ -63,3 +63,13 @@ Alle parametre nedenfor er låst; en ændring efter kørsel gør screeningen ugy
 ## 6. Kode
 
 `research/tools/screen_s1.py` (committet sammen med denne tekst, før kørsel).
+
+## 7. Resultat (kørt én gang 2026-10-20 på commit a1cd0f3)
+
+- **AFVIST.** ρ = −0,090 over 637 mønt-uger (9 mønter; AVAX har ingen uge med fuld dækning i explore0), 92 uger;
+  p_boot = 0,87, p_placebo = 0,87. Fuldt output: `S1_result.json`.
+- Beskrivelse (ikke test): ρ pr. mønt er negativ for 7 af 9 (BNB −0,25 laveste, LINK +0,19 på kun 22 uger);
+  øverste chok-femtedel har gennemsnitlig funding-ændring −0,0028 procentpoint pr. 8 t mod +0,0007 for resten; det
+  markedsbredde chok ("Cryptocurrency") giver ρ = −0,109.
+- Fortolkning (antaget, ikke testet): funding reagerer hurtigt på opmærksomhed og falder derefter tilbage, så et
+  chok, der kan ses ved t, ligger efter reaktionen. Der er ingen forudsigelse at handle på. Ingen gentestning.

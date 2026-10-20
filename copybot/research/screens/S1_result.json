@@ -1,0 +1,73 @@
+{
+ "screen": "S1",
+ "window": "explore0 2020-03..2021-12",
+ "coin_weeks": 637,
+ "weeks": 92,
+ "coins_used": [
+  "ADAUSDT",
+  "BNBUSDT",
+  "BTCUSDT",
+  "DOGEUSDT",
+  "DOTUSDT",
+  "ETHUSDT",
+  "LINKUSDT",
+  "LTCUSDT",
+  "XRPUSDT"
+ ],
+ "rho": -0.08981118771262699,
+ "p_boot": 0.8705,
+ "p_placebo": 0.8670664667666167,
+ "passed": false,
+ "descriptive": {
+  "per_coin": {
+   "BTCUSDT": {
+    "n": 92,
+    "rho": -0.06285183658260897
+   },
+   "ETHUSDT": {
+    "n": 92,
+    "rho": -0.10892081009893924
+   },
+   "DOGEUSDT": {
+    "n": 75,
+    "rho": 0.016756756756756756
+   },
+   "LTCUSDT": {
+    "n": 92,
+    "rho": -0.028104542424813007
+   },
+   "BNBUSDT": {
+    "n": 92,
+    "rho": -0.25453508623214094
+   },
+   "XRPUSDT": {
+    "n": 92,
+    "rho": -0.10659186535764376
+   },
+   "ADAUSDT": {
+    "n": 32,
+    "rho": -0.03409090909090909
+   },
+   "DOTUSDT": {
+    "n": 48,
+    "rho": -0.16891011723838473
+   },
+   "LINKUSDT": {
+    "n": 22,
+    "rho": 0.189158667419537
+   },
+   "AVAXUSDT": {
+    "n": 0,
+    "rho": null
+   }
+  },
+  "quintiles": {
+   "top_quintile_mean_dY_pct_8h": -0.0027726953124999998,
+   "rest_mean_dY_pct_8h": 0.0006685322293947047,
+   "top_n": 128,
+   "rest_n": 509
+  },
+  "market_wide_rho": -0.10880099050586357,
+  "market_wide_coin_weeks": 852
+ }
+}
