@@ -1241,3 +1241,24 @@ mønter), plus listen over Binance spot-par. Studierne: `research/tools/recent_s
    den gamle regels +0,24 % / −0,02 % / 49 %. Udregel og stopregler uændrede.
 4. **Ærligt:** 60-90 dages data, ingen spot/perp-bevægelser og ingen gebyrforskel modelleret; det er valg af regel
    på årets data, ikke bevis.
+
+## Ændring 11c (2026-10-20): banekandidater gennemgås adversarielt, før de må handles — før kode
+
+**Beslutning:** Claude efter brugerens mandat 2026-10-20 ("Sende lovende resultater videre til uafhængig gennemgang",
+"Giv agenterne konkret arbejde"). Strengere, ikke lempeligere; kun banekonti (ændring 11) og kun `explore0`.
+
+**Baggrund (registret 2026-10-20):** 433 af 450 evaluerede varianter opfyldte ændring 10 punkt 5, og kandidaterne gik
+direkte til papirhandel uden den adversarielle gennemgang, alle formelle eksperimenter får. De tre adversarial-agenter
+havde 0 jobs på et døgn.
+
+1. **Job `lane_review|<10 hex af nøglen>`** (adversarial-agenterne) for en kandidat, før den kan blive en banekonto. Den
+   læser kun `explore0` (banens eneste dataadgang) og kører den eksisterende motor (`lab/engine/adversarial.py`) på
+   kandidatens funktion, parametre og mønter:
+   - look-ahead-trunkering og forgiftning (krydssektionelle versioner): skal være eksakte;
+   - én bars forsinkelse: netto-Sharpe ved 2× omkostninger ≥ 1,0 (samme krav som kandidaten selv);
+   - placebo (positioner blandet i blokke af 24 bars, 60 træk, fast seed): p < 0,10 (`catalogue.PLACEBO_P_MAX`).
+2. **Resultat:** artefakt `artifacts/_lane_review/<hex>.json` og hændelsen `research.lane_review` (afgør kun, om
+   kandidaten må blive en banekonto; aldrig bevis, ingen formelle rækker).
+3. **Kø:** højst 6 gennemgange i kø ad gangen, bedste netto-Sharpe først, hver kandidat én gang.
+4. **Start (ændrer ændring 11 punkt 3 og 11b):** en banekonto startes kun for en kandidat med bestået gennemgang.
+   Aktive konti berøres ikke.
