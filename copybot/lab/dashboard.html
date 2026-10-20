@@ -292,7 +292,8 @@ details.more[open]>summary{margin-bottom:12px}
 
   <section class="panel corner" id="lanes"><h2>Bane- og scannerkonti <span class="tagx" id="lanes-note">simuleret · aldrig bevis · startes og stoppes automatisk</span></h2>
     <div class="grid3" id="lanes-sum"></div><div class="scroll" id="lanes-act" style="max-height:520px"></div>
-    <div class="note" style="margin:10px 0 4px;font-size:12px;color:var(--sand)">SENEST STOPPET</div><div class="scroll" id="lanes-old" style="max-height:300px"></div></section>
+    <div class="note" style="margin:10px 0 4px;font-size:12px;color:var(--sand)">SENEST STOPPET</div><div class="scroll" id="lanes-old" style="max-height:300px"></div>
+    <div class="note" style="margin:10px 0 4px;font-size:12px;color:var(--sand)">STARTFORSØG: EKSEKVERING PR. BEN OG KLASSIFIKATION (OBSERVERET I DE LIVE BØGER)</div><div class="scroll" id="lanes-probes" style="max-height:360px"></div></section>
 
   <section class="panel corner" id="capital"><h2>Kapitalmodel <span class="tagx">dit eget beløb · planlægning, ingen handel, ingen konto</span></h2>
     <div class="crow" style="flex-wrap:wrap;gap:8px">
@@ -771,9 +772,21 @@ function renderLanes(l){
     {h:"Netto (USD)", num:1, f:x => sgn(x.net) + `<div class="dim">${pct(x.net_pct)}</div>`},
     {h:"Funding − gebyrer", num:1, f:x => sgn(x.funding_minus_fees) + `<div class="dim">${num(x.funding)} − ${num(x.fees)}</div>`},
     {h:"Dage", num:1, f:x => num(x.days, 1)},
+    {h:"Opdeling (observeret)", f:x => { const d = x.decomposition; return d ? `funding ${sgn(d.funding)}<br>gebyrer ${sgn(d.fees)}<br>spread/slip ${sgn(d.spread_slippage)}<br>pris/basis ${sgn(d.price_basis)}` : na(); }},
     {h:"Udløser / regler", f:x => (x.trigger ? `${esc(x.trigger)}<br>` : "") + `<span class="dim">${esc(x.rules)}</span>`}];
   $("#lanes-act").innerHTML = table(cols, l.active, "Ingen aktive konti lige nu: de starter af sig selv, når banen eller scanneren finder noget.");
   $("#lanes-old").innerHTML = table(cols, l.recent, "Ingen konti er stoppet endnu.");
+  const leg = (g, side) => g ? `spread ${pct(g.spread, 3)} · VWAP ${g["vwap_" + side] == null ? "<b>kan ikke fylde</b>" : pct(g["vwap_" + side], 3)}<br><span class="dim">dybde ${num(g.depth_bid_usd, 0)} / ${num(g.depth_ask_usd, 0)} USD</span>` : na();
+  $("#lanes-probes").innerHTML = table([
+    {h:"Tid (UTC)", f:x => esc(new Date(x.ts * 1000).toISOString().slice(5, 16).replace("T", " "))},
+    {h:"Mønt", f:x => `<b>${esc(x.coin || "?")}</b><div class="dim">${x.source === "hl" ? "Hyperliquid" : "Binance"}</div>`},
+    {h:"Klassifikation", f:x => esc(x.class) + (x.reason ? `<div class="dim">${esc(String(x.reason).slice(0, 110))}</div>` : "")},
+    {h:"Spot (køb ind)", f:x => leg((x.execution || {}).spot, "buy")},
+    {h:"Perp (sælg ind)", f:x => leg((x.execution || {}).perp, "sell")},
+    {h:"Basis / skew", num:1, f:x => x.execution ? `${pct(x.execution.basis, 3)}<div class="dim">${x.execution.skew_s == null ? "ukendt" : num(x.execution.skew_s, 2) + " s"}</div>` : na()},
+    {h:"Tur ind og ud", num:1, f:x => x.execution ? (x.execution.round_trip_cost === "UNKNOWN" ? `<span class="na">UKENDT</span>` : pct(x.execution.round_trip_cost, 3)) : na()},
+    {h:"3 døgns funding", num:1, f:x => x.execution ? pct(x.execution.funding_3d, 3) : na()}],
+    l.probes || [], "Ingen startforsøg endnu.");
 }
 async function runCapital(){
   const v = id => $(id).value.trim(), q = new URLSearchParams({amount: v("#cap-amount"), coins: v("#cap-coins"), leverage: v("#cap-lev")});

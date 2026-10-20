@@ -1,5 +1,6 @@
 """research/PROTOCOL_V3.md amendment 11: lane accounts trade the exploration lane's candidates on paper and retire by
 fixed rules. Simulated only; never evidence; nothing formal is written."""
+import json
 import math
 import os
 import shutil
@@ -808,6 +809,80 @@ class CostGate(Base):
         out = lane.manage(self.db, NOW, thin, fids=[])["scanner"]
         self.assertEqual(out["skipped"], ["BBBUSDT"])
         self.assertIn("too thin", self.db.one("SELECT payload FROM events WHERE kind='lane.skipped'")["payload"])
+
+
+class Execution(Base):
+    """Amendment 12h: execution measured per leg, unsynchronised books refused, decomposition and classes."""
+    def scan(self, ts, fund):
+        Scanner.scan(self, ts, fund)
+
+    def test_leg_stats_by_hand(self):
+        from lab.paper import Book
+        b = Book(ts=NOW, bids=((99.0, 10), (98.0, 10)), asks=((101.0, 10), (102.0, 10)))
+        g = lane.leg_stats(b, 15, "XUSDT.SPOT", 123.0)
+        self.assertAlmostEqual(g["spread"], 0.02)
+        self.assertAlmostEqual(g["depth_bid_usd"], 99 * 10 + 98 * 10)
+        self.assertAlmostEqual(g["depth_ask_usd"], 101 * 10 + 102 * 10)
+        self.assertAlmostEqual(g["vwap_buy"], (101 * 10 + 102 * 5) / 15 / 100 - 1)
+        self.assertAlmostEqual(g["vwap_sell"], 1 - (99 * 10 + 98 * 5) / 15 / 100)
+        self.assertEqual((g["instrument"], g["fetched_at"]), ("XUSDT.SPOT", 123.0))
+
+    def test_the_start_records_both_legs_and_the_basis(self):
+        self.scan(NOW - 60, {"BBBUSDT": 0.003})
+        led = lane.manage(self.db, NOW, market(rate=0.0008, spot_px=100.5), fids=[])["scanner"]["started"][0]
+        ex = lane.started(self.db)[led]["trigger"]["execution"]
+        self.assertEqual((ex["spot"]["instrument"], ex["perp"]["instrument"]), ("BBBUSDT.SPOT", "BBBUSDT"))
+        self.assertAlmostEqual(ex["basis"], 100.5 / 100 - 1)
+        self.assertLess(ex["skew_s"], lane.EXEC_SKEW_MAX)
+        self.assertEqual(ex["size_usd_per_leg"], 5000.0)
+        self.assertGreater(ex["round_trip_cost"], 4 * (lane.COSTS.taker_fee + lane.COSTS.extra_slippage))
+
+    def test_unsynchronised_books_are_refused_as_unknown(self):
+        self.scan(NOW - 60, {"BBBUSDT": 0.003})
+        clock = iter([1000.0, 1010.0])                                   # the second book 10 s later
+        with mock.patch.object(lane, "_wall", lambda: next(clock)):
+            out = lane.manage(self.db, NOW, hi(), fids=[])["scanner"]
+        self.assertEqual(out["skipped"], ["BBBUSDT"])
+        p = json.loads(self.db.one("SELECT payload FROM events WHERE kind='lane.skipped'")["payload"])
+        self.assertIn("unsynchronised", p["reason"])
+        self.assertEqual(p["trigger"]["execution"]["round_trip_cost"], "UNKNOWN")
+        self.assertEqual(lane.classify("lane.skipped", p), "utilstrækkelige data")
+
+    def test_negative_funding_never_covers_the_cost(self):
+        from lab.paper import Book
+        b = Book(ts=NOW, bids=((99.99, 1000),), asks=((100.01, 1000),))
+        t = {}
+        with self.assertRaises(ValueError) as e:
+            lane._cost_gate(t, b, b, -0.0005, {"s": 1.0, "p": 1.0}, ("s", "p"))
+        self.assertIn("do not cover", str(e.exception))
+        self.assertEqual(lane.classify("lane.skipped", {"reason": str(e.exception)}), "afvist af omkostninger")
+
+    def test_decomposition_sums_to_net_without_double_counting(self):
+        self.scan(NOW - 60, {"BBBUSDT": 0.003})
+        led = lane.manage(self.db, NOW, hi(), fids=[])["scanner"]["started"][0]
+        lane.run_one(self.db, led, market(rate=0.0008, spread=0.4), NOW)
+        g = market(rate=0.0008, spread=0.4, px=101.0, spot_px=100.8)          # price and basis move
+        g.now = NOW + 8 * HOUR
+        lane.run_one(self.db, led, g, g.now)
+        d = lane.decomposition(self.db, led)
+        self.assertAlmostEqual(d["funding"] + d["fees"] + d["spread_slippage"] + d["price_basis"], d["net"], places=9)
+        self.assertLess(d["spread_slippage"], 0)
+        self.assertLess(d["fees"], 0)
+        self.assertGreater(d["funding"], 0)
+        self.assertEqual(d["fills_without_mid"], 0)
+
+    def test_classes_and_view(self):
+        self.assertEqual(lane.classify("lane.started", {}), "afventer fremadtest")
+        self.assertEqual(lane.classify("lane.started", {}, ready=True), "klar til formel, menneskegodkendt validering")
+        self.assertEqual(lane.classify("lane.skipped", {"reason": "a book is too thin for the account's size (12g)"}),
+                         "utilstrækkelige data")
+        self.scan(NOW - 60, {"BBBUSDT": 0.003, "CCCUSDT": 0.0006})
+        lane.manage(self.db, NOW, market(rate=0.0008, spread=1.0), fids=[])
+        v = command.lane_view(self.db, now=NOW + 60)
+        classes = {p["coin"]: p["class"] for p in v["probes"]}
+        self.assertEqual(classes["BBBUSDT"], "afventer fremadtest")
+        self.assertEqual(classes["CCCUSDT"], "afvist af omkostninger")
+        self.assertIn("decomposition", v["active"][0])
 
 
 class Review(Base):

@@ -499,11 +499,49 @@ def round_trip_cost(spot_book, perp_book, notional, costs=COSTS):
     return sum(w) + 4 * (costs.taker_fee + costs.extra_slippage)
 
 
-def _cost_gate(trigger, spot_book, perp_book, funding_8h):
-    """12g point 2: refuse (ValueError, so the coin is skipped) unless COST_DAYS of predicted funding cover the cost."""
-    cost = round_trip_cost(spot_book, perp_book, CAPITAL / UNIT_CAPITAL)
+EXEC_SKEW_MAX = 5.0                             # 12h: the two books must be fetched within 5 s of each other
+_wall = time.time                               # replaceable in tests
+
+
+def leg_stats(book, qty, instrument=None, fetched_at=None):
+    """12h point 1, observed: spread, depth on each side of the 20 levels (USD) and the VWAP distance from the mid for
+    `qty` bought and sold (None = the book cannot fill it). The mid is a reference, never a fill price."""
+    mid = book.mid()
+    return {"instrument": instrument, "fetched_at": fetched_at, "mid": mid,
+            "spread": (book.asks[0][0] - book.bids[0][0]) / mid,
+            "depth_bid_usd": sum(p * q for p, q in book.bids), "depth_ask_usd": sum(p * q for p, q in book.asks),
+            "vwap_buy": walk(book, "buy", qty), "vwap_sell": walk(book, "sell", qty)}
+
+
+def fetch_pair(pr, insts, now, get):
+    """Both books with the wall-clock time each was read (12h point 2)."""
+    books, at = {}, {}
+    for inst in insts:
+        books[inst] = pr.fetch_book(inst, now, get)
+        at[inst] = _wall()
+    return books, at
+
+
+def _cost_gate(trigger, spot_book, perp_book, funding_8h, at=None, insts=(None, None)):
+    """12g point 2 and 12h: record the execution observed in both books, then refuse (ValueError, so the coin is
+    skipped) unsynchronised books, a book too thin for the size, or COST_DAYS of predicted funding below the cost."""
+    size = CAPITAL / UNIT_CAPITAL
+    qty = size / perp_book.mid()
+    cost = round_trip_cost(spot_book, perp_book, size)
     earn = (funding_8h or 0.0) * 3 * COST_DAYS
+    skew = abs(at[insts[0]] - at[insts[1]]) if at and None not in insts else None
     trigger["round_trip_cost"], trigger["funding_3d"] = cost, earn
+    trigger["execution"] = {
+        "size_usd_per_leg": size, "qty": qty, "skew_s": skew,
+        "spot": leg_stats(spot_book, qty, insts[0], at.get(insts[0]) if at else None),
+        "perp": leg_stats(perp_book, qty, insts[1], at.get(insts[1]) if at else None),
+        "basis": spot_book.mid() / perp_book.mid() - 1,
+        "fees_round_trip": 4 * COSTS.taker_fee, "extra_slippage_round_trip": 4 * COSTS.extra_slippage,
+        "round_trip_cost": cost if cost is not None else "UNKNOWN", "funding_3d": earn,
+        "observed": ["spread", "depth", "vwap", "basis", "skew"], "assumed": ["fees (VIP0)", "extra slippage"]}
+    if skew is not None and skew > EXEC_SKEW_MAX:
+        trigger["execution"]["round_trip_cost"] = "UNKNOWN"
+        raise ValueError(f"unsynchronised books: {skew:.1f} s apart (12h)")
     if cost is None:
         raise ValueError("a book is too thin for the account's size (12g)")
     if earn < cost:
@@ -599,10 +637,10 @@ def manage_scanner(db, now, get):
             trigger["settled_avg3"] = sum(last3) / len(last3) if len(last3) == 3 else None
             if trigger["settled_avg3"] is None or trigger["settled_avg3"] < SCAN_FUND_PERSIST:
                 raise ValueError(f"funding not persistent: last 3 settled {last3}")
-            bks = {inst: paper_runner.fetch_book(inst, now, get) for inst in (coin, coin + SPOT)}
+            bks, at = fetch_pair(paper_runner, (coin + SPOT, coin), now, get)
             if any(b.crossed() for b in bks.values()):
                 raise ValueError("crossed or empty book")
-            _cost_gate(trigger, bks[coin + SPOT], bks[coin], fs[0].get(coin))          # 12g
+            _cost_gate(trigger, bks[coin + SPOT], bks[coin], fs[0].get(coin), at, (coin + SPOT, coin))   # 12g/12h
         except Exception as e:
             db.event("lane.skipped", ACTOR, led, {**base, "coins": [coin], "reason": f"{e!r}"[:200]})
             out["skipped"].append(coin)
@@ -695,11 +733,11 @@ def manage_hl(db, now, get):
             if avg is None or avg < HL_FUND_PERSIST:
                 raise ValueError(f"funding not persistent: mean of last {len(last)} settled hours x 8 = {avg}")
             p_inst, s_inst = HL_PERP + coin, f"{coin}USDT{SPOT}"
-            bks = {inst: paper_runner.fetch_book(inst, now, get) for inst in (p_inst, s_inst)}
+            bks, at = fetch_pair(paper_runner, (s_inst, p_inst), now, get)
             for inst, b in bks.items():
                 if b.crossed():
                     raise ValueError(f"{inst}: crossed or empty book")
-            _cost_gate(trigger, bks[s_inst], bks[p_inst], fs.get(coin))                 # 12g (x 8 already)
+            _cost_gate(trigger, bks[s_inst], bks[p_inst], fs.get(coin), at, (s_inst, p_inst))   # 12g/12h (x 8 already)
         except Exception as e:
             db.event("lane.skipped", ACTOR, led, {**base, "coins": [coin], "reason": f"{e!r}"[:200]})
             out["skipped"].append(coin)
@@ -811,6 +849,48 @@ def run_one(db, ledger, get, now, cache=None, books=None):
         risk.trip_fail_closed("reconciliation", f"{ledger}: {rec['problems']}"[:500])
     return {"status": "ok", "orders": orders, "marked": marked, "reconciled": rec["ok"], "funding": len(funded),
             "signal": want}
+
+
+# ---------- classification and observed decomposition (amendment 12h; display only) ----------
+READY_TRADES = 30                               # 12h point 4: closed trades of the same mechanism before "ready"
+CLASSES = ("afvist af omkostninger", "utilstrækkelige data", "afventer fremadtest",
+           "klar til formel, menneskegodkendt validering")
+
+
+def classify(kind, payload, ready=False):
+    """12h point 4 for one start attempt (lane.started / lane.skipped of a scanner or HL account)."""
+    if kind == "lane.started":
+        return CLASSES[3] if ready else CLASSES[2]
+    reason = str(payload.get("reason") or "")
+    if "do not cover the round-trip cost" in reason:
+        return CLASSES[0]
+    return CLASSES[1]
+
+
+def decomposition(db, ledger):
+    """12h point 3, observed from the fills: net = funding - fees - paid distance from the mid + the rest (price and
+    basis moves measured at the mid). Each part counted once; the parts sum to net."""
+    fills = db.q("SELECT px, qty, fee, mid FROM sim_fills WHERE exp_id=?", ledger)
+    funding = db.one("SELECT COALESCE(SUM(amount), 0) FROM sim_funding WHERE exp_id=?", ledger)[0]
+    eq = db.one("SELECT equity FROM sim_equity WHERE exp_id=? ORDER BY id DESC LIMIT 1", ledger)
+    net = (eq["equity"] if eq else CAPITAL) - CAPITAL
+    fees = sum(f["fee"] for f in fills)
+    paid = sum(abs(f["px"] - f["mid"]) * f["qty"] for f in fills if f["mid"])
+    unknown = sum(1 for f in fills if not f["mid"])
+    return {"net": net, "funding": funding, "fees": -fees, "spread_slippage": -paid,
+            "price_basis": net - funding + fees + paid, "fills": len(fills),
+            "fills_without_mid": unknown, "observed": True}
+
+
+def closed_trades(db, source):
+    """Closed perp-leg round trips over every account of `source` (for the "ready" class)."""
+    n = 0
+    for led, i in started(db).items():
+        if (i.get("source") or "lane") != source:
+            continue
+        if db.one("SELECT 1 FROM events WHERE kind='paper.started' AND exp_id=?", led):
+            n += len(PaperEngine(db).ledger(led)["trades"]) // 2       # each round trip closes two legs
+    return n
 
 
 # ---------- adversarial review of lane candidates (amendment 11c) ----------

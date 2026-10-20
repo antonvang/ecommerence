@@ -609,6 +609,7 @@ def edge(db, ledger, now=None, expectation=True):
 
 
 LANE_RECENT = 10                # stopped lane/scanner accounts shown on the main page
+LANE_PROBES = 40                # 12h: the latest scanner / HL start attempts with their execution and class
 
 
 def _lane_trigger(t):
@@ -653,7 +654,8 @@ def lane_view(db, now=None):
                      "equity": equity, "net": equity - lane.CAPITAL, "net_pct": (equity - lane.CAPITAL) / lane.CAPITAL,
                      "funding": book["funding"], "fees": book["fees"], "funding_minus_fees": book["funding"] - book["fees"],
                      "days": (now - i["ts"]) / 86400 if i.get("ts") else None,
-                     "trigger": _lane_trigger(i.get("trigger")), "rules": lane.rules_text(i)})
+                     "trigger": _lane_trigger(i.get("trigger")), "rules": lane.rules_text(i),
+                     "decomposition": lane.decomposition(db, led)})
     act = sorted((r for r in rows if r["active"]), key=lambda r: -(r["started"] or 0))
     old = sorted((r for r in rows if not r["active"]), key=lambda r: -(r["stopped"] or 0))
     rep = db.one("SELECT payload FROM events WHERE kind='research.lane_report' ORDER BY id DESC LIMIT 1")
@@ -678,7 +680,26 @@ def lane_view(db, now=None):
                   "hl_median": (h.get("hl_funding_median") or {"value": None})["value"],
                   "hl_top": h["hl_funding_top"]["value"],
                   "hl_top_symbol": (_j(h["hl_funding_top"]["payload"]) or {}).get("symbol")}
-    return {"active": act, "recent": old[:LANE_RECENT], "stopped_total": len(old),
+    probes, ready = [], {}
+    rep0 = db.one("SELECT payload FROM events WHERE kind='research.lane_report' ORDER BY id DESC LIMIT 1")
+    met = set((_j(rep0["payload"]) or {}).get("met") or []) if rep0 else set()
+    for kind in ("lane.started", "lane.skipped"):
+        for r in db.q("SELECT id, ts, exp_id, payload FROM events WHERE kind=? ORDER BY id DESC LIMIT ?", kind,
+                      LANE_PROBES):
+            pl = _j(r["payload"]) or {}
+            if pl.get("source") not in ("scanner", "hl"):
+                continue
+            src = pl["source"]
+            if src not in ready:
+                ready[src] = lane.closed_trades(db, src) >= lane.READY_TRADES
+            ex = ((pl.get("trigger") or {}).get("execution")) or {}
+            probes.append({"id": r["id"], "ts": r["ts"], "ledger": r["exp_id"], "source": src,
+                           "coin": (pl.get("coins") or [pl.get("coin")])[0], "kind": kind,
+                           "class": lane.classify(kind, pl, ready[src] and r["exp_id"] in met),
+                           "reason": pl.get("reason"), "execution": ex or None,
+                           "funding": (pl.get("trigger") or {}).get("funding")})
+    probes.sort(key=lambda x: -x["id"])
+    return {"active": act, "recent": old[:LANE_RECENT], "stopped_total": len(old), "probes": probes[:LANE_PROBES],
             "counts": {"lane": sum(1 for r in act if not r["scanner"] and not r["hl"]), "lane_slots": lane.SLOTS,
                        "scanner": sum(1 for r in act if r["scanner"]), "scanner_slots": lane.SCAN_SLOTS,
                        "hl": sum(1 for r in act if r["hl"]), "hl_slots": lane.HL_SLOTS},
