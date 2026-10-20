@@ -137,6 +137,26 @@ class Hypotheses(Base):
         self.assertEqual((h["total_mechanisms"], h["total_experiments"], h["lane_variants_evaluated"]), (3, 4, 50))
 
 
+class FinalStateOverrides(Hypotheses):
+    def test_a_retired_experiment_is_rejected_whatever_its_screening_verdict(self):
+        self.exp("E_v1", "volatility_managed_exposure", "scale exposure")
+        self.exp("E_v2", "volatility_managed_exposure", "scale exposure, v2")
+        self.result("E_v1", "PASS (screen): all validation gates passed")
+        self.result("E_v2", "REJECTED at train gate: x")
+        self.db.append("transitions", exp_id="E_v1", ts=NOW, from_state="SCREEN_PASSED", to_state="RETIRED",
+                       actor="human:anton", reason="retired", evidence="{}")
+        m = {x["mechanism"]: x for x in coverage.hypotheses(self.db)["mechanisms"]}["volatility_managed_exposure"]
+        self.assertEqual(m["status"], "REJECTED")
+        self.assertEqual([e["state"] for e in m["experiments"]], ["RETIRED", None])
+
+    def test_a_live_screen_pass_stays_pass(self):
+        self.exp("E_x", "momentum", "trend")
+        self.result("E_x", "PASS (screen): ok")
+        self.db.append("transitions", exp_id="E_x", ts=NOW, from_state="SCREENING", to_state="SCREEN_PASSED",
+                       actor="system:x", reason="r", evidence="{}")
+        self.assertEqual(coverage.hypotheses(self.db)["mechanisms"][0]["status"], "PASS")
+
+
 class LaneMultipleTesting(Base):
     def review(self, p, ok, method="11d"):
         self.db.event("research.lane_review", "system:adversarial-1", None,
@@ -152,6 +172,8 @@ class LaneMultipleTesting(Base):
         self.review(0.0, True, method=None)                     # an old-method review does not count
         r = coverage.lane_multiple_testing(self.db)
         self.assertEqual((r["tests"], r["passed_rule"], r["expected_by_chance"]), (20, 2, 2.0))
+        self.assertEqual(sum(f["tests"] for f in r["by_function"]), 20)
+        self.assertIn("not independent edges", r["note"])
         # conservative p: (0+1)/(n+1) and (2+1)/(n+1); BH needs p_(1) <= 0.1/20 = 0.005 -> none at n = 60
         self.assertEqual(r["bh_significant"], 0)
 

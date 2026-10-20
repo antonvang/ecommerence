@@ -26,6 +26,9 @@ for i, s in enumerate(perps):
         bn[s] = {"error": repr(e)}
     time.sleep(0.7)                       # fundingRate: 500 requests / 5 min / IP; this is ~85
 json.dump(bn, open(os.path.join(out, "binance_funding.json"), "w"))
+spot_info = get("https://data-api.binance.vision/api/v3/exchangeInfo")   # public spot market data (GET only)
+spot = sorted(s["symbol"] for s in spot_info["symbols"] if s.get("status") == "TRADING" and s.get("quoteAsset") == "USDT")
+json.dump(spot, open(os.path.join(out, "spot_symbols.json"), "w"))      # recent_study.py: coins with a Binance spot
 meta, ctxs = post({"type": "metaAndAssetCtxs"})
 coins = [a["name"] for a in meta["universe"] if not a.get("isDelisted") and not a["name"].startswith(("k", "@"))]
 hl, start = {}, int(time.time() * 1000) - 60 * 86400 * 1000

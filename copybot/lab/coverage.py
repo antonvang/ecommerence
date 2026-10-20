@@ -156,7 +156,10 @@ def _head(verdict):
 
 def hypotheses(db):
     """One row per mechanism (deduplicated by mechanism_tag): experiments, variants tested, latest verdict, alpha
-    spent; plus the multiple-testing totals and the exploration lane's own count (exploratory, not decisional)."""
+    spent; plus the multiple-testing totals and the exploration lane's own count (exploratory, not decisional). An
+    experiment in a final lifecycle state (REJECTED, RETIRED, WITHDRAWN) counts as REJECTED whatever its last result
+    row says; PASS here is a screening step, never documented profitability."""
+    from lab import lifecycle
     latest = {}
     for r in db.q("SELECT exp_id, verdict, ts FROM results ORDER BY id"):
         latest[r["exp_id"]] = (r["verdict"], r["ts"])
@@ -178,8 +181,12 @@ def hypotheses(db):
             h = h.get("statement") or h.get("text") or json.dumps(h)[:200]
         m["hypothesis"] = (h or m["hypothesis"] or spec.get("title"))
         v, ts = latest.get(r["exp_id"], (None, None))
-        m["experiments"].append({"exp_id": r["exp_id"], "verdict": _head(v), "verdict_text": (v or "")[:200],
-                                 "verdict_ts": ts})
+        st = lifecycle.state(db, r["exp_id"])
+        head = _head(v)
+        if st in lifecycle.FINAL:                  # a later rejection/retirement overrides an earlier screening verdict
+            head = "REJECTED"
+        m["experiments"].append({"exp_id": r["exp_id"], "verdict": head, "verdict_text": (v or "")[:200],
+                                 "verdict_ts": ts, "state": st})
         m["variants_tested"] += trials.get(r["exp_id"], 0)
         m["alpha_spent"] += alpha.get(r["exp_id"], 0.0)
     rows = []
@@ -233,10 +240,19 @@ def lane_multiple_testing(db, method="11d"):
         n = int(d.get("placebo_n") or lane.REVIEW_PLACEBO_N)    # the review records p only; n is the lane's fixed n
         ps.append(((round(d["placebo_p"] * n) + 1) / (n + 1), d.get("ok"), d.get("key")))
     m = len(ps)
+    fam = {}
+    for _p, ok, k in ps:
+        f = (k or "?").split(":")[0]
+        x = fam.setdefault(f, {"family": f, "tests": 0, "passed": 0})
+        x["tests"] += 1
+        x["passed"] += bool(ok)
     bh = 0
     for i, (p, _ok, _k) in enumerate(sorted(ps), 1):
         if p <= FDR_Q * i / m:
             bh = i
     return {"method": method, "tests": m, "passed_rule": sum(1 for _p, ok, _k in ps if ok),
             "expected_by_chance": round(m * LANE_ALPHA, 1), "bh_q": FDR_Q, "bh_significant": bh,
-            "note": "per-candidate rule p < 0.10; BH with p = (k+1)/(n+1); dependent tests, approximate"}
+            "by_function": sorted(fam.values(), key=lambda x: -x["passed"]), "placebo_n_assumed": lane.REVIEW_PLACEBO_N,
+            "note": "per-candidate rule p < 0.10; BH with p = (k+1)/(n+1). The candidates are overlapping variants of "
+                    "few functions on shared coins: dependent tests, not independent edges. A pass means timing value "
+                    "in explore0 (2020-21), not profit now"}

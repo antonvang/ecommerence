@@ -371,7 +371,7 @@ details.more[open]>summary{margin-bottom:12px}
   <footer>Alle tal læses fra lab.db ved hver opdatering. Backtest, validering, holdout og paper er adskilt; intet er et resultat med rigtige penge.<br>
     Rigtig konto: <b>ikke tilgængelig</b> — der findes ingen konto, broker eller live-ordrevej i systemet.<br><span id="foot"></span></footer>
 </div>
-<div class="found" id="found" role="status" aria-live="polite"><div class="h">NY STRATEGI FUNDET</div><div class="n" id="found-n"></div><div class="s" id="found-s"></div></div>
+<div class="found" id="found" role="status" aria-live="polite"><div class="h" id="found-h">NYT TRIN NÅET</div><div class="n" id="found-n"></div><div class="s" id="found-s"></div></div>
 <div class="drawer" id="drawer"><div class="dpanel" id="detail"></div></div>
 <script>
 "use strict";
@@ -629,9 +629,11 @@ function renderStatus(k){
     + st(`Tests/min (${Math.round(k.window_s/60)} m)`, num(k.tests_per_min, 1))
     + st("Fejl · gentagelser", `${k.errors_window} · ${k.retries_window}`, k.errors_window ? "bad" : "")
     + st("RAM fri", ram ? `${gb(ram.free).toFixed(1)} GB` : NA, ram && ram.free < k.ram_min_free ? "bad" : ram ? "" : "na")
-    + st("Data opdateret", lastData ? ago(lastData) : NA, lastData ? "" : "na");
+    + st("Data opdateret", lastData ? ago(lastData) : NA, lastData ? "" : "na")
+    + (k.watcher ? st("Watcher", k.watcher.running ? "KØRER" : (k.watcher.age_s == null ? "ALDRIG SET" : `NEDE · ${dur(k.watcher.age_s)}`), k.watcher.running ? "good" : "bad") : "")
+    + (k.deploy && k.deploy.commit ? st("Deploy", `${esc(k.deploy.commit)} · ${ago(k.deploy.commit_ts)}`) : "");
   const at = ts => ts ? utc(ts) : NA;
-  $("#status").title = k.tests_per_min_basis + ` · Data opdateret = nyeste af forskningsdata (læst ${at(data.last_gateway_read_ts)}, hentet ${at(data.last_download_ts)}), søgning ${at(data.last_scan_ts)} og paper-mark ${at(data.last_mark_ts)}`;
+  $("#status").title = k.tests_per_min_basis + ` · Fejl/gentagelser = de sidste ${Math.round(k.window_s/60)} min (i alt ${k.errors_total} fejl, ${k.retries_total} gentagelser; job-timeouts tæller i begge)` + (k.host_boot_ts ? ` · maskinen startet ${utc(k.host_boot_ts)}` : "") + ` · Data opdateret = nyeste af forskningsdata (læst ${at(data.last_gateway_read_ts)}, hentet ${at(data.last_download_ts)}), søgning ${at(data.last_scan_ts)} og paper-mark ${at(data.last_mark_ts)}`;
   Planet.setActive(sup.alive);
   const rs = k.research || {};
   const srch = rs.last_scan_ts ? ` · søgning ${ago(rs.last_scan_ts)} · ${rs.scans_24h} i døgnet` : "";
@@ -642,12 +644,17 @@ function renderFeed(f){
   const hhmm = ts => new Date(ts*1000).toISOString().slice(11,16);
   $("#feed").innerHTML = f.items.length ? f.items.map(e => `<div class="fl${feedPrimed && !seenFeed.has(e.id) ? " new" : ""}"><span class="t">${hhmm(e.ts)}</span><span class="tg tg-${esc(e.tag)}">[${esc(e.tag)}]</span><span class="x" title="${esc(e.detail || e.text)}">${esc(e.text)}</span></div>`).join("")
     : `<div class="empty">Ingen hændelser endnu.</div>`;
-  f.items.filter(e => e.found && feedPrimed && !seenFeed.has(e.id)).slice(0, 1).forEach(e => celebrate(e.exp_id, e.text));
+  f.items.filter(e => e.found && feedPrimed && !seenFeed.has(e.id)).slice(0, 1).forEach(e => celebrate(e.exp_id, e.text, e.to));
   f.items.forEach(e => seenFeed.add(e.id)); feedPrimed = true;
 }
-function celebrate(eid, text){
+const FOUND_DA = {SCREEN_PASSED: ["BESTOD ET SCREENINGSTRIN", "kun et screeningstrin — ikke bevis, ingen handel startet"],
+                  VALIDATED: ["VALIDERET", "simuleret; paperhandel kræver din godkendelse"],
+                  PAPER_TRADING: ["PAPERHANDEL STARTET", "simuleret, ingen rigtige penge"]};
+function celebrate(eid, text, to){
+  const [h, note] = FOUND_DA[to] || ["NYT TRIN NÅET", "simuleret"];
+  $("#found-h").textContent = h;
   $("#found-n").textContent = eid || "";
-  $("#found-s").textContent = (text || "") + " · saldoen opdateres i boksen øverst (simuleret)";
+  $("#found-s").textContent = (text || "") + " · " + note;
   const el = $("#found"); el.classList.remove("show"); void el.offsetWidth; el.classList.add("show");
   ["VALIDATION", "PAPER_ELIGIBLE", "PAPER_TRADING"].forEach((s, i) => setTimeout(() => Orbits.pulse(s, "#5fd39a", true), i * 300));
   const m = $("#m-bal"); m.classList.remove("glow"); void m.offsetWidth; m.classList.add("glow");
@@ -804,10 +811,10 @@ function renderCoverage(c, h){
   $("#cov-sum").innerHTML = metric("Kilder", `${c.sources.length} · ${bad.length ? `<span class="bad">${bad.length} med problem</span>` : `<span class="good">alle sunde</span>`}`, `${live.length} live · ${c.sources.length - live.length} historiske · betalte kilder: ${c.paid_sources_active} · nøgler: ${c.keys_used}`)
     + (c.ingest ? metric("Indsamling (ændring 14)", `${c.ingest.done} af ${c.ingest.units} enheder`, `${num(c.ingest.spent_bytes / 1e9, 2)} af ${num(c.ingest.budget_bytes / 1e9, 0)} GB budget · ` + c.ingest.by_source.map(b => `${esc(b.source)} ${b.done}/${b.units}`).join(" · ") + (c.ingest.failed.length ? ` · <span class="bad">${c.ingest.failed.length} fejlet</span>` : "") + (c.ingest.refused.length ? ` · <span class="bad">${c.ingest.refused.length} afvist</span>` : "")) : "")
     + metric("Datapauser (24 t)", String(c.fetch_pauses_24h.length), c.fetch_pauses_24h.length ? esc(c.fetch_pauses_24h[c.fetch_pauses_24h.length - 1].detail.slice(0, 90)) : "ingen hentefejl")
-    + metric("Hypoteser", `${h.total_mechanisms} mekanismer`, `${h.total_experiments} eksperimenter · ${h.total_variants_tested} varianter testet formelt · alfa brugt ${num(h.alpha_spent, 4)} · banen: ${h.lane_variants_evaluated} varianter (udforskning, aldrig bevis)`)
+    + metric("Hypoteser", `${h.total_mechanisms} mekanismer`, `${h.total_experiments} eksperimenter · ${h.total_variants_tested} varianter testet formelt · alfa brugt i alt ${num(h.alpha_spent, 4)} (screening + familier) · banen: ${h.lane_variants_evaluated} varianter (udforskning, aldrig bevis)`)
     + metric("Status", Object.entries(st).map(([k, v]) => `${esc(k)} ${v}`).join(" · ") || na(), "PASS her er kun et screeningstrin; ingen strategi har dokumenteret fordel");
   const lr = h.lane_reviews;
-  if (lr && lr.tests) $("#cov-sum").innerHTML += metric("Banegennemgange (11d)", `${lr.passed_rule} af ${lr.tests} består`, `tilfældighed alene giver ca. ${num(lr.expected_by_chance, 1)} · efter korrektion for mange tests (BH, q ${lr.bh_q}): <b>${lr.bh_significant}</b> · testene overlapper, så tallene er omtrentlige`);
+  if (lr && lr.tests) $("#cov-sum").innerHTML += metric("Banegennemgange (11d)", `${lr.passed_rule} af ${lr.tests} består`, `tilfældighed alene giver ca. ${num(lr.expected_by_chance, 1)} · efter korrektion (BH, q ${lr.bh_q}): ${lr.bh_significant} · <b>varianter af få funktioner på samme mønter (${(lr.by_function || []).slice(0, 3).map(f => `${esc(f.family)} ${f.passed}/${f.tests}`).join(", ")}): afhængige tests, ikke uafhængige fordele; bestået = timingværdi i 2020-21, ikke profit i dag</b>`);
   $("#cov-src").innerHTML = table([
     {h:"Kilde", f:x => `<b>${esc(x.source)}</b><div class="dim">${esc(x.content)}</div>`},
     {h:"Type", f:x => (x.kind === "live" ? "live" : "historik") + `<div class="dim">${esc(x.resolution)}</div>`},
@@ -821,7 +828,7 @@ function renderCoverage(c, h){
     c.gaps, "Ingen kendte huller.");
   $("#hyp").innerHTML = table([
     {h:"Mekanisme", f:x => `<b>${esc(x.mechanism.replaceAll("_", " "))}</b><div class="dim">${esc((x.hypothesis || "").slice(0, 160))}</div>`},
-    {h:"Status", f:x => `<span class="${x.status === "REJECTED" ? "bad" : ["PASS", "OBSERVE"].includes(x.status) ? "good" : ""}">${esc(x.status)}</span>`},
+    {h:"Status", f:x => `<span class="${x.status === "REJECTED" ? "bad" : ""}">${esc(x.status)}</span>` + (x.status === "PASS" ? `<div class="dim">kun screening, ikke bevis</div>` : x.status === "OBSERVE" ? `<div class="dim">fremadtest, ikke bevis</div>` : "")},
     {h:"Eksperimenter", f:x => x.experiments.map(e => `${esc(e.exp_id)} <span class="dim">${esc(e.verdict)}</span>`).join("<br>")},
     {h:"Varianter", num:1, f:x => num(x.variants_tested, 0)},
     {h:"Alfa", num:1, f:x => num(x.alpha_spent, 4)}],

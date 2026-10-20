@@ -237,7 +237,47 @@ def kpis(db, window_s=900, now=None):
         "disk": res["disk"], "ram": res["ram"], "ram_min_free": res["ram_min_free"], "resources_ok": res["ok"],
         "data": last_data_update(db), "gate_s7": s7_gate(db, now), "real_account_profit": REAL_ACCOUNT,
         "research": research_progress(db, now), "families": families_card(db, now),
-        "last_event_id": db.one("SELECT COALESCE(MAX(id),0) FROM events")[0]}
+        "last_event_id": db.one("SELECT COALESCE(MAX(id),0) FROM events")[0],
+        "deploy": deployed(now), "watcher": watcher_state(now), "host_boot_ts": host_boot_ts()}
+
+
+_DEPLOYED = {}
+DEPLOY_CHECK_S = 60
+WATCHER_STALE_S = 120                       # the watcher ticks every 30 s (lab/watch.py)
+
+
+def deployed(now=None):
+    """The commit this code runs from (git HEAD of the checkout), read at most once a minute."""
+    now = now or time.time()
+    if _DEPLOYED and now - _DEPLOYED["checked"] < DEPLOY_CHECK_S:
+        return _DEPLOYED["value"]
+    import subprocess
+    try:
+        out = subprocess.check_output(["git", "log", "-1", "--format=%h %ct"], cwd=HERE, text=True,
+                                      stderr=subprocess.DEVNULL).split()
+        value = {"commit": out[0], "commit_ts": int(out[1])}
+    except Exception:
+        value = {"commit": None, "commit_ts": None}
+    _DEPLOYED.update(checked=now, value=value)
+    return value
+
+
+def watcher_state(now=None):
+    """The independent watcher (lab watch) from its heartbeat file: running if it wrote within 2 minutes."""
+    from lab import ops
+    age = ops.external_freshness(now).get("W_watch", {}).get("last_write_age_s")
+    return {"age_s": age, "running": age is not None and age < WATCHER_STALE_S, "stale_after_s": WATCHER_STALE_S}
+
+
+def host_boot_ts():
+    try:
+        with open("/proc/stat") as f:
+            for line in f:
+                if line.startswith("btime "):
+                    return int(line.split()[1])
+    except OSError:
+        pass
+    return None
 
 
 # ---------- amendment 8 hypothesis families (read-only) ----------
@@ -976,7 +1016,7 @@ def feed(db, limit=40):
         elif k == "lifecycle.transition":
             to = p.get("to")
             short = short_reason(p.get("reason")) if to in ("REJECTED", "PAUSED", "SUPPRESSED") else None
-            e.update(tag=TAG_OF_STATE.get(to, "STATUS"), found=to in FOUND_STATES, detail=p.get("reason"),
+            e.update(tag=TAG_OF_STATE.get(to, "STATUS"), found=to in FOUND_STATES, to=to, detail=p.get("reason"),
                      text=f"{nm}: {short}" if short else f"{nm}: {STAGE_DA.get(to, to)}")
         elif k == "batch.registered":
             e.update(tag="TEST", text=f"Ny testrunde startet: {', '.join(plain(db, x)[0] for x in p.get('exp_ids', []))}")
