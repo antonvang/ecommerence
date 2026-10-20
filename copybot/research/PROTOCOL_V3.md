@@ -1221,3 +1221,23 @@ position, fordi deres regel ikke går ind ved 2026's funding (fx hysteresis kræ
    pladsen går til en variant, der handler. De øvrige stopregler er uændrede.
 3. **Ærligt:** det vælger varianter efter, at de handler nu, ikke efter, at de tjener nu; kontiene er stadig aldrig
    bevis.
+
+## Ændring 13a (2026-10-20): HL-kontiens tærskel efter et studie af årets data; ingen spread-konto — før kode
+
+**Beslutning:** Claude efter brugerens mandat 2026-10-20 ("byg spread-kontoen hvis den tjener", "deploy det selv når
+den tjener"). Kun simuleret handel.
+
+**Data (offentlige, hentet 2026-10-20 med `research/tools/fetch_recent_funding.py`):** Binance USD-M `fundingRate`
+(op til 1000 afregninger pr. perp, typisk 2026-07..10; 522 perps) og Hyperliquid `fundingHistory` (60 dage; 172
+mønter), plus listen over Binance spot-par. Studierne: `research/tools/recent_study.py`, `spread_study.py`.
+
+1. **Binance-carry (scannerkonti):** reglen fra 12f (0,05 %) gav i år +0,81 % i snit pr. handel (median +0,44 %, 57 %
+   vundet, 68 handler på 356 mønter med spot). Den beholdes. Ved rentegulvet (0,01 %) tabte carry (24 % vundet).
+2. **Spread mellem Hyperliquid og Binance (perp mod perp):** tabte ved alle tærskler 0,02-0,2 % pr. 8 t, også ved
+   0,3 % omkostning (gns. −0,12 til −0,27 % pr. handel, 8-30 % vundet; spreadet lukker inden for cirka et døgn).
+   Der bygges ingen spread-konto.
+3. **HL-konti (ændrer 13 punkt 4 og 12f punkt 1 for HL):** ind ved forventet funding × 8 ≥ 0,10 % og snittet af de
+   seneste 24 afregnede timer × 8 ≥ 0,05 %. Studiet: 56 handler, gns. +0,51 %, median +0,14 %, 61 % vundet, mod
+   den gamle regels +0,24 % / −0,02 % / 49 %. Udregel og stopregler uændrede.
+4. **Ærligt:** 60-90 dages data, ingen spot/perp-bevægelser og ingen gebyrforskel modelleret; det er valg af regel
+   på årets data, ikke bevis.
