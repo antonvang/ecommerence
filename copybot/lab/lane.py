@@ -470,6 +470,46 @@ def live_funding(coin, now):
     return hit[1].get(coin), hit[0]
 
 
+COST_DAYS = 3                                   # 12g: 3 days of predicted funding must cover the round trip
+
+
+def walk(book, side, qty):
+    """Mean fill price of a taker order of `qty` walked through the book, as a fraction away from the mid (always >= 0),
+    or None when the book is too thin for the whole quantity."""
+    levels, mid, rest, cost = (book.asks if side == "buy" else book.bids), book.mid(), qty, 0.0
+    for px, size in levels:
+        q = min(rest, size)
+        cost += q * px
+        rest -= q
+        if rest <= 1e-12:
+            avg = cost / qty
+            return (avg - mid) / mid if side == "buy" else (mid - avg) / mid
+    return None
+
+
+def round_trip_cost(spot_book, perp_book, notional, costs=COSTS):
+    """12g: the cost of opening and closing both legs of `notional` USD each, as a fraction of one leg: fees and the
+    extra slippage per fill plus the walked distance from the mid (spot bought then sold, perp sold then bought).
+    None when a book cannot fill the size."""
+    qty = notional / perp_book.mid()
+    w = [walk(spot_book, "buy", qty), walk(spot_book, "sell", qty), walk(perp_book, "sell", qty),
+         walk(perp_book, "buy", qty)]
+    if any(x is None for x in w):
+        return None
+    return sum(w) + 4 * (costs.taker_fee + costs.extra_slippage)
+
+
+def _cost_gate(trigger, spot_book, perp_book, funding_8h):
+    """12g point 2: refuse (ValueError, so the coin is skipped) unless COST_DAYS of predicted funding cover the cost."""
+    cost = round_trip_cost(spot_book, perp_book, CAPITAL / UNIT_CAPITAL)
+    earn = (funding_8h or 0.0) * 3 * COST_DAYS
+    trigger["round_trip_cost"], trigger["funding_3d"] = cost, earn
+    if cost is None:
+        raise ValueError("a book is too thin for the account's size (12g)")
+    if earn < cost:
+        raise ValueError(f"3 days of predicted funding {earn:.4%} do not cover the round-trip cost {cost:.4%} (12g)")
+
+
 def entry_ts(db, ledger, inst):
     """When `inst` last went from flat to a position in `ledger` (the fill that opened it), or None."""
     pos, t = 0.0, None
@@ -559,9 +599,10 @@ def manage_scanner(db, now, get):
             trigger["settled_avg3"] = sum(last3) / len(last3) if len(last3) == 3 else None
             if trigger["settled_avg3"] is None or trigger["settled_avg3"] < SCAN_FUND_PERSIST:
                 raise ValueError(f"funding not persistent: last 3 settled {last3}")
-            for inst in (coin, coin + SPOT):
-                if paper_runner.fetch_book(inst, now, get).crossed():
-                    raise ValueError("crossed or empty book")
+            bks = {inst: paper_runner.fetch_book(inst, now, get) for inst in (coin, coin + SPOT)}
+            if any(b.crossed() for b in bks.values()):
+                raise ValueError("crossed or empty book")
+            _cost_gate(trigger, bks[coin + SPOT], bks[coin], fs[0].get(coin))          # 12g
         except Exception as e:
             db.event("lane.skipped", ACTOR, led, {**base, "coins": [coin], "reason": f"{e!r}"[:200]})
             out["skipped"].append(coin)
@@ -654,9 +695,11 @@ def manage_hl(db, now, get):
             if avg is None or avg < HL_FUND_PERSIST:
                 raise ValueError(f"funding not persistent: mean of last {len(last)} settled hours x 8 = {avg}")
             p_inst, s_inst = HL_PERP + coin, f"{coin}USDT{SPOT}"
-            for inst in (p_inst, s_inst):
-                if paper_runner.fetch_book(inst, now, get).crossed():
+            bks = {inst: paper_runner.fetch_book(inst, now, get) for inst in (p_inst, s_inst)}
+            for inst, b in bks.items():
+                if b.crossed():
                     raise ValueError(f"{inst}: crossed or empty book")
+            _cost_gate(trigger, bks[s_inst], bks[p_inst], fs.get(coin))                 # 12g (x 8 already)
         except Exception as e:
             db.event("lane.skipped", ACTOR, led, {**base, "coins": [coin], "reason": f"{e!r}"[:200]})
             out["skipped"].append(coin)

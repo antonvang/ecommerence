@@ -750,6 +750,44 @@ def review_market(days=240, regime=21):
     return bars, funding
 
 
+class CostGate(Base):
+    """Amendment 12g: an account opens only if 3 days of predicted funding cover the walked round-trip cost."""
+    def test_walk_by_hand(self):
+        from lab.paper import Book
+        b = Book(ts=NOW, bids=((99.0, 10), (98.0, 10)), asks=((101.0, 10), (102.0, 10)))      # mid 100
+        self.assertAlmostEqual(lane.walk(b, "buy", 5), 0.01)                                # all at 101
+        self.assertAlmostEqual(lane.walk(b, "buy", 20), (101 * 10 + 102 * 10) / 20 / 100 - 1)
+        self.assertAlmostEqual(lane.walk(b, "sell", 20), 1 - (99 * 10 + 98 * 10) / 20 / 100)
+        self.assertIsNone(lane.walk(b, "buy", 21))
+        c = lane.round_trip_cost(b, b, 500)                    # 5 coins at mid 100: 1 % each walk
+        self.assertAlmostEqual(c, 4 * 0.01 + 4 * (lane.COSTS.taker_fee + lane.COSTS.extra_slippage))
+
+    def scan(self, ts, fund):
+        Scanner.scan(self, ts, fund)
+
+    def test_too_little_funding_for_the_cost_is_skipped(self):
+        wide = market(rate=0.0008, spread=1.0)                 # 1 % spread on both books
+        self.scan(NOW - 60, {"BBBUSDT": 0.0006})               # 3 days: 0.54 %, cost about 2.5 %
+        out = lane.manage(self.db, NOW, wide, fids=[])["scanner"]
+        self.assertEqual((out["started"], out["skipped"]), ([], ["BBBUSDT"]))
+        p = self.db.one("SELECT payload FROM events WHERE kind='lane.skipped' ORDER BY id DESC LIMIT 1")["payload"]
+        self.assertIn("do not cover the round-trip cost", p)
+        self.scan(NOW + HOUR, {"BBBUSDT": 0.0006})
+        self.assertEqual(len(lane.manage(self.db, NOW + HOUR + 1, hi(), fids=[])["scanner"]["started"]), 1)
+
+    def test_a_book_too_thin_for_the_size_is_skipped(self):
+        def thin(path):
+            g = hi()
+            if "depth" in path:
+                return {"bids": [["99.99", "1"]], "asks": [["100.01", "1"]]}             # 100 USD a side
+            return g(path)
+        thin.now = NOW
+        self.scan(NOW - 60, {"BBBUSDT": 0.003})
+        out = lane.manage(self.db, NOW, thin, fids=[])["scanner"]
+        self.assertEqual(out["skipped"], ["BBBUSDT"])
+        self.assertIn("too thin", self.db.one("SELECT payload FROM events WHERE kind='lane.skipped'")["payload"])
+
+
 class Review(Base):
     """Amendment 11c: candidates are reviewed adversarially before they may trade."""
     def test_unreviewed_or_failed_candidates_never_start(self):
