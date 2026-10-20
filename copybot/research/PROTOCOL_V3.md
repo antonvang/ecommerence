@@ -1172,3 +1172,30 @@ mønt, ikke prisforudsigende), men perp-benet ligger på en anden børs, så kon
 8. **Ærlige forbehold.** To børser: kursen på Hyperliquid kan afvige fra Binances spot (basisrisiko), og en rigtig
    konto ville kræve kapital på begge børser og overførsler. Hyperliquid kan ændre gebyrer, funding-formel eller
    afnotere. Intet afkast er beregnet.
+
+## Ændring 12f (2026-10-20): tærskel og udregel for scanner- og HL-konti efter et datastudie — før kode
+
+**Beslutning:** Claude efter brugerens mandat 2026-10-20 ("det er beslutninger som denne du også skal tage", "gør alt
+perfekt"). Kun simuleret handel. Gælder scannerkonti (ændring 12, 12c, 12e) og HL-konti (ændring 13).
+
+**Data:** cachede Binance-funding-filer i `explore0` (2020-03..2021-12, 32 mønter, ingen netværk; banens eget vindue,
+aldrig familiernes). Regel som 12e: ind ved afregnet rate ≥ X og snit af de 3 seneste ≥ X/2; hold til to afregninger
+i træk er under 0,01 %; 0,6 % omkostning pr. rundtur. Script: `research/tools/fund_study.py` (committet med denne).
+
+| X pr. 8 t | handler | gns. netto | median | vundet | median hold |
+|---|---|---|---|---|---|
+| 0,030 % | 250 | +5,1 % | +1,2 % | 67 % | 58 afregninger |
+| 0,050 % | 225 | +5,6 % | +1,8 % | 72 % | 67 |
+| 0,100 % | 144 | +7,8 % | +3,0 % | 87 % | 86 |
+| 0,200 % | 73 | +11,6 % | +6,8 % | 86 % | 89 |
+
+1. **Ind:** forventet funding ≥ 0,05 % pr. 8 timer (HL: × 8), og snittet af de seneste 3 afregninger (HL: 24 timer
+   × 8) ≥ 0,025 %. Erstatter 0,10 % og 0,05 % i ændring 12e punkt 2 og 13 punkt 4. `premium-watch` markerer derfor
+   forventet funding fra 0,05 %.
+2. **Ud:** to afregnede rater i træk under 0,01 % pr. 8 timer (HL: to afregnede timer i træk, × 8), og 12c's
+   regel (en afregning efter indgangen eller 12 timer; HL: 8 timer). Erstatter udreglen på to minut-målinger i 12e
+   punkt 3 og 13 punkt 5, fordi gevinsten i studiet kommer af at holde i uger.
+3. **Udløb:** 60 dage i stedet for 30 (median hold 58-89 afregninger, cirka 3-4 uger; mange længere).
+4. **Ærligt:** 2020-2021 havde usædvanligt høj funding; studiet ser bort fra bevægelser i spot/perp-forholdet og fra
+   afnoteringer. Det er ikke bevis for 2026; det vælger blot tærsklen og udreglen på data i stedet for skøn.
+   Stopreglerne (tab ≥ 5 %, 24 t pause, kilden betaler ikke efter 3 dage, 2 døgn uden position) er uændrede.
