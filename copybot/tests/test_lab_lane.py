@@ -90,7 +90,8 @@ class Base(unittest.TestCase):
                           {"family": "fcarry", "variants": [r["key"] for r in results], "decisional": False,
                            "artifact_sha256": art["sha256"]})
         for r in results if reviewed else ():          # amendment 11c: a passed review lets a candidate start
-            self.db.event("research.lane_review", "system:adversarial-1", None, {"key": r["key"], "ok": True})
+            self.db.event("research.lane_review", "system:adversarial-1", None, {"key": r["key"], "ok": True,
+                                                                                  "method": lane.REVIEW_METHOD})
         return art
 
     def started(self, get=None, now=NOW, **kw):
@@ -157,7 +158,8 @@ class Start(Base):
                                      {"label": explore.LABEL, "family": "fcarry", "coins": COINS[:5],
                                       "results": [result()]})
         self.db.event("research.explore", "system:backtest-1", None, {"artifact_sha256": art["sha256"]})
-        self.db.event("research.lane_review", "system:adversarial-1", None, {"key": "fcarry.carry_filter|a", "ok": True})
+        self.db.event("research.lane_review", "system:adversarial-1", None, {"key": "fcarry.carry_filter|a", "ok": True,
+                                                                                    "method": lane.REVIEW_METHOD})
         with mock.patch.object(explore, "universe", lambda fam: tuple(COINS + ["SOLUSDT", "APEUSDT"])):
             led = lane.manage(self.db, NOW, market(), fids=["fcarry"])["started"]
         self.assertEqual(lane.started(self.db)[led]["coins"], COINS[:5])
@@ -765,6 +767,11 @@ def review_market(days=240, regime=21):
     return bars, funding
 
 
+def families_costs():
+    from lab import families
+    return families.load("fcarry")["costs"]
+
+
 class CostGate(Base):
     """Amendment 12g: an account opens only if 3 days of predicted funding cover the walked round-trip cost."""
     def test_walk_by_hand(self):
@@ -808,11 +815,37 @@ class Review(Base):
     def test_unreviewed_or_failed_candidates_never_start(self):
         self.publish([result("k1", sharpe=5)], reviewed=False)
         self.assertIsNone(lane.manage(self.db, NOW, market(), fids=["fcarry"])["started"])
-        self.db.event("research.lane_review", "system:adversarial-1", None, {"key": "k1", "ok": False})
+        self.db.event("research.lane_review", "system:adversarial-1", None, {"key": "k1", "ok": False, "method": lane.REVIEW_METHOD})
         self.assertIsNone(lane.manage(self.db, NOW + HOUR, market(), fids=["fcarry"])["started"])
-        self.db.event("research.lane_review", "system:adversarial-1", None, {"key": "k1", "ok": True})
+        self.db.event("research.lane_review", "system:adversarial-1", None, {"key": "k1", "ok": True, "method": lane.REVIEW_METHOD})
         self.assertEqual(lane.manage(self.db, NOW + 2 * HOUR, market(), fids=["fcarry"])["started"],
                          lane.ledger_id("k1"))
+
+    def test_an_old_method_review_does_not_count(self):
+        self.publish([result("k1", sharpe=5)], reviewed=False)
+        self.db.event("research.lane_review", "system:adversarial-1", None, {"key": "k1", "ok": True})   # 11c
+        self.assertIsNone(lane.manage(self.db, NOW, market(), fids=["fcarry"])["started"])
+        self.assertEqual(lane.enqueue_reviews(self.db, NOW, fids=["fcarry"]), 1)                     # reviewed again
+
+    def test_the_market_shift_placebo_separates_timing_from_noise(self):
+        import random
+        from lab.engine import adversarial
+        from lab.families import fcarry
+        costs = lane._stressed(families_costs())
+        bars, funding = review_market()
+        pos = fcarry.carry_filter(bars, funding, {"lookback_days": 7, "enter_apr": 0.3}, None)
+        self.assertLess(adversarial.placebo_circular(bars, pos, funding, costs, n=20)["p"], 0.10)       # regimes
+        flat = {c: {t: -0.0003 for t in f} for c, f in funding.items()}
+        pos = fcarry.carry_filter(bars, flat, {"lookback_days": 7, "enter_apr": 0.3}, None)
+        self.assertGreaterEqual(adversarial.placebo_circular(bars, pos, flat, costs, n=20)["p"], 0.10)  # no timing
+        bars, funding = review_market(days=180)
+        low = 0
+        for seed in range(8):                                                   # noise: p is not stuck at zero
+            rng = random.Random(100 + seed)
+            noise = {c: {t: -rng.uniform(-0.0004, 0.001) for t in f} for c, f in funding.items()}
+            pos = fcarry.carry_filter(bars, noise, {"lookback_days": 3, "enter_apr": 0.3}, None)
+            low += adversarial.placebo_circular(bars, pos, noise, costs, n=20, seed=seed)["p"] < 0.10
+        self.assertLessEqual(low, 2)
 
     def test_reviews_are_queued_best_first_at_most_six(self):
         self.publish([result(f"k{i}", sharpe=10 - i * 0.5) for i in range(9)], reviewed=False)
@@ -828,7 +861,7 @@ class Review(Base):
         self.assertLess(good["placebo"]["p"], 0.10)
         bad = lane.review(r, *review_market(regime=7))
         self.assertFalse(bad["ok"])
-        self.assertFalse(bad["checks"]["one-bar delay net Sharpe >= 1.0 at 2x costs"], bad["delayed_net_sharpe"])
+        self.assertFalse(bad["checks"]["24-bar delay net Sharpe >= 1.0 at 2x costs"], bad["delayed_net_sharpe"])
         self.assertTrue(bad["checks"]["look-ahead truncation exact"] and bad["checks"]["poison exact"])
 
     def test_the_job_writes_artifact_and_event_and_decides_only_the_lane(self):

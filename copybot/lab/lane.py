@@ -817,7 +817,9 @@ def run_one(db, ledger, get, now, cache=None, books=None):
 REVIEW_DIR = "_lane_review"
 REVIEW_QUEUE_MAX = 6
 REVIEW_JOB = {"priority": 150, "max_attempts": 2, "timeout_s": 1800}
-REVIEW_DELAY_SHARPE = 1.0                       # one-bar delay: net Sharpe at 2x costs, as the candidate itself
+REVIEW_DELAY_SHARPE = 1.0                       # the delayed net Sharpe at 2x costs, as the candidate itself
+REVIEW_DELAY_BARS = 24                          # 11d: one decision period (the rules decide once a day)
+REVIEW_METHOD = "11d"                           # reviews by an older method do not count
 REVIEW_PLACEBO_N = 60
 
 
@@ -826,8 +828,9 @@ def review_id(key):
 
 
 def reviews(db):
-    """{key: research.lane_review payload}: the latest review of each candidate."""
-    return {p.get("key"): p for _, _, _, _, p in _events(db, "research.lane_review")}
+    """{key: research.lane_review payload}: the latest review of each candidate by the current method (11d)."""
+    return {p.get("key"): p for _, _, _, _, p in _events(db, "research.lane_review")
+            if p.get("method") == REVIEW_METHOD}
 
 
 def enqueue_reviews(db, now=None, actor="strategy-1", fids=None):
@@ -866,10 +869,10 @@ def review(r, bars, funding):
     poison = adversarial.poison_test_xs(fn, bars, funding, r["params"])
     pos = fn(bars, funding, r["params"], None)
     costs = _stressed(fam["costs"])
-    late = adversarial.delayed(bars, pos, funding, costs)
-    plac = adversarial.placebo(bars, pos, funding, costs, n=REVIEW_PLACEBO_N)
+    late = adversarial.delayed_by(bars, pos, funding, costs, REVIEW_DELAY_BARS)
+    plac = adversarial.placebo_circular(bars, pos, funding, costs, n=REVIEW_PLACEBO_N)
     checks = {"look-ahead truncation exact": trunc["ok"], "poison exact": poison["ok"],
-              f"one-bar delay net Sharpe >= {REVIEW_DELAY_SHARPE} at 2x costs":
+              f"{REVIEW_DELAY_BARS}-bar delay net Sharpe >= {REVIEW_DELAY_SHARPE} at 2x costs":
                   (late.get("net_sharpe_ann") or -1e9) >= REVIEW_DELAY_SHARPE,
               f"placebo p < {catalogue.PLACEBO_P_MAX}": plac["p"] is not None and plac["p"] < catalogue.PLACEBO_P_MAX}
     return {"coins": coins, "checks": checks, "ok": all(checks.values()), "truncation": trunc, "poison": poison,
@@ -888,12 +891,12 @@ def step_review(db, job, worker, load=None):
     res = review(cand, bars, funding)
     out = {**res, "key": key, "family": cand["family"], "function": cand["function"], "params": cand["params"],
            "split": explore.SPLIT, "inputs": inputs, "label": explore.LABEL, "decisional": False,
-           "rule": "research/PROTOCOL_V3.md amendment 11c"}
+           "method": REVIEW_METHOD, "rule": "research/PROTOCOL_V3.md amendments 11c and 11d"}
     art = pipeline.save_artifact(REVIEW_DIR, review_id(key), out)
     db.event("research.lane_review", f"system:{worker}", None,
              {"key": key, "ok": res["ok"], "checks": res["checks"], "placebo_p": res["placebo"]["p"],
               "delayed_net_sharpe": res["delayed_net_sharpe"], "artifact_sha256": art["sha256"],
-              "decisional": False, "label": explore.LABEL})
+              "method": REVIEW_METHOD, "decisional": False, "label": explore.LABEL})
     return {"key": key, "ok": res["ok"], "artifact": art}
 
 

@@ -6,6 +6,7 @@ positions, and the neighbourhood of the selected grid variant.
 """
 from __future__ import annotations
 
+import math
 import random
 
 from lab.engine import backtest
@@ -154,3 +155,62 @@ def placebo(per_symbol_bars, per_symbol_pos, funding, costs, n=60, block=24, see
         return {"actual": None, "p": None, "n": n}
     return {"actual": base, "p": sum(1 for x in sims if x >= base) / n, "n": n,
             "placebo_mean": sum(sims) / n}
+
+
+def placebo_circular(per_symbol_bars, per_symbol_pos, funding, costs, n=60, min_days=7, seed=17, offset=3600):
+    """Distribution of net Sharpe when each symbol's MARKET (its bar prices and settled funding) is shifted circularly
+    by a random whole number of days in [min_days, length - min_days) while its positions stay exactly as they are:
+    the same turnover, exposure and costs, only out of step with the market (amendment 11d). Sharpe is taken over
+    decision periods starting at `offset` seconds after 00:00 UTC (01:00, the families' decision time). Returns the
+    share of placebos at or above the actual Sharpe."""
+    rng = random.Random(seed)
+
+    def shifted(s, bars, k_days):
+        ts = [b[0] for b in bars]
+        n = len(bars)
+        k = (k_days * 24) % n
+        nb = [(ts[i],) + tuple(bars[(i + k) % n][1:]) for i in range(n)]
+        f = funding.get(s, {})
+        ft = sorted(f)
+        if not ft:
+            return nb, {}
+        step = k_days * 86400
+        span = ft[-1] - ft[0] + 8 * 3600
+        nf = {t: f.get(ft[0] + ((t - ft[0] + step) % span), 0.0) for t in ft}
+        return nb, nf
+
+    def sharpe(bars_by, fund_by):
+        """Net Sharpe over decision periods (UTC days shifted by `offset`), so a period's switch and the settlements
+        its decision used never fall in the same period by construction."""
+        rows = backtest.portfolio({s: backtest.apply_costs(backtest.gross(b, per_symbol_pos[s]), fund_by.get(s, {}),
+                                                           costs) for s, b in bars_by.items()})
+        per = {}
+        for r in rows:
+            per[(r[0] - offset) // 86400] = per.get((r[0] - offset) // 86400, 0.0) + r[7]
+        x = [per[k] for k in sorted(per)]
+        if len(x) < 2:
+            return None
+        m = math.fsum(x) / len(x)
+        sd = math.sqrt(math.fsum((v - m) ** 2 for v in x) / (len(x) - 1))
+        return m / sd * math.sqrt(365) if sd > 0 else None
+    base, sims = sharpe(per_symbol_bars, funding), []
+    days = min(len(b) for b in per_symbol_bars.values()) // 24
+    for _ in range(n):
+        bb, ff = {}, {}
+        for s, b in per_symbol_bars.items():
+            k = rng.randrange(min_days, days - min_days) if days > 2 * min_days else 0
+            bb[s], ff[s] = shifted(s, b, k)
+        sims.append(sharpe(bb, ff) or 0.0)
+    if base is None:
+        return {"actual": None, "p": None, "n": n}
+    return {"actual": base, "p": sum(1 for x in sims if x >= base) / n, "n": n, "placebo_mean": sum(sims) / n,
+            "method": "market shifted by whole days; positions unchanged"}
+
+
+def delayed_by(per_symbol_bars, per_symbol_pos, funding, costs, bars=24):
+    """Net metrics when every position is executed `bars` bars later than decided."""
+    rows = {}
+    for s, b in per_symbol_bars.items():
+        pos = [0.0] * bars + per_symbol_pos[s][:-bars] if bars else per_symbol_pos[s]
+        rows[s] = backtest.apply_costs(backtest.gross(b, pos), funding.get(s, {}), costs)
+    return backtest.metrics(backtest.portfolio(rows))
