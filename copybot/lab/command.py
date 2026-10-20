@@ -665,7 +665,7 @@ def lane_view(db, now=None):
         h = {r["metric"]: r for r in db.q("SELECT metric, value, payload FROM observations WHERE ts=? AND "
                                            "instrument='hyperliquid_perps' AND metric IN ('hl_funding_median', "
                                            "'hl_funding_top')", hts)}
-        market = {**(market or {"entry_min": lane.SCAN_FUND_MIN}), "hl_ts": hts,
+        market = {**(market or {"entry_min": lane.SCAN_FUND_MIN}), "hl_ts": hts, "hl_entry_min": lane.HL_FUND_MIN,
                   "hl_median": (h.get("hl_funding_median") or {"value": None})["value"],
                   "hl_top": h["hl_funding_top"]["value"],
                   "hl_top_symbol": (_j(h["hl_funding_top"]["payload"]) or {}).get("symbol")}

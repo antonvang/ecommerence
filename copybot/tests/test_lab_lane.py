@@ -580,6 +580,7 @@ class PremiumWatch(Base):
         self.assertEqual((m["median"], m["above_floor"], m["top"], m["top_symbol"]), (0.0004, 0.5, 0.0004, "AAAUSDT"))
         self.assertEqual(m["entry_min"], lane.SCAN_FUND_MIN)
         self.assertEqual((m["hl_top"], m["hl_top_symbol"]), (0.0016, "AAA"))
+        self.assertEqual(m["hl_entry_min"], lane.HL_FUND_MIN)
 
 
 def hl_post(rate=0.0002, fail=(), now=lambda: NOW, log=None):
