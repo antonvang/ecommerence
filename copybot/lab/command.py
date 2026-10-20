@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import math
 import os
+import sqlite3
 import time
 
 from lab import control, jobs, lifecycle, mission, registry
@@ -22,7 +23,7 @@ PIPE = ("DISCOVERED", "QUEUED", "RUNNING", "COST_CHECK", "VALIDATION", "PAPER_EL
 STAGE_OF_KIND = {"data": "RUNNING", "backtest": "RUNNING", "cost": "COST_CHECK", "adversarial": "VALIDATION",
                  "validate": "VALIDATION", "report": "VALIDATION", "holdout": "VALIDATION", "observe": "VALIDATION",
                  "observe_interim": "VALIDATION"}
-NON_STAGE_KINDS = ("diagnose", "scan_digest", "scan_dossier", "explore", "explore_report", "lane_report")   # decide nothing: never move an experiment on the orbit
+NON_STAGE_KINDS = ("diagnose", "scan_digest", "scan_dossier", "explore", "explore_report", "lane_report", "lane_review")   # decide nothing: never move an experiment on the orbit
 STAGE_OF_STATE = {"DISCOVERED": "DISCOVERED", "REGISTERED": "QUEUED", "SCREENING": "RUNNING",
                   "SCREEN_PASSED": "VALIDATION", "VALIDATION": "VALIDATION", "VALIDATED": "PAPER_ELIGIBLE",
                   "OBSERVATION": "VALIDATION",
@@ -108,6 +109,13 @@ def agents(db, now=None):
                     f"no work: no runnable {'/'.join(kinds)} job" + (" (catalogue exhausted, see research.idle_reason)"
                                                                        if exhausted and not run["total"] else ""))
         made = _output_24h(made_by, w["worker"])
+        if w["worker"] in MEASURES:                       # an agent whose work is observation rows, not events
+            try:
+                n = db.one("SELECT COUNT(*) FROM observations WHERE metric=? AND ts>=?", MEASURES[w["worker"]],
+                           int(now - 86400))[0]
+            except sqlite3.OperationalError:              # no observations table yet
+                n = 0
+            made = {**made, "output_24h": made["output_24h"] + n, "measurements_24h": n}
         out.append({"agent": w["worker"], "role": r.get("role") or "built-in supervisor worker", "status": st,
                     "raw_status": raw, "current_job": r.get("current_job") if st == "running" else None,
                     "current_exp": r.get("current_exp") if st == "running" else None,
@@ -128,6 +136,7 @@ def agents(db, now=None):
 
 
 AGENT_ACTORS = {"discovery-scanner": ("system:scanner",), "paper-1": ("system:paper",), "risk-1": ("system:risk",)}
+MEASURES = {"premium-watch": "hl_symbols_compared"}   # 12a/13: one row per minute measurement (only it writes this)
 NOT_OUTPUT = ("job.started", "job.retry", "job.failed", "job.timeout", "job.interrupted", "agent.error",
               "agent.recovered", "worker.error", "paper.error", "paper.refused", "paper.signal_while_paused",
               "paper.not_authorized", "paper.blocked", "paper.unsupported", "data.accessed",

@@ -399,6 +399,7 @@ def strategy_pass(db):
             "scan_research_queued": scanresearch.enqueue(db),           # amendment 9 section 3: digest and dossiers
             "explore_queued": explore.enqueue(db),          # amendments 10/10a: one lane job at a time, hourly
             "lane_report_queued": lane.enqueue_report(db),  # amendment 12d: the daily account report
+            "lane_reviews_queued": lane.enqueue_reviews(db),  # amendment 11c: adversarial review of candidates
             **({"families": fams} if fams else {})}
 
 
@@ -492,9 +493,12 @@ ROSTER = (
      ("backtest", "explore"), None, None, True),
     ("cost-1", "Cost agent: net results, 2x cost stress, trials ledger, selection", ("cost",), None, None, True),
     ("cost-2", "Cost agent: net results, 2x cost stress, trials ledger, selection", ("cost",), None, None, True),
-    ("adversarial-1", "Adversarial agent: look-ahead, poison, delay, placebo", ("adversarial",), None, None, True),
-    ("adversarial-2", "Adversarial agent: look-ahead, poison, delay, placebo", ("adversarial",), None, None, True),
-    ("adversarial-3", "Adversarial agent: look-ahead, poison, delay, placebo", ("adversarial",), None, None, True),
+    ("adversarial-1", "Adversarial agent: look-ahead, poison, delay, placebo; lane reviews (11c)",
+     ("adversarial", "lane_review"), None, None, True),
+    ("adversarial-2", "Adversarial agent: look-ahead, poison, delay, placebo; lane reviews (11c)",
+     ("adversarial", "lane_review"), None, None, True),
+    ("adversarial-3", "Adversarial agent: look-ahead, poison, delay, placebo; lane reviews (11c)",
+     ("adversarial", "lane_review"), None, None, True),
     ("validation-1", "Validation agent: frozen variant on validation; forward test; sealed holdout after approval",
      ("validate", "holdout", "observe", "observe_interim"), None, None, True),
     ("validation-2", "Validation agent: frozen variant on validation; forward test; sealed holdout after approval",

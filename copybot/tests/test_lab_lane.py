@@ -82,13 +82,15 @@ class Base(unittest.TestCase):
     def no_network(*a, **k):
         raise AssertionError(f"network call in a test: {a}")
 
-    def publish(self, results, name="fcarry_1", record=True):
+    def publish(self, results, name="fcarry_1", record=True, reviewed=True):
         art = pipeline.save_artifact(os.path.join(explore.DIR, "2026-10-19"), name,
                                      {"label": explore.LABEL, "family": "fcarry", "results": results})
         if record:
             self.db.event("research.explore", "system:backtest-1", None,
                           {"family": "fcarry", "variants": [r["key"] for r in results], "decisional": False,
                            "artifact_sha256": art["sha256"]})
+        for r in results if reviewed else ():          # amendment 11c: a passed review lets a candidate start
+            self.db.event("research.lane_review", "system:adversarial-1", None, {"key": r["key"], "ok": True})
         return art
 
     def started(self, get=None, now=NOW, **kw):
@@ -155,6 +157,7 @@ class Start(Base):
                                      {"label": explore.LABEL, "family": "fcarry", "coins": COINS[:5],
                                       "results": [result()]})
         self.db.event("research.explore", "system:backtest-1", None, {"artifact_sha256": art["sha256"]})
+        self.db.event("research.lane_review", "system:adversarial-1", None, {"key": "fcarry.carry_filter|a", "ok": True})
         with mock.patch.object(explore, "universe", lambda fam: tuple(COINS + ["SOLUSDT", "APEUSDT"])):
             led = lane.manage(self.db, NOW, market(), fids=["fcarry"])["started"]
         self.assertEqual(lane.started(self.db)[led]["coins"], COINS[:5])
@@ -573,6 +576,15 @@ class PremiumWatch(Base):
         self.assertEqual(sum(u.endswith("exchangeInfo") for u in self.urls), 2)   # the list again after an hour
         self.assertEqual(lane.live_funding("AAAUSDT", NOW + 3600 + 1 + lane.SCAN_LIVE_MAX_S + 1), (None, None))
 
+    def test_its_measurements_count_as_its_output(self):
+        for k in range(3):
+            scanner.premium_watch(self.db, self.get({"AAAUSDT": (0.0, 0.0001)}), NOW - 60 * k, self.post)
+        self.db.con.execute("INSERT INTO heartbeats(worker, ts, pid, ok, detail, status, stale_after) "
+                            "VALUES('premium-watch', ?, 1, 1, '', 'idle', 180)", (int(NOW),))
+        a = next(x for x in command.agents(self.db, now=NOW + 1)["agents"] if x["agent"] == "premium-watch")
+        self.assertEqual(a["measurements_24h"], 3)
+        self.assertGreaterEqual(a["output_24h"], 3)
+
     def test_market_funding_is_recorded_and_shown(self):
         out = scanner.premium_watch(self.db, self.get({"AAAUSDT": (0.0, 0.0004), "BBBUSDT": (0.0, 0.0001)}), NOW - 60, self.post)
         self.assertEqual(out["flagged"], 1)                                       # Hyperliquid AAA only
@@ -720,6 +732,63 @@ class LaneView(Base):
         self.assertAlmostEqual(r["funding_minus_fees"], r["funding"] - r["fees"])
         self.assertEqual(v["recent"][0]["status"], "stoppet: edge")
         self.assertFalse(v["evidence"])
+
+
+def review_market(days=240, regime=21):
+    """explore0-like data for COINS: ratio bars at 1 and funding that alternates between `regime` days high and
+    `regime` days negative. With 21-day regimes a 7-day filter catches most of each high regime; with 7-day regimes
+    it always enters late and loses."""
+    start, bars, funding = 1583020800, {}, {}
+    for c in COINS:
+        bars[c] = [(start + i * HOUR, 1.0, 1.0) for i in range(days * 24)]
+        fr = {}
+        for k in range(days * 3):
+            t = start + k * 8 * HOUR
+            hi = (k // (3 * regime)) % 2 == 0
+            fr[t] = -(0.0009 if hi else -0.0006)                                # cost convention (fcarry.py)
+        funding[c] = fr
+    return bars, funding
+
+
+class Review(Base):
+    """Amendment 11c: candidates are reviewed adversarially before they may trade."""
+    def test_unreviewed_or_failed_candidates_never_start(self):
+        self.publish([result("k1", sharpe=5)], reviewed=False)
+        self.assertIsNone(lane.manage(self.db, NOW, market(), fids=["fcarry"])["started"])
+        self.db.event("research.lane_review", "system:adversarial-1", None, {"key": "k1", "ok": False})
+        self.assertIsNone(lane.manage(self.db, NOW + HOUR, market(), fids=["fcarry"])["started"])
+        self.db.event("research.lane_review", "system:adversarial-1", None, {"key": "k1", "ok": True})
+        self.assertEqual(lane.manage(self.db, NOW + 2 * HOUR, market(), fids=["fcarry"])["started"],
+                         lane.ledger_id("k1"))
+
+    def test_reviews_are_queued_best_first_at_most_six(self):
+        self.publish([result(f"k{i}", sharpe=10 - i * 0.5) for i in range(9)], reviewed=False)
+        self.assertEqual(lane.enqueue_reviews(self.db, NOW, fids=["fcarry"]), lane.REVIEW_QUEUE_MAX)
+        self.assertEqual(lane.enqueue_reviews(self.db, NOW + 60, fids=["fcarry"]), 0)
+        ids = {r[0] for r in self.db.q("SELECT job_id FROM jobs WHERE kind='lane_review'")}
+        self.assertEqual(ids, {f"lane_review|{lane.review_id(f'k{i}')}" for i in range(6)})
+
+    def test_a_rule_that_catches_the_regime_passes_and_one_that_is_always_late_fails(self):
+        r = result(params={"lookback_days": 7, "enter_apr": 0.3})
+        good = lane.review(r, *review_market())
+        self.assertTrue(good["ok"], good["checks"])
+        self.assertLess(good["placebo"]["p"], 0.10)
+        bad = lane.review(r, *review_market(regime=7))
+        self.assertFalse(bad["ok"])
+        self.assertFalse(bad["checks"]["one-bar delay net Sharpe >= 1.0 at 2x costs"], bad["delayed_net_sharpe"])
+        self.assertTrue(bad["checks"]["look-ahead truncation exact"] and bad["checks"]["poison exact"])
+
+    def test_the_job_writes_artifact_and_event_and_decides_only_the_lane(self):
+        self.publish([result("k1", params={"lookback_days": 7, "enter_apr": 0.3})], reviewed=False)
+        bars, funding = review_market()
+        out = lane.step_review(self.db, {"payload": {"key": "k1"}}, "adversarial-1",
+                               load=lambda fam: (bars, funding, [], {"files": 0}))
+        self.assertTrue(out["ok"])
+        self.assertTrue(lane.reviews(self.db)["k1"]["ok"])
+        self.assertTrue(os.path.exists(os.path.join(pipeline.ARTIFACTS, lane.REVIEW_DIR, f"{lane.review_id('k1')}.json")))
+        for t in ("results", "trials", "transitions", "alpha_ledger"):
+            if self.db.one("SELECT name FROM sqlite_master WHERE type='table' AND name=?", t):
+                self.assertEqual(self.db.one(f"SELECT COUNT(*) FROM {t}")[0], 0, t)
 
 
 class Report(Base):

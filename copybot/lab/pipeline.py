@@ -1340,7 +1340,10 @@ HANDLERS = {"data": step_data, "backtest": step_backtest, "cost": step_cost, "ad
             .step_report(db, job, worker),
             # amendment 12d: the daily report on lane and scanner accounts (decides nothing)
             "lane_report": lambda db, job, worker: __import__("lab.lane", fromlist=["step_report"])
-            .step_report(db, job, worker)}
+            .step_report(db, job, worker),
+            # amendment 11c: the adversarial review of a lane candidate (gates only a simulated lane account)
+            "lane_review": lambda db, job, worker: __import__("lab.lane", fromlist=["step_review"])
+            .step_review(db, job, worker)}
 
 
 def enqueue_holdouts(db, actor="strategy-1"):
