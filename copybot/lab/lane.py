@@ -60,6 +60,7 @@ SCAN_LOSS = 0.05
 SCAN_SOURCE_S = 3 * DAY
 SCAN_FLAT_S = 2 * DAY
 SCAN_MAX_AGE_S = 30 * DAY
+SCAN_HOLD_S = 12 * HOUR                         # 12c: without a booked settlement, a position may close after 12 h
 _CANDIDATES = {}                                # (registry, last research.explore id, families) -> candidates
 
 
@@ -74,7 +75,8 @@ def label(info):
 def rules_text(info):
     """The automatic stop rules, in Danish, for the dashboard."""
     if is_scanner(info):
-        return (f"ind ved første præmie ≥ {SCAN_MIN:.1%}, ud når den er væk i to målinger; "
+        return (f"ind ved første præmie ≥ {SCAN_MIN:.1%}, ud når den er væk i to målinger og en afregning er bogført "
+                f"(højst {SCAN_HOLD_S // HOUR} t); "
                 f"stoppes ved tab ≥ {SCAN_LOSS:.0%}, 24 t pause, funding − gebyrer ≤ 0 efter {SCAN_SOURCE_S // DAY} "
                 f"dage, {SCAN_FLAT_S // DAY} døgn uden position eller {SCAN_MAX_AGE_S // DAY} dage")
     return (f"stoppes ved funding − gebyrer ≤ 0 efter {SOURCE_DAYS} dage, tab ≥ {LOSS_RETIRE:.0%}, 24 t pause, "
@@ -401,15 +403,39 @@ def scan_entry(p_now, p_prev=None):
     return p_now is not None and p_now >= SCAN_MIN
 
 
-def scan_signal(db, coin, holding, now):
-    """Point 2-3: in on the entry rule; out when neither of the two latest scans flags a positive premium; with no scan
-    in SCAN_STALE_S nothing new opens and a position is held."""
+def entry_ts(db, ledger, inst):
+    """When `inst` last went from flat to a position in `ledger` (the fill that opened it), or None."""
+    pos, t = 0.0, None
+    for f in db.q("SELECT ts, side, qty FROM sim_fills WHERE exp_id=? AND instrument=? ORDER BY ts, id", ledger, inst):
+        was = pos
+        pos += f["qty"] if f["side"] == "buy" else -f["qty"]
+        if abs(was) < 1e-12 and abs(pos) >= 1e-12:
+            t = f["ts"]
+    return t
+
+
+def settled_since_entry(db, ledger, coin, now):
+    """12c: a funding settlement after the entry is booked for the perp leg, or SCAN_HOLD_S has passed."""
+    t = entry_ts(db, ledger, coin)
+    if t is None:
+        return True
+    if now - t >= SCAN_HOLD_S:
+        return True
+    return db.one("SELECT 1 FROM sim_funding WHERE exp_id=? AND instrument=? AND settle_ts>?", ledger, coin, t) is not None
+
+
+def scan_signal(db, coin, holding, now, ledger=None):
+    """Point 2-3: in on the entry rule; out when neither of the two latest scans flags a positive premium and (12c) a
+    settlement after the entry is booked or 12 h have passed; with no scan in SCAN_STALE_S nothing new opens and a
+    position is held."""
     ts, ps = _last_two(db, now)
     if not ts or now - ts[0] > SCAN_STALE_S:
         return 1.0 if holding else 0.0
     vals = [p.get(coin) for p in ps] + [None]
     if holding:
-        return 1.0 if any(v is not None and v > 0 for v in vals[:2]) else 0.0
+        if any(v is not None and v > 0 for v in vals[:2]):
+            return 1.0
+        return 0.0 if (ledger is None or settled_since_entry(db, ledger, coin, now)) else 1.0
     return 1.0 if scan_entry(vals[0], vals[1]) else 0.0
 
 
@@ -506,7 +532,7 @@ def run_one(db, ledger, get, now, cache=None, books=None):
     if is_scanner(info):                                 # amendment 12: the scanner's premium decides
         c = info["coins"][0]
         pos0 = eng.ledger(ledger)["positions"]
-        want = {c: scan_signal(db, c, pos0.get(c + SPOT, 0.0) > 0 or pos0.get(c, 0.0) < 0, now)}
+        want = {c: scan_signal(db, c, pos0.get(c + SPOT, 0.0) > 0 or pos0.get(c, 0.0) < 0, now, ledger)}
     else:
         want = _signal(info, market)
     pos = eng.ledger(ledger)["positions"]

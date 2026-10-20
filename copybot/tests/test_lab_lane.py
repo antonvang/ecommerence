@@ -39,8 +39,10 @@ def market(rate=0.0003, px=100.0, spot_px=100.0, spread=0.02, missing=(), log=No
         if "klines" in path:
             start = int(now) // HOUR * HOUR - 1000 * HOUR
             return [[(start + i * HOUR) * 1000, px, px, px, px, 1, (start + (i + 1) * HOUR) * 1000 - 1, 100.0]
-                    for i in range(1000)]
+                    for i in range(1001)]                  # as Binance: the bar in progress comes last
         if "fundingRate" in path:
+            if rate is None:                               # no settlement published
+                return []
             last = int(now) // (8 * HOUR) * 8 * HOUR
             return [{"fundingTime": (last - k * 8 * HOUR) * 1000, "fundingRate": str(rate)} for k in range(199, -1, -1)]
         if "/fapi/v1/depth" in path:
@@ -400,9 +402,26 @@ class Scanner(Base):
         self.assertEqual(lane.run_one(self.db, led, g, NOW + HOUR)["signal"], {"BBBUSDT": 1.0})   # one scan gone
         self.scan(NOW + 2 * HOUR - 60, {})
         g.now = NOW + 2 * HOUR
-        self.assertEqual(lane.run_one(self.db, led, g, NOW + 2 * HOUR)["signal"], {"BBBUSDT": 0.0})
+        self.assertEqual(lane.run_one(self.db, led, g, NOW + 2 * HOUR)["signal"], {"BBBUSDT": 1.0})   # 12c: no
+        self.scan(NOW + 6 * HOUR - 60, {})                                          # settlement yet (next 08:00)
+        g.now = NOW + 6 * HOUR                                                      # 08:30: 08:00 is booked
+        self.assertEqual(lane.run_one(self.db, led, g, NOW + 6 * HOUR)["signal"], {"BBBUSDT": 0.0})
+        self.assertTrue(self.db.one("SELECT 1 FROM sim_funding WHERE exp_id=? AND instrument='BBBUSDT'", led))
         self.assertEqual(PaperEngine(self.db).ledger(led)["positions"], {})
         self.assertTrue(PaperEngine(self.db).reconcile(led)["ok"])
+
+    def test_without_a_settlement_the_position_may_close_after_12_hours(self):
+        self.scan(NOW - 60, {"BBBUSDT": 0.015})
+        led = lane.manage(self.db, NOW, market(), fids=[])["scanner"]["started"][0]
+        g = market(rate=None)
+        lane.run_one(self.db, led, g, NOW)
+        for h in (11, 12):
+            self.scan(NOW + h * HOUR - 120, {})
+            self.scan(NOW + h * HOUR - 60, {})
+            g.now = NOW + h * HOUR
+            sig = lane.run_one(self.db, led, g, NOW + h * HOUR)["signal"]["BBBUSDT"]
+            self.assertEqual(sig, 1.0 if h == 11 else 0.0, h)
+        self.assertEqual(PaperEngine(self.db).ledger(led)["positions"], {})
 
     def test_retire_rules_and_cooldown(self):
         self.scan(NOW - 60, {"BBBUSDT": 0.015})
