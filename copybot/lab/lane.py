@@ -50,6 +50,8 @@ PAUSE_RETIRE_S = DAY
 MAX_AGE_S = 90 * DAY
 PROMISING_DAYS, PROMISING_Z = 30, -1.0
 SOURCE_DAYS = 14                                # point 5: funding booked - fees paid must be > 0 by then
+LANE_FLAT_S = 3 * DAY                           # 11b: a lane account without a position for 3 days retires
+RETRY_S = DAY                                   # 11b: a variant that would hold nothing now may be tried a day later
 # amendment 12: scanner accounts (source "scanner"): one coin, the scanner's perp premium decides in and out
 SCAN_LABEL = "SCANNERKONTO (scannerfund, simuleret, aldrig bevis)"
 SCAN_SLOTS = 10                                 # 12b
@@ -158,8 +160,13 @@ def is_active(db, ledger):
     return bool(r and r["kind"] == "lane.started")
 
 
-def tried_keys(db):
-    return {p.get("key") for _, _, _, _, p in _events(db, "lane.started") + _events(db, "lane.skipped")}
+def tried_keys(db, now=None):
+    """Keys never to start again: every started key and every skip, except an 11b skip ("would hold nothing now")
+    whose RETRY_S has passed."""
+    now = now or time.time()
+    return {p.get("key") for _, _, _, _, p in _events(db, "lane.started")} | {
+        p.get("key") for _, ts, _, _, p in _events(db, "lane.skipped")
+        if not p.get("retry") or now - p.get("t", ts) < RETRY_S}
 
 
 # ---------- candidates (point 2) ----------
@@ -316,6 +323,11 @@ def _retire_reason(db, ledger, info, now, fids):
         if st["funding_minus_fees"] <= 0:
             return "source", (f"kilden betaler ikke: funding {led['funding']:.2f} − gebyrer {led['fees']:.2f} ≤ 0 "
                               f"efter {SOURCE_DAYS} dage"), st
+    led_ = _paid(db, ledger, now)
+    if not led_["positions"]:                                    # 11b: flat for LANE_FLAT_S frees the slot
+        last = db.one("SELECT MAX(ts) FROM sim_fills WHERE exp_id=?", ledger)[0]
+        if now - max(info["ts"], last or 0) >= LANE_FLAT_S:
+            return "flat", f"ingen position i {LANE_FLAT_S // DAY} døgn", st
     if st["days"] >= MIN_DAYS and st["z"] is not None and st["z"] <= Z_RETIRE:
         return "edge", f"z = {st['z']:.2f} <= {Z_RETIRE} efter {st['days']} dage", st
     return None, None, st
@@ -343,6 +355,22 @@ def _probe(r, fam, get, now):
     return ok, dropped
 
 
+def _would_hold(r, coins, get, now):
+    """11b: the coins in which the variant's own function holds +1 on the live data it would trade on, or [] (also
+    when the data cannot be read)."""
+    from lab import paper_runner as pr
+    cache = pr._HOURLY if get is pr._get else None
+    try:
+        market = {}
+        for s in coins:
+            bars, funding, _, _ = pr.hourly(s, now, get, cache)
+            market[s] = (bars, funding)
+        want = _signal({"family": r["family"], "function": r["function"], "params": r["params"]}, market)
+    except Exception:
+        return []
+    return [s for s, v in want.items() if v > 0]
+
+
 def _start(db, r, get, now):
     led, fam = ledger_id(r["key"]), families.load(r["family"])
     coins, dropped = _probe(r, fam, get, now)
@@ -352,6 +380,11 @@ def _start(db, r, get, now):
     if len(coins) < MIN_COINS:
         db.event("lane.skipped", ACTOR, led, {**base, "coins": coins, "reason": f"{len(coins)} coins with both live "
                                               f"books, fewer than {MIN_COINS}", "simulated": True})
+        return None
+    held = _would_hold(r, coins, get, now)                          # 11b: it must hold a coin on live data now
+    if not held:
+        db.event("lane.skipped", ACTOR, led, {**base, "coins": coins, "reason": "would hold nothing now (11b)",
+                                              "retry": True, "t": int(now), "simulated": True})
         return None
     db.event("lane.started", ACTOR, led, {**base, "coins": coins, "expectation": expectation(r), "capital": CAPITAL,
                                           "t": int(now),
@@ -391,7 +424,7 @@ def manage(db, now=None, get=None, fids=None):
     if len(act) >= SLOTS or (last is not None and now - last < START_EVERY):
         return out
     busy = collections.Counter((info[a]["family"], info[a]["function"]) for a in act)
-    done = tried_keys(db)
+    done = tried_keys(db, now)
     probes = 0
     for r in candidates(db, fids):
         if r["key"] in done or busy[(r["family"], r["function"])] >= PER_FUNCTION:

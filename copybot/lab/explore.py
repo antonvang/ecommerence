@@ -207,7 +207,7 @@ def fetch_allowed(source, now=None):
     now = data.CLOCK() if now is None else now
     if source == families.KIND_SOURCE["delivery"]:
         return now >= families.EMBARGO_UNTIL                 # COIN-M: amendment 8 point 17 unchanged
-    return source in SOURCES and (now < FETCH_UNTIL or now >= FETCH_FROM)
+    return source in SOURCES                                 # 10d: any time (10b's window is lifted)
 
 
 def guarded_get(fetch=None):
@@ -338,8 +338,7 @@ def step_explore(db, job, worker, get=None, load=None):
     try:
         bars, funding, excluded, inputs = load(fam) if load else _files(fam, SPLIT, get)
     except families.Embargoed as e:
-        raise pipeline.Deferred(f"explore {fid}: {e}", FETCH_FROM if now < FETCH_FROM else
-                                families.EMBARGO_UNTIL) from None
+        raise pipeline.Deferred(f"explore {fid}: {e}", families.EMBARGO_UNTIL) from None
     except OSError as e:
         if not str(e).startswith("download failed"):
             raise

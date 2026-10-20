@@ -257,6 +257,7 @@ class Retire(Base):
 
     def test_edge_missing_after_seven_days(self):
         led = self.started(sharpe=10.0)                   # sd 0.1 %/day on capital
+        lane.run_one(self.db, led, market(), NOW)         # holds positions (not flat)
         day0 = int(NOW) // DAY * DAY
         eq = 10_000.0
         for d in range(9):                                # -0.3 %/day: far below, still above the 3 % loss stop
@@ -283,6 +284,20 @@ class Retire(Base):
         self.assertEqual(out["retired"], [led3])
         self.assertEqual({lane.retired(self.db)[x]["rule"] for x in (led, led2, led3)}, {"paused", "family", "expired"})
 
+    def test_flat_lane_account_retires_after_three_days(self):
+        led = self.started()
+        lane.run_one(self.db, led, market(rate=0.0), NOW)          # never on: no position
+        self.assertEqual(lane.manage(self.db, NOW + 3 * DAY - 60, None, fids=["fcarry"])["retired"], [])
+        self.assertEqual(lane.manage(self.db, NOW + 3 * DAY, None, fids=["fcarry"])["retired"], [led])
+        self.assertEqual(lane.retired(self.db)[led]["rule"], "flat")
+
+    def test_a_variant_that_would_hold_nothing_now_is_skipped_and_retried_a_day_later(self):
+        self.publish([result()])
+        out = lane.manage(self.db, NOW, market(rate=0.0), fids=["fcarry"])
+        self.assertEqual((out["started"], out["skipped"]), (None, ["fcarry.carry_filter|a"]))
+        self.assertIsNone(lane.manage(self.db, NOW + HOUR, market(), fids=["fcarry"])["started"])
+        self.assertIsNotNone(lane.manage(self.db, NOW + lane.RETRY_S, market(), fids=["fcarry"])["started"])
+
     def test_a_retired_variant_never_restarts(self):
         led = self.started()
         lane.retire(self.db, led, "edge", "fixture")
@@ -308,7 +323,7 @@ class Retire(Base):
 
     def test_source_rule_retires_an_account_whose_funding_does_not_pay(self):
         led = self.started()
-        lane.run_one(self.db, led, market(rate=0.0), NOW)          # never on: no position, no funding
+        lane.run_one(self.db, led, market(), NOW)                  # positions, then no pass books any funding
         self.assertEqual(lane.manage(self.db, NOW + 13 * DAY, None, fids=["fcarry"])["retired"], [])
         self.assertEqual(lane.manage(self.db, NOW + 14 * DAY, None, fids=["fcarry"])["retired"], [led])
         self.assertEqual(lane.retired(self.db)[led]["rule"], "source")

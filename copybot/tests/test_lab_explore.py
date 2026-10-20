@@ -55,9 +55,14 @@ class Base(unittest.TestCase):
                   mock.patch.object(explore, "GRIDS", SMALL),
                   mock.patch.object(explore, "eligible", lambda db: ["fcarry"]),
                   mock.patch.object(explore.time, "time", lambda: self.clock[0]),
-                  mock.patch.object(data, "CLOCK", lambda: self.clock[0])]
+                  mock.patch.object(data, "CLOCK", lambda: self.clock[0]),
+                  mock.patch.object(families, "_urlopen", self.no_network)]           # no test reaches the network
         for p in self.p:
             p.start()
+
+    @staticmethod
+    def no_network(*a, **k):
+        raise AssertionError(f"network call in a test: {a}")
 
     def tearDown(self):
         for p in reversed(self.p):
@@ -110,8 +115,9 @@ class TheLaneReadsOnlyExplore0(Base):
         with mock.patch.object(data, "files_for", files), mock.patch.object(data, "spot_files_for", spot), \
                 mock.patch.object(families, "missing", lambda *a, **k: fetchable):
             explore._files(fam, explore.SPLIT, get=lambda u: b"", now=EARLY)            # download mode
+        coinm = [(families.KIND_SOURCE["delivery"], explore.SPLIT, "u", "p")]          # 10d: only COIN-M still waits
         with mock.patch.object(data, "expected_paths", paths), \
-                mock.patch.object(families, "missing", lambda *a, **k: fetchable):
+                mock.patch.object(families, "missing", lambda *a, **k: coinm):
             explore._files(fam, explore.SPLIT, now=GAP)                                   # cached mode
         self.assertEqual(set(seen), {explore.SPLIT})
         self.assertEqual(len(seen), 3 * len(explore.universe(fam)))
@@ -137,25 +143,21 @@ class Network10b(Base):
 
     def test_the_dates(self):
         um, spot, cm = families.KIND_SOURCE["klines"], families.SPOT, families.KIND_SOURCE["delivery"]
-        for now, ok in ((EARLY, True), (explore.FETCH_UNTIL, False), (GAP, False), (explore.FETCH_FROM, True)):
-            self.assertEqual((explore.fetch_allowed(um, now), explore.fetch_allowed(spot, now)), (ok, ok), now)
+        for now in (EARLY, explore.FETCH_UNTIL, GAP, explore.FETCH_FROM):           # 10d: any time
+            self.assertEqual((explore.fetch_allowed(um, now), explore.fetch_allowed(spot, now)), (True, True), now)
         self.assertFalse(explore.fetch_allowed(cm, explore.FETCH_FROM))
         self.assertTrue(explore.fetch_allowed(cm, families.EMBARGO_UNTIL))
         self.assertFalse(explore.fetch_allowed("binance_um_metrics", EARLY))
 
-    def test_in_pm_lps_holdout_the_lane_makes_no_request(self):
+    def test_only_the_archive_and_only_its_known_sources(self):
         calls = []
         self.clock[0] = GAP
-        get = explore.guarded_get(fetch=lambda u: calls.append(u))
-        with self.assertRaises(families.Embargoed):
-            get(self.URL)
+        get = explore.guarded_get(fetch=lambda u: calls.append(u) or b"zip")
         with self.assertRaises(families.Embargoed):
             get("https://example.com/x.zip")
         self.assertEqual(calls, [])
-        fam = {"universe": {"base": "8"}, "instrument_model": {"type": "spot_perp_ratio"}}
-        with mock.patch.object(families, "_urlopen", lambda u: calls.append(u)):
-            bars, _, _, inputs = explore._files(fam, explore.SPLIT)                    # empty cache: reads nothing
-        self.assertEqual((calls, bars, inputs["files"]), ([], {}, 0))
+        self.assertEqual(get(self.URL), b"zip")                                      # 10d: also in pm_lp's holdout
+        self.assertEqual(calls, [self.URL])
 
     def test_before_10_24_it_fetches_through_the_slots_and_remembers_a_404(self):
         self.clock[0] = EARLY
@@ -312,8 +314,8 @@ class Scheduling(Base):
 
     def test_no_job_while_the_lane_could_only_wait(self):
         self.clock[0] = GAP
-        gone = [(families.SPOT, explore.SPLIT, "u", os.path.join("x", f"{s}-1h-2020-01.zip"))
-                for s in explore.universe(families.load("fcarry"))]
+        gone = [(families.KIND_SOURCE["delivery"], explore.SPLIT, "u", os.path.join("x", f"{s}-1h-2020-01.zip"))
+                for s in explore.universe(families.load("fcarry"))]                    # 10d: only COIN-M waits
         with mock.patch.object(families, "missing", lambda *a, **k: gone):
             self.assertEqual(explore.enqueue(self.db, now=GAP), 0)
         with mock.patch.object(families, "missing", lambda *a, **k: gone[explore.MIN_COINS:]):   # 5 coins cached
