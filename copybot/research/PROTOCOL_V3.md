@@ -1513,3 +1513,18 @@ er registreret, ændres ikke; punkterne gælder trin, der køres efter deploy.
    - Begrundelse: ved AR(1) φ = 0,8 gav 5-døgns blokke 22 % falske fund mod nominelt 10 %.
    - F1's frosne filer ændres ikke; familiernes fremadtest beregnes af pipelinen, og punktet gælder derfor også dér,
      før F1's vindue (fra 2026-12-01) er læst.
+
+## Ændring 15b (2026-10-21): den nedre grænse kalibreret — 15a punkt 2 alene var ikke nok — før kode
+
+**Beslutning:** Claude under brugerens ja til fund 6 ("perfekt og aggressivt"), før 15a er kodet færdig og deployet.
+Strengere end 15a.
+
+1. **Kalibrering (syntetiske AR(1)-serier, 184 døgn, ingen markedsdata):** andel falske fund for "nedre 10 %-grænse
+   > 0" ved middelværdi 0 — 5-døgns blokke 14,5 / 16,5 / 26,5 % ved φ = 0 / 0,3 / 0,8; 15a's automatiske blokke
+   14,5 / 16,5 / 22,5 % (200 serier). Normalgrænsen med AR(1)-variansfaktor (punkt 2) 9,3 / 9,8 / 9,5 %, og minimum af
+   de to 8,2 / 9,3 / 9,3 % (600 serier); styrken ved en ægte fordel på 0,15 sd pr. døgn 0,76 mod 0,78 for 5-døgns
+   blokke. Script: `research/tools/lb_calibration.py`.
+2. **Reglen:** hvor 15a punkt 2 gælder, er den ensidede nedre grænse **minimum** af (a) blok-bootstrap-grænsen med
+   15a's bloklængde og (b) x̄ − z_(1−q) · s · √((1 + ρ̃) / ((1 − ρ̃) · n)), hvor s er stikprøvens standardafvigelse,
+   ρ̃ = ρ̂ + (1 + 3ρ̂) / n begrænset til [0; 0,99] (første-ordens autokorrelation, bias-rettet) og q gatens kvantil
+   (0,10 eller 0,05). 95 %-intervallet er fortsat bootstrap. Begge grænser registreres ved resultatet.
