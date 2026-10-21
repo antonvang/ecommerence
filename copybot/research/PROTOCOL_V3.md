@@ -1410,3 +1410,82 @@ den rå rate og var korrekt. Hyperliquid (× 8) var korrekt.
 5. **Ærligt:** det rettede studie (`research/studies/CARRY_BASIS_PLAN.md`) viser ingen fordel ved realistiske
    omkostninger; rettelsen gør reglen korrekt, ikke profitabel. 12g stopper fortsat starter, hvis 3 døgns funding ikke
    dækker de live bøgers omkostning.
+
+## Ændring 15 (2026-10-21): statistikken gøres sværere at snyde — streng look-ahead-gate, rettet baneplacebo, adskilt udvælgelse og gennemgang, PSR med autokorrelation — før kode
+
+**Beslutning:** brugeren 2026-10-21 ("Ja, gør alt" til de fem anbefalinger i statistik-revisionen,
+`research/studies/STAT_AUDIT_2026-10-21.md` fund 1–4 og 7). Alle punkter er strengere eller neutrale; ingen gate
+lempes, ingen tærskel sænkes. Kun simuleret handel. Afgørelser, der allerede er registreret, ændres ikke; punkterne
+gælder trin, der køres efter deploy.
+
+1. **Streng look-ahead-test er en gate (fund 1).** Position i tjener bar i's lukke-til-lukke-afkast
+   (`backtest.gross`) og må derfor ikke se bar i's lukkekurs.
+   - **Testen:** ved et snit i bar i fjernes alle senere barer; bar i beholder kun sin åbningskurs (lukkekurs :=
+     åbningskurs); funding afregnet efter bar i's åbning fjernes; timeværdier (volumen, taker) fra barer, der åbner ved
+     eller efter snittet, fjernes; daglige værdier for døgn, der ikke er afsluttet ved snittet, fjernes. Positionen i
+     snittet må ikke ændre sig (tolerance 1e-12). Én mønt: 40 snit (seed 11). Tværsnit: 20 fælles snit (seed 11).
+   - **Hvor:** pipelinens adversarielle trin (katalogskabeloner og familieinstanser screenet af pipelinen) — både i
+     "adversarial checks pass" og i v2's "exact look-ahead and poison tests" før validering — og banegennemgangen
+     (11c). Den eksisterende trunkerings- og gifttest beholdes ved siden af.
+   - **Allerede kontrolleret** (syntetiske data, 2026-10-21): alle 28 katalogskabeloner, alle 8 F1-varianter og
+     F2-udkastet dbasis — ingen look-ahead fundet. Ingen tidligere afgørelse ændres derfor.
+2. **Baneplaceboen forskyder afkast, ikke prisniveauer, og med ét fælles skift (fund 2 og 3).** Erstatter 11d's
+   placebo i banegennemgangen:
+   - Pr. placebotræk trækkes ÉT helt antal døgn k, ligefordelt i [7, døgn − 7), fælles for alle kandidatens mønter
+     (bevarer samvariationen mellem mønterne).
+   - Hver mønts lukke-til-lukke-afkast forskydes cirkulært med k × 24 barer, og en ny prisserie bygges fra møntens
+     første lukkekurs med de forskudte afkast (ingen spring ved omløbet; en konstant position får samme samlede
+     afkast som i virkeligheden). Afregnet funding forskydes k døgn som i 11d. Positionerne er uændrede.
+   - Sharpe over beslutningsperioder (døgn forskudt til 01:00 UTC) som i 11d; 60 træk, seed 17; p = andelen af træk
+     med Sharpe ≥ den faktiske; kravet er fortsat p < 0,10.
+3. **Banens udvælgelse og gennemgang bruger adskilte data (fund 4).** explore0 (2020-03..2021-12) deles:
+   **udvælgelse S = 2020-03-01..2020-12-31** og **gennemgang R = 2021-01-01..2021-12-31**.
+   - **Udforskning (metode "15"):** positionerne beregnes på hele explore0 (reglerne er point-in-time; punkt 1 og
+     revisionens scanning viser det), men alle tre krav i ændring 10 punkt 5 (net Sharpe ≥ 1 ved 2× omkostninger,
+     attributionen, positiv i ≥ 2 af 3 tredjedele) og de viste tal (net Sharpe, netto, dage) regnes kun på afkast i
+     S. Varianter, der er udforsket efter en ældre metode, udforskes igen (de tæller i ugeloftet som før).
+   - **Kandidater:** kun resultater efter metode "15".
+   - **Gennemgang (metode "15"):** look-ahead-testene (inkl. punkt 1) på hele explore0; forsinkelsen (24 barer, net
+     Sharpe ≥ 1 ved 2× omkostninger) og placeboen (punkt 2) kun på afkast i R. Gennemgange efter ældre metoder
+     tæller ikke.
+   - **Forventning (ændring 11 punkt 6):** fra resultatet i S.
+   - **Konti, der allerede kører,** fortsætter under deres egne stopregler; ingen ny konto startes fra en kandidat
+     eller gennemgang efter en ældre metode.
+   - **Ærligt:** med S på 10 måneder og R på 12 bliver der sandsynligvis få eller ingen nye banekonti. Det er den
+     korrekte konsekvens af, at udvælgelse og gennemgang på samme data gav 18–21 % falske fund mod nominelt 9,8 %.
+4. **PSR i katalogets fremadtest korrigeres for autokorrelation (fund 7).** Held-tjekket i ændring 2 punkt 4 bruger
+   PSR med den effektive stikprøve n_eff = n × (1 − ρ̂) / (1 + ρ̂), hvor ρ̂ er første-ordens autokorrelationen i
+   fremadvinduets daglige nettoafkast, når ρ̂ > 0 (ellers n). Gælder fremadtest, der læses efter deploy (MVRV's vindue
+   starter 2026-11-01). Familiernes PSR_kons (ændring 8) ligger i den frosne F1-kode (`lab/families/__init__.py`) og
+   ændres ikke her; revisionen viser, at den undervurderer ved stærk autokorrelation (φ 0,8). En rettelse dér kræver,
+   at brugeren ophæver F1-frysningen.
+5. **Vagten starter automatisk ved opstart — først når S7 er åben.** `research/LINUX_DRIFT.md` forbyder autostart af
+   vagten, før S7-gaten er åben (7 rene dage; 1,94 af 7 den 2026-10-21). S7-reglen ændres ikke. Unit-filen
+   `research/systemd/lab-watch.service` lægges klar; brugeren installerer den selv, når S7 er åben (kommandoerne står i
+   `LINUX_DRIFT.md`).
+6. **Ikke omfattet** (revisionens fund 5 og 6: pipelinens blok-placebo og bootstrap-bloklængden) — de er ikke en del
+   af de fem godkendte anbefalinger og kræver eget ja.
+
+## Ændring 14a (2026-10-21): tre målehypoteser på ændring 14's data — H1 makrodybde, H2 og H3 trin 1 — før kode
+
+**Beslutning:** brugeren 2026-10-21 ("Ja, gør alt" til de tre hypoteseudkast). Teksten er udkastet
+`research/drafts/AENDRING14_HYPOTESER_UDKAST.md` som committet i bd97063 (git-blob
+e7077ad579aaf1bac0a0a582cc8bb6f8bf2ca55c, sha256 93487b5f2bfdddcd1940ffa3e78b9d8d2fe73dd14c0b63cb8d282e9d7337ccc6);
+den låses hermed uændret. Intet handles, og intet her ændrer en papirkonto.
+
+1. **Godkendt til én kørsel hver:** H1 `makrodybde` (udkastets H1 punkt 1–9), H2 `opmaerk` trin 1 og H3 `smaahandel`
+   trin 1 (punkt 1–4, 6–9 for trin 1). Måling, kontrol, vinduer, point-in-time, minimumsantal, train-gate, test,
+   placebo/bootstrap, seeds og stopkriterier er udkastets, uden ændring. Train læses først; fejler train-gaten,
+   læses validering aldrig.
+2. **Fejlrate:** en ny, separat målefejlrate på 0,05 for de tre tests (α = 0,05/3 ≈ 0,0167 pr. test), uden for W0 og
+   alle eksisterende budgetter (ændring 2, 7 og 8). Brugeren har accepteret, at laboratoriets samlede fejlrisiko
+   dermed stiger. Testene går ikke gennem katalogets DSR og hæver ingen andens hurdle.
+3. **Ikke godkendt:** trin 2 af H2/H3 (en afdækket carry-familie; kræver ændring 8's `approve-family`, skrevet af
+   brugeren selv, og tagets sidste plads), mere data (aggTrades 2022, fremadvinduer, wikimedia i familiekoden) og
+   brug af H1's udskydelsesregel i papirkontiene (kræver en senere ændring efter et PASS).
+4. **Læsning:** ingest-filerne læses gennem en læser i laboratoriets datalag, der afviser alt efter 2023-12-31 og
+   alt uden for testens vindue (H1 og H3: `train` 2023-01..2023-08 og `validation` 2023-09..2023-12; H2: `train3`
+   2022-01..2023-06 og `validation3` 2023-07..2023-12). Datadækningen kontrolleres før kørslen; mangler data, er
+   udfaldet UNTESTABLE efter udkastets regler.
+5. **Registrering:** hvert udfald (PASS, REJECTED eller UNTESTABLE) skrives uændret i hændelseskæden og i
+   `research/studies/` med kode-commit, inputs og seeds. Et udfald afgør intet for handel.
