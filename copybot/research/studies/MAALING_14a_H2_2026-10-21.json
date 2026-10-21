@@ -1,0 +1,1377 @@
+{
+ "alpha": 0.016666666666666666,
+ "artifact": {
+  "path": "data/lab/artifacts/MEASURE_14a/H2-1792582197.json",
+  "sha256": "aa94329748ccc335c2e824d340e31c40e9cba0f604e4cdb188df2a3523785fff"
+ },
+ "code": {
+  "clean": true,
+  "commit": "0fc6a3b73459a5d530be053d9a69493d16ccb3dd",
+  "file": "lab/measure.py",
+  "sha256": "cfed071bd7e3338a275e5b53b7604c992ac08d8c5bba6023afed0204bd86df82"
+ },
+ "coverage": {
+  "ok": true,
+  "reason": null,
+  "splits": {
+   "train3": {
+    "coins_with_all_files": [
+     "BNBUSDT",
+     "XRPUSDT",
+     "DOGEUSDT",
+     "ADAUSDT",
+     "LINKUSDT",
+     "LTCUSDT",
+     "AVAXUSDT",
+     "DOTUSDT"
+    ],
+    "missing_calendar": []
+   },
+   "validation3": {
+    "coins_with_all_files": [
+     "BNBUSDT",
+     "XRPUSDT",
+     "DOGEUSDT",
+     "ADAUSDT",
+     "LINKUSDT",
+     "LTCUSDT",
+     "AVAXUSDT",
+     "DOTUSDT"
+    ],
+    "missing_calendar": []
+   }
+  }
+ },
+ "decisional_for_trading": false,
+ "draft": "research/drafts/AENDRING14_HYPOTESER_UDKAST.md",
+ "event_id": 12129,
+ "finished": "2026-10-21 11:29 UTC",
+ "hypothesis": "H2",
+ "inputs": [
+  {
+   "bytes": 927,
+   "path": "funding/BNBUSDT-fundingRate-2022-01.zip",
+   "sha256": "687891d67f99c3a622c44ed34413d65918fd96ea3a59d5e376af84d6d83f743b",
+   "split": "train3"
+  },
+  {
+   "bytes": 833,
+   "path": "funding/BNBUSDT-fundingRate-2022-02.zip",
+   "sha256": "4f7641f27333f9a55a8fdeb827387504984a8734a37ef73ab6e620db41fe0303",
+   "split": "train3"
+  },
+  {
+   "bytes": 840,
+   "path": "funding/BNBUSDT-fundingRate-2022-03.zip",
+   "sha256": "96888f6eb25414b7095aaedbc7ad7410c315c4fd3cf92cbc41b02e5c4a942d84",
+   "split": "train3"
+  },
+  {
+   "bytes": 812,
+   "path": "funding/BNBUSDT-fundingRate-2022-04.zip",
+   "sha256": "697cb449545afb1281b9fa6c03d902515f7d909d96668f345f6dd053dfed7430",
+   "split": "train3"
+  },
+  {
+   "bytes": 990,
+   "path": "funding/BNBUSDT-fundingRate-2022-05.zip",
+   "sha256": "b14eb3bf91a3cfaea1be24a2b9bf0d8991194f125b85f7bedc3c5ff4294845b2",
+   "split": "train3"
+  },
+  {
+   "bytes": 960,
+   "path": "funding/BNBUSDT-fundingRate-2022-06.zip",
+   "sha256": "168a18066b384a4718ee9f6f659edb7edf713e6be5f8d798bcdf0525c42825f4",
+   "split": "train3"
+  },
+  {
+   "bytes": 875,
+   "path": "funding/BNBUSDT-fundingRate-2022-07.zip",
+   "sha256": "7bda335d67fa74ce7d034989298137161181dd5e54f4085e13f52f677c14fce7",
+   "split": "train3"
+  },
+  {
+   "bytes": 862,
+   "path": "funding/BNBUSDT-fundingRate-2022-08.zip",
+   "sha256": "9b5f26943c0b41dbabd37421aa7857851a7e3656646f5a1999568c1aee9a9111",
+   "split": "train3"
+  },
+  {
+   "bytes": 918,
+   "path": "funding/BNBUSDT-fundingRate-2022-09.zip",
+   "sha256": "a61885f7b9705d335c4fabb6d2bf1bbd35af15615adfac0d49fdac3a95cba3ba",
+   "split": "train3"
+  },
+  {
+   "bytes": 841,
+   "path": "funding/BNBUSDT-fundingRate-2022-10.zip",
+   "sha256": "a899a77f378d0133a5837b4d7755fb1db9b8c8ca4e51ce94bc2f97e3a5928c25",
+   "split": "train3"
+  },
+  {
+   "bytes": 920,
+   "path": "funding/BNBUSDT-fundingRate-2022-11.zip",
+   "sha256": "1abb39471f3908ae91f4379500cbb24f5e7a487d004979719d19abff6f2ec2a9",
+   "split": "train3"
+  },
+  {
+   "bytes": 886,
+   "path": "funding/BNBUSDT-fundingRate-2022-12.zip",
+   "sha256": "3291256d57eef23bcd663a547e537e762ee54d54b8959a983e6bc4738fe7ef4b",
+   "split": "train3"
+  },
+  {
+   "bytes": 882,
+   "path": "funding/BNBUSDT-fundingRate-2023-01.zip",
+   "sha256": "57926f802a5d97b17bb08f10539bf10e86bdb55caa1efed7b1e485ec0e4a3a27",
+   "split": "train3"
+  },
+  {
+   "bytes": 854,
+   "path": "funding/BNBUSDT-fundingRate-2023-02.zip",
+   "sha256": "f5e3ce986788bef656363c2741e8f515f93e409c61e9b335bc714e528f4f8609",
+   "split": "train3"
+  },
+  {
+   "bytes": 986,
+   "path": "funding/BNBUSDT-fundingRate-2023-03.zip",
+   "sha256": "0309e5d4202275f5657b2d5a400c77618f51090962e2945ab2305820f8fbf239",
+   "split": "train3"
+  },
+  {
+   "bytes": 944,
+   "path": "funding/BNBUSDT-fundingRate-2023-04.zip",
+   "sha256": "7bbc666c3748ff43b5042acc77f9b158344d6b1e11f93c7de0c36c83affd7066",
+   "split": "train3"
+  },
+  {
+   "bytes": 905,
+   "path": "funding/BNBUSDT-fundingRate-2023-05.zip",
+   "sha256": "bcf038a86d9f483fa4d1a9db6fa734cae54745409bcc083d3067670f76b4fb84",
+   "split": "train3"
+  },
+  {
+   "bytes": 774,
+   "path": "funding/BNBUSDT-fundingRate-2023-06.zip",
+   "sha256": "7a92bc9a9f03229509e2e34835c8cb4e05b8218cc82fe080443389d2ccbb1e98",
+   "split": "train3"
+  },
+  {
+   "bytes": 860,
+   "path": "funding/XRPUSDT-fundingRate-2022-01.zip",
+   "sha256": "9ddff6efb16709debed38c0a6a0a2278c01659d18aedc2192b9fc02dc93d03ce",
+   "split": "train3"
+  },
+  {
+   "bytes": 862,
+   "path": "funding/XRPUSDT-fundingRate-2022-02.zip",
+   "sha256": "033b260f54c03c4f32b3503e87f9a3d3bcf735a48f13b4057344bb05192006b4",
+   "split": "train3"
+  },
+  {
+   "bytes": 841,
+   "path": "funding/XRPUSDT-fundingRate-2022-03.zip",
+   "sha256": "4eeea8c79c35ff9363baa9dc70091a155c8f9e276dd319d05e0ba8ef5ab00b6e",
+   "split": "train3"
+  },
+  {
+   "bytes": 861,
+   "path": "funding/XRPUSDT-fundingRate-2022-04.zip",
+   "sha256": "65dc012890af68b8e77736be03a71bde04c7a54b5ff6cb1957c94c4b2560da78",
+   "split": "train3"
+  },
+  {
+   "bytes": 998,
+   "path": "funding/XRPUSDT-fundingRate-2022-05.zip",
+   "sha256": "9ec85394189f8f61a420bc6266cfd6e782870eb14ab43fe53ad981f274ea2829",
+   "split": "train3"
+  },
+  {
+   "bytes": 986,
+   "path": "funding/XRPUSDT-fundingRate-2022-06.zip",
+   "sha256": "ed33e50c7a15b4605478840bc9ceb93af17afe81728dd9c80a8673732da5b979",
+   "split": "train3"
+  },
+  {
+   "bytes": 1005,
+   "path": "funding/XRPUSDT-fundingRate-2022-07.zip",
+   "sha256": "d0c0be21ff0fd3476d88cd2ac576f4b8e5697001bedf8ab43c746f2e5ae4699b",
+   "split": "train3"
+  },
+  {
+   "bytes": 1017,
+   "path": "funding/XRPUSDT-fundingRate-2022-08.zip",
+   "sha256": "ebe01bede02640bb9425dc31f6a1bb4e46488989715d7083b6d1569adb8736ba",
+   "split": "train3"
+  },
+  {
+   "bytes": 1003,
+   "path": "funding/XRPUSDT-fundingRate-2022-09.zip",
+   "sha256": "5f4cef57cc0b839b9efd1a0ad2a09457e8a4f7745f5de045d85ad86159255587",
+   "split": "train3"
+  },
+  {
+   "bytes": 994,
+   "path": "funding/XRPUSDT-fundingRate-2022-10.zip",
+   "sha256": "d19321c736b80fa52b447325092f6f21128f435a28e377941bccb65e6dae1370",
+   "split": "train3"
+  },
+  {
+   "bytes": 976,
+   "path": "funding/XRPUSDT-fundingRate-2022-11.zip",
+   "sha256": "44f32f9c6d3f66d7d0af48a56b5cd6f431c19070c9e4438784ee95df25d7dcb2",
+   "split": "train3"
+  },
+  {
+   "bytes": 1023,
+   "path": "funding/XRPUSDT-fundingRate-2022-12.zip",
+   "sha256": "4c17c8aa8c7b64d2acf1ecfdbdc5ff0c2a69d918f44a1040f530be3fbec74e6b",
+   "split": "train3"
+  },
+  {
+   "bytes": 805,
+   "path": "funding/XRPUSDT-fundingRate-2023-01.zip",
+   "sha256": "d5a60c79d144e9157ccd211c4230fb64fdd210dd34cb22e7660e41531f66a5e9",
+   "split": "train3"
+  },
+  {
+   "bytes": 782,
+   "path": "funding/XRPUSDT-fundingRate-2023-02.zip",
+   "sha256": "a8e7674eb3bd141d27787af892832896d609881764582f86c724b2a8d88fec50",
+   "split": "train3"
+  },
+  {
+   "bytes": 906,
+   "path": "funding/XRPUSDT-fundingRate-2023-03.zip",
+   "sha256": "198eed85733a3e9e6baa935b853aac7dcfa27c550a4ec43f6b862d02cea79d0b",
+   "split": "train3"
+  },
+  {
+   "bytes": 926,
+   "path": "funding/XRPUSDT-fundingRate-2023-04.zip",
+   "sha256": "a312648378931c50243bbba31b6b4595f6d8c9d8f6e16c5ffb779fb3a8817ea4",
+   "split": "train3"
+  },
+  {
+   "bytes": 921,
+   "path": "funding/XRPUSDT-fundingRate-2023-05.zip",
+   "sha256": "d3e2b728cb6e493672b359004946f0737506ed4b153f61354478dedd20a50da7",
+   "split": "train3"
+  },
+  {
+   "bytes": 867,
+   "path": "funding/XRPUSDT-fundingRate-2023-06.zip",
+   "sha256": "a83e74907e437eac3f8db466fda62cdb7c487a096bdaa69a9b797e1507431502",
+   "split": "train3"
+  },
+  {
+   "bytes": 943,
+   "path": "funding/DOGEUSDT-fundingRate-2022-01.zip",
+   "sha256": "b37736ec46a47d8bd0b5a0de1be61a6f0511d86e8c045cdfc8238b247cf8a8b2",
+   "split": "train3"
+  },
+  {
+   "bytes": 917,
+   "path": "funding/DOGEUSDT-fundingRate-2022-02.zip",
+   "sha256": "e496ee4bbe84b791550497ce6555e995582fcb507cc08e6329d3fb4ffeb5f468",
+   "split": "train3"
+  },
+  {
+   "bytes": 849,
+   "path": "funding/DOGEUSDT-fundingRate-2022-03.zip",
+   "sha256": "fce1916d6dc4bd971cb72931e4f8477935ec489df6bb5bc22c99bcbf2abe78e6",
+   "split": "train3"
+  },
+  {
+   "bytes": 823,
+   "path": "funding/DOGEUSDT-fundingRate-2022-04.zip",
+   "sha256": "655d57b2da463acf06a2e11f9c5d7ea8744facd5a082725cd14b4f480fc9d877",
+   "split": "train3"
+  },
+  {
+   "bytes": 1006,
+   "path": "funding/DOGEUSDT-fundingRate-2022-05.zip",
+   "sha256": "77b31f75485d3f66eef37d3cc5bc1620a1e9e93d00e47aa5391d5a6f0216b469",
+   "split": "train3"
+  },
+  {
+   "bytes": 950,
+   "path": "funding/DOGEUSDT-fundingRate-2022-06.zip",
+   "sha256": "40f2c0ca054a31eb62372f67919ee1b402015454018026d3b15ff7faacd22f1e",
+   "split": "train3"
+  },
+  {
+   "bytes": 890,
+   "path": "funding/DOGEUSDT-fundingRate-2022-07.zip",
+   "sha256": "ad7458419c3486565f826838da188714c6034e0f9054929fec1cb07bac64f8d6",
+   "split": "train3"
+  },
+  {
+   "bytes": 894,
+   "path": "funding/DOGEUSDT-fundingRate-2022-08.zip",
+   "sha256": "a45c8e14d3bf26a1aa9fd60e09ff215ca459c39cba1c7d9ec24d019ad375cb8e",
+   "split": "train3"
+  },
+  {
+   "bytes": 916,
+   "path": "funding/DOGEUSDT-fundingRate-2022-09.zip",
+   "sha256": "75ed3ada815ae4273abedeac0faee99aba67eb03ce3a467ddebd99affd69674c",
+   "split": "train3"
+  },
+  {
+   "bytes": 882,
+   "path": "funding/DOGEUSDT-fundingRate-2022-10.zip",
+   "sha256": "ca1d8d2818fa7850ed7c511a6a04269b984c4a7e7ba8ff882e8999a028e430f4",
+   "split": "train3"
+  },
+  {
+   "bytes": 934,
+   "path": "funding/DOGEUSDT-fundingRate-2022-11.zip",
+   "sha256": "e118ddf37bc7f2659d102595fbc6235c364621231100f57f7dd20e9e8c6ab2fd",
+   "split": "train3"
+  },
+  {
+   "bytes": 994,
+   "path": "funding/DOGEUSDT-fundingRate-2022-12.zip",
+   "sha256": "c5d07f43864d7ca5fe3dbc84ab9dd1c824932fcf4750ef401f27eb2a46fb555b",
+   "split": "train3"
+  },
+  {
+   "bytes": 808,
+   "path": "funding/DOGEUSDT-fundingRate-2023-01.zip",
+   "sha256": "49e9a7828c95398a332abecf1747724a951f012fcf2ab22b36e9a3281f8d3a49",
+   "split": "train3"
+  },
+  {
+   "bytes": 817,
+   "path": "funding/DOGEUSDT-fundingRate-2023-02.zip",
+   "sha256": "09f036da9f150499af7f053e8a3679baeab3b1dd24cf9d655659bd809680a701",
+   "split": "train3"
+  },
+  {
+   "bytes": 877,
+   "path": "funding/DOGEUSDT-fundingRate-2023-03.zip",
+   "sha256": "abde9a1d13799b4a412670cc0fba59fb283a5f1be8475bf1ab608dc0bd2707f4",
+   "split": "train3"
+  },
+  {
+   "bytes": 875,
+   "path": "funding/DOGEUSDT-fundingRate-2023-04.zip",
+   "sha256": "0f15cc8b48c85f0dbdaad908836e08a085673ca4d67bd96bbca2e3910cba29ff",
+   "split": "train3"
+  },
+  {
+   "bytes": 896,
+   "path": "funding/DOGEUSDT-fundingRate-2023-05.zip",
+   "sha256": "1c388110bc5e1a69d76c7a41e4945396427fad064a593fbf5edecae338584322",
+   "split": "train3"
+  },
+  {
+   "bytes": 827,
+   "path": "funding/DOGEUSDT-fundingRate-2023-06.zip",
+   "sha256": "50cbca0534f27a63cc9146c22559764010fffdffeef8f48e9e8c97fbf4372ea6",
+   "split": "train3"
+  },
+  {
+   "bytes": 904,
+   "path": "funding/ADAUSDT-fundingRate-2022-01.zip",
+   "sha256": "3138295cb16bc090a6d1d658cd1e57138f21c6ceb6cffec47b79b65f4f11a6f8",
+   "split": "train3"
+  },
+  {
+   "bytes": 915,
+   "path": "funding/ADAUSDT-fundingRate-2022-02.zip",
+   "sha256": "8d2a62d7de4038c5b29b160ec57196976aecad618f70edb0d64da5dc2f3226df",
+   "split": "train3"
+  },
+  {
+   "bytes": 927,
+   "path": "funding/ADAUSDT-fundingRate-2022-03.zip",
+   "sha256": "087b203cea3653811affc5f52dfca7410bf11d1daf8c51013da259f675f8ef24",
+   "split": "train3"
+  },
+  {
+   "bytes": 898,
+   "path": "funding/ADAUSDT-fundingRate-2022-04.zip",
+   "sha256": "7a309960d46bf0b83958871636a368ea1b3cedb905e2de2786bf09aeb73bdd44",
+   "split": "train3"
+  },
+  {
+   "bytes": 1016,
+   "path": "funding/ADAUSDT-fundingRate-2022-05.zip",
+   "sha256": "943b13250bd58873e0c10b212e42caf7b401fafc6c8794c3656be689a97cde1c",
+   "split": "train3"
+  },
+  {
+   "bytes": 983,
+   "path": "funding/ADAUSDT-fundingRate-2022-06.zip",
+   "sha256": "e1f0e37ed17c45d8220951b334fa922a30e978a0662a0332de422fe761e69656",
+   "split": "train3"
+  },
+  {
+   "bytes": 922,
+   "path": "funding/ADAUSDT-fundingRate-2022-07.zip",
+   "sha256": "18174b5948e1356cd5dca9b818ce27b59d72b04e0a14cc2e4c9e98fe1dbbf637",
+   "split": "train3"
+  },
+  {
+   "bytes": 954,
+   "path": "funding/ADAUSDT-fundingRate-2022-08.zip",
+   "sha256": "bba667b6d4b95257af774f1da39fca7075ac2ba2349f78f3352d1c46c1da5b7a",
+   "split": "train3"
+  },
+  {
+   "bytes": 972,
+   "path": "funding/ADAUSDT-fundingRate-2022-09.zip",
+   "sha256": "e886a2b7e43c81c43471d8bee405d4cc1b78e9b014391024885402150a858994",
+   "split": "train3"
+  },
+  {
+   "bytes": 1018,
+   "path": "funding/ADAUSDT-fundingRate-2022-10.zip",
+   "sha256": "1a309c079492d7475ae7ffce7b6261941a1e1a60a1adc8fbfba7bbd424ba2720",
+   "split": "train3"
+  },
+  {
+   "bytes": 922,
+   "path": "funding/ADAUSDT-fundingRate-2022-11.zip",
+   "sha256": "8432e7df74a8579db955160ffbdb8a18523b64011bdea30ddbd2e405ffc3c4c1",
+   "split": "train3"
+  },
+  {
+   "bytes": 968,
+   "path": "funding/ADAUSDT-fundingRate-2022-12.zip",
+   "sha256": "f7d24b7047e6840f91f54500733079f4f20eba22cdb67f79b43b0a34e37dd638",
+   "split": "train3"
+  },
+  {
+   "bytes": 822,
+   "path": "funding/ADAUSDT-fundingRate-2023-01.zip",
+   "sha256": "0f15aefda466406c18b88a653e5dccf1916bbfb3be6accc5196a0289237e0c85",
+   "split": "train3"
+  },
+  {
+   "bytes": 777,
+   "path": "funding/ADAUSDT-fundingRate-2023-02.zip",
+   "sha256": "618ff4e73258d603b2b1215dccb3835834fbce33731c51d4e194c011641689bf",
+   "split": "train3"
+  },
+  {
+   "bytes": 925,
+   "path": "funding/ADAUSDT-fundingRate-2023-03.zip",
+   "sha256": "f2f97cad940c730d5576da7954af9b944240e451e54b1163058eb9f2c445f4fc",
+   "split": "train3"
+  },
+  {
+   "bytes": 860,
+   "path": "funding/ADAUSDT-fundingRate-2023-04.zip",
+   "sha256": "6adf0981c8ed8eae67abe6834c2360ac7ee83fbb575c35735978489db443effd",
+   "split": "train3"
+  },
+  {
+   "bytes": 877,
+   "path": "funding/ADAUSDT-fundingRate-2023-05.zip",
+   "sha256": "216652bb167d682883d29f1c4591ec1bf3eabdab9e1a5091f518bd2742330353",
+   "split": "train3"
+  },
+  {
+   "bytes": 901,
+   "path": "funding/ADAUSDT-fundingRate-2023-06.zip",
+   "sha256": "7c91256dd07a9692f2e3acf6ce241b61c3a63cdde4eb485bb6cbaeb29ff06303",
+   "split": "train3"
+  },
+  {
+   "bytes": 799,
+   "path": "funding/LINKUSDT-fundingRate-2022-01.zip",
+   "sha256": "d1b20d0ee55f77437aa22d50f725b3dea884647df1177dfdd91ff1cca7e5e6d8",
+   "split": "train3"
+  },
+  {
+   "bytes": 854,
+   "path": "funding/LINKUSDT-fundingRate-2022-02.zip",
+   "sha256": "2755f17e416b2a5d9a3adb2f8e114c6339a91be2fc98de3858d255a8bda8bfb5",
+   "split": "train3"
+  },
+  {
+   "bytes": 770,
+   "path": "funding/LINKUSDT-fundingRate-2022-03.zip",
+   "sha256": "fbe9dd5cde9c27e729e3b95506a6e3bca8fdb719ee919a0a516c189fc08bc97c",
+   "split": "train3"
+  },
+  {
+   "bytes": 797,
+   "path": "funding/LINKUSDT-fundingRate-2022-04.zip",
+   "sha256": "91bfda68b358bd555eb772317c00fd1677bac4769a607a565c2de95811199d84",
+   "split": "train3"
+  },
+  {
+   "bytes": 999,
+   "path": "funding/LINKUSDT-fundingRate-2022-05.zip",
+   "sha256": "1a73179cecaa7305759c2367a9b12fcbe9757a1573cdea1be00b20dcd1c8b820",
+   "split": "train3"
+  },
+  {
+   "bytes": 967,
+   "path": "funding/LINKUSDT-fundingRate-2022-06.zip",
+   "sha256": "44107ee9174a139e6f56ca33b7d5c752a8a66c645d4d02a8baa201d4e69c151d",
+   "split": "train3"
+  },
+  {
+   "bytes": 828,
+   "path": "funding/LINKUSDT-fundingRate-2022-07.zip",
+   "sha256": "b162eec38434e0231b5a2e38759e9604dd5bbc3071d4cc33d9de5e65c7f9a6dc",
+   "split": "train3"
+  },
+  {
+   "bytes": 903,
+   "path": "funding/LINKUSDT-fundingRate-2022-08.zip",
+   "sha256": "726b6fd80ce065f96ffcec2acf6e524b4796cadf78d380c531c90c8b4ba04ef0",
+   "split": "train3"
+  },
+  {
+   "bytes": 924,
+   "path": "funding/LINKUSDT-fundingRate-2022-09.zip",
+   "sha256": "997347551489ca09ae1b8f11134a30a8e212130fd41d8449ba60b9aa761e0ed2",
+   "split": "train3"
+  },
+  {
+   "bytes": 941,
+   "path": "funding/LINKUSDT-fundingRate-2022-10.zip",
+   "sha256": "b4c87a4f656657bfa70d93fb49ed7337b6b39b886ed5c8262e4e7f0a2f8aeb82",
+   "split": "train3"
+  },
+  {
+   "bytes": 877,
+   "path": "funding/LINKUSDT-fundingRate-2022-11.zip",
+   "sha256": "a3fcbc1c3811cfa1552edcf60b67c7f454a7b817805808de15d2854cacada808",
+   "split": "train3"
+  },
+  {
+   "bytes": 942,
+   "path": "funding/LINKUSDT-fundingRate-2022-12.zip",
+   "sha256": "e290f7de6dbd20f1004913b566339e942e2e5ca7f7a31880d872eab70818e6ef",
+   "split": "train3"
+  },
+  {
+   "bytes": 806,
+   "path": "funding/LINKUSDT-fundingRate-2023-01.zip",
+   "sha256": "ce4a65fab0992afc691a555f0d7071beff7108704c281171f0fa2543491e9484",
+   "split": "train3"
+  },
+  {
+   "bytes": 741,
+   "path": "funding/LINKUSDT-fundingRate-2023-02.zip",
+   "sha256": "877493f77949b9e40cceea41796155a72a1a454d15f360f25590ec3a62d7c599",
+   "split": "train3"
+  },
+  {
+   "bytes": 884,
+   "path": "funding/LINKUSDT-fundingRate-2023-03.zip",
+   "sha256": "79b93a5cd8f7ae4a6708efd994fe2175a5ec05c472ced564197624c868ebf637",
+   "split": "train3"
+  },
+  {
+   "bytes": 841,
+   "path": "funding/LINKUSDT-fundingRate-2023-04.zip",
+   "sha256": "e8acd937ee1b11f7630fff07440e1d16753da7108747d437c449a7d5068f0c64",
+   "split": "train3"
+  },
+  {
+   "bytes": 883,
+   "path": "funding/LINKUSDT-fundingRate-2023-05.zip",
+   "sha256": "c1164402237277860b302f7ef682175ad52f27f027aa6bb3daa93955f97c9aa3",
+   "split": "train3"
+  },
+  {
+   "bytes": 823,
+   "path": "funding/LINKUSDT-fundingRate-2023-06.zip",
+   "sha256": "5f5a79f4f614a5de1b2f6ad7616c6c2960fcc41b8593f303709791f7c830ee95",
+   "split": "train3"
+  },
+  {
+   "bytes": 876,
+   "path": "funding/LTCUSDT-fundingRate-2022-01.zip",
+   "sha256": "6bd76b0ae2f6444c0da89fef35bfb398954152c00db9be908f8b3039e73eef86",
+   "split": "train3"
+  },
+  {
+   "bytes": 933,
+   "path": "funding/LTCUSDT-fundingRate-2022-02.zip",
+   "sha256": "2b58978757dfdbecaae0078bd0b2a8067a7e81b537acd88e8246210a3c9040f2",
+   "split": "train3"
+  },
+  {
+   "bytes": 947,
+   "path": "funding/LTCUSDT-fundingRate-2022-03.zip",
+   "sha256": "09df99bed0907beb314aaa3a520b311af6a57a751a749f789f8c2b8b632e9b77",
+   "split": "train3"
+  },
+  {
+   "bytes": 899,
+   "path": "funding/LTCUSDT-fundingRate-2022-04.zip",
+   "sha256": "dc9b4f53c5b0c2fbe7a1779f052ade9ff7818766a880c2239d71041fde8efe87",
+   "split": "train3"
+  },
+  {
+   "bytes": 1012,
+   "path": "funding/LTCUSDT-fundingRate-2022-05.zip",
+   "sha256": "2baf78c95492d56dc1612089966659523843e1a68de08c06bfb227688cd64b48",
+   "split": "train3"
+  },
+  {
+   "bytes": 959,
+   "path": "funding/LTCUSDT-fundingRate-2022-06.zip",
+   "sha256": "27d1d7c8fd770bc66cc4c1d7f8a06110f11bce22c6fc48c9387dd27b2d32cadb",
+   "split": "train3"
+  },
+  {
+   "bytes": 878,
+   "path": "funding/LTCUSDT-fundingRate-2022-07.zip",
+   "sha256": "bc296b7e9005391f08d46012ab10a77f5897dde38bbf3445e4927b4d5554be42",
+   "split": "train3"
+  },
+  {
+   "bytes": 944,
+   "path": "funding/LTCUSDT-fundingRate-2022-08.zip",
+   "sha256": "9a4c93db980ce2f301c8c14807cc9ffb7fd1e4951281d56b92e8dcaa28f29518",
+   "split": "train3"
+  },
+  {
+   "bytes": 957,
+   "path": "funding/LTCUSDT-fundingRate-2022-09.zip",
+   "sha256": "80d0a61066b0678aa7e515179cd1f7704462e3284ff599be947f4b8f28313fa5",
+   "split": "train3"
+  },
+  {
+   "bytes": 982,
+   "path": "funding/LTCUSDT-fundingRate-2022-10.zip",
+   "sha256": "305abd76825e800eee7722d090e38a20a1f2f13d49c4f25aac28fa7ece90bb54",
+   "split": "train3"
+  },
+  {
+   "bytes": 926,
+   "path": "funding/LTCUSDT-fundingRate-2022-11.zip",
+   "sha256": "d69a874495de01254150113879601d4e1a00f4b3e0504c89e97810f6c94beba0",
+   "split": "train3"
+  },
+  {
+   "bytes": 988,
+   "path": "funding/LTCUSDT-fundingRate-2022-12.zip",
+   "sha256": "c3722f5ecba3f3435fd61c65786a7e80c84caf3bbde83781c97cc008966facbe",
+   "split": "train3"
+  },
+  {
+   "bytes": 800,
+   "path": "funding/LTCUSDT-fundingRate-2023-01.zip",
+   "sha256": "7179e28e19f5b8e7b3753947740d93a135a0856bef0f3bd98298f2b3002453f0",
+   "split": "train3"
+  },
+  {
+   "bytes": 753,
+   "path": "funding/LTCUSDT-fundingRate-2023-02.zip",
+   "sha256": "8bdd9933b77f5735b166d3f509117e952696322d257242876b00e2e69f745bc4",
+   "split": "train3"
+  },
+  {
+   "bytes": 903,
+   "path": "funding/LTCUSDT-fundingRate-2023-03.zip",
+   "sha256": "c043aa59c696045eced0564c0bfffc4fe22901239daf1a5dcb26759f908d4d9c",
+   "split": "train3"
+  },
+  {
+   "bytes": 884,
+   "path": "funding/LTCUSDT-fundingRate-2023-04.zip",
+   "sha256": "37552806901ae7b1da6f1ce2249fdb3ad40cf60848ad6652024bd891b3d6df3a",
+   "split": "train3"
+  },
+  {
+   "bytes": 929,
+   "path": "funding/LTCUSDT-fundingRate-2023-05.zip",
+   "sha256": "4f85c2921a58167c38fb17e28a0e993dd02f5d8f3ac8cf5ecec5ab8a16c4a0d4",
+   "split": "train3"
+  },
+  {
+   "bytes": 828,
+   "path": "funding/LTCUSDT-fundingRate-2023-06.zip",
+   "sha256": "5300f0bef16cfa6271f95aaa6d38d9019a741453d11263361b502a0e9061f76f",
+   "split": "train3"
+  },
+  {
+   "bytes": 870,
+   "path": "funding/AVAXUSDT-fundingRate-2022-01.zip",
+   "sha256": "7e32fd06427cd4d0f1d2a665d11a3d379677cf514035dea6de9c4583557ef429",
+   "split": "train3"
+  },
+  {
+   "bytes": 881,
+   "path": "funding/AVAXUSDT-fundingRate-2022-02.zip",
+   "sha256": "07c788a3f90d13b5dd8decc9b9e4054ab1c5dc59e0d082bc76215f58a561f19c",
+   "split": "train3"
+  },
+  {
+   "bytes": 869,
+   "path": "funding/AVAXUSDT-fundingRate-2022-03.zip",
+   "sha256": "0c982ebcf93b28493abce0fa22a8c13913f7790bcf0cd862ddaa71275c404e31",
+   "split": "train3"
+  },
+  {
+   "bytes": 899,
+   "path": "funding/AVAXUSDT-fundingRate-2022-04.zip",
+   "sha256": "bd74e2dbb12d6c884efdb139ecf1fc6b1397093335700a7fa358bd997f6998da",
+   "split": "train3"
+  },
+  {
+   "bytes": 1043,
+   "path": "funding/AVAXUSDT-fundingRate-2022-05.zip",
+   "sha256": "e9199665d684e1a7691eb0bd60a79955c740245f69456a7ca850daac30b980cf",
+   "split": "train3"
+  },
+  {
+   "bytes": 977,
+   "path": "funding/AVAXUSDT-fundingRate-2022-06.zip",
+   "sha256": "1cd1118de840a4df6afcf1979b4ffab34db5b509000da21c4e0837b06b79a4dc",
+   "split": "train3"
+  },
+  {
+   "bytes": 957,
+   "path": "funding/AVAXUSDT-fundingRate-2022-07.zip",
+   "sha256": "fc9ac4b4fa331d8c633fdb75f883f8ca9b6b17fec1cc62a924495cb452770658",
+   "split": "train3"
+  },
+  {
+   "bytes": 964,
+   "path": "funding/AVAXUSDT-fundingRate-2022-08.zip",
+   "sha256": "c89709e262344b176f2b2ca323cb3a0b1957527829ba068a176ccbe0d62198f2",
+   "split": "train3"
+  },
+  {
+   "bytes": 976,
+   "path": "funding/AVAXUSDT-fundingRate-2022-09.zip",
+   "sha256": "0d809284ac4a8aaf961f44d1d646f6f66b1aedcb2b9b487b09fa55637969bb6a",
+   "split": "train3"
+  },
+  {
+   "bytes": 978,
+   "path": "funding/AVAXUSDT-fundingRate-2022-10.zip",
+   "sha256": "6a185d4fdef56bbc9871685ce2496f342bb602db0076cb8919451bc39873185f",
+   "split": "train3"
+  },
+  {
+   "bytes": 1011,
+   "path": "funding/AVAXUSDT-fundingRate-2022-11.zip",
+   "sha256": "2a85fba693e63a7ffd8c6de432485f3a435a7a3388a712160c846c619ea0a158",
+   "split": "train3"
+  },
+  {
+   "bytes": 1001,
+   "path": "funding/AVAXUSDT-fundingRate-2022-12.zip",
+   "sha256": "09c2df23d8820d9eeb95b1fc9e7c990a4c0a971776e18ccdda847a447fd90a0c",
+   "split": "train3"
+  },
+  {
+   "bytes": 835,
+   "path": "funding/AVAXUSDT-fundingRate-2023-01.zip",
+   "sha256": "b893b052e18ae9067b80fef9765475ff4b74ec8106a152bc7f86c915e84df9ce",
+   "split": "train3"
+  },
+  {
+   "bytes": 783,
+   "path": "funding/AVAXUSDT-fundingRate-2023-02.zip",
+   "sha256": "a87358418de27cfc4fe7981847367c1690d66d0c31215f7565bb9f9b0b413fb9",
+   "split": "train3"
+  },
+  {
+   "bytes": 868,
+   "path": "funding/AVAXUSDT-fundingRate-2023-03.zip",
+   "sha256": "c635a5c1b5e4b6a8e352ff8889633230b6337a83d209bcddbbf2a1ae9f814910",
+   "split": "train3"
+  },
+  {
+   "bytes": 874,
+   "path": "funding/AVAXUSDT-fundingRate-2023-04.zip",
+   "sha256": "47312af7109106a4eef182bf60911cbd35f8b3ebedafe9c96fd72c4a59c39c12",
+   "split": "train3"
+  },
+  {
+   "bytes": 945,
+   "path": "funding/AVAXUSDT-fundingRate-2023-05.zip",
+   "sha256": "020b9407dd30220ea129923c83008a44c55fc6e214522c38baf306cd4f6ba998",
+   "split": "train3"
+  },
+  {
+   "bytes": 843,
+   "path": "funding/AVAXUSDT-fundingRate-2023-06.zip",
+   "sha256": "001d6333e9fcfc88c0542cc94b2f605754d4c9b71a03cf39afd849cab48812d2",
+   "split": "train3"
+  },
+  {
+   "bytes": 997,
+   "path": "funding/DOTUSDT-fundingRate-2022-01.zip",
+   "sha256": "1897dda495a2a46058609df0bb866e06026daade549deae74664e02125df9add",
+   "split": "train3"
+  },
+  {
+   "bytes": 967,
+   "path": "funding/DOTUSDT-fundingRate-2022-02.zip",
+   "sha256": "bcd93e481e6d88d5e1024f2817af716130b98e956f7b07a2f059c7743f03fcb3",
+   "split": "train3"
+  },
+  {
+   "bytes": 1034,
+   "path": "funding/DOTUSDT-fundingRate-2022-03.zip",
+   "sha256": "6043a1f6ef9d7a54d3235b924ddf254b72014d60a0621f0477ecfd5e4879bd97",
+   "split": "train3"
+  },
+  {
+   "bytes": 1009,
+   "path": "funding/DOTUSDT-fundingRate-2022-04.zip",
+   "sha256": "3614b0b9d31e57ecd654c13ddf339606393f210e344d0fbceedc0d14ebc1d5be",
+   "split": "train3"
+  },
+  {
+   "bytes": 1037,
+   "path": "funding/DOTUSDT-fundingRate-2022-05.zip",
+   "sha256": "9308b8db20165b762e1d1cbc0a38795877c5de015d25978d15de2b29aa907037",
+   "split": "train3"
+  },
+  {
+   "bytes": 1012,
+   "path": "funding/DOTUSDT-fundingRate-2022-06.zip",
+   "sha256": "ee05cae5829be4f0827b667870080a05425b12ef7631bb34b0990c811806574c",
+   "split": "train3"
+  },
+  {
+   "bytes": 1033,
+   "path": "funding/DOTUSDT-fundingRate-2022-07.zip",
+   "sha256": "fc87f7250f9e17136289167eee5ce7025a48cb6d83f31165da74f13e0c522cfa",
+   "split": "train3"
+  },
+  {
+   "bytes": 1044,
+   "path": "funding/DOTUSDT-fundingRate-2022-08.zip",
+   "sha256": "3883040d1bccb5ed239de1a19c9f5d052b2764bd458831d9962be0152d38ccc3",
+   "split": "train3"
+  },
+  {
+   "bytes": 1022,
+   "path": "funding/DOTUSDT-fundingRate-2022-09.zip",
+   "sha256": "6ecf0e91c0dda8f9a795a43b1bf87f41950c21b316b610117d0f1a575aba8fc3",
+   "split": "train3"
+  },
+  {
+   "bytes": 1037,
+   "path": "funding/DOTUSDT-fundingRate-2022-10.zip",
+   "sha256": "d7bd357f7e6cb86ae6f7cd051346458712dd42218cff216e35c0c1063a41cb23",
+   "split": "train3"
+  },
+  {
+   "bytes": 1013,
+   "path": "funding/DOTUSDT-fundingRate-2022-11.zip",
+   "sha256": "aff5174cec6876c69881bbc689b3d6fdd35b1f7c55ad58ae6d779347119f1fce",
+   "split": "train3"
+  },
+  {
+   "bytes": 994,
+   "path": "funding/DOTUSDT-fundingRate-2022-12.zip",
+   "sha256": "64a93d3299b70d5bb1c459bd1c53d0ffa34c33174db9f924aa0b8f34b924a15d",
+   "split": "train3"
+  },
+  {
+   "bytes": 899,
+   "path": "funding/DOTUSDT-fundingRate-2023-01.zip",
+   "sha256": "daf6986e3669fcea3cca406ef72751ef3b25d25d2a5a029a23397a398d78d133",
+   "split": "train3"
+  },
+  {
+   "bytes": 854,
+   "path": "funding/DOTUSDT-fundingRate-2023-02.zip",
+   "sha256": "0dcf3c70f2a781c6b8f325f4a523e4fda651ebc18595a0ef20ea72d87a074f8d",
+   "split": "train3"
+  },
+  {
+   "bytes": 956,
+   "path": "funding/DOTUSDT-fundingRate-2023-03.zip",
+   "sha256": "cd9c8d94f18c9780b9152ddf6ac26ab1147981190b704e912958ebbb97572e4e",
+   "split": "train3"
+  },
+  {
+   "bytes": 896,
+   "path": "funding/DOTUSDT-fundingRate-2023-04.zip",
+   "sha256": "fcd6555f958b0cdcb62954893e4b1884e66727e7521c83af7be25ac5de78c5a1",
+   "split": "train3"
+  },
+  {
+   "bytes": 943,
+   "path": "funding/DOTUSDT-fundingRate-2023-05.zip",
+   "sha256": "f27f079f18c894f78eaa09790fa93584e5d2b610bb6f788600d5ba56c4d69b6f",
+   "split": "train3"
+  },
+  {
+   "bytes": 916,
+   "path": "funding/DOTUSDT-fundingRate-2023-06.zip",
+   "sha256": "e29d828cbea7eed708ec9728c94b4fc1fb72e82495def596d978902e8c9e636f",
+   "split": "train3"
+  },
+  {
+   "bytes": 122669,
+   "path": "ingest/pageviews/Binance.json",
+   "sha256": "f9610d4034f0783d2c0f69bd18377213e44da148242d3b966086160712ebc69b",
+   "split": "train3"
+  },
+  {
+   "bytes": 121376,
+   "path": "ingest/pageviews/Ripple_Labs.json",
+   "sha256": "449d782fa25ffd76d77aec8a559ca7ee315f768b2cf2b6ae1a06d3c2fc76af2c",
+   "split": "train3"
+  },
+  {
+   "bytes": 122377,
+   "path": "ingest/pageviews/Dogecoin.json",
+   "sha256": "13fe68fd20214ffe3048a6118947d199b9988a2e5efd421a9ae0f1c059c9448e",
+   "split": "train3"
+  },
+  {
+   "bytes": 81744,
+   "path": "ingest/pageviews/Cardano_(blockchain_platform).json",
+   "sha256": "c4b52227f6c5e6677c5f7a241254f6c5fb12bc58692859afb4102566a1ee6e53",
+   "split": "train3"
+  },
+  {
+   "bytes": 75610,
+   "path": "ingest/pageviews/Chainlink_(blockchain).json",
+   "sha256": "21b5a642d9160f771e47e5254fcbef7638163a93eb403c7679caa9f954c5c657",
+   "split": "train3"
+  },
+  {
+   "bytes": 121769,
+   "path": "ingest/pageviews/Litecoin.json",
+   "sha256": "9dd9c3d56949b9152c0e9593b3cc7a34c7280443ab56a22b0797d2a23bcd5a73",
+   "split": "train3"
+  },
+  {
+   "bytes": 61715,
+   "path": "ingest/pageviews/Avalanche_(blockchain_platform).json",
+   "sha256": "bca954c7fa7ae7f63e7f2735adc2695a9740c2475f71f2bed0c4783650795381",
+   "split": "train3"
+  },
+  {
+   "bytes": 90996,
+   "path": "ingest/pageviews/Polkadot_(cryptocurrency).json",
+   "sha256": "5bb2bef6ca00abf171ed8bbd3e1e4a21dfaba77463555e146062141a62d98796",
+   "split": "train3"
+  }
+ ],
+ "name": "opmaerk (step 1)",
+ "reason": "train gate failed; validation3 not read",
+ "rule": "research/PROTOCOL_V3.md amendment 14a",
+ "seeds": {
+  "bootstrap": 7
+ },
+ "splits": [
+  "train3",
+  "validation3"
+ ],
+ "started": "2026-10-21 11:29 UTC",
+ "train": {
+  "bootstrap": {
+   "alpha": 0.016666666666666666,
+   "block": 4,
+   "draws": 2000,
+   "lower": -0.1419047619047619,
+   "median": -0.05746031746031747,
+   "rank": 33,
+   "seed": 7
+  },
+  "mean_rho": -0.061102531025386625,
+  "mondays": 75,
+  "n": 75,
+  "secondary": {
+   "decisional": false,
+   "without_BNB_XRP": {
+    "mean_rho": -0.034666666666666665,
+    "n": 75
+   }
+  },
+  "split": "train3",
+  "weeks": [
+   {
+    "coins": 8,
+    "rho": -0.8809523809523809,
+    "t": "2022-01-17 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": -0.6428571428571429,
+    "t": "2022-01-24 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": -0.23809523809523808,
+    "t": "2022-01-31 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": 0.0,
+    "t": "2022-02-07 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": -0.42857142857142855,
+    "t": "2022-02-14 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": 0.11904761904761904,
+    "t": "2022-02-21 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": -0.47619047619047616,
+    "t": "2022-02-28 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": -0.4523809523809524,
+    "t": "2022-03-07 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": -0.11904761904761904,
+    "t": "2022-03-14 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": -0.30952380952380953,
+    "t": "2022-03-21 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": 0.10778636357219332,
+    "t": "2022-03-28 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": -0.09523809523809523,
+    "t": "2022-04-04 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": 0.4523809523809524,
+    "t": "2022-04-11 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": 0.47619047619047616,
+    "t": "2022-04-18 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": 0.5714285714285714,
+    "t": "2022-04-25 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": -0.047619047619047616,
+    "t": "2022-05-02 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": -0.35714285714285715,
+    "t": "2022-05-09 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": -0.30952380952380953,
+    "t": "2022-05-16 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": -0.5238095238095238,
+    "t": "2022-05-23 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": 0.023809523809523808,
+    "t": "2022-05-30 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": -0.023809523809523808,
+    "t": "2022-06-06 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": -0.14285714285714285,
+    "t": "2022-06-13 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": 0.3333333333333333,
+    "t": "2022-06-20 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": -0.11904761904761904,
+    "t": "2022-06-27 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": -0.6428571428571429,
+    "t": "2022-07-04 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": 0.35714285714285715,
+    "t": "2022-07-11 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": -0.8095238095238095,
+    "t": "2022-07-18 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": 0.38095238095238093,
+    "t": "2022-07-25 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": 0.7142857142857143,
+    "t": "2022-08-01 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": -0.35714285714285715,
+    "t": "2022-08-08 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": 0.19047619047619047,
+    "t": "2022-08-15 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": -0.5238095238095238,
+    "t": "2022-08-22 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": 0.14285714285714285,
+    "t": "2022-08-29 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": -0.023809523809523808,
+    "t": "2022-09-05 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": -0.09523809523809523,
+    "t": "2022-09-12 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": -0.5238095238095238,
+    "t": "2022-09-19 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": -0.11904761904761904,
+    "t": "2022-09-26 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": -0.35714285714285715,
+    "t": "2022-10-03 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": 0.09523809523809523,
+    "t": "2022-10-10 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": -0.4523809523809524,
+    "t": "2022-10-17 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": 0.023809523809523808,
+    "t": "2022-10-24 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": -0.19047619047619047,
+    "t": "2022-10-31 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": 0.3333333333333333,
+    "t": "2022-11-07 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": 0.47619047619047616,
+    "t": "2022-11-14 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": 0.47619047619047616,
+    "t": "2022-11-21 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": -0.5238095238095238,
+    "t": "2022-11-28 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": -0.4523809523809524,
+    "t": "2022-12-05 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": -0.3333333333333333,
+    "t": "2022-12-12 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": 0.0,
+    "t": "2022-12-19 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": -0.3333333333333333,
+    "t": "2022-12-26 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": 0.5,
+    "t": "2023-01-02 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": -0.047619047619047616,
+    "t": "2023-01-09 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": 0.6190476190476191,
+    "t": "2023-01-16 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": -0.23809523809523808,
+    "t": "2023-01-23 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": 0.16666666666666666,
+    "t": "2023-01-30 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": -0.11904761904761904,
+    "t": "2023-02-06 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": 0.5238095238095238,
+    "t": "2023-02-13 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": -0.3333333333333333,
+    "t": "2023-02-20 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": -0.40476190476190477,
+    "t": "2023-02-27 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": -0.047619047619047616,
+    "t": "2023-03-06 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": -0.047619047619047616,
+    "t": "2023-03-13 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": -0.09523809523809523,
+    "t": "2023-03-20 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": -0.38095238095238093,
+    "t": "2023-03-27 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": -0.47619047619047616,
+    "t": "2023-04-03 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": 0.42857142857142855,
+    "t": "2023-04-10 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": 0.5714285714285714,
+    "t": "2023-04-17 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": -0.4523809523809524,
+    "t": "2023-04-24 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": 0.5476190476190477,
+    "t": "2023-05-01 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": -0.07142857142857142,
+    "t": "2023-05-08 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": 0.23809523809523808,
+    "t": "2023-05-15 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": -0.9047619047619048,
+    "t": "2023-05-22 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": 0.023809523809523808,
+    "t": "2023-05-29 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": 0.14285714285714285,
+    "t": "2023-06-05 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": 0.6190476190476191,
+    "t": "2023-06-12 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": 0.2857142857142857,
+    "t": "2023-06-19 01:00 UTC"
+   }
+  ]
+ },
+ "train_gate": false,
+ "validation_read": false,
+ "verdict": "REJECTED"
+}

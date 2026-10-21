@@ -1,0 +1,1079 @@
+{
+ "alpha": 0.016666666666666666,
+ "artifact": {
+  "path": "data/lab/artifacts/MEASURE_14a/H1-1792582171.json",
+  "sha256": "179ca713c5a793f4e6b4779fb2b7061bcd016ff8f62a76a8dc61915c75d0c9ad"
+ },
+ "code": {
+  "clean": true,
+  "commit": "0fc6a3b73459a5d530be053d9a69493d16ccb3dd",
+  "file": "lab/measure.py",
+  "sha256": "cfed071bd7e3338a275e5b53b7604c992ac08d8c5bba6023afed0204bd86df82"
+ },
+ "coverage": {
+  "ok": true,
+  "reason": null,
+  "splits": {
+   "train": {
+    "coins_with_all_files": [
+     "BNBUSDT",
+     "XRPUSDT",
+     "DOGEUSDT",
+     "ADAUSDT",
+     "LINKUSDT",
+     "LTCUSDT",
+     "AVAXUSDT",
+     "DOTUSDT"
+    ],
+    "missing_calendar": []
+   },
+   "validation": {
+    "coins_with_all_files": [
+     "BNBUSDT",
+     "XRPUSDT",
+     "DOGEUSDT",
+     "ADAUSDT",
+     "LINKUSDT",
+     "LTCUSDT",
+     "AVAXUSDT",
+     "DOTUSDT"
+    ],
+    "missing_calendar": []
+   }
+  }
+ },
+ "decisional_for_trading": false,
+ "draft": "research/drafts/AENDRING14_HYPOTESER_UDKAST.md",
+ "event_id": 12126,
+ "finished": "2026-10-21 11:29 UTC",
+ "hypothesis": "H1",
+ "inputs": [
+  {
+   "bytes": 108966,
+   "path": "ingest/bookdepth_1h/BNBUSDT-2023-01.csv.gz",
+   "sha256": "41124380c88c9ab5d98904b37d102b4eb8c5906ae943286dbd517c723ea4f25b",
+   "split": "train"
+  },
+  {
+   "bytes": 101232,
+   "path": "ingest/bookdepth_1h/BNBUSDT-2023-02.csv.gz",
+   "sha256": "e195a42757ff8b2beb68461a9363e955af3736b43720795fd63065c7dfc0b209",
+   "split": "train"
+  },
+  {
+   "bytes": 121952,
+   "path": "ingest/bookdepth_1h/BNBUSDT-2023-03.csv.gz",
+   "sha256": "1fb8195560003e4243bd0ec9b647693994b3500f7948356ee17dd7438c46654e",
+   "split": "train"
+  },
+  {
+   "bytes": 121548,
+   "path": "ingest/bookdepth_1h/BNBUSDT-2023-04.csv.gz",
+   "sha256": "2dff2dba9450be8ff87ea8b9c500425384b49eee935709e8bb8aa2f39c0a395d",
+   "split": "train"
+  },
+  {
+   "bytes": 125490,
+   "path": "ingest/bookdepth_1h/BNBUSDT-2023-05.csv.gz",
+   "sha256": "3a1b4ad1833db6c2422caa59b4a9e62466247e3558571e9d8533281434949f9a",
+   "split": "train"
+  },
+  {
+   "bytes": 120366,
+   "path": "ingest/bookdepth_1h/BNBUSDT-2023-06.csv.gz",
+   "sha256": "9fb33d3173e75ba3c6eadfdf8d206a179d3454ed063fab4ffaf114e1e14b813b",
+   "split": "train"
+  },
+  {
+   "bytes": 125451,
+   "path": "ingest/bookdepth_1h/BNBUSDT-2023-07.csv.gz",
+   "sha256": "29046a7e7a2b7a4f696afdaea73ac0f1f1cd9224414a903b285c5c0dff999f22",
+   "split": "train"
+  },
+  {
+   "bytes": 122097,
+   "path": "ingest/bookdepth_1h/BNBUSDT-2023-08.csv.gz",
+   "sha256": "1e86a3005b8b4d6b428e2387b1b67eead35b35ab418d046f9c70826eabc2ff86",
+   "split": "train"
+  },
+  {
+   "bytes": 109886,
+   "path": "ingest/bookdepth_1h/XRPUSDT-2023-01.csv.gz",
+   "sha256": "3fb3b123877ce69892540a51da9bb4b61b1d78e9b7676d3c25d99f8d919f62a0",
+   "split": "train"
+  },
+  {
+   "bytes": 102401,
+   "path": "ingest/bookdepth_1h/XRPUSDT-2023-02.csv.gz",
+   "sha256": "c8cb83ad630ba6da1c05cc9c14555164223a5f437e675642598a20e5cfd1ada5",
+   "split": "train"
+  },
+  {
+   "bytes": 123076,
+   "path": "ingest/bookdepth_1h/XRPUSDT-2023-03.csv.gz",
+   "sha256": "af61a3c9720df8739d8b5a2416f9997450ab2fce1f9b877e775afa8453982c45",
+   "split": "train"
+  },
+  {
+   "bytes": 123583,
+   "path": "ingest/bookdepth_1h/XRPUSDT-2023-04.csv.gz",
+   "sha256": "e1bcdcf7d1eb507c995ca7edd7f62b74057a202891e40e7337a0178940042cd0",
+   "split": "train"
+  },
+  {
+   "bytes": 127231,
+   "path": "ingest/bookdepth_1h/XRPUSDT-2023-05.csv.gz",
+   "sha256": "52a14a34dd643fee3fd230ce61bfb3f416b861f9efda28a51f69638dd4def39d",
+   "split": "train"
+  },
+  {
+   "bytes": 121971,
+   "path": "ingest/bookdepth_1h/XRPUSDT-2023-06.csv.gz",
+   "sha256": "0f8123294e6eb51fb81e6786d65caa8c407b80db97c9dec127df8e3f682f86be",
+   "split": "train"
+  },
+  {
+   "bytes": 128078,
+   "path": "ingest/bookdepth_1h/XRPUSDT-2023-07.csv.gz",
+   "sha256": "742f1ca845d7577d0656de740d0dbe6ca64358f481156e80e05dcc37e83798fe",
+   "split": "train"
+  },
+  {
+   "bytes": 127872,
+   "path": "ingest/bookdepth_1h/XRPUSDT-2023-08.csv.gz",
+   "sha256": "4e89d8b925b26597846d16185f20b5d526c3d091167e3d8e6debfc5232f111dd",
+   "split": "train"
+  },
+  {
+   "bytes": 109298,
+   "path": "ingest/bookdepth_1h/DOGEUSDT-2023-01.csv.gz",
+   "sha256": "e65802ab8dd50b71401bf5fcdc672942127f6245a532a3879bebd47571605a0f",
+   "split": "train"
+  },
+  {
+   "bytes": 102041,
+   "path": "ingest/bookdepth_1h/DOGEUSDT-2023-02.csv.gz",
+   "sha256": "aedc87e38e9bf44b9f697e751f420734ec6f26884533daf0f250b08301f20c2c",
+   "split": "train"
+  },
+  {
+   "bytes": 122053,
+   "path": "ingest/bookdepth_1h/DOGEUSDT-2023-03.csv.gz",
+   "sha256": "339a28403930739fab412d414afb189b9d7212142d7771e4436671534ac38e75",
+   "split": "train"
+  },
+  {
+   "bytes": 123627,
+   "path": "ingest/bookdepth_1h/DOGEUSDT-2023-04.csv.gz",
+   "sha256": "a66d7f504156918fd3d8f07383c9b8f61612faca9e562c528cc5d0656db45244",
+   "split": "train"
+  },
+  {
+   "bytes": 126092,
+   "path": "ingest/bookdepth_1h/DOGEUSDT-2023-05.csv.gz",
+   "sha256": "3f9414b5f79e13a0462bfb249eba4a0fe5d00c2ac7929ba28c9afb9df27c3d47",
+   "split": "train"
+  },
+  {
+   "bytes": 120234,
+   "path": "ingest/bookdepth_1h/DOGEUSDT-2023-06.csv.gz",
+   "sha256": "b249bb6ff1efc1ff47a24e5252578902d53599c56214734c46314b3fc424ed5d",
+   "split": "train"
+  },
+  {
+   "bytes": 125734,
+   "path": "ingest/bookdepth_1h/DOGEUSDT-2023-07.csv.gz",
+   "sha256": "e5b0a9cd168420236ac242e5b2bc9c2994febe19a4a5387941c2e2b817a1815b",
+   "split": "train"
+  },
+  {
+   "bytes": 126325,
+   "path": "ingest/bookdepth_1h/DOGEUSDT-2023-08.csv.gz",
+   "sha256": "f63b4e5a0a4552c6234f75b1fdc359319ceb4c6ef3bb0f6169734536e132228a",
+   "split": "train"
+  },
+  {
+   "bytes": 103868,
+   "path": "ingest/bookdepth_1h/ADAUSDT-2023-01.csv.gz",
+   "sha256": "463be8dd9133a0fb7cdb2ce745e7c431991de287739f15fe4e4a5446dc7bfe7f",
+   "split": "train"
+  },
+  {
+   "bytes": 96397,
+   "path": "ingest/bookdepth_1h/ADAUSDT-2023-02.csv.gz",
+   "sha256": "6e2ea7b8463b93813d6702652cbb3911123f940461466ba507703ac19322def9",
+   "split": "train"
+  },
+  {
+   "bytes": 116229,
+   "path": "ingest/bookdepth_1h/ADAUSDT-2023-03.csv.gz",
+   "sha256": "0cd18d7596b7de06cf74159575b91e77c4cfc1f6edc915dc3bcebed8e548152b",
+   "split": "train"
+  },
+  {
+   "bytes": 116284,
+   "path": "ingest/bookdepth_1h/ADAUSDT-2023-04.csv.gz",
+   "sha256": "9d4f27afa9a8053eae7fe82ee631f66c1b515ad7598983547842c0025264512b",
+   "split": "train"
+  },
+  {
+   "bytes": 119746,
+   "path": "ingest/bookdepth_1h/ADAUSDT-2023-05.csv.gz",
+   "sha256": "1e20243cf113dc8c5f19404296d6ecf18651aab932882245cb26264a61278025",
+   "split": "train"
+  },
+  {
+   "bytes": 114847,
+   "path": "ingest/bookdepth_1h/ADAUSDT-2023-06.csv.gz",
+   "sha256": "1502b7992fb714d3513f4760ea2e1fd5a15dadc01c43206611dea3050cebe4d4",
+   "split": "train"
+  },
+  {
+   "bytes": 119132,
+   "path": "ingest/bookdepth_1h/ADAUSDT-2023-07.csv.gz",
+   "sha256": "b77d547aca7e3d3c853d2653eb1b2c03dede1cb3ed11af1c9bd41b445cace8a7",
+   "split": "train"
+  },
+  {
+   "bytes": 119126,
+   "path": "ingest/bookdepth_1h/ADAUSDT-2023-08.csv.gz",
+   "sha256": "1920f6ae940339e56bc19a56544f97701714dc67c5613e6552439e5fd8e951b8",
+   "split": "train"
+  },
+  {
+   "bytes": 108454,
+   "path": "ingest/bookdepth_1h/LINKUSDT-2023-01.csv.gz",
+   "sha256": "51ed763cc67af73130d8425aac2c24b3cd4e9148e5c549993f6eab6e3b365e6f",
+   "split": "train"
+  },
+  {
+   "bytes": 100565,
+   "path": "ingest/bookdepth_1h/LINKUSDT-2023-02.csv.gz",
+   "sha256": "019a9b3eb1d18f4db634492661ac274944ca2816de7ebab22236eb6b51fab789",
+   "split": "train"
+  },
+  {
+   "bytes": 121450,
+   "path": "ingest/bookdepth_1h/LINKUSDT-2023-03.csv.gz",
+   "sha256": "9a44faaaf1bc36d1ba810bcbfc962a32ed06dfa0c2425166b1dfb1507da2a85c",
+   "split": "train"
+  },
+  {
+   "bytes": 121335,
+   "path": "ingest/bookdepth_1h/LINKUSDT-2023-04.csv.gz",
+   "sha256": "b2247521b336cf5e6e742fc5cc7467573a6119c36f7e40ea11ed840409b67b80",
+   "split": "train"
+  },
+  {
+   "bytes": 124875,
+   "path": "ingest/bookdepth_1h/LINKUSDT-2023-05.csv.gz",
+   "sha256": "02274107f6b99898e73eddebaed62598367e1bc67f9e15086f5dd1b89d103f7d",
+   "split": "train"
+  },
+  {
+   "bytes": 119757,
+   "path": "ingest/bookdepth_1h/LINKUSDT-2023-06.csv.gz",
+   "sha256": "0810ff522dcf865d6be1a91a44ca1b315a5fa5f0a5d76d8a99b893bce3ab2adf",
+   "split": "train"
+  },
+  {
+   "bytes": 121053,
+   "path": "ingest/bookdepth_1h/LINKUSDT-2023-07.csv.gz",
+   "sha256": "4c3d61206eeb61240adbf9de1850f9107ce68e4ebca4d42c3fa62fbbc877e027",
+   "split": "train"
+  },
+  {
+   "bytes": 124609,
+   "path": "ingest/bookdepth_1h/LINKUSDT-2023-08.csv.gz",
+   "sha256": "2c16bbc06c1cbc6254e020066b944be5f7aa46d4d30096022de5f48bff79ae81",
+   "split": "train"
+  },
+  {
+   "bytes": 109122,
+   "path": "ingest/bookdepth_1h/LTCUSDT-2023-01.csv.gz",
+   "sha256": "75c2fc29956418d50bb7578466a0e15a0cca6a3d96cac41bd2ba05e12c2aeb6a",
+   "split": "train"
+  },
+  {
+   "bytes": 101056,
+   "path": "ingest/bookdepth_1h/LTCUSDT-2023-02.csv.gz",
+   "sha256": "e1da6c65f4bdcebae6d5667170c3492bbd93a43a5eb398186f65f7fde95608b8",
+   "split": "train"
+  },
+  {
+   "bytes": 121807,
+   "path": "ingest/bookdepth_1h/LTCUSDT-2023-03.csv.gz",
+   "sha256": "cb10241c937819e18f8bc6f6789ec72cff95c17a4b6701b2ab6540749276cb40",
+   "split": "train"
+  },
+  {
+   "bytes": 121821,
+   "path": "ingest/bookdepth_1h/LTCUSDT-2023-04.csv.gz",
+   "sha256": "aaa4a31911130db1535acc7a045085d0c81e2ea0155de972997a4a2a610cb345",
+   "split": "train"
+  },
+  {
+   "bytes": 126579,
+   "path": "ingest/bookdepth_1h/LTCUSDT-2023-05.csv.gz",
+   "sha256": "355110c25259231b3bddccf61e923b5741f44b7058cca651b508636b2b8da3df",
+   "split": "train"
+  },
+  {
+   "bytes": 120784,
+   "path": "ingest/bookdepth_1h/LTCUSDT-2023-06.csv.gz",
+   "sha256": "a37c52dcd2e74ab0a8bf13887697a1d41070134d004f8adfae98a9a1e1ef839c",
+   "split": "train"
+  },
+  {
+   "bytes": 127345,
+   "path": "ingest/bookdepth_1h/LTCUSDT-2023-07.csv.gz",
+   "sha256": "a85990741a2044ec27c75cb8d29e401be61108780671e83de76b1f5efe6cb007",
+   "split": "train"
+  },
+  {
+   "bytes": 126508,
+   "path": "ingest/bookdepth_1h/LTCUSDT-2023-08.csv.gz",
+   "sha256": "11a12175f93f660cdf91369f6d116f1397d14c4e74361a416ee082227e67b5aa",
+   "split": "train"
+  },
+  {
+   "bytes": 97716,
+   "path": "ingest/bookdepth_1h/AVAXUSDT-2023-01.csv.gz",
+   "sha256": "067385fc64142515c9801f3c89ce416c57cc29f9481593172169b147e35aa658",
+   "split": "train"
+  },
+  {
+   "bytes": 90927,
+   "path": "ingest/bookdepth_1h/AVAXUSDT-2023-02.csv.gz",
+   "sha256": "413e00c17fbe47e8c21f65bb6f60d495fd7dba28a3343f73fe16592f688b40ac",
+   "split": "train"
+  },
+  {
+   "bytes": 109651,
+   "path": "ingest/bookdepth_1h/AVAXUSDT-2023-03.csv.gz",
+   "sha256": "d1cf586ecd95308712b722b8536ee18a52d51a55a3c930a98b2cf5611586710c",
+   "split": "train"
+  },
+  {
+   "bytes": 109663,
+   "path": "ingest/bookdepth_1h/AVAXUSDT-2023-04.csv.gz",
+   "sha256": "923f1de3dc68b2cdde9190f8fe8c2854061faf82812afdbcd86273940275f4b9",
+   "split": "train"
+  },
+  {
+   "bytes": 112887,
+   "path": "ingest/bookdepth_1h/AVAXUSDT-2023-05.csv.gz",
+   "sha256": "a6be0b71bf8c037e773fb8f5175b37e1a540925e279c11ccc88bff90a91865c2",
+   "split": "train"
+  },
+  {
+   "bytes": 107288,
+   "path": "ingest/bookdepth_1h/AVAXUSDT-2023-06.csv.gz",
+   "sha256": "06f6da857a2d808d45e2ffe852d90bb38fd091065acac769770c0354e0d81300",
+   "split": "train"
+  },
+  {
+   "bytes": 112168,
+   "path": "ingest/bookdepth_1h/AVAXUSDT-2023-07.csv.gz",
+   "sha256": "930a6df44dc71c834e2c5d439e12db2fe501763b4b5467f98b463740c867194e",
+   "split": "train"
+  },
+  {
+   "bytes": 111753,
+   "path": "ingest/bookdepth_1h/AVAXUSDT-2023-08.csv.gz",
+   "sha256": "b8014d72bb134fa3f0b2f2a4428cd4fbd5440d366437e87b8facac9a3a4c02e4",
+   "split": "train"
+  },
+  {
+   "bytes": 104076,
+   "path": "ingest/bookdepth_1h/DOTUSDT-2023-01.csv.gz",
+   "sha256": "58f5485cd47cb9db1f242c7bc1d95f74034b90f6488e16c916089d35e68f4623",
+   "split": "train"
+  },
+  {
+   "bytes": 96431,
+   "path": "ingest/bookdepth_1h/DOTUSDT-2023-02.csv.gz",
+   "sha256": "593461e8a6fa5c6084a8bdc0a8393e17bfd4c791b56ea5e547321c19f18c9b2a",
+   "split": "train"
+  },
+  {
+   "bytes": 116396,
+   "path": "ingest/bookdepth_1h/DOTUSDT-2023-03.csv.gz",
+   "sha256": "4e19801d5b847f4b1fe5c1d8fef3d842003798f087ef2c442ead2469ad8cb234",
+   "split": "train"
+  },
+  {
+   "bytes": 116030,
+   "path": "ingest/bookdepth_1h/DOTUSDT-2023-04.csv.gz",
+   "sha256": "9b41e339cefe712e61dbbfcd0f10e6e714afe062f49afc6703e9b8e49e36c62c",
+   "split": "train"
+  },
+  {
+   "bytes": 119630,
+   "path": "ingest/bookdepth_1h/DOTUSDT-2023-05.csv.gz",
+   "sha256": "f263999c6c65f91ad3b5e7e0c24565cabaf4de0eb15e018b6b97bdf90026544b",
+   "split": "train"
+  },
+  {
+   "bytes": 114704,
+   "path": "ingest/bookdepth_1h/DOTUSDT-2023-06.csv.gz",
+   "sha256": "8c8aad67aba06d554ac89bb7fe00d48c3d3eb14f329e2d5bb6c9b7983aebc77a",
+   "split": "train"
+  },
+  {
+   "bytes": 118922,
+   "path": "ingest/bookdepth_1h/DOTUSDT-2023-07.csv.gz",
+   "sha256": "f4a6f3688e18450430571e900c5db7f91449189aeea4b23f1d7a6a70438c149b",
+   "split": "train"
+  },
+  {
+   "bytes": 119218,
+   "path": "ingest/bookdepth_1h/DOTUSDT-2023-08.csv.gz",
+   "sha256": "312067473c8457d757451595ea8691e755737f642b7ec6f9701f23907d4397de",
+   "split": "train"
+  },
+  {
+   "bytes": 1391,
+   "path": "ingest/calendar/fomc-2023.json",
+   "sha256": "c942d7c8051b97e3791cce26cd798584eb5eea276932be8d8a8e6cf2b7bafa2b",
+   "split": "train"
+  },
+  {
+   "bytes": 3762,
+   "path": "ingest/calendar/bls-2023.json",
+   "sha256": "3444c82262737669702587542ed1b68debaf5498cc3390ae9a58d76889adb7e9",
+   "split": "train"
+  },
+  {
+   "bytes": 116763,
+   "path": "ingest/bookdepth_1h/BNBUSDT-2023-09.csv.gz",
+   "sha256": "ec09d5e402f4624dc7bf6d7719567114428d7046c0a6ba53de92b72629817748",
+   "split": "validation"
+  },
+  {
+   "bytes": 120673,
+   "path": "ingest/bookdepth_1h/BNBUSDT-2023-10.csv.gz",
+   "sha256": "e6496bc7220806c58f47f34076ee1486534e75bac0d1805fc1941b231ea50d72",
+   "split": "validation"
+  },
+  {
+   "bytes": 113078,
+   "path": "ingest/bookdepth_1h/BNBUSDT-2023-11.csv.gz",
+   "sha256": "dfc8eb01cbb65f75ba718cbfe509a239ed77db3608da5cb6b8c18ac0ce0a5fd3",
+   "split": "validation"
+  },
+  {
+   "bytes": 122067,
+   "path": "ingest/bookdepth_1h/BNBUSDT-2023-12.csv.gz",
+   "sha256": "e0e19d2af8e88b0bb89fd6a2cb34a7415c57e1b496a46bc074b26a547e10a11e",
+   "split": "validation"
+  },
+  {
+   "bytes": 123261,
+   "path": "ingest/bookdepth_1h/XRPUSDT-2023-09.csv.gz",
+   "sha256": "8a5cc5487d850a21ee9805c330ccde407b4ab09ae78483002525e85e0f2d42d2",
+   "split": "validation"
+  },
+  {
+   "bytes": 127550,
+   "path": "ingest/bookdepth_1h/XRPUSDT-2023-10.csv.gz",
+   "sha256": "bc5fa40ebf1e0216973a8764af5b7210908cf52a1716b9a2c119162fe9c10e4a",
+   "split": "validation"
+  },
+  {
+   "bytes": 119206,
+   "path": "ingest/bookdepth_1h/XRPUSDT-2023-11.csv.gz",
+   "sha256": "c677b4bc428b60049ceac311e239abd0a2c8dcbb50416ba1e1aadedf2d98f416",
+   "split": "validation"
+  },
+  {
+   "bytes": 127331,
+   "path": "ingest/bookdepth_1h/XRPUSDT-2023-12.csv.gz",
+   "sha256": "efb77cea51a6efd8e12cf58f54eb2266c4a03b0cc7d807b4c258a851148f4109",
+   "split": "validation"
+  },
+  {
+   "bytes": 121195,
+   "path": "ingest/bookdepth_1h/DOGEUSDT-2023-09.csv.gz",
+   "sha256": "d49cdbdfbabf4606f70684e524a7cc08b7ac5ec900f3a2fcd08a8475339603d2",
+   "split": "validation"
+  },
+  {
+   "bytes": 125311,
+   "path": "ingest/bookdepth_1h/DOGEUSDT-2023-10.csv.gz",
+   "sha256": "d34a4a7847db0e555b137a5fed31aed6c98b8beba85d88c15abc37767d414eb3",
+   "split": "validation"
+  },
+  {
+   "bytes": 121685,
+   "path": "ingest/bookdepth_1h/DOGEUSDT-2023-11.csv.gz",
+   "sha256": "e20c12cd35272d11b3869f6e0cc714b5e6d95ddc51690a4e375b77c23fdac5da",
+   "split": "validation"
+  },
+  {
+   "bytes": 125501,
+   "path": "ingest/bookdepth_1h/DOGEUSDT-2023-12.csv.gz",
+   "sha256": "fc73de0f592472fa25ea48537b5c0e6e045301a468d41d0dafe84ddaf2ca15db",
+   "split": "validation"
+  },
+  {
+   "bytes": 115294,
+   "path": "ingest/bookdepth_1h/ADAUSDT-2023-09.csv.gz",
+   "sha256": "95109732f47b608b1498deb643e4190105118022eb203278e924e85a38c91a6c",
+   "split": "validation"
+  },
+  {
+   "bytes": 119130,
+   "path": "ingest/bookdepth_1h/ADAUSDT-2023-10.csv.gz",
+   "sha256": "1d14facf4e46a1db26fc6ae3da2a10ca89d4ba08097803f736dacf87fdfe68f8",
+   "split": "validation"
+  },
+  {
+   "bytes": 115353,
+   "path": "ingest/bookdepth_1h/ADAUSDT-2023-11.csv.gz",
+   "sha256": "5cc3fbde5e8bc975d10c5d78e4887661c59ee0a7a5eb0ebdecda8da7483ac740",
+   "split": "validation"
+  },
+  {
+   "bytes": 119727,
+   "path": "ingest/bookdepth_1h/ADAUSDT-2023-12.csv.gz",
+   "sha256": "0c24dab5da6b93a9865855fdd1eec885efc4e7047637bff84653de9cc51c4b30",
+   "split": "validation"
+  },
+  {
+   "bytes": 120765,
+   "path": "ingest/bookdepth_1h/LINKUSDT-2023-09.csv.gz",
+   "sha256": "8377a2766dab43c08f0bb618bb10b30f205f617fa4f5b863db2df065898d4ef2",
+   "split": "validation"
+  },
+  {
+   "bytes": 125241,
+   "path": "ingest/bookdepth_1h/LINKUSDT-2023-10.csv.gz",
+   "sha256": "dc67e71af2008644d16970877f11116c5b9c1345508d11071902a6b01ae05fea",
+   "split": "validation"
+  },
+  {
+   "bytes": 121296,
+   "path": "ingest/bookdepth_1h/LINKUSDT-2023-11.csv.gz",
+   "sha256": "35144fe73af75b58ca92325f0ef01850a33da254a612b7c37404c26c3b4e5b7e",
+   "split": "validation"
+  },
+  {
+   "bytes": 125267,
+   "path": "ingest/bookdepth_1h/LINKUSDT-2023-12.csv.gz",
+   "sha256": "5082652f393e76a7a2fc5b777f20e9867abdfdd14896318f3b64e97450e5f1e9",
+   "split": "validation"
+  },
+  {
+   "bytes": 120979,
+   "path": "ingest/bookdepth_1h/LTCUSDT-2023-09.csv.gz",
+   "sha256": "da15cf313dc6aa555285ecefc799600f8181c3cff3796c7937976f6997620f56",
+   "split": "validation"
+  },
+  {
+   "bytes": 125260,
+   "path": "ingest/bookdepth_1h/LTCUSDT-2023-10.csv.gz",
+   "sha256": "aa73f3cfa359c7546cc570551e3a58d14d798c1c05a5995cde0970a9d65533b4",
+   "split": "validation"
+  },
+  {
+   "bytes": 117192,
+   "path": "ingest/bookdepth_1h/LTCUSDT-2023-11.csv.gz",
+   "sha256": "697182feb091de02ca5e5143ba277426758ce2d933736d4a35611acca3cb0f26",
+   "split": "validation"
+  },
+  {
+   "bytes": 125492,
+   "path": "ingest/bookdepth_1h/LTCUSDT-2023-12.csv.gz",
+   "sha256": "8435dfb0496c338651f3c2c9d03ea59bdc130c1ebbe34948d4765dd2a584f5cd",
+   "split": "validation"
+  },
+  {
+   "bytes": 107994,
+   "path": "ingest/bookdepth_1h/AVAXUSDT-2023-09.csv.gz",
+   "sha256": "6513cd6db26888432e39e2a10818efc7416f6effe94b229b8dc4a32fac6e8960",
+   "split": "validation"
+  },
+  {
+   "bytes": 112071,
+   "path": "ingest/bookdepth_1h/AVAXUSDT-2023-10.csv.gz",
+   "sha256": "4f794936ea4c4a15b46b7ecf7c02c78e3e9cbe76fa1ee5932d919ead3ff34870",
+   "split": "validation"
+  },
+  {
+   "bytes": 108846,
+   "path": "ingest/bookdepth_1h/AVAXUSDT-2023-11.csv.gz",
+   "sha256": "e38a9335204cbbb69a476c642add542d80d836e3d955c3a2ec64eeb138062948",
+   "split": "validation"
+  },
+  {
+   "bytes": 113063,
+   "path": "ingest/bookdepth_1h/AVAXUSDT-2023-12.csv.gz",
+   "sha256": "dfe6d57536e1f5e32c333ab094876d486a43df3b15a10ee52c9790e0c0def175",
+   "split": "validation"
+  },
+  {
+   "bytes": 115473,
+   "path": "ingest/bookdepth_1h/DOTUSDT-2023-09.csv.gz",
+   "sha256": "d297c88736406bf56c594cbb7c875b9ae02e6b9a87414bf604b34f76e128bba7",
+   "split": "validation"
+  },
+  {
+   "bytes": 119399,
+   "path": "ingest/bookdepth_1h/DOTUSDT-2023-10.csv.gz",
+   "sha256": "7e3e5623a3ded507945ef199fc213242933f332eebd51dcd4a01155dcef53b63",
+   "split": "validation"
+  },
+  {
+   "bytes": 115429,
+   "path": "ingest/bookdepth_1h/DOTUSDT-2023-11.csv.gz",
+   "sha256": "0dba160a3ef42d24c34f62870683705ebbb449c20686b976b9dfa76a69f75a24",
+   "split": "validation"
+  },
+  {
+   "bytes": 119474,
+   "path": "ingest/bookdepth_1h/DOTUSDT-2023-12.csv.gz",
+   "sha256": "70e07f29d76fbb62ecef1240b4cb94a9bc6120d1ee75820ed49db6a59cec6d50",
+   "split": "validation"
+  },
+  {
+   "bytes": 1391,
+   "path": "ingest/calendar/fomc-2023.json",
+   "sha256": "c942d7c8051b97e3791cce26cd798584eb5eea276932be8d8a8e6cf2b7bafa2b",
+   "split": "validation"
+  },
+  {
+   "bytes": 3762,
+   "path": "ingest/calendar/bls-2023.json",
+   "sha256": "3444c82262737669702587542ed1b68debaf5498cc3390ae9a58d76889adb7e9",
+   "split": "validation"
+  }
+ ],
+ "name": "makrodybde",
+ "reason": "validation test failed at alpha 0.0167",
+ "rule": "research/PROTOCOL_V3.md amendment 14a",
+ "seeds": {
+  "placebo": 17,
+  "sign_flip": 7
+ },
+ "splits": [
+  "train",
+  "validation"
+ ],
+ "started": "2026-10-21 11:29 UTC",
+ "train": {
+  "coins_95": [
+   "BNBUSDT",
+   "XRPUSDT",
+   "DOGEUSDT",
+   "ADAUSDT",
+   "LINKUSDT",
+   "LTCUSDT",
+   "AVAXUSDT",
+   "DOTUSDT"
+  ],
+  "events": [
+   {
+    "T": "2023-01-06 13:30 UTC",
+    "Y": -0.8045730512891768,
+    "coins": 8,
+    "control_days": 4,
+    "dropped": null,
+    "type": "jobs"
+   },
+   {
+    "T": "2023-01-12 13:30 UTC",
+    "Y": -2.0451480437476617,
+    "coins": 8,
+    "control_days": 5,
+    "dropped": null,
+    "type": "cpi"
+   },
+   {
+    "T": "2023-02-01 19:00 UTC",
+    "Y": -1.7597088645371954,
+    "coins": 8,
+    "control_days": 5,
+    "dropped": null,
+    "type": "fomc"
+   },
+   {
+    "T": "2023-02-03 13:30 UTC",
+    "Y": -0.9093454102979084,
+    "coins": 8,
+    "control_days": 5,
+    "dropped": null,
+    "type": "jobs"
+   },
+   {
+    "T": "2023-02-14 13:30 UTC",
+    "Y": null,
+    "coins": 0,
+    "control_days": 5,
+    "dropped": "fewer than 6 coins",
+    "type": "cpi"
+   },
+   {
+    "T": "2023-03-10 13:30 UTC",
+    "Y": -1.449754522454231,
+    "coins": 8,
+    "control_days": 5,
+    "dropped": null,
+    "type": "jobs"
+   },
+   {
+    "T": "2023-03-14 12:30 UTC",
+    "Y": -1.916710405282031,
+    "coins": 8,
+    "control_days": 5,
+    "dropped": null,
+    "type": "cpi"
+   },
+   {
+    "T": "2023-03-22 18:00 UTC",
+    "Y": -1.7265178261321272,
+    "coins": 8,
+    "control_days": 5,
+    "dropped": null,
+    "type": "fomc"
+   },
+   {
+    "T": "2023-04-07 12:30 UTC",
+    "Y": -0.31294852915737686,
+    "coins": 8,
+    "control_days": 5,
+    "dropped": null,
+    "type": "jobs"
+   },
+   {
+    "T": "2023-04-12 12:30 UTC",
+    "Y": -0.9969272449207904,
+    "coins": 8,
+    "control_days": 5,
+    "dropped": null,
+    "type": "cpi"
+   },
+   {
+    "T": "2023-05-03 18:00 UTC",
+    "Y": -0.8136103040018527,
+    "coins": 8,
+    "control_days": 5,
+    "dropped": null,
+    "type": "fomc"
+   },
+   {
+    "T": "2023-05-05 12:30 UTC",
+    "Y": -1.0264860359526322,
+    "coins": 8,
+    "control_days": 5,
+    "dropped": null,
+    "type": "jobs"
+   },
+   {
+    "T": "2023-05-10 12:30 UTC",
+    "Y": -1.3249707167924472,
+    "coins": 8,
+    "control_days": 5,
+    "dropped": null,
+    "type": "cpi"
+   },
+   {
+    "T": "2023-06-02 12:30 UTC",
+    "Y": -0.7490150602697581,
+    "coins": 8,
+    "control_days": 5,
+    "dropped": null,
+    "type": "jobs"
+   },
+   {
+    "T": "2023-06-13 12:30 UTC",
+    "Y": -1.0644445704997638,
+    "coins": 8,
+    "control_days": 5,
+    "dropped": null,
+    "type": "cpi"
+   },
+   {
+    "T": "2023-06-14 18:00 UTC",
+    "Y": -0.8802537280372735,
+    "coins": 8,
+    "control_days": 5,
+    "dropped": null,
+    "type": "fomc"
+   },
+   {
+    "T": "2023-07-07 12:30 UTC",
+    "Y": -0.42737089477838924,
+    "coins": 8,
+    "control_days": 5,
+    "dropped": null,
+    "type": "jobs"
+   },
+   {
+    "T": "2023-07-12 12:30 UTC",
+    "Y": -0.9487537000402716,
+    "coins": 8,
+    "control_days": 5,
+    "dropped": null,
+    "type": "cpi"
+   },
+   {
+    "T": "2023-07-26 18:00 UTC",
+    "Y": -0.6027392035774873,
+    "coins": 8,
+    "control_days": 5,
+    "dropped": null,
+    "type": "fomc"
+   },
+   {
+    "T": "2023-08-04 12:30 UTC",
+    "Y": -0.39096518442866385,
+    "coins": 8,
+    "control_days": 5,
+    "dropped": null,
+    "type": "jobs"
+   },
+   {
+    "T": "2023-08-10 12:30 UTC",
+    "Y": -0.4357766384588646,
+    "coins": 8,
+    "control_days": 5,
+    "dropped": null,
+    "type": "cpi"
+   }
+  ],
+  "fall": 0.6427434031608802,
+  "mean_Y": -1.029300996732795,
+  "n": 20,
+  "n_listed": 21,
+  "placebo": {
+   "at_or_below": 0,
+   "mean_of_sets": -0.08812577955204648,
+   "n": 2000,
+   "p": 0.0,
+   "pool": {
+    "45000": 140,
+    "48600": 140,
+    "64800": 141,
+    "68400": 141
+   },
+   "seed": 17
+  },
+  "practically_negligible": false,
+  "secondary": {
+   "by_type": {
+    "cpi": {
+     "mean_Y": -1.2475330456774043,
+     "n": 7
+    },
+    "fomc": {
+     "mean_Y": -1.1565659852571872,
+     "n": 5
+    },
+    "jobs": {
+     "mean_Y": -0.758807336078517,
+     "n": 8
+    }
+   },
+   "decisional": false,
+   "depth_2pct": {
+    "mean_Y": -0.653038582455312,
+    "n": 20
+   },
+   "hour_after_T": {
+    "mean_Y": -1.0549495225949015,
+    "n": 20
+   },
+   "hour_before_T": {
+    "mean_Y": -0.8745515501161079,
+    "n": 20
+   },
+   "mean_depth_1pct": {
+    "mean_Y": -0.14733867549638452,
+    "n": 20
+   }
+  },
+  "sign_flip": "exact",
+  "sign_flip_p": 9.5367431640625e-07,
+  "split": "train",
+  "valid_hour_share": {
+   "ADAUSDT": 0.960562414266118,
+   "AVAXUSDT": 0.960562414266118,
+   "BNBUSDT": 0.960562414266118,
+   "DOGEUSDT": 0.960562414266118,
+   "DOTUSDT": 0.960562414266118,
+   "LINKUSDT": 0.9564471879286695,
+   "LTCUSDT": 0.960562414266118,
+   "XRPUSDT": 0.960562414266118
+  }
+ },
+ "train_gate": true,
+ "validation": {
+  "coins_95": [
+   "BNBUSDT",
+   "XRPUSDT",
+   "DOGEUSDT",
+   "ADAUSDT",
+   "LINKUSDT",
+   "LTCUSDT",
+   "AVAXUSDT",
+   "DOTUSDT"
+  ],
+  "events": [
+   {
+    "T": "2023-09-01 12:30 UTC",
+    "Y": null,
+    "coins": 0,
+    "control_days": 0,
+    "dropped": "fewer than 3 control days in the window",
+    "type": "jobs"
+   },
+   {
+    "T": "2023-09-13 12:30 UTC",
+    "Y": -0.26769527348681443,
+    "coins": 8,
+    "control_days": 5,
+    "dropped": null,
+    "type": "cpi"
+   },
+   {
+    "T": "2023-09-20 18:00 UTC",
+    "Y": -0.07525001864533815,
+    "coins": 8,
+    "control_days": 5,
+    "dropped": null,
+    "type": "fomc"
+   },
+   {
+    "T": "2023-10-06 12:30 UTC",
+    "Y": -0.03251273318817862,
+    "coins": 8,
+    "control_days": 5,
+    "dropped": null,
+    "type": "jobs"
+   },
+   {
+    "T": "2023-10-12 12:30 UTC",
+    "Y": -0.3610795792290411,
+    "coins": 8,
+    "control_days": 5,
+    "dropped": null,
+    "type": "cpi"
+   },
+   {
+    "T": "2023-11-01 18:00 UTC",
+    "Y": -0.08086984476170869,
+    "coins": 7,
+    "control_days": 5,
+    "dropped": null,
+    "type": "fomc"
+   },
+   {
+    "T": "2023-11-03 12:30 UTC",
+    "Y": -0.03756487708661367,
+    "coins": 8,
+    "control_days": 5,
+    "dropped": null,
+    "type": "jobs"
+   },
+   {
+    "T": "2023-11-14 13:30 UTC",
+    "Y": -0.11885254264627346,
+    "coins": 8,
+    "control_days": 5,
+    "dropped": null,
+    "type": "cpi"
+   },
+   {
+    "T": "2023-12-08 13:30 UTC",
+    "Y": -0.27186362023328525,
+    "coins": 8,
+    "control_days": 5,
+    "dropped": null,
+    "type": "jobs"
+   },
+   {
+    "T": "2023-12-12 13:30 UTC",
+    "Y": -0.16430334855228407,
+    "coins": 8,
+    "control_days": 5,
+    "dropped": null,
+    "type": "cpi"
+   },
+   {
+    "T": "2023-12-13 19:00 UTC",
+    "Y": -0.31573229112679463,
+    "coins": 8,
+    "control_days": 5,
+    "dropped": null,
+    "type": "fomc"
+   }
+  ],
+  "fall": 0.15850264865440788,
+  "mean_Y": -0.17257241289563321,
+  "n": 10,
+  "n_listed": 11,
+  "placebo": {
+   "at_or_below": 388,
+   "mean_of_sets": -0.08783060906148693,
+   "n": 2000,
+   "p": 0.194,
+   "pool": {
+    "45000": 72,
+    "48600": 72,
+    "64800": 72,
+    "68400": 72
+   },
+   "seed": 17
+  },
+  "practically_negligible": false,
+  "secondary": {
+   "by_type": {
+    "cpi": {
+     "mean_Y": -0.22798268597860327,
+     "n": 4
+    },
+    "fomc": {
+     "mean_Y": -0.15728405151128047,
+     "n": 3
+    },
+    "jobs": {
+     "mean_Y": -0.11398041016935918,
+     "n": 3
+    }
+   },
+   "decisional": false,
+   "depth_2pct": {
+    "mean_Y": -0.06824393886605133,
+    "n": 10
+   },
+   "hour_after_T": {
+    "mean_Y": -0.22440714747497753,
+    "n": 10
+   },
+   "hour_before_T": {
+    "mean_Y": -0.1857622631734207,
+    "n": 10
+   },
+   "mean_depth_1pct": {
+    "mean_Y": -0.0204226845168729,
+    "n": 10
+   }
+  },
+  "sign_flip": "exact",
+  "sign_flip_p": 0.0009765625,
+  "split": "validation",
+  "valid_hour_share": {
+   "ADAUSDT": 1.0,
+   "AVAXUSDT": 1.0,
+   "BNBUSDT": 0.9918032786885246,
+   "DOGEUSDT": 1.0,
+   "DOTUSDT": 1.0,
+   "LINKUSDT": 1.0,
+   "LTCUSDT": 0.9918032786885246,
+   "XRPUSDT": 0.9918032786885246
+  }
+ },
+ "validation_read": true,
+ "verdict": "REJECTED"
+}

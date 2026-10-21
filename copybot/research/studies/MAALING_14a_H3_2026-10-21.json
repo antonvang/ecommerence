@@ -1,0 +1,1011 @@
+{
+ "alpha": 0.016666666666666666,
+ "artifact": {
+  "path": "data/lab/artifacts/MEASURE_14a/H3-1792582198.json",
+  "sha256": "013bb1aa9645e2f0ddedf4d4d8b1608c57667160ce141870f498cccb44ffc188"
+ },
+ "code": {
+  "clean": true,
+  "commit": "0fc6a3b73459a5d530be053d9a69493d16ccb3dd",
+  "file": "lab/measure.py",
+  "sha256": "cfed071bd7e3338a275e5b53b7604c992ac08d8c5bba6023afed0204bd86df82"
+ },
+ "coverage": {
+  "ok": true,
+  "reason": null,
+  "splits": {
+   "train": {
+    "coins_with_all_files": [
+     "BNBUSDT",
+     "XRPUSDT",
+     "DOGEUSDT",
+     "ADAUSDT",
+     "LINKUSDT",
+     "LTCUSDT",
+     "AVAXUSDT",
+     "DOTUSDT"
+    ],
+    "missing_calendar": []
+   },
+   "validation": {
+    "coins_with_all_files": [
+     "BNBUSDT",
+     "XRPUSDT",
+     "DOGEUSDT",
+     "ADAUSDT",
+     "LINKUSDT",
+     "LTCUSDT",
+     "AVAXUSDT",
+     "DOTUSDT"
+    ],
+    "missing_calendar": []
+   }
+  }
+ },
+ "decisional_for_trading": false,
+ "draft": "research/drafts/AENDRING14_HYPOTESER_UDKAST.md",
+ "event_id": 12130,
+ "finished": "2026-10-21 11:29 UTC",
+ "hypothesis": "H3",
+ "inputs": [
+  {
+   "bytes": 882,
+   "path": "funding/BNBUSDT-fundingRate-2023-01.zip",
+   "sha256": "57926f802a5d97b17bb08f10539bf10e86bdb55caa1efed7b1e485ec0e4a3a27",
+   "split": "train"
+  },
+  {
+   "bytes": 854,
+   "path": "funding/BNBUSDT-fundingRate-2023-02.zip",
+   "sha256": "f5e3ce986788bef656363c2741e8f515f93e409c61e9b335bc714e528f4f8609",
+   "split": "train"
+  },
+  {
+   "bytes": 986,
+   "path": "funding/BNBUSDT-fundingRate-2023-03.zip",
+   "sha256": "0309e5d4202275f5657b2d5a400c77618f51090962e2945ab2305820f8fbf239",
+   "split": "train"
+  },
+  {
+   "bytes": 944,
+   "path": "funding/BNBUSDT-fundingRate-2023-04.zip",
+   "sha256": "7bbc666c3748ff43b5042acc77f9b158344d6b1e11f93c7de0c36c83affd7066",
+   "split": "train"
+  },
+  {
+   "bytes": 905,
+   "path": "funding/BNBUSDT-fundingRate-2023-05.zip",
+   "sha256": "bcf038a86d9f483fa4d1a9db6fa734cae54745409bcc083d3067670f76b4fb84",
+   "split": "train"
+  },
+  {
+   "bytes": 774,
+   "path": "funding/BNBUSDT-fundingRate-2023-06.zip",
+   "sha256": "7a92bc9a9f03229509e2e34835c8cb4e05b8218cc82fe080443389d2ccbb1e98",
+   "split": "train"
+  },
+  {
+   "bytes": 887,
+   "path": "funding/BNBUSDT-fundingRate-2023-07.zip",
+   "sha256": "38d044d00f3c81a8d201b9117f5f1f6559568db16561cf9ce8f0eccc02cddbc9",
+   "split": "train"
+  },
+  {
+   "bytes": 799,
+   "path": "funding/BNBUSDT-fundingRate-2023-08.zip",
+   "sha256": "27621b8cfc274cba9882e08c61315433ea23f58d59eb83781b4e63f9ad685c13",
+   "split": "train"
+  },
+  {
+   "bytes": 805,
+   "path": "funding/XRPUSDT-fundingRate-2023-01.zip",
+   "sha256": "d5a60c79d144e9157ccd211c4230fb64fdd210dd34cb22e7660e41531f66a5e9",
+   "split": "train"
+  },
+  {
+   "bytes": 782,
+   "path": "funding/XRPUSDT-fundingRate-2023-02.zip",
+   "sha256": "a8e7674eb3bd141d27787af892832896d609881764582f86c724b2a8d88fec50",
+   "split": "train"
+  },
+  {
+   "bytes": 906,
+   "path": "funding/XRPUSDT-fundingRate-2023-03.zip",
+   "sha256": "198eed85733a3e9e6baa935b853aac7dcfa27c550a4ec43f6b862d02cea79d0b",
+   "split": "train"
+  },
+  {
+   "bytes": 926,
+   "path": "funding/XRPUSDT-fundingRate-2023-04.zip",
+   "sha256": "a312648378931c50243bbba31b6b4595f6d8c9d8f6e16c5ffb779fb3a8817ea4",
+   "split": "train"
+  },
+  {
+   "bytes": 921,
+   "path": "funding/XRPUSDT-fundingRate-2023-05.zip",
+   "sha256": "d3e2b728cb6e493672b359004946f0737506ed4b153f61354478dedd20a50da7",
+   "split": "train"
+  },
+  {
+   "bytes": 867,
+   "path": "funding/XRPUSDT-fundingRate-2023-06.zip",
+   "sha256": "a83e74907e437eac3f8db466fda62cdb7c487a096bdaa69a9b797e1507431502",
+   "split": "train"
+  },
+  {
+   "bytes": 792,
+   "path": "funding/XRPUSDT-fundingRate-2023-07.zip",
+   "sha256": "5348dd7a724fdb991788703b14b5c134711ec173b2bc821e13da18a46042c1f3",
+   "split": "train"
+  },
+  {
+   "bytes": 816,
+   "path": "funding/XRPUSDT-fundingRate-2023-08.zip",
+   "sha256": "491f029d456a47cc58f5888c4e9a91deac419c5242c27fde744a971716391fa6",
+   "split": "train"
+  },
+  {
+   "bytes": 808,
+   "path": "funding/DOGEUSDT-fundingRate-2023-01.zip",
+   "sha256": "49e9a7828c95398a332abecf1747724a951f012fcf2ab22b36e9a3281f8d3a49",
+   "split": "train"
+  },
+  {
+   "bytes": 817,
+   "path": "funding/DOGEUSDT-fundingRate-2023-02.zip",
+   "sha256": "09f036da9f150499af7f053e8a3679baeab3b1dd24cf9d655659bd809680a701",
+   "split": "train"
+  },
+  {
+   "bytes": 877,
+   "path": "funding/DOGEUSDT-fundingRate-2023-03.zip",
+   "sha256": "abde9a1d13799b4a412670cc0fba59fb283a5f1be8475bf1ab608dc0bd2707f4",
+   "split": "train"
+  },
+  {
+   "bytes": 875,
+   "path": "funding/DOGEUSDT-fundingRate-2023-04.zip",
+   "sha256": "0f15cc8b48c85f0dbdaad908836e08a085673ca4d67bd96bbca2e3910cba29ff",
+   "split": "train"
+  },
+  {
+   "bytes": 896,
+   "path": "funding/DOGEUSDT-fundingRate-2023-05.zip",
+   "sha256": "1c388110bc5e1a69d76c7a41e4945396427fad064a593fbf5edecae338584322",
+   "split": "train"
+  },
+  {
+   "bytes": 827,
+   "path": "funding/DOGEUSDT-fundingRate-2023-06.zip",
+   "sha256": "50cbca0534f27a63cc9146c22559764010fffdffeef8f48e9e8c97fbf4372ea6",
+   "split": "train"
+  },
+  {
+   "bytes": 783,
+   "path": "funding/DOGEUSDT-fundingRate-2023-07.zip",
+   "sha256": "2e92a749e0886d0cfba0d9ebe7061ed0abadf9fc4d16e12d2d00fed555d666dc",
+   "split": "train"
+  },
+  {
+   "bytes": 845,
+   "path": "funding/DOGEUSDT-fundingRate-2023-08.zip",
+   "sha256": "7cdad830df4e60545d222744d9194bbe6044bf3af32b6b1b8dcc9d0649b5aa81",
+   "split": "train"
+  },
+  {
+   "bytes": 822,
+   "path": "funding/ADAUSDT-fundingRate-2023-01.zip",
+   "sha256": "0f15aefda466406c18b88a653e5dccf1916bbfb3be6accc5196a0289237e0c85",
+   "split": "train"
+  },
+  {
+   "bytes": 777,
+   "path": "funding/ADAUSDT-fundingRate-2023-02.zip",
+   "sha256": "618ff4e73258d603b2b1215dccb3835834fbce33731c51d4e194c011641689bf",
+   "split": "train"
+  },
+  {
+   "bytes": 925,
+   "path": "funding/ADAUSDT-fundingRate-2023-03.zip",
+   "sha256": "f2f97cad940c730d5576da7954af9b944240e451e54b1163058eb9f2c445f4fc",
+   "split": "train"
+  },
+  {
+   "bytes": 860,
+   "path": "funding/ADAUSDT-fundingRate-2023-04.zip",
+   "sha256": "6adf0981c8ed8eae67abe6834c2360ac7ee83fbb575c35735978489db443effd",
+   "split": "train"
+  },
+  {
+   "bytes": 877,
+   "path": "funding/ADAUSDT-fundingRate-2023-05.zip",
+   "sha256": "216652bb167d682883d29f1c4591ec1bf3eabdab9e1a5091f518bd2742330353",
+   "split": "train"
+  },
+  {
+   "bytes": 901,
+   "path": "funding/ADAUSDT-fundingRate-2023-06.zip",
+   "sha256": "7c91256dd07a9692f2e3acf6ce241b61c3a63cdde4eb485bb6cbaeb29ff06303",
+   "split": "train"
+  },
+  {
+   "bytes": 737,
+   "path": "funding/ADAUSDT-fundingRate-2023-07.zip",
+   "sha256": "7ae0fc563a17f317779e6d1cc2119ad1ca72d71d1e3807fc4998f381655026e3",
+   "split": "train"
+  },
+  {
+   "bytes": 844,
+   "path": "funding/ADAUSDT-fundingRate-2023-08.zip",
+   "sha256": "7b188eefc9364b1f74533c765ed212832cce3c17ce41b2ac174506bfec45a169",
+   "split": "train"
+  },
+  {
+   "bytes": 806,
+   "path": "funding/LINKUSDT-fundingRate-2023-01.zip",
+   "sha256": "ce4a65fab0992afc691a555f0d7071beff7108704c281171f0fa2543491e9484",
+   "split": "train"
+  },
+  {
+   "bytes": 741,
+   "path": "funding/LINKUSDT-fundingRate-2023-02.zip",
+   "sha256": "877493f77949b9e40cceea41796155a72a1a454d15f360f25590ec3a62d7c599",
+   "split": "train"
+  },
+  {
+   "bytes": 884,
+   "path": "funding/LINKUSDT-fundingRate-2023-03.zip",
+   "sha256": "79b93a5cd8f7ae4a6708efd994fe2175a5ec05c472ced564197624c868ebf637",
+   "split": "train"
+  },
+  {
+   "bytes": 841,
+   "path": "funding/LINKUSDT-fundingRate-2023-04.zip",
+   "sha256": "e8acd937ee1b11f7630fff07440e1d16753da7108747d437c449a7d5068f0c64",
+   "split": "train"
+  },
+  {
+   "bytes": 883,
+   "path": "funding/LINKUSDT-fundingRate-2023-05.zip",
+   "sha256": "c1164402237277860b302f7ef682175ad52f27f027aa6bb3daa93955f97c9aa3",
+   "split": "train"
+  },
+  {
+   "bytes": 823,
+   "path": "funding/LINKUSDT-fundingRate-2023-06.zip",
+   "sha256": "5f5a79f4f614a5de1b2f6ad7616c6c2960fcc41b8593f303709791f7c830ee95",
+   "split": "train"
+  },
+  {
+   "bytes": 783,
+   "path": "funding/LINKUSDT-fundingRate-2023-07.zip",
+   "sha256": "4d1cbfeb15f5b570b2cac0be1c7e64450b3652af3c6f3de97756d52a6ea1abff",
+   "split": "train"
+  },
+  {
+   "bytes": 806,
+   "path": "funding/LINKUSDT-fundingRate-2023-08.zip",
+   "sha256": "adeb4fd43b0afec33e4d3bdce605ac500253759fa6dc796dc0fbb932cf40aa56",
+   "split": "train"
+  },
+  {
+   "bytes": 800,
+   "path": "funding/LTCUSDT-fundingRate-2023-01.zip",
+   "sha256": "7179e28e19f5b8e7b3753947740d93a135a0856bef0f3bd98298f2b3002453f0",
+   "split": "train"
+  },
+  {
+   "bytes": 753,
+   "path": "funding/LTCUSDT-fundingRate-2023-02.zip",
+   "sha256": "8bdd9933b77f5735b166d3f509117e952696322d257242876b00e2e69f745bc4",
+   "split": "train"
+  },
+  {
+   "bytes": 903,
+   "path": "funding/LTCUSDT-fundingRate-2023-03.zip",
+   "sha256": "c043aa59c696045eced0564c0bfffc4fe22901239daf1a5dcb26759f908d4d9c",
+   "split": "train"
+  },
+  {
+   "bytes": 884,
+   "path": "funding/LTCUSDT-fundingRate-2023-04.zip",
+   "sha256": "37552806901ae7b1da6f1ce2249fdb3ad40cf60848ad6652024bd891b3d6df3a",
+   "split": "train"
+  },
+  {
+   "bytes": 929,
+   "path": "funding/LTCUSDT-fundingRate-2023-05.zip",
+   "sha256": "4f85c2921a58167c38fb17e28a0e993dd02f5d8f3ac8cf5ecec5ab8a16c4a0d4",
+   "split": "train"
+  },
+  {
+   "bytes": 828,
+   "path": "funding/LTCUSDT-fundingRate-2023-06.zip",
+   "sha256": "5300f0bef16cfa6271f95aaa6d38d9019a741453d11263361b502a0e9061f76f",
+   "split": "train"
+  },
+  {
+   "bytes": 830,
+   "path": "funding/LTCUSDT-fundingRate-2023-07.zip",
+   "sha256": "b6a2af7fbf06e28454eb4a469f82984ed37369da2765ce7412abdf2f57916381",
+   "split": "train"
+  },
+  {
+   "bytes": 868,
+   "path": "funding/LTCUSDT-fundingRate-2023-08.zip",
+   "sha256": "33f110598950dae9d0a7ea2e9b10d028c6c2bce018f36c30be5dd9c63cb17239",
+   "split": "train"
+  },
+  {
+   "bytes": 835,
+   "path": "funding/AVAXUSDT-fundingRate-2023-01.zip",
+   "sha256": "b893b052e18ae9067b80fef9765475ff4b74ec8106a152bc7f86c915e84df9ce",
+   "split": "train"
+  },
+  {
+   "bytes": 783,
+   "path": "funding/AVAXUSDT-fundingRate-2023-02.zip",
+   "sha256": "a87358418de27cfc4fe7981847367c1690d66d0c31215f7565bb9f9b0b413fb9",
+   "split": "train"
+  },
+  {
+   "bytes": 868,
+   "path": "funding/AVAXUSDT-fundingRate-2023-03.zip",
+   "sha256": "c635a5c1b5e4b6a8e352ff8889633230b6337a83d209bcddbbf2a1ae9f814910",
+   "split": "train"
+  },
+  {
+   "bytes": 874,
+   "path": "funding/AVAXUSDT-fundingRate-2023-04.zip",
+   "sha256": "47312af7109106a4eef182bf60911cbd35f8b3ebedafe9c96fd72c4a59c39c12",
+   "split": "train"
+  },
+  {
+   "bytes": 945,
+   "path": "funding/AVAXUSDT-fundingRate-2023-05.zip",
+   "sha256": "020b9407dd30220ea129923c83008a44c55fc6e214522c38baf306cd4f6ba998",
+   "split": "train"
+  },
+  {
+   "bytes": 843,
+   "path": "funding/AVAXUSDT-fundingRate-2023-06.zip",
+   "sha256": "001d6333e9fcfc88c0542cc94b2f605754d4c9b71a03cf39afd849cab48812d2",
+   "split": "train"
+  },
+  {
+   "bytes": 795,
+   "path": "funding/AVAXUSDT-fundingRate-2023-07.zip",
+   "sha256": "33fdff77aa019f098a22c20eeb002f9fe26b2be46efa5ff2c54ed7963591fa3d",
+   "split": "train"
+  },
+  {
+   "bytes": 927,
+   "path": "funding/AVAXUSDT-fundingRate-2023-08.zip",
+   "sha256": "5c4852ed738fde23758cc5684e9c981ea640c8b6c5a75dee3574fc7820d5eee8",
+   "split": "train"
+  },
+  {
+   "bytes": 899,
+   "path": "funding/DOTUSDT-fundingRate-2023-01.zip",
+   "sha256": "daf6986e3669fcea3cca406ef72751ef3b25d25d2a5a029a23397a398d78d133",
+   "split": "train"
+  },
+  {
+   "bytes": 854,
+   "path": "funding/DOTUSDT-fundingRate-2023-02.zip",
+   "sha256": "0dcf3c70f2a781c6b8f325f4a523e4fda651ebc18595a0ef20ea72d87a074f8d",
+   "split": "train"
+  },
+  {
+   "bytes": 956,
+   "path": "funding/DOTUSDT-fundingRate-2023-03.zip",
+   "sha256": "cd9c8d94f18c9780b9152ddf6ac26ab1147981190b704e912958ebbb97572e4e",
+   "split": "train"
+  },
+  {
+   "bytes": 896,
+   "path": "funding/DOTUSDT-fundingRate-2023-04.zip",
+   "sha256": "fcd6555f958b0cdcb62954893e4b1884e66727e7521c83af7be25ac5de78c5a1",
+   "split": "train"
+  },
+  {
+   "bytes": 943,
+   "path": "funding/DOTUSDT-fundingRate-2023-05.zip",
+   "sha256": "f27f079f18c894f78eaa09790fa93584e5d2b610bb6f788600d5ba56c4d69b6f",
+   "split": "train"
+  },
+  {
+   "bytes": 916,
+   "path": "funding/DOTUSDT-fundingRate-2023-06.zip",
+   "sha256": "e29d828cbea7eed708ec9728c94b4fc1fb72e82495def596d978902e8c9e636f",
+   "split": "train"
+  },
+  {
+   "bytes": 887,
+   "path": "funding/DOTUSDT-fundingRate-2023-07.zip",
+   "sha256": "3b0bc3e552ed8e2c7c5221cb1d778c0e92a0df569a9f1c44fab462bf775b7678",
+   "split": "train"
+  },
+  {
+   "bytes": 943,
+   "path": "funding/DOTUSDT-fundingRate-2023-08.zip",
+   "sha256": "fc5685bd3ec2a6af0ff73e418c0b12c08af9d93ffe1d8e9e515bb4b15aa02415",
+   "split": "train"
+  },
+  {
+   "bytes": 84592,
+   "path": "ingest/aggtrades_1h/BNBUSDT-2023-01.csv.gz",
+   "sha256": "0b2e531f3a3a42b1813455ecb1564a28993967d0236955b4a27d3245c21e7aad",
+   "split": "train"
+  },
+  {
+   "bytes": 77289,
+   "path": "ingest/aggtrades_1h/BNBUSDT-2023-02.csv.gz",
+   "sha256": "c93670b25c23b2d9fa36d98acfc1488a51a400fecc2bba707e1ecf720c8320cc",
+   "split": "train"
+  },
+  {
+   "bytes": 84436,
+   "path": "ingest/aggtrades_1h/BNBUSDT-2023-03.csv.gz",
+   "sha256": "e3007a4c222112a816b54881a658fd03d2ddd98fbd1804fb1d37001572bc60a9",
+   "split": "train"
+  },
+  {
+   "bytes": 79946,
+   "path": "ingest/aggtrades_1h/BNBUSDT-2023-04.csv.gz",
+   "sha256": "cf3c4d7fcf38c4f8cfd0558602e9133c06669c2f9ec9c09d9e47336a22a2d945",
+   "split": "train"
+  },
+  {
+   "bytes": 80775,
+   "path": "ingest/aggtrades_1h/BNBUSDT-2023-05.csv.gz",
+   "sha256": "30a1643f1c2d5e7aa1bd9f5922af62054469fa62f52b8a6d6e96969d3e4a5657",
+   "split": "train"
+  },
+  {
+   "bytes": 82471,
+   "path": "ingest/aggtrades_1h/BNBUSDT-2023-06.csv.gz",
+   "sha256": "f6df6115e6dbcbefc4b0fd3186fba11352c3144da09ac6d21f2c02c713b3d865",
+   "split": "train"
+  },
+  {
+   "bytes": 81946,
+   "path": "ingest/aggtrades_1h/BNBUSDT-2023-07.csv.gz",
+   "sha256": "e922316c3a4e742cdd52b6d431e0aa7d20690a25c43dd49a22520c1b29e63b3c",
+   "split": "train"
+  },
+  {
+   "bytes": 80476,
+   "path": "ingest/aggtrades_1h/BNBUSDT-2023-08.csv.gz",
+   "sha256": "dae465867dee1fc8e3f9b324ec69286fe8a3d83183384a8efce849fc110cf267",
+   "split": "train"
+  },
+  {
+   "bytes": 93450,
+   "path": "ingest/aggtrades_1h/XRPUSDT-2023-01.csv.gz",
+   "sha256": "a5ea1fbd73398f86ef4bcb53df525b8b6a0e34f7c32a1e0081c6f4e43137383b",
+   "split": "train"
+  },
+  {
+   "bytes": 83151,
+   "path": "ingest/aggtrades_1h/XRPUSDT-2023-02.csv.gz",
+   "sha256": "dac03b31df73c8eac18b23af77904520413d794087bc058e65663e0899d85a12",
+   "split": "train"
+  },
+  {
+   "bytes": 94788,
+   "path": "ingest/aggtrades_1h/XRPUSDT-2023-03.csv.gz",
+   "sha256": "e53028ae06a9d866c83af57ebc56bec24ad8724d93e32a85c6230db6f1d2d6ec",
+   "split": "train"
+  },
+  {
+   "bytes": 89980,
+   "path": "ingest/aggtrades_1h/XRPUSDT-2023-04.csv.gz",
+   "sha256": "a5f41f4ce23d6cb4c8fea3517bd6438f2e84833d7ee3c4851b4ff65e4c48ed87",
+   "split": "train"
+  },
+  {
+   "bytes": 92577,
+   "path": "ingest/aggtrades_1h/XRPUSDT-2023-05.csv.gz",
+   "sha256": "93f918d68675bbb32739fb649260afe43dc8999743336979e9f019ccf10a28d5",
+   "split": "train"
+  },
+  {
+   "bytes": 91215,
+   "path": "ingest/aggtrades_1h/XRPUSDT-2023-06.csv.gz",
+   "sha256": "4fc1a01273edde961842df1cb64f45167d1abb3d27fa9e6cacd9678338d84855",
+   "split": "train"
+  },
+  {
+   "bytes": 94672,
+   "path": "ingest/aggtrades_1h/XRPUSDT-2023-07.csv.gz",
+   "sha256": "601ddb8ea7b07e2c04b4461dd0eb36ecf0fb3c08624222fbafc2f2f663a0474a",
+   "split": "train"
+  },
+  {
+   "bytes": 93487,
+   "path": "ingest/aggtrades_1h/XRPUSDT-2023-08.csv.gz",
+   "sha256": "ad37c34e73c61ef2ae30087108fbd0b3ae9a1d2ea4bf09b6e3a35fdc00698515",
+   "split": "train"
+  },
+  {
+   "bytes": 87931,
+   "path": "ingest/aggtrades_1h/DOGEUSDT-2023-01.csv.gz",
+   "sha256": "ec670022ff594f575ae0fedb617e545079792917009272152d8f3e3239ed8af1",
+   "split": "train"
+  },
+  {
+   "bytes": 78555,
+   "path": "ingest/aggtrades_1h/DOGEUSDT-2023-02.csv.gz",
+   "sha256": "0d444795b0eebcb0e7c8dc8bdb3493e5af60f1b9491cc7a0ea93fc7040019a8e",
+   "split": "train"
+  },
+  {
+   "bytes": 84159,
+   "path": "ingest/aggtrades_1h/DOGEUSDT-2023-03.csv.gz",
+   "sha256": "0be3c133c5067df3ed1f45162d63ecc6900f2762c3de966bb993d6bece7d13ee",
+   "split": "train"
+  },
+  {
+   "bytes": 86261,
+   "path": "ingest/aggtrades_1h/DOGEUSDT-2023-04.csv.gz",
+   "sha256": "69b8a557ea4c61d313174002f53acedc1a3787280ec124ea5d96fa33fdb92f09",
+   "split": "train"
+  },
+  {
+   "bytes": 83515,
+   "path": "ingest/aggtrades_1h/DOGEUSDT-2023-05.csv.gz",
+   "sha256": "7f58d4680eb7aadfca781c559ad16d1a4de69dc8320ef2aa5d30ad5343884fef",
+   "split": "train"
+  },
+  {
+   "bytes": 80766,
+   "path": "ingest/aggtrades_1h/DOGEUSDT-2023-06.csv.gz",
+   "sha256": "acf1abd57c340258fe6c27cc2c2f0ae4b27b420ea73580acc6da2eec477def0d",
+   "split": "train"
+  },
+  {
+   "bytes": 87199,
+   "path": "ingest/aggtrades_1h/DOGEUSDT-2023-07.csv.gz",
+   "sha256": "c75fa5bf3372dadfc7977fdeb9d063b049f3c2284a5bf2e57ee2274e4908fabe",
+   "split": "train"
+  },
+  {
+   "bytes": 85452,
+   "path": "ingest/aggtrades_1h/DOGEUSDT-2023-08.csv.gz",
+   "sha256": "e5c21310cd0c402e18219c5f3ce625551a5485055717fa1abe6cf1260a88e563",
+   "split": "train"
+  },
+  {
+   "bytes": 79525,
+   "path": "ingest/aggtrades_1h/ADAUSDT-2023-01.csv.gz",
+   "sha256": "af7875b38470079f282acb1a7dd0dc993e325c96b7a97d650042115a9ea52e1f",
+   "split": "train"
+  },
+  {
+   "bytes": 71215,
+   "path": "ingest/aggtrades_1h/ADAUSDT-2023-02.csv.gz",
+   "sha256": "8409d19950efe05e71dff251b18b02b831fdf823d16bbd26546865076b0df8cf",
+   "split": "train"
+  },
+  {
+   "bytes": 78623,
+   "path": "ingest/aggtrades_1h/ADAUSDT-2023-03.csv.gz",
+   "sha256": "bf5e3a3cb66094e6c627a82d6c55b26a17ad259e7dcc16cf140c898c9b0fdb41",
+   "split": "train"
+  },
+  {
+   "bytes": 75398,
+   "path": "ingest/aggtrades_1h/ADAUSDT-2023-04.csv.gz",
+   "sha256": "1a972c58823592f247e1256142d457e6baad8f122c789f6bff39d0eecd92f153",
+   "split": "train"
+  },
+  {
+   "bytes": 76650,
+   "path": "ingest/aggtrades_1h/ADAUSDT-2023-05.csv.gz",
+   "sha256": "aaf5d3d26729e21a2726cec002f9cee0dfeac4126dcde7580099dcd6b867c376",
+   "split": "train"
+  },
+  {
+   "bytes": 77034,
+   "path": "ingest/aggtrades_1h/ADAUSDT-2023-06.csv.gz",
+   "sha256": "19ce7c0e209cb2282558186cff1f97e70f12a73657a752557ade1b13805af30c",
+   "split": "train"
+  },
+  {
+   "bytes": 78230,
+   "path": "ingest/aggtrades_1h/ADAUSDT-2023-07.csv.gz",
+   "sha256": "eccf5d63fbde9d764f750bc54211b6cacb7926d0f6538c574783c8a96c342800",
+   "split": "train"
+  },
+  {
+   "bytes": 75877,
+   "path": "ingest/aggtrades_1h/ADAUSDT-2023-08.csv.gz",
+   "sha256": "bb546aa08e57ee8c52d6f1e3795eaafcc912bb08b5d002ad7e2599f98bcbb630",
+   "split": "train"
+  },
+  {
+   "bytes": 85062,
+   "path": "ingest/aggtrades_1h/LINKUSDT-2023-01.csv.gz",
+   "sha256": "3d57ad537c9ca1ee8f44b5e4c7a8dd8e109cf75294b1ac3563e16267cde0e198",
+   "split": "train"
+  },
+  {
+   "bytes": 77576,
+   "path": "ingest/aggtrades_1h/LINKUSDT-2023-02.csv.gz",
+   "sha256": "aa97542273d28fbff65c2e98b49c6e49b6bd3c5ed528640e4734ee14c939a573",
+   "split": "train"
+  },
+  {
+   "bytes": 83937,
+   "path": "ingest/aggtrades_1h/LINKUSDT-2023-03.csv.gz",
+   "sha256": "205c925832e10987c82bb1ea952fc6481f827671d0695cd911b26200cabcb700",
+   "split": "train"
+  },
+  {
+   "bytes": 79741,
+   "path": "ingest/aggtrades_1h/LINKUSDT-2023-04.csv.gz",
+   "sha256": "d5d8b0c74682d573fcc6930c282633ced8377efc0111bfd2545b2b8d8e452699",
+   "split": "train"
+  },
+  {
+   "bytes": 80627,
+   "path": "ingest/aggtrades_1h/LINKUSDT-2023-05.csv.gz",
+   "sha256": "8f02679859deb8eaac4a1a51cfb5735f13a7a89b123588f3c34901d1d613e4a7",
+   "split": "train"
+  },
+  {
+   "bytes": 78854,
+   "path": "ingest/aggtrades_1h/LINKUSDT-2023-06.csv.gz",
+   "sha256": "94abbc74b9b747f8a9111d81167c2869245f72537f1e7064695ab671bb0b2d29",
+   "split": "train"
+  },
+  {
+   "bytes": 84452,
+   "path": "ingest/aggtrades_1h/LINKUSDT-2023-07.csv.gz",
+   "sha256": "b17dcce50ca53071e1d71af4aa30ed45d6f407bd7c3390f110fcd5510db629cc",
+   "split": "train"
+  },
+  {
+   "bytes": 82571,
+   "path": "ingest/aggtrades_1h/LINKUSDT-2023-08.csv.gz",
+   "sha256": "9f198c44339a2bcb1d10e3f8648395bf0a6ec93176bbb28d0c4c608b73bf1dd5",
+   "split": "train"
+  },
+  {
+   "bytes": 87354,
+   "path": "ingest/aggtrades_1h/LTCUSDT-2023-01.csv.gz",
+   "sha256": "b067e640957c7337975fa30f9f47fe9fbf270f555f9997e6e817ba26b9ee78fa",
+   "split": "train"
+  },
+  {
+   "bytes": 79022,
+   "path": "ingest/aggtrades_1h/LTCUSDT-2023-02.csv.gz",
+   "sha256": "29a614ce10c14bd5b47023d52281ed73dd9a9d435f5b4c35f73b9e169918fb4e",
+   "split": "train"
+  },
+  {
+   "bytes": 88401,
+   "path": "ingest/aggtrades_1h/LTCUSDT-2023-03.csv.gz",
+   "sha256": "b53073f2351c4b8a3a11ef2106f483d189b2e7cadf9cca3b908b336dee513acf",
+   "split": "train"
+  },
+  {
+   "bytes": 83911,
+   "path": "ingest/aggtrades_1h/LTCUSDT-2023-04.csv.gz",
+   "sha256": "b749541f6ee19a4df5720a13b76611533de483ecb04720952591b95bd5a54f09",
+   "split": "train"
+  },
+  {
+   "bytes": 87614,
+   "path": "ingest/aggtrades_1h/LTCUSDT-2023-05.csv.gz",
+   "sha256": "94e51283c8e45872158541aa35bd730d2b13874c9608d6ab0db4173a28534a07",
+   "split": "train"
+  },
+  {
+   "bytes": 85911,
+   "path": "ingest/aggtrades_1h/LTCUSDT-2023-06.csv.gz",
+   "sha256": "a9be14d9d207d78cc8fe1e8859ac801679ce7547de080c37e4d7f406adf1a155",
+   "split": "train"
+  },
+  {
+   "bytes": 91179,
+   "path": "ingest/aggtrades_1h/LTCUSDT-2023-07.csv.gz",
+   "sha256": "a6d6fe571f4a73f75ea808962b46e95d7aa7921a0ae1f9c8928f0598ad4cb75e",
+   "split": "train"
+  },
+  {
+   "bytes": 87577,
+   "path": "ingest/aggtrades_1h/LTCUSDT-2023-08.csv.gz",
+   "sha256": "3a0d4a2aa8690bbace2e8f292f57d40abac7fbc395636884ee4688bc3186c3b1",
+   "split": "train"
+  },
+  {
+   "bytes": 73088,
+   "path": "ingest/aggtrades_1h/AVAXUSDT-2023-01.csv.gz",
+   "sha256": "06cf1f9c8cc1d53e0e2dec756b227729ef1f504af1b5f6cf3f3e23eefc0be919",
+   "split": "train"
+  },
+  {
+   "bytes": 66057,
+   "path": "ingest/aggtrades_1h/AVAXUSDT-2023-02.csv.gz",
+   "sha256": "ce8197e8b7a85ba08dd27a67778d2197ed2a60043831a644787d7fe3650a5fa7",
+   "split": "train"
+  },
+  {
+   "bytes": 71202,
+   "path": "ingest/aggtrades_1h/AVAXUSDT-2023-03.csv.gz",
+   "sha256": "75cdbf7a270d5a16be56a901fcfdbc5f3476d6fa7c398766540417c622642611",
+   "split": "train"
+  },
+  {
+   "bytes": 68285,
+   "path": "ingest/aggtrades_1h/AVAXUSDT-2023-04.csv.gz",
+   "sha256": "33e5fa5ccefe89ca553234c11ab5a85f391bcd2984989cb702f10446754657c9",
+   "split": "train"
+  },
+  {
+   "bytes": 69014,
+   "path": "ingest/aggtrades_1h/AVAXUSDT-2023-05.csv.gz",
+   "sha256": "1dbbe896e0716f511c112f7e9e69e8bd24554c3ce4b33f20b2780d7f8441af59",
+   "split": "train"
+  },
+  {
+   "bytes": 66929,
+   "path": "ingest/aggtrades_1h/AVAXUSDT-2023-06.csv.gz",
+   "sha256": "95434001034855bdd6133f9c2b268d52cdd49081e708cd8e1550e7be6c9e9482",
+   "split": "train"
+  },
+  {
+   "bytes": 69997,
+   "path": "ingest/aggtrades_1h/AVAXUSDT-2023-07.csv.gz",
+   "sha256": "1b6619e237948a0ed6da3604ae1aafaa403244ac02f0ae49eaa727eb3431d5c8",
+   "split": "train"
+  },
+  {
+   "bytes": 68121,
+   "path": "ingest/aggtrades_1h/AVAXUSDT-2023-08.csv.gz",
+   "sha256": "1053c0b5dec98f7a14b119c3fbb772b26760c34f3e1ca856c54975facfd5a976",
+   "split": "train"
+  },
+  {
+   "bytes": 78610,
+   "path": "ingest/aggtrades_1h/DOTUSDT-2023-01.csv.gz",
+   "sha256": "66058a422957dd4660f5514136e959edc665c6c5a83615200871ccbf7bc9f45c",
+   "split": "train"
+  },
+  {
+   "bytes": 71640,
+   "path": "ingest/aggtrades_1h/DOTUSDT-2023-02.csv.gz",
+   "sha256": "574d382d2620671e9d1693e9a0df7ca42416b6c6502b060eb027459bbf0232ab",
+   "split": "train"
+  },
+  {
+   "bytes": 78542,
+   "path": "ingest/aggtrades_1h/DOTUSDT-2023-03.csv.gz",
+   "sha256": "31ab719bc53f78c4a5785ac6d8e0eff462e73eeb92a538409a3c4dfab699a610",
+   "split": "train"
+  },
+  {
+   "bytes": 74856,
+   "path": "ingest/aggtrades_1h/DOTUSDT-2023-04.csv.gz",
+   "sha256": "5304305e874a6d689558d438b6d99a2ffb93edaa3e290669c71d3fcf5b6b00db",
+   "split": "train"
+  },
+  {
+   "bytes": 75992,
+   "path": "ingest/aggtrades_1h/DOTUSDT-2023-05.csv.gz",
+   "sha256": "c8e1b4ac2dac7f545c909d79b530397aae6f965e080d4b905effd056ec3cbd1f",
+   "split": "train"
+  },
+  {
+   "bytes": 74685,
+   "path": "ingest/aggtrades_1h/DOTUSDT-2023-06.csv.gz",
+   "sha256": "d4ebb1b7ef6c6860b7ec1ca0657e5b1d03bf7822544e05e9df6359a035e4e21f",
+   "split": "train"
+  },
+  {
+   "bytes": 76979,
+   "path": "ingest/aggtrades_1h/DOTUSDT-2023-07.csv.gz",
+   "sha256": "0e695a078ab2115f70fbbfe0d3e30e88e0be1b834b0b0ee704aac34766aa2501",
+   "split": "train"
+  },
+  {
+   "bytes": 75318,
+   "path": "ingest/aggtrades_1h/DOTUSDT-2023-08.csv.gz",
+   "sha256": "9a7e4ac17713ab4fab346ea1c2ab628941d6e45633fcf65698bd1ac67c815653",
+   "split": "train"
+  }
+ ],
+ "name": "smaahandel (step 1)",
+ "reason": "train gate failed; validation not read",
+ "rule": "research/PROTOCOL_V3.md amendment 14a",
+ "seeds": {
+  "bootstrap": 7
+ },
+ "splits": [
+  "train",
+  "validation"
+ ],
+ "started": "2026-10-21 11:29 UTC",
+ "train": {
+  "bootstrap": {
+   "alpha": 0.016666666666666666,
+   "block": 4,
+   "draws": 2000,
+   "lower": -0.11979166666666666,
+   "median": -0.002976190476190476,
+   "rank": 33,
+   "seed": 7
+  },
+  "mean_rho": -0.010416666666666666,
+  "mondays": 32,
+  "n": 32,
+  "split": "train",
+  "weeks": [
+   {
+    "coins": 8,
+    "rho": -0.30952380952380953,
+    "t": "2023-01-16 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": -0.4523809523809524,
+    "t": "2023-01-23 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": 0.3333333333333333,
+    "t": "2023-01-30 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": 0.30952380952380953,
+    "t": "2023-02-06 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": 0.047619047619047616,
+    "t": "2023-02-13 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": 0.7380952380952381,
+    "t": "2023-02-20 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": -0.47619047619047616,
+    "t": "2023-02-27 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": 0.30952380952380953,
+    "t": "2023-03-06 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": -0.5,
+    "t": "2023-03-13 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": 0.19047619047619047,
+    "t": "2023-03-20 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": -0.19047619047619047,
+    "t": "2023-03-27 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": -0.40476190476190477,
+    "t": "2023-04-03 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": 0.30952380952380953,
+    "t": "2023-04-10 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": -0.11904761904761904,
+    "t": "2023-04-17 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": -0.5,
+    "t": "2023-04-24 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": 0.21428571428571427,
+    "t": "2023-05-01 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": 0.23809523809523808,
+    "t": "2023-05-08 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": 0.14285714285714285,
+    "t": "2023-05-15 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": 0.16666666666666666,
+    "t": "2023-05-22 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": -0.23809523809523808,
+    "t": "2023-05-29 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": 0.47619047619047616,
+    "t": "2023-06-05 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": -0.4523809523809524,
+    "t": "2023-06-12 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": 0.047619047619047616,
+    "t": "2023-06-19 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": -0.6666666666666666,
+    "t": "2023-06-26 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": -0.38095238095238093,
+    "t": "2023-07-03 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": 0.023809523809523808,
+    "t": "2023-07-10 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": 0.23809523809523808,
+    "t": "2023-07-17 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": 0.07142857142857142,
+    "t": "2023-07-24 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": 0.07142857142857142,
+    "t": "2023-07-31 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": 0.0,
+    "t": "2023-08-07 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": 0.42857142857142855,
+    "t": "2023-08-14 01:00 UTC"
+   },
+   {
+    "coins": 8,
+    "rho": 0.0,
+    "t": "2023-08-21 01:00 UTC"
+   }
+  ]
+ },
+ "train_gate": false,
+ "validation_read": false,
+ "verdict": "REJECTED"
+}
