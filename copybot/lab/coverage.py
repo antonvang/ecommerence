@@ -44,11 +44,19 @@ SOURCES = (
      "https://api.hyperliquid.xyz/info", 900),
     ("Polymarket Gamma/CLOB (live)", "live", "events, liquidity rewards", "per scan (about 40 min)", "free", "no", (),
      "https://gamma-api.polymarket.com", 7200),
+    ("Binance announcements (amendment 16)", "live", "listings, delistings, exchange news (publisher time)", "10 min",
+     "free", "no", (), "https://www.binance.com/bapi/composite", 2 * 86400),
+    ("Cointelegraph RSS (amendment 16)", "live", "crypto news headlines", "10 min", "free", "no", (),
+     "https://cointelegraph.com", 86400),
+    ("CoinDesk RSS (amendment 16)", "live", "crypto news headlines", "10 min", "free", "no", (),
+     "https://www.coindesk.com", 86400),
+    ("GDELT DOC 2.0 (amendment 16)", "live", "world news mentioning crypto (titles, URLs)", "15 min, backoff",
+     "free (1 request per 5 s)", "no", (), "https://api.gdeltproject.org", 86400),
 )
 GAPS = (
-    ("news articles and headlines", "licensed feeds need a key or payment; GDELT's free API allows one request per "
-                                    "5 s; Wikipedia pageviews are the proxy (amendment 14)", "ask the user before any "
-                                                                                              "key or payment"),
+    ("news history before amendment 16", "RSS and GDELT are collected forward only; Binance announcements are "
+                                         "backfilled from their own timestamps; licensed archives need a key or "
+                                         "payment", "ask the user before any key or payment"),
     ("released macro figures (CPI value, surprise)", "only the scheduled times are fetched (amendment 14 point 1)",
      "not fetched"),
     ("liquidations history", "no free historical source on data.binance.vision", "not available free"),
@@ -109,7 +117,8 @@ def sources(db, now=None, root=None):
     now = now or time.time()
     obs = {r["source"]: dict(r) for r in db.q(
         "SELECT source, MAX(ts) last_ts, SUM(CASE WHEN ts>=? THEN 1 ELSE 0 END) n_24h, "
-        "SUM(CASE WHEN ts>=? AND metric='error' THEN 1 ELSE 0 END) errors_24h FROM observations GROUP BY source",
+        "SUM(CASE WHEN ts>=? AND metric IN ('error', 'news_error') THEN 1 ELSE 0 END) errors_24h FROM observations "
+        "GROUP BY source",
         int(now - DAY), int(now - DAY))}
     windows = [dict(r) for r in db.q("SELECT source, MIN(window_start) a, MAX(window_end) b, COUNT(*) n "
                                       "FROM datasets GROUP BY source")]

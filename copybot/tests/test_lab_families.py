@@ -927,7 +927,7 @@ class Invariants(A3Base):
         self.assertNotIn("E_fcarry__filt_a8", paper.FORWARD_ACCOUNTS)
         self.assertEqual([(n, e) for n, _, _, _, e, _ in fleet.ROSTER],
                          [("data-1", None), ("discovery-scanner", 3600), ("premium-watch", 60),
-                          ("discovery-catalogue", 600), ("strategy-1", 30), ("backtest-1", None),
+                          ("news-watch", 600), ("discovery-catalogue", 600), ("strategy-1", 30), ("backtest-1", None),
                           ("backtest-2", None), ("cost-1", None), ("cost-2", None), ("adversarial-1", None),
                           ("adversarial-2", None), ("adversarial-3", None), ("validation-1", None),
                           ("validation-2", None), ("report-1", None), ("paper-1", 60), ("risk-1", 15)])
@@ -2058,7 +2058,7 @@ class RosterAndSafety(unittest.TestCase):
     def test_roster_names_intervals_and_no_timers(self):
         self.assertEqual([(n, e) for n, _, _, _, e, _ in fleet.ROSTER],
                          [("data-1", None), ("discovery-scanner", 3600), ("premium-watch", 60),
-                          ("discovery-catalogue", 600), ("strategy-1", 30), ("backtest-1", None),
+                          ("news-watch", 600), ("discovery-catalogue", 600), ("strategy-1", 30), ("backtest-1", None),
                           ("backtest-2", None), ("cost-1", None), ("cost-2", None), ("adversarial-1", None),
                           ("adversarial-2", None), ("adversarial-3", None), ("validation-1", None),
                           ("validation-2", None), ("report-1", None), ("paper-1", 60), ("risk-1", 15)])

@@ -80,7 +80,7 @@ class Sources(Base):
         self.assertTrue(all(r["health"] == "never seen" for r in live))
         self.assertEqual((out["paid_sources_active"], out["keys_used"]), (0, 0))
         self.assertTrue(all(r["key_needed"] == "no" for r in out["sources"]))
-        self.assertIn("news articles and headlines", [g["data"] for g in out["gaps"]])
+        self.assertIn("news history before amendment 16", [g["data"] for g in out["gaps"]])
         self.assertEqual(out["ingest"]["spent_bytes"], 0)
         pending = [r for r in out["sources"] if "amendment 14" in r["source"]]
         self.assertEqual({r["health"] for r in pending}, {"pending"})

@@ -31,6 +31,10 @@ ALLOWED_HOSTS = {
     "wikimedia.org",                  # Wikipedia pageviews REST, GET only (amendment 14, approved by the user
                                       # 2026-10-20)
     "www.federalreserve.gov",         # FOMC meeting calendar pages, GET only (amendment 14)
+    "www.binance.com",                # exchange announcements (bapi cms article list), GET only (amendment 16,
+                                      # approved by the user 2026-10-21)
+    "cointelegraph.com", "www.coindesk.com",   # crypto news RSS, GET only (amendment 16)
+    "api.gdeltproject.org",           # GDELT DOC 2.0 article list, GET only (amendment 16)
     "www.bls.gov",                    # BLS release schedule pages, GET only (amendment 14)
     "doi.org", "www.bis.org",         # citations in catalogue evidence
     "127.0.0.1", "localhost",         # the local dashboard

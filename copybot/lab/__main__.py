@@ -31,6 +31,7 @@
   python3 -m lab revoke-family FID --reason ".." | families                 (amendment 8)
   python3 -m lab autopromote on|off --reason ".."                         (automatic promotion policy, amendment 4)
   python3 -m lab measure H1|H2|H3 [--data-dir DIR] [--record]             (amendment 14a measurement; no network)
+  python3 -m lab news [--backfill]                                          (amendment 16: one news pass / backfill)
 """
 from __future__ import annotations
 
@@ -252,6 +253,8 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
     me = sub.add_parser("measure"); me.add_argument("hypothesis", choices=("H1", "H2", "H3"))
     me.add_argument("--data-dir", help="market cache with funding/ and ingest/ (default data/lab/market)")
     me.add_argument("--record", action="store_true", help="record the outcome as an event (once per hypothesis)")
+    nw = sub.add_parser("news"); nw.add_argument("--backfill", action="store_true",
+                                                 help="fetch Binance announcements backwards once (amendment 16)")
     wt = sub.add_parser("watch"); wt.add_argument("--once", action="store_true")
     wt.add_argument("--interval", type=float, default=30.0); wt.add_argument("--port", type=int, default=8770)
     pf = sub.add_parser("preflight"); pf.add_argument("--port", type=int, default=8770)
@@ -282,6 +285,14 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
         return family_check(args.file, db_path, out)
     if args.cmd == "measure":         # research/PROTOCOL_V3.md amendment 14a: read-only data, one run per hypothesis
         return measure_cmd(args, db_path, out)
+    if args.cmd == "news":            # amendment 16: one pass, or the one-time Binance backfill (observations only)
+        from lab import news
+        db = DB(db_path)
+        try:
+            out(json.dumps(news.backfill(db) if args.backfill else news.run(db), indent=1, default=str))
+            return 0
+        finally:
+            db.close()
     if args.cmd == "fleet":           # the research agent fleet runs inside the single-instance supervisor
         from lab import fleet, supervisor
         from research.pm_lp import install_dns_cache
