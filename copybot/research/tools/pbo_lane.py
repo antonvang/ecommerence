@@ -5,7 +5,7 @@ Recomputes each tried variant's daily net return in explore0 (2020-03..2021-12) 
 the lane's own code (lab.explore, the family module, lab.engine.backtest), from the market cache only: every download
 is refused. Variants are aligned on the days that all of them cover. Runs CSCV on all variants and per function.
 
-Usage: python3 research/tools/pbo_lane.py <market_cache_dir> <explore_artifacts_dir> [S] [max_variants]
+Usage: python3 research/tools/pbo_lane.py <market_cache_dir> <explore_artifacts_dir> [S] [max_variants] [--no-cscv]
 """
 import glob
 import importlib
@@ -51,10 +51,30 @@ def daily(fid, fam, fn, params, bars, funding, coins):
     return out
 
 
+def dsr_view(rows):
+    """Effective trials and the deflated Sharpe of the best variant (daily Sharpe), with N = configurations and with
+    N = N_eff (diagnostic)."""
+    import statistics
+    eff = pbo.effective_trials(rows)
+    srs = []
+    for x in rows:
+        sd = statistics.pstdev(x)
+        srs.append(statistics.fmean(x) / sd if sd > 0 else 0.0)
+    best = max(range(len(rows)), key=lambda i: srs[i])
+    x = rows[best]
+    m, sd = statistics.fmean(x), statistics.pstdev(x)
+    skew = sum(((v - m) / sd) ** 3 for v in x) / len(x) if sd > 0 else 0.0
+    kurt = sum(((v - m) / sd) ** 4 for v in x) / len(x) if sd > 0 else 3.0
+    return {**eff, "best_daily_sharpe": srs[best], "best_annual_sharpe": srs[best] * 365 ** 0.5,
+            "dsr_n_configurations": backtest.deflated_sharpe(srs[best], srs, len(x), skew, kurt),
+            "dsr_n_eff": backtest.deflated_sharpe(srs[best], srs, len(x), skew, kurt, n=max(2.0, eff["n_eff"]))}
+
+
 def main(argv):
-    market, arts = argv[1], argv[2]
-    s = int(argv[3]) if len(argv) > 3 else 16
-    cap = int(argv[4]) if len(argv) > 4 else None
+    pos = [a for a in argv[1:] if not a.startswith("--")]
+    market, arts = pos[0], pos[1]
+    s = int(pos[2]) if len(pos) > 2 else 16
+    cap = int(pos[3]) if len(pos) > 3 else None
     urllib.request.urlopen = no_network
     explore.fetch_allowed = lambda *a, **k: False             # read the cache only
     data.CACHE = market
@@ -77,11 +97,15 @@ def main(argv):
            "last_day": time.strftime("%Y-%m-%d", time.gmtime(common[-1] * DAY)) if common else None,
            "inputs_digest": inputs["digest"], "blocks": s}
     mat = {k: [v[d] for d in common] for k, v in series.items()}
-    out["all"] = pbo.cscv(list(mat.values()), s=s)
     by_fn = {}
     for k in mat:
         by_fn.setdefault(vs[k][0], []).append(mat[k])
-    out["by_function"] = {fn: (pbo.cscv(rows, s=s) if len(rows) >= 2 else None) for fn, rows in sorted(by_fn.items())}
+    if "--no-cscv" not in argv:
+        out["all"] = pbo.cscv(list(mat.values()), s=s)
+        out["by_function"] = {fn: (pbo.cscv(rows, s=s) if len(rows) >= 2 else None)
+                              for fn, rows in sorted(by_fn.items())}
+    out["effective_trials"] = {"all": dsr_view(list(mat.values())),
+                               **{fn: dsr_view(rows) for fn, rows in sorted(by_fn.items())}}
     out["seconds"] = round(time.time() - t0, 1)
     print(json.dumps(out, indent=1))
     return 0

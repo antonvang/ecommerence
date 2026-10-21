@@ -26,6 +26,23 @@ def truncation_test(family, bars, funding, params, fit=None, samples=40, seed=11
     return {"checked": len(idx), "mismatches": len(bad), "ok": not bad}
 
 
+def strict_truncation_test(family, bars, funding, params, fit=None, samples=40, seed=11):
+    """Stricter than truncation_test (statistics audit 2026-10-21; NOT wired into any gate): position i earns bar i's
+    close-to-close return (backtest.gross), so it must not see bar i's close. Bars after i are removed, bar i keeps only
+    its open (close := open), funding settled after bar i's open is removed; position i must not change. Catches a
+    family that reads the current bar's close, which truncation_test and poison_test do not."""
+    full = family(bars, funding, params, fit)
+    rng = random.Random(seed)
+    idx = sorted(rng.sample(range(1, len(bars)), min(samples, len(bars) - 1))) if len(bars) > 2 else []
+    bad = []
+    for i in idx:
+        ts, o, _ = bars[i]
+        part = family(bars[:i] + [(ts, o, o)], {k: v for k, v in funding.items() if k <= ts}, params, fit)
+        if abs(part[i] - full[i]) > 1e-12:
+            bad.append(i)
+    return {"checked": len(idx), "mismatches": len(bad), "ok": not bad}
+
+
 def poison_test(family, bars, funding, params, fit=None, seed=13):
     """Replace all data after a random bar with absurd values; earlier positions must be identical."""
     rng = random.Random(seed)

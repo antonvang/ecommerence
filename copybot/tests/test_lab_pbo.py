@@ -21,6 +21,21 @@ class CSCV(unittest.TestCase):
         self.assertGreater(sum(vals) / len(vals), 0.3)        # the IS winner of pure noise is a coin flip OOS
         self.assertLess(sum(vals) / len(vals), 0.7)
 
+    def test_known_limitation_persistent_noise_looks_not_overfit(self):
+        # documented in research/studies/PBO_PERSISTENCE_2026-10-21.md: no skill, AR(1) phi 0.98 -> PBO well below 0.5
+        vals = []
+        for seed in range(6):
+            rng = random.Random(500 + seed)
+            rows = []
+            for _ in range(20):
+                x, out = 0.0, []
+                for _ in range(400):
+                    x = 0.98 * x + math.sqrt(1 - 0.98 ** 2) * rng.gauss(0, 1)
+                    out.append(0.01 * x)
+                rows.append(out)
+            vals.append(pbo.cscv(rows, s=8)["pbo"])
+        self.assertLess(sum(vals) / len(vals), 0.4)
+
     def test_one_real_edge_among_noise_is_not_overfit(self):
         rows = noise(19, 400, 5)
         rows.append([v + 0.004 for v in noise(1, 400, 99)[0]])   # Sharpe about 7.6 a year
@@ -55,6 +70,43 @@ class CSCV(unittest.TestCase):
                          ((noise(3, 100, 1),), {"s": 7}), ((noise(3, 20, 1),), {"s": 16})):
             with self.assertRaises(pbo.PBOError):
                 pbo.cscv(*args, **kw)
+
+
+
+class EffectiveTrials(unittest.TestCase):
+    def test_identical_series_count_as_one(self):
+        x = noise(1, 300, 4)[0]
+        r = pbo.effective_trials([x, x, x, x, x])
+        self.assertAlmostEqual(r["mean_correlation"], 1.0)
+        self.assertAlmostEqual(r["n_eff"], 1.0)
+
+    def test_independent_series_count_as_n(self):
+        r = pbo.effective_trials(noise(40, 2000, 8))
+        self.assertLess(abs(r["mean_correlation"]), 0.01)
+        self.assertGreater(r["n_eff"], 39)
+
+    def test_mean_correlation_equals_the_pairwise_mean(self):
+        rows = noise(6, 200, 2)
+        rows = [[a + 0.5 * b for a, b in zip(r, rows[0])] for r in rows]          # shared component
+        r = pbo.effective_trials(rows)
+        def corr(a, b):
+            ma, mb = sum(a) / len(a), sum(b) / len(b)
+            num = sum((x - ma) * (y - mb) for x, y in zip(a, b))
+            return num / math.sqrt(sum((x - ma) ** 2 for x in a) * sum((y - mb) ** 2 for y in b))
+        pairs = [corr(rows[i], rows[j]) for i in range(6) for j in range(i + 1, 6)]
+        self.assertAlmostEqual(r["mean_correlation"], sum(pairs) / len(pairs), places=9)
+
+    def test_flat_series_are_left_out(self):
+        r = pbo.effective_trials([[0.0] * 50] + noise(3, 50, 1))
+        self.assertEqual((r["used"], r["flat"]), (3, 1))
+
+    def test_deflated_sharpe_with_fewer_effective_trials_is_less_harsh(self):
+        from lab.engine import backtest
+        trials = [x / 100 for x in range(-50, 51)]
+        full = backtest.deflated_sharpe(0.2, trials, 500)
+        eff = backtest.deflated_sharpe(0.2, trials, 500, n=5)
+        self.assertGreater(eff, full)
+        self.assertEqual(backtest.deflated_sharpe(0.2, trials, 500, n=len(trials)), full)   # default unchanged
 
 
 if __name__ == "__main__":

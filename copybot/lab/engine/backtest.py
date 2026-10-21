@@ -135,10 +135,11 @@ def psr(sr, n_obs, benchmark=0.0, skew=0.0, kurt=3.0):
     return statistics.NormalDist().cdf((sr - benchmark) * math.sqrt(n_obs - 1) / den)
 
 
-def deflated_sharpe(sr, sr_trials, n_obs, skew=0.0, kurt=3.0):
+def deflated_sharpe(sr, sr_trials, n_obs, skew=0.0, kurt=3.0, n=None):
     """Probability that the (per-period) Sharpe `sr` exceeds the expected maximum of `len(sr_trials)` independent trials
-    (Bailey & Lopez de Prado 2014). Returns None when it cannot be computed."""
-    N = len(sr_trials)
+    (Bailey & Lopez de Prado 2014). Returns None when it cannot be computed. `n` replaces the number of trials (e.g. an
+    effective number of independent trials, lab.engine.pbo.effective_trials); the default is unchanged."""
+    N = len(sr_trials) if n is None else n
     if sr is None or N < 2 or n_obs < 3:
         return None
     var = statistics.pvariance(sr_trials)

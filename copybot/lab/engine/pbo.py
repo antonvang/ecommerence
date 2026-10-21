@@ -10,6 +10,10 @@ worst, N = best; ties share the average rank) the logit is lambda = ln(w / (1 - 
 with lambda <= 0: the IS winner did no better than the OOS median. Also reported: how often the IS winner lost money
 OOS, and the slope of OOS on IS Sharpe of the winner (performance degradation).
 
+LIMITATION (research/studies/PBO_PERSISTENCE_2026-10-21.md): with strongly persistent returns (AR(1) phi near 1, as
+funding carry) CSCV reports a low PBO without any skill (about 0.2 instead of 0.5); a boundary embargo barely helps. A
+low PBO is evidence only against a null PBO calibrated with the same persistence.
+
 Pure Python (the lab has no numpy): per configuration and block the sum, sum of squares and count are computed once,
 so a combination costs O(N x S).
 """
@@ -112,3 +116,31 @@ def cscv(series, s=16, max_combinations=None):
             "prob_oos_loss": losses / m, "is_sharpe_of_selected_mean": mx, "oos_sharpe_of_selected_mean": my,
             "degradation_slope": slope, "lambda_median": lam[m // 2],
             "method": "CSCV, Bailey/Borwein/Lopez de Prado/Zhu 2014; Sharpe annualised x sqrt(365); diagnostic only"}
+
+
+def effective_trials(series):
+    """Effective number of independent trials among N correlated return series (diagnostic): the mean pairwise
+    correlation rho, computed exactly from standardised series (|sum z|^2 - sum |z|^2 over N (N - 1)), and
+    N_eff = rho + (1 - rho) N, the approximation in Bailey & Lopez de Prado (2014, The Deflated Sharpe Ratio).
+    Flat series (zero variance) are left out and counted."""
+    t = len(series[0]) if series else 0
+    z, flat = [], 0
+    for x in series:
+        if len(x) != t:
+            raise PBOError("all configurations need the same number of periods")
+        m = math.fsum(x) / t
+        d = [v - m for v in x]
+        norm = math.sqrt(math.fsum(v * v for v in d))
+        if norm <= 1e-15:
+            flat += 1
+            continue
+        z.append([v / norm for v in d])
+    n = len(z)
+    if n < 2:
+        return {"configurations": len(series), "used": n, "flat": flat, "mean_correlation": None, "n_eff": float(n)}
+    total = [math.fsum(col) for col in zip(*z)]
+    rho = (math.fsum(v * v for v in total) - n) / (n * (n - 1))
+    rho = max(-1.0 / (n - 1), min(1.0, rho))
+    return {"configurations": len(series), "used": n, "flat": flat, "mean_correlation": rho,
+            "n_eff": rho + (1 - rho) * n,
+            "method": "N_eff = rho + (1 - rho) N, Bailey and Lopez de Prado 2014; rho = mean pairwise correlation"}
