@@ -450,7 +450,8 @@ class Control(Env):
         pipeline.discover_catalogue(self.db)
         self.approve("day_of_week", "hour_of_day", "vol_managed_long")
         ws = [w for w in fleet.workers(self.db_path) if w.name not in ("discovery-scanner", "paper-1", "risk-1",
-                                                                         "discovery-catalogue", "premium-watch")]
+                                                                         "discovery-catalogue", "premium-watch",
+                                                                         "news-watch")]
         sup = Supervisor(self.db_path, ws, log=lambda *a: None, check_evidence=False)
         import threading
         t = threading.Thread(target=sup.run, kwargs={"duration": 240})
@@ -465,7 +466,10 @@ class Control(Env):
         t.join(30)
         self.assertFalse(t.is_alive())
         c = jobs.counts(self.db)
-        self.assertEqual(c["done"], 3 * len(pipeline.STEPS), c)
+        steps = self.db.one(f"SELECT COUNT(*) FROM jobs WHERE status='done' AND kind IN "
+                            f"({','.join('?' * len(pipeline.STEPS))})", *pipeline.STEPS)[0]
+        self.assertEqual(steps, 3 * len(pipeline.STEPS), c)            # a rejection may also queue a diagnose job
+        self.assertEqual(c["failed"], 0, c)
         starts = self.db.q("SELECT payload FROM events WHERE kind='job.started'")
         ids = [json.loads(r[0])["job_id"] for r in starts]
         self.assertEqual(len(ids), len(set(ids)))                       # no job processed twice
