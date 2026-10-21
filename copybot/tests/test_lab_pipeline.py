@@ -457,9 +457,10 @@ class Control(Env):
         t = threading.Thread(target=sup.run, kwargs={"duration": 240})
         t.start()
         deadline = time.time() + 230
-        while time.time() < deadline:
-            c = jobs.counts(self.db)
-            if c["done"] + c["failed"] + c["cancelled"] >= 3 * len(pipeline.STEPS):
+        q = (f"SELECT COUNT(*) FROM jobs WHERE status IN ('done','failed','cancelled') AND kind IN "
+             f"({','.join('?' * len(pipeline.STEPS))})")
+        while time.time() < deadline:                      # step jobs only: a rejection may also queue a diagnose job
+            if self.db.one(q, *pipeline.STEPS)[0] >= 3 * len(pipeline.STEPS):
                 break
             time.sleep(0.5)
         control.request_stop(self.db, "human:test", "stop in test")
