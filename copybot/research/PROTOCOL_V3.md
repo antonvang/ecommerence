@@ -1739,3 +1739,13 @@ uden en hånd. Ingen eksisterende gate, holdout, evalueringskriterium eller godk
    hentning og klares af dens ventetider; ingen ændring.
 10. **Aldrig:** ordrer, papirkonti, familier, alfa-budgetter for familier, holdout 2024, reserverede data fra 2025,
     `pm_lp`. Nye begivenhedstyper, udfald eller tærskler kræver en ny dateret ændring.
+
+### Præcisering af ændring 17 (2026-10-21, før kode og før nogen screening): ord matches som hele ord
+
+En test af typerne viste, at punkt 1 skrevet bogstaveligt lader `margin` fange futures-listninger ("USDT-Margined …
+Will Launch …") og `staking` fange "Learn" (via "Earn"). Rettelse, før nogen kandidat er screenet:
+
+1. Alle ord og fraser i punkt 1 matches som **hele ord** (ordgrænse før og efter; "Margin" matcher ikke "Margined",
+   "Earn" matcher ikke "Learn"). `spot_listing` er fortsat titlens begyndelse.
+2. `margin` kræver desuden, at titlen ikke indeholder "Futures".
+Intet andet ændres.
