@@ -30,6 +30,7 @@ GDELT_QUERY = "(bitcoin OR ethereum OR crypto OR cryptocurrency OR stablecoin) s
 GDELT_EVERY, GDELT_BACKOFF_MAX = 900, 6 * 3600
 BACKFILL_LAG_S = 3600                            # point 3: a backfilled item is usable from publication + 1 hour
 BACKFILL_PAUSE_S = 2.0
+BACKFILL_RETRY_S = (60, 180, 600)                # waits after a refused page before the category stops
 _STATE = {"gdelt_next": 0.0, "gdelt_wait": GDELT_EVERY}
 _PAREN = re.compile(r"\(([A-Z0-9]{2,12})\)")
 _PAIR = re.compile(r"\b([A-Z0-9]{2,12})(?:USDT|USDC|FDUSD)\b")
@@ -177,7 +178,19 @@ def backfill(db, get=http_get, now=None, pages=200, sleep=time.sleep):
     for c in CATALOGS:
         n = 0
         for p in range(1, pages + 1):
-            got = binance(get, now, c, page=p, size=50, backfill=True)
+            got = None
+            for wait in BACKFILL_RETRY_S + (None,):              # a refusal (e.g. HTTP 429): wait, then try again
+                try:
+                    got = binance(get, now, c, page=p, size=50, backfill=True)
+                    break
+                except Exception as e:                          # noqa: BLE001 - recorded, never fatal
+                    _error(db, BINANCE, now, e)
+                    if wait is None:
+                        break
+                    sleep(wait)
+            if got is None:
+                total[f"{CATALOGS[c]}_stopped_at_page"] = p    # a rerun continues (stored items are skipped)
+                break
             if not got:
                 break
             k = store(db, got, BINANCE, now)

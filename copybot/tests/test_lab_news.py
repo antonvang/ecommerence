@@ -111,6 +111,23 @@ class Scanner(Base):
         self.assertEqual(news.backfill(self.db, self.get(), now=NOW, sleep=lambda s: None),
                          {"listing": 0, "delisting": 0, "binance_news": 0})       # a rerun stores nothing twice
 
+    def test_backfill_waits_after_a_refusal_and_stops_a_category_without_crashing(self):
+        calls, waits = {"n": 0}, []
+        inner = self.get()
+
+        def flaky(url):
+            calls["n"] += 1
+            if "catalogId=48" in url and "pageNo=2" in url and calls["n"] < 4:
+                raise OSError("HTTP Error 429: Too Many Requests")
+            return inner(url)
+        n = news.backfill(self.db, flaky, now=NOW, sleep=waits.append)
+        self.assertEqual(n["listing"], 6)                                     # page 2 came through after waiting
+        self.assertIn(60, waits)
+        always = lambda url: (_ for _ in ()).throw(OSError("429")) if "catalogId=161" in url else inner(url)  # noqa
+        n = news.backfill(self.db, always, now=NOW, sleep=lambda s: None)
+        self.assertEqual(n["delisting_stopped_at_page"], 1)                   # recorded, not raised
+        self.assertGreater(self.db.one("SELECT COUNT(*) FROM observations WHERE metric='news_error'")[0], 0)
+
     def test_nothing_formal_is_written(self):
         news.run(self.db, self.get(), now=NOW)
         for t in ("results", "trials", "transitions", "alpha_ledger", "sim_fills"):
