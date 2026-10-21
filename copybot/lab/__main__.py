@@ -31,6 +31,7 @@
   python3 -m lab revoke-family FID --reason ".." | families                 (amendment 8)
   python3 -m lab autopromote on|off --reason ".."                         (automatic promotion policy, amendment 4)
   python3 -m lab measure H1|H2|H3 [--data-dir DIR] [--record]             (amendment 14a measurement; no network)
+  python3 -m lab measure H4 [--data-dir DIR] [--record]                     (amendment 16a; fetches 2022-2023 funding)
   python3 -m lab news [--backfill]                                          (amendment 16: one news pass / backfill)
 """
 from __future__ import annotations
@@ -167,21 +168,29 @@ def family_cmd(args, db, out, ask=input):
 
 
 def measure_cmd(args, db_path, out):
-    """Amendment 14a: run one measurement, save the result as an artifact and print it; with --record also write it
-    unchanged as a research.measurement event (point 5), refused when that hypothesis already has one."""
-    from lab import measure, pipeline
+    """Amendment 14a (H1-H3) and 16a (H4): run one measurement, save the result as an artifact and print it; with
+    --record also write it unchanged as a research.measurement event (point 5), refused when that hypothesis already
+    has one. H4 reads the announcements read-only from the registry and fetches checksum-verified funding archives."""
+    from lab import ingest, measure, measure_h4, pipeline
     db = DB(db_path) if args.record else None
     try:
         if db and any(json.loads(r["payload"] or "{}").get("hypothesis") == args.hypothesis
                       for r in db.q("SELECT payload FROM events WHERE kind=?", measure.EVENT)):
             out(f"refused: {args.hypothesis} already has a recorded measurement (amendment 14a: one run each)")
             return 1
+        h4 = args.hypothesis == "H4"
         try:
-            res = measure.run(args.hypothesis, args.data_dir)
-        except measure.Refused as e:
+            res = measure_h4.run(args.data_dir, db_path) if h4 else measure.run(args.hypothesis, args.data_dir)
+        except (measure.Refused, ingest.Refused) as e:
             out(f"refused: {e}")
             return 1
-        res["artifact"] = pipeline.save_artifact(measure.ARTIFACT_ID, f"{args.hypothesis}-{int(time.time())}", res)
+        except OSError as e:
+            if not h4:
+                raise
+            out(f"failed: {e} (nothing recorded; a rerun reuses the verified files already cached)")
+            return 1
+        art = measure_h4.ARTIFACT_ID if h4 else measure.ARTIFACT_ID
+        res["artifact"] = pipeline.save_artifact(art, f"{args.hypothesis}-{int(time.time())}", res)
         if db:
             res["event_id"] = db.event(measure.EVENT, operator(), None, res)
         out(json.dumps(res, indent=1, sort_keys=True, default=str))
@@ -250,7 +259,7 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
     fcv = sub.add_parser("family-coverage"); fcv.add_argument("fid")   # F2: HEAD check (family id or file path)
     rt = sub.add_parser("revoke-template"); rt.add_argument("template"); rt.add_argument("--reason", required=True)
     ex = sub.add_parser("export-db"); ex.add_argument("target")
-    me = sub.add_parser("measure"); me.add_argument("hypothesis", choices=("H1", "H2", "H3"))
+    me = sub.add_parser("measure"); me.add_argument("hypothesis", choices=("H1", "H2", "H3", "H4"))
     me.add_argument("--data-dir", help="market cache with funding/ and ingest/ (default data/lab/market)")
     me.add_argument("--record", action="store_true", help="record the outcome as an event (once per hypothesis)")
     nw = sub.add_parser("news"); nw.add_argument("--backfill", action="store_true",
