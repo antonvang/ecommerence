@@ -30,6 +30,7 @@
   python3 -m lab approve-family FID --reason ".." -> code;  python3 -m lab confirm-family   (typed by the user)
   python3 -m lab revoke-family FID --reason ".." | families                 (amendment 8)
   python3 -m lab autopromote on|off --reason ".."                         (automatic promotion policy, amendment 4)
+  python3 -m lab measure H1|H2|H3 [--data-dir DIR] [--record]             (amendment 14a measurement; no network)
 """
 from __future__ import annotations
 
@@ -38,6 +39,7 @@ import getpass
 import json
 import os
 import sys
+import time
 
 from lab import legacy, lifecycle, registry
 from lab.data import AccessRefused
@@ -163,6 +165,31 @@ def family_cmd(args, db, out, ask=input):
         return 1
 
 
+def measure_cmd(args, db_path, out):
+    """Amendment 14a: run one measurement, save the result as an artifact and print it; with --record also write it
+    unchanged as a research.measurement event (point 5), refused when that hypothesis already has one."""
+    from lab import measure, pipeline
+    db = DB(db_path) if args.record else None
+    try:
+        if db and any(json.loads(r["payload"] or "{}").get("hypothesis") == args.hypothesis
+                      for r in db.q("SELECT payload FROM events WHERE kind=?", measure.EVENT)):
+            out(f"refused: {args.hypothesis} already has a recorded measurement (amendment 14a: one run each)")
+            return 1
+        try:
+            res = measure.run(args.hypothesis, args.data_dir)
+        except measure.Refused as e:
+            out(f"refused: {e}")
+            return 1
+        res["artifact"] = pipeline.save_artifact(measure.ARTIFACT_ID, f"{args.hypothesis}-{int(time.time())}", res)
+        if db:
+            res["event_id"] = db.event(measure.EVENT, operator(), None, res)
+        out(json.dumps(res, indent=1, sort_keys=True, default=str))
+        return 0
+    finally:
+        if db:
+            db.close()
+
+
 def main(argv=None, db_path=DEFAULT_DB, out=print):
     ap = argparse.ArgumentParser(prog="python3 -m lab")
     ap.add_argument("--db", help="registry path (default data/lab/lab.db)")
@@ -222,6 +249,9 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
     fcv = sub.add_parser("family-coverage"); fcv.add_argument("fid")   # F2: HEAD check (family id or file path)
     rt = sub.add_parser("revoke-template"); rt.add_argument("template"); rt.add_argument("--reason", required=True)
     ex = sub.add_parser("export-db"); ex.add_argument("target")
+    me = sub.add_parser("measure"); me.add_argument("hypothesis", choices=("H1", "H2", "H3"))
+    me.add_argument("--data-dir", help="market cache with funding/ and ingest/ (default data/lab/market)")
+    me.add_argument("--record", action="store_true", help="record the outcome as an event (once per hypothesis)")
     wt = sub.add_parser("watch"); wt.add_argument("--once", action="store_true")
     wt.add_argument("--interval", type=float, default=30.0); wt.add_argument("--port", type=int, default=8770)
     pf = sub.add_parser("preflight"); pf.add_argument("--port", type=int, default=8770)
@@ -250,6 +280,8 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
             return 3
     if args.cmd == "family-check":    # research/PROTOCOL_V3.md amendment 8 point 4: read-only, no network
         return family_check(args.file, db_path, out)
+    if args.cmd == "measure":         # research/PROTOCOL_V3.md amendment 14a: read-only data, one run per hypothesis
+        return measure_cmd(args, db_path, out)
     if args.cmd == "fleet":           # the research agent fleet runs inside the single-instance supervisor
         from lab import fleet, supervisor
         from research.pm_lp import install_dns_cache
