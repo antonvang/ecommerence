@@ -254,6 +254,22 @@ Driftsregler, ikke en protokolændring: ingen porte, vinduer, paneler, data elle
   `dev` ikke ser data efter perioden, `frozen()`-parsning og en kontrol af `n_req` mellem filerne.
 - Oprydning: `git -C ~/ecommerence worktree remove ~/pm_lp_devrun`. Kopien i `~/pm_lp_runs/2026-10-31/` gemmes.
 
+**G. Autostart af vagten (PROTOCOL_V3 ændring 15 punkt 5, brugerens ja 2026-10-21).**
+- **Først når S7-gaten er åben** (7 rene dage, `gate_s7.open` i `/api/kpis`). S7-reglen ovenfor er uændret; ja'et
+  2026-10-21 er ikke en undtagelse som C, kun en beslutning om, hvad der sker, når S7 åbner.
+- Unit-fil: `research/systemd/lab-watch.service` (kun læsning; genstarter aldrig laboratoriet eller indsamleren;
+  starter igen 60 s efter et nedbrud).
+- Installation (brugeren, i en terminal, når S7 er åben; linger er allerede slået til for indsamleren):
+  ```
+  cp ~/ecommerence/copybot/research/systemd/lab-watch.service ~/.config/systemd/user/
+  systemctl --user daemon-reload
+  systemctl --user enable lab-watch.service             # kun enable: virker fra næste opstart
+  ```
+- Kører der en vagt startet i hånden, skal den ikke stoppes; tjenesten starter først ved næste opstart. Vil man skifte
+  med det samme: `kill <pid>` (se `pgrep -af "lab watch"`) og derefter `systemctl --user start lab-watch`.
+- Fortryd: `systemctl --user disable --now lab-watch`, `rm ~/.config/systemd/user/lab-watch.service`,
+  `systemctl --user daemon-reload`. Start derefter i hånden som før.
+
 ## Overvågning
 
 | Hvem | Ser | Hvordan |

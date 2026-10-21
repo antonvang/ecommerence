@@ -56,7 +56,7 @@ def market(rate=0.0003, px=100.0, spot_px=100.0, spread=0.02, missing=(), log=No
 def result(key="fcarry.carry_filter|a", fn="carry_filter", params=None, coins=None, sharpe=2.0, cand=True, fam="fcarry"):
     return {"key": key, "family": fam, "function": fn, "params": params or {"lookback_days": 7, "enter_apr": 0.1},
             "coins": coins, "net_sharpe_ann": sharpe, "net_total": 0.73, "days": 730, "candidate": cand,
-            "checks": {"a": cand, "b": True, "c": True}}
+            "checks": {"a": cand, "b": True, "c": True}, "method": explore.METHOD}
 
 
 class Base(unittest.TestCase):
@@ -783,11 +783,11 @@ class LaneView(Base):
         self.assertFalse(v["evidence"])
 
 
-def review_market(days=240, regime=21):
-    """explore0-like data for COINS: ratio bars at 1 and funding that alternates between `regime` days high and
-    `regime` days negative. With 21-day regimes a 7-day filter catches most of each high regime; with 7-day regimes
-    it always enters late and loses."""
-    start, bars, funding = 1583020800, {}, {}
+def review_market(days=396, regime=21, start=1606780800):
+    """explore0-like data for COINS from 2020-12-01 (through the review window R, 2021): ratio bars at 1 and funding
+    that alternates between `regime` days high and `regime` days negative. With 21-day regimes a 7-day filter catches
+    most of each high regime; with 7-day regimes it always enters late and loses."""
+    bars, funding = {}, {}
     for c in COINS:
         bars[c] = [(start + i * HOUR, 1.0, 1.0) for i in range(days * 24)]
         fr = {}
@@ -797,6 +797,11 @@ def review_market(days=240, regime=21):
             fr[t] = -(0.0009 if hi else -0.0006)                                # cost convention (fcarry.py)
         funding[c] = fr
     return bars, funding
+
+
+def families_load():
+    from lab import families
+    return families.load("fcarry")
 
 
 def families_costs():
@@ -964,6 +969,43 @@ class Review(Base):
             pos = fcarry.carry_filter(bars, noise, {"lookback_days": 3, "enter_apr": 0.3}, None)
             low += adversarial.placebo_circular(bars, pos, noise, costs, n=20, seed=seed)["p"] < 0.10
         self.assertLessEqual(low, 2)
+
+    def test_the_returns_placebo_ignores_trends_and_separates_timing_from_noise(self):
+        import random
+        from lab.engine import adversarial
+        from lab.families import fcarry
+        costs = lane._stressed(families_costs())
+        bars, funding = review_market()
+        trend = {c: [(t, math.exp(i / 2000), math.exp((i + 1) / 2000)) for i, (t, _, _) in enumerate(b)]
+                 for c, b in bars.items()}                                     # a steady trend, no timing
+        hold = {c: [1.0] * len(b) for c, b in trend.items()}
+        zero = {c: {} for c in trend}
+        self.assertLess(adversarial.placebo_circular(trend, hold, zero, costs, n=20)["p"], 0.10)   # 11d: false find
+        self.assertGreaterEqual(adversarial.placebo_returns(trend, hold, zero, costs, n=20)["p"], 0.10)
+        pos = fcarry.carry_filter(bars, funding, {"lookback_days": 7, "enter_apr": 0.3}, None)
+        self.assertLess(adversarial.placebo_returns(bars, pos, funding, costs, n=20)["p"], 0.10)    # regimes
+        low = 0
+        for seed in range(8):                                                   # noise: p is not stuck at zero
+            rng = random.Random(100 + seed)
+            noise = {c: {t: -rng.uniform(-0.0004, 0.001) for t in f} for c, f in funding.items()}
+            pos = fcarry.carry_filter(bars, noise, {"lookback_days": 3, "enter_apr": 0.3}, None)
+            low += adversarial.placebo_returns(bars, pos, noise, costs, n=20, seed=seed)["p"] < 0.10
+        self.assertLessEqual(low, 2)
+
+    def test_selection_reads_2020_and_review_reads_2021_only(self):
+        bars, funding = review_market(days=670, start=1583020800)              # 2020-03-01..2021-12-30
+        cut = explore.SELECT[1]
+        quiet = {c: {t: (v if t < cut else 0.0) for t, v in f.items()} for c, f in funding.items()}   # edge only in 2020
+        r = result(params={"lookback_days": 7, "enter_apr": 0.3})
+        fam = families_load()
+        sel = explore.evaluate("fcarry", fam, "carry_filter", r["params"], bars, quiet)
+        self.assertTrue(sel["candidate"], sel["checks"])                       # chosen on 2020
+        self.assertLess(sel["days"], 310)                                      # figures from S only
+        rev = lane.review(r, bars, quiet)
+        self.assertFalse(rev["ok"])                                            # 2021 has no edge: the review fails
+        self.assertTrue(rev["checks"]["strict look-ahead exact"])
+        late = {c: {t: (v if t >= cut else 0.0) for t, v in f.items()} for c, f in funding.items()}   # edge only in 2021
+        self.assertFalse(explore.evaluate("fcarry", fam, "carry_filter", r["params"], bars, late)["candidate"])
 
     def test_reviews_are_queued_best_first_at_most_six(self):
         self.publish([result(f"k{i}", sharpe=10 - i * 0.5) for i in range(9)], reviewed=False)

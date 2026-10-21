@@ -55,6 +55,10 @@ ELIGIBLE_TTL = 3600                            # the approval check reads git bl
 FOCUS_DAYS = 7                                 # scanner-flagged perp_premium coins of the last 7 days come first
 DRAW_TRIES = 50                                # draws per wanted variant before a job stops looking
 DIR = "_explore"
+METHOD = "15"                                  # amendment 15 point 3: results of an older method are not candidates
+SELECT = (int(datetime(2020, 3, 1, tzinfo=timezone.utc).timestamp()),
+          int(datetime(2021, 1, 1, tzinfo=timezone.utc).timestamp()))    # S: checks and figures (selection)
+REVIEW = (SELECT[1], int(datetime(2022, 1, 1, tzinfo=timezone.utc).timestamp()))   # R: the lane review only
 FETCH_UNTIL = int(datetime(2026, 10, 24, tzinfo=timezone.utc).timestamp())   # 10b: once, before pm_lp's validation
 FETCH_FROM = int(datetime(2026, 11, 14, tzinfo=timezone.utc).timestamp())    # 10b: after pm_lp's holdout
 SOURCES = (families.KIND_SOURCE["klines"], families.KIND_SOURCE["funding"], families.SPOT)
@@ -187,12 +191,15 @@ def eligible(db):
     return list(out)
 
 
-def tried(db, since=None, until=None):
-    """{variant key} that explore events recorded as evaluated (all time, or in [since, until))."""
+def tried(db, since=None, until=None, method=None):
+    """{variant key} that explore events recorded as evaluated (all time, or in [since, until)); with `method`, only
+    by that method."""
     out = set()
     for (p,) in db.q("SELECT payload FROM events WHERE kind='research.explore' AND ts>=? AND ts<?", since or 0,
                      until or 2 ** 62):
-        out.update(json.loads(p).get("variants") or [])
+        p = json.loads(p)
+        if method is None or p.get("method") == method:
+            out.update(p.get("variants") or [])
     return out
 
 
@@ -279,12 +286,26 @@ def thirds(daily):
     return [math.fsum(daily[:t]), math.fsum(daily[t:2 * t]), math.fsum(daily[2 * t:])] if t else []
 
 
+def window(bars, funding, pos, a, b):
+    """The bars opening in [a, b) plus the bar before (its close starts the first return; a held position pays its
+    entry), their positions and the funding settled in [a, b)."""
+    ob, of, op = {}, {}, {}
+    for s, x in bars.items():
+        idx = [i for i, r in enumerate(x) if a <= r[0] < b]
+        if idx:
+            lo, hi = max(0, idx[0] - 1), idx[-1] + 1
+            ob[s], op[s] = x[lo:hi], pos[s][lo:hi]
+            of[s] = {t: v for t, v in (funding.get(s) or {}).items() if a <= t < b}
+    return ob, of, op
+
+
 def evaluate(fid, fam, fn, params, bars, funding, coins=None):
-    """One variant: net metrics at 2x costs, the family's attribution rule and the chronological thirds."""
+    """One variant: net metrics at 2x costs, the family's attribution rule and the chronological thirds, on the
+    selection window S only (amendment 15 point 3; positions from all of explore0, the rules are point-in-time)."""
     if coins:
         bars, funding = {s: bars[s] for s in coins}, {s: funding.get(s, {}) for s in coins}
     mod = importlib.import_module(f"lab.families.{fid}")
-    pos = getattr(mod, fn)(bars, funding, params, None)
+    bars, funding, pos = window(bars, funding, getattr(mod, fn)(bars, funding, params, None), *SELECT)
     m = pipeline._evaluate(bars, funding, pos, fam["costs"], mult=STRESS)
     att = families.attribution({"family": fid}, m, bars=bars, pos=pos)
     th = thirds(m.get("daily_net") or [])
@@ -295,7 +316,8 @@ def evaluate(fid, fam, fn, params, bars, funding, coins=None):
     return {"key": key(fid, fn, params, coins), "family": fid, "function": fn, "params": params, "coins": coins,
             "label": LABEL, "net_sharpe_ann": sr, "net_total": m.get("net_total"), "days": m.get("days"),
             "max_drawdown": m.get("max_drawdown"), "fees": m.get("fees"), "funding": m.get("funding"),
-            "attribution": att, "thirds": th, "checks": checks, "candidate": all(checks.values())}
+            "attribution": att, "thirds": th, "checks": checks, "candidate": all(checks.values()), "method": METHOD,
+            "window": "2020-03-01..2020-12-31 (selection, amendment 15 point 3)"}
 
 
 def plan(fid, done, coins, foc, want):
@@ -346,14 +368,14 @@ def step_explore(db, job, worker, get=None, load=None):
     if len(bars) < MIN_COINS:
         res, why = [], f"{len(bars)} coins pass the data-quality rule in {SPLIT}, fewer than {MIN_COINS}"
     else:
-        todo = plan(fid, tried(db), sorted(bars), focus(db, now), min(BATCH, left))
+        todo = plan(fid, tried(db, method=METHOD), sorted(bars), focus(db, now), min(BATCH, left))
         res = [evaluate(fid, fam, fn, p, bars, funding, coins) for fn, p, coins in todo]
         why = None if res else "no untried variant left"
     art = pipeline.save_artifact(os.path.join(DIR, _day(now)), f"{fid}_{int(now)}",
                                  {"label": LABEL, "family": fid, "week": wk, "split": SPLIT, "excluded": excluded,
                                   "coins": sorted(bars), "inputs": inputs, "results": res, "why": why})
     db.event("research.explore", f"system:{worker}", None,
-             {"family": fid, "week": wk, "variants": [r["key"] for r in res], "evaluated": len(res),
+             {"family": fid, "week": wk, "variants": [r["key"] for r in res], "evaluated": len(res), "method": METHOD,
               "decisional": False, "label": LABEL, "candidates": [r["key"] for r in res if r["candidate"]],
               "why": why, "inputs": inputs, "artifact_sha256": art["sha256"]})
     return {"family": fid, "week": wk, "evaluated": len(res), "candidates": sum(1 for r in res if r["candidate"]),
@@ -377,7 +399,7 @@ def _all_results(fids):
             if f.endswith(".json"):
                 with open(os.path.join(root, day, f), encoding="utf-8") as fh:
                     for r in json.load(fh).get("results") or []:
-                        if r.get("family") in fids:          # a family whose approval ended is not proposed
+                        if r.get("family") in fids and r.get("method") == METHOD:   # ended approval / older method
                             out[r["key"]] = r
     return list(out.values())
 

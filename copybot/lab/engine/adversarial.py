@@ -1,6 +1,7 @@
 """Adversarial checks: try to break a result before anyone trusts it.
 
-Gating (must pass): look-ahead truncation and future-poison tests are exact; data quality is OK.
+Gating (must pass): look-ahead truncation, strict truncation (amendment 15) and future-poison tests are exact; data
+quality is OK.
 Reported flags (inform the decision, documented in the report): one-bar extra delay, placebo with block-shuffled
 positions, and the neighbourhood of the selected grid variant.
 """
@@ -27,10 +28,10 @@ def truncation_test(family, bars, funding, params, fit=None, samples=40, seed=11
 
 
 def strict_truncation_test(family, bars, funding, params, fit=None, samples=40, seed=11):
-    """Stricter than truncation_test (statistics audit 2026-10-21; NOT wired into any gate): position i earns bar i's
-    close-to-close return (backtest.gross), so it must not see bar i's close. Bars after i are removed, bar i keeps only
-    its open (close := open), funding settled after bar i's open is removed; position i must not change. Catches a
-    family that reads the current bar's close, which truncation_test and poison_test do not."""
+    """Stricter than truncation_test (statistics audit 2026-10-21; a gate since amendment 15 point 1): position i earns
+    bar i's close-to-close return (backtest.gross), so it must not see bar i's close. Bars after i are removed, bar i
+    keeps only its open (close := open), funding settled after bar i's open is removed; position i must not change.
+    Catches a family that reads the current bar's close, which truncation_test and poison_test do not."""
     full = family(bars, funding, params, fit)
     rng = random.Random(seed)
     idx = sorted(rng.sample(range(1, len(bars)), min(samples, len(bars) - 1))) if len(bars) > 2 else []
@@ -118,6 +119,31 @@ def truncation_test_xs(family, bars_by, funding_by, params, samples=20, seed=11,
         for s, b in bars_by.items():
             m = sum(1 for x in b if x[0] <= cut)
             if any(abs(part[s][j] - full[s][j]) > 1e-12 for j in range(m)):
+                bad += 1
+                break
+    return {"checked": len(cuts), "mismatches": bad, "ok": bad == 0}
+
+
+def strict_truncation_test_xs(family, bars_by, funding_by, params, samples=20, seed=11, volume_by=None):
+    """Cross-sectional strict_truncation_test (amendment 15 point 1): every symbol is cut at the same bar, which keeps
+    only its open; funding settled after the cut, hourly values of bars opening at or after it and daily values of days
+    not closed by it are removed. The positions at the cut must not change."""
+    full = _call(family, bars_by, funding_by, params, volume_by)
+    ref = min(bars_by, key=lambda s: len(bars_by[s]))
+    rng = random.Random(seed)
+    n = len(bars_by[ref])
+    cuts = sorted(rng.sample(range(1, n), min(samples, n - 1))) if n > 2 else []
+    bad = 0
+    for i in cuts:
+        cut = bars_by[ref][i][0]
+        part = _call(family, {s: [x for x in b if x[0] < cut] + [(cut, x[1], x[1]) for x in b if x[0] == cut]
+                              for s, b in bars_by.items()},
+                     {s: {k: v for k, v in f.items() if k <= cut} for s, f in funding_by.items()}, params,
+                     cut_bundle(volume_by, cut) if _is_bundle(volume_by) else
+                     ({s: {k: q for k, q in v.items() if k < cut} for s, v in volume_by.items()} if volume_by else None))
+        for s, b in bars_by.items():
+            j = sum(1 for x in b if x[0] < cut)
+            if j < len(b) and b[j][0] == cut and abs(part[s][j] - full[s][j]) > 1e-12:
                 bad += 1
                 break
     return {"checked": len(cuts), "mismatches": bad, "ok": bad == 0}
@@ -222,6 +248,62 @@ def placebo_circular(per_symbol_bars, per_symbol_pos, funding, costs, n=60, min_
         return {"actual": None, "p": None, "n": n}
     return {"actual": base, "p": sum(1 for x in sims if x >= base) / n, "n": n, "placebo_mean": sum(sims) / n,
             "method": "market shifted by whole days; positions unchanged"}
+
+
+def placebo_returns(per_symbol_bars, per_symbol_pos, funding, costs, n=60, min_days=7, seed=17, offset=3600):
+    """Amendment 15 point 2 (replaces 11d's market shift in the lane review): each draw takes ONE whole number of days k
+    in [min_days, days - min_days), common to all symbols; every symbol's bar returns (open and close relative to the
+    previous close) are shifted circularly by k days and a price path is rebuilt from its first close, so the wrap adds
+    no jump and a constant position earns the same total; settled funding is shifted k days as in 11d. Positions stay
+    as they are. Sharpe over decision periods as placebo_circular. Returns the share of placebos at or above."""
+    rng = random.Random(seed)
+
+    def shifted(s, bars, k_days):
+        m = len(bars) - 1
+        if m < 2:
+            return bars, funding.get(s, {})
+        g = [(bars[i][1] / bars[i - 1][2], bars[i][2] / bars[i - 1][2]) for i in range(1, m + 1)]
+        k, c, nb = (k_days * 24) % m, bars[0][2], [bars[0]]
+        for i in range(1, m + 1):
+            go, gc = g[(i - 1 + k) % m]
+            nb.append((bars[i][0], c * go, c * gc))
+            c *= gc
+        f = funding.get(s, {})
+        ft = sorted(f)
+        if not ft:
+            return nb, {}
+        step, span = k_days * 86400, ft[-1] - ft[0] + 8 * 3600
+        return nb, {t: f.get(ft[0] + ((t - ft[0] + step) % span), 0.0) for t in ft}
+
+    if not per_symbol_bars:
+        return {"actual": None, "p": None, "n": n}
+    base, sims = _period_sharpe(per_symbol_bars, per_symbol_pos, funding, costs, offset), []
+    days = min(len(b) for b in per_symbol_bars.values()) // 24
+    for _ in range(n):
+        k = rng.randrange(min_days, days - min_days) if days > 2 * min_days else 0
+        bb, ff = {}, {}
+        for s, b in per_symbol_bars.items():
+            bb[s], ff[s] = shifted(s, b, k)
+        sims.append(_period_sharpe(bb, per_symbol_pos, ff, costs, offset) or 0.0)
+    if base is None:
+        return {"actual": None, "p": None, "n": n}
+    return {"actual": base, "p": sum(1 for x in sims if x >= base) / n, "n": n, "placebo_mean": sum(sims) / n,
+            "method": "returns shifted by one common whole number of days; positions unchanged (amendment 15)"}
+
+
+def _period_sharpe(bars_by, pos_by, fund_by, costs, offset=3600):
+    """Annualised net Sharpe over decision periods (UTC days shifted by `offset`)."""
+    rows = backtest.portfolio({s: backtest.apply_costs(backtest.gross(b, pos_by[s]), fund_by.get(s, {}), costs)
+                               for s, b in bars_by.items()})
+    per = {}
+    for r in rows:
+        per[(r[0] - offset) // 86400] = per.get((r[0] - offset) // 86400, 0.0) + r[7]
+    x = [per[k] for k in sorted(per)]
+    if len(x) < 2:
+        return None
+    m = math.fsum(x) / len(x)
+    sd = math.sqrt(math.fsum((v - m) ** 2 for v in x) / (len(x) - 1))
+    return m / sd * math.sqrt(365) if sd > 0 else None
 
 
 def delayed_by(per_symbol_bars, per_symbol_pos, funding, costs, bars=24):

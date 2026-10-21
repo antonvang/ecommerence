@@ -1,5 +1,5 @@
 """adversarial.strict_truncation_test: catches a family that reads the current bar's close (the blind spot of the
-existing truncation/poison tests, statistics audit 2026-10-21). Not wired into any gate."""
+existing truncation/poison tests, statistics audit 2026-10-21); a gate since amendment 15 point 1."""
 import math
 import os
 import random
@@ -43,6 +43,27 @@ class Strict(unittest.TestCase):
     def test_a_catalogue_template_passes(self):
         t = catalogue.TEMPLATES["vol_managed_long"]
         self.assertTrue(adversarial.strict_truncation_test(t["family"], bars(), {}, t["grid"][0])["ok"])
+
+    def test_cross_sectional_strict_test_catches_the_current_close_and_volume(self):
+        xs = {f"S{k}USDT": bars(seed=k) for k in range(4)}
+        cheat = lambda b, f, p, fit=None, vol=None: {s: peek_current(x, f, p) for s, x in b.items()}   # noqa: E731
+        self.assertTrue(adversarial.truncation_test_xs(cheat, xs, {s: {} for s in xs}, {})["ok"])     # the blind spot
+        self.assertFalse(adversarial.strict_truncation_test_xs(cheat, xs, {s: {} for s in xs}, {})["ok"])
+        fair = lambda b, f, p, fit=None, vol=None: {s: honest(x, f, p) for s, x in b.items()}         # noqa: E731
+        self.assertTrue(adversarial.strict_truncation_test_xs(fair, xs, {s: {} for s in xs}, {})["ok"])
+        vol = {s: {ts: float(i % 7) for i, (ts, _, _) in enumerate(x)} for s, x in xs.items()}
+
+        def peek_volume(b, f, p, fit=None, v=None):          # reads the current bar's volume (known at its close)
+            return {s: [1.0 if (v or {}).get(s, {}).get(x[0], 0) > 3 else 0.0 for x in bars_] for s, bars_ in b.items()}
+        self.assertFalse(adversarial.strict_truncation_test_xs(peek_volume, xs, {s: {} for s in xs}, {},
+                                                               volume_by=vol)["ok"])
+
+    def test_the_pipeline_gate_includes_the_strict_test(self):
+        import inspect
+        from lab import pipeline
+        src = inspect.getsource(pipeline.step_adversarial)
+        self.assertIn("strict_truncation_test_xs", src)
+        self.assertIn("for t in (trunc, strict, poison)", src)
 
 
 if __name__ == "__main__":

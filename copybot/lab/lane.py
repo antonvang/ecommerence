@@ -204,7 +204,8 @@ def candidates(db, fids):
                 continue                                         # not a recorded lane artifact: never traded
             art = json.loads(raw)
             for r in art.get("results") or []:
-                if r.get("candidate") and r.get("family") in fids and all((r.get("checks") or {}).values()):
+                if r.get("candidate") and r.get("family") in fids and all((r.get("checks") or {}).values()) \
+                        and r.get("method") == explore.METHOD:            # amendment 15 point 3: selection on S
                     out[r["key"]] = {**r, "artifact": os.path.relpath(os.path.join(d, f), pipeline.HERE)
                                      .replace("\\", "/"), "artifact_sha256": sha,
                                      "evaluated_coins": r.get("coins") or art.get("coins") or None}
@@ -221,7 +222,7 @@ def expectation(r):
         return None
     m = total / days
     return {"mean": m / UNIT_CAPITAL, "sd": m * math.sqrt(365) / sr / UNIT_CAPITAL, "days": days,
-            "source": "explore0 result at 2x costs (amendment 11 point 6)"}
+            "source": "explore0 selection window (2020) result at 2x costs (amendments 11 point 6 and 15 point 3)"}
 
 
 # ---------- live statistics (points 5-7) ----------
@@ -914,7 +915,7 @@ REVIEW_QUEUE_MAX = 6
 REVIEW_JOB = {"priority": 150, "max_attempts": 2, "timeout_s": 1800}
 REVIEW_DELAY_SHARPE = 1.0                       # the delayed net Sharpe at 2x costs, as the candidate itself
 REVIEW_DELAY_BARS = 24                          # 11d: one decision period (the rules decide once a day)
-REVIEW_METHOD = "11d"                           # reviews by an older method do not count
+REVIEW_METHOD = "15"                            # reviews by an older method do not count (amendment 15)
 REVIEW_PLACEBO_N = 60
 
 
@@ -923,7 +924,7 @@ def review_id(key):
 
 
 def reviews(db):
-    """{key: research.lane_review payload}: the latest review of each candidate by the current method (11d)."""
+    """{key: research.lane_review payload}: the latest review of each candidate by the current method (15)."""
     return {p.get("key"): p for _, _, _, _, p in _events(db, "research.lane_review")
             if p.get("method") == REVIEW_METHOD}
 
@@ -952,8 +953,9 @@ def _stressed(costs):
 
 
 def review(r, bars, funding):
-    """11c point 1 on the candidate's own coins in explore0: exact look-ahead and poison tests, the one-bar delay at
-    2x costs and the block placebo. Returns the checks and their numbers."""
+    """11c point 1 as amendment 15 sets it, on the candidate's own coins: exact look-ahead (also strict) and poison
+    tests on all of explore0; the one-period delay at 2x costs and the returns placebo on the review window R only
+    (positions from all of explore0). Returns the checks and their numbers."""
     from lab.engine import adversarial, catalogue
     fam = families.load(r["family"])
     coins = [c for c in (r.get("coins") or r.get("evaluated_coins") or sorted(bars)) if c in bars]
@@ -961,16 +963,19 @@ def review(r, bars, funding):
     funding = {c: funding.get(c, {}) for c in coins}
     fn = getattr(importlib.import_module(f"lab.families.{r['family']}"), r["function"])
     trunc = adversarial.truncation_test_xs(fn, bars, funding, r["params"], 20)
+    strict = adversarial.strict_truncation_test_xs(fn, bars, funding, r["params"], 20)
     poison = adversarial.poison_test_xs(fn, bars, funding, r["params"])
-    pos = fn(bars, funding, r["params"], None)
+    rb, rf, pos = explore.window(bars, funding, fn(bars, funding, r["params"], None), *explore.REVIEW)
     costs = _stressed(fam["costs"])
-    late = adversarial.delayed_by(bars, pos, funding, costs, REVIEW_DELAY_BARS)
-    plac = adversarial.placebo_circular(bars, pos, funding, costs, n=REVIEW_PLACEBO_N)
-    checks = {"look-ahead truncation exact": trunc["ok"], "poison exact": poison["ok"],
+    late = adversarial.delayed_by(rb, pos, rf, costs, REVIEW_DELAY_BARS)
+    plac = adversarial.placebo_returns(rb, pos, rf, costs, n=REVIEW_PLACEBO_N)
+    checks = {"look-ahead truncation exact": trunc["ok"], "strict look-ahead exact": strict["ok"],
+              "poison exact": poison["ok"],
               f"{REVIEW_DELAY_BARS}-bar delay net Sharpe >= {REVIEW_DELAY_SHARPE} at 2x costs":
                   (late.get("net_sharpe_ann") or -1e9) >= REVIEW_DELAY_SHARPE,
               f"placebo p < {catalogue.PLACEBO_P_MAX}": plac["p"] is not None and plac["p"] < catalogue.PLACEBO_P_MAX}
-    return {"coins": coins, "checks": checks, "ok": all(checks.values()), "truncation": trunc, "poison": poison,
+    return {"coins": coins, "checks": checks, "ok": all(checks.values()), "truncation": trunc, "strict": strict,
+            "poison": poison, "window": "2021-01-01..2021-12-31 (review, amendment 15 point 3)",
             "delayed_net_sharpe": late.get("net_sharpe_ann"), "delayed_net_total": late.get("net_total"),
             "placebo": plac}
 
@@ -986,7 +991,7 @@ def step_review(db, job, worker, load=None):
     res = review(cand, bars, funding)
     out = {**res, "key": key, "family": cand["family"], "function": cand["function"], "params": cand["params"],
            "split": explore.SPLIT, "inputs": inputs, "label": explore.LABEL, "decisional": False,
-           "method": REVIEW_METHOD, "rule": "research/PROTOCOL_V3.md amendments 11c and 11d"}
+           "method": REVIEW_METHOD, "rule": "research/PROTOCOL_V3.md amendments 11c, 11d and 15"}
     art = pipeline.save_artifact(REVIEW_DIR, review_id(key), out)
     db.event("research.lane_review", f"system:{worker}", None,
              {"key": key, "ok": res["ok"], "checks": res["checks"], "placebo_p": res["placebo"]["p"],

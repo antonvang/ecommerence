@@ -158,7 +158,7 @@ class FinalStateOverrides(Hypotheses):
 
 
 class LaneMultipleTesting(Base):
-    def review(self, p, ok, method="11d"):
+    def review(self, p, ok, method="15"):
         self.db.event("research.lane_review", "system:adversarial-1", None,
                       {"key": f"k{p}{ok}", "ok": ok, "placebo_p": p, "method": method})
 

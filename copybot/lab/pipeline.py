@@ -734,22 +734,25 @@ def step_adversarial(db, job, worker):
     fam = _family(tpl)
     if tpl.get("cross_sectional"):
         trunc = {"ALL": adversarial.truncation_test_xs(fam, bars, funding, v["params"], 20, volume_by=vol)}
+        strict = {"ALL": adversarial.strict_truncation_test_xs(fam, bars, funding, v["params"], 20, volume_by=vol)}
         poison = {"ALL": adversarial.poison_test_xs(fam, bars, funding, v["params"], volume_by=vol)}
     else:
         trunc = {s: adversarial.truncation_test(fam, bars[s], funding[s], v["params"], (v["fit"] or {}).get(s), 20)
                  for s in bars}
+        strict = {s: adversarial.strict_truncation_test(fam, bars[s], funding[s], v["params"], (v["fit"] or {}).get(s))
+                  for s in bars}
         poison = {s: adversarial.poison_test(fam, bars[s], funding[s], v["params"], (v["fit"] or {}).get(s))
                   for s in bars}
     dq = load_artifact(eid, "data")
     others = [r["net"]["net_sharpe_ann"] for r in cost["variants"] if r["variant"] != cost["selected"]]
-    res = {"truncation": trunc, "poison": poison, "data_ok": dq["ok"],
+    res = {"truncation": trunc, "strict_truncation": strict, "poison": poison, "data_ok": dq["ok"],
            "delayed_one_bar": _strip(adversarial.delayed(bars, v["positions"], funding, spec["costs"])),
            "placebo": adversarial.placebo(bars, v["positions"], funding, spec["costs"], n=PLACEBO_N),
            "neighbours_net_sharpe": others}
-    res["ok"] = all(x["ok"] for x in trunc.values()) and all(x["ok"] for x in poison.values()) and dq["ok"]
+    exact = all(x["ok"] for t in (trunc, strict, poison) for x in t.values())      # amendment 15 point 1: strict too
+    res["ok"] = exact and dq["ok"]
     if _v2(spec):
         pp = res["placebo"]["p"]
-        exact = all(x["ok"] for x in trunc.values()) and all(x["ok"] for x in poison.values())
         checks = (("exact look-ahead and poison tests", exact), ("data quality", dq["ok"]),
                   (f"train placebo p < {catalogue.PLACEBO_P_MAX}", pp is not None and pp < catalogue.PLACEBO_P_MAX))
         res["pre_validation_failed"] = [k for k, ok in checks if not ok]
@@ -928,7 +931,8 @@ def step_observe(db, job, worker):
             cohort += 1
     need = 1 - 0.05 / max(1, cohort)
     sr_d = (m["net_mean_daily"] / m["net_sd_daily"]) if m.get("net_sd_daily") else None
-    prob = backtest.psr(sr_d, m["days"])
+    n_eff, rho = backtest.effective_n(m.get("daily_net") or [])
+    prob = backtest.psr(sr_d, n_eff)                     # amendment 15 point 4: autocorrelation-corrected sample
     gates = {"net_mean_daily > 0": (m["net_mean_daily"] or 0) > 0,
              "one-sided 90% lower bound > 0": (m["lb_one_sided"] or -1) > 0,
              "net Sharpe > buy-and-hold": (m["net_sharpe_ann"] or -9e9) > (bench["net_sharpe_ann"] or -9e9),
@@ -939,7 +943,8 @@ def step_observe(db, job, worker):
     verdict = ("PASS (forward test): every gate passed on new, unseen data; eligible for the human-approved steps"
                if not failed else f"FAIL (forward test): failed {', '.join(failed)}")
     art = save_artifact(eid, "observe", {"window": split, "metrics": _strip(m), "metrics_2x_costs": _strip(hi),
-                                         "benchmark": _strip(bench), "psr": prob, "cohort": cohort, "gates": gates,
+                                         "benchmark": _strip(bench), "psr": prob, "psr_n_eff": n_eff,
+                                         "lag1_autocorrelation": rho, "cohort": cohort, "gates": gates,
                                          "quality": q, "excluded": excluded, "daily_net": m["daily_net"]})
     rid = registry.record_result(db, eid, "VALIDATION", verdict, {"forward": _strip(m), "benchmark": _strip(bench),
                                                                   "psr": prob, "cohort": cohort, "gates": gates,

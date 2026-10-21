@@ -1,0 +1,20 @@
+# Laboratoriets uafhængige vagt (lab/watch.py) som systemd-brugertjeneste (PROTOCOL_V3 ændring 15 punkt 5).
+# MÅ FØRST INSTALLERES, NÅR S7-GATEN ER ÅBEN (7 rene dage; research/LINUX_DRIFT.md "G"). Brugeren installerer selv.
+# Kun læsning: vagten genstarter aldrig laboratoriet eller indsamleren. Ingen ordrer, ingen konto, intet netværk ud
+# over 127.0.0.1 og skrivebordsnotifikationer. Fortryd: systemctl --user disable --now lab-watch.
+[Unit]
+Description=Copybot-vagt (overvågning af laboratoriet og pm_lp, kun læsning)
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+WorkingDirectory=%h/ecommerence/copybot
+ExecStart=%h/ecommerence/copybot/START_WATCH.sh
+StandardOutput=append:%h/ecommerence/copybot/data/lab/watch.log
+StandardError=append:%h/ecommerence/copybot/data/lab/watch.log
+Restart=on-failure
+RestartSec=60
+TimeoutStopSec=30
+
+[Install]
+WantedBy=default.target

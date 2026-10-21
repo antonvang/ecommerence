@@ -135,6 +135,18 @@ def psr(sr, n_obs, benchmark=0.0, skew=0.0, kurt=3.0):
     return statistics.NormalDist().cdf((sr - benchmark) * math.sqrt(n_obs - 1) / den)
 
 
+def effective_n(x):
+    """(n_eff, rho): the sample size n (1 - rho) / (1 + rho) of a series with first-order autocorrelation rho > 0, else
+    n (amendment 15 point 4; never larger than n)."""
+    n = len(x)
+    if n < 3:
+        return float(n), None
+    m = math.fsum(x) / n
+    den = math.fsum((v - m) ** 2 for v in x)
+    rho = math.fsum((x[i] - m) * (x[i - 1] - m) for i in range(1, n)) / den if den > 0 else 0.0
+    return (n * (1 - rho) / (1 + rho) if rho > 0 else float(n)), rho
+
+
 def deflated_sharpe(sr, sr_trials, n_obs, skew=0.0, kurt=3.0, n=None):
     """Probability that the (per-period) Sharpe `sr` exceeds the expected maximum of `len(sr_trials)` independent trials
     (Bailey & Lopez de Prado 2014). Returns None when it cannot be computed. `n` replaces the number of trials (e.g. an

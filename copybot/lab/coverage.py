@@ -215,20 +215,21 @@ def hypotheses(db):
             "alpha_spent": sum(m["alpha_spent"] for m in rows), "by_status": counts,
             "lane_variants_evaluated": lane, "lane_reviews": lane_multiple_testing(db),
             "multiple_testing": "formal tests spend alpha from the ledger (amendment 8); the exploration lane is "
-                                "exploratory, never decisional, and its candidates must pass lane_review (11d) and a "
+                                "exploratory, never decisional, and its candidates must pass lane_review (15) and a "
                                 "separate forward test"}
 
 
-LANE_ALPHA = 0.10                     # amendment 11c/11d: placebo p < 0.10 per candidate
+LANE_ALPHA = 0.10                     # amendment 11c/11d/15: placebo p < 0.10 per candidate
 FDR_Q = 0.10
 
 
-def lane_multiple_testing(db, method="11d"):
+def lane_multiple_testing(db, method=None):
     """Display only, decides nothing: how many lane reviews pass by the per-candidate rule, how many chance alone would
     pass, and how many survive Benjamini-Hochberg at q = 0.10 with the conservative permutation p (k + 1) / (n + 1).
     Candidates overlap (variants of one family on shared coins), so the tests are dependent and both figures are
     approximate."""
     from lab import lane
+    method = method or lane.REVIEW_METHOD
     ps = []
     for r in db.q("SELECT payload FROM events WHERE kind='research.lane_review'"):
         try:

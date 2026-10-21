@@ -109,5 +109,29 @@ class EffectiveTrials(unittest.TestCase):
         self.assertEqual(backtest.deflated_sharpe(0.2, trials, 500, n=len(trials)), full)   # default unchanged
 
 
+class EffectiveSample(unittest.TestCase):
+    """Amendment 15 point 4: the forward PSR uses n (1 - rho) / (1 + rho) when returns are autocorrelated."""
+    def ar1(self, phi, n=400, seed=3):
+        rng, x, out = random.Random(seed), 0.0, []
+        for _ in range(n):
+            x = phi * x + rng.gauss(0, 1)
+            out.append(x)
+        return out
+
+    def test_persistence_shrinks_the_sample_and_never_grows_it(self):
+        from lab.engine import backtest
+        n8, r8 = backtest.effective_n(self.ar1(0.8))
+        self.assertAlmostEqual(r8, 0.8, delta=0.1)
+        self.assertLess(n8, 400 * 0.2)
+        self.assertEqual(backtest.effective_n(self.ar1(-0.5))[0], 400.0)     # negative rho: n, never more
+        self.assertEqual(backtest.effective_n([1.0, 2.0])[0], 2.0)
+
+    def test_the_corrected_psr_is_lower_for_a_persistent_series(self):
+        from lab.engine import backtest
+        x = [v / 10 + 0.05 for v in self.ar1(0.8)]
+        sr = sum(x) / len(x) / (sum((v - sum(x) / len(x)) ** 2 for v in x) / len(x)) ** 0.5
+        self.assertLess(backtest.psr(sr, backtest.effective_n(x)[0]), backtest.psr(sr, len(x)))
+
+
 if __name__ == "__main__":
     unittest.main()
