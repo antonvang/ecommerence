@@ -50,8 +50,8 @@ SOURCES = (
      "https://cointelegraph.com", 86400),
     ("CoinDesk RSS (amendment 16)", "live", "crypto news headlines", "10 min", "free", "no", (),
      "https://www.coindesk.com", 86400),
-    ("GDELT DOC 2.0 (amendment 16)", "live", "world news mentioning crypto (titles, URLs)", "15 min, backoff",
-     "free (1 request per 5 s)", "no", (), "https://api.gdeltproject.org", 86400),
+    ("GDELT DOC 2.0 (amendment 16)", "live", "world news mentioning crypto (titles, URLs)", "30 min, backoff to 24 h",
+     "free, but limits this address (HTTP 429, amendment 17 point 9)", "no", (), "https://api.gdeltproject.org", 86400),
 )
 GAPS = (
     ("news history before amendment 16", "RSS and GDELT are collected forward only; Binance announcements are "
@@ -185,7 +185,16 @@ def progress(db, rows=None, now=None):
                      "reason": (p.get("reason") or "")[:160], "ts": r["ts"], "rule": p.get("rule")})
     return {"live_sources": live, "jobs_done_24h": j[0] or 0, "jobs_failed_24h": j[1] or 0,
             "oldest_runnable_job_age_s": (now - oldest) if oldest else None, "measurements": meas,
-            "forward": forward(db, now)}
+            "forward": forward(db, now), "hypotheses": _hypotheses(db, now)}
+
+
+def _hypotheses(db, now):
+    """Amendment 17's pipeline (display only); a failure here never hides the rest of the page."""
+    try:
+        from lab import hypogen
+        return hypogen.view(db, now)
+    except Exception as e:                                  # noqa: BLE001
+        return {"error": repr(e)[:200]}
 
 
 FORWARD_FROM = 1792627200                       # 2026-10-22 00:00 UTC: amendments 16d and 16f collect from here

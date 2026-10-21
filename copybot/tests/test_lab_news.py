@@ -34,7 +34,7 @@ class Base(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.mkdtemp(prefix="labnews")
         self.db = DB(os.path.join(self.tmp, "lab.db"))
-        news._STATE.update({"gdelt_next": 0.0, "gdelt_wait": news.GDELT_EVERY})
+        news._STATE.update({"gdelt_next": 0.0, "gdelt_wait": news.GDELT_EVERY, "gdelt_loaded": False})
 
     def tearDown(self):
         self.db.close()
@@ -102,6 +102,27 @@ class Scanner(Base):
         self.assertNotIn(news.GDELT, r["stored"])
         r = news.run(self.db, self.get(), now=NOW + 2 * news.GDELT_EVERY)
         self.assertIn(news.GDELT, r["stored"])
+
+    def test_17_gdelt_backoff_survives_a_restart_and_respects_retry_after(self):
+        """Amendment 17 point 9: 30-minute base, the state is restored from the registry, Retry-After is respected."""
+        self.assertEqual((news.GDELT_EVERY, news.GDELT_BACKOFF_MAX), (1800, 24 * 3600))
+        news.run(self.db, self.get(fail=("gdeltproject",)), now=NOW)
+        news.run(self.db, self.get(fail=("gdeltproject",)), now=NOW + 2 * news.GDELT_EVERY)
+        news._STATE.update({"gdelt_next": 0.0, "gdelt_wait": news.GDELT_EVERY, "gdelt_loaded": False})   # restart
+        r = news.run(self.db, self.get(), now=NOW + 2 * news.GDELT_EVERY + 600)
+        self.assertNotIn(news.GDELT, r["stored"])                    # two errors since the last item: still waiting
+        self.assertEqual(news._STATE["gdelt_next"], NOW + 2 * news.GDELT_EVERY + 4 * news.GDELT_EVERY)
+
+        class TooMany(OSError):
+            headers = {"Retry-After": "40000"}
+
+        def g(url):
+            if url.startswith(news.GDELT):
+                raise TooMany("429")
+            return self.get()(url)
+        news._STATE.update({"gdelt_next": 0.0, "gdelt_wait": news.GDELT_EVERY, "gdelt_loaded": True})
+        news.run(self.db, g, now=NOW + 10 ** 5)
+        self.assertEqual(news._STATE["gdelt_next"], NOW + 10 ** 5 + 40000)
 
     def test_backfill_marks_items_and_delays_their_use(self):
         n = news.backfill(self.db, self.get(), now=NOW, sleep=lambda s: None)

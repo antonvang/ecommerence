@@ -393,7 +393,7 @@ def strategy_pass(db):
     fams = families.pass_(db, "strategy-1")                                             # errors contained per family
     from lab import promotion
     decisions = [d for d in promotion.step(db) if d.get("applicable")]                 # amendment 4: one decision path
-    from lab import explore, ingest, lane, scanresearch
+    from lab import explore, hypogen, ingest, lane, scanresearch
     return {"registered": registered, "promotions": [(d["exp_id"], d["to"], d["allowed"]) for d in decisions],
             "holdouts_queued": pipeline.enqueue_holdouts(db), "diagnostics_queued": pipeline.enqueue_diagnostics(db),
             "scan_research_queued": scanresearch.enqueue(db),           # amendment 9 section 3: digest and dossiers
@@ -401,6 +401,7 @@ def strategy_pass(db):
             "lane_report_queued": lane.enqueue_report(db),  # amendment 12d: the daily account report
             "lane_reviews_queued": lane.enqueue_reviews(db),  # amendment 11c: adversarial review of candidates
             "ingest_queued": ingest.enqueue(db) if ingest.auto(db) else 0,   # amendment 14: one unit at a time
+            "hypotheses_queued": hypogen.enqueue(db),       # amendment 17: one screening at a time, locked measurements
             **({"families": fams} if fams else {})}
 
 
@@ -500,18 +501,22 @@ ROSTER = (
      ("backtest", "explore"), None, None, True),
     ("backtest-2", "Backtest agent: grid positions on the train window; exploration lane (amendment 10)",
      ("backtest", "explore"), None, None, True),
-    ("cost-1", "Cost agent: net results, 2x cost stress, trials ledger, selection", ("cost",), None, None, True),
-    ("cost-2", "Cost agent: net results, 2x cost stress, trials ledger, selection", ("cost",), None, None, True),
+    ("cost-1", "Cost agent: net results, 2x cost stress, trials ledger, selection; hypothesis screening (amendment 17)",
+     ("cost", "hypo_screen"), None, None, True),
+    ("cost-2", "Cost agent: net results, 2x cost stress, trials ledger, selection; hypothesis screening (amendment 17)",
+     ("cost", "hypo_screen"), None, None, True),
     ("adversarial-1", "Adversarial agent: look-ahead, poison, delay, placebo; lane reviews (11c)",
      ("adversarial", "lane_review"), None, None, True),
     ("adversarial-2", "Adversarial agent: look-ahead, poison, delay, placebo; lane reviews (11c)",
      ("adversarial", "lane_review"), None, None, True),
     ("adversarial-3", "Adversarial agent: look-ahead, poison, delay, placebo; lane reviews (11c)",
      ("adversarial", "lane_review"), None, None, True),
-    ("validation-1", "Validation agent: frozen variant on validation; forward test; sealed holdout after approval",
-     ("validate", "holdout", "observe", "observe_interim"), None, None, True),
-    ("validation-2", "Validation agent: frozen variant on validation; forward test; sealed holdout after approval",
-     ("validate", "holdout", "observe", "observe_interim"), None, None, True),
+    ("validation-1", "Validation agent: frozen variant on validation; forward test; sealed holdout after approval; "
+     "locked hypothesis measurements (amendment 17)", ("validate", "holdout", "observe", "observe_interim",
+                                                       "hypo_measure"), None, None, True),
+    ("validation-2", "Validation agent: frozen variant on validation; forward test; sealed holdout after approval; "
+     "locked hypothesis measurements (amendment 17)", ("validate", "holdout", "observe", "observe_interim",
+                                                       "hypo_measure"), None, None, True),
     ("report-1", "Reporting agent: results, lifecycle verdicts, markdown reports; diagnostics of finished experiments",
      ("report", "diagnose", "scan_digest", "scan_dossier", "explore_report", "lane_report"), None, None, False),
     ("paper-1", "Paper execution agent: simulated orders for PAPER_TRADING experiments only", None, paper_pass, 60,

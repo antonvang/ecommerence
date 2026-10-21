@@ -2064,7 +2064,7 @@ class RosterAndSafety(unittest.TestCase):
                           ("validation-2", None), ("report-1", None), ("paper-1", 60), ("risk-1", 15)])
         kinds = {n: k for n, _, k, _, _, _ in fleet.ROSTER}
         for n in ("validation-1", "validation-2"):
-            self.assertEqual(kinds[n], ("validate", "holdout", "observe", "observe_interim"))
+            self.assertEqual(kinds[n], ("validate", "holdout", "observe", "observe_interim", "hypo_measure"))   # 17
         self.assertTrue({"observe", "observe_interim"} <= fleet.HEAVY)
         self.assertEqual(command.STAGE_OF_KIND["observe_interim"], "VALIDATION")
         self.assertIs(pipeline.HANDLERS["observe_interim"], pipeline.step_observe_interim)

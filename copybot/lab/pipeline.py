@@ -1352,7 +1352,12 @@ HANDLERS = {"data": step_data, "backtest": step_backtest, "cost": step_cost, "ad
             .step_review(db, job, worker),
             # amendment 14: one unit of free public data, summarised; decides nothing
             "ingest": lambda db, job, worker: __import__("lab.ingest", fromlist=["step_ingest"])
-            .step_ingest(db, job, worker)}
+            .step_ingest(db, job, worker),
+            # amendment 17: automatic hypotheses - screening in explore0 (never evidence) and the locked measurement
+            "hypo_screen": lambda db, job, worker: __import__("lab.hypogen", fromlist=["step_screen"])
+            .step_screen(db, job, worker),
+            "hypo_measure": lambda db, job, worker: __import__("lab.hypogen", fromlist=["step_measure"])
+            .step_measure(db, job, worker)}
 
 
 def enqueue_holdouts(db, actor="strategy-1"):

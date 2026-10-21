@@ -27,11 +27,11 @@ CATALOGS = {48: "listing", 161: "delisting", 49: "binance_news"}
 RSS = {"cointelegraph": "https://cointelegraph.com/rss", "coindesk": "https://www.coindesk.com/arc/outboundfeeds/rss"}
 GDELT = "https://api.gdeltproject.org/api/v2/doc/doc"
 GDELT_QUERY = "(bitcoin OR ethereum OR crypto OR cryptocurrency OR stablecoin) sourcelang:english"
-GDELT_EVERY, GDELT_BACKOFF_MAX = 900, 6 * 3600
+GDELT_EVERY, GDELT_BACKOFF_MAX = 1800, 24 * 3600     # amendment 17 point 9 (was 900 and 6 h)
 BACKFILL_LAG_S = 3600                            # point 3: a backfilled item is usable from publication + 1 hour
 BACKFILL_PAUSE_S = 2.0
 BACKFILL_RETRY_S = (60, 180, 600)                # waits after a refused page before the category stops
-_STATE = {"gdelt_next": 0.0, "gdelt_wait": GDELT_EVERY}
+_STATE = {"gdelt_next": 0.0, "gdelt_wait": GDELT_EVERY, "gdelt_loaded": False}
 _PAREN = re.compile(r"\(([A-Z0-9]{2,12})\)")
 _PAIR = re.compile(r"\b([A-Z0-9]{2,12})(?:USDT|USDC|FDUSD)\b")
 
@@ -147,10 +147,33 @@ def _error(db, source_url, now, e):
               value=None, threshold=None, flagged=0, payload={"error": f"{e!r}"[:300]})
 
 
+def _gdelt_restore(db):
+    """Amendment 17 point 9: the backoff survives a restart. Read from the registry once per process: the last GDELT
+    error and the number of errors since the last stored GDELT item."""
+    _STATE["gdelt_loaded"] = True
+    last_item = db.one("SELECT MAX(ts) FROM observations WHERE detector=? AND metric='news_item' AND source=?",
+                       DETECTOR, GDELT)[0] or 0
+    r = db.one("SELECT COUNT(*), MAX(ts) FROM observations WHERE detector=? AND metric='news_error' AND source=? AND "
+               "ts>?", DETECTOR, GDELT, last_item)
+    if r[0]:
+        _STATE["gdelt_wait"] = min(GDELT_BACKOFF_MAX, GDELT_EVERY * 2 ** r[0])
+        _STATE["gdelt_next"] = max(_STATE["gdelt_next"], r[1] + _STATE["gdelt_wait"])
+
+
+def _retry_after(e):
+    try:
+        return max(0, int((getattr(e, "headers", None) or {}).get("Retry-After")))
+    except (TypeError, ValueError):
+        return 0
+
+
 def run(db, get=http_get, now=None):
-    """One pass (news-watch, every 10 minutes): Binance categories and RSS each pass, GDELT at most every 15 minutes
-    with exponential backoff after a refusal. Returns counts per source and the errors."""
+    """One pass (news-watch, every 10 minutes): Binance categories and RSS each pass, GDELT at most every 30 minutes
+    with exponential backoff after a refusal (Retry-After respected; restored after a restart, amendment 17 point 9).
+    Returns counts per source and the errors."""
     now = now or time.time()
+    if not _STATE["gdelt_loaded"]:
+        _gdelt_restore(db)
     out, errors = {}, []
     jobs = [(f"{BINANCE}#{c}", lambda c=c: binance(get, now, c)) for c in CATALOGS]
     jobs += [(RSS[n], lambda n=n: rss(get, now, n)) for n in RSS]
@@ -165,7 +188,7 @@ def run(db, get=http_get, now=None):
             errors.append(f"{src}: {e!r}"[:200])
             _error(db, src.split("#")[0], now, e)
             if src == GDELT:
-                _STATE["gdelt_wait"] = min(GDELT_BACKOFF_MAX, _STATE["gdelt_wait"] * 2)
+                _STATE["gdelt_wait"] = min(GDELT_BACKOFF_MAX, max(_STATE["gdelt_wait"] * 2, _retry_after(e)))
                 _STATE["gdelt_next"] = now + _STATE["gdelt_wait"]
     return {"stored": out, "errors": errors, "decisional": False}
 

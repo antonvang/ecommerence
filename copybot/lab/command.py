@@ -23,7 +23,7 @@ PIPE = ("DISCOVERED", "QUEUED", "RUNNING", "COST_CHECK", "VALIDATION", "PAPER_EL
 STAGE_OF_KIND = {"data": "RUNNING", "backtest": "RUNNING", "cost": "COST_CHECK", "adversarial": "VALIDATION",
                  "validate": "VALIDATION", "report": "VALIDATION", "holdout": "VALIDATION", "observe": "VALIDATION",
                  "observe_interim": "VALIDATION"}
-NON_STAGE_KINDS = ("diagnose", "scan_digest", "scan_dossier", "explore", "explore_report", "lane_report", "lane_review", "ingest")   # decide nothing: never move an experiment on the orbit
+NON_STAGE_KINDS = ("diagnose", "scan_digest", "scan_dossier", "explore", "explore_report", "lane_report", "lane_review", "ingest", "hypo_screen", "hypo_measure")   # decide nothing: never move an experiment on the orbit
 STAGE_OF_STATE = {"DISCOVERED": "DISCOVERED", "REGISTERED": "QUEUED", "SCREENING": "RUNNING",
                   "SCREEN_PASSED": "VALIDATION", "VALIDATION": "VALIDATION", "VALIDATED": "PAPER_ELIGIBLE",
                   "OBSERVATION": "VALIDATION",
