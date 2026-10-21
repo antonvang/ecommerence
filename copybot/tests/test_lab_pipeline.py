@@ -456,6 +456,7 @@ class Control(Env):
         import threading
         t = threading.Thread(target=sup.run, kwargs={"duration": 240})
         t.start()
+        jobs.init(self.db)
         deadline = time.time() + 230
         q = (f"SELECT COUNT(*) FROM jobs WHERE status IN ('done','failed','cancelled') AND kind IN "
              f"({','.join('?' * len(pipeline.STEPS))})")
