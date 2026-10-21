@@ -1528,3 +1528,25 @@ Strengere end 15a.
    15a's bloklængde og (b) x̄ − z_(1−q) · s · √((1 + ρ̃) / ((1 − ρ̃) · n)), hvor s er stikprøvens standardafvigelse,
    ρ̃ = ρ̂ + (1 + 3ρ̂) / n begrænset til [0; 0,99] (første-ordens autokorrelation, bias-rettet) og q gatens kvantil
    (0,10 eller 0,05). 95 %-intervallet er fortsat bootstrap. Begge grænser registreres ved resultatet.
+
+## Ændring 15c (2026-10-21): placeboens skift gøres eksakt — før deploy
+
+**Beslutning:** Claude under brugerens ja til ændring 15 og 15a, før 15a deployes. Rettelse af en fejl fundet ved
+afprøvning; ingen gennemgang efter ændring 15 er nået at køre med den fejlbehæftede udgave (gennemgangsjobbene blev
+ikke oprettet, se punkt 3).
+
+1. **Fejlen:** ændring 15 punkt 2 skiftede timeafkastene cirkulært over hele serien (n − 1 afkast, ikke et multiplum
+   af 24). Efter omløbet lå døgngrænserne én time forskudt, og alle placebotræk delte den samme omgruppering. På
+   syntetiske data fik en konstant position uden timing derfor p = 0,0 (et falsk fund).
+2. **Rettelsen (gælder banens placebo, ændring 15 punkt 2, og pipelinens, 15a punkt 1):** kun hele
+   beslutningsperioder (24 barer fra beslutningstiden) flyttes, cirkulært med det fælles antal perioder k; hver bar
+   får afkastet fra baren på samme plads i kildeperioden, og hver afregning fundingen på samme plads i kildeperioden.
+   Ufuldstændige perioder i enderne står uændrede. En simuleret Sharpe inden for 1e-9 af den faktiske tæller som ≥
+   (uafgjort går imod strategien). Positioner og omkostninger følger fortsat positionerne.
+   - Afprøvning (syntetisk): 40 langsomme tilfældige positioner uden timing bestod p < 0,10 i 2,5 % af tilfældene
+     (blok-placeboen: 27–40 % ifølge revisionen); en regime-timet regel består fortsat.
+   - En konstant position får ikke nødvendigvis p = 1: dens indgangsomkostning lander i placeboen på et andet døgns
+     afkast. Den består gaten med den nominelle sandsynlighed eller mindre.
+3. **Banens gennemgangsjob** blev efter ændring 15 givet samme job-id som gennemgangen af samme kandidat efter 11d og
+   derfor afvist som dubletter (ingen gennemgang efter metode 15 kørte). Navnet indeholder nu metoden; ældre
+   job-rækker og artefakter genbruges eller overskrives aldrig.
