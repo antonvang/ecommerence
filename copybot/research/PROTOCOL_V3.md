@@ -1623,3 +1623,31 @@ H5's PASS (`research/studies/MAALING_16c_H5_2026-10-21.md`). Kun måling; intet 
 2. **Fejlrate:** egen α = 0,05. Koden skrives, når data findes, og må ikke ændre den låste tekst.
 3. **Data indsamles allerede automatisk** af `news-watch` (ændring 16); funding hentes én gang efter døgn 60 for det
    20. symbol.
+
+## Ændring 16e (2026-10-21): scannerkonti undgår mønter, som Binance har annonceret afnotering af — før kode
+
+**Beslutning:** Claude under brugerens mandat 2026-10-21 ("Kør videre automatisk og tag selv beslutning"). Kun
+simuleret handel; ingen gate, ingen holdout og intet evalueringskriterium ændres. Reglen gør scannerkontiene mere
+forsigtige, ikke mindre.
+
+**Data (registret 2026-10-21, ændring 16's meddelelser mod `lane.started`):** af de 3 scannerkonti, der nogensinde er
+startet, stod 2 på mønter med en afnoteringsmeddelelse: EPICUSDT blev startet ca. 24 timer *efter* "Binance Will Delist
+EPIC, QUICK on 2026-10-28" og stoppede på pause (spread_anomaly) med −62 USDT; MITOUSDT fik "Binance Futures Will Delist
+PTBUSDT and MITOUSDT USDⓈ-M Perpetual Contracts (2026-10-23)" 1,2 døgn efter start. En carry-position på begge ben
+kræver, at både spot og perp handler; afnotering af ét af dem slutter positionen til en ukendt pris.
+
+1. **Hvilke meddelelser:** gemte `news_item`-observationer (ændring 16) i kategorien `delisting`, hvis titel begynder
+   med "Binance Will Delist", "Binance to Delist", "Binance Futures Will Delist" eller "Binance Futures to Delist".
+   Margin-, lån-, Alpha-, staking- og "Notice of Removal"-meddelelser tæller ikke (de fjerner ikke mønten selv eller
+   nævner den ikke i titlen).
+2. **Mønter (fast regel):** i teksten efter "Delist" er hvert ord af store bogstaver og cifre med mindst ét bogstav en
+   mønt; ordene "USD", "USDT", "USDC", "BUSD" og "M" (fra "USDⓈ-M"/"USDT-Margined") fjernes, og et slut-"USDT", "USDC"
+   eller "BUSD" på et længere ord skæres af (IPUSDT → IP).
+3. **Tidspunkt (point-in-time):** en meddelelse tæller fra sit `usable_from` og i 30 døgn derefter.
+4. **Start:** scanneren springer en mønt over, før den bruger et af sine prøveforsøg, og noterer `lane.skipped` med
+   årsagen "afnotering annonceret (16e)" og titlen.
+5. **Stop:** en aktiv scannerkonto, hvis mønt får en sådan meddelelse, stoppes med reglen `delisting`; positioner
+   lukkes reduce-only som ved de øvrige stopregler.
+6. **Gælder ikke** banekonti (ændring 11; frosne familiekurve) eller HL-konti (ændring 13; anden børs).
+7. **Kendte huller:** meddelelser, der ikke nævner mønten i titlen ("Multiple Perpetual Contracts", "Notice of Removal
+   of Spot Trading Pairs"), fanges ikke.
