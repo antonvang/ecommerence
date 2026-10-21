@@ -313,6 +313,38 @@ class Measurement(Base):
             self.run_h4()
 
 
+class H5(Base):
+    """Amendment 16c: the opposite direction, only on listings announced in 2023-07..2023-12."""
+    def run_h5(self):
+        return h4.run_h5(self.root, self.dbp, opener=self.fake, free=lambda: 10 ** 12)
+
+    def test_lower_early_funding_passes_and_train_listings_are_never_read(self):
+        sc = self.scenario(train=5, valid=10, train_prem=0.0005, valid_prem=-0.0004)
+        res = self.run_h5()
+        self.assertEqual(res["verdict"], "PASS", res["reason"])
+        self.assertEqual(sorted(res["validation"]["symbols"]), sc["valid"])
+        self.assertAlmostEqual(res["validation"]["sign_flip_p"], 1 / 1024)
+        early = {x["symbol"] for x in res["excluded"] if x["reason"] == "announced_before_2023_07"}
+        self.assertTrue(set(sc["train"]) <= early)                  # (16b also reads a bogus TA01USDTUSDT: no data)
+        self.assertFalse(any(t in u for u in self.fake.asked for t in sc["train"]))   # H4's sample stays unread
+        self.assertEqual(res["validation"]["secondary"]["share_negative_early_sum"], 1.0)
+        self.assertEqual(res["rule"], "research/PROTOCOL_V3.md amendment 16c")
+
+    def test_higher_early_funding_does_not_pass_and_too_few_is_untestable(self):
+        self.scenario(train=0, valid=10, valid_prem=0.0004)
+        self.assertEqual(self.run_h5()["verdict"], "REJECTED")
+        shutil.rmtree(self.root, ignore_errors=True)
+        self.tearDown()
+        self.setUp()
+        self.scenario(train=0, valid=5, valid_prem=-0.0004)
+        self.assertEqual(self.run_h5()["verdict"], "UNTESTABLE")
+
+    def test_the_draft_must_match_the_locked_text(self):
+        with mock.patch.object(h4, "H5_DRAFT_SHA256", "0" * 64):
+            with self.assertRaises(h4.Refused):
+                self.run_h5()
+
+
 class Cli(Base):
     def test_measure_h4_saves_an_artifact_and_records_once(self):
         self.scenario(train=3, valid=0)

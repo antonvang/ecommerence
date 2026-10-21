@@ -431,3 +431,67 @@ def run(root=None, db_path=None, opener=None, free=None):
     res["validation"] |= {"sign_flip_p": p, "sign_flip": "exact" if n <= measure.EXACT_MAX else f"{FLIP_DRAWS} draws"}
     ok = p < ALPHA
     return done("PASS" if ok else "REJECTED", f"one-sided sign-flip p {p:.4f} {'<' if ok else '>='} alpha {ALPHA}")
+
+
+# ---------- H5 notering_lav (amendment 16c): the data-suggested opposite of H4, on listings H4 never read ----------
+H5_RULE = "research/PROTOCOL_V3.md amendment 16c"
+H5_DRAFT = "research/drafts/H5_NOTERING_LAV.md"
+H5_DRAFT_SHA256 = "71b6058b6ca29f9e7c2e63309d429b0ccc0b153d34a220173cf7dfbc08a143c6"   # amendment 16c point 1
+H5_ARTIFACT_ID = "MEASURE_16c"
+H5_MIN_N = 8
+
+
+def p_less(ys):
+    """One-sided sign-flip p for mean < 0 (exact for n <= 20, else 100,000 draws, seed 7, p = (k + 1) / (B + 1))."""
+    return measure.sign_flip_p(list(ys), FLIP_DRAWS, FLIP_SEED)
+
+
+def run_h5(root=None, db_path=None, opener=None, free=None):
+    """Amendment 16c: only symbols announced in 2023-07..2023-12 whose first settlement lies there too (draft 2);
+    no train gate (H4's train is the hypothesis' source); one-sided test of mean Y < 0 at alpha 0.05."""
+    root = root or mdata.CACHE
+    with open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), H5_DRAFT), "rb") as f:
+        if hashlib.sha256(f.read()).hexdigest() != H5_DRAFT_SHA256:
+            raise Refused(f"{H5_DRAFT} differs from the text locked by amendment 16c (sha256 {H5_DRAFT_SHA256})")
+    res = {"hypothesis": "H5", "name": "notering_lav", "rule": H5_RULE, "draft": H5_DRAFT,
+           "draft_sha256": H5_DRAFT_SHA256, "alpha": ALPHA, "splits": ["validation3"],
+           "seeds": {"sign_flip": FLIP_SEED}, "code": _code(), "started": _iso(time.time()), "inputs": [],
+           "absent_months": [], "excluded": [], "decisional_for_trading": False}
+    budget = new_budget()
+    items = announcements(db_path)
+    per, skipped = events(items)
+    res["announcements"] = {"matching": len(items), "symbols": len(per),
+                            "skipped_counts": {k: sum(1 for x in skipped if x["reason"] == k)
+                                               for k in sorted({x["reason"] for x in skipped})}}
+    phase = classify(per)
+    valid = []
+    for s in sorted(phase):
+        if phase[s][0] == "validation3":
+            valid.append(s)
+        elif phase[s][0] == "train3":
+            res["excluded"].append(_excl(per[s], None, "announced_before_2023_07", "H4's train window: not H5's sample"))
+        else:
+            res["excluded"].append(_excl(per[s], None, *phase[s]))
+    rows, _none = _phase(res, root, "validation3", valid, per, budget, opener, free,
+                         lambda s: (VALID_FIRST, LAST, True))
+    rows = [r for r in rows if r["split"] == "validation3"]
+    res["validation"] = summary(rows, "validation3") | {"rows": rows}
+    if rows:
+        res["validation"]["secondary"]["share_negative_early_sum"] = (
+            sum(1 for r in rows if r["early_raw_sum"] < 0) / len(rows))
+    counts = {}
+    for x in res["excluded"]:
+        counts[x["reason"]] = counts.get(x["reason"], 0) + 1
+    res["excluded_counts"] = dict(sorted(counts.items()))
+    res["network"] = {k: v for k, v in budget.items() if k != "left"}
+    n = len(rows)
+    if n < H5_MIN_N:
+        res["verdict"], res["reason"] = "UNTESTABLE", f"{n} symbols (minimum {H5_MIN_N})"
+    else:
+        p = p_less([r["Y"] for r in rows])
+        res["validation"] |= {"sign_flip_p": p, "sign_flip": "exact" if n <= measure.EXACT_MAX else f"{FLIP_DRAWS} draws"}
+        ok = p < ALPHA
+        res["verdict"] = "PASS" if ok else "REJECTED"
+        res["reason"] = f"one-sided sign-flip p (mean Y < 0) {p:.4f} {'<' if ok else '>='} alpha {ALPHA}"
+    res["finished"] = _iso(time.time())
+    return res
