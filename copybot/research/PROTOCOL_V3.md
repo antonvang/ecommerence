@@ -1749,3 +1749,23 @@ Will Launch …") og `staking` fange "Learn" (via "Earn"). Rettelse, før nogen 
    "Earn" matcher ikke "Learn"). `spot_listing` er fortsat titlens begyndelse.
 2. `margin` kræver desuden, at titlen ikke indeholder "Futures".
 Intet andet ændres.
+
+## Ændring 17a (2026-10-22): udfald fra første tilgængelige pris, også på spot — før kode
+
+**Beslutning:** Claude under brugerens mandat ("Tag beslutning … gør alt automatisk"). **Data:** de første 26 screeninger
+under 17 (2026-10-21 21:52–22:2x UTC) blev alle UNTESTABLE: spot_listing 0 af 156 begivenheder med data,
+innovation_zone 1 af 57, futures_listing 1–5 af 98, staking 3 af 32, airdrop 11 af 37, launchpool 0 af 23. Årsag:
+mønterne i disse meddelelser havde typisk hverken perp eller spotmarked før meddelelsen, så udfald med en kurs ved t
+eller et før-vindue kan ikke regnes. Ingen tærskel ændres; 17's 60 kandidater og deres resultater står uændret.
+
+1. **Fire nye udfald** (samme 12 typer, 48 nye kandidater, nøglen `type|udfald|m17`):
+   - `far_1d`, `far_7d`: perpen `<mønt>USDT`; P0 = lukkekursen for den første time, der åbner ≥ t og senest t + 72 t,
+     med en kurs; P1 = lukkekursen 24 t / 7 d senere; y = ln(P1/P0) − samme for BTCUSDT-perpen i de samme timer;
+   - `sar_1d`, `sar_7d`: det samme på Binance **spot** `<mønt>USDT` (1 t-klines fra
+     data.binance.vision/data/spot/monthly; BTCUSDT spot som marked).
+   Findes ingen kurs i (t, t + 72 t], udelukkes begivenheden ("no price within 72 h").
+2. Alt andet fra 17 gælder uændret: vinduer (screening i explore0; måling i train3 og validation3 efter LÅS-17),
+   prioritet, deduplikering, screeningskriterier (p ≤ 0,005, samme fortegn i 2020 og 2021, placebo t − 30 d med
+   p > 0,05, |gennemsnit| ≥ 0,46 % for alle fire, da de er afkast), α_k-rækken og "aldrig"-listen.
+3. Spotfilerne hentes gennem banens hentevej (kilden er allerede tilladt for banen, ændring 8 punkt 17 og 10d) og
+   lægges i den fælles cache `spot_klines`.
