@@ -1655,3 +1655,14 @@ kræver, at både spot og perp handler; afnotering af ét af dem slutter positio
    **Gælder ikke** banekonti (ændring 11; frosne familiekurve).
 7. **Kendte huller:** meddelelser, der ikke nævner mønten i titlen ("Multiple Perpetual Contracts", "Notice of Removal
    of Spot Trading Pairs"), fanges ikke.
+
+## Ændring 16f (2026-10-21): H5X — H5's lave tidlige funding målt mod Hyperliquid i stedet for spot — før data findes
+
+**Beslutning:** Claude under brugerens mandat 2026-10-21 ("Kør videre automatisk og tag selv beslutning"; "Forsæt med
+alt du kan"), efter H5's PASS. Kun måling; intet handles.
+
+1. **Låst tekst:** `research/drafts/H5X_NOTERING_TVAERS.md` (git-blob fc330b8a9c6cf6d994dd5e0645be15215a8fa52b, sha256 add256bd724d1c31791581124a8769873d5d8796ec5b3ac830e9f2896b1bccdb), skrevet før nogen
+   listning i stikprøven er annonceret.
+2. **Fejlrate:** egen α = 0,05, uden for alle andre budgetter (også H5F's).
+3. **Data** indsamles allerede af `news-watch` (meddelelserne); funding hentes én gang fra Binance og Hyperliquid
+   efter døgn 7 for det 20. symbol. Koden skrives, når data findes, og må ikke ændre den låste tekst.
