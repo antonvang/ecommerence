@@ -79,6 +79,14 @@ class Scanner(Base):
     def test_coins_by_fixed_rules(self):
         self.assertEqual(news.coins("Binance Will List Foo (FOO) and BARUSDT, BAZUSDC Perpetual"), ["BAR", "BAZ", "FOO"])
         self.assertEqual(news.coins("Bitcoin rallies"), [])
+        # amendment 16b: Binance futures-launch titles name bare tickers
+        self.assertEqual(news.coins("Binance Futures Will Launch USDⓈ-M MOVR Perpetual Contract With Up to 50x "
+                                    "Leverage"), ["MOVR"])
+        self.assertEqual(news.coins("Binance Futures Will Launch RSR & LRC USDT-Margined Perpetual Contracts With Up "
+                                    "to 50x Leverage"), ["LRC", "RSR"])
+        self.assertEqual(news.coins("Binance Futures Will Launch USDⓈ-M 1000RATS, ACE and JTO Perpetual Contracts"),
+                         ["1000RATS", "ACE", "JTO"])
+        self.assertEqual(news.coins("Binance Futures Will Launch Coin-Margined XRP Perpetual"), ["XRP"])
 
     def test_one_failing_source_is_recorded_and_the_others_continue(self):
         r = news.run(self.db, self.get(fail=("cointelegraph",)), now=NOW)

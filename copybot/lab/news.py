@@ -45,9 +45,25 @@ def http_get(url, timeout=30):
     return raw
 
 
+_LAUNCH = re.compile(r"Futures Will Launch (.*?) Perpetual")
+_LAUNCH_DROP = ("USDⓈ-M", "USDS-M", "USDT-Margined", "USDC-Margined", "Coin-Margined")
+_TICKER = re.compile(r"[A-Z0-9]{2,15}")
+
+
 def coins(title):
-    """Tickers named in a title by fixed rules: tokens in parentheses and XXXUSDT/USDC/FDUSD pairs (sorted, unique)."""
-    return sorted(set(_PAREN.findall(title or "")) | set(_PAIR.findall(title or "")))
+    """Tickers named in a title by fixed rules: tokens in parentheses, XXXUSDT/USDC/FDUSD pairs, and (amendment 16b)
+    the bare tickers between "Futures Will Launch" and "Perpetual" (sorted, unique)."""
+    t = title or ""
+    out = set(_PAREN.findall(t)) | set(_PAIR.findall(t))
+    m = _LAUNCH.search(t)
+    if m:
+        part = m.group(1)
+        for w in _LAUNCH_DROP:
+            part = part.replace(w, " ")
+        for tok in re.split(r"[\s&,]+", part):
+            if tok != "and" and _TICKER.fullmatch(tok):
+                out.add(tok)
+    return sorted(out)
 
 
 def item(source, sid, url, title, published, category, now, backfill=False):

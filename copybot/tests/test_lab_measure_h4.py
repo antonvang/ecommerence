@@ -260,7 +260,7 @@ class Measurement(Base):
         self.listing("DL01USDT", ts(2022, 9, 1, 3), end=ts(2022, 9, 2) + 40 * D)             # delisted on day 40
         self.listing("GP01USDT", ts(2022, 9, 1, 3), skip={(2022, 10)})                        # a month missing
         self.listing("OLD1USDT", ts(2021, 11, 20))
-        self.announce("Binance Futures Will Launch USDⓈ-M HOOK Perpetual Contract", ts(2022, 12, 1))
+        self.announce("Binance Futures Will Launch Multiple TradFi USDⓈ-Margined Perpetual Contracts", ts(2022, 12, 1))
         self.announce("Binance Futures Will Launch COIN-Margined XYZ (XYZ) Perpetual Contract", ts(2022, 12, 2))
         self.announce("Binance Will List Foo (FOO)", ts(2022, 12, 3))                         # not a futures launch
         res = self.run_h4()
