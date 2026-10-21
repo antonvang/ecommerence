@@ -21,10 +21,11 @@ import importlib
 import json
 import math
 import os
+import re
 import statistics
 import time
 
-from lab import explore, families, jobs, lifecycle, pipeline
+from lab import explore, families, jobs, lifecycle, news, pipeline
 from lab.paper import CostModel, PaperEngine
 from lab.risk import Risk
 
@@ -72,6 +73,11 @@ HL_LABEL = "HL-KONTO (Hyperliquid-funding, simuleret, aldrig bevis)"
 HL_PERP = "HL:"                                 # the perp leg's instrument prefix (paper_runner.HL_PREFIX)
 HL_SLOTS = 10
 HL_HOLD_S = 8 * HOUR                            # 13 point 5: out no earlier than 8 h after the entry
+# amendment 16e: Binance delisting announcements (news-watch, amendment 16) keep scanner and HL accounts away
+DELIST_WINDOW_S = 30 * DAY
+DELIST_SPOT = ("Binance Will Delist", "Binance to Delist")
+DELIST_FUTURES = ("Binance Futures Will Delist", "Binance Futures to Delist")
+DELIST_DROP = {"USD", "USDT", "USDC", "BUSD", "M"}
 HL_PERSIST_HOURS = 24                           # 13 point 4: mean of the last 24 settled hours x 8 >= HL_FUND_PERSIST
 HL_FUND_MIN = 0.001                             # 13a: predicted funding x 8 >= 0.10 % (13a's study figures are not
                                                 # reproducible; corrected study: research/studies/CARRY_COST_2026-10-21.md)
@@ -263,6 +269,10 @@ def _paid(db, ledger, now):
 def _scan_retire_reason(db, ledger, info, now):
     """Amendment 12 point 5."""
     st, risk = stats(db, ledger, now, info), Risk(db, lambda: now)
+    coin = (info.get("coins") or [""])[0]
+    title = delistings(db, now, spot_only=is_hl(info)).get(_base(coin, info.get("source")))
+    if title:                                                    # 16e point 5
+        return "delisting", f"afnotering annonceret (16e): {title}"[:200], st
     if now - info["ts"] >= SCAN_MAX_AGE_S:
         return "expired", f"{SCAN_MAX_AGE_S // DAY} dage efter start", st
     if st["equity"] is not None and st["equity"] <= CAPITAL * (1 - SCAN_LOSS):
@@ -282,6 +292,41 @@ def _scan_retire_reason(db, ledger, info, now):
         if now - since >= SCAN_FLAT_S:
             return "flat", f"ingen position i {SCAN_FLAT_S // DAY} døgn: præmien er væk", st
     return None, None, st
+
+
+def delist_coins(title):
+    """16e point 2: the upper-case words (at least one letter) after "Delist", quote suffixes cut (IPUSDT -> IP)."""
+    out = []
+    for w in re.split(r"[\s,&()]+", title.split("Delist", 1)[1] if "Delist" in title else ""):
+        if not re.fullmatch(r"[A-Z0-9]*[A-Z][A-Z0-9]*", w) or w in DELIST_DROP:
+            continue
+        for q in ("USDT", "USDC", "BUSD"):
+            if w.endswith(q) and len(w) > len(q):
+                w = w[:-len(q)]
+                break
+        if w not in out:
+            out.append(w)
+    return out
+
+
+def delistings(db, now, spot_only=False):
+    """16e points 1 and 3: {coin: title} of the delisting announcements usable by now and published within
+    DELIST_WINDOW_S."""
+    prefixes, out = DELIST_SPOT if spot_only else DELIST_SPOT + DELIST_FUTURES, {}
+    for r in db.q("SELECT payload FROM observations WHERE detector=? AND metric='news_item' AND ts>=? "
+                  "AND payload LIKE '%delisting%' ORDER BY ts, rowid", news.DETECTOR, int(now - DELIST_WINDOW_S)):
+        p = json.loads(r["payload"]) if isinstance(r["payload"], str) else r["payload"]
+        t, title = p.get("usable_from"), p.get("title") or ""
+        if p.get("category") == "delisting" and t is not None and t <= now \
+                and now - DELIST_WINDOW_S < (p.get("published_ts") or t) and title.startswith(prefixes):
+            for c in delist_coins(title):
+                out.setdefault(c, title)
+    return out
+
+
+def _base(coin, source):
+    """The coin name in announcement titles: a scanner trades the USD-M symbol (MITOUSDT), an HL account the coin."""
+    return coin[:-4] if source == "scanner" and coin.endswith("USDT") else coin
 
 
 def _tested_coins(info):
@@ -633,18 +678,24 @@ def manage_scanner(db, now, get):
     held = {info[a]["coins"][0] for a in active(db) if is_scanner(info[a])}
     out, probes = {"started": [], "skipped": []}, 0
     ts, fs = _last_two(db, now)
+    gone = delistings(db, now)
     for coin in scan_candidates(db, now):
         if len(held) >= SCAN_SLOTS or probes >= PROBES:
             break
         if coin in held or _cooling(db, coin, now):
             continue
-        probes += 1
         key, hour = f"scan|{coin}|{int(now) // HOUR * HOUR}", int(now) // HOUR * HOUR
         led = ledger_id(key)
         trigger = {"scan_ts": ts[:2], "funding": fs[0].get(coin), "rule": "research/PROTOCOL_V3.md amendment 12e"}
         base = {"key": key, "source": "scanner", "family": "fcarry", "function": "scanner_funding", "params": {},
                 "coin": coin, "trigger": trigger, "label": SCAN_LABEL, "simulated": True, "decisional": False,
                 "t": int(now)}
+        if _base(coin, "scanner") in gone:                      # 16e point 4: before a probe is spent
+            db.event("lane.skipped", ACTOR, led, {**base, "coins": [coin], "reason":
+                                                  f"afnotering annonceret (16e): {gone[_base(coin, 'scanner')]}"[:200]})
+            out["skipped"].append(coin)
+            continue
+        probes += 1
         try:
             _, settled, _, _ = paper_runner.hourly(coin, now, get)
             norm = per8h(settled)                                                      # 12i: per 8 hours
@@ -728,18 +779,24 @@ def manage_hl(db, now, get):
     held = {info[a]["coins"][0] for a in active(db) if is_hl(info[a])}
     out, probes = {"started": [], "skipped": []}, 0
     cands, fs = hl_candidates(db, now)
+    gone = delistings(db, now, spot_only=True)
     for coin in cands:
         if len(held) >= HL_SLOTS or probes >= PROBES:
             break
         if coin in held or _cooling(db, coin, now, "hl"):
             continue
-        probes += 1
         key, hour = f"hl|{coin}|{int(now) // HOUR * HOUR}", int(now) // HOUR * HOUR
         led = ledger_id(key)
         trigger = {"funding": fs.get(coin), "rule": "research/PROTOCOL_V3.md amendment 13"}
         base = {"key": key, "source": "hl", "family": "fcarry", "function": "hl_funding", "params": {},
                 "coin": coin, "trigger": trigger, "label": HL_LABEL, "simulated": True, "decisional": False,
                 "t": int(now)}
+        if coin in gone:                                        # 16e points 4 and 6: spot delistings only
+            db.event("lane.skipped", ACTOR, led, {**base, "coins": [coin],
+                                                  "reason": f"afnotering annonceret (16e): {gone[coin]}"[:200]})
+            out["skipped"].append(coin)
+            continue
+        probes += 1
         try:
             settled, _ = paper_runner.hl_hourly(coin, now)
             last = [settled[t] for t in sorted(settled)[-HL_PERSIST_HOURS:]]

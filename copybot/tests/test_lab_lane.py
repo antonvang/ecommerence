@@ -763,6 +763,18 @@ class Hyperliquid(Base):
         self.assertEqual(r["trigger"], "Hyperliquid-funding ×8 0.200% · snit af 24 timer ×8 0.160%")
         self.assertEqual(lane.label(lane.started(self.db)[led]), lane.HL_LABEL)
 
+    def test_16e_only_spot_delistings_count(self):
+        """Amendment 16e point 6: the Binance leg is spot, so only spot delistings count."""
+        self.scan(NOW - 60, {"AAA": 0.002, "BBB": 0.003})
+        news_item(self.db, "Binance Futures Will Delist AAAUSDT Perpetual Contract", NOW - 120)   # other venue's perp
+        news_item(self.db, "Binance Will Delist BBB on 2026-10-28", NOW - 120)                   # the spot leg goes
+        out = lane.manage(self.db, NOW, self.at(NOW), fids=[])["hl"]
+        self.assertEqual(out["skipped"], ["BBB"])
+        self.assertEqual([lane.started(self.db)[x]["coins"] for x in out["started"]], [["AAA"]])
+        news_item(self.db, "Binance Will Delist AAA on 2026-10-29", NOW + 90)
+        self.assertEqual(lane.manage(self.db, NOW + 120, None, fids=[])["retired"], out["started"])
+        self.assertEqual(lane.retired(self.db)[out["started"][0]]["rule"], "delisting")
+
 
 class LaneView(Base):
     def test_main_page_view_lists_active_and_stopped_accounts(self):
@@ -1123,3 +1135,66 @@ class PerEightHours(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def news_item(db, title, usable_from, published=None, category="delisting"):
+    """One stored announcement as news-watch writes it (amendment 16)."""
+    p = {"category": category, "title": title, "usable_from": usable_from,
+         "published_ts": usable_from - 600 if published is None else published, "source": "binance",
+         "key": f"binance:{title}"}
+    db.append("observations", ts=int(usable_from), detector="news/1", source="binance-cms", instrument=p["key"],
+              metric="news_item", value=p["published_ts"], threshold=None, flagged=0, payload=p)
+
+
+class Delisting(Base):
+    """Amendment 16e: Binance delisting announcements keep scanner and HL accounts away and stop open ones."""
+    def setUp(self):
+        super().setUp()
+        scanner.LIVE.clear()
+        scanner.HL_LIVE.clear()
+
+    def news(self, title, usable_from, published=None, category="delisting"):
+        news_item(self.db, title, usable_from, published, category)
+
+    def scan(self, ts, fund):
+        Scanner.scan(self, ts, fund)
+
+    def test_coin_rule(self):
+        cases = {"Binance Will Delist EPIC, QUICK on 2026-10-28": ["EPIC", "QUICK"],
+                 "Binance Futures Will Delist PTBUSDT and MITOUSDT USDⓈ-M Perpetual Contracts (2026-10-23)":
+                     ["PTB", "MITO"],
+                 "Binance Futures Will Delist USDⓈ-Margined IPUSDT and IPUSDC Perpetual Contracts (2026-06-28)": ["IP"],
+                 "Binance Will Delist COS, D, HIGH, MBOX on 2026-06-19": ["COS", "D", "HIGH", "MBOX"],
+                 "Binance Futures Will Delist Multiple Perpetual Contracts (2026-04-08 & 2026-04-09)": []}
+        for title, coins in cases.items():
+            self.assertEqual(lane.delist_coins(title), coins, title)
+
+    def test_which_announcements_and_when(self):
+        self.news("Binance Will Delist AAA on 2026-10-28", NOW - 60)
+        self.news("Binance Futures Will Delist BBBUSDT Perpetual Contract", NOW - 60)
+        self.news("Binance Margin Will Delist CCC on 2026-10-28", NOW - 60)                 # not the coin itself
+        self.news("Binance Will Delist DDD on 2026-10-29", NOW + 60)                          # not usable yet
+        self.news("Binance Will Delist EEE on 2026-08-01", NOW - 60, published=NOW - 31 * DAY)   # first fetch, old
+        self.news("Binance Will Delist FFF on 2026-10-30", NOW - 60, category="binance_news")
+        self.assertEqual(sorted(lane.delistings(self.db, NOW)), ["AAA", "BBB"])
+        self.assertEqual(sorted(lane.delistings(self.db, NOW, spot_only=True)), ["AAA"])
+        self.assertEqual(lane.delistings(self.db, NOW + 31 * DAY), {})
+
+    def test_scanner_skips_before_spending_a_probe(self):
+        self.news("Binance Futures Will Delist C00USDT and C01USDT USDⓈ-M Perpetual Contracts (2026-10-23)", NOW - 60)
+        self.scan(NOW - 60, {f"C{i:02d}USDT": 0.002 - i / 10000 for i in range(5)})
+        out = lane.manage(self.db, NOW, hi(), fids=[])["scanner"]
+        self.assertEqual(out["skipped"], ["C00USDT", "C01USDT"])
+        info = lane.started(self.db)
+        self.assertEqual(sorted(info[x]["coins"][0] for x in out["started"]), ["C02USDT", "C03USDT", "C04USDT"])
+        skip = [p for _, _, _, _, p in lane._events(self.db, "lane.skipped")]
+        self.assertTrue(all(p["reason"].startswith("afnotering annonceret (16e): Binance Futures") for p in skip))
+
+    def test_open_scanner_account_stops(self):
+        self.scan(NOW - 60, {"BBBUSDT": 0.003})
+        led = lane.manage(self.db, NOW, hi(), fids=[])["scanner"]["started"][0]
+        lane.run_one(self.db, led, hi(), NOW)
+        self.assertEqual(lane.manage(self.db, NOW + 60, None, fids=[])["retired"], [])
+        self.news("Binance Futures Will Delist BBBUSDT Perpetual Contract", NOW + 90)
+        self.assertEqual(lane.manage(self.db, NOW + 120, None, fids=[])["retired"], [led])
+        self.assertEqual(lane.retired(self.db)[led]["rule"], "delisting")
