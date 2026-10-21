@@ -153,9 +153,38 @@ def sources(db, now=None, root=None):
         rows.append(row)
     from lab import ingest
     return {"sources": rows, "ingest": ingest.status(db), "gaps": [{"data": g, "why": w, "status": s} for g, w, s in GAPS],
-            "fetch_pauses_24h": _fetch_pauses(db, now),
+            "fetch_pauses_24h": _fetch_pauses(db, now), "progress": progress(db, rows, now),
             "paid_sources_active": 0, "keys_used": 0,
             "note": "free public sources only; no key or payment is used. Reserved data from 2025-01-01 is never read."}
+
+
+def progress(db, rows=None, now=None):
+    """Display only (the user's directive point 7): results, not activity. Hours of the last 24 with data per live
+    source, jobs finished and failed in 24 h, the age of the oldest job that could run now, and every recorded
+    measurement with its verdict."""
+    now = now or time.time()
+    hours = {r["source"]: r["h"] for r in db.q(
+        "SELECT source, COUNT(DISTINCT ts / 3600) h FROM observations WHERE ts>=? AND metric NOT IN "
+        "('error', 'news_error') GROUP BY source", int(now - DAY))}
+    live = []
+    for row in rows or []:
+        if row.get("kind") == "live":
+            pre = next((x[7] for x in SOURCES if x[0] == row["source"]), None)
+            h = max((v for k, v in hours.items() if k and pre and k.startswith(pre)), default=0)
+            live.append({"source": row["source"], "hours_with_data_24h": min(24, h)})
+    try:
+        j = db.one("SELECT SUM(CASE WHEN status='done' THEN 1 ELSE 0 END), SUM(CASE WHEN status='failed' THEN 1 "
+                   "ELSE 0 END) FROM jobs WHERE updated_ts>=?", now - DAY)
+        oldest = db.one("SELECT MIN(created_ts) FROM jobs WHERE status='queued' AND next_run<=?", now)[0]
+    except Exception:                                       # noqa: BLE001 - no jobs table yet
+        j, oldest = (0, 0), None
+    meas = []
+    for r in db.q("SELECT ts, payload FROM events WHERE kind='research.measurement' ORDER BY id"):
+        p = json.loads(r["payload"]) if isinstance(r["payload"], str) else r["payload"]
+        meas.append({"hypothesis": p.get("hypothesis"), "name": p.get("name"), "verdict": p.get("verdict"),
+                     "reason": (p.get("reason") or "")[:160], "ts": r["ts"], "rule": p.get("rule")})
+    return {"live_sources": live, "jobs_done_24h": j[0] or 0, "jobs_failed_24h": j[1] or 0,
+            "oldest_runnable_job_age_s": (now - oldest) if oldest else None, "measurements": meas}
 
 
 def _head(verdict):

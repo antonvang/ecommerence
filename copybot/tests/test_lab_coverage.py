@@ -4,6 +4,7 @@ import os
 import sys
 import tempfile
 import threading
+import time
 import unittest
 from unittest import mock
 import urllib.request
@@ -182,6 +183,23 @@ class LaneMultipleTesting(Base):
             self.review(0.0, True)
             self.review(0.9, False)
             self.assertEqual(coverage.lane_multiple_testing(self.db)["bh_significant"], 1)   # 1/1001 <= 0.05
+
+
+class Progress(Base):
+    """The user's directive point 7: results on the dashboard, display only."""
+    def test_measurements_jobs_and_live_hours(self):
+        now = time.time()
+        self.db.event("research.measurement", "human:test", None, {"hypothesis": "H9", "name": "x", "verdict": "REJECTED",
+                                                                   "reason": "train gate failed"})
+        for h in range(3):
+            self.db.append("observations", ts=int(now - h * 3600), detector="d/1", source="https://fapi.binance.com/fapi/v1/premiumIndex",
+                           instrument="A", metric="perp_premium", value=0.1, threshold=None, flagged=0, payload={})
+        p = coverage.sources(self.db, now=now)["progress"]
+        self.assertEqual([(m["hypothesis"], m["verdict"]) for m in p["measurements"]], [("H9", "REJECTED")])
+        live = {x["source"]: x["hours_with_data_24h"] for x in p["live_sources"]}
+        self.assertEqual(live["Binance fapi premiumIndex (live)"], 3)
+        self.assertEqual(live["GDELT DOC 2.0 (amendment 16)"], 0)
+        self.assertEqual((p["jobs_done_24h"], p["jobs_failed_24h"]), (0, 0))
 
 
 class Api(unittest.TestCase):
