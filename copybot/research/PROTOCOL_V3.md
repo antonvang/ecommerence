@@ -1666,3 +1666,76 @@ alt du kan"), efter H5's PASS. Kun måling; intet handles.
 2. **Fejlrate:** egen α = 0,05, uden for alle andre budgetter (også H5F's).
 3. **Data** indsamles allerede af `news-watch` (meddelelserne); funding hentes én gang fra Binance og Hyperliquid
    efter døgn 7 for det 20. symbol. Koden skrives, når data findes, og må ikke ændre den låste tekst.
+
+## Ændring 17 (2026-10-21): automatisk hypotesepipeline — begivenhedstyper × udfald, screening i udforskningsvinduet, låsning før måling; GDELT's adgangsbegrænsning — før kode
+
+**Beslutning:** Claude under brugerens mandat 2026-10-21 ("Tag beslutning osv du bestemmer og gør alt automatisk";
+plantrin 3 i `research/PLAN_DIREKTIV_2026-10-21.md`). Hidtil kunne nye observationer ikke blive til forskningsopgaver
+uden en hånd. Ingen eksisterende gate, holdout, evalueringskriterium eller godkendelse ændres; intet handles.
+
+1. **Observationer og sporbarhed.** Kandidater dannes af Binance' meddelelser i registret (detector `news/1`,
+   kilde binance.com). En begivenhed er (observationens id, mønt, t), hvor t = postens `usable_from` (ændring 16 punkt
+   3) og mønterne er `news.coins(titel)` (16/16b). Én begivenhed pr. (type, mønt) pr. 30 døgn: den første.
+   **Faste begivenhedstyper** (titlen matcher; ingen andre uden en ny ændring):
+   - `spot_listing`: begynder med "Binance Will List" eller "Binance Lists";
+   - `innovation_zone`: "Innovation Zone";
+   - `futures_listing`: "Futures Will Launch" og "Perpetual", ikke "Coin-Margined";
+   - `launchpool`: "Launchpool";
+   - `network_swap`: "Network Upgrade", "Hard Fork", "Mainnet", "Token Swap", "Contract Swap", "Migration" eller
+     "Redenomination";
+   - `delisting`: "Will Delist" eller "to Delist", ikke "Futures";
+   - `futures_delisting`: "Futures Will Delist" eller "Futures to Delist";
+   - `airdrop`: "Airdrop";
+   - `staking`: "Staking", "Savings" eller "Earn";
+   - `margin`: "Margin" og ("Will Add", "Adds", "Enabled" eller "Launch"), ikke "Tiers";
+   - `margin_tiers`: "Leverage & Margin Tiers" eller "Leverage and Margin Tiers";
+   - `funding_interval`: "Funding Rate" og ("Interval", "Frequency" eller "Settlement").
+2. **Udfald (faste)** på Binance USD-M-perpen `<mønt>USDT`, fra månedsfilerne på data.binance.vision (1 t-klines og
+   fundingRate):
+   - `ar_1d`, `ar_7d`: log-afkast af lukkekursen fra den første time ≥ t til t + 1 d / t + 7 d minus BTCUSDT's i samme
+     timer;
+   - `fund_7d`: gennemsnitlig funding pr. 8 t i (t, t + 7 d] minus i (t − 7 d, t];
+   - `vol_3d`: log(realiseret volatilitet af timeafkast i (t, t + 3 d] / i (t − 7 d, t]);
+   - `volume_1d`: log(gennemsnitlig timevolumen i quote i (t, t + 1 d] / i (t − 7 d, t]).
+   Et vindue skal have mindst 90 % af sine timer; ellers udelukkes begivenheden for det udfald (tælles med årsag).
+   En hypotese er (type, udfald) med nøglen `type|udfald|m17`: 12 × 5 = 60 kandidater.
+3. **Generering og prioritering (automatisk).** `strategy-1` registrerer hver kandidat én gang som hændelsen
+   `research.hypothesis` med dens kilder (antal begivenheder, første og sidste observations-id, sha256 af
+   begivenhedslisten) og regner ved hver kørsel en prioritet:
+   `2·min(1, n/40) + min(1, n30/5) + 1[n ≥ 15] − min(1, mangler/200) − overlap`, hvor n er begivenheder i
+   screeningsvinduet, n30 er samme type indsamlet live de seneste 30 døgn (nyhedsværdi), `mangler` er måneds-filer, der
+   ikke er i cachen (beregnings- og downloadomkostning), og overlap = 0,5, hvis samme type allerede er screenet med
+   et andet udfald, plus 0,25, hvis samme udfald allerede er screenet med en anden type.
+4. **Deduplikering og negative resultater.** En nøgle med et resultat screenes aldrig igen under m17. Alle resultater
+   (SCREEN_PASS, SCREEN_FAIL med årsag, UNTESTABLE) gemmes som hændelsen `research.hypothesis_screen` i den
+   hashkædede log og vises på dashboardet. `futures_listing|fund_7d` er DÆKKET af H4/H5 (16a, 16c) og screenes ikke.
+5. **Screening (automatisk; udforskning, aldrig bevis).** Kun vinduet explore0 (2020-03-01 – 2021-12-31): t og hele
+   udfaldsvinduet skal ligge i det. Data kun fra data.binance.vision gennem banens hentevej (10b/10d, de 2 fælles
+   pladser og den huskede 404-liste); andre måneder afvises. Højst ét job `hypo_screen|<nøgle>` ad gangen (agenterne
+   cost-1 og cost-2, tung opgave under RAM-vagten), højeste prioritet først.
+   **Test:** mindst 15 begivenheder, ellers UNTESTABLE. Gennemsnit af y; tosidet fortegnsskift-test (eksakt ved
+   n ≤ 20, ellers 20.000 træk, seed 7). Placebo: samme mønter med t − 30 d (inde i vinduet).
+   **SCREEN_PASS** kræver: p ≤ 0,005; samme fortegn i 2020 og 2021 (hver med mindst 5 begivenheder); placeboens
+   p > 0,05; og for `ar_*` |gennemsnit| ≥ 0,46 % (F1's rundtur). Ellers SCREEN_FAIL med årsag.
+6. **Udkast.** En SCREEN_PASS skriver et præregistreringsudkast (påstand med retning, mekanisme, data, baseline,
+   placebo, omkostninger, kriterium, risici, plan) som `data/lab/hypotheses/<nøgle>.json` og `.md` og vises på
+   dashboardet som "venter på låsning". Udkastet er ikke bevis.
+7. **Låsning (det eksisterende krav: dateret ændring før data).** Udkastet kopieres til `research/drafts/auto/` og
+   låses af en dateret ændring i denne fil med linjen `LÅS-17 <nøgle> <sha256 af json-filen>`. Først når den
+   committede protokol (HEAD) indeholder linjen, og filens sha256 stemmer, oprettes jobbet
+   `hypo_measure|<nøgle>` automatisk. Den k'te låste hypotese (rækkefølgen i filen) får α_k = 0,05 · 2^−k; summen
+   er under 0,05, et eget målebudget uden for alle andre.
+8. **Måling (automatisk efter låsning; agenterne validation-1 og validation-2).** Samme udfald og regler som i
+   udkastet. train3 (2022-01 – 2023-06): mindst 15 begivenheder og ensidet p < 0,05 i udkastets retning, ellers
+   REJECTED (eller UNTESTABLE ved for få). Kun derefter validation3 (2023-07 – 2023-12): mindst 8 begivenheder og
+   ensidet p < α_k → PASS, ellers REJECTED. Læseren afviser måneder uden for fasen og alt fra 2024-01-01 (holdout og
+   reserverede data læses aldrig). Resultatet registreres som `research.measurement` (regel 17). PASS er en måling, ikke
+   en handelsregel; en papirkonto kræver sin egen daterede ændring.
+9. **GDELT.** Målt 2026-10-21: 10 afvisninger (HTTP 429) mellem 13:54 og 20:15 UTC, sidste gemte post kl. 18:33, og
+   én enkelt manuel forespørgsel kl. 20:4x blev også afvist. GDELT begrænser altså denne adresse, ikke kun vores
+   tempo. Derfor: grundinterval 30 min (var 15), backoff fordobles op til 24 t (var 6 t), en `Retry-After`-header
+   respekteres, og backoff-tilstanden overlever genstart (den læses af registret: sidste GDELT-fejl og antal fejl
+   siden sidste gemte GDELT-post). Kilden står som begrænset på dashboardet. Binance' 429 kom kun under den bagudrettede
+   hentning og klares af dens ventetider; ingen ændring.
+10. **Aldrig:** ordrer, papirkonti, familier, alfa-budgetter for familier, holdout 2024, reserverede data fra 2025,
+    `pm_lp`. Nye begivenhedstyper, udfald eller tærskler kræver en ny dateret ændring.
