@@ -1573,3 +1573,18 @@ ikke oprettet, se punkt 3).
    registreres (`metric` "news_error") uden at stoppe andet. Dækningspanelet viser kilder, antal, friskhed og fejl.
 5. **Brug:** dataene er ikke bevis. En hypotese på dem kræver sin egen præregistrering før test (ændring 8 eller en
    egen ændring), og ingen test må bruge poster fra før hypotesen blev committet som "ny" evidens for den.
+
+## Ændring 16a (2026-10-21): målehypotese H4 `notering` — funding efter nye listninger — før kode
+
+**Beslutning:** Claude under brugerens ja 2026-10-21 ("JA TIL ALT du har tilladelse til alt", direktivet punkt 2C).
+Kun måling; intet handles, ingen gate ændres.
+
+1. **Låst tekst:** `research/drafts/H4_NOTERING_FUNDING.md` (git-blob 16c1e6a71bc68033a6d36fb03546b900c8908a67,
+   sha256 753b21aef638c72583295ebee570b0365c3c01e20c538175ff5a0581fca0603d), skrevet før nogen funding for nye
+   listninger er hentet. Én kørsel.
+2. **Fejlrate:** egen målefejlrate α = 0,05 for denne ene test, uden for W0 og alle andre budgetter (som ændring 14a).
+3. **Data:** meddelelserne fra ændring 16 og funding-arkiver fra `data.binance.vision` for de listede symboler, kun
+   med første afregning i 2022-01..2023-12 og kun afregninger til og med 2023-12-31. Overslag: højst et par hundrede
+   små månedsfiler.
+4. **Registrering:** udfaldet (PASS, REJECTED eller UNTESTABLE) skrives uændret i hændelseskæden og i
+   `research/studies/` med kode-commit, inputs og seed. Et PASS giver kun grundlag for et senere forslag.
