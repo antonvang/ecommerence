@@ -944,6 +944,17 @@ class Review(Base):
         self.assertEqual(lane.manage(self.db, NOW + 2 * HOUR, market(), fids=["fcarry"])["started"],
                          lane.ledger_id("k1"))
 
+    def test_an_old_method_job_and_artifact_are_not_reused(self):
+        import hashlib
+        self.publish([result("k1", sharpe=5)], reviewed=False)
+        old = hashlib.sha256(b"k1").hexdigest()[:10]                          # the 11d naming: the key alone
+        jobs_mod = __import__("lab.jobs", fromlist=["enqueue"])
+        jobs_mod.init(self.db)
+        jobs_mod.enqueue(self.db, f"lane_review|{old}", "lane_review", None, {"key": "k1"}, actor="system:t", now=NOW)
+        self.db.con.execute("UPDATE jobs SET status='done' WHERE job_id=?", (f"lane_review|{old}",))
+        self.assertEqual(lane.enqueue_reviews(self.db, NOW, fids=["fcarry"]), 1)
+        self.assertNotEqual(lane.review_id("k1"), old)
+
     def test_an_old_method_review_does_not_count(self):
         self.publish([result("k1", sharpe=5)], reviewed=False)
         self.db.event("research.lane_review", "system:adversarial-1", None, {"key": "k1", "ok": True})   # 11c

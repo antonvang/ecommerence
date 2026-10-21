@@ -95,8 +95,48 @@ def sharpe_ann(rows):
     return m / sd * math.sqrt(365) if sd > 0 else None
 
 
-def metrics(rows, seed=7, lb_q=0.10):
-    """Portfolio metrics from cost rows; uncertainty by 5-day block bootstrap of daily net returns."""
+def auto_block(x, floor=5):
+    """Amendment 15a point 2: max(floor, ceil(b)) days, b the Politis & White (2004; Patton, Politis & White 2009)
+    automatic block length for the moving-block bootstrap of x (flat-top window), at most n / 3."""
+    n = len(x)
+    if n < 3 * floor:
+        return floor
+    m = math.fsum(x) / n
+    d = [v - m for v in x]
+    r0 = math.fsum(v * v for v in d) / n
+    if r0 <= 0:
+        return floor
+    lags = min(n - 1, max(2 * floor, math.ceil(3 * math.sqrt(n))))
+    R = [r0] + [math.fsum(d[i] * d[i - k] for i in range(k, n)) / n for k in range(1, lags + 1)]
+    kn, c = max(5, math.ceil(math.sqrt(math.log10(n)))), 2 * math.sqrt(math.log10(n) / n)
+    mhat = next((j for j in range(1, lags - kn + 1) if all(abs(R[j + k] / r0) < c for k in range(1, kn + 1))), None)
+    if mhat is None:
+        return min(n // 3, max(floor, lags))
+    M = min(2 * mhat, lags)
+    lam = lambda t: 1.0 if abs(t) <= 0.5 else (2 * (1 - abs(t)) if abs(t) <= 1 else 0.0)   # noqa: E731
+    G = 2 * math.fsum(lam(k / M) * k * R[k] for k in range(1, M + 1))
+    g0 = R[0] + 2 * math.fsum(lam(k / M) * R[k] for k in range(1, M + 1))
+    D = 4 / 3 * g0 ** 2
+    b = (2 * G * G / D) ** (1 / 3) * n ** (1 / 3) if D > 0 else floor
+    return int(min(n // 3, max(floor, math.ceil(b))))
+
+
+def ar1_lb(x, q):
+    """Amendment 15b: one-sided lower q bound of the mean with the AR(1) long-run variance factor (1 + r) / (1 - r),
+    r the first-order autocorrelation plus its small-sample bias (1 + 3r) / n, clamped to [0, 0.99]."""
+    n = len(x)
+    if n < 3:
+        return None
+    m = math.fsum(x) / n
+    s = statistics.stdev(x)
+    rho = effective_n(x)[1]
+    r = min(0.99, max(0.0, rho + (1 + 3 * rho) / n))
+    return m - statistics.NormalDist().inv_cdf(1 - q) * s * math.sqrt((1 + r) / ((1 - r) * n))
+
+
+def metrics(rows, seed=7, lb_q=0.10, block=5):
+    """Portfolio metrics from cost rows; uncertainty by block bootstrap of daily net returns (5-day blocks, or
+    block="auto": auto_block, amendment 15a)."""
     if not rows:
         return {"bars": 0}
     net_d, gross_d = daily(rows, 7), daily(rows, 2)
@@ -107,7 +147,12 @@ def metrics(rows, seed=7, lb_q=0.10):
     else:
         trades = sum(1 for i in range(1, len(rows)) if abs(rows[i][1] - rows[i - 1][1]) > 1e-12)
     total_net = sum(net_d)
-    boot = bootstrap_means(net_d, 5, 2000, seed)
+    auto = block == "auto"
+    block = auto_block(net_d) if auto else block
+    boot = bootstrap_means(net_d, block, 2000, seed)
+    lb_boot = boot[int(lb_q * len(boot))] if boot else None
+    lb_ar1 = ar1_lb(net_d, lb_q) if auto else None
+    lb = min(lb_boot, lb_ar1) if (lb_boot is not None and lb_ar1 is not None) else lb_boot
     active_days = sum(1 for x in net_d if x != 0)
     return {
         "bars": len(rows), "days": len(net_d), "gross_total": sum(gross_d), "net_total": total_net,
@@ -121,9 +166,9 @@ def metrics(rows, seed=7, lb_q=0.10):
         "expectancy_per_change": (total_net / trades) if trades else None,
         "fees": sum(r[3] for r in rows), "spread": sum(r[4] for r in rows), "slippage": sum(r[5] for r in rows),
         "funding": sum(r[6] for r in rows),
-        "lb_one_sided": boot[int(lb_q * len(boot))] if boot else None,
+        "lb_one_sided": lb, "lb_bootstrap": lb_boot, "lb_ar1": lb_ar1,
         "lb_quantile": lb_q, "ci95": [boot[int(0.025 * len(boot))], boot[int(0.975 * len(boot))]] if boot else None,
-        "bootstrap": {"method": "moving block", "block_days": 5, "draws": 2000, "seed": seed},
+        "bootstrap": {"method": "moving block", "block_days": block, "draws": 2000, "seed": seed},
         "daily_net": net_d}
 
 

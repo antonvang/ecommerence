@@ -251,44 +251,63 @@ def placebo_circular(per_symbol_bars, per_symbol_pos, funding, costs, n=60, min_
 
 
 def placebo_returns(per_symbol_bars, per_symbol_pos, funding, costs, n=60, min_days=7, seed=17, offset=3600):
-    """Amendment 15 point 2 (replaces 11d's market shift in the lane review): each draw takes ONE whole number of days k
-    in [min_days, days - min_days), common to all symbols; every symbol's bar returns (open and close relative to the
-    previous close) are shifted circularly by k days and a price path is rebuilt from its first close, so the wrap adds
-    no jump and a constant position earns the same total; settled funding is shifted k days as in 11d. Positions stay
-    as they are. Sharpe over decision periods as placebo_circular. Returns the share of placebos at or above."""
+    """Amendment 15 point 2 and 15a point 1 (replaces 11d's market shift and the block shuffle): each draw takes ONE
+    whole number k of decision periods (UTC days from `offset`) in [min_days, periods - min_days), common to all
+    symbols; the complete periods are shifted circularly by k: every bar takes the return (open and close relative to
+    the previous close) of the bar at the same place in the source period, and every settlement the funding at the
+    same place in the source period, so the price path is rebuilt without a jump and a position without timing gets
+    exactly the same period results. Partial periods at the ends stay as they are. Positions are unchanged. Sharpe
+    over decision periods as placebo_circular. Returns the share of placebos at or above the actual Sharpe (within
+    1e-9: ties count against the strategy)."""
     rng = random.Random(seed)
 
-    def shifted(s, bars, k_days):
-        m = len(bars) - 1
-        if m < 2:
-            return bars, funding.get(s, {})
-        g = [(bars[i][1] / bars[i - 1][2], bars[i][2] / bars[i - 1][2]) for i in range(1, m + 1)]
-        k, c, nb = (k_days * 24) % m, bars[0][2], [bars[0]]
-        for i in range(1, m + 1):
-            go, gc = g[(i - 1 + k) % m]
+    def period(ts):
+        return (ts - offset) // 86400
+
+    def core(bars):
+        """{period: [bar index]} of the complete periods (24 bars), bar 0 excluded (it earns no return)."""
+        per = {}
+        for i in range(1, len(bars)):
+            per.setdefault(period(bars[i][0]), []).append(i)
+        return {p: ix for p, ix in per.items() if len(ix) == 24}
+
+    def shifted(s, bars, k):
+        f = funding.get(s, {})
+        per = core(bars)
+        ps = sorted(per)
+        if len(ps) < 2 or not k:
+            return bars, f
+        src = {p: ps[(j + k) % len(ps)] for j, p in enumerate(ps)}
+        g = {i: (bars[i][1] / bars[i - 1][2], bars[i][2] / bars[i - 1][2]) for i in range(1, len(bars))}
+        nb, c = [bars[0]], bars[0][2]
+        for i in range(1, len(bars)):
+            p = period(bars[i][0])
+            j = per[src[p]][per[p].index(i)] if p in src else i
+            go, gc = g[j]
             nb.append((bars[i][0], c * go, c * gc))
             c *= gc
-        f = funding.get(s, {})
-        ft = sorted(f)
-        if not ft:
-            return nb, {}
-        step, span = k_days * 86400, ft[-1] - ft[0] + 8 * 3600
-        return nb, {t: f.get(ft[0] + ((t - ft[0] + step) % span), 0.0) for t in ft}
+        nf = {}
+        for t, v in f.items():
+            p = period(t)
+            nf[t] = f.get(t + (src[p] - p) * 86400, 0.0) if p in src else v
+        return nb, nf
 
     if not per_symbol_bars:
         return {"actual": None, "p": None, "n": n}
     base, sims = _period_sharpe(per_symbol_bars, per_symbol_pos, funding, costs, offset), []
-    days = min(len(b) for b in per_symbol_bars.values()) // 24
+    periods = min(len(core(b)) for b in per_symbol_bars.values())
     for _ in range(n):
-        k = rng.randrange(min_days, days - min_days) if days > 2 * min_days else 0
+        k = rng.randrange(min_days, periods - min_days) if periods > 2 * min_days else 0
         bb, ff = {}, {}
         for s, b in per_symbol_bars.items():
             bb[s], ff[s] = shifted(s, b, k)
         sims.append(_period_sharpe(bb, per_symbol_pos, ff, costs, offset) or 0.0)
     if base is None:
         return {"actual": None, "p": None, "n": n}
-    return {"actual": base, "p": sum(1 for x in sims if x >= base) / n, "n": n, "placebo_mean": sum(sims) / n,
-            "method": "returns shifted by one common whole number of days; positions unchanged (amendment 15)"}
+    tol = 1e-9 * max(1.0, abs(base))
+    return {"actual": base, "p": sum(1 for x in sims if x >= base - tol) / n, "n": n, "placebo_mean": sum(sims) / n,
+            "method": "complete decision periods shifted by one common whole number; positions unchanged "
+                      "(amendments 15 and 15a)"}
 
 
 def _period_sharpe(bars_by, pos_by, fund_by, costs, offset=3600):

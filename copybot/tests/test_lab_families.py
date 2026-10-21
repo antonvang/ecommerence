@@ -1109,10 +1109,16 @@ FR = ["calc_time", "funding_interval_hours", "last_funding_rate"]
 def write_pairs(root, symbols, years=(2022, 2023), seed=5, rate=None, drop_spot=(), span=None):
     """Monthly perp kline, spot kline (open times in microseconds, as Binance spot files since 2025) and funding zips in
     the Binance layout. The perps fall (buy-and-hold loses), spot follows the perp within about 2 bp, and the settled
-    funding alternates 21-day regimes of 0.03 %/8h and -0.01 %/8h, shifted 3 days per coin (or is `rate`). `span`
+    funding alternates regimes of 0.03 %/8h and -0.01 %/8h lasting 14-35 days (drawn, not periodic: a periodic
+    regime is matched by a shifted market, amendment 15a), shifted 3 days per coin (or is `rate`). `span`
     (start, end) replaces the whole years."""
     rng = random.Random(seed)
     a, b = span or (ts(years[0], 1, 1), ts(years[-1] + 1, 1, 1))
+    reg, high, day, hi = random.Random(seed + 101), [], 0, True
+    while day < (b - a) // DAY + 3 * len(symbols) + 40:
+        n = reg.randint(14, 35)
+        high += [hi] * n
+        day, hi = day + n, not hi
     out = {}
     for j, sym in enumerate(symbols):
         px, perp, spot, fund = 100.0, {}, {}, {}
@@ -1127,7 +1133,7 @@ def write_pairs(root, symbols, years=(2022, 2023), seed=5, rate=None, drop_spot=
                 spot.setdefault((d.year, d.month), []).append([t * 10 ** 6, so, max(so, sc), min(so, sc), sc, 1,
                                                                t * 10 ** 6 + 3599999999])
             if t % (8 * HOUR) == 0:
-                r = rate if rate is not None else 0.0003 if ((t - a) // DAY + 3 * j) // 21 % 2 == 0 else -0.0001
+                r = rate if rate is not None else 0.0003 if high[(t - a) // DAY + 3 * j] else -0.0001
                 fund.setdefault((d.year, d.month), []).append([t * 1000, 8, r])
         out[sym] = {"klines": [], "funding": [], "spot": []}
         for (y, m) in perp:
@@ -1303,7 +1309,7 @@ class Screen(A3Base):
         with mock.patch.object(fcarry, "carry_filter", always):
             e = self.screen()
         adv = pipeline.frozen_artifact(self.db, e, "adversarial")
-        self.assertEqual(adv["placebo"]["p"], 1.0)
+        self.assertGreaterEqual(adv["placebo"]["p"], catalogue.PLACEBO_P_MAX)   # 15a: no timing, not exactly 1
         self.assertEqual(adv["pre_validation_failed"], [f"train placebo p < {catalogue.PLACEBO_P_MAX}"])
         self.assertEqual(lifecycle.state(self.db, e), "REJECTED")
         verdict = self.db.one("SELECT verdict FROM results WHERE exp_id=?", e)[0]

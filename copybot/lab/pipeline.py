@@ -631,7 +631,7 @@ def _fit(t, bars, params):
 
 def _evaluate(bars, funding, pos, costs, mult=1.0, seed=SEED, lb_q=0.10):
     rows = {s: backtest.apply_costs(backtest.gross(bars[s], pos[s]), funding[s], costs, mult) for s in bars}
-    return backtest.metrics(backtest.portfolio(rows), seed=seed, lb_q=lb_q)
+    return backtest.metrics(backtest.portfolio(rows), seed=seed, lb_q=lb_q, block="auto")    # amendment 15a point 2
 
 
 def _benchmark(bars, funding, costs, seed=SEED):
@@ -747,7 +747,8 @@ def step_adversarial(db, job, worker):
     others = [r["net"]["net_sharpe_ann"] for r in cost["variants"] if r["variant"] != cost["selected"]]
     res = {"truncation": trunc, "strict_truncation": strict, "poison": poison, "data_ok": dq["ok"],
            "delayed_one_bar": _strip(adversarial.delayed(bars, v["positions"], funding, spec["costs"])),
-           "placebo": adversarial.placebo(bars, v["positions"], funding, spec["costs"], n=PLACEBO_N),
+           "placebo": adversarial.placebo_returns(bars, v["positions"], funding, spec["costs"], n=PLACEBO_N,
+                                                  offset=3600 if spec.get("family") else 0),   # amendment 15a point 1
            "neighbours_net_sharpe": others}
     exact = all(x["ok"] for t in (trunc, strict, poison) for x in t.values())      # amendment 15 point 1: strict too
     res["ok"] = exact and dq["ok"]

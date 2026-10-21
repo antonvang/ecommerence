@@ -920,7 +920,9 @@ REVIEW_PLACEBO_N = 60
 
 
 def review_id(key):
-    return hashlib.sha256(key.encode()).hexdigest()[:10]
+    """Job and artifact name of a review by the current method: an older method's job row and artifact (named by the
+    key alone) are never reused or overwritten."""
+    return hashlib.sha256(f"{REVIEW_METHOD}|{key}".encode()).hexdigest()[:10]
 
 
 def reviews(db):

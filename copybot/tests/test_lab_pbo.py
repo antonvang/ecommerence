@@ -133,5 +133,42 @@ class EffectiveSample(unittest.TestCase):
         self.assertLess(backtest.psr(sr, backtest.effective_n(x)[0]), backtest.psr(sr, len(x)))
 
 
+class LowerBound(unittest.TestCase):
+    """Amendments 15a and 15b: automatic block length and the AR(1)-corrected lower bound."""
+    def ar1(self, phi, n=184, seed=3, mu=0.0):
+        rng, x, out = random.Random(seed), 0.0, []
+        for _ in range(n):
+            x = phi * x + rng.gauss(0, 1)
+            out.append(x + mu)
+        return out
+
+    def rows(self, x):
+        return [(i * 86400, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, v) for i, v in enumerate(x)]
+
+    def test_block_length_grows_with_persistence_and_never_falls_below_five(self):
+        from lab.engine import backtest
+        self.assertEqual(backtest.auto_block(self.ar1(0.0)), 5)
+        self.assertGreater(backtest.auto_block(self.ar1(0.8)), 5)
+        self.assertLessEqual(backtest.auto_block(self.ar1(0.99)), 184 // 3)
+        self.assertEqual(backtest.auto_block([1.0] * 10), 5)
+
+    def test_the_bound_is_the_stricter_of_the_two_and_recorded(self):
+        from lab.engine import backtest
+        m = backtest.metrics(self.rows(self.ar1(0.8)), block="auto")
+        self.assertEqual(m["lb_one_sided"], min(m["lb_bootstrap"], m["lb_ar1"]))
+        self.assertGreater(m["bootstrap"]["block_days"], 5)
+        old = backtest.metrics(self.rows(self.ar1(0.8)))                      # the default is unchanged
+        self.assertEqual((old["bootstrap"]["block_days"], old["lb_ar1"]), (5, None))
+
+    def test_false_finds_near_nominal_under_persistence(self):
+        from lab.engine import backtest
+        hits = sum(backtest.metrics(self.rows(self.ar1(0.8, seed=5000 + s)), block="auto")["lb_one_sided"] > 0
+                   for s in range(80))
+        self.assertLessEqual(hits / 80, 0.15)                                 # 5-day blocks: about 0.22-0.27
+        power = sum(backtest.metrics(self.rows(self.ar1(0.0, seed=9000 + s, mu=0.25)), block="auto")["lb_one_sided"] > 0
+                    for s in range(40))
+        self.assertGreaterEqual(power / 40, 0.8)
+
+
 if __name__ == "__main__":
     unittest.main()

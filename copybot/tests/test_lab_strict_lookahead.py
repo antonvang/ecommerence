@@ -64,6 +64,8 @@ class Strict(unittest.TestCase):
         src = inspect.getsource(pipeline.step_adversarial)
         self.assertIn("strict_truncation_test_xs", src)
         self.assertIn("for t in (trunc, strict, poison)", src)
+        self.assertIn("adversarial.placebo_returns(", src)                     # amendment 15a point 1
+        self.assertIn('block="auto"', inspect.getsource(pipeline._evaluate))  # amendment 15a point 2
 
 
 if __name__ == "__main__":

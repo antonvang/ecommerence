@@ -27,7 +27,7 @@ from lab.engine import backtest, data  # noqa: E402
 from lab.supervisor import Supervisor  # noqa: E402
 
 HOUR = 3600
-_PLACEBO = __import__("lab.engine.adversarial", fromlist=["placebo"]).placebo
+_PLACEBO = __import__("lab.engine.adversarial", fromlist=["placebo_returns"]).placebo_returns
 
 
 def make_market(root, seed=3):
@@ -86,7 +86,7 @@ class Env(unittest.TestCase):
                         mock.patch.object(registry, "last_commit", lambda path: "c0ffee"),
                         mock.patch.object(registry, "blob_at", lambda c, p: "blob-test"),
                         mock.patch.object(data, "_fetch", self._no_network),
-                        mock.patch.object(pipeline.adversarial, "placebo", functools.partial(_PLACEBO, n=5)),
+                        mock.patch.object(pipeline.adversarial, "placebo_returns", functools.partial(_PLACEBO, n=5)),
                         mock.patch.object(pipeline, "PLACEBO_N", 5),
                         mock.patch.object(fleet, "PROCESSES", False),          # tests patch module state
                         mock.patch.object(fleet.control, "ram", lambda: {"total": 16e9, "free": 8e9, "load_pct": 50})]
@@ -359,7 +359,7 @@ class ProtocolV2(Env):
         self.approve("day_of_week")
         fleet.strategy_pass(self.db)
         fake = lambda *a, **k: {"actual": 1.0, "p": 0.5, "n": 5, "placebo_mean": 1.2}  # noqa: E731
-        with mock.patch.object(pipeline.adversarial, "placebo", fake):
+        with mock.patch.object(pipeline.adversarial, "placebo_returns", fake):
             self.drain([a for a in fleet.agents(self.db_path) if a.kinds])
         eid = "E_day_of_week_p2"
         self.assertEqual(lifecycle.state(self.db, eid), "REJECTED")
