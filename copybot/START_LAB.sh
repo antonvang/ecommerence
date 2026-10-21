@@ -25,9 +25,29 @@ fi
 
 mkdir -p data/lab
 echo "$(now) START_LAB.sh paa $(hostname), port $PORT"
+# >>> code guard
+# Et haardt nedbrud lige efter et deploy efterlod de nyskrevne filer tomme (2026-10-21), og starten saa normal ud.
+# Start ikke, hvis koden under lab/ (eller dette script) afviger fra den committede, eller git ikke kan svare.
+if command -v git >/dev/null 2>&1 && git rev-parse --git-dir >/dev/null 2>&1; then
+  if ! changed=$(git status --porcelain --untracked-files=no -- lab START_LAB.sh 2>&1); then
+    changed="git status fejlede: $changed"
+  fi
+  if [ -n "$changed" ]; then
+    echo "$(now) Start afbrudt: koden afviger fra den committede (tomme filer efter et nedbrud?):"
+    echo "$changed" | head -25
+    echo " Se filerne efter, og gendan dem med git checkout -- <fil> (research/LINUX_DRIFT.md)."
+    exit 1
+  fi
+fi
+# <<< code guard
 if [ -f data/lab/lab.db ]; then
   echo " Tjekker at laboratoriet kan starte sikkert ..."
-  "$PY" -m lab preflight --port "$PORT" || { echo "$(now) Start afbrudt. Se ovenfor (og research/LINUX_FLYT.md)."; exit 1; }
+  if ! pf=$("$PY" -m lab preflight --port "$PORT" 2>&1); then
+    echo "$pf"; echo "$(now) Start afbrudt. Se ovenfor (og research/LINUX_FLYT.md)."; exit 1
+  fi
+  echo "$pf"
+  # exit 0 alene er ikke nok: en tom lab/__main__.py slutter ogsaa med 0
+  echo "$pf" | grep -q "^PREFLIGHT OK$" || { echo "$(now) Start afbrudt: preflight svarede ikke PREFLIGHT OK."; exit 1; }
 fi
 echo
 echo " Mars Command Center - forskningsflaade (paper, ingen rigtige penge)"
