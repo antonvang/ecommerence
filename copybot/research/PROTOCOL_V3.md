@@ -1550,3 +1550,26 @@ ikke oprettet, se punkt 3).
 3. **Banens gennemgangsjob** blev efter ændring 15 givet samme job-id som gennemgangen af samme kandidat efter 11d og
    derfor afvist som dubletter (ingen gennemgang efter metode 15 kørte). Navnet indeholder nu metoden; ældre
    job-rækker og artefakter genbruges eller overskrives aldrig.
+
+## Ændring 16 (2026-10-21): begivenheds- og nyhedsscanner — kun data, intet handles — før kode
+
+**Beslutning:** brugeren 2026-10-21 (direktivet "AGGRESSIVE AUTONOMOUS RESEARCH & MARKET INTELLIGENCE", punkt 2B, og
+"JA TIL ALT du har tilladelse til alt"). Kun data; ingen strategi, ingen gate ændres, intet handles. Plan:
+`research/PLAN_DIREKTIV_2026-10-21.md`.
+
+1. **Kilder (offentlige, gratis, uden nøgle, kun GET):**
+   - Binance' meddelelser (`www.binance.com/bapi/composite/v1/public/cms/article/list/query`): kategorierne nye
+     listninger (48), delistninger (161) og Binance-nyheder (49). Udgiverens eget tidsstempel (`releaseDate`).
+   - RSS fra Cointelegraph (`cointelegraph.com/rss`) og CoinDesk (`www.coindesk.com/arc/outboundfeeds/rss`).
+   - GDELT DOC 2.0 (`api.gdeltproject.org`), forespørgsler om bitcoin/krypto, højst én pr. 6 s og med eksponentiel
+     ventetid ved afvisning (429).
+2. **Hver post:** kilde, kildens id, URL, titel, publiceringstid (fra kilden), indsamlingstid, kategori, nævnte mønter
+   (fundet i titlen efter faste regler) og en hash af kilde og id (dublet-kontrol). Gemmes som observationer
+   (`detector` "news/1", `metric` "news_item"); intet udfald eller fortolkning gemmes som fakta.
+3. **Point-in-time:** en post må kun bruges fra sin indsamlingstid. Undtagelse: Binance' meddelelser, hvis
+   publiceringstid kilden selv sætter, må hentes bagud (én gang, højst 1 forespørgsel pr. 2 s) og bruges fra
+   publiceringstiden + 1 time; de markeres `backfill` og med forbeholdet, at en titel kan være rettet senere.
+4. **Drift:** en ny agent `news-watch` henter hvert 10. minut (GDELT hvert 15.); hver kilde fejler for sig, og fejl
+   registreres (`metric` "news_error") uden at stoppe andet. Dækningspanelet viser kilder, antal, friskhed og fejl.
+5. **Brug:** dataene er ikke bevis. En hypotese på dem kræver sin egen præregistrering før test (ændring 8 eller en
+   egen ændring), og ingen test må bruge poster fra før hypotesen blev committet som "ny" evidens for den.
