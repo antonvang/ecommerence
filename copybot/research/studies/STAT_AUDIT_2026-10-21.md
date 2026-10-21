@@ -26,8 +26,10 @@ Den strenge test er kørt (syntetiske data) på alle strategier, laboratoriets b
 fcarry-varianter (F1), `vol_managed_long`, `mvrv_value` (OBSERVE) og `supply_dilution` samt 15 øvrige skabeloner uden
 ekstra data: **ingen look-ahead fundet.** F2-udkastet `dbasis` (alle tre funktioner, begge gitterpunkter, syntetiske
 forholdsserier over 4 kvartalsrul, tilfældige snit og snit præcis ved beslutningstimerne 01:00/02:00 UTC): **ingen
-look-ahead fundet** (2026-10-21). Ikke kontrolleret endnu: 9 skabeloner med metrics/dvol/stable/rates/taker/volume-data
-og 2 med dollarvolumen (alle afviste eksperimenter).
+look-ahead fundet** (2026-10-21). De 9 skabeloner med metrics/dvol/stable/rates/taker/volume-data og de 2 med
+dollarvolumen (alle afviste eksperimenter; begge gitterpunkter, 37 snit hver inkl. alle beslutningsmidnatter, ekstra
+data skåret med `cut_bundle`; en snydefamilie fanges ved 37/37): **ingen look-ahead fundet** (2026-10-21,
+`research/tools/strict_lookahead_scan_needs.py`). Dermed er alle katalogets skabeloner kontrolleret.
 
 ## Andet
 
