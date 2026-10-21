@@ -1643,7 +1643,9 @@ kræver, at både spot og perp handler; afnotering af ét af dem slutter positio
 2. **Mønter (fast regel):** i teksten efter "Delist" er hvert ord af store bogstaver og cifre med mindst ét bogstav en
    mønt; ordene "USD", "USDT", "USDC", "BUSD" og "M" (fra "USDⓈ-M"/"USDT-Margined") fjernes, og et slut-"USDT", "USDC"
    eller "BUSD" på et længere ord skæres af (IPUSDT → IP).
-3. **Tidspunkt (point-in-time):** en meddelelse tæller fra sit `usable_from` og i 30 døgn derefter.
+3. **Tidspunkt (point-in-time):** en meddelelse tæller fra sit `usable_from` (aldrig før) og indtil 30 døgn efter
+   sit `published_ts` (præciseret før kode: den første hentning gemte også ældre meddelelser med `usable_from` =
+   hentetidspunktet; de er allerede gennemført og skal ikke spærre i 30 døgn mere).
 4. **Start:** scanneren springer en mønt over, før den bruger et af sine prøveforsøg, og noterer `lane.skipped` med
    årsagen "afnotering annonceret (16e)" og titlen.
 5. **Stop:** en aktiv scannerkonto, hvis mønt får en sådan meddelelse, stoppes med reglen `delisting`; positioner
