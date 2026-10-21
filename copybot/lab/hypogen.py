@@ -62,9 +62,13 @@ TYPES = (                                                    # point 1: fixed; a
     ("margin_tiers", _has("Leverage & Margin Tiers", "Leverage and Margin Tiers")),
     ("funding_interval", lambda t: _w(t, "Funding Rate") and _w(t, "Interval", "Frequency", "Settlement")),
 )
-OUTCOMES = ("ar_1d", "ar_7d", "fund_7d", "vol_3d", "volume_1d")       # point 2
+OUTCOMES = ("ar_1d", "ar_7d", "fund_7d", "vol_3d", "volume_1d",       # point 2
+            "far_1d", "far_7d", "sar_1d", "sar_7d")                  # 17a: from the first available price (perp, spot)
 PRE = {"fund_7d", "vol_3d", "volume_1d"}                               # need (t - 7 d, t]
-HORIZON = {"ar_1d": DAY, "ar_7d": 7 * DAY, "fund_7d": 7 * DAY, "vol_3d": 3 * DAY, "volume_1d": DAY}
+HORIZON = {"ar_1d": DAY, "ar_7d": 7 * DAY, "fund_7d": 7 * DAY, "vol_3d": 3 * DAY, "volume_1d": DAY,
+           "far_1d": DAY, "far_7d": 7 * DAY, "sar_1d": DAY, "sar_7d": 7 * DAY}
+RETURNS = ("ar_", "far_", "sar_")                             # returns: the 0.46 % cost check applies
+FIRST_WITHIN = 72 * HOUR                                      # 17a: the first price must come by t + 72 h
 COVERED = {"futures_listing|fund_7d|m17": "H4/H5 (amendments 16a, 16c)"}   # point 4
 DEDUP_S = 30 * DAY
 COVER = 0.9
@@ -153,18 +157,23 @@ def _months(a, b):
 def need(ev, phase):
     """(symbol, kind, y, m) files an event needs inside the phase (its coin and BTCUSDT)."""
     a, b = bounds(phase)
-    lo, hi = max(a, ev["t"] - 7 * DAY - HOUR), min(b - 1, ev["t"] + 7 * DAY)
-    return {(s, k, y, m) for s in (ev["coin"] + "USDT", "BTCUSDT") for k in ("klines", "funding")
+    lo = max(a, ev["t"] - 7 * DAY - HOUR)
+    hi = min(b - 1, ev["t"] + FIRST_WITHIN + 7 * DAY)
+    return {(s, k, y, m) for s in (ev["coin"] + "USDT", "BTCUSDT") for k in ("klines", "funding", "spot")
             for y, m in _months(lo, hi)}
 
 
 def _path(sym, kind, y, m):
+    if kind == "spot":
+        return os.path.join(data.CACHE, "spot_klines", f"{sym}-1h-{y}-{m:02d}.zip")
     if kind == "klines":
         return os.path.join(data.CACHE, "klines", f"{sym}-1h-{y}-{m:02d}.zip")
     return os.path.join(data.CACHE, "funding", f"{sym}-fundingRate-{y}-{m:02d}.zip")
 
 
 def _url(sym, kind, y, m):
+    if kind == "spot":
+        return f"{data.SPOT_BASE}/klines/{sym}/1h/{sym}-1h-{y}-{m:02d}.zip"
     if kind == "klines":
         return f"{data.BASE}/klines/{sym}/1h/{sym}-1h-{y}-{m:02d}.zip"
     return f"{data.BASE}/fundingRate/{sym}/{sym}-fundingRate-{y}-{m:02d}.zip"
@@ -199,7 +208,7 @@ def priority(n, n30, miss, overlap):
 
 
 def candidates(db, now=None, fresh=False):
-    """All 60 candidates with status and priority (cached TTL seconds per registry)."""
+    """All candidates (60 under 17, 48 more under 17a) with status and priority (cached TTL seconds per registry)."""
     now = now or time.time()
     c = _CACHE.get(db.path)
     if c and not fresh and now - c[0] < TTL:
@@ -260,7 +269,7 @@ class Reader:
                     ts //= 1000
                 if not (self.a <= ts < self.b) or ts >= END:
                     continue
-                if kind == "klines":
+                if kind in ("klines", "spot"):
                     out[ts] = (float(r[4]), float(r[7]) if len(r) > 7 else 0.0)
                 else:
                     out[ts - ts % HOUR] = float(r[2])
@@ -287,6 +296,19 @@ def outcome(reader, coin, t, name):
     if lo - HOUR < reader.a or t + hz > reader.b:
         return None, "window outside the phase"
     t0 = -(-t // HOUR) * HOUR                                 # first full hour >= t
+    if name.startswith(("far_", "sar_")):                     # 17a: from the first available price
+        kind = "spot" if name.startswith("sar_") else "klines"
+        if t + FIRST_WITHIN + hz + HOUR > reader.b:
+            return None, "window outside the phase"
+        k = reader.series(sym, kind, t0, t0 + FIRST_WITHIN + hz)
+        btc = reader.series("BTCUSDT", kind, t0, t0 + FIRST_WITHIN + hz)
+        h = next((h for h in range(t0, t + FIRST_WITHIN + 1, HOUR) if h in k and k[h][0] > 0), None)
+        if h is None:
+            return None, "no price within 72 h"
+        p = [k.get(h), k.get(h + hz), btc.get(h), btc.get(h + hz)]
+        if any(x is None or x[0] <= 0 for x in p):
+            return None, "missing price"
+        return math.log(p[1][0] / p[0][0]) - math.log(p[3][0] / p[2][0]), None
     if name.startswith("ar_"):
         k, btc = reader.series(sym, "klines", t0 - HOUR, t0 + hz), reader.series("BTCUSDT", "klines", t0 - HOUR,
                                                                                     t0 + hz)
@@ -387,7 +409,7 @@ def screen(db, k, get=None, items=None):
               "same sign in 2020 and 2021": len(h1) >= MIN_HALF and len(h2) >= MIN_HALF and
               statistics.fmean(h1) * sign > 0 and statistics.fmean(h2) * sign > 0,
               f"placebo p > {P_PLACEBO} (n >= {MIN_SCREEN})": pp is not None and pp > P_PLACEBO}
-    if name.startswith("ar_"):
+    if name.startswith(RETURNS):
         checks[f"|mean| >= {COST}"] = abs(mean) >= COST
     res.update(mean=mean, median=statistics.median(ys), share_positive=sum(y > 0 for y in ys) / len(ys), p=p,
                direction=sign, halves={"2020": [len(h1), statistics.fmean(h1) if h1 else None],
@@ -410,8 +432,8 @@ def draft(res, root=None):
             "claim": f"`{res['outcome']}` efter Binance-meddelelser af typen `{res['type']}` er {word} end 0",
             "mechanism": "meddelelsen ændrer efterspørgsel, opmærksomhed eller afdækning i mønten (ikke undersøgt)",
             "data": "Binance' meddelelser i registret (news/1); USD-M 1 t-klines og fundingRate fra data.binance.vision",
-            "baseline": "0: ingen ændring (ar_* er allerede fratrukket BTCUSDT; de andre måles mod (t - 7 d, t])",
-            "placebo": "samme mønter med t - 30 d", "costs": "ar_*: 0,46 % rundtur (F1); andre udfald handles ikke",
+            "baseline": "0: ingen ændring (afkast er fratrukket BTCUSDT; de andre måles mod (t - 7 d, t])",
+            "placebo": "samme mønter med t - 30 d", "costs": "afkast (ar_, far_, sar_): 0,46 % rundtur (F1); andre udfald handles ikke",
             "criterion": f"train3 ensidet p < {P_TRAIN} med n >= {MIN_TRAIN}; validation3 ensidet p < alpha_k med "
                          f"n >= {MIN_VALID}; alpha_k = 0,05 * 2^-k (ændring 17 punkt 7)",
             "risks": "screeningen valgte blandt 60 kandidater; overlappende begivenheder; tynde perps",

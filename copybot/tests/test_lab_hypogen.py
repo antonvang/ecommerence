@@ -46,7 +46,7 @@ class Base(unittest.TestCase):
         shutil.rmtree(self.tmp, ignore_errors=True)
 
     def zip(self, kind, sym, y, m, rows):
-        name = f"{sym}-1h-{y}-{m:02d}.zip" if kind == "klines" else f"{sym}-fundingRate-{y}-{m:02d}.zip"
+        name = f"{sym}-1h-{y}-{m:02d}.zip" if kind in ("klines", "spot_klines") else f"{sym}-fundingRate-{y}-{m:02d}.zip"
         d = os.path.join(data.CACHE, kind)
         os.makedirs(d, exist_ok=True)
         buf = io.StringIO()
@@ -81,7 +81,7 @@ class Base(unittest.TestCase):
 
 class Rules(Base):
     def test_fixed_types_and_outcomes(self):
-        self.assertEqual(len(hypogen.TYPES) * len(hypogen.OUTCOMES), 60)
+        self.assertEqual(len(hypogen.TYPES) * len(hypogen.OUTCOMES), 108)          # 60 (17) + 48 (17a)
         self.assertEqual(hypogen.types_of("Binance Will List Arweave (AR) in the Innovation Zone"),
                          ["spot_listing", "innovation_zone"])
         self.assertEqual(hypogen.types_of("Binance Futures Will Launch USDT-Margined REEF Perpetual Contract"),
@@ -130,6 +130,30 @@ class Rules(Base):
         self.assertEqual(hypogen.outcome(r, "AAA", T(2020, 3, 3), "fund_7d")[1], "window outside the phase")
 
 
+class FirstPrice(Base):
+    def test_17a_outcomes_start_at_the_first_available_price_on_perp_and_spot(self):
+        t = T(2020, 6, 10, 5) + 1800
+        start = T(2020, 6, 11, 2)                                   # the market opens 20.5 h after the announcement
+
+        def write(kind, y, m):
+            for sym, px in (("NEWUSDT", lambda ts: 10.0 if ts < start + 3 * H else 12.0), ("BTCUSDT", lambda ts: 9e3)):
+                a, b = T(y, m), T(y + (m == 12), 1 if m == 12 else m + 1)
+                rows = [(ts * 1000, px(ts), 0, 0, px(ts), 1, ts * 1000 + H * 1000 - 1, 5.0) for ts in range(a, b, H)
+                        if sym == "BTCUSDT" or ts >= start]
+                self.zip(kind if kind == "klines" else "spot_klines", sym, y, m, rows)
+        for y, m in ((2020, 6), (2020, 7)):
+            write("klines", y, m)
+            write("spot", y, m)
+        r = hypogen.Reader("explore0")
+        import math
+        for name in ("far_1d", "far_7d", "sar_1d", "sar_7d"):
+            y, why = hypogen.outcome(r, "NEW", t, name)
+            self.assertAlmostEqual(y, math.log(1.2), msg=name)
+        self.assertEqual(hypogen.outcome(r, "NEW", t, "ar_1d")[1], "missing price")     # 17: no price at t
+        self.assertEqual(hypogen.outcome(r, "OLD", t, "sar_1d")[1], "no price within 72 h")
+        self.assertTrue(hypogen._url("NEWUSDT", "spot", 2020, 6).startswith(data.SPOT_BASE))
+
+
 class Screening(Base):
     def setup_pass(self, n=20, jump=1.03):
         evs = []
@@ -168,7 +192,7 @@ class Screening(Base):
         self.setup_pass()
         self.assertEqual(hypogen.enqueue(self.db, NOW, lock_list=[]), 1)
         self.assertEqual(hypogen.enqueue(self.db, NOW + 1, lock_list=[]), 0)       # one at a time
-        self.assertEqual(self.db.one("SELECT COUNT(*) FROM events WHERE kind=?", hypogen.EV_HYP)[0], 60)
+        self.assertEqual(self.db.one("SELECT COUNT(*) FROM events WHERE kind=?", hypogen.EV_HYP)[0], 108)
         hyp = json.loads(self.db.one("SELECT payload FROM events WHERE kind=? LIMIT 1", hypogen.EV_HYP)[0])
         self.assertEqual(set(hyp["sources"]), {"detector", "events", "first_obs", "last_obs", "events_sha256"})
         job = jobs.claim(self.db, "cost-1", ("hypo_screen",))
@@ -186,7 +210,7 @@ class Screening(Base):
         self.assertEqual(c["futures_listing|fund_7d|m17"]["status"], "COVERED")
         self.assertGreater(c[nxt]["priority"], 0)
         v = hypogen.view(self.db, NOW + 3)
-        self.assertEqual(v["total"], 60)
+        self.assertEqual(v["total"], 108)
         self.assertEqual([r["key"] for r in v["results"]], [first])
 
 
