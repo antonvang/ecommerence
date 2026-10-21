@@ -1624,7 +1624,7 @@ H5's PASS (`research/studies/MAALING_16c_H5_2026-10-21.md`). Kun måling; intet 
 3. **Data indsamles allerede automatisk** af `news-watch` (ændring 16); funding hentes én gang efter døgn 60 for det
    20. symbol.
 
-## Ændring 16e (2026-10-21): scannerkonti undgår mønter, som Binance har annonceret afnotering af — før kode
+## Ændring 16e (2026-10-21): scanner- og HL-konti undgår mønter, som Binance har annonceret afnotering af — før kode
 
 **Beslutning:** Claude under brugerens mandat 2026-10-21 ("Kør videre automatisk og tag selv beslutning"). Kun
 simuleret handel; ingen gate, ingen holdout og intet evalueringskriterium ændres. Reglen gør scannerkontiene mere
@@ -1648,6 +1648,8 @@ kræver, at både spot og perp handler; afnotering af ét af dem slutter positio
    årsagen "afnotering annonceret (16e)" og titlen.
 5. **Stop:** en aktiv scannerkonto, hvis mønt får en sådan meddelelse, stoppes med reglen `delisting`; positioner
    lukkes reduce-only som ved de øvrige stopregler.
-6. **Gælder ikke** banekonti (ændring 11; frosne familiekurve) eller HL-konti (ændring 13; anden børs).
+6. **HL-konti (ændring 13)** har Binance-spot som det ene ben: for dem gælder punkt 1–5 kun spot-meddelelserne
+   ("Binance Will Delist", "Binance to Delist"); Binance' futures-afnoteringer rører ikke Hyperliquid-perpen.
+   **Gælder ikke** banekonti (ændring 11; frosne familiekurve).
 7. **Kendte huller:** meddelelser, der ikke nævner mønten i titlen ("Multiple Perpetual Contracts", "Notice of Removal
    of Spot Trading Pairs"), fanges ikke.
