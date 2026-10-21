@@ -1588,3 +1588,17 @@ Kun måling; intet handles, ingen gate ændres.
    små månedsfiler.
 4. **Registrering:** udfaldet (PASS, REJECTED eller UNTESTABLE) skrives uændret i hændelseskæden og i
    `research/studies/` med kode-commit, inputs og seed. Et PASS giver kun grundlag for et senere forslag.
+
+## Ændring 16b (2026-10-21): de faste møntregler læser også Binance' futures-listningstitler — før kode og før H4 køres
+
+**Beslutning:** Claude, før Binance-meddelelserne er hentet bagud og før H4 (ændring 16a) er kørt; ingen funding for
+nye listninger er hentet eller set. Kun titlernes format er set (fx "Binance Futures Will Launch USDⓈ-M MOVR Perpetual
+Contract …", "… Launch RSR & LRC USDT-Margined Perpetual Contracts …"): de nævner tickeren uden parentes, så ændring
+16's regler fandt ingen mønt, og H4 ville være blevet UNTESTABLE af en formfejl.
+
+1. **Ny fast regel (ud over parentes- og XXXUSDT-reglen):** i en titel, der indeholder "Futures Will Launch" og
+   "Perpetual", læses teksten mellem "Launch" og "Perpetual"; ordene "USDⓈ-M", "USDS-M", "USDT-Margined",
+   "USDC-Margined", "Coin-Margined" og "and" fjernes; resten deles ved mellemrum, "&" og ","; hvert stykke, der kun
+   består af store bogstaver og cifre (2–15 tegn), er en mønt.
+2. **Gælder** `lab/news.py` (mønterne ved hvert opslag) og dermed H4's stikprøve. H4's øvrige regler er uændrede;
+   COIN-M-titler ("Coin-Margined") er fortsat uden for H4.
