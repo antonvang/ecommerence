@@ -1489,3 +1489,27 @@ den låses hermed uændret. Intet handles, og intet her ændrer en papirkonto.
    udfaldet UNTESTABLE efter udkastets regler.
 5. **Registrering:** hvert udfald (PASS, REJECTED eller UNTESTABLE) skrives uændret i hændelseskæden og i
    `research/studies/` med kode-commit, inputs og seeds. Et udfald afgør intet for handel.
+
+## Ændring 15a (2026-10-21): pipelinens placebo og bootstrap-bloklængden rettes — før kode
+
+**Beslutning:** brugeren 2026-10-21 ("Ja det skal være perfekt og aggressivt", svar på revisionens fund 5 og 6 i
+`research/studies/STAT_AUDIT_2026-10-21.md`). Strengere eller neutralt; ingen gate lempes. Afgørelser, der allerede
+er registreret, ændres ikke; punkterne gælder trin, der køres efter deploy.
+
+1. **Pipelinens placebo (fund 5).** Det adversarielle trin bruger samme placebo som banen efter ændring 15 punkt 2
+   (afkast forskudt cirkulært med ét fælles helt antal døgn pr. træk, ny prisserie fra første lukkekurs, funding
+   forskudt samme antal døgn, positioner uændrede; 60 træk, seed 17) i stedet for blok-ombytning af positionerne.
+   Begrundelse: ombytning i 24-timers blokke øger omsætningen og dermed placebosættenes omkostninger, så langsomme
+   strategier uden fordel fik 27–40 % falske fund. Sharpe over døgn fra 00:00 UTC (katalogets beslutningstid) og fra
+   01:00 UTC for familieinstanser (ændring 8 punkt 3). Kravet er uændret: train placebo p < 0,10 (v2) og rapporteret
+   ellers.
+2. **Bootstrap-bloklængden (fund 6).** Den ensidede nedre grænse (og 95 %-intervallet) i pipelinens gates — katalogets
+   validering og fremadtest, holdout og familiernes fremadtest — bruger blokke på
+   **b = max(5, ⌈b̂⌉) døgn**, hvor b̂ er Politis & Whites automatiske bloklængde (2004, rettet af Patton, Politis &
+   White 2009) for blok-bootstrap af den daglige nettoserie: flad-top-vindue, m̂ = mindste m hvor |ρ̂(m+k)| <
+   2·√(log10 n / n) for k = 1..max(5, ⌈√log10 n⌉), M = 2m̂, b̂ = (2Ĝ² / D̂)^(1/3) · n^(1/3) med D̂ = (4/3)ĝ(0)², højst
+   n/3. Aldrig under de hidtidige 5 døgn. Antal træk (2.000) og seed er uændrede. Bloklængden registreres ved
+   resultatet.
+   - Begrundelse: ved AR(1) φ = 0,8 gav 5-døgns blokke 22 % falske fund mod nominelt 10 %.
+   - F1's frosne filer ændres ikke; familiernes fremadtest beregnes af pipelinen, og punktet gælder derfor også dér,
+     før F1's vindue (fra 2026-12-01) er læst.
