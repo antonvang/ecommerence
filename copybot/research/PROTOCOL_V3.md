@@ -1602,3 +1602,13 @@ Contract …", "… Launch RSR & LRC USDT-Margined Perpetual Contracts …"): de
    består af store bogstaver og cifre (2–15 tegn), er en mønt.
 2. **Gælder** `lab/news.py` (mønterne ved hvert opslag) og dermed H4's stikprøve. H4's øvrige regler er uændrede;
    COIN-M-titler ("Coin-Margined") er fortsat uden for H4.
+
+## Ændring 16c (2026-10-21): målehypotese H5 `notering_lav` — kun på data, H4 ikke læste — før kode
+
+**Beslutning:** Claude under brugerens mandat 2026-10-21 ("Kør videre automatisk og tag selv beslutning"). Kun
+måling; intet handles.
+
+1. **Låst tekst:** `research/drafts/H5_NOTERING_LAV.md` (git-blob 38e0701cecd1ec622e67fdca6d678d3565709378, sha256 71b6058b6ca29f9e7c2e63309d429b0ccc0b153d34a220173cf7dfbc08a143c6).
+2. **Kilde og adskillelse:** hypotesen kommer fra H4's train-data; den testes kun på symboler annonceret i
+   2023-07..2023-12, som H4 aldrig læste (H4 stoppede ved sin train-gate). Én kørsel.
+3. **Fejlrate:** egen α = 0,05 for denne ene test, uden for alle andre budgetter.
