@@ -201,6 +201,32 @@ class Progress(Base):
         self.assertEqual(live["GDELT DOC 2.0 (amendment 16)"], 0)
         self.assertEqual((p["jobs_done_24h"], p["jobs_failed_24h"]), (0, 0))
 
+    def news(self, ts, title, coins, category="listing", backfill=False, fetched=None):
+        p = {"title": title, "coins": coins, "category": category, "backfill": backfill,
+             "fetched_ts": ts if fetched is None else fetched, "published_ts": ts - 60}
+        self.db.append("observations", ts=int(ts), detector="news/1", source="binance", instrument=title,
+                       metric="news_item", value=ts - 60, threshold=None, flagged=0, payload=p)
+
+    def test_forward_tests_count_new_listing_announcements_only(self):
+        t0 = coverage.FORWARD_FROM
+        self.news(t0 - 3600, "Binance Futures Will Launch USDⓈ-M OLD Perpetual Contract", ["OLD"])     # before
+        self.news(t0 + 60, "Binance Futures Will Launch USDⓈ-M AAA Perpetual Contract", ["AAA"])
+        self.news(t0 + 120, "Binance Futures Will Launch BBB & CCC USDT-Margined Perpetual Contracts", ["BBB", "CCC"])
+        self.news(t0 + 180, "Binance Futures Will Launch USDⓈ-M DDD Perpetual Contract", ["DDD"], backfill=True)
+        self.news(t0 + 240, "Binance Futures Will Launch DDD Coin-Margined Perpetual Contract", ["DDD"])
+        self.news(t0 + 300, "Binance Will List EEE (EEE)", ["EEE"])                                     # spot listing
+        self.news(t0 + 360, "Binance Futures Will Delist FFFUSDT Perpetual Contract", ["FFF"], category="delisting")
+        f = {x["hypothesis"]: x for x in coverage.forward(self.db, t0 + 400)}
+        self.assertEqual(sorted(f), ["H5F", "H5X"])
+        self.assertEqual((f["H5F"]["collected"], f["H5F"]["coins"], f["H5F"]["earliest_run_ts"]),
+                         (3, ["AAA", "BBB", "CCC"], None))
+        for i in range(20):
+            self.news(t0 + 1000 + i, f"Binance Futures Will Launch USDⓈ-M X{i:02d} Perpetual Contract", [f"X{i:02d}"])
+        f = {x["hypothesis"]: x for x in coverage.forward(self.db, t0 + 2000)}
+        self.assertEqual(f["H5X"]["collected"], 20)
+        self.assertEqual(f["H5X"]["earliest_run_ts"], t0 + 1016 - 60 + 7 * coverage.DAY)              # 20th: X16
+        self.assertEqual(f["H5F"]["earliest_run_ts"], t0 + 1016 - 60 + 60 * coverage.DAY)
+
 
 class Api(unittest.TestCase):
     def test_endpoints(self):

@@ -184,7 +184,37 @@ def progress(db, rows=None, now=None):
         meas.append({"hypothesis": p.get("hypothesis"), "name": p.get("name"), "verdict": p.get("verdict"),
                      "reason": (p.get("reason") or "")[:160], "ts": r["ts"], "rule": p.get("rule")})
     return {"live_sources": live, "jobs_done_24h": j[0] or 0, "jobs_failed_24h": j[1] or 0,
-            "oldest_runnable_job_age_s": (now - oldest) if oldest else None, "measurements": meas}
+            "oldest_runnable_job_age_s": (now - oldest) if oldest else None, "measurements": meas,
+            "forward": forward(db, now)}
+
+
+FORWARD_FROM = 1792627200                       # 2026-10-22 00:00 UTC: amendments 16d and 16f collect from here
+FORWARD_TESTS = (("H5F", "16d", 20, 60 * DAY), ("H5X", "16f", 20, 7 * DAY))   # (id, amendment, symbols, window)
+
+
+def forward(db, now=None):
+    """Display only: the locked forward tests (16d, 16f) and how many USD-M listing announcements news-watch has
+    collected for them so far. The final sample rules (no earlier funding, a Hyperliquid perp, full windows) are applied
+    once, when the measurement runs; this counts candidates."""
+    now = now or time.time()
+    coins = {}
+    for r in db.q("SELECT payload FROM observations WHERE detector='news/1' AND metric='news_item' AND ts>=? "
+                  "ORDER BY ts, rowid", FORWARD_FROM):
+        p = json.loads(r["payload"]) if isinstance(r["payload"], str) else r["payload"]
+        t = p.get("title") or ""
+        if p.get("backfill") or p.get("category") != "listing" or (p.get("fetched_ts") or 0) < FORWARD_FROM \
+                or "Futures Will Launch" not in t or "Perpetual" not in t or "Coin-Margined" in t:
+            continue
+        for c in p.get("coins") or []:
+            coins.setdefault(c, p.get("published_ts") or p.get("fetched_ts"))
+    first = sorted(coins.items(), key=lambda x: (x[1], x[0]))
+    out = []
+    for hid, amendment, n, window in FORWARD_TESTS:
+        nth = first[n - 1][1] if len(first) >= n else None
+        out.append({"hypothesis": hid, "rule": f"research/PROTOCOL_V3.md amendment {amendment}", "needed": n,
+                    "collected": min(len(first), n), "coins": [c for c, _ in first[:n]],
+                    "earliest_run_ts": nth + window if nth else None, "deadline": "2027-06-30"})
+    return out
 
 
 def _head(verdict):
