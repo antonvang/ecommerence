@@ -1612,3 +1612,14 @@ måling; intet handles.
 2. **Kilde og adskillelse:** hypotesen kommer fra H4's train-data; den testes kun på symboler annonceret i
    2023-07..2023-12, som H4 aldrig læste (H4 stoppede ved sin train-gate). Én kørsel.
 3. **Fejlrate:** egen α = 0,05 for denne ene test, uden for alle andre budgetter.
+
+## Ændring 16d (2026-10-21): H5 gentages fremad (H5F) — før data findes
+
+**Beslutning:** Claude under brugerens mandat 2026-10-21 ("Kør videre automatisk og tag selv beslutning"), efter
+H5's PASS (`research/studies/MAALING_16c_H5_2026-10-21.md`). Kun måling; intet handles.
+
+1. **Låst tekst:** `research/drafts/H5F_NOTERING_FREMAD.md` (git-blob 3c961925a01a826abd3bab4e8ac8dfc10e889357, sha256 bb2337b6df5a4c7ad9c3735992f8ebfa3207aa30267eb354ce15b743934d4aa3), skrevet før nogen
+   listning i stikprøven er annonceret.
+2. **Fejlrate:** egen α = 0,05. Koden skrives, når data findes, og må ikke ændre den låste tekst.
+3. **Data indsamles allerede automatisk** af `news-watch` (ændring 16); funding hentes én gang efter døgn 60 for det
+   20. symbol.
