@@ -1769,3 +1769,22 @@ eller et før-vindue kan ikke regnes. Ingen tærskel ændres; 17's 60 kandidater
    p > 0,05, |gennemsnit| ≥ 0,46 % for alle fire, da de er afkast), α_k-rækken og "aldrig"-listen.
 3. Spotfilerne hentes gennem banens hentevej (kilden er allerede tilladt for banen, ændring 8 punkt 17 og 10d) og
    lægges i den fælles cache `spot_klines`.
+
+## Ændring 17b (2026-10-22): låsning af den første SCREEN_PASS — `futures_listing|sar_7d|m17` — før data
+
+**Beslutning:** Claude under brugerens mandat, efter ændring 17 punkt 7. Ingen kode ændres.
+
+1. **Screening** (explore0, hændelse `research.hypothesis_screen`, 2026-10-21/22): spotkursen (mod BTCUSDT spot) på
+   mønter, som Binance annoncerer en ny USD-M-perp for, faldt i 7 døgn fra første tilgængelige spotpris efter
+   meddelelsen: n 91, gennemsnit −15,1 %, median −14,5 %, 27 % positive, p 0,0001; 2020 −20,7 % (45), 2021 −9,6 % (46);
+   placebo (t − 30 d) +1,5 %, p 0,65 (n 58).
+2. **Kendte forbehold, nævnt før målingen:** det blev valgt blandt 108 kandidater (60 under 17 og 48 under 17a, ikke 60 som
+   udkastets "risks" skriver); udkastets "data"-felt nævner kun USD-M-filer, men udfaldet `sar_7d` bruger spotfilerne
+   (ændring 17a). Koden måler efter type, udfald og retning; teksten herover gælder.
+3. **Ingen 2022–2023-priser er læst** af pipelinen. H4/H5 læste perp-funding for 2022–2023-listninger, ikke spotpriser.
+4. **Lås** (α_1 = 0,05 · 2^−1 = 0,025; ensidet, retning negativ):
+
+LÅS-17 futures_listing|sar_7d|m17 1ad14ece81b13db537ed0c0174344d1594a60e5711ecbdd178c01949623541c6
+
+5. Et PASS er en måling, ikke en handelsregel. En papirkonto, der udnytter den, kræver sin egen daterede ændring med
+   omkostninger og stopregler.
