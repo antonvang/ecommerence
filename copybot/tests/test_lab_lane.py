@@ -308,10 +308,23 @@ class Retire(Base):
 
     def test_flat_lane_account_retires_after_three_days(self):
         led = self.started()
-        lane.run_one(self.db, led, market(rate=0.0), NOW)          # never on: no position
-        self.assertEqual(lane.manage(self.db, NOW + 3 * DAY - 60, None, fids=["fcarry"])["retired"], [])
-        self.assertEqual(lane.manage(self.db, NOW + 3 * DAY, None, fids=["fcarry"])["retired"], [led])
+        lane.run_one(self.db, led, market(), NOW)                  # holds
+        g = market(rate=0.0)
+        g.now = NOW + HOUR
+        lane.run_one(self.db, led, g, NOW + HOUR)                  # out: flat from its last trade
+        self.assertEqual(PaperEngine(self.db).ledger(led)["positions"], {})
+        self.assertEqual(lane.manage(self.db, NOW + HOUR + 3 * DAY - 60, None, fids=["fcarry"])["retired"], [])
+        self.assertEqual(lane.manage(self.db, NOW + HOUR + 3 * DAY, None, fids=["fcarry"])["retired"], [led])
         self.assertEqual(lane.retired(self.db)[led]["rule"], "flat")
+
+    def test_a_lane_account_that_never_traded_retires_a_day_after_start(self):
+        """Amendment 11f."""
+        led = self.started()
+        lane.run_one(self.db, led, market(rate=0.0), NOW)          # never on: no position
+        self.assertEqual(lane.manage(self.db, NOW + DAY - 60, None, fids=["fcarry"])["retired"], [])
+        self.assertEqual(lane.manage(self.db, NOW + DAY, None, fids=["fcarry"])["retired"], [led])
+        r = lane.retired(self.db)[led]
+        self.assertEqual((r["rule"], r["detail"]), ("flat", "ingen position siden start i 24 timer (11f)"))
 
     def test_a_variant_that_would_hold_nothing_now_is_skipped_and_retried_a_day_later(self):
         self.publish([result()])

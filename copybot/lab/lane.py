@@ -52,6 +52,7 @@ MAX_AGE_S = 90 * DAY
 PROMISING_DAYS, PROMISING_Z = 30, -1.0
 SOURCE_DAYS = 14                                # point 5: funding booked - fees paid must be > 0 by then
 LANE_FLAT_S = 3 * DAY                           # 11b: a lane account without a position for 3 days retires
+LANE_NEVER_S = DAY                              # 11f: a lane account that never traded retires a day after start
 RETRY_S = DAY                                   # 11b: a variant that would hold nothing now may be tried a day later
 # amendment 12: scanner accounts (source "scanner"): one coin, the scanner's perp premium decides in and out
 SCAN_LABEL = "SCANNERKONTO (scannerfund, simuleret, aldrig bevis)"
@@ -403,6 +404,8 @@ def _retire_reason(db, ledger, info, now, fids):
         last = db.one("SELECT MAX(ts) FROM sim_fills WHERE exp_id=?", ledger)[0]
         if now - max(info["ts"], last or 0) >= LANE_FLAT_S:
             return "flat", f"ingen position i {LANE_FLAT_S // DAY} døgn", st
+        if last is None and now - info["ts"] >= LANE_NEVER_S:
+            return "flat", f"ingen position siden start i {LANE_NEVER_S // HOUR} timer (11f)", st
     if st["days"] >= MIN_DAYS and st["z"] is not None and st["z"] <= Z_RETIRE:
         return "edge", f"z = {st['z']:.2f} <= {Z_RETIRE} efter {st['days']} dage", st
     return None, None, st
