@@ -1054,12 +1054,15 @@ def reviews(db):
 
 def enqueue_reviews(db, now=None, actor="strategy-1", fids=None):
     """Point 3: queue reviews for the best unreviewed candidates, at most REVIEW_QUEUE_MAX waiting or running, and
-    (amendment 11e) only while a lane slot is free: with every slot taken a review cannot lead to a start."""
+    (amendment 11e) only while a lane slot is free: with every slot taken a review cannot lead to a start; (11g) nor
+    for a function that already has PER_FUNCTION active accounts."""
     now = now or time.time()
     jobs.init(db)
     info = started(db)
-    if sum(1 for a in active(db) if is_lane(info[a])) >= SLOTS:
+    act = [a for a in active(db) if is_lane(info[a])]
+    if len(act) >= SLOTS:
         return 0
+    busy = collections.Counter((info[a]["family"], info[a]["function"]) for a in act)       # 11g
     waiting = db.one("SELECT COUNT(*) FROM jobs WHERE kind='lane_review' AND status IN ('queued','running','blocked')")[0]
     if waiting >= REVIEW_QUEUE_MAX:
         return 0
@@ -1067,7 +1070,7 @@ def enqueue_reviews(db, now=None, actor="strategy-1", fids=None):
     for r in candidates(db, explore.eligible(db) if fids is None else fids):
         if waiting >= REVIEW_QUEUE_MAX:
             break
-        if r["key"] in done or r["key"] in tried:
+        if r["key"] in done or r["key"] in tried or busy[(r["family"], r["function"])] >= PER_FUNCTION:
             continue
         added = jobs.enqueue(db, f"lane_review|{review_id(r['key'])}", "lane_review", None, {"key": r["key"]},
                              actor=f"system:{actor}", now=now, **REVIEW_JOB)[1]

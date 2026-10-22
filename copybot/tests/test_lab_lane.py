@@ -1050,6 +1050,20 @@ class Review(Base):
             self.assertEqual(lane.enqueue_reviews(self.db, NOW, fids=["fcarry"]), 0)
         self.assertEqual(lane.enqueue_reviews(self.db, NOW, fids=["fcarry"]), lane.REVIEW_QUEUE_MAX)   # a free slot
 
+    def test_reviews_skip_a_function_at_its_two_account_cap(self):
+        """Amendment 11g."""
+        for i in range(lane.PER_FUNCTION):
+            self.db.event("lane.started", lane.ACTOR, f"LANE_cap{i}", {"key": f"cap{i}", "family": "fcarry",
+                                                                        "function": "carry_filter", "t": int(NOW)})
+        self.publish([result(f"f{i}", sharpe=10 - i * 0.1) for i in range(4)]
+                     + [result(f"g{i}", fn="carry_floor", params={"days": 7, "q": 0.5 + i / 100}, sharpe=5 - i * 0.1)
+                        for i in range(2)], reviewed=False)
+        self.assertEqual(lane.enqueue_reviews(self.db, NOW, fids=["fcarry"]), 2)
+        ids = {r[0] for r in self.db.q("SELECT job_id FROM jobs WHERE kind='lane_review'")}
+        self.assertEqual(ids, {f"lane_review|{lane.review_id(f'g{i}')}" for i in range(2)})
+        lane.retire(self.db, "LANE_cap0", "flat", "fixture", now=NOW + 60)            # room again: its best first
+        self.assertEqual(lane.enqueue_reviews(self.db, NOW + 120, fids=["fcarry"]), 4)
+
     def test_reviews_are_queued_best_first_at_most_six(self):
         self.publish([result(f"k{i}", sharpe=10 - i * 0.5) for i in range(9)], reviewed=False)
         self.assertEqual(lane.enqueue_reviews(self.db, NOW, fids=["fcarry"]), lane.REVIEW_QUEUE_MAX)
