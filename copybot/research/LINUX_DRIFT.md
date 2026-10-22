@@ -311,9 +311,9 @@ Derfor (ingen ændring af pm_lp-koden, enheden eller indsamleren):
   skal genstarte.
 - Deploys, der ændrer de filer, undgås fra 10-31 til 11-13.
 
-### Værktøj og Obsidian-vault (tilføjet 2026-10-22, før kode)
+### Værktøj (tilføjet 2026-10-22, før kode)
 
-Brugeren bad 2026-10-22 om bedre værktøj og om en Obsidian-vault ("Du gør det der er bedst"). Intet her beslutter
+Brugeren bad 2026-10-22 om bedre værktøj ("Du gør det der er bedst"). Intet her beslutter
 noget, ændrer en gate eller rører indsamleren:
 - `python3 -m lab deploy-check [--commit SHA]`: én kommando efter et deploy, kun læsning. Dashboardet kører den
   forventede commit; endpoints `kpis lanes coverage experiments overview` svarer 200; flåde, dashboard, vagt og
@@ -324,11 +324,8 @@ noget, ændrer en gate eller rører indsamleren:
   tomt lab-modul, og alle lab-moduler kan importeres.
 - `scripts/suite.sh [LOG]`: hele testsamlingen med `nice`, timeout 2700 s og én opsummeringslinje (exitkode, antal,
   resultat, sekunder, de 15 langsomste tests, efterladte `data/ingest` eller `data/lab/hypotheses`).
-- **Obsidian-vault:** `strategy-1` skriver højst én gang i timen `data/vault/Lab/` (ikke i git): én note pr. hypotese
-  (screening, lås, måling, også negative), pr. protokolændring, pr. papirkonto, pr. eksperiment og pr. døgnrapport, med
-  links og et indeks `Copybot.md`. Kun `Lab/` skrives; andre filer i vaulten (brugerens egne noter) læses og røres
-  aldrig. Det er ikke et job, så vagtens "intet forskningsarbejde" påvirkes ikke. En fejl i vaulten stopper aldrig
-  strategy-1's øvrige arbejde. Noterne er visning; afgørelser står i registret og protokollen.
+- **Obsidian-vault: droppet samme dag (2026-10-22), før deploy.** Brugeren skrev "Jeg kommer ikke til at bruge den";
+  ubrugt kode skal ikke køre. Koden fjernes; intet blev skrevet i produktionen.
 
 ## Ekstern sundhedskontrol og S7
 
