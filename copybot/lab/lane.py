@@ -68,6 +68,9 @@ SCAN_SOURCE_S = 3 * DAY
 SCAN_FLAT_S = 2 * DAY
 SCAN_MAX_AGE_S = 60 * DAY                       # 12f: winners hold for weeks (study median 58-89 settlements)
 SCAN_HOLD_S = 12 * HOUR                         # 12c: without a booked settlement, a position may close after 12 h
+SPOT_LIST_EVERY = HOUR                          # 19: the Binance spot pair list is read at most once an hour
+_SPOT_LIST = {}                                 # 19: {"at": read at, "pairs": trading spot symbols}, memory only
+NO_SPOT = "intet spotpar på Binance (19)"
 # amendment 13: Hyperliquid funding accounts (source "hl"): long Binance spot, short Hyperliquid perp
 HL_LABEL = "HL-KONTO (Hyperliquid-funding, simuleret, aldrig bevis)"
 HL_PERP = "HL:"                                 # the perp leg's instrument prefix (paper_runner.HL_PREFIX)
@@ -322,6 +325,29 @@ def delistings(db, now, spot_only=False):
             for c in delist_coins(title):
                 out.setdefault(c, title)
     return out
+
+
+def spot_pairs(get, now):
+    """19: Binance spot symbols with status TRADING (public exchangeInfo from the market-data host, at most once an
+    hour). A failed read keeps the last list; None while no list was ever read (then nothing is skipped)."""
+    from lab import paper_runner
+    at = _SPOT_LIST.get("at")
+    if at is None or not 0 <= now - at < SPOT_LIST_EVERY:
+        _SPOT_LIST["at"] = now
+        try:
+            d = get(f"{paper_runner.SPOT_REST}/api/v3/exchangeInfo?symbolStatus=TRADING")
+            pairs = {x["symbol"] for x in d["symbols"] if x.get("status") == "TRADING"}
+            if pairs:
+                _SPOT_LIST["pairs"] = pairs
+        except Exception:                                       # noqa: BLE001 - the last list (or none) is kept
+            pass
+    return _SPOT_LIST.get("pairs")
+
+
+def _no_spot(get, now, symbol):
+    """19: True only when a spot list is known and `symbol` is not in it."""
+    pairs = spot_pairs(get, now)
+    return pairs is not None and symbol not in pairs
 
 
 def _base(coin, source):
@@ -695,6 +721,10 @@ def manage_scanner(db, now, get):
                                                   f"afnotering annonceret (16e): {gone[_base(coin, 'scanner')]}"[:200]})
             out["skipped"].append(coin)
             continue
+        if _no_spot(get, now, coin):                            # 19: before a probe is spent
+            db.event("lane.skipped", ACTOR, led, {**base, "coins": [coin], "reason": NO_SPOT})
+            out["skipped"].append(coin)
+            continue
         probes += 1
         try:
             _, settled, _, _ = paper_runner.hourly(coin, now, get)
@@ -794,6 +824,10 @@ def manage_hl(db, now, get):
         if coin in gone:                                        # 16e points 4 and 6: spot delistings only
             db.event("lane.skipped", ACTOR, led, {**base, "coins": [coin],
                                                   "reason": f"afnotering annonceret (16e): {gone[coin]}"[:200]})
+            out["skipped"].append(coin)
+            continue
+        if _no_spot(get, now, f"{coin}USDT"):                   # 19: the spot leg, before a probe is spent
+            db.event("lane.skipped", ACTOR, led, {**base, "coins": [coin], "reason": NO_SPOT})
             out["skipped"].append(coin)
             continue
         probes += 1

@@ -72,6 +72,7 @@ class Base(unittest.TestCase):
         for p in self.p:
             p.start()
         lane._CANDIDATES.clear()
+        lane._SPOT_LIST.clear()
 
     def tearDown(self):
         for p in self.p:
@@ -1137,6 +1138,72 @@ class PerEightHours(unittest.TestCase):
         self.assertFalse(lane._two_settled_low(lane.per8h(four)))           # 12i: held at the floor
         low = {t0 + k * 4 * self.H: 0.00002 for k in range(4)}
         self.assertTrue(lane._two_settled_low(lane.per8h(low)))
+
+
+
+class SpotPairs(Base):
+    """Amendment 19: scanner and HL accounts skip coins without a Binance spot pair before spending a probe."""
+    def setUp(self):
+        super().setUp()
+        scanner.LIVE.clear()
+        scanner.HL_LIVE.clear()
+
+    def scan(self, ts, fund):
+        Scanner.scan(self, ts, fund)
+
+    def with_list(self, pairs, log=None, fail=False):
+        base = hi()
+
+        def get(path):
+            if "/api/v3/exchangeInfo" in path:
+                if log is not None:
+                    log.append(path)
+                if fail:
+                    raise OSError("timed out")
+                return {"symbols": [{"symbol": s, "status": "TRADING"} for s in pairs]
+                        + [{"symbol": "HALTUSDT", "status": "BREAK"}]}
+            return base(path)
+        return get
+
+    def test_coins_without_spot_do_not_take_the_probes(self):
+        self.scan(NOW - 60, {f"C{i:02d}USDT": 0.003 - i / 10000 for i in range(6)})
+        log = []
+        get = self.with_list(["C03USDT", "C04USDT", "C05USDT", "BTCUSDT"], log)
+        out = lane.manage(self.db, NOW, get, fids=[])["scanner"]
+        self.assertEqual(out["skipped"], ["C00USDT", "C01USDT", "C02USDT"])
+        info = lane.started(self.db)
+        self.assertEqual(sorted(info[x]["coins"][0] for x in out["started"]), ["C03USDT", "C04USDT", "C05USDT"])
+        skip = [p for _, _, _, _, p in lane._events(self.db, "lane.skipped")]
+        self.assertEqual({p["reason"] for p in skip}, {lane.NO_SPOT})
+        self.assertEqual(log, ["https://data-api.binance.vision/api/v3/exchangeInfo?symbolStatus=TRADING"])
+        lane.manage(self.db, NOW + 600, get, fids=[])
+        self.assertEqual(len(log), 1)                                           # at most once an hour
+        lane.manage(self.db, NOW + HOUR + 600, get, fids=[])
+        self.assertEqual(len(log), 2)
+
+    def test_without_a_list_nothing_is_skipped_and_a_failed_read_keeps_the_last(self):
+        self.scan(NOW - 60, {"AAAUSDT": 0.003, "BBBUSDT": 0.002})
+        out = lane.manage(self.db, NOW, self.with_list([], fail=True), fids=[])["scanner"]
+        self.assertEqual(len(out["started"]), 2)                                # as before amendment 19
+        self.assertIsNone(lane.spot_pairs(None, NOW))
+        lane._SPOT_LIST.clear()
+        self.assertEqual(lane.spot_pairs(self.with_list(["AAAUSDT"]), NOW), {"AAAUSDT"})   # BREAK is not trading
+        self.assertEqual(lane.spot_pairs(self.with_list([], fail=True), NOW + 2 * HOUR), {"AAAUSDT"})
+
+    def test_hl_checks_the_spot_leg(self):
+        scanner.HL_LIVE.clear()
+        self.db.append("observations", ts=int(NOW - 60), detector="pricing_constraint/2", source="hl",
+                       instrument="hl", metric="hl_symbols_compared", value=10, threshold=None, flagged=0, payload=None)
+        for c, v in (("XMR", 0.004), ("AAA", 0.003)):                          # the highest has no spot pair
+            self.db.append("observations", ts=int(NOW - 60), detector="pricing_constraint/2", source="hl",
+                           instrument=c, metric="hl_predicted_funding", value=v, threshold=0.001, flagged=1,
+                           payload=None)
+        with mock.patch.object(paper_runner, "hl_hourly", side_effect=OSError("probe spent")) as probe:
+            out = lane.manage_hl(self.db, NOW, self.with_list(["AAAUSDT"]))
+        self.assertEqual(out["skipped"], ["XMR", "AAA"])
+        self.assertEqual(probe.call_count, 1)                                   # only AAA was probed
+        reasons = {p["coin"]: p["reason"] for _, _, _, _, p in lane._events(self.db, "lane.skipped")}
+        self.assertEqual(reasons, {"XMR": lane.NO_SPOT, "AAA": "OSError('probe spent')"})
 
 
 if __name__ == "__main__":
