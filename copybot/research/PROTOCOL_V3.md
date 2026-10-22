@@ -1931,3 +1931,23 @@ gennemgange, før en plads er fri. De 4 flade frigør først pladserne 10-23 kl.
 2. **Uændret:** startkravet (11b punkt 1, 11c), gennemgangene (11d, 15), 11e, pladserne, rækkefølgen og de øvrige
    stopregler. Scanner- og HL-konti har deres egne regler (12–13) og røres ikke.
 3. **Ærligt:** banekonti er aldrig bevis; reglen bruger pladserne på varianter, der handler nu.
+
+## Ændring 11g (2026-10-22): gennemgange køes kun for funktioner med plads — før kode
+
+**Beslutning:** Claude under brugerens mandat 2026-10-22 ("kør fuldstændig selv hele natten ... du må gøre alt for at
+komme videre"). Kun simuleret handel; ingen gate, gennemgang, tærskel, holdout eller evalueringskriterium ændres.
+Samme princip som 11e: en gennemgang, der ikke kan føre til en start, køes ikke.
+
+**Data (produktionens register 2026-10-22 20:23–20:48 UTC):** efter 11f er 4 af 6 banepladser optaget: 2
+`carry_filter` og 2 `carry_filter_weekly`, dvs. begge funktioner står på loftet "højst 2 pr. funktion" (12b), så
+`manage` springer deres kandidater over. På de 25 minutter blev 72 gennemgange færdige; 40 (56 %, 13,2 jobminutter)
+var for `carry_filter` (19) og `carry_filter_weekly` (21) — ca. 13 jobtimer pr. døgn uden mulig start, på en maskine,
+der har haft hårde nedbrud. Udforskningen tilføjer ca. 45 nye kandidater i timen, så køen tømmes ikke af sig selv.
+
+1. **Regel (tilføjes 11e):** `enqueue_reviews` springer en kandidat over, hvis dens familie og funktion allerede har
+   så mange aktive banekonti, som 12b tillader (2). Når en sådan konto stopper, køes de bedste ugennemgåede
+   kandidater for den funktion igen, som efter 11e.
+2. **Uændret:** en kandidat starter kun med en bestået gennemgang (11c); kontrollerne og tærsklerne (11d, 15, 15a);
+   rækkefølgen efter netto-Sharpe; 11b's startkrav; en konto pr. 10 min; højst 2 pr. funktion; 11e.
+3. **Ærligt:** som efter 11e kan en lavere rangeret, allerede gennemgået kandidat starte, før en bedre ugennemgået
+   for samme funktion er gennemgået; banekonti er aldrig bevis.
