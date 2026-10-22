@@ -1016,9 +1016,13 @@ def reviews(db):
 
 
 def enqueue_reviews(db, now=None, actor="strategy-1", fids=None):
-    """Point 3: queue reviews for the best unreviewed candidates, at most REVIEW_QUEUE_MAX waiting or running."""
+    """Point 3: queue reviews for the best unreviewed candidates, at most REVIEW_QUEUE_MAX waiting or running, and
+    (amendment 11e) only while a lane slot is free: with every slot taken a review cannot lead to a start."""
     now = now or time.time()
     jobs.init(db)
+    info = started(db)
+    if sum(1 for a in active(db) if is_lane(info[a])) >= SLOTS:
+        return 0
     waiting = db.one("SELECT COUNT(*) FROM jobs WHERE kind='lane_review' AND status IN ('queued','running','blocked')")[0]
     if waiting >= REVIEW_QUEUE_MAX:
         return 0

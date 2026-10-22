@@ -1030,6 +1030,12 @@ class Review(Base):
         late = {c: {t: (v if t >= cut else 0.0) for t, v in f.items()} for c, f in funding.items()}   # edge only in 2021
         self.assertFalse(explore.evaluate("fcarry", fam, "carry_filter", r["params"], bars, late)["candidate"])
 
+    def test_reviews_wait_while_every_lane_slot_is_taken(self):
+        self.publish([result(f"k{i}", sharpe=10 - i * 0.5) for i in range(9)], reviewed=False)
+        with mock.patch.object(lane, "SLOTS", 0):                             # 0 active >= 0 slots: all taken
+            self.assertEqual(lane.enqueue_reviews(self.db, NOW, fids=["fcarry"]), 0)
+        self.assertEqual(lane.enqueue_reviews(self.db, NOW, fids=["fcarry"]), lane.REVIEW_QUEUE_MAX)   # a free slot
+
     def test_reviews_are_queued_best_first_at_most_six(self):
         self.publish([result(f"k{i}", sharpe=10 - i * 0.5) for i in range(9)], reviewed=False)
         self.assertEqual(lane.enqueue_reviews(self.db, NOW, fids=["fcarry"]), lane.REVIEW_QUEUE_MAX)
