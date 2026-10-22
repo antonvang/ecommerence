@@ -374,6 +374,38 @@ def run(db, get=_get, now=None, cm_get=_cm_get, cache=None, cm_cache=None):
     return {"experiments": len(out), "results": out, "simulated": True, "lane": managed}
 
 
+def _cm_bundle(tpl, market, now, cm_get, cm_cache):
+    """The template's live CoinMetrics inputs ({"cm": ...}, one fetch per hour and key), or None if it needs none."""
+    if "cm" not in (tpl.get("needs") or []):
+        return None
+    key, hour_now = (tuple(tpl["cm_metrics"]), tuple(sorted(market))), int(now) // HOUR * HOUR
+    hit = cm_cache.get(key) if cm_cache is not None else None
+    if hit and hit[0] == hour_now:
+        return {"cm": hit[1]}
+    cmv = fetch_cm_live(tpl["cm_metrics"], list(market), now, cm_get)
+    if cm_cache is not None:
+        cm_cache[key] = (hour_now, cmv)
+    return {"cm": cmv}
+
+
+def _invalid(market, now):
+    """The first symbol whose closed bars are stale or whose book is crossed or empty, else None."""
+    for s, (bars, _, book, _) in market.items():
+        if not bars or now - (bars[-1][0] + HOUR) > MAX_BAR_AGE or book.crossed():
+            return s
+    return None
+
+
+def _data_probe(spec, tpl, now, get, cache, books, cm_get, cm_cache):
+    """Amendment 18: the same full fetch and checks a pass trades on, for a ledger paused by data_fetch; raises on any
+    failure and never orders."""
+    market = {s: fetch_market(s, now, get, cache, books, {}) for s in catalogue.universe(spec["template"])}
+    _cm_bundle(tpl, market, now, cm_get, cm_cache)
+    bad = _invalid(market, now)
+    if bad:
+        raise ValueError(f"{bad}: stale bars or invalid book")
+
+
 def run_one(db, eid, get, now, ledger=None, cm_get=_cm_get, cache=None, cm_cache=None, books=None):
     """Trade experiment `eid`'s frozen strategy on the simulated ledger `ledger` (default: the experiment itself)."""
     L = ledger or eid
@@ -393,7 +425,8 @@ def run_one(db, eid, get, now, ledger=None, cm_get=_cm_get, cache=None, cm_cache
     eng.start(L, CAPITAL, cost_model(), actor="agent:paper-1")
     if risk.fail_closed():
         return {"status": "fail_closed"}
-    if risk.paused(L):
+    probe = lambda: _data_probe(spec, tpl, now, get, cache, books, cm_get, cm_cache)    # noqa: E731 (amendment 18)
+    if risk.paused(L) and not risk.auto_resume(L, probe):
         return mark_only(db, L, get, now, books, cache)   # amendment 4 section 7: kept and marked, nothing new
     try:
         variant = pipeline.frozen_variant(db, eid)                    # fail closed: no orders on unverified rules
@@ -410,26 +443,16 @@ def run_one(db, eid, get, now, ledger=None, cm_get=_cm_get, cache=None, cm_cache
     except Exception as e:
         risk.pause(L, "data_fetch", None, None, f"public market data fetch failed: {e!r}"[:300], eng.cancel_entries)
         return {"status": "paused", "reason": "data fetch failed"}
-    bundle = None
-    if "cm" in (tpl.get("needs") or []):
-        try:
-            key, hour_now = (tuple(tpl["cm_metrics"]), tuple(sorted(market))), int(now) // HOUR * HOUR
-            hit = cm_cache.get(key) if cm_cache is not None else None
-            if hit and hit[0] == hour_now:
-                cmv = hit[1]
-            else:
-                cmv = fetch_cm_live(tpl["cm_metrics"], list(market), now, cm_get)
-                if cm_cache is not None:
-                    cm_cache[key] = (hour_now, cmv)
-            bundle = {"cm": cmv}
-        except Exception as e:
-            risk.pause(L, "data_fetch", None, None, f"CoinMetrics fetch failed: {e!r}"[:300], eng.cancel_entries)
-            return {"status": "paused", "reason": "CoinMetrics fetch failed"}
-    for s, (bars, _, book, _) in market.items():
-        if not bars or now - (bars[-1][0] + HOUR) > MAX_BAR_AGE or book.crossed():
+    try:
+        bundle = _cm_bundle(tpl, market, now, cm_get, cm_cache)
+    except Exception as e:
+        risk.pause(L, "data_fetch", None, None, f"CoinMetrics fetch failed: {e!r}"[:300], eng.cancel_entries)
+        return {"status": "paused", "reason": "CoinMetrics fetch failed"}
+    for s, m in market.items():
+        if _invalid({s: m}, now):
             risk.pause(L, "data_stale", None, MAX_BAR_AGE, f"{s}: stale bars or invalid book", eng.cancel_entries)
             return {"status": "paused", "reason": f"{s} data stale or invalid"}
-        risk.observe_book(L, book)
+        risk.observe_book(L, m[2])
     fetch_more = _cached_funding(get, now, cache)       # a held symbol outside the universe (none today)
     funded = book_funding(db, eng, L, now, lambda syms: {**fetch_more([s for s in syms if s not in market]),
                                                          **{s: (market[s][1], opens[s]) for s in syms if s in market}})

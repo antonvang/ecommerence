@@ -19,6 +19,7 @@ DEFAULTS = {"consecutive_losses": 2, "max_drawdown": 0.10, "data_max_age_s": 60,
             "spread_strikes": 3, "spread_window_s": 86400}
 ACTOR = "system:risk"
 SIMULATED = ("SHADOW_", "FWD_", "LANE_")          # amendments 3, 7 and 11: simulated ledgers, never approved trading
+AUTO_RULE, AUTO_RUN_S, AUTO_MAX, AUTO_WINDOW_S = "data_fetch", 50 * 60, 2, 86400    # amendment 18
 
 
 def rules_for(db, exp_id):
@@ -228,6 +229,42 @@ class Risk:
                 raise lifecycle.LifecycleError(f"drawdown {dd['drawdown']:.2%} is still at or above {lim:.0%} of the "
                                                "running peak; resume once it is below")
             self._event(ledger, "manual_resume", None, None, "CLEAR", reason.strip()[:300], actor)
+        return True
+
+    def auto_resume(self, ledger, probe):
+        """Amendment 18: a simulated ledger paused by `data_fetch` probes the same full fetch each pass (a PROBE risk
+        event, value 1 ok / 0 failed) and resumes itself (CLEAR auto_resume) once the current probe works and an unbroken
+        run of working probes since the pause began AUTO_RUN_S ago. Not at the drawdown limit, at most AUTO_MAX per
+        AUTO_WINDOW_S; every other pause rule stays human-only. probe() raises on any failure. Returns True if resumed."""
+        if not ledger.startswith(SIMULATED) or not self.paused(ledger):
+            return False
+        p = self._last(ledger, ("PAUSE",))
+        now = self.now()
+        if p["rule"] != AUTO_RULE or self.db.one(
+                "SELECT COUNT(*) FROM risk_events WHERE exp_id=? AND action='CLEAR' AND rule='auto_resume' AND ts>?",
+                ledger, int(now - AUTO_WINDOW_S))[0] >= AUTO_MAX:
+            return False
+        try:
+            probe()
+            ok, detail = True, "full fetch and checks passed"
+        except Exception as e:
+            ok, detail = False, f"{e!r}"[:300]
+        with self.db.tx():                             # BEGIN IMMEDIATE: one CLEAR, and only of the pause just read
+            if self._last(ledger, ("PAUSE", "CLEAR"))["id"] != p["id"]:
+                return False
+            first = None
+            for r in self.db.q("SELECT ts, value FROM risk_events WHERE exp_id=? AND action='PROBE' AND id>? ORDER BY id",
+                               ledger, p["id"]):
+                first = (first or r["ts"]) if r["value"] == 1 else None
+            dd = self.db.one("SELECT drawdown FROM sim_equity WHERE exp_id=? ORDER BY id DESC LIMIT 1", ledger)
+            lim = rules_for(self.db, ledger)["max_drawdown"]
+            if ok and dd and dd["drawdown"] >= lim:
+                ok, detail = False, f"drawdown {dd['drawdown']:.2%} is at or above {lim:.0%}"
+            if not ok or first is None or now - first < AUTO_RUN_S:
+                self._event(ledger, AUTO_RULE, 1 if ok else 0, AUTO_RUN_S, "PROBE", detail)
+                return False
+            self._event(ledger, "auto_resume", now - first, AUTO_RUN_S, "CLEAR",
+                        f"amendment 18: data worked in every probe for {(now - first) / 60:.0f} min")
         return True
 
     def after_trade_closed(self, exp_id, trades, cancel_open=None):

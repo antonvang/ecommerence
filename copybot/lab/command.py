@@ -16,7 +16,7 @@ from lab import control, jobs, lifecycle, mission, registry
 from lab.db import HERE
 from lab.engine import data as mdata
 from lab.gates import s7_gate
-from lab.risk import Risk
+from lab.risk import AUTO_RULE, Risk
 
 PIPE = ("DISCOVERED", "QUEUED", "RUNNING", "COST_CHECK", "VALIDATION", "PAPER_ELIGIBLE", "PAPER_TRADING", "ACCEPTED",
         "REJECTED", "PAUSED")
@@ -754,8 +754,9 @@ def _pause_info(rk, eid):
         return None
     r = rk._last(eid, ("PAUSE",))
     sim = eid.startswith(("SHADOW_", "FWD_", "LANE_"))
+    auto = " or by itself once data has worked for an hour (amendment 18)" if sim and r["rule"] == AUTO_RULE else ""
     return {"rule": r["rule"], "detail": r["detail"], "ts": r["ts"],
-            "resume": f'python3 -m lab sim-resume {eid} --reason "..." (typed in a terminal)' if sim else
+            "resume": f'python3 -m lab sim-resume {eid} --reason "..." (typed in a terminal){auto}' if sim else
             "revalidation and a human approval (amendment 4)"}
 
 

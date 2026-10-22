@@ -841,6 +841,39 @@ def legs(info, coin):
     return coin, coin + SPOT
 
 
+def _fetch(info, now, get, cache):
+    """Each coin's (closed 1h bars or None, settled funding) and its 1h opens; raises if any fetch fails."""
+    from lab import paper_runner as pr
+    market, opens = {}, {}
+    for s in info["coins"]:
+        if is_hl(info):                                  # amendment 13: Hyperliquid funding and 1h opens
+            funding, op = pr.hl_hourly(s, now)
+            market[s], opens[s] = (None, funding), op
+        else:
+            bars, funding, _, op = pr.hourly(s, now, get, cache)
+            market[s], opens[s] = (bars, funding), op
+    return market, opens
+
+
+def _stale(market, opens, now):
+    """The first coin whose last closed bar (or Hyperliquid open) is older than MAX_BAR_AGE, else None."""
+    from lab import paper_runner as pr
+    for s, (bars, _) in market.items():
+        last = (max(opens[s]) if opens[s] else None) if bars is None else (bars[-1][0] + HOUR if bars else None)
+        if last is None or now - last > pr.MAX_BAR_AGE:
+            return s
+    return None
+
+
+def _data_probe(info, now, get, cache):
+    """Amendment 18: the same fetch and check a pass trades on, for an account paused by data_fetch; raises on any
+    failure and never orders."""
+    market, opens = _fetch(info, now, get, cache)
+    bad = _stale(market, opens, now)
+    if bad:
+        raise ValueError(f"{bad}: stale bars")
+
+
 def run_one(db, ledger, get, now, cache=None, books=None):
     from lab import paper_runner as pr
     info = started(db)[ledger]
@@ -848,26 +881,20 @@ def run_one(db, ledger, get, now, cache=None, books=None):
     eng.start(ledger, CAPITAL, COSTS, actor=ACTOR)
     if risk.fail_closed():
         return {"status": "fail_closed"}
-    if risk.paused(ledger):
+    if risk.paused(ledger) and not risk.auto_resume(ledger, lambda: _data_probe(info, now, get, cache)):
         return pr.mark_only(db, ledger, get, now, books, cache)
-    hour, market, opens, price = int(now) // HOUR * HOUR, {}, {}, {}
+    hour, price = int(now) // HOUR * HOUR, {}
     try:
-        for s in info["coins"]:
-            if is_hl(info):                              # amendment 13: Hyperliquid funding and 1h opens
-                funding, op = pr.hl_hourly(s, now)
-                market[s], opens[s] = (None, funding), op
-            else:
-                bars, funding, _, op = pr.hourly(s, now, get, cache)
-                market[s], opens[s] = (bars, funding), op
+        market, opens = _fetch(info, now, get, cache)
     except Exception as e:
         risk.pause(ledger, "data_fetch", None, None, f"public market data fetch failed: {e!r}"[:300],
                    eng.cancel_entries)
         return {"status": "paused", "reason": "data fetch failed"}
+    bad = _stale(market, opens, now)
+    if bad:
+        risk.pause(ledger, "data_stale", None, pr.MAX_BAR_AGE, f"{bad}: stale bars", eng.cancel_entries)
+        return {"status": "paused", "reason": f"{bad} data stale"}
     for s, (bars, _) in market.items():
-        last = (max(opens[s]) if opens[s] else None) if bars is None else (bars[-1][0] + HOUR if bars else None)
-        if last is None or now - last > pr.MAX_BAR_AGE:
-            risk.pause(ledger, "data_stale", None, pr.MAX_BAR_AGE, f"{s}: stale bars", eng.cancel_entries)
-            return {"status": "paused", "reason": f"{s} data stale"}
         price[s] = opens[s][max(opens[s])] if bars is None else bars[-1][2]
     perp = {legs(info, s)[0]: s for s in market}
     funded = pr.book_funding(db, eng, ledger, now, lambda syms: {
