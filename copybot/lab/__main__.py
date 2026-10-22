@@ -14,6 +14,7 @@
   python3 -m lab supervise [--duration S] [--worker module:factory ...] [--no-default]   (manual start only)
   python3 -m lab health                                                     (heartbeats, FAIL_CLOSED, pauses, warm-up)
   python3 -m lab deploy-check [--commit SHA]                                (read-only: did the deploy land?)
+  python3 -m lab report-verify [--day YYYY-MM-DD]                          (read-only: recompute the daily report)
   python3 -m lab web [--port 8770] [--duration S]                           (dashboard on 127.0.0.1; manual start only)
   python3 -m lab gate [--require]                                           (S7 automation gate: 7 days of clean operation)
   python3 -m lab fleet [--duration S]                                       (research agent fleet under the supervisor; manual)
@@ -271,6 +272,7 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
     wt.add_argument("--interval", type=float, default=30.0); wt.add_argument("--port", type=int, default=8770)
     pf = sub.add_parser("preflight"); pf.add_argument("--port", type=int, default=8770)
     dc = sub.add_parser("deploy-check"); dc.add_argument("--port", type=int, default=8770); dc.add_argument("--commit")
+    rv = sub.add_parser("report-verify"); rv.add_argument("--day", help="UTC day (default: the latest report)")
     pf.add_argument("--dashboard-running", action="store_true", help="only check whether the dashboard answers")
     wb = sub.add_parser("web"); wb.add_argument("--port", type=int, default=8770); wb.add_argument("--duration", type=float)
     args = ap.parse_args(argv)
@@ -286,6 +288,9 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
     if args.cmd == "deploy-check":    # read-only: did the deploy land? (research/LINUX_DRIFT.md 2026-10-22)
         from lab import deploycheck
         return deploycheck.main(port=args.port, commit=args.commit, out=out)
+    if args.cmd == "report-verify":   # read-only: recompute the daily lane report (research/LINUX_DRIFT.md 2026-10-22)
+        from lab import reportcheck
+        return reportcheck.main(db_path, args.day, out)
     if args.cmd == "web":
         from lab import web
         return web.run(args.db or db_path, args.port, args.duration, out)
