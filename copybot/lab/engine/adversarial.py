@@ -271,18 +271,25 @@ def placebo_returns(per_symbol_bars, per_symbol_pos, funding, costs, n=60, min_d
             per.setdefault(period(bars[i][0]), []).append(i)
         return {p: ix for p, ix in per.items() if len(ix) == 24}
 
+    def prepare(bars):
+        """What every draw of one symbol shares (computed once, not per draw): its complete periods, each bar's
+        period and place in it, and the bar returns."""
+        per = core(bars)
+        at = {i: x for ix in per.values() for x, i in enumerate(ix)}
+        pb = [period(b[0]) for b in bars]
+        g = {i: (bars[i][1] / bars[i - 1][2], bars[i][2] / bars[i - 1][2]) for i in range(1, len(bars))}
+        return per, sorted(per), at, pb, g
+
     def shifted(s, bars, k):
         f = funding.get(s, {})
-        per = core(bars)
-        ps = sorted(per)
+        per, ps, at, pb, g = prep[s]
         if len(ps) < 2 or not k:
             return bars, f
         src = {p: ps[(j + k) % len(ps)] for j, p in enumerate(ps)}
-        g = {i: (bars[i][1] / bars[i - 1][2], bars[i][2] / bars[i - 1][2]) for i in range(1, len(bars))}
         nb, c = [bars[0]], bars[0][2]
         for i in range(1, len(bars)):
-            p = period(bars[i][0])
-            j = per[src[p]][per[p].index(i)] if p in src else i
+            p = pb[i]
+            j = per[src[p]][at[i]] if p in src else i
             go, gc = g[j]
             nb.append((bars[i][0], c * go, c * gc))
             c *= gc
@@ -294,8 +301,9 @@ def placebo_returns(per_symbol_bars, per_symbol_pos, funding, costs, n=60, min_d
 
     if not per_symbol_bars:
         return {"actual": None, "p": None, "n": n}
+    prep = {s: prepare(b) for s, b in per_symbol_bars.items()}
     base, sims = _period_sharpe(per_symbol_bars, per_symbol_pos, funding, costs, offset), []
-    periods = min(len(core(b)) for b in per_symbol_bars.values())
+    periods = min(len(prep[s][0]) for s in per_symbol_bars)
     for _ in range(n):
         k = rng.randrange(min_days, periods - min_days) if periods > 2 * min_days else 0
         bb, ff = {}, {}
@@ -311,12 +319,24 @@ def placebo_returns(per_symbol_bars, per_symbol_pos, funding, costs, n=60, min_d
 
 
 def _period_sharpe(bars_by, pos_by, fund_by, costs, offset=3600):
-    """Annualised net Sharpe over decision periods (UTC days shifted by `offset`)."""
-    rows = backtest.portfolio({s: backtest.apply_costs(backtest.gross(b, pos_by[s]), fund_by.get(s, {}), costs)
-                               for s, b in bars_by.items()})
+    """Annualised net Sharpe over decision periods (UTC days shifted by `offset`). Only the net column of
+    backtest.portfolio(apply_costs(gross(...))) is needed, so it is computed alone, with the same float operations in
+    the same order (identical results; tests/test_lab_adversarial_speed.py)."""
+    tf, hs, sl = costs["taker_fee"], costs["half_spread"], costs["slippage"]
+    acc, cnt = {}, {}
+    for s, b in bars_by.items():
+        pos, f, prev = pos_by[s], fund_by.get(s, {}), 0.0
+        for i in range(1, len(b)):
+            p, ts = pos[i], b[i][0]
+            g = p * (b[i][2] / b[i - 1][2] - 1)
+            tov = abs(p - prev)
+            prev = p
+            net = g - tov * tf * 1.0 - tov * hs * 1.0 - tov * sl * 1.0 - p * f.get(ts, 0.0)
+            acc[ts] = acc.get(ts, 0.0) + net
+            cnt[ts] = cnt.get(ts, 0) + 1
     per = {}
-    for r in rows:
-        per[(r[0] - offset) // 86400] = per.get((r[0] - offset) // 86400, 0.0) + r[7]
+    for ts in sorted(acc):
+        per[(ts - offset) // 86400] = per.get((ts - offset) // 86400, 0.0) + acc[ts] / cnt[ts]
     x = [per[k] for k in sorted(per)]
     if len(x) < 2:
         return None
