@@ -1870,3 +1870,17 @@ LÅS-17 margin|far_7d|m17c 3944d2b5500f505a82f96d57e558777750b4682c43fef139927e2
 LÅS-17 margin|sar_1d|m17c ec4dc33042e28d3daf520e282fb34f984ffa9c7d8f43160f22da226b26be1411
 
 5. En papirkonto, der udnytter et PASS, kræver sin egen daterede ændring med omkostninger og stopregler.
+
+## Ændring 11e (2026-10-22): banegennemgange køes kun, mens en baneplads er fri — før kode
+
+**Beslutning:** Claude under brugerens mandat (datadrevet; maskinens kapacitet). Ingen kontrol, tærskel, rækkefølge
+eller startregel ændres.
+
+1. **Data** (registret, 2026-10-21 17:00 til 2026-10-22 15:00 UTC): 1108 gennemgange (job `lane_review`), ca. 12,5
+   timers beregning på de adversarielle agenter, og 0 nye banekonti, fordi alle 6 pladser var optaget. Af 1390
+   gennemgange i alt havde 1253 bestået, så der lå altid beståede, ikke-prøvede kandidater klar til en fri plads.
+2. **Regel:** `enqueue_reviews` køer kun nye gennemgange, mens der er færre end 6 aktive banekonti (ændring 12b's
+   pladser; scanner- og HL-konti tæller ikke og gennemgås ikke). Når en plads bliver fri, køes de bedste
+   ugennemgåede kandidater igen, højst 6 ad gangen, som før (11c punkt 3).
+3. **Uændret:** en kandidat starter kun med en bestået gennemgang (11c); kontrollerne og tærsklerne (11d, 15, 15a);
+   rækkefølgen efter netto-Sharpe; en konto pr. 10 min; højst 2 pr. funktion. Gennemgange er stadig aldrig bevis.
