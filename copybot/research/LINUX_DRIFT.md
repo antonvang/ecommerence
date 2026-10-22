@@ -326,6 +326,14 @@ noget, ændrer en gate eller rører indsamleren:
   resultat, sekunder, de 15 langsomste tests, efterladte `data/ingest` eller `data/lab/hypotheses`).
 - **Obsidian-vault: droppet samme dag (2026-10-22), før deploy.** Brugeren skrev "Jeg kommer ikke til at bruge den";
   ubrugt kode skal ikke køre. Koden fjernes; intet blev skrevet i produktionen.
+- `python3 -m lab report-verify [--day YYYY-MM-DD]` (tilføjet 2026-10-22 kl. ca. 22:40, før kode; brugeren bad om, at
+  døgnrapporten kan reproduceres uafhængigt, og at afvigelser vises tydeligt). Kun læsning, egen kode (ren SQL, ikke
+  `lane.report`): artefaktets SHA-256 er den, `research.lane_report` registrerede; kontiene er præcis dem, der var
+  startet før døgnets slut og ikke stoppet før dets start; for hver konto genberegnes værdi (sidste mærkning før
+  døgnets slut, ellers startkapitalen fra `lane.started`), netto, funding, gebyrer, største fald og status; kontantsaldoen
+  i sidste mærkning genskabes fra startkapital + handlernes pengestrømme − gebyrer + funding; `net_total` er summen.
+  Hver kontrol er en linje `[OK ]`/`[NO ]` med begge tal, og kommandoen slutter med `REPORT OK` eller
+  `REPORT MISMATCH` (exitkode 1). Uden `--day` kontrolleres den seneste rapport.
 
 ### Før pm_lp-holdouten: watchdog og strøm (tjekket 2026-10-22)
 
