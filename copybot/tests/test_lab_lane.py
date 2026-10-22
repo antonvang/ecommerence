@@ -326,6 +326,20 @@ class Retire(Base):
         r = lane.retired(self.db)[led]
         self.assertEqual((r["rule"], r["detail"]), ("flat", "ingen position siden start i 24 timer (11f)"))
 
+    def test_a_variant_that_holds_nothing_reads_no_book(self):
+        """Amendment 11h: 11b is checked on the hourly data before any book is read."""
+        self.publish([result()])
+        log = []
+        out = lane.manage(self.db, NOW, market(rate=0.0, log=log), fids=["fcarry"])
+        self.assertEqual((out["started"], out["skipped"]), (None, ["fcarry.carry_filter|a"]))
+        self.assertFalse([u for u in log if "depth" in u], log)
+        skip = [p for _, _, _, _, p in lane._events(self.db, "lane.skipped")][-1]
+        self.assertEqual((skip["reason"], skip["retry"], skip["books_read"]), ("would hold nothing now (11b)", True,
+                                                                                False))
+        log.clear()
+        self.assertIsNotNone(lane.manage(self.db, NOW + DAY, market(log=log), fids=["fcarry"])["started"])
+        self.assertTrue([u for u in log if "depth" in u])                             # holds: the books are read
+
     def test_a_variant_that_would_hold_nothing_now_is_skipped_and_retried_a_day_later(self):
         self.publish([result()])
         out = lane.manage(self.db, NOW, market(rate=0.0), fids=["fcarry"])

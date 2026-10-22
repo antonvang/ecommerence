@@ -433,16 +433,24 @@ def _probe(r, fam, get, now):
     return ok, dropped
 
 
-def _would_hold(r, coins, get, now):
+def _would_hold(r, coins, get, now, skip_unreadable=False):
     """11b: the coins in which the variant's own function holds +1 on the live data it would trade on, or [] (also
-    when the data cannot be read)."""
+    when the data cannot be read). 11h's check before the books: a coin whose data cannot be read is left out, as
+    _probe would leave it out."""
     from lab import paper_runner as pr
     cache = pr._HOURLY if get is pr._get else None
     try:
         market = {}
         for s in coins:
-            bars, funding, _, _ = pr.hourly(s, now, get, cache)
+            try:
+                bars, funding, _, _ = pr.hourly(s, now, get, cache)
+            except Exception:
+                if not skip_unreadable:
+                    raise
+                continue
             market[s] = (bars, funding)
+        if not market:
+            return []
         want = _signal({"family": r["family"], "function": r["function"], "params": r["params"]}, market)
     except Exception:
         return []
@@ -451,10 +459,16 @@ def _would_hold(r, coins, get, now):
 
 def _start(db, r, get, now):
     led, fam = ledger_id(r["key"]), families.load(r["family"])
-    coins, dropped = _probe(r, fam, get, now)
     base = {k: r.get(k) for k in ("key", "family", "function", "params", "net_sharpe_ann", "artifact",
-                                  "artifact_sha256", "evaluated_coins")} | {"basket": r.get("coins"),
-                                                                            "dropped": dropped}
+                                  "artifact_sha256", "evaluated_coins")} | {"basket": r.get("coins")}
+    basket = list(r.get("evaluated_coins") or r.get("coins") or explore.universe(fam))   # the coins _probe reads
+    if not _would_hold(r, basket, get, now, skip_unreadable=True):  # 11h: before any book is read
+        db.event("lane.skipped", ACTOR, led, {**base, "coins": basket, "dropped": [], "books_read": False,
+                                              "reason": "would hold nothing now (11b)", "retry": True, "t": int(now),
+                                              "simulated": True})
+        return None
+    coins, dropped = _probe(r, fam, get, now)
+    base["dropped"] = dropped
     if len(coins) < MIN_COINS:
         db.event("lane.skipped", ACTOR, led, {**base, "coins": coins, "reason": f"{len(coins)} coins with both live "
                                               f"books, fewer than {MIN_COINS}", "simulated": True})
