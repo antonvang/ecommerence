@@ -296,6 +296,21 @@ Vagten ser:
 - Vagten ændrer aldrig databasernes indhold. At åbne `lab.db` (WAL) kan dog oprette eller opdatere filerne
   `lab.db-wal` og `lab.db-shm`.
 
+### Indsamlerens genstart afhænger af lab-koden (tilføjet 2026-10-22, før kode)
+
+En gennemgang 2026-10-22 viste: `research/pm_lp.py` (`collect()`) importerer `lab.supervisor`, som importerer
+`lab.legacy`, `lifecycle`, `ops`, `db` og `risk`, fra samme checkout som lab-deploys trækker ind i. Den kørende
+indsamler påvirkes ikke af et deploy, men brækker et deploy de importer (eller efterlader et nedbrud filerne på 0 bytes,
+som 2026-10-21), fejler hver genstart, som systemd laver hvert 60. sekund, og der samles intet ind.
+
+Derfor (ingen ændring af pm_lp-koden, enheden eller indsamleren):
+- `lab preflight` (START_LAB.sh) tjekker ved hver start, at ingen af indsamlerens filer (`lab/supervisor.py`,
+  `lab/legacy.py`, `lab/lifecycle.py`, `lab/ops.py`, `lab/db.py`, `lab/risk.py`, `research/pm_lp.py`,
+  `START_PM_LP.sh`) er tomme, og at `import lab.supervisor, research.pm_lp` lykkes i en ny Python-proces. Fejler det,
+  starter labbet ikke, og den, der deployede, ser det med det samme og ruller tilbage, før indsamleren næste gang
+  skal genstarte.
+- Deploys, der ændrer de filer, undgås fra 10-31 til 11-13.
+
 ## Ekstern sundhedskontrol og S7
 
 - **Er den nødvendig?**
