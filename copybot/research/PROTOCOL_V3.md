@@ -1846,3 +1846,27 @@ periode ændres). Brugerens arbejdspakke 2026-10-22 bad om nye hypoteser fra eks
    staking (titlerne er mest kampagner; reglerne fandt mønter i under halvdelen). En ny type kræver sin egen ændring.
 5. **Forbehold, nævnt før screening:** pipelinen har nu 117 kandidater (108 + 9); reglerne er skrevet efter at have
    læst explore0-, train3- og validation3-titler (kun titler og antal, ingen priser, funding eller udfald).
+
+## Ændring 17d (2026-10-22): låsning af de to SCREEN_PASS under m17c — `margin|far_7d|m17c` og `margin|sar_1d|m17c` — før data
+
+**Beslutning:** Claude under brugerens mandat, efter ændring 17 punkt 7 og ændring 17c. Ingen kode ændres.
+
+1. **Screening** (explore0, hændelser `research.hypothesis_screen`, 2026-10-22; alle 9 margin-kandidater under m17c er
+   screenet: 2 PASS, 7 FAIL, ingen gentaget):
+   - `margin|far_7d|m17c`: perp-kursen (mod BTCUSDT) 7 døgn fra første perp-pris efter en margin-meddelelse: n 93,
+     gennemsnit −7,4 %, median −8,9 %, 28 % positive, p 0,0044; 2020 −15,5 % (36), 2021 −2,3 % (57); placebo
+     (t − 30 d) +0,8 %, p 0,71 (n 63). 212 af 318 begivenheder havde ingen perp-pris inden for 72 timer.
+   - `margin|sar_1d|m17c`: spotkursen (mod BTCUSDT spot) 1 døgn fra første spotpris: n 287, gennemsnit −2,0 %,
+     median −2,7 %, 37 % positive, p 0,0012; 2020 −1,6 % (129), 2021 −2,3 % (158); placebo −0,3 %, p 0,70 (n 198).
+2. **Kendte forbehold, nævnt før målingen:** valgt blandt 117 kandidater (heraf 9 under m17c); begge bygger på de
+   samme margin-meddelelser og er derfor ikke uafhængige; `far_7d` hviler mest på 2020 (2021 er svag); mønt-reglerne
+   (17c) blev skrevet efter at have læst titler og antal i train3 og validation3, men ingen priser, funding eller
+   udfald derfra. Et PASS her er en måling, ikke en handelsregel.
+3. **Ingen 2022–2023-priser er læst** for margin-begivenheder af pipelinen eller af andre målinger.
+4. **Låse** (ensidet, retning negativ; k = låsens nummer i filen, alpha_k = 0,05 · 2^−k: `far_7d` k = 2, alpha 0,0125;
+   `sar_1d` k = 3, alpha 0,00625):
+
+LÅS-17 margin|far_7d|m17c 3944d2b5500f505a82f96d57e558777750b4682c43fef139927e2f12176a0f05
+LÅS-17 margin|sar_1d|m17c ec4dc33042e28d3daf520e282fb34f984ffa9c7d8f43160f22da226b26be1411
+
+5. En papirkonto, der udnytter et PASS, kræver sin egen daterede ændring med omkostninger og stopregler.

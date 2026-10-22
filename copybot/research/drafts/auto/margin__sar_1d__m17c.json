@@ -1,0 +1,39 @@
+{
+ "baseline": "0: ingen ændring (afkast er fratrukket BTCUSDT; de andre måles mod (t - 7 d, t])",
+ "claim": "`sar_1d` efter Binance-meddelelser af typen `margin` er lavere end 0",
+ "costs": "afkast (ar_, far_, sar_): 0,46 % rundtur (F1); andre udfald handles ikke",
+ "criterion": "train3 ensidet p < 0.05 med n >= 15; validation3 ensidet p < alpha_k med n >= 8; alpha_k = 0,05 * 2^-k (ændring 17 punkt 7)",
+ "data": "Binance' meddelelser i registret (news/1); USD-M 1 t-klines og fundingRate fra data.binance.vision",
+ "direction": -1,
+ "key": "margin|sar_1d|m17c",
+ "mechanism": "meddelelsen ændrer efterspørgsel, opmærksomhed eller afdækning i mønten (ikke undersøgt)",
+ "method": "m17c",
+ "outcome": "sar_1d",
+ "placebo": "samme mønter med t - 30 d",
+ "plan": "låses ved en dateret ændring (LÅS-17); måles derefter automatisk én gang",
+ "risks": "screeningen valgte blandt 117 kandidater; overlappende begivenheder; tynde perps",
+ "rule": "research/PROTOCOL_V3.md amendment 17c",
+ "screen": {
+  "events_sha256": "28657657655e73ca3e0fd4ed972eab6cc1130ba78077f30cc3b833645762521c",
+  "halves": {
+   "2020": [
+    129,
+    -0.016060740982924378
+   ],
+   "2021": [
+    158,
+    -0.023061157586398897
+   ]
+  },
+  "mean": -0.019914628869157736,
+  "median": -0.02652290202072791,
+  "n": 287,
+  "p": 0.00119994000299985,
+  "placebo": {
+   "mean": -0.0033661754414817495,
+   "n": 198,
+   "p": 0.7027648617569121
+  }
+ },
+ "type": "margin"
+}
