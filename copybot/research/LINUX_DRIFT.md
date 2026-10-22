@@ -327,6 +327,19 @@ noget, ændrer en gate eller rører indsamleren:
 - **Obsidian-vault: droppet samme dag (2026-10-22), før deploy.** Brugeren skrev "Jeg kommer ikke til at bruge den";
   ubrugt kode skal ikke køre. Koden fjernes; intet blev skrevet i produktionen.
 
+### Før pm_lp-holdouten: watchdog og strøm (tjekket 2026-10-22)
+
+- **Watchdog: aktiv** (brugeren 2026-10-22 17:02, med sudo). `/etc/systemd/system.conf` har `RuntimeWatchdogSec=60`,
+  `/etc/sysctl.d/90-panic.conf` har `kernel.panic = 10`. Kontrol uden sudo: `systemctl show -p RuntimeWatchdogUSec
+  -p WatchdogLastPingTimestamp` (1min og et tidspunkt under et minut gammelt) og `cat /proc/sys/kernel/panic` (10).
+  Fryser kernen, nulstiller `iTCO_wdt` maskinen efter ca. 1 minut; collectoren og labbet starter igen (vagten ikke).
+  Et frossent skrivebord med en levende kerne fanges ikke.
+- **Strøm: mangler.** HP Compaq 8200 Elite USDT, BIOS J01 v02.33: ved opstart F10 → Advanced → Power-On Options →
+  "After Power Loss" = **On** (eller "Previous State") → F10 gem. Kræver en planlagt genstart, som skal ske før
+  2026-10-31 (fra 10-31 til 11-27 må maskinen ikke genstartes). Efter genstarten: `python3 -m lab deploy-check` og
+  START_WATCH.sh for vagten.
+- **Disk:** SMART PASSED 2026-10-22 (0 omallokerede sektorer, 76 % slid tilbage, 31 °C); `smartd` overvåger den.
+
 ## Ekstern sundhedskontrol og S7
 
 - **Er den nødvendig?**

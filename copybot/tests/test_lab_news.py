@@ -59,6 +59,19 @@ class Base(unittest.TestCase):
         return news.items(self.db, limit=1000)
 
 
+class Output(Base):
+    def test_stored_items_count_as_news_watch_output(self):
+        from lab import command
+        n = news.run(self.db, self.get(), NOW)
+        rows = self.db.one("SELECT COUNT(*) FROM observations WHERE metric='news_item'")[0]
+        self.assertGreater(rows, 0, n)
+        self.db.con.execute("INSERT INTO heartbeats(worker, ts, pid, ok, detail, status, stale_after) "
+                            "VALUES('news-watch', ?, 1, 1, '', 'idle', 1800)", (NOW,))
+        a = next(x for x in command.agents(self.db, now=NOW + 1)["agents"] if x["agent"] == "news-watch")
+        self.assertEqual(a["measurements_24h"], rows)
+        self.assertGreaterEqual(a["output_24h"], rows)
+
+
 class Scanner(Base):
     def test_items_are_stored_once_with_point_in_time_fields(self):
         r = news.run(self.db, self.get(), now=NOW)

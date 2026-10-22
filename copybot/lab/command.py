@@ -136,7 +136,8 @@ def agents(db, now=None):
 
 
 AGENT_ACTORS = {"discovery-scanner": ("system:scanner",), "paper-1": ("system:paper",), "risk-1": ("system:risk",)}
-MEASURES = {"premium-watch": "hl_symbols_compared"}   # 12a/13: one row per minute measurement (only it writes this)
+MEASURES = {"premium-watch": "hl_symbols_compared",   # 12a/13: one row per minute measurement (only it writes this)
+            "news-watch": "news_item"}             # 16: each new announcement or article is one row, no event
 NOT_OUTPUT = ("job.started", "job.retry", "job.failed", "job.timeout", "job.interrupted", "agent.error",
               "agent.recovered", "worker.error", "paper.error", "paper.refused", "paper.signal_while_paused",
               "paper.not_authorized", "paper.blocked", "paper.unsupported", "data.accessed",
