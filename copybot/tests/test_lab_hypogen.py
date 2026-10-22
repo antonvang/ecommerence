@@ -154,6 +154,84 @@ class FirstPrice(Base):
         self.assertTrue(hypogen._url("NEWUSDT", "spot", 2020, 6).startswith(data.SPOT_BASE))
 
 
+class MarginTitles(Base):
+    """Amendment 17c: margin coins are read from the title by fixed rules (method m17c), only for the margin
+    candidates m17 screened UNTESTABLE; screening and measurement are otherwise unchanged."""
+
+    def margin(self, coin, usable):
+        it = news.item("binance", f"m{coin}{usable}", "https://www.binance.com/x",
+                       f"Cross Margin Trading for {coin} Enabled on Binance", usable - news.BACKFILL_LAG_S,
+                       "binance_news", NOW, backfill=True)
+        news.store(self.db, [it], news.BINANCE, NOW)
+
+    def test_fixed_title_rules(self):
+        cases = {
+            "Binance Adds RAD & RARE on Isolated Margin, Stablecoins Annual Interest Rate Starts at 6.20%!": {"RAD", "RARE"},
+            "Cross Margin Trading for 1INCH Enabled on Binance": {"1INCH"},
+            "DOT, ANT, CRV, BAL and YFI Enabled on Binance Margin Trading": {"DOT", "ANT", "CRV", "BAL", "YFI"},
+            "CELR/BUSD & FTM/BUSD Pairs Enabled on Isolated Margin, BUSD Annual Interest Rate Starts at 6.20%!":
+                {"CELR", "FTM"},
+            "Binance Adds CVC, FRONT, QI, RAD, TWT on Cross Margin and BIDR, T on Isolated Margin":
+                {"CVC", "FRONT", "QI", "RAD", "TWT"},
+            "Isolated Margin Trading for FET and ALGO Enabled on Binance": {"FET", "ALGO"},
+            "Binance Adds USDC & BNB on Cross Margin": set(),                     # stablecoin and context: stop list
+            "New BUSD Trading Pairs Enabled on Binance Isolated Margin": set(),
+            "Tiered Leverage Up to 10x Enabled For Isolated Margin Trading On Binance": set()}
+        for title, want in cases.items():
+            with self.subTest(title=title):
+                self.assertEqual(hypogen.coins_c(title), want)
+                if want:
+                    self.assertIn("margin", hypogen.types_of(title))
+
+    def test_m17_finds_no_margin_coin_and_m17c_does(self):
+        self.margin("FIL", T(2020, 6, 10))
+        self.announce("AAA", T(2020, 6, 10))
+        a, b = hypogen.bounds("explore0")
+        items = hypogen._items(self.db)
+        self.assertEqual(hypogen.events(items, a, b)["margin"], [])
+        c = hypogen.events(items, a, b, hypogen.M17C)
+        self.assertEqual([e["coin"] for e in c["margin"]], ["FIL"])
+        self.assertEqual(c["spot_listing"], hypogen.events(items, a, b)["spot_listing"])   # other types: unchanged
+
+    def test_candidates_only_where_m17_was_untestable(self):
+        self.margin("FIL", T(2020, 6, 10))
+        self.assertEqual(len(hypogen.candidates(self.db, NOW, fresh=True)), 108)
+        self.db.event(hypogen.EV_SCREEN, "agent:cost-1", None, {"key": "margin|ar_1d|m17", "verdict": "UNTESTABLE"})
+        self.db.event(hypogen.EV_SCREEN, "agent:cost-1", None, {"key": "margin|ar_7d|m17", "verdict": "SCREEN_FAIL"})
+        c = {x["key"]: x for x in hypogen.candidates(self.db, NOW + 1, fresh=True)}
+        self.assertEqual(len(c), 109)
+        self.assertEqual((c["margin|ar_1d|m17c"]["status"], c["margin|ar_1d|m17c"]["events"]), ("QUEUED_FOR_SCREEN", 1))
+        self.assertEqual(c["margin|ar_1d|m17c"]["rule"], hypogen.RULE_C)
+        self.assertNotIn("margin|ar_7d|m17c", c)                       # an m17 result is never screened again
+        self.assertEqual(hypogen.enqueue(self.db, NOW + 2, lock_list=[]), 1)
+        rec = {json.loads(r[0])["key"]: json.loads(r[0]) for r in self.db.q("SELECT payload FROM events WHERE kind=?",
+                                                                            hypogen.EV_HYP)}
+        self.assertEqual(rec["margin|ar_1d|m17c"]["rule"], hypogen.RULE_C)
+        self.assertEqual(rec["margin|ar_1d|m17"]["rule"], hypogen.RULE)
+
+    def test_screen_and_locked_measurement_use_the_title_coins(self):
+        evs = []
+        for i, (y, m, n) in enumerate(((2020, 6, 10), (2021, 6, 10), (2022, 6, 16), (2023, 9, 8))):
+            for j in range(n):
+                coin, t = f"M{i}{j:02d}", T(y, m, 1 + j, 3) + 900
+                evs.append((coin, t))
+                self.margin(coin, t)
+        months = [(y, m) for y in (2020, 2021, 2022, 2023) for m in (5, 6, 8, 9)]
+        self.jump_market(evs, months)
+        res = hypogen.screen(self.db, "margin|ar_1d|m17c", no_net)
+        self.assertEqual((res["verdict"], res["n"], res["method"], res["rule"]),
+                         ("SCREEN_PASS", 20, hypogen.M17C, hypogen.RULE_C), res.get("reason"))
+        self.assertEqual(hypogen.screen(self.db, "margin|ar_1d|m17", no_net)["verdict"], "UNTESTABLE")
+        with open(hypogen.draft(res)) as f:
+            spec = json.load(f)
+        self.assertEqual((spec["method"], spec["rule"]), (hypogen.M17C, hypogen.RULE_C))
+        out = hypogen.measure_locked(self.db, "margin|ar_1d|m17c", "0" * 64, 2, spec)
+        self.assertEqual(out["verdict"], "PASS", out.get("reason"))
+        self.assertEqual((out["phases"]["train3"]["n"], out["phases"]["validation3"]["n"]), (16, 8))
+        old = hypogen.measure_locked(self.db, "margin|ar_1d|m17", "0" * 64, 2, {**spec, "method": hypogen.METHOD})
+        self.assertEqual(old["verdict"], "UNTESTABLE")
+
+
 class Screening(Base):
     def setup_pass(self, n=20, jump=1.03):
         evs = []

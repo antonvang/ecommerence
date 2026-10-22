@@ -30,6 +30,7 @@ from lab.engine import data
 
 RULE = "research/PROTOCOL_V3.md amendment 17"
 METHOD = "m17"
+M17C, RULE_C = "m17c", "research/PROTOCOL_V3.md amendment 17c"
 HOUR, DAY = 3600, 86400
 _T = lambda y, m: int(datetime(y, m, 1, tzinfo=timezone.utc).timestamp())          # noqa: E731
 PHASES = {"explore0": ((2020, 3), (2021, 12)), "train3": ((2022, 1), (2023, 6)), "validation3": ((2023, 7), (2023, 12))}
@@ -90,8 +91,8 @@ class Refused(data.ReservedData):
     pass
 
 
-def key(etype, outcome):
-    return f"{etype}|{outcome}|{METHOD}"
+def key(etype, outcome, method=METHOD):
+    return f"{etype}|{outcome}|{method}"
 
 
 def fname(k):
@@ -108,6 +109,35 @@ def types_of(title):
     return [name for name, f in TYPES if f(t)]
 
 
+# ---------- amendment 17c: margin coins read from the title ----------
+C_TYPES = ("margin",)
+C_STOP = {"USD", "USDT", "BUSD", "USDC", "TUSD", "PAX", "USDP", "FDUSD", "DAI", "EUR", "GBP", "AUD", "TRY", "BRL", "RUB",
+          "NGN", "UAH", "BIDR", "IDRT", "ZAR", "BKRW", "VAI", "UST", "BNB", "BTC", "ETH", "NFT", "API", "VIP", "UTC", "AMA",
+          "FAQ", "BSC", "APY", "APR", "ETF", "OTC", "P2P", "KYC", "DEX", "DAO", "NEW", "AND", "ALL"}
+C_LISTS = (re.compile(r"(?:Adds|Will Add) (.+?) (?:on|to) (?:Binance )?(?:Isolated|Cross)"),
+           re.compile(r"Margin Trading for (.+?) (?:Enabled|Pairs)"),
+           re.compile(r"^(.+?) (?:Enabled|Now Available) on (?:Binance )?(?:Isolated |Cross )?Margin"))
+C_PAIR = re.compile(r"(?<![A-Za-z0-9])([A-Z0-9]{2,12})/(?:USDT|BUSD|USDC|BTC|BNB|ETH|DOGE)(?![A-Za-z0-9])")
+C_TICK = re.compile(r"(?=[A-Z0-9]{2,12}$)[A-Z0-9]*[A-Z][A-Z0-9]*")
+
+
+def coins_c(title):
+    """Point 2 of 17c: the tickers a margin title lists (fixed rules), without fiat, stablecoins and the stop words."""
+    t, out = title or "", set()
+    for rx in C_LISTS:
+        for m in rx.finditer(t):
+            out |= {w for w in re.split(r"[\s,&()]+|\band\b", m.group(1)) if C_TICK.fullmatch(w)}
+    out |= set(C_PAIR.findall(t))
+    return out - C_STOP
+
+
+def _coins(p, etype, method):
+    base = p.get("coins") or []
+    if method == M17C and etype in C_TYPES:
+        return sorted(set(base) | coins_c(p.get("title")))
+    return base
+
+
 # ---------- observations -> events (point 1) ----------
 def _items(db):
     out = []
@@ -118,8 +148,9 @@ def _items(db):
     return out
 
 
-def events(items, a, b):
-    """{type: [{obs, coin, t}]} for items usable in [a, b): one event per (type, coin) per DEDUP_S, the first."""
+def events(items, a, b, method=METHOD):
+    """{type: [{obs, coin, t}]} for items usable in [a, b): one event per (type, coin) per DEDUP_S, the first. Under
+    m17c (amendment 17c) a C_TYPES item's coins also include those its title lists."""
     out = {name: [] for name, _ in TYPES}
     last = {}
     for obs, p in sorted(items, key=lambda x: (x[1].get("usable_from") or 0, x[0])):
@@ -127,7 +158,7 @@ def events(items, a, b):
         if not t or not a <= t < b:
             continue
         for etype in types_of(p.get("title")):
-            for coin in p.get("coins") or []:
+            for coin in _coins(p, etype, method):
                 k = (etype, coin)
                 if k in last and t - last[k] < DEDUP_S:
                     continue
@@ -233,6 +264,21 @@ def candidates(db, now=None, fresh=False):
                                     "last_obs": max(ids, default=None), "events_sha256": hashlib.sha256(json.dumps(
                                         evs[etype], sort_keys=True).encode()).hexdigest()},
                         **({"covered_by": COVERED[k]} if k in COVERED else {})})
+    evc = events(items, a, b, M17C)                         # amendment 17c point 3: only after m17 found no data
+    for etype in C_TYPES:
+        miss = missing(evc[etype], SCREEN)
+        for o in OUTCOMES:
+            if (done.get(key(etype, o)) or {}).get("verdict") != "UNTESTABLE":
+                continue
+            k = key(etype, o, M17C)
+            res = done.get(k)
+            ids = [e["obs"] for e in evc[etype]]
+            out.append({"key": k, "type": etype, "outcome": o, "events": len(ids), "live_30d": live[etype],
+                        "missing_files": miss, "overlap": 0.5, "status": res["verdict"] if res else "QUEUED_FOR_SCREEN",
+                        "priority": priority(len(ids), live[etype], miss, 0.5), "rule": RULE_C,
+                        "sources": {"detector": news.DETECTOR, "events": len(ids), "first_obs": min(ids, default=None),
+                                    "last_obs": max(ids, default=None), "events_sha256": hashlib.sha256(json.dumps(
+                                        evc[etype], sort_keys=True).encode()).hexdigest()}})
     out.sort(key=lambda x: (-x["priority"], x["key"]))
     _CACHE[db.path] = (now, out)
     return out
@@ -381,15 +427,16 @@ def measure_events(reader, evs, name):
 
 # ---------- screening (point 5) ----------
 def screen(db, k, get=None, items=None):
-    etype, name = k.split("|")[:2]
+    etype, name, method = k.split("|")[:3]
+    rule = RULE_C if method == M17C else RULE
     if k in COVERED:
         return {"key": k, "verdict": "COVERED", "reason": COVERED[k], "method": METHOD, "rule": RULE}
     a, b = bounds(SCREEN)
-    evs = events(items if items is not None else _items(db), a, b)[etype]
+    evs = events(items if items is not None else _items(db), a, b, method)[etype]
     reader = Reader(SCREEN, get)
     rows, excl = measure_events(reader, evs, name)
     ys = [r["y"] for r in rows]
-    res = {"key": k, "type": etype, "outcome": name, "method": METHOD, "rule": RULE, "window": "explore0 2020-03..2021-12",
+    res = {"key": k, "type": etype, "outcome": name, "method": method, "rule": rule, "window": "explore0 2020-03..2021-12",
            "label": "EXPLORATORY (never evidence)", "events": len(evs), "n": len(ys), "excluded": excl,
            "events_sha256": hashlib.sha256(json.dumps([[r["obs"], r["coin"], r["t"], round(r["y"], 10)] for r in rows]
                                                       ).encode()).hexdigest(),
@@ -436,10 +483,11 @@ def draft(res, root=None):
             "placebo": "samme mønter med t - 30 d", "costs": "afkast (ar_, far_, sar_): 0,46 % rundtur (F1); andre udfald handles ikke",
             "criterion": f"train3 ensidet p < {P_TRAIN} med n >= {MIN_TRAIN}; validation3 ensidet p < alpha_k med "
                          f"n >= {MIN_VALID}; alpha_k = 0,05 * 2^-k (ændring 17 punkt 7)",
-            "risks": "screeningen valgte blandt 60 kandidater; overlappende begivenheder; tynde perps",
+            "risks": f"screeningen valgte blandt {108 + 9 * (res.get('method') == M17C)} kandidater; overlappende "
+                     "begivenheder; tynde perps",
             "plan": "låses ved en dateret ændring (LÅS-17); måles derefter automatisk én gang",
             "screen": {x: res.get(x) for x in ("n", "mean", "median", "p", "halves", "placebo", "events_sha256")},
-            "rule": RULE, "method": METHOD}
+            "rule": res.get("rule", RULE), "method": res.get("method", METHOD)}
     path = os.path.join(d, fname(res["key"]) + ".json")
     with open(path, "w") as f:
         json.dump(spec, f, ensure_ascii=False, indent=1, sort_keys=True)
@@ -484,7 +532,7 @@ def measure_locked(db, k, sha, idx, spec, get=None, items=None):
     for phase, n_min, p_max in (("train3", MIN_TRAIN, P_TRAIN), ("validation3", MIN_VALID, alpha)):
         a, b = bounds(phase)
         reader = Reader(phase, get)
-        rows, excl = measure_events(reader, events(items, a, b)[etype], name)
+        rows, excl = measure_events(reader, events(items, a, b, spec.get("method", METHOD))[etype], name)
         ys = [r["y"] for r in rows]
         p = p_one(ys, direction) if ys else None
         res["phases"][phase] = {"n": len(ys), "mean": statistics.fmean(ys) if ys else None, "p": p, "excluded": excl,
@@ -558,7 +606,7 @@ def enqueue(db, now=None, actor="strategy-1", lock_list=None):
     for c in cands:
         if c["key"] not in known:
             db.event(EV_HYP, f"system:{actor}", None, {k: c[k] for k in ("key", "type", "outcome", "sources",
-                                                                          "priority", "status")} | {"rule": RULE})
+                                                                          "priority", "status")} | {"rule": c.get("rule", RULE)})
     n = 0
     if not db.one("SELECT 1 FROM jobs WHERE kind='hypo_screen' AND status IN ('queued', 'running', 'blocked') LIMIT 1"):
         nxt = next((c for c in cands if c["status"] == "QUEUED_FOR_SCREEN" and not db.one(
