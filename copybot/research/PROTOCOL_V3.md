@@ -1951,3 +1951,24 @@ der har haft hårde nedbrud. Udforskningen tilføjer ca. 45 nye kandidater i tim
    rækkefølgen efter netto-Sharpe; 11b's startkrav; en konto pr. 10 min; højst 2 pr. funktion; 11e.
 3. **Ærligt:** som efter 11e kan en lavere rangeret, allerede gennemgået kandidat starte, før en bedre ugennemgået
    for samme funktion er gennemgået; banekonti er aldrig bevis.
+
+## Ændring 11h (2026-10-23): 11b's startkrav tjekkes, før ordrebøgerne læses — før kode
+
+**Beslutning:** Claude under brugerens mandat 2026-10-22 ("kør fuldstændig selv hele natten ... du må gøre alt for at
+komme videre"). Kun simuleret handel; ingen gate, gennemgang, tærskel eller startregel ændres, kun rækkefølgen af to
+kontroller i en start.
+
+**Data (produktionens register 2026-10-22 20:51–21:51 UTC):** banen prøvede 95 varianter (`carry_hysteresis` 65,
+`carry_floor` 31), der alle blev sprunget over med "would hold nothing now (11b)". Hvert forsøg læste først perp- og
+spot-bogen for hver mønt i kurven (ca. 2 180 bogopslag i timen, ca. 52 000 i døgnet, på kun 15 forskellige mønter)
+og tjekkede derefter 11b på timedata, der i forvejen er cachet pr. mønt og time. Opslagene går over samme
+netforbindelse som pm_lp-indsamleren, hvis dækning (D1 ≥ 90 %) holdouten 10-31–11-27 afhænger af.
+
+1. **Rækkefølge:** en start tjekker først 11b punkt 1 (variantens funktion giver +1 i mindst én mønt lige nu) på
+   kurvens mønter med de samme timedata som før. Holder den intet, registreres `lane.skipped` med den samme årsag
+   ("would hold nothing now (11b)") og samme 24-timers genforsøg, uden at en bog er læst. Holder den noget, læses
+   bøgerne og tjekkes MIN_COINS og 11b på de mønter, hvis bøger loader, præcis som før.
+2. **Uændret:** hvilke varianter der kan starte, reglen om mindst 5 mønter med begge bøger, rækkefølgen, 3 forsøg pr.
+   gennemløb, en konto pr. 10 min, højst 2 pr. funktion, 11e og 11g.
+3. **Ærligt:** en variant, der hverken holder noget nu eller har 5 mønter med bøger, får nu 11b's 24-timers
+   genforsøg i stedet for det permanente "fewer than 5"-spring; ved genforsøget gælder reglen som før.
