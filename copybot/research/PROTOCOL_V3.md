@@ -1788,3 +1788,29 @@ LÅS-17 futures_listing|sar_7d|m17 1ad14ece81b13db537ed0c0174344d1594a60e5711ecb
 
 5. Et PASS er en måling, ikke en handelsregel. En papirkonto, der udnytter den, kræver sin egen daterede ændring med
    omkostninger og stopregler.
+
+## Ændring 18 (2026-10-22): datapauser hæves automatisk, når data har virket i en time — før kode
+
+**Beslutning:** brugeren svarede "Ja" 2026-10-22 til at netværksfejl ikke længere skal kræve et menneske. Det er en
+lempelse af ændring 7 punkt 1 ("kun et menneske kan genoptage") for én regel, derfor brugerens egen godkendelse.
+
+**Baggrund:** natten til 2026-10-22 (ca. 00:06–03:13 UTC) mistede værten netværket ("No route to host"). 11 simulerede
+konti blev sat på pause af reglen `data_fetch` og stod stille i ca. 6 timer, til brugeren skrev `sim-resume` for hver.
+Pausen var rigtig (intet blev handlet på manglende data), men genoptagelsen krævede ingen vurdering.
+
+1. **Kun reglen `data_fetch`** (en offentlig datahentning fejlede: Binance eller CoinMetrics), og kun på simulerede
+   konti (`SHADOW_`, `FWD_`, `LANE_`, også scanner- og HL-konti). Alle andre pauseregler — drawdown, `data_stale`,
+   `data_missing`, `data_inconsistent`, spread — kræver stadig et menneske (`sim-resume`). FAIL_CLOSED er uændret.
+2. **Prøvehentning.** Mens en konto står på pause af `data_fetch`, prøver den timevise kørsel den samme fulde
+   hentning og de samme kontroller (forældede timebarer, krydset bog), som kontoen handler på. Resultatet skrives som
+   en risikohændelse `PROBE` (værdi 1 = alt virkede, 0 = fejl med fejlteksten). En prøve åbner aldrig noget.
+3. **Genoptagelse.** Kontoen genoptages (en `CLEAR` med regel `auto_resume`, actor `system:risk`), når den aktuelle
+   prøve virker, og en ubrudt række af vellykkede prøver siden pausen begyndte mindst 50 minutter før. Med timevise
+   kørsler betyder det: to vellykkede hentninger med en time imellem og ingen fejl ind imellem. Samme kørsel handler
+   derefter efter de almindelige regler.
+4. **Ingen genoptagelse,** hvis kontoens drawdown er på eller over 10 % (samme kontrol som `sim-resume`), eller hvis
+   kontoen allerede er genoptaget automatisk 2 gange inden for 24 timer. Så venter pausen på et menneske, og der
+   skrives ingen flere prøver.
+5. **Uændret:** en banekonto, der har stået på pause i 24 timer, stoppes stadig (ændring 11 punkt 5); vagten melder
+   stadig en pause over et døgn; et menneske kan stadig genoptage når som helst med `sim-resume`. Ingen gate,
+   tærskel, holdout, evalueringskriterium eller registreret afgørelse ændres. Konti er simulerede og er aldrig bevis.
