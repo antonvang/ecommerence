@@ -102,6 +102,9 @@ def _scan(d):
             "coins": len(coins), "mtime": mt}
 
 
+ERROR_RECENT_S = 2 * 3600             # a source is "errors" only with an error this recent; older ones stay counted
+
+
 def _fetch_pauses(db, now):
     rows = db.q("SELECT ts, payload FROM events WHERE kind='risk.pause' AND ts>=?", int(now - DAY))
     out = []
@@ -117,7 +120,8 @@ def sources(db, now=None, root=None):
     now = now or time.time()
     obs = {r["source"]: dict(r) for r in db.q(
         "SELECT source, MAX(ts) last_ts, SUM(CASE WHEN ts>=? THEN 1 ELSE 0 END) n_24h, "
-        "SUM(CASE WHEN ts>=? AND metric IN ('error', 'news_error') THEN 1 ELSE 0 END) errors_24h FROM observations "
+        "SUM(CASE WHEN ts>=? AND metric IN ('error', 'news_error') THEN 1 ELSE 0 END) errors_24h, "
+        "MAX(CASE WHEN metric IN ('error', 'news_error') THEN ts END) last_err FROM observations "
         "GROUP BY source",
         int(now - DAY), int(now - DAY))}
     windows = [dict(r) for r in db.q("SELECT source, MIN(window_start) a, MAX(window_end) b, COUNT(*) n "
@@ -146,10 +150,12 @@ def sources(db, now=None, root=None):
             last = max((v["last_ts"] for v in m), default=None)
             n = sum(v["n_24h"] or 0 for v in m)
             err = sum(v["errors_24h"] or 0 for v in m)
+            last_err = max((v["last_err"] or 0 for v in m), default=0) or None
             age = (now - last) if last else None
-            row |= {"rows_24h": n, "errors_24h": err, "last_ts": last, "age_s": age,
+            recent = last_err is not None and now - last_err < ERROR_RECENT_S     # an outage hours ago is not a problem now
+            row |= {"rows_24h": n, "errors_24h": err, "last_ts": last, "age_s": age, "last_error_ts": last_err,
                     "health": ("never seen" if last is None else "stale" if age > stale_s else
-                               "errors" if err else "ok")}
+                               "errors" if recent else "ok")}
         rows.append(row)
     from lab import ingest
     return {"sources": rows, "ingest": ingest.status(db), "gaps": [{"data": g, "why": w, "status": s} for g, w, s in GAPS],

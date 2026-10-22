@@ -75,6 +75,13 @@ class Sources(Base):
         self.assertEqual(s["Hyperliquid info (live)"]["health"], "stale")
         self.assertEqual(s["Polymarket Gamma/CLOB (live)"]["health"], "ok")
 
+    def test_an_error_hours_ago_is_counted_but_not_a_problem_now(self):
+        self.obs(NOW - 60, PREMIUM)
+        self.obs(NOW - 5 * 3600, PREMIUM, "error")               # last night's outage, recovered since
+        b = next(r for r in coverage.sources(self.db, NOW, self.root)["sources"]
+                 if r["source"] == "Binance fapi premiumIndex (live)")
+        self.assertEqual((b["errors_24h"], b["health"], b["last_error_ts"]), (1, "ok", NOW - 5 * 3600))
+
     def test_never_seen_and_no_paid_source(self):
         out = coverage.sources(self.db, NOW, self.root)
         live = [r for r in out["sources"] if r["kind"] == "live"]
