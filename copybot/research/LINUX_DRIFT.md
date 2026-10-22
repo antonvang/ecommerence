@@ -334,6 +334,11 @@ noget, ændrer en gate eller rører indsamleren:
   i sidste mærkning genskabes fra startkapital + handlernes pengestrømme − gebyrer + funding; `net_total` er summen.
   Hver kontrol er en linje `[OK ]`/`[NO ]` med begge tal, og kommandoen slutter med `REPORT OK` eller
   `REPORT MISMATCH` (exitkode 1). Uden `--day` kontrolleres den seneste rapport.
+- `python3 -m lab hypo-audit` (tilføjet 2026-10-22 kl. ca. 23:10, før kode; brugeren bad om en målbar oversigt over
+  hypotesepipelinen, se `research/studies/AUDIT_HYPOTESER_2026-10-22.md`). Kun læsning af registret: antal pr.
+  afgørelse; for UNTESTABLE udelukkelserne summeret pr. underårsag og pr. type (hændelser, største n); for SCREEN_FAIL
+  de fejlede tjek og hvilke nøgler, hvis placebo-tjek fejlede uden en placebo-værdi; for hver låst måling resultatet
+  og screeningens træfrate på uafhængige data. Den ændrer intet og afgør intet.
 
 ### Før pm_lp-holdouten: watchdog og strøm (tjekket 2026-10-22)
 
