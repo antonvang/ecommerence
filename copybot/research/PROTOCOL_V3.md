@@ -1884,3 +1884,30 @@ eller startregel ændres.
    ugennemgåede kandidater igen, højst 6 ad gangen, som før (11c punkt 3).
 3. **Uændret:** en kandidat starter kun med en bestået gennemgang (11c); kontrollerne og tærsklerne (11d, 15, 15a);
    rækkefølgen efter netto-Sharpe; en konto pr. 10 min; højst 2 pr. funktion. Gennemgange er stadig aldrig bevis.
+
+## Ændring 19 (2026-10-22): scanner- og HL-konti springer mønter uden Binance-spotpar over, før et prøveforsøg bruges — før kode
+
+**Beslutning:** Claude under brugerens mandat 2026-10-22 ("kør videre automatisk ... tager de bedste beslutninger").
+Kun simuleret handel. Ingen gate, tærskel, holdout eller evalueringskriterium ændres; en mønt uden spotpar kan i
+forvejen aldrig starte (carry kræver spot-benet, og spot-bogen kan ikke hentes).
+
+**Data (produktionens register 2026-10-22 ca. 19:17 UTC):** de seneste 72 timer brugte scanner- og HL-kontiene 433
+prøveforsøg (højst 3 pr. gennemløb, ændring 11/12b); 282 af dem (65 %) endte i `HTTPError 400` på spot-bogen og 3 i
+"crossed or empty book" på spot (XMRUSDT, som Binance spot ikke handler). Kontrol samme dag: SIRENUSDT,
+BROCCOLIF3BUSDT, JCTUSDT, TACUSDT, AGTUSDT og BTRUSDT giver 200 på perp-bogen og 400 ("Invalid symbol") på spot;
+Binance' offentlige `exchangeInfo` (status TRADING) har 1387 spotpar, og af de mønter, scanneren flagede de seneste 24
+timer (≥ 0,05 % pr. 8 t), havde kun MITOUSDT, VELODROMEUSDT og THEUSDT et spotpar. Kandidaterne sorteres efter højeste
+funding, og de højeste er typisk nye perps uden spot, så de tog prøveforsøgene fra mønter længere nede. 0 scanner- og
+HL-starter i 72 timer.
+
+1. **Spotlisten:** Binance' offentlige `GET /api/v3/exchangeInfo?symbolStatus=TRADING` fra markedsdata-værten
+   (`data-api.binance.vision`, samme som spot-bøgerne, ændring 11 punkt 8), hentet højst én gang i timen og kun holdt i
+   hukommelsen. Mislykkes hentningen, bruges den sidst hentede liste; er ingen liste hentet endnu, springes intet over
+   (som før).
+2. **Start:** scanneren (`<MØNT>` = USD-M-symbolet, fx `SIRENUSDT`) og HL-kontiene (`<MØNT>USDT`) springer en mønt uden
+   spotpar i listen over, før de bruger et prøveforsøg, og noterer `lane.skipped` med årsagen "intet spotpar på
+   Binance (19)". Den almindelige ventetid efter et spring (12e punkt 4, en time) gælder uændret.
+3. **Uændret:** rækkefølgen efter forventet funding, 3 prøveforsøg pr. gennemløb, alle krav i 12e–12i, 13, 13a og 16e,
+   pladserne og stopreglerne. Aktive konti røres ikke. Banekonti (ændring 11) gælder ikke.
+4. **Ærligt:** det giver flere prøveforsøg til mønter, der kan handles, ikke flere starter i sig selv; de tre spotmønter
+   ovenfor blev i perioden afvist af 12f (funding ikke vedvarende), 12g (tynd bog) og 16e (afnotering).
