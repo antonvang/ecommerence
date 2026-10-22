@@ -1911,3 +1911,23 @@ HL-starter i 72 timer.
    pladserne og stopreglerne. Aktive konti røres ikke. Banekonti (ændring 11) gælder ikke.
 4. **Ærligt:** det giver flere prøveforsøg til mønter, der kan handles, ikke flere starter i sig selv; de tre spotmønter
    ovenfor blev i perioden afvist af 12f (funding ikke vedvarende), 12g (tynd bog) og 16e (afnotering).
+
+## Ændring 11f (2026-10-22): en banekonto, der aldrig har haft en position, stoppes efter 24 timer — før kode
+
+**Beslutning:** Claude under brugerens mandat 2026-10-22 ("fortsæt videre aggressivt, så vi kommer i mål"). Kun
+simuleret handel; ingen gate, gennemgang, tærskel, holdout eller evalueringskriterium ændres. Reglen stopper konti
+tidligere, den starter ingen, der ellers ikke var startet.
+
+**Data (produktionens register 2026-10-22 ca. 19:45 UTC):** 7 banekonti er nogensinde startet. De 3, der har handlet,
+fik deres første handel i den første kørsel (0,0 timer efter start). De 4 andre (carry_floor ×2, carry_hysteresis ×2)
+har ingen handel efter 2,4–2,8 døgn. Alle 6 aktive konti blev startet 10-19 22:09 – 10-20 08:00 UTC, før 11b punkt 1
+(startkravet "giver +1 i mindst én mønt lige nu") blev deployet 10-20 ca. 10:20 UTC; ingen af de 4 flade ville være
+startet under 11b. Siden er ingen banekonto startet, fordi alle 6 pladser er optaget, og efter 11e køes ingen
+gennemgange, før en plads er fri. De 4 flade frigør først pladserne 10-23 kl. 00:09, 02:09, 09:38 og 09:49 lokal tid.
+
+1. **Stop (tilføjes 11b punkt 2):** en banekonto, der aldrig har haft en handel (ingen `sim_fills`), stoppes 24 timer
+   efter start med reglen `flat` og årsagen "ingen position siden start i 24 timer (11f)". En konto, der har handlet,
+   følger uændret 11b punkt 2 (3 døgn uden position).
+2. **Uændret:** startkravet (11b punkt 1, 11c), gennemgangene (11d, 15), 11e, pladserne, rækkefølgen og de øvrige
+   stopregler. Scanner- og HL-konti har deres egne regler (12–13) og røres ikke.
+3. **Ærligt:** banekonti er aldrig bevis; reglen bruger pladserne på varianter, der handler nu.
