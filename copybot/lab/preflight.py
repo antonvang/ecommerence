@@ -3,12 +3,14 @@ the registry, so a refused start leaves no trace in the S7 window.
 
 Checks: Python version, database present with intact hash chains, no other supervisor holding the lock, dashboard
 port free, disk and RAM above their floors, market cache present, and the frozen parameters of every experiment that
-can still be evaluated or traded match their recorded SHA-256 (missing or changed files are never regenerated).
+can still be evaluated or traded match their recorded SHA-256 (missing or changed files are never regenerated), and
+that the pm_lp collector could restart from this checkout (research/LINUX_DRIFT.md, 2026-10-22).
 """
 from __future__ import annotations
 
 import os
 import socket
+import subprocess
 import sys
 
 from lab import control, pipeline, registry
@@ -16,6 +18,27 @@ from lab.db import DB, HERE
 from lab.supervisor import AlreadyRunning, acquire_lock, release_lock
 
 NEEDS_FROZEN = ("VALIDATION", "VALIDATED", "OBSERVATION", "PAPER_TRADING", "PAUSED")
+COLLECTOR_FILES = ("lab/supervisor.py", "lab/legacy.py", "lab/lifecycle.py", "lab/ops.py", "lab/db.py", "lab/risk.py",
+                   "research/pm_lp.py", "START_PM_LP.sh")
+COLLECTOR_IMPORT = "import lab.supervisor, research.pm_lp"
+
+
+def collector_restart(root=HERE, timeout=60):
+    """(ok, detail): the pm_lp collector's systemd restart imports lab.supervisor from this checkout, so none of its
+    files may be empty or missing and the import must succeed in a fresh interpreter. Read-only; never touches the
+    collector."""
+    bad = [f for f in COLLECTOR_FILES if not os.path.isfile(os.path.join(root, f))
+           or os.path.getsize(os.path.join(root, f)) == 0]
+    if bad:
+        return False, f"empty or missing: {', '.join(bad)}"
+    try:
+        r = subprocess.run([sys.executable, "-c", COLLECTOR_IMPORT], cwd=root, capture_output=True, text=True,
+                           timeout=timeout)
+    except subprocess.TimeoutExpired:
+        return False, f"`{COLLECTOR_IMPORT}` took over {timeout} s"
+    if r.returncode:
+        return False, f"`{COLLECTOR_IMPORT}` fails: " + (r.stderr.strip().splitlines() or ["?"])[-1][:300]
+    return True, "its files are present and import cleanly"
 
 
 def _port_free(port):
@@ -83,6 +106,7 @@ def checks(db_path, port=8770):
                 except (KeyError, IndexError, ValueError) as e:
                     bad.append(f"{x['exp_id']}: unreadable frozen parameters ({e!r})")
         add("frozen parameters verified", not bad, "; ".join(bad)[:400])
+        add("pm_lp collector could restart", *collector_restart())
     finally:
         db.close()
     return out

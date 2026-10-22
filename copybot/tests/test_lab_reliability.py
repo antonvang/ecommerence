@@ -234,6 +234,27 @@ class Preflight(Tmp):
         self.assertFalse(ok)
         self.assertIn(GOOD, detail)
 
+    def test_refuses_when_the_collector_could_not_restart(self):
+        from lab import preflight
+        root = os.path.join(self.tmp, "checkout")
+        for f in preflight.COLLECTOR_FILES:
+            os.makedirs(os.path.dirname(os.path.join(root, f)), exist_ok=True)
+            with open(os.path.join(root, f), "w") as fh:
+                fh.write("# fixture\n")
+        for d in ("lab", "research"):
+            open(os.path.join(root, d, "__init__.py"), "w").close()
+        with open(os.path.join(root, "lab", "supervisor.py"), "w") as fh:          # the real import chain
+            fh.write("from lab import db, legacy, lifecycle, ops, risk  # noqa: F401\n")
+        self.assertEqual(preflight.collector_restart(root), (True, "its files are present and import cleanly"))
+        with open(os.path.join(root, "lab", "risk.py"), "w") as fh:
+            fh.write("raise ImportError('fixture: a broken deploy')\n")
+        ok, detail = preflight.collector_restart(root)
+        self.assertFalse(ok)
+        self.assertIn("fixture: a broken deploy", detail)
+        open(os.path.join(root, "lab", "ops.py"), "w").close()                  # a crash left it at 0 bytes
+        self.assertEqual(preflight.collector_restart(root), (False, "empty or missing: lab/ops.py"))
+        self.assertTrue(self.result()["pm_lp collector could restart"][0])     # this checkout
+
     def test_refuses_without_a_database(self):
         from lab import preflight
         r = preflight.checks(os.path.join(self.tmp, "absent", "lab.db"), self.port)
