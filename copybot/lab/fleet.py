@@ -393,7 +393,7 @@ def strategy_pass(db):
     fams = families.pass_(db, "strategy-1")                                             # errors contained per family
     from lab import promotion
     decisions = [d for d in promotion.step(db) if d.get("applicable")]                 # amendment 4: one decision path
-    from lab import explore, hypogen, ingest, lane, scanresearch, vault
+    from lab import explore, hypogen, ingest, lane, scanresearch
     return {"registered": registered, "promotions": [(d["exp_id"], d["to"], d["allowed"]) for d in decisions],
             "holdouts_queued": pipeline.enqueue_holdouts(db), "diagnostics_queued": pipeline.enqueue_diagnostics(db),
             "scan_research_queued": scanresearch.enqueue(db),           # amendment 9 section 3: digest and dossiers
@@ -402,7 +402,6 @@ def strategy_pass(db):
             "lane_reviews_queued": lane.enqueue_reviews(db),  # amendment 11c: adversarial review of candidates
             "ingest_queued": ingest.enqueue(db) if ingest.auto(db) else 0,   # amendment 14: one unit at a time
             "hypotheses_queued": hypogen.enqueue(db),       # amendment 17: one screening at a time, locked measurements
-            "vault": vault.maybe_write(db),                 # LINUX_DRIFT 2026-10-22: read-only Obsidian notes, hourly
             **({"families": fams} if fams else {})}
 
 
