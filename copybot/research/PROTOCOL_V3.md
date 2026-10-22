@@ -1814,3 +1814,35 @@ Pausen var rigtig (intet blev handlet på manglende data), men genoptagelsen kr�
 5. **Uændret:** en banekonto, der har stået på pause i 24 timer, stoppes stadig (ændring 11 punkt 5); vagten melder
    stadig en pause over et døgn; et menneske kan stadig genoptage når som helst med `sim-resume`. Ingen gate,
    tærskel, holdout, evalueringskriterium eller registreret afgørelse ændres. Konti er simulerede og er aldrig bevis.
+
+## Ændring 17c (2026-10-22): margin-meddelelsernes mønter læses af faste titelregler (metode m17c) — før kode
+
+**Beslutning:** Claude under brugerens mandat (datadrevet forbedring af datadækningen; ingen gate, tærskel eller
+periode ændres). Brugerens arbejdspakke 2026-10-22 bad om nye hypoteser fra eksisterende data uden holdout-lækage.
+
+1. **Fejlen.** Ændring 17's mønter kommer fra `news.coins`: tickers i parentes, XXXUSDT/USDC/FDUSD-par og tickers
+   mellem "Futures Will Launch" og "Perpetual". Binance' margin-meddelelser skriver mønterne bart ("Cross Margin
+   Trading for FIL Enabled on Binance", "Binance Adds RAD & RARE on Isolated Margin"), så 0 af 116 margin-meddelelser
+   i explore0 (0 af 61 i train3, 0 af 31 i validation3) fik en mønt. Alle 9 `margin|…|m17`-kandidater blev derfor
+   UNTESTABLE med 0 begivenheder; ingen udfaldsværdi for en margin-begivenhed er nogensinde beregnet.
+2. **Metode m17c, kun typen `margin`.** Observationernes gemte `coins` ændres ikke (append-only). Pipelinen læser
+   titlen igen; en margin-begivenheds mønter er foreningen af `coins` og disse faste regler:
+   - en liste efter `(?:Adds|Will Add) (.+?) (?:on|to) (?:Binance )?(?:Isolated|Cross)`;
+   - en liste efter `Margin Trading for (.+?) (?:Enabled|Pairs)`;
+   - en liste fra titlens start: `^(.+?) (?:Enabled|Now Available) on (?:Binance )?(?:Isolated |Cross )?Margin`;
+   - par-baser `XXX/(USDT|BUSD|USDC|BTC|BNB|ETH|DOGE)`.
+   En liste deles ved mellemrum, komma, `&`, parenteser og ordet "and"; et led tælles som mønt, hvis det er 2–12 tegn
+   af A–Z/0–9 med mindst ét bogstav og ikke står på stoplisten (fiat og stablecoins: USD, USDT, BUSD, USDC, TUSD,
+   PAX, USDP, FDUSD, DAI, EUR, GBP, AUD, TRY, BRL, RUB, NGN, UAH, BIDR, IDRT, ZAR, BKRW, VAI, UST; kontekst: BNB, BTC,
+   ETH; ord: NFT, API, VIP, UTC, AMA, FAQ, BSC, APY, APR, ETF, OTC, P2P, KYC, DEX, DAO, NEW, AND, ALL). På explore0
+   giver det mønter i 109 af 116 meddelelser (train3 58 af 61, validation3 27 af 31; kun titler er talt).
+3. **Kandidater.** `margin|<udfald>|m17c` for hvert af de 9 udfald, hvis `margin|<udfald>|m17` er screenet
+   UNTESTABLE (i dag alle 9). Ingen anden kandidat genscreenes under m17c; en m17-afgørelse (PASS, FAIL, COVERED)
+   screenes aldrig igen. Screening, tærskler, placebo, explore0-vinduet, Reader-grænserne, udkast, LÅS-17-låse med
+   alpha_k = 0,05 · 2^−k (k = låsens nummer i filen) og målingen på train3/validation3 er uændrede; målingen af en
+   m17c-lås bruger m17c-mønterne.
+4. **Ikke med, og hvorfor:** afnotering (typen blander spot-, margin-, staking- og gearede tokens' afnoteringer, og
+   validation3 har kun 4 spot-afnoteringer med mønter), airdrop (0 meddelelser i validation3, kan aldrig måles),
+   staking (titlerne er mest kampagner; reglerne fandt mønter i under halvdelen). En ny type kræver sin egen ændring.
+5. **Forbehold, nævnt før screening:** pipelinen har nu 117 kandidater (108 + 9); reglerne er skrevet efter at have
+   læst explore0-, train3- og validation3-titler (kun titler og antal, ingen priser, funding eller udfald).
