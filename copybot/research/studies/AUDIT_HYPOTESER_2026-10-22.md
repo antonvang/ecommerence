@@ -80,3 +80,34 @@ hændelser i train3, 1 i validation3). Målingen: train3 n 28, −9,1 %, p 0,006
 p 0,3525 ≥ 0,003125 → **REJECTED**. Screeningens træfrate på uafhængige data er nu 0 af 4. `lab hypo-audit` viser
 stadig de 7 m17-nøgler under "uden placebo-værdi"; det er m17-resultaterne, og deres m17e-afgørelser står under deres
 egne nøgler.
+
+## Tillæg 2026-10-23 (eftermiddag): de 87 UNTESTABLE klassificeret efter afhjælpning
+
+Kun læsning af registret (alle 123 screenede nøgler, seneste resultat pr. nøgle). Ingen gate, tærskel eller
+hypotese er ændret. Brugeren bad om andelen, der kan løses med (1) teknisk rettelse, (2) bedre brug af eksisterende
+data, (3) ny tilladt dataindsamling, (4) ingen forsvarlig løsning.
+
+| Klasse | Nøgler | Hvilke | Hvorfor |
+|---|---:|---|---|
+| 1. Teknisk rettelse | 0 | — | Stikprøven ovenfor fandt ingen kodefejl; 1000-præfiks-fejlen rammer 5 hændelser og ændrer ingen afgørelse. |
+| 2. Eksisterende data | 0 (højst 2) | `airdrop` med spot-baseret `vol_3d`/`volume_1d` | Spotkurser findes før t for højst 23 airdrop-hændelser; `staking` (14) og `launchpool` (8) når ikke 15. Volatilitet og volumen er ikke et handelbart afkast alene, så det er ikke forfulgt. Afkastudfaldene er allerede målt på spot (`sar_*`). |
+| 3. Ny dataindsamling | 36 | `funding_interval`, `futures_delisting`, `margin_tiers` (hver 9) og `margin` under m17 (9; 17c læser titlerne) | 0 hændelser i explore0 (2020-03..2021-12): meddelelsestyperne fandtes ikke, eller titlerne nævnte ikke mønter. De kan kun samles fremad (`news-watch` kører, se nedenfor); explore0 er fast og 2022-2023 er train/validation. |
+| 4. Ingen forsvarlig løsning | 51 | perp-baserede udfald (`ar_*`, `far_*`, `fund_7d`, `vol_3d`, `volume_1d`) for `spot_listing` 7, `innovation_zone` 7, `airdrop` 7, `staking` 8, `launchpool` 9, `delisting` 9, `futures_listing` 4 | Mønten havde ingen USD-M-perp ved t (nynoteret eller kun spot). For `futures_listing` kræver `ar_*`/`vol*` en perp-pris før noteringen — umuligt per definition. `delisting` har kun 3 hændelser i explore0. |
+
+87 = 0 + 0 + 36 + 51. Konklusion: andelen af meningsfulde, testbare eksperimenter kan ikke øges med kode eller ved
+at sænke krav; den kan kun øges med nye data.
+
+### Nyhedskilden fremad (tjekket 2026-10-23 ca. 13:50 UTC)
+
+Alle 60 aktuelle meddelelser i Binances tre kataloger (48 listing, 161 delisting, 49 news) var gemt; der mangler
+intet. Siden 2026-10-22 har Binance næsten kun noteret TradFi-produkter (bStocks, TradFi-perps), så H5F/H5X
+(ændring 16d/16f, 20 noteringer efter 2026-10-22) venter på markedet, ikke på en fejl.
+
+### Uklassificerede meddelelser i explore0
+
+938 af 1.833 Binance-meddelelser i explore0 passer ikke på nogen af de 13 typer; 136 af dem nævner mønter. Største
+grupper: "Binance Liquid Swap Adds" 39, "Notice of Removal of (Trading Pairs)" 34, "Binance Futures Will Launch"
+(uden "Perpetual", fx kvartalskontrakter) 27, "Binance Loans Adds Borrowable/Collateral/Loanable" 28, "Binance
+Futures Will List" 8 og "Binance Futures: New Listings" 5. En ny type kræver en ny ændring (17 punkt 1). Ingen er
+tilføjet: screeningen har indtil nu 0 af 4 træffere på uafhængige data, og hver ny lås halverer alfa. En ny type
+bør kun låses ind med en mekanisme, der er skrevet før data — ikke fordi den findes i titlerne.
