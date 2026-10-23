@@ -31,6 +31,8 @@ from lab.engine import data
 RULE = "research/PROTOCOL_V3.md amendment 17"
 METHOD = "m17"
 M17C, RULE_C = "m17c", "research/PROTOCOL_V3.md amendment 17c"
+M17E, RULE_E = "m17e", "research/PROTOCOL_V3.md amendment 17e"
+CANDIDATES = {M17C: 117, M17E: 124}                        # how many candidates a draft was selected among
 HOUR, DAY = 3600, 86400
 _T = lambda y, m: int(datetime(y, m, 1, tzinfo=timezone.utc).timestamp())          # noqa: E731
 PHASES = {"explore0": ((2020, 3), (2021, 12)), "train3": ((2022, 1), (2023, 6)), "validation3": ((2023, 7), (2023, 12))}
@@ -279,6 +281,22 @@ def candidates(db, now=None, fresh=False):
                         "sources": {"detector": news.DETECTOR, "events": len(ids), "first_obs": min(ids, default=None),
                                     "last_obs": max(ids, default=None), "events_sha256": hashlib.sha256(json.dumps(
                                         evc[etype], sort_keys=True).encode()).hexdigest()}})
+    for etype, _ in TYPES:                                  # amendment 17e point 3: an m17 FAIL without a placebo
+        miss = missing(evs[etype], SCREEN)
+        for o in OUTCOMES:
+            r = done.get(key(etype, o)) or {}
+            pn = (r.get("placebo") or {}).get("n")
+            if r.get("verdict") != "SCREEN_FAIL" or pn is None or pn >= MIN_SCREEN:
+                continue
+            k = key(etype, o, M17E)
+            res = done.get(k)
+            ids = [e["obs"] for e in evs[etype]]
+            out.append({"key": k, "type": etype, "outcome": o, "events": len(ids), "live_30d": live[etype],
+                        "missing_files": miss, "overlap": 0.5, "status": res["verdict"] if res else "QUEUED_FOR_SCREEN",
+                        "priority": priority(len(ids), live[etype], miss, 0.5), "rule": RULE_E,
+                        "sources": {"detector": news.DETECTOR, "events": len(ids), "first_obs": min(ids, default=None),
+                                    "last_obs": max(ids, default=None), "events_sha256": hashlib.sha256(json.dumps(
+                                        evs[etype], sort_keys=True).encode()).hexdigest()}})
     out.sort(key=lambda x: (-x["priority"], x["key"]))
     _CACHE[db.path] = (now, out)
     return out
@@ -428,7 +446,7 @@ def measure_events(reader, evs, name):
 # ---------- screening (point 5) ----------
 def screen(db, k, get=None, items=None):
     etype, name, method = k.split("|")[:3]
-    rule = RULE_C if method == M17C else RULE
+    rule = {M17C: RULE_C, M17E: RULE_E}.get(method, RULE)
     if k in COVERED:
         return {"key": k, "verdict": "COVERED", "reason": COVERED[k], "method": METHOD, "rule": RULE}
     a, b = bounds(SCREEN)
@@ -448,7 +466,11 @@ def screen(db, k, get=None, items=None):
     mean, p = statistics.fmean(ys), p_two(ys)
     h1 = [r["y"] for r in rows if r["t"] < HALF]
     h2 = [r["y"] for r in rows if r["t"] >= HALF]
-    pl_rows, _ = measure_events(reader, [{**e, "t": e["t"] - PLACEBO_SHIFT} for e in evs], name)
+    shift = -PLACEBO_SHIFT
+    pl_rows, _ = measure_events(reader, [{**e, "t": e["t"] + shift} for e in evs], name)
+    if method == M17E and len(pl_rows) < MIN_SCREEN:         # amendment 17e: a new market has no price at t - 30 d
+        shift = PLACEBO_SHIFT
+        pl_rows, _ = measure_events(reader, [{**e, "t": e["t"] + shift} for e in evs], name)
     pl = [r["y"] for r in pl_rows]
     pp = p_two(pl) if len(pl) >= MIN_SCREEN else None
     sign = 1 if mean > 0 else -1
@@ -461,7 +483,8 @@ def screen(db, k, get=None, items=None):
     res.update(mean=mean, median=statistics.median(ys), share_positive=sum(y > 0 for y in ys) / len(ys), p=p,
                direction=sign, halves={"2020": [len(h1), statistics.fmean(h1) if h1 else None],
                                        "2021": [len(h2), statistics.fmean(h2) if h2 else None]},
-               placebo={"n": len(pl), "mean": statistics.fmean(pl) if pl else None, "p": pp}, checks=checks,
+               placebo={"n": len(pl), "mean": statistics.fmean(pl) if pl else None, "p": pp,
+                        "shift_days": shift // DAY}, checks=checks,
                files=len(reader.files))
     ok = all(checks.values())
     res.update(verdict="SCREEN_PASS" if ok else "SCREEN_FAIL",
@@ -475,15 +498,17 @@ def draft(res, root=None):
     d = root or DIR
     os.makedirs(d, exist_ok=True)
     word = "højere" if res["direction"] > 0 else "lavere"
+    fwd = (res.get("placebo") or {}).get("shift_days", -30) > 0         # amendment 17e
     spec = {"key": res["key"], "type": res["type"], "outcome": res["outcome"], "direction": res["direction"],
             "claim": f"`{res['outcome']}` efter Binance-meddelelser af typen `{res['type']}` er {word} end 0",
             "mechanism": "meddelelsen ændrer efterspørgsel, opmærksomhed eller afdækning i mønten (ikke undersøgt)",
             "data": "Binance' meddelelser i registret (news/1); USD-M 1 t-klines og fundingRate fra data.binance.vision",
             "baseline": "0: ingen ændring (afkast er fratrukket BTCUSDT; de andre måles mod (t - 7 d, t])",
-            "placebo": "samme mønter med t - 30 d", "costs": "afkast (ar_, far_, sar_): 0,46 % rundtur (F1); andre udfald handles ikke",
+            "placebo": f"samme mønter med t {'+' if fwd else '-'} 30 d",
+            "costs": "afkast (ar_, far_, sar_): 0,46 % rundtur (F1); andre udfald handles ikke",
             "criterion": f"train3 ensidet p < {P_TRAIN} med n >= {MIN_TRAIN}; validation3 ensidet p < alpha_k med "
                          f"n >= {MIN_VALID}; alpha_k = 0,05 * 2^-k (ændring 17 punkt 7)",
-            "risks": f"screeningen valgte blandt {108 + 9 * (res.get('method') == M17C)} kandidater; overlappende "
+            "risks": f"screeningen valgte blandt {CANDIDATES.get(res.get('method'), 108)} kandidater; overlappende "
                      "begivenheder; tynde perps",
             "plan": "låses ved en dateret ændring (LÅS-17); måles derefter automatisk én gang",
             "screen": {x: res.get(x) for x in ("n", "mean", "median", "p", "halves", "placebo", "events_sha256")},

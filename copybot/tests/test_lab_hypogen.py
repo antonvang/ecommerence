@@ -232,6 +232,72 @@ class MarginTitles(Base):
         self.assertEqual(old["verdict"], "UNTESTABLE")
 
 
+class ForwardPlacebo(Base):
+    """Amendment 17e: under m17e the placebo moves to t + 30 d when t - 30 d has fewer than 15 events with data (a newly
+    listed coin has no price a month before); everything else is m17's, and only m17 FAILs without a placebo get it."""
+
+    def new_coins(self, n=20, again=False, may=False):
+        """n coins whose files start in the event month (no price 30 days earlier unless `may`); the price jumps 3 % at
+        the event and, with `again`, once more 30 days later (a drift of new coins, not of the announcement)."""
+        evs = []
+        for i in range(n):
+            coin, t = f"N{i:02d}", T(2020 + i % 2, 6, 10 + i // 2, 3) + 900
+            evs.append((coin, t))
+            self.announce(coin, t)
+        for y in (2020, 2021):
+            for m in (5, 6, 7, 8):
+                self.klines("BTCUSDT", y, m, lambda ts: 50000.0)
+                for coin, t in evs:
+                    if int(coin[1:]) % 2 == y - 2020 and (m >= 6 or may):
+                        marks = (t, t + 30 * 24 * H) if again else (t,)
+                        self.klines(coin + "USDT", y, m, lambda ts, mk=marks: 100.0 * 1.03 ** sum(
+                            ts >= -(-x // H) * H for x in mk))
+        return evs
+
+    def test_a_new_coin_gets_the_forward_placebo_and_m17_keeps_its_result(self):
+        self.new_coins()
+        old = hypogen.screen(self.db, "spot_listing|ar_1d|m17", no_net)
+        self.assertEqual((old["verdict"], old["placebo"]["n"], old["placebo"]["shift_days"]), ("SCREEN_FAIL", 0, -30))
+        self.assertEqual(old["reason"], "failed: placebo p > 0.05 (n >= 15)")
+        res = hypogen.screen(self.db, "spot_listing|ar_1d|m17e", no_net)
+        self.assertEqual((res["verdict"], res["rule"], res["method"]), ("SCREEN_PASS", hypogen.RULE_E, hypogen.M17E),
+                         res.get("reason"))
+        self.assertEqual((res["n"], res["placebo"]["n"], res["placebo"]["shift_days"]), (20, 20, 30))
+        self.assertEqual(res["events_sha256"], old["events_sha256"])           # the same events and outcomes as m17
+        with open(hypogen.draft(res)) as f:
+            spec = json.load(f)
+        self.assertEqual(spec["placebo"], "samme mønter med t + 30 d")
+        self.assertIn("blandt 124 kandidater", spec["risks"])
+
+    def test_a_drift_that_goes_on_a_month_later_fails_the_forward_placebo(self):
+        self.new_coins(again=True)
+        res = hypogen.screen(self.db, "spot_listing|ar_1d|m17e", no_net)
+        self.assertEqual((res["verdict"], res["placebo"]["shift_days"]), ("SCREEN_FAIL", 30))
+        self.assertEqual(res["reason"], "failed: placebo p > 0.05 (n >= 15)")
+
+    def test_the_backward_placebo_is_kept_where_it_has_data(self):
+        self.new_coins(may=True)
+        res = hypogen.screen(self.db, "spot_listing|ar_1d|m17e", no_net)
+        self.assertEqual((res["verdict"], res["placebo"]["n"], res["placebo"]["shift_days"]), ("SCREEN_PASS", 20, -30))
+
+    def test_candidates_only_for_m17_fails_whose_placebo_had_too_few_events(self):
+        self.announce("AAA", T(2020, 6, 10))
+        ev = lambda p: self.db.event(hypogen.EV_SCREEN, "agent:cost-1", None, p)   # noqa: E731
+        ev({"key": "spot_listing|sar_7d|m17", "verdict": "SCREEN_FAIL", "placebo": {"n": 0, "p": None}})
+        ev({"key": "spot_listing|sar_1d|m17", "verdict": "SCREEN_FAIL", "placebo": {"n": 40, "p": 0.01}})
+        ev({"key": "staking|sar_7d|m17", "verdict": "SCREEN_FAIL", "placebo": {"n": 14, "p": None}})
+        ev({"key": "airdrop|ar_1d|m17", "verdict": "UNTESTABLE"})
+        c = {x["key"]: x for x in hypogen.candidates(self.db, NOW, fresh=True)}
+        self.assertEqual(sorted(k for k in c if k.endswith("|m17e")), ["spot_listing|sar_7d|m17e", "staking|sar_7d|m17e"])
+        self.assertEqual((c["spot_listing|sar_7d|m17e"]["status"], c["spot_listing|sar_7d|m17e"]["rule"]),
+                         ("QUEUED_FOR_SCREEN", hypogen.RULE_E))
+        self.assertEqual(len(c), 110)
+        self.assertEqual(hypogen.enqueue(self.db, NOW + 1, lock_list=[]), 1)
+        rec = {json.loads(r[0])["key"]: json.loads(r[0]) for r in self.db.q("SELECT payload FROM events WHERE kind=?",
+                                                                            hypogen.EV_HYP)}
+        self.assertEqual(rec["staking|sar_7d|m17e"]["rule"], hypogen.RULE_E)
+
+
 class Screening(Base):
     def setup_pass(self, n=20, jump=1.03):
         evs = []
