@@ -108,7 +108,9 @@ def _processes(needle, proc_root="/proc", here=HERE):
 
 def check_lab(db_path, now):
     """{component: (ok, detail)}; ok is None for 'not judged' (agents while the supervisor is down)."""
-    from lab.fleet import ROLES
+    from lab.command import STALE_PASSES
+    from lab.fleet import ROLES, ROSTER
+    every_of = {name: every for name, _r, _k, _fn, every, _h in ROSTER}
     con = _ro(db_path)
     if con is None:
         return {"lab": (False, "lab database missing"), "lab_state": (None, "not judged: no lab database"),
@@ -160,6 +162,12 @@ def check_lab(db_path, now):
             out[f"agent:{name}"] = (False, f"failed: {(r.get('detail') or '')[:120]}")
         elif now - r["ts"] > (r.get("stale_after") or 300):
             out[f"agent:{name}"] = (False, f"heartbeat {int(now - r['ts'])} s old (hung)")
+        elif every_of.get(name) and (r.get("last_ok_ts") or r.get("started_ts")) and \
+                now - (r.get("last_ok_ts") or r["started_ts"]) > max(600, STALE_PASSES * every_of[name]):
+            # a just-started agent gets one window for its first pass; a row with neither time is not judged by work
+            ok = r.get("last_ok_ts")                     # a fresh heartbeat without work (research/LINUX_DRIFT.md)
+            out[f"agent:{name}"] = (False, (f"no successful pass for {int(now - ok)} s" if ok else
+                                            "no successful pass recorded") + f" (expected every {every_of[name]} s)")
         else:
             out[f"agent:{name}"] = (True, r.get("status") or "ok")
     return out

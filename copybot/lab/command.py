@@ -75,12 +75,46 @@ def stage(db, eid, state):
 
 
 # ---------- agents ----------
+HEALTH = ("HEALTHY", "IDLE", "STALE", "BLOCKED", "FAILED", "UNKNOWN")      # research/LINUX_DRIFT.md 2026-10-23
+STALE_PASSES = 3                  # a periodic agent is STALE after 3 missed passes (at least 10 min)
+WAITING_S = 1800                  # a job agent with runnable work and no job done for 30 min is BLOCKED
+
+
+def health(a, every, runnable, now):
+    """(state, reason) of one agent from its recorded work, not from its process: a fresh heartbeat with old or failed
+    work is not HEALTHY. `every` is the agent's pass interval (periodic agents), None for job agents."""
+    st, ok, err = a["status"], a.get("last_ok_ts"), a.get("last_error_ts")
+    if st in ("offline", "stale"):
+        return "STALE", f"heartbeat {int(a.get('heartbeat_age_s') or 0)} s old"
+    if st in ("failed", "error"):
+        return "FAILED", (a.get("last_error") or "status failed")[:160]
+    if st == "blocked":
+        return "BLOCKED", (a.get("detail") or a.get("next_action") or "blocked")[:160]
+    if err and (not ok or err > ok):
+        return "FAILED", f"latest attempt failed: {(a.get('last_error') or '?')[:140]}"
+    if every:
+        limit = max(600, STALE_PASSES * every)
+        if not ok:
+            return "UNKNOWN", "no successful pass recorded"
+        if now - ok > limit:
+            return "STALE", f"last successful pass {int(now - ok)} s ago (expected every {every} s)"
+        return "HEALTHY", f"last successful pass {int(now - ok)} s ago (expected every {every} s)"
+    if st == "running":
+        return "HEALTHY", "running a job"
+    if runnable and ok and now - ok > WAITING_S:
+        return "BLOCKED", f"{runnable} runnable job(s) waiting, none done for {int(now - ok)} s"
+    if runnable:
+        return "HEALTHY", f"{runnable} runnable job(s) waiting"
+    return "IDLE", "no runnable job of its kinds"
+
+
 def agents(db, now=None):
     now = now or time.time()
     wk = mission.workers(db, now)
     rows = {r["worker"]: dict(r) for r in db.q("SELECT * FROM heartbeats")}
     from lab.fleet import ROLES, ROSTER
     kinds_of = {name: k for name, _r, k, *_ in ROSTER}
+    every_of = {name: every for name, _r, _k, _fn, every, _h in ROSTER}
     run = jobs.runnable(db, now)
     exhausted = not _untested_templates(db)
     made_by = _events_24h(db, now)
@@ -128,11 +162,16 @@ def agents(db, now=None):
                     "last_ok_ts": r.get("last_ok_ts"), "last_error": r.get("last_error"),
                     "last_error_ts": r.get("last_error_ts"), "kinds": list(kinds), "jobs_done_this_run": run_done,
                     "work": work, "pid": r.get("pid"), **made})
+        n_run = sum(run["by_kind"].get(k, 0) for k in kinds)
+        every = every_of.get(w["worker"])
+        out[-1]["health"], out[-1]["health_reason"] = health(out[-1], every, n_run, now)
+        out[-1]["expected_every_s"] = every
     return {"supervisor": wk["supervisor"], "agents": out, "total": len(out), "retired": retired,
             "active": sum(1 for a in out if a["status"] in ("running", "idle", "queued", "blocked")),
             "running": sum(1 for a in out if a["status"] == "running"),
             "job_agents_without_work": sum(1 for a in out if (a["work"] or "").startswith("no work")),
-            "with_output_24h": sum(1 for a in out if a["output_24h"])}
+            "with_output_24h": sum(1 for a in out if a["output_24h"]),
+            "health": {h: sum(1 for a in out if a["health"] == h) for h in HEALTH}}
 
 
 AGENT_ACTORS = {"discovery-scanner": ("system:scanner",), "paper-1": ("system:paper",), "risk-1": ("system:risk",)}

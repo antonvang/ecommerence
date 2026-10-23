@@ -110,6 +110,24 @@ class Checks(Base):
         self.lab_sql("UPDATE heartbeats SET ts=? WHERE worker='discovery-scanner'", NOW - 3700)   # hourly agent
         self.assertTrue(self.res()["agent:discovery-scanner"]["ok"])
 
+    def test_a_fresh_heartbeat_without_a_successful_pass_is_not_healthy(self):
+        """research/LINUX_DRIFT.md 2026-10-23: periodic agents are judged by their last successful pass."""
+        self.lab_sql("UPDATE heartbeats SET last_ok_ts=?, started_ts=? WHERE worker='premium-watch'", NOW - 30,
+                     NOW - 86400)                                                # every 60 s: fine
+        self.assertTrue(self.res()["agent:premium-watch"]["ok"])
+        self.lab_sql("UPDATE heartbeats SET last_ok_ts=? WHERE worker='premium-watch'", NOW - 700)   # > 600 s
+        r = self.res()["agent:premium-watch"]
+        self.assertFalse(r["ok"])
+        self.assertIn("no successful pass for 700 s (expected every 60 s)", r["detail"])
+        self.lab_sql("UPDATE heartbeats SET last_ok_ts=?, started_ts=? WHERE worker='discovery-scanner'", NOW - 7200,
+                     NOW - 86400)                                                # hourly: 3 passes = 3 h
+        self.assertTrue(self.res()["agent:discovery-scanner"]["ok"])
+        self.lab_sql("UPDATE heartbeats SET last_ok_ts=NULL, started_ts=? WHERE worker='news-watch'", NOW - 300)
+        self.assertTrue(self.res()["agent:news-watch"]["ok"])                    # just started: one window
+        self.lab_sql("UPDATE heartbeats SET started_ts=? WHERE worker='news-watch'", NOW - 3600)
+        self.assertIn("no successful pass recorded", self.res()["agent:news-watch"]["detail"])
+        self.assertTrue(self.res()[f"agent:{AGENT}"]["ok"])                     # job agents: not judged by passes
+
     def test_blocked_agents_are_judged_through_lab_state(self):
         self.lab_sql("UPDATE heartbeats SET status='blocked', detail='lab FAIL_CLOSED' WHERE worker != 'supervisor'")
         db = DB(self.lab)

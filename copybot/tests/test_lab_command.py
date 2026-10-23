@@ -228,6 +228,46 @@ class Api(unittest.TestCase):
         self.assertIn(self.srv.token, html)
 
 
+class Health(unittest.TestCase):
+    """research/LINUX_DRIFT.md 2026-10-23: agent health comes from recorded work, not from the heartbeat."""
+    NOW = 1_800_000_000
+
+    def h(self, every=None, runnable=0, **a):
+        base = {"status": "idle", "last_ok_ts": None, "last_error_ts": None, "heartbeat_age_s": 2}
+        return command.health({**base, **a}, every, runnable, self.NOW)
+
+    def test_periodic_agents_are_judged_by_their_last_successful_pass(self):
+        self.assertEqual(self.h(60, last_ok_ts=self.NOW - 30)[0], "HEALTHY")
+        st, why = self.h(60, last_ok_ts=self.NOW - 601)                      # fresh heartbeat, old work
+        self.assertEqual(st, "STALE")
+        self.assertIn("expected every 60 s", why)
+        self.assertEqual(self.h(3600, last_ok_ts=self.NOW - 3 * 3600 + 5)[0], "HEALTHY")   # its own limit
+        self.assertEqual(self.h(3600, last_ok_ts=self.NOW - 3 * 3600 - 5)[0], "STALE")
+        self.assertEqual(self.h(60)[0], "UNKNOWN")
+
+    def test_failures_blocks_and_old_heartbeats(self):
+        self.assertEqual(self.h(60, last_ok_ts=self.NOW - 30, last_error_ts=self.NOW - 10, last_error="boom")[0],
+                         "FAILED")                                            # the latest attempt failed
+        self.assertEqual(self.h(60, last_ok_ts=self.NOW - 10, last_error_ts=self.NOW - 30)[0], "HEALTHY")
+        self.assertEqual(self.h(status="failed", last_error="x")[0], "FAILED")
+        self.assertEqual(self.h(status="blocked", detail="lab FAIL_CLOSED")[0], "BLOCKED")
+        self.assertEqual(self.h(60, status="stale", last_ok_ts=self.NOW - 5, heartbeat_age_s=900)[0], "STALE")
+
+    def test_job_agents_idle_legitimately_or_are_blocked_with_work_waiting(self):
+        self.assertEqual(self.h(None)[0], "IDLE")
+        self.assertEqual(self.h(None, status="running")[0], "HEALTHY")
+        self.assertEqual(self.h(None, runnable=2, last_ok_ts=self.NOW - 60)[0], "HEALTHY")
+        st, why = self.h(None, runnable=2, last_ok_ts=self.NOW - 1801)
+        self.assertEqual(st, "BLOCKED")
+        self.assertIn("2 runnable job(s) waiting", why)
+
+    def test_the_agents_view_carries_health_for_every_agent(self):
+        db = DB(":memory:")
+        out = command.agents(db)
+        self.assertEqual(set(out["health"]), set(command.HEALTH))
+        self.assertTrue(all(a["health"] in command.HEALTH and a["health_reason"] for a in out["agents"]))
+
+
 class Index(unittest.TestCase):
     def test_lookups_by_experiment_use_the_exp_index(self):
         """research/LINUX_DRIFT.md 2026-10-23: kind + exp_id lookups (pipeline.recorded_sha, paper.forward_active) read

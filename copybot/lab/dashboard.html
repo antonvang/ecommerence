@@ -87,6 +87,7 @@ a{color:var(--amber);text-decoration:none} a:hover{text-decoration:underline}
 .wk:last-child{border-bottom:0}
 .state{font:700 10px var(--mono);letter-spacing:.08em;text-transform:uppercase;border:1px solid currentColor;border-radius:5px;padding:1px 6px;white-space:nowrap}
 .s-running{color:var(--green)} .s-scheduled{color:var(--blue)} .s-stale,.s-error{color:var(--red)} .s-offline,.s-stopped{color:var(--dim)}
+.h-HEALTHY{color:var(--green)} .h-IDLE{color:var(--blue)} .h-STALE,.h-FAILED{color:var(--red)} .h-BLOCKED{color:var(--amber)} .h-UNKNOWN{color:var(--dim)}
 
 /* pipeline flow */
 .flow{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:6px;margin-bottom:12px}
@@ -393,6 +394,7 @@ const ago = ts => ts ? dur(Date.now()/1000 - ts) + " siden" : NA;
 const utc = ts => ts ? new Date(ts*1000).toISOString().replace("T"," ").slice(0,16) + " UTC" : NA;
 const badge = l => { const k = String(l||"").split(/[ (]/)[0]; return `<span class="badge b-${esc(k)}">${esc(l||"")}</span>`; };
 const stateChip = s => `<span class="state s-${esc(s)}">${esc(s)}</span>`;
+const healthChip = (h, why) => h ? `<span class="state h-${esc(h)}" title="${esc(why || "")}">${esc(h)}</span>` : "";   // from recorded work, not the heartbeat
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const STAGES = ["DISCOVERED","QUEUED","RUNNING","COST_CHECK","VALIDATION","PAPER_ELIGIBLE","PAPER_TRADING","ACCEPTED","REJECTED","PAUSED"];
 const STAGE_COL = {REJECTED:"#ff5d5d", PAUSED:"#f4b860", PAPER_TRADING:"#5fd39a", PAPER_ELIGIBLE:"#5fd39a", ACCEPTED:"#5fd39a", DISCOVERED:"#b39cff"};
@@ -671,8 +673,9 @@ function renderAgents(a){
   const sup = a.supervisor;
   $("#sup-note").textContent = sup.alive ? `Supervisor kører · ${a.total} agenter · ${a.running} arbejder` : `Flåden kører ikke — agenter vises som senest rapporteret. Start: py -m lab fleet`;
   $("#agents").innerHTML = a.agents.length ? a.agents.map(x => `<div class="ag" data-agent="${esc(x.agent)}">
-      <span class="n">${esc(x.agent)}</span><span>${stateChip(x.status)}</span>
+      <span class="n">${esc(x.agent)}</span><span>${healthChip(x.health, x.health_reason)} ${stateChip(x.status)}</span>
       <span class="r">${esc(x.role)}</span>
+      ${x.health_reason ? `<span class="r">helbred: ${esc(x.health_reason)}</span>` : ""}
       <span class="r">${x.current_job ? `▶ ${esc(x.current_job)} · ${dur(x.job_running_s)}` : esc(x.next_action || x.detail || "")}</span>
       <span class="r">opgaver ${x.tasks_done ?? 0} · fejl ${x.errors ?? 0} · gentagelser ${x.retries ?? 0} · puls for ${dur(x.heartbeat_age_s)} siden</span>
       ${x.last_result ? `<span class="r" title="${esc(x.last_result)}">sidst: ${esc(x.last_result)}</span>` : ""}</div>`).join("")
