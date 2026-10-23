@@ -177,6 +177,23 @@ class Registry(unittest.TestCase):
         self.assertTrue(trig and all(b is None for _, b in chains.values()))
 
 
+class StatusCli(unittest.TestCase):
+    def test_a_later_final_decision_outranks_an_old_pass_verdict(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            p, lines = os.path.join(tmp, "lab.db"), []
+            db = DB(p)
+            for e in ("E8", "E9"):
+                registry.discover(db, e, "h", "tag_" + e, "inst", "minutes", "taker", "unit test", H)
+                registry.record_result(db, e, "EXPLORATORY", "PASS (screen): all gates passed", {}, {}, S)
+            code = lifecycle.request_approval(db, "E9", "WITHDRAWN", H, "owner decision: retire the old pass unused")
+            lifecycle.confirm(db, code, H)
+            db.close()
+            self.assertEqual(cli(["status"], p, lines.append), 0)
+            row = {x.split()[0]: x for x in lines if x.startswith("E")}
+            self.assertIn("WITHDRAWN: owner decision: retire the old pass unused (tidligere: PASS", row["E9"])
+            self.assertTrue(row["E8"].rstrip().endswith("PASS (screen): all gates passed"))   # not final: unchanged
+
+
 class Safety(unittest.TestCase):
     def test_lab_has_no_order_or_credential_code(self):
         banned = ("private_key", "api_key", "apisecret", "place_order", "/order", "signtransaction", "withdraw(")

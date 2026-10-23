@@ -517,7 +517,13 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
         elif args.cmd == "status":
             rows = registry.status(db)
             for x in rows:
-                out(f"{x['exp_id']:<30} {x['state'] or '-':<14} {x['label'] or '':<12} {x['verdict'] or ''}")
+                why = x["verdict"] or ""
+                if x["final"] and why.upper().startswith("PASS"):      # a later final decision outranks an old pass
+                    t = db.one("SELECT to_state, reason FROM transitions WHERE exp_id=? ORDER BY id DESC LIMIT 1",
+                               x["exp_id"])
+                    if t and t["reason"]:
+                        why = f"{t['to_state']}: {t['reason']} (tidligere: {why})"
+                out(f"{x['exp_id']:<30} {x['state'] or '-':<14} {x['label'] or '':<12} {why}")
             counts = {}
             for x in rows:
                 counts[x["state"]] = counts.get(x["state"], 0) + 1
