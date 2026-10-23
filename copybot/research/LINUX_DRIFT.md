@@ -429,6 +429,8 @@ har handlet, gav +3,18 % i samme periode (Binance 1h-åbning ved start mod nu). 
 - `/api/balance` og dashboardets fremadtest-kort viser køb-og-hold i USD og forskellen (P&L − køb-og-hold).
 - Ærligt: det er en tilnærmelse (de handlede mønter, ikke nødvendigvis hele universet; ingen funding/gebyr i
   benchmarket). Den afgør intet; fremadtestens egen regel (ændring 7) gælder.
+- Udvidet samme dag kl. 18:25 (før kode): skyggekontoen (`SHADOW_`, kortet "Total P&L (paper)") får samme
+  sammenligning, så det største tal øverst heller ikke står uden benchmark.
 
 ### Vagten måler pm_lp-dækningen (tilføjet 2026-10-23 kl. 17:55, før kode; brugerens ja samme dag: "ja til pm_lp dækning")
 
