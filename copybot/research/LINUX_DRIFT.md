@@ -397,6 +397,13 @@ noget, ændrer en gate eller rører indsamleren:
   - **Papirkonti**: én tabel med en række pr. gruppe (baner og scanner, fremadtest, skyggehandel) og I alt: konti,
     startkapital, saldo, netto, gebyrer, funding — fra `/api/balance` som før; alt mærket simuleret og ikke bevis.
   - "Senest stoppet" og "Startforsøg" foldes sammen som standard (et klik åbner dem).
+- **Falsk grøn for live-kilder rettet (tilføjet 2026-10-23 kl. 17:03, før kode).** `/api/coverage` viste GDELT som
+  `ok`, skønt ingen nyhed er gemt siden 2026-10-22 10:23 UTC (ca. 31 t) og hvert forsøg siden fejlede med HTTP 429
+  (backoff efter ændring 17 punkt 9: nu 24 t mellem forsøg). Årsag: kildens alder blev målt fra `MAX(ts)` over alle
+  rækker, også fejlrækkerne, så en fejl gjorde kilden "frisk"; og en fejl talte kun som aktuel i 2 t. Ændring, kun
+  visning: alderen måles fra seneste datarække; ny tilstand `failing` ("fejler") når seneste fejl er nyere end seneste
+  data og der ikke er kommet data i over 2 t; ellers som før (`stale` efter kildens grænse, `errors` ved en fejl inden
+  for 2 t, `ok`). En enkelt fejl lige efter frisk data er stadig `errors`, ikke `failing`.
 
 ### Før pm_lp-holdouten: watchdog og strøm (tjekket 2026-10-22)
 
