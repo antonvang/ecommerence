@@ -187,22 +187,24 @@ footer{font:11px var(--mono);color:var(--dim);text-align:center;padding-top:8px;
 body{font-size:14px}
 .wrap{gap:16px}
 .brand h1{font-size:20px}
-.money{display:grid;grid-template-columns:1.3fr 1.3fr 1fr 1fr;gap:12px}
-@media (max-width:1000px){.money{grid-template-columns:1fr 1fr}}
-@media (max-width:520px){.money{grid-template-columns:1fr}}
-.money.sim{grid-template-columns:repeat(3,minmax(0,1fr))}
-@media (max-width:1000px){.money.sim{grid-template-columns:1fr}}
-.money.sim .simcap{grid-column:1/-1;font:700 11px var(--mono);letter-spacing:.16em;color:var(--violet)}
-.mcard{position:relative;border:1px solid var(--line);border-radius:16px;padding:16px 18px;background:linear-gradient(180deg,#14181fee,#0f1217ee);overflow:hidden;min-width:0}
-.mcard .lab{font:700 11px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--mute)}
-.mcard .big{font:700 36px/1.15 var(--mono);font-variant-numeric:tabular-nums;margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.mcard .sub{font:12px var(--mono);color:var(--mute);margin-top:4px;min-height:16px}
-.mcard.pnl::before{content:"";position:absolute;left:0;top:16px;bottom:16px;width:4px;border-radius:4px;background:var(--green);box-shadow:0 0 14px var(--green)}
-.mcard.pnl.neg::before{background:var(--red);box-shadow:0 0 14px var(--red)}
-.mcard.pnl.zero::before{background:var(--dim);box-shadow:none}
 .pos{color:var(--green)} .neg{color:var(--red)}
-.mcard.glow{animation:glow 2.4s ease-out}
-@keyframes glow{0%{box-shadow:0 0 0 0 #5fd39aaa;border-color:var(--green)}100%{box-shadow:0 0 0 22px #5fd39a00}}
+.ov{padding:16px 20px}
+.ov-top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.ov-verdict{display:flex;align-items:center;gap:12px;font:700 22px var(--mono)}
+.ov-dot{width:14px;height:14px;border-radius:50%;background:var(--dim);flex:none}
+.ov.ok .ov-dot{background:var(--green);box-shadow:0 0 12px var(--green)} .ov.ok #ov-text{color:var(--green)}
+.ov.warn .ov-dot{background:var(--amber);box-shadow:0 0 12px var(--amber)} .ov.warn #ov-text{color:var(--amber)}
+.ov.bad .ov-dot{background:var(--red);box-shadow:0 0 12px var(--red)} .ov.bad #ov-text{color:var(--red)}
+.ov-when{font:12px var(--mono);color:var(--mute)}
+.ov-list{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:6px}
+.ov-list li{font:13px/1.45 var(--mono);padding:8px 12px;border-radius:10px;border:1px solid var(--line2);background:#0e1116}
+.ov-list li.bad{border-color:#ff5d5d88} .ov-list li.warn{border-color:#f4b86088} .ov-list li b{margin-right:8px}
+.ov-list li.bad b{color:var(--red)} .ov-list li.warn b{color:var(--amber)}
+.ov-fine{font:12px/1.5 var(--mono);color:var(--mute);margin-top:10px}
+.acc tr.total td{border-top:1px solid var(--line);font-weight:700}
+.acc .grp{font-weight:700} .acc .why{font:11px var(--mono);color:var(--dim)}
+details.fold{margin-top:10px} details.fold>summary{cursor:pointer;font-size:12px;color:var(--sand);list-style:none}
+details.fold>summary::before{content:"▸ ";color:var(--mute)} details.fold[open]>summary::before{content:"▾ "}
 .status{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));gap:8px}
 @media (max-width:1200px){.status{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media (max-width:520px){.status{grid-template-columns:repeat(2,minmax(0,1fr))}}
@@ -283,25 +285,21 @@ details.more[open]>summary{margin-bottom:12px}
   <div class="banner amber" id="b-ctl"></div>
   <div class="banner amber" id="b-off"></div>
 
-  <section class="money" aria-label="Saldo og profit">
-    <div class="mcard" id="m-bal"><div class="lab">Saldo (paper)</div><div class="big" id="bal">–</div><div class="sub" id="balsub"></div></div>
-    <div class="mcard pnl zero" id="m-pnl"><div class="lab" style="padding-left:6px">Total P&amp;L (paper)</div><div class="big" id="pnl" style="padding-left:6px">–</div><div class="sub" id="pnlsub" style="padding-left:6px"></div></div>
-    <div class="mcard" id="m-today"><div class="lab">I dag</div><div class="big" id="today">–</div><div class="sub" id="todaysub"></div></div>
-    <div class="mcard" id="m-strat"><div class="lab">Aktive strategier</div><div class="big" id="strat">–</div><div class="sub" id="stratsub"></div></div>
+  <section class="panel corner ov" id="overview" aria-label="Overblik">
+    <div class="ov-top"><div class="ov-verdict"><span class="ov-dot"></span><span id="ov-text">Henter status …</span></div>
+      <div class="ov-when" id="ov-when"></div></div>
+    <ul class="ov-list" id="ov-list"></ul><div class="ov-fine" id="ov-fine"></div>
   </section>
-  <section class="money sim" aria-label="Simuleret samlet (ikke godkendt)">
-    <div class="simcap" id="simcap">SIMULERET SAMLET (ikke godkendt)</div>
-    <div class="mcard" id="m-fwd"><div class="lab">Fremadtest-saldo</div><div class="big" id="fwd">–</div><div class="sub" id="fwdsub"></div></div>
-    <div class="mcard" id="m-comb"><div class="lab">Samlet simuleret værdi</div><div class="big" id="comb">–</div><div class="sub" id="combsub"></div></div>
-    <div class="mcard pnl zero" id="m-combpnl"><div class="lab" style="padding-left:6px">Samlet simuleret P&amp;L</div><div class="big" id="combpnl" style="padding-left:6px">–</div><div class="sub" id="combpnlsub" style="padding-left:6px"></div></div>
-  </section>
+
+  <section class="panel corner" id="accounts"><h2>Papirkonti <span class="tagx" id="acc-note">simuleret · ingen rigtige penge · ikke bevis</span></h2>
+    <div class="scroll acc" id="acc"><div class="sk" style="height:120px"></div></div></section>
 
   <section class="status" id="status" aria-label="Status"></section>
 
   <section class="panel corner" id="lanes"><h2>Bane- og scannerkonti <span class="tagx" id="lanes-note">simuleret · aldrig bevis · startes og stoppes automatisk</span></h2>
     <div class="grid3" id="lanes-sum"></div><div class="scroll" id="lanes-act" style="max-height:520px"></div>
-    <div class="note" style="margin:10px 0 4px;font-size:12px;color:var(--sand)">SENEST STOPPET</div><div class="scroll" id="lanes-old" style="max-height:300px"></div>
-    <div class="note" style="margin:10px 0 4px;font-size:12px;color:var(--sand)">STARTFORSØG: EKSEKVERING PR. BEN OG KLASSIFIKATION (OBSERVERET I DE LIVE BØGER)</div><div class="scroll" id="lanes-probes" style="max-height:360px"></div></section>
+    <details class="fold"><summary>Senest stoppet</summary><div class="scroll" id="lanes-old" style="max-height:300px"></div></details>
+    <details class="fold"><summary>Startforsøg: eksekvering pr. ben og klassifikation (observeret i de live bøger)</summary><div class="scroll" id="lanes-probes" style="max-height:360px"></div></details></section>
 
   <section class="panel corner" id="capital"><h2>Kapitalmodel <span class="tagx">dit eget beløb · planlægning, ingen handel, ingen konto</span></h2>
     <div class="crow" style="flex-wrap:wrap;gap:8px">
@@ -577,23 +575,24 @@ function animate(id, v, fmt){
   const step = t => { const k = d ? Math.min(1, (t - t0) / d) : 1, e = 1 - Math.pow(1 - k, 3); el.textContent = fmt(from + (v - from) * e); if (k < 1) requestAnimationFrame(step); };
   requestAnimationFrame(step);
 }
-let lastEquity = null;
 function renderMoney(b){
-  animate("bal", b.equity, v => usd(v));
-  $("#balsub").textContent = b.capital == null ? "ingen strategi handler endnu — starter, når den første består alle tests" : `startede på ${usd(b.capital)} · ${b.active} aktiv(e)` + (b.shadow ? ` · heraf ${b.shadow} skyggehandel (simuleret, ikke godkendt)` : "");
-  animate("pnl", b.pnl, v => usd(v, true));
-  $("#pnl").className = "big " + (b.pnl > 0 ? "pos" : b.pnl < 0 ? "neg" : "");
-  $("#m-pnl").className = "mcard pnl" + (b.pnl == null || b.pnl === 0 ? " zero" : b.pnl < 0 ? " neg" : "");
-  $("#pnlsub").textContent = b.pnl == null ? "simuleret · rigtig konto: ikke tilgængelig" : `${(b.pnl_pct*100).toFixed(2)}% · realiseret ${usd(b.realized, true)} · urealiseret ${usd(b.unrealized, true)}` + (b.funding_t0 ? ` · inkl. funding fra ${utc(b.funding_t0)} (${usd(b.funding || 0, true)})` : " · ekskl. funding (bogføres fra første afregning efter deploy)");
-  animate("today", b.today, v => usd(v, true));
-  $("#today").className = "big " + (b.today > 0 ? "pos" : b.today < 0 ? "neg" : "");
-  $("#todaysub").textContent = b.capital == null ? "" : `${b.open_positions} åbne positioner`;
-  animate("strat", b.active, v => String(Math.round(v)));
-  const f = b.forward || {}, c = b.combined || {}, r = b.reconciliation || {};
-  $("#stratsub").textContent = `${b.trading ?? 0} handler · ${b.paused ?? 0} på pause` + (f.ledgers ? ` · fremadtest: ${f.running} handler, ${f.paused} på pause (ikke godkendt)` : "") + ((b.lane || {}).ledgers ? ` · bane- og scannerkonti: ${b.lane.running} handler (simuleret, aldrig bevis)` : "") + ` · ${b.closed_trades} lukkede handler` + (b.win_rate == null ? "" : ` · ${(b.win_rate*100).toFixed(0)}% vundet`) + (b.shadow ? " · skyggehandel tæller ikke som godkendt" : "");
-  renderSim(b, f, c, r);
-  if (lastEquity != null && b.equity != null && b.equity !== lastEquity) { const m = $("#m-bal"); m.classList.remove("glow"); void m.offsetWidth; m.classList.add("glow"); }
-  lastEquity = b.equity;
+  const f = b.forward || {}, l = b.lane || {}, r = b.reconciliation || {};
+  const groups = [
+    ["Baner og scanner", l, l.ledgers ? `${l.active ?? 0} aktive af ${l.ledgers}` : "0", "udforskning; startes og stoppes automatisk; aldrig bevis"],
+    ["Fremadtest", f, f.ledgers ? `${f.running ?? 0} af ${f.ledgers}` : "0", "screenede strategier testet fremad; ikke godkendt"],
+    ["Skyggehandel", {capital: b.capital, equity: b.equity, pnl: b.pnl, fees: b.fees, funding: b.funding}, String(b.active ?? 0), "MVRV-skyggehandel; ikke godkendt"]
+  ].filter(g => g[1] && g[1].capital != null);
+  const sum = k => groups.reduce((a, g) => a + (g[1][k] || 0), 0);
+  const cell = v => `<span class="${v > 0 ? "pos" : v < 0 ? "neg" : ""}">${usd(v, true)}</span>`;
+  const rows = groups.map(([n, g, cnt, why]) => ({n, cnt, why, cap: g.capital, eq: g.equity, pnl: g.pnl, fees: g.fees, fund: g.funding}));
+  if (rows.length) rows.push({n: "I alt (alt simuleret)", cnt: "", why: "", cap: sum("capital"), eq: sum("equity"), pnl: sum("pnl"), fees: sum("fees"), fund: sum("funding"), total: true});
+  $("#acc").innerHTML = table([{h:"Gruppe", f:x => `<div class="grp">${esc(x.n)}</div>${x.why ? `<div class="why">${esc(x.why)}</div>` : ""}`},
+      {h:"Konti", f:x => esc(x.cnt)}, {h:"Startkapital", num:1, f:x => usd(x.cap)}, {h:"Saldo (paper)", num:1, f:x => usd(x.eq)},
+      {h:"Netto", num:1, f:x => cell(x.pnl)}, {h:"Gebyrer", num:1, f:x => usd(-(x.fees || 0), true)}, {h:"Funding", num:1, f:x => cell(x.fund || 0)}],
+    rows, "Ingen papirkonti endnu.", x => x.total ? 'class="total"' : "");
+  $("#acc-note").textContent = "simuleret · ingen rigtige penge · ikke bevis" + (r.ok === false ? " · AFSTEMNING AFVIGER" : r.ok ? " · afstemt" : "")
+    + (b.funding_t0 ? ` · funding fra ${utc(b.funding_t0)}` : "");
+  $("#acc-note").title = r.ok === false ? (r.problems || []).join("\n") : "Netto = saldo − startkapital. Gebyrer og funding er allerede med i netto; de vises også hver for sig.";
   const h = b.history.map(p => [p.ts, p.equity]);
   $("#balchart").innerHTML = !h.length ? `<div class="empty">Balancehistorik: ${NA} — ingen strategi handler på paper endnu.</div><div class="cap">Kilde: ${esc(b.source)}</div>`
     : axisChart(1000, 210, {l:70,r:10,t:16,b:24}, [h[0][0], Math.max(h[h.length-1][0], h[0][0] + 3600)],
@@ -601,22 +600,33 @@ function renderMoney(b){
         (X, Y) => `<line x1="${X(h[0][0])}" x2="${X(h[h.length-1][0])}" y1="${Y(b.capital)}" y2="${Y(b.capital)}" stroke="#5f5b57" stroke-dasharray="3 3"/><path d="${stepPath(h, X, Y)}" fill="none" stroke="${b.pnl >= 0 ? "#5fd39a" : "#ff5d5d"}" stroke-width="2"/>`,
         "tid (UTC)", "USD (simuleret)", day, v => "$" + num(v, 0)) + `<div class="cap">Formel paper-saldo (godkendte konti og skyggehandel; fremadtest vises for sig); værdien holdes til næste timemark (ingen interpolation). Stiplet linje = startkapital. Kilde: ${esc(b.source)}</div>`;
 }
-function renderSim(b, f, c, r){
-  const tf = b.funding_t0 ? ` · inkl. funding fra ${utc(b.funding_t0)}` : " · funding bogføres fra T_F";
-  $("#simcap").textContent = "SIMULERET SAMLET (ikke godkendt)" + tf + (r.ok === false ? " · AFSTEMNING AFVIGER" : r.ok ? " · afstemt" : "");
-  $("#simcap").title = r.ok === false ? r.problems.join("\n") : `${r.checks || 0} kontroller (tolerance ${r.tolerance}): pr. konto, formel = sum, fremadtest = sum, samlet = formel + fremadtest, gebyrer og funding = tabellerne`;
-  animate("fwd", f.ledgers ? f.equity : null, v => usd(v));
-  $("#fwdsub").textContent = f.ledgers ? `start ${usd(f.capital)} · P&L ${usd(f.pnl, true)} · ${f.running} handler, ${f.paused} på pause · ${f.open_positions} åbne positioner` : "ingen fremadtest-konti";
-  $("#fwdsub").title = "Fremadtest (simuleret, ikke godkendt). Tæller ikke i den formelle saldo.";
-  animate("comb", c.equity, v => usd(v));
-  $("#combsub").textContent = c.equity == null ? "" : `formel ${usd(b.equity ?? 0)} + fremadtest ${usd(f.equity ?? 0)} · start ${usd(c.capital)}`;
-  animate("combpnl", c.pnl, v => usd(v, true));
-  $("#combpnl").className = "big " + (c.pnl > 0 ? "pos" : c.pnl < 0 ? "neg" : "");
-  $("#m-combpnl").className = "mcard pnl" + (c.pnl == null || c.pnl === 0 ? " zero" : c.pnl < 0 ? " neg" : "");
-  $("#combpnlsub").textContent = c.pnl == null ? "" : `realiseret ${usd(c.realized, true)} + urealiseret ${usd(c.unrealized, true)} (realiseret indeholder allerede gebyrer ${usd(-c.fees, true)} og funding ${usd(c.funding, true)})`;
-  $("#combpnlsub").title = "Realiseret indeholder gebyrer og funding; de vises også hver for sig.";
-}
 function st(k, v, cls="", sub=""){ return `<div class="st"><div class="k">${esc(k)}</div><div class="v ${cls}">${v}</div>${sub ? `<div class="s">${sub}</div>` : ""}</div>`; }
+function renderOverview(k, a, ap){
+  const items = [], H = (a && a.health) || {}, ag = (a && a.agents) || [];
+  const add = (lvl, what, how) => items.push({lvl, what, how});
+  if (k.fail_closed) add("bad", "Laboratoriet er FAIL_CLOSED", "ingen nye jobs eller handler, før et menneske rydder det (se banneret)");
+  if (!k.supervisor.alive) add("bad", "Flåden kører ikke", "start den med ./START_LAB.sh fra mappen copybot");
+  if (k.watcher && !k.watcher.running) add("bad", "Vagten kører ikke", k.watcher.age_s == null ? "aldrig set" : `nede i ${dur(k.watcher.age_s)} · start med ./START_WATCH.sh (kræver dit ja)`);
+  if (k.supervisor.alive) [["FAILED", "bad"], ["STALE", "bad"], ["BLOCKED", "warn"]].forEach(([h, lvl]) => {   // a dead fleet is one item
+    const xs = ag.filter(x => x.health === h);
+    if (xs.length > 2) add(lvl, `${xs.length} agenter ${h}`, xs.map(x => x.agent).join(", ") + ` · fx ${xs[0].health_reason || ""}`);
+    else xs.forEach(x => add(lvl, `${x.agent}: ${h}`, x.health_reason || ""));
+  });
+  if (k.errors_window) add("warn", `${k.errors_window} fejl de sidste ${Math.round(k.window_s/60)} min`, "se Teknik → Risiko og worker-log nederst");
+  const c = k.control || {};
+  if (c.paused) add("warn", "Flåden er sat på pause", "genoptag i agentpanelet"); if (c.hold) add("warn", "Ressourcestop", "for lidt RAM eller disk");
+  const nd = k.data && k.data.newest_ts; if (nd && Date.now()/1000 - nd > 7200) add("warn", "Data er gamle", `nyeste data ${ago(nd)}`);
+  const w = (ap && ap.waiting) || []; if (w.length) add("warn", `${w.length} venter på din godkendelse`, w.slice(0, 3).map(x => x.name).join(" · "));
+  const bad = items.some(x => x.lvl === "bad");
+  $("#overview").className = "panel corner ov " + (items.length ? (bad ? "bad" : "warn") : "ok");
+  $("#ov-text").textContent = items.length ? `${items.length} kræver opmærksomhed` : "Alt kører";
+  $("#ov-list").innerHTML = items.map(x => `<li class="${x.lvl}"><b>${esc(x.what)}</b>${esc(x.how)}</li>`).join("");
+  const g = k.gate_s7 || {};
+  $("#ov-when").textContent = `kontrolleret ${new Date().toISOString().slice(11,19)} UTC`;
+  $("#ov-fine").innerHTML = `Agenter: ${H.HEALTHY ?? 0} arbejder · ${H.IDLE ?? 0} venter på jobs` + (H.UNKNOWN ? ` · ${H.UNKNOWN} ukendt` : "")
+    + ` · vagt ${k.watcher && k.watcher.running ? "kører" : "nede"} · S7 ${(g.covered_s/86400 || 0).toFixed(1)}/7 dage`
+    + ` · nyeste data ${nd ? ago(nd) : NA} · deploy ${esc((k.deploy || {}).commit || NA)}`;
+}
 function renderStatus(k){
   K = k;
   const sup = k.supervisor, gb = b => b == null ? null : (b/1e9);
@@ -663,7 +673,6 @@ function celebrate(eid, text, to){
   $("#found-s").textContent = (text || "") + " · " + note;
   const el = $("#found"); el.classList.remove("show"); void el.offsetWidth; el.classList.add("show");
   ["VALIDATION", "PAPER_ELIGIBLE", "PAPER_TRADING"].forEach((s, i) => setTimeout(() => Orbits.pulse(s, "#5fd39a", true), i * 300));
-  const m = $("#m-bal"); m.classList.remove("glow"); void m.offsetWidth; m.classList.add("glow");
 }
 
 /* ---------------- agents ---------------- */
@@ -995,7 +1004,7 @@ async function refresh(full){
   if (fastBusy) return; fastBusy = true;
   try {
     const [k, a, b, f, ap, ln] = await Promise.all([api("/api/kpis"), api("/api/agents"), api("/api/balance"), api("/api/feed?limit=40"), api("/api/approvals"), api("/api/lanes")]);
-    renderStatus(k); renderAgents(a); renderMoney(b); renderLanes(ln); renderFeed(f); renderApprovals(ap);
+    renderStatus(k); renderAgents(a); renderMoney(b); renderLanes(ln); renderFeed(f); renderApprovals(ap); renderOverview(k, a, ap);
     await loadExperiments();
     if (full || Date.now() - slowAt > 20000) {
       slowAt = Date.now();
@@ -1004,7 +1013,7 @@ async function refresh(full){
       if ($("#more").open) await Promise.all([loadJobs(), loadLog(), loadRisk(), refreshAudit()]);
       else await refreshAudit();
     }
-    lastOk = Date.now(); $("#b-off").classList.remove("show"); document.querySelectorAll(".st,.mcard").forEach(n => n.classList.remove("stale"));
+    lastOk = Date.now(); $("#b-off").classList.remove("show"); document.querySelectorAll(".st,.ov").forEach(n => n.classList.remove("stale"));
     const skew = Math.abs(Date.now()/1000 - k.now);
     $("#foot").textContent = `Sidst opdateret ${new Date().toISOString().slice(11,19)} UTC · hændelse #${k.last_event_id}` + (skew > 60 ? ` · urforskel ${dur(skew)}` : "");
     if (link === "offline") setLink(es ? "live" : "polling");
@@ -1013,7 +1022,7 @@ async function refresh(full){
 }
 function showOffline(){
   setLink("offline");
-  document.querySelectorAll(".st,.mcard").forEach(n => n.classList.add("stale"));
+  document.querySelectorAll(".st,.ov").forEach(n => n.classList.add("stale"));
   const b = $("#b-off"); b.classList.add("show");
   b.textContent = lastOk ? `FORBINDELSEN ER TABT — lab-serveren svarer ikke. Tallene er fra for ${dur((Date.now()-lastOk)/1000)} siden og er IKKE live.` : "KAN IKKE NÅ LAB-SERVEREN — start den med: py -m lab web";
 }

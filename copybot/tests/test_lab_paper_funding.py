@@ -373,15 +373,17 @@ class Truth(unittest.TestCase):
 
 
 class Dashboard(unittest.TestCase):
-    def test_simulated_overview_row_is_separate_from_the_formal_saldo(self):
+    def test_each_paper_group_is_shown_on_its_own_row_and_marked_simulated(self):
+        """research/LINUX_DRIFT.md 2026-10-23: one account table, a row per group (lanes, forward test, shadow)
+        and a total, all simulated; replaces the seven money cards whose biggest number was the shadow account."""
         with open(os.path.join(os.path.dirname(command.__file__), "dashboard.html"), encoding="utf-8") as f:
             html = f.read()
-        for s in ("SIMULERET SAMLET (ikke godkendt)", "Fremadtest-saldo", "Samlet simuleret værdi",
-                  "Samlet simuleret P&amp;L", "med output 24 t", "data.newest_ts", "Edge mod validering (z)",
-                  "ingen forventning"):
+        for s in ('"Baner og scanner"', '"Fremadtest"', '"Skyggehandel"', "I alt (alt simuleret)", "Saldo (paper)",
+                  "ikke godkendt", "simuleret · ingen rigtige penge · ikke bevis", "AFSTEMNING AFVIGER",
+                  "med output 24 t", "data.newest_ts", "Edge mod validering (z)", "ingen forventning"):
             self.assertIn(s, html)
-        self.assertEqual(html.count('class="mcard'), 7)                            # 4 money cards + one row of 3
-        self.assertNotIn("fremadtest udenfor saldoen", html)                       # moved out of #balsub
+        self.assertNotIn('class="mcard', html)
+        self.assertNotIn("fremadtest udenfor saldoen", html)
 
 
 class VerifierFindings(Base):
