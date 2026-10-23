@@ -379,6 +379,13 @@ noget, ændrer en gate eller rører indsamleren:
   af brugeren (laben nede ca. 15:08–15:16, pm_lp mistede 2 minutter; registret `quick_check` ok). **Ingen afgørelse,
   ingen ændring af dashboardet.** Headless Firefox kørte ved siden af brugerens egen Firefox, da pc'en frøs; årsagen
   er ukendt (intet i journalen), men flere browser-benchmarks kører ikke uden brugerens ja.
+  **Afgjort samme dag kl. 16:16–16:32 (brugerens ja 16:12):** ny serie med 60 s opvarmning, 2 gentagelser, én
+  headless Firefox ad gangen med `nice 19` og en vagt, der afbrød ved < 2 GB ledig RAM eller load > 6 (udløste ikke;
+  ledig RAM ≥ 11,2 GB). CPU for Firefox-procestræet, 60 s: tom side 2,1 / 2,2 %; dashboard som i dag 12,6 / 15,6 %
+  (snit 14,1; runde 1 med samtidige tests, load 4); uden LED-blink 4,5 / 5,7 % (snit 5,1); blink i 4 trin 8,2 / 7,9 %.
+  Forskellen (ca. 9 point) er tre gange større end spredningen mellem gentagelser. **Ændring:** `.led.live` (forbindelses-
+  lampen) lyser fast grønt uden animation; farven og teksten ("live"/"polling"/"offline") viser stadig tilstanden.
+  Forventet: dashboardfanen ca. 14 % → ca. 5 % af en kerne i headless Firefox (målt; brugerens egen Firefox er ikke målt).
 
 ### Før pm_lp-holdouten: watchdog og strøm (tjekket 2026-10-22)
 
