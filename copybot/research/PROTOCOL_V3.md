@@ -1972,3 +1972,31 @@ netforbindelse som pm_lp-indsamleren, hvis dækning (D1 ≥ 90 %) holdouten 10-3
    gennemløb, en konto pr. 10 min, højst 2 pr. funktion, 11e og 11g.
 3. **Ærligt:** en variant, der hverken holder noget nu eller har 5 mønter med bøger, får nu 11b's 24-timers
    genforsøg i stedet for det permanente "fewer than 5"-spring; ved genforsøget gælder reglen som før.
+
+## Ændring 17e (2026-10-23): placebo fremad for nynoterede mønter (metode m17e) — før kode
+
+**Beslutning:** brugeren 2026-10-23 ("fiks 4", svar på morgenrapportens punkt 4 om placeboens blinde vinkel). Det er
+en ændring af et screeningskriterium, besluttet efter at explore0-resultaterne er kendt (se
+`research/studies/AUDIT_HYPOTESER_2026-10-22.md`). Målingen på uafhængige data (train3/validation3, ændring 17 punkt
+7–8) bruger ingen placebo og ændres ikke.
+
+1. **Fejlen.** Screeningens placebo flytter t 30 døgn *tilbage* (ændring 17 punkt 5). En mønt, der lige er noteret,
+   har ingen kurs dengang, så placeboen får n < 15, og tjekket "placebo p > 0,05 (n >= 15)" kan aldrig bestå. 7
+   SCREEN_FAIL-nøgler under m17 har placebo-n 0–2: `futures_listing|far_1d`, `futures_listing|far_7d`,
+   `innovation_zone|sar_1d`, `innovation_zone|sar_7d`, `spot_listing|sar_1d`, `spot_listing|sar_7d`,
+   `staking|sar_7d`. Fire fejler kun på placeboen (`futures_listing|far_7d`, `innovation_zone|sar_1d`,
+   `spot_listing|sar_1d`, `spot_listing|sar_7d`); tre fejler også p ≤ 0,005 og kan ikke bestå.
+2. **Metode m17e.** Samme nøgle, begivenheder, mønter (m17's), udfald, explore0-vindue, Reader-grænser og tjek som m17
+   med én forskel: har placeboen med t − 30 d færre end 15 begivenheder med data, bruges t + 30 d i stedet (samme
+   mønter, samme udfald, samme krav n ≥ 15 og tosidet p > 0,05). Begivenhedens vindue (højst t + 72 t + 7 d) og
+   placeboens vindue overlapper ikke. Placeboen registreres med sin forskydning (`shift_days` −30 eller +30).
+   Hvorfor fremad er en ærlig test: 30 døgn efter er mønten ikke længere ny. Falder nye mønter generelt i de første
+   måneder (og ikke på grund af meddelelsen), viser placeboen fremad det samme fald og afviser nøglen.
+3. **Kandidater.** `<type>|<udfald>|m17e` kun for m17-nøgler, der er screenet SCREEN_FAIL med placebo-n < 15 (i dag
+   de 7 ovenfor). Hver screenes én gang under m17e; ingen anden nøgle genscreenes, og m17-resultaterne står.
+4. **Låsning og alfa uændret.** En SCREEN_PASS under m17e kræver som alle andre en dateret LÅS-17-ændring og måles
+   med alpha_k = 0,05 · 2^−k (k = låsens nummer i filen; næste lås er k = 4, alpha 0,003125). Forudbestemt nu, før
+   screeningen: `futures_listing|far_7d|m17e` låses ikke, selv om den består, fordi train3-data for de samme
+   futures-listninger er læst ved målingen af `futures_listing|sar_7d|m17` (ændring 17b, REJECTED).
+5. **Forbehold, nævnt før screening:** pipelinen har nu 124 kandidater (108 + 9 + 7); kriteriet er valgt efter at
+   have set explore0-resultaterne for netop disse nøgler. Et PASS i screeningen er udforskning og aldrig bevis.
