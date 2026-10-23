@@ -416,6 +416,20 @@ noget, ændrer en gate eller rører indsamleren:
   dem. Feltet "Jobs i kø" viser klar og planlagt hver for sig ("0 klar", "3 planlagt · næste 2027-05-07"), fordi
   de tre jobs er fremadtestenes afgørelser i 2027, ikke en fastlåst kø.
 
+### Fremadtest mod køb-og-hold (tilføjet 2026-10-23 kl. 18:15, før kode; brugerens directive: "undersøg, om de nuværende rapporter kan give falsk optimisme")
+
+Målt: `FWD_E_vol_managed_long_p1` står +2,79 % siden 10-18 20:15 UTC, mens lige-vægtet køb-og-hold af de 8 mønter, den
+har handlet, gav +3,18 % i samme periode (Binance 1h-åbning ved start mod nu). Dashboardet viser fremadtestenes P&L
+(+178–276 USD samlet) i grønt uden nogen sammenligning, så en gevinst, der er ren markedsbevægelse, ligner en fordel.
+Ændring, kun visning og registrering (ingen fremadtestregel, ingen afgørelse, intet i papirregnskabet ændres):
+- `lab/benchmark.py`: højst én gang i timen, for hver aktiv fremadtestkonto, lige-vægtet køb-og-hold af de mønter, kontoen
+  har handlet, fra kontoens første mærkning til nu. Startprisen pr. mønt er 1h-åbningen ved start (hentes én gang og
+  gemmes); nutidsprisen kommer fra ét samlet kald (`/fapi/v1/ticker/price`). Gemmes som observationer
+  (`benchmark/1`, `fwd_bh_return`), så tallet kan genberegnes.
+- `/api/balance` og dashboardets fremadtest-kort viser køb-og-hold i USD og forskellen (P&L − køb-og-hold).
+- Ærligt: det er en tilnærmelse (de handlede mønter, ikke nødvendigvis hele universet; ingen funding/gebyr i
+  benchmarket). Den afgør intet; fremadtestens egen regel (ændring 7) gælder.
+
 ### Vagten måler pm_lp-dækningen (tilføjet 2026-10-23 kl. 17:55, før kode; brugerens ja samme dag: "ja til pm_lp dækning")
 
 Indtil nu opdagede vagten kun et totalt stop (seneste snapshot ældre end 300 s). En delvis forringelse — som natten
