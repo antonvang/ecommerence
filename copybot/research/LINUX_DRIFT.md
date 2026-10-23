@@ -517,3 +517,5 @@ holdouten røres ikke; intet genstartes.
   lukket (ændring 8), kun som familie; screening FAIL → explore0 er brugt; UNTESTABLE → ≥ 15 hændelser med data.
   Fanget ved bygningen: H5 (16c) står som PASS på validation3 (n 26), mens min statusrapport sagde "0 af 4"; det tal
   gjaldt kun ændring 17's screening. Den ændrer intet og afgør intet; ingen holdout læses.
+  Rettet samme dag kl. 18:40 (før kode): en screenings-PASS, som en låst måling siden har afgjort (4 nøgler), henviser
+  nu til målingens afgørelse i stedet for reglen "en LÅS-17-lås, så afgør målingen".
