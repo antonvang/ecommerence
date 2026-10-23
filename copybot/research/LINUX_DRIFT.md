@@ -412,3 +412,17 @@ noget, ændrer en gate eller rører indsamleren:
   - Ventetid på navneopslag før start som i pm-lp-collector.service (højst 10 min).
   - Fortryd: `systemctl --user disable copybot-lab copybot-watch` og slet de to filer.
   - Installation kræver begge dele: S7 åben og brugerens ja (brugeren kører scriptet selv).
+- **Agenternes sundhed bygger på udført arbejde, ikke på puls (tilføjet 2026-10-23 ca. 16:10, før kode; brugeren bad
+  om, at en kørende proces eller en frisk puls aldrig fremstår som sund uden nyligt arbejde).** I dag dømmer både
+  dashboardet (`status`) og vagten (`agent:<navn>`) kun ud fra pulsen og `ok`-flaget: en periodisk agent, hvis gennemløb
+  udebliver eller fejler, men som stadig sender puls, vises som sund. Nyt felt `health` pr. agent i `/api/agents`, med
+  grund (`health_reason`) og forventet interval:
+  - `STALE`: pulsen er gammel, eller en periodisk agents seneste vellykkede gennemløb er ældre end 3 intervaller (mindst
+    10 min) — grænsen følger agentens eget interval (premium-watch 60 s, news-watch 600 s, scanner 3600 s …).
+  - `FAILED`: status fejlet, eller seneste fejl er nyere end seneste succes.
+  - `BLOCKED`: status blokeret, eller en jobagent har kørbare jobs, men intet job er lykkedes i 30 min.
+  - `HEALTHY`: periodisk agent med vellykket gennemløb inden for grænsen; jobagent, der kører et job eller har arbejde.
+  - `IDLE`: jobagent uden kørbare jobs af sine typer (venter legitimt).
+  - `UNKNOWN`: periodisk agent uden registreret succes.
+  Vagten får samme dom for periodiske agenter: intet vellykket gennemløb inden for grænsen er en fejl, også med frisk
+  puls. Dashboardets agentliste viser `health` og grunden. Ingen gate, ingen beslutning og ingen genstart ændres.
