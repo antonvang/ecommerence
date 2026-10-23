@@ -188,6 +188,21 @@ body{font-size:14px}
 .wrap{gap:16px}
 .brand h1{font-size:20px}
 .pos{color:var(--green)} .neg{color:var(--red)}
+.money{display:grid;grid-template-columns:1.3fr 1.3fr 1fr 1fr;gap:12px}
+@media (max-width:1000px){.money{grid-template-columns:1fr 1fr}}
+@media (max-width:520px){.money{grid-template-columns:1fr}}
+.money.sim{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media (max-width:1000px){.money.sim{grid-template-columns:1fr}}
+.money.sim .simcap{grid-column:1/-1;font:700 11px var(--mono);letter-spacing:.16em;color:var(--violet)}
+.mcard{position:relative;border:1px solid var(--line);border-radius:16px;padding:16px 18px;background:linear-gradient(180deg,#14181fee,#0f1217ee);overflow:hidden;min-width:0}
+.mcard .lab{font:700 11px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--mute)}
+.mcard .big{font:700 36px/1.15 var(--mono);font-variant-numeric:tabular-nums;margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mcard .sub{font:12px var(--mono);color:var(--mute);margin-top:4px;min-height:16px}
+.mcard.pnl::before{content:"";position:absolute;left:0;top:16px;bottom:16px;width:4px;border-radius:4px;background:var(--green);box-shadow:0 0 14px var(--green)}
+.mcard.pnl.neg::before{background:var(--red);box-shadow:0 0 14px var(--red)}
+.mcard.pnl.zero::before{background:var(--dim);box-shadow:none}
+.mcard.glow{animation:glow 2.4s ease-out}
+@keyframes glow{0%{box-shadow:0 0 0 0 #5fd39aaa;border-color:var(--green)}100%{box-shadow:0 0 0 22px #5fd39a00}}
 .ov{padding:16px 20px}
 .ov-top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
 .ov-verdict{display:flex;align-items:center;gap:12px;font:700 22px var(--mono)}
@@ -289,6 +304,19 @@ details.more[open]>summary{margin-bottom:12px}
     <div class="ov-top"><div class="ov-verdict"><span class="ov-dot"></span><span id="ov-text">Henter status …</span></div>
       <div class="ov-when" id="ov-when"></div></div>
     <ul class="ov-list" id="ov-list"></ul><div class="ov-fine" id="ov-fine"></div>
+  </section>
+
+  <section class="money" aria-label="Saldo og profit">
+    <div class="mcard" id="m-bal"><div class="lab">Saldo (paper)</div><div class="big" id="bal">–</div><div class="sub" id="balsub"></div></div>
+    <div class="mcard pnl zero" id="m-pnl"><div class="lab" style="padding-left:6px">Total P&amp;L (paper)</div><div class="big" id="pnl" style="padding-left:6px">–</div><div class="sub" id="pnlsub" style="padding-left:6px"></div></div>
+    <div class="mcard" id="m-today"><div class="lab">I dag</div><div class="big" id="today">–</div><div class="sub" id="todaysub"></div></div>
+    <div class="mcard" id="m-strat"><div class="lab">Aktive strategier</div><div class="big" id="strat">–</div><div class="sub" id="stratsub"></div></div>
+  </section>
+  <section class="money sim" aria-label="Simuleret samlet (ikke godkendt)">
+    <div class="simcap" id="simcap">SIMULERET SAMLET (ikke godkendt)</div>
+    <div class="mcard" id="m-fwd"><div class="lab">Fremadtest-saldo</div><div class="big" id="fwd">–</div><div class="sub" id="fwdsub"></div></div>
+    <div class="mcard" id="m-comb"><div class="lab">Samlet simuleret værdi</div><div class="big" id="comb">–</div><div class="sub" id="combsub"></div></div>
+    <div class="mcard pnl zero" id="m-combpnl"><div class="lab" style="padding-left:6px">Samlet simuleret P&amp;L</div><div class="big" id="combpnl" style="padding-left:6px">–</div><div class="sub" id="combpnlsub" style="padding-left:6px"></div></div>
   </section>
 
   <section class="panel corner" id="accounts"><h2>Papirkonti <span class="tagx" id="acc-note">simuleret · ingen rigtige penge · ikke bevis</span></h2>
@@ -575,7 +603,26 @@ function animate(id, v, fmt){
   const step = t => { const k = d ? Math.min(1, (t - t0) / d) : 1, e = 1 - Math.pow(1 - k, 3); el.textContent = fmt(from + (v - from) * e); if (k < 1) requestAnimationFrame(step); };
   requestAnimationFrame(step);
 }
+let lastEquity = null;
 function renderMoney(b){
+  renderAccounts(b);
+  animate("bal", b.equity, v => usd(v));
+  $("#balsub").textContent = b.capital == null ? "ingen strategi handler endnu — starter, når den første består alle tests" : `startede på ${usd(b.capital)} · ${b.active} aktiv(e)` + (b.shadow ? ` · heraf ${b.shadow} skyggehandel (simuleret, ikke godkendt)` : "");
+  animate("pnl", b.pnl, v => usd(v, true));
+  $("#pnl").className = "big " + (b.pnl > 0 ? "pos" : b.pnl < 0 ? "neg" : "");
+  $("#m-pnl").className = "mcard pnl" + (b.pnl == null || b.pnl === 0 ? " zero" : b.pnl < 0 ? " neg" : "");
+  $("#pnlsub").textContent = b.pnl == null ? "simuleret · rigtig konto: ikke tilgængelig" : `${(b.pnl_pct*100).toFixed(2)}% · realiseret ${usd(b.realized, true)} · urealiseret ${usd(b.unrealized, true)}` + (b.funding_t0 ? ` · inkl. funding fra ${utc(b.funding_t0)} (${usd(b.funding || 0, true)})` : " · ekskl. funding (bogføres fra første afregning efter deploy)");
+  animate("today", b.today, v => usd(v, true));
+  $("#today").className = "big " + (b.today > 0 ? "pos" : b.today < 0 ? "neg" : "");
+  $("#todaysub").textContent = b.capital == null ? "" : `${b.open_positions} åbne positioner`;
+  animate("strat", b.active, v => String(Math.round(v)));
+  const f = b.forward || {}, c = b.combined || {}, r = b.reconciliation || {};
+  $("#stratsub").textContent = `${b.trading ?? 0} handler · ${b.paused ?? 0} på pause` + (f.ledgers ? ` · fremadtest: ${f.running} handler, ${f.paused} på pause (ikke godkendt)` : "") + ((b.lane || {}).ledgers ? ` · bane- og scannerkonti: ${b.lane.running} handler (simuleret, aldrig bevis)` : "") + ` · ${b.closed_trades} lukkede handler` + (b.win_rate == null ? "" : ` · ${(b.win_rate*100).toFixed(0)}% vundet`) + (b.shadow ? " · skyggehandel tæller ikke som godkendt" : "");
+  renderSim(b, f, c, r);
+  if (lastEquity != null && b.equity != null && b.equity !== lastEquity) { const m = $("#m-bal"); m.classList.remove("glow"); void m.offsetWidth; m.classList.add("glow"); }
+  lastEquity = b.equity;
+}
+function renderAccounts(b){
   const f = b.forward || {}, l = b.lane || {}, r = b.reconciliation || {};
   const groups = [
     ["Baner og scanner", l, l.ledgers ? `${l.active ?? 0} aktive af ${l.ledgers}` : "0", "udforskning; startes og stoppes automatisk; aldrig bevis"],
@@ -599,6 +646,21 @@ function renderMoney(b){
         [Math.min(...h.map(p => p[1]), b.capital), Math.max(...h.map(p => p[1]), b.capital)],
         (X, Y) => `<line x1="${X(h[0][0])}" x2="${X(h[h.length-1][0])}" y1="${Y(b.capital)}" y2="${Y(b.capital)}" stroke="#5f5b57" stroke-dasharray="3 3"/><path d="${stepPath(h, X, Y)}" fill="none" stroke="${b.pnl >= 0 ? "#5fd39a" : "#ff5d5d"}" stroke-width="2"/>`,
         "tid (UTC)", "USD (simuleret)", day, v => "$" + num(v, 0)) + `<div class="cap">Formel paper-saldo (godkendte konti og skyggehandel; fremadtest vises for sig); værdien holdes til næste timemark (ingen interpolation). Stiplet linje = startkapital. Kilde: ${esc(b.source)}</div>`;
+}
+function renderSim(b, f, c, r){
+  const tf = b.funding_t0 ? ` · inkl. funding fra ${utc(b.funding_t0)}` : " · funding bogføres fra T_F";
+  $("#simcap").textContent = "SIMULERET SAMLET (ikke godkendt)" + tf + (r.ok === false ? " · AFSTEMNING AFVIGER" : r.ok ? " · afstemt" : "");
+  $("#simcap").title = r.ok === false ? r.problems.join("\n") : `${r.checks || 0} kontroller (tolerance ${r.tolerance}): pr. konto, formel = sum, fremadtest = sum, samlet = formel + fremadtest, gebyrer og funding = tabellerne`;
+  animate("fwd", f.ledgers ? f.equity : null, v => usd(v));
+  $("#fwdsub").textContent = f.ledgers ? `start ${usd(f.capital)} · P&L ${usd(f.pnl, true)} · ${f.running} handler, ${f.paused} på pause · ${f.open_positions} åbne positioner` : "ingen fremadtest-konti";
+  $("#fwdsub").title = "Fremadtest (simuleret, ikke godkendt). Tæller ikke i den formelle saldo.";
+  animate("comb", c.equity, v => usd(v));
+  $("#combsub").textContent = c.equity == null ? "" : `formel ${usd(b.equity ?? 0)} + fremadtest ${usd(f.equity ?? 0)} · start ${usd(c.capital)}`;
+  animate("combpnl", c.pnl, v => usd(v, true));
+  $("#combpnl").className = "big " + (c.pnl > 0 ? "pos" : c.pnl < 0 ? "neg" : "");
+  $("#m-combpnl").className = "mcard pnl" + (c.pnl == null || c.pnl === 0 ? " zero" : c.pnl < 0 ? " neg" : "");
+  $("#combpnlsub").textContent = c.pnl == null ? "" : `realiseret ${usd(c.realized, true)} + urealiseret ${usd(c.unrealized, true)} (realiseret indeholder allerede gebyrer ${usd(-c.fees, true)} og funding ${usd(c.funding, true)})`;
+  $("#combpnlsub").title = "Realiseret indeholder gebyrer og funding; de vises også hver for sig.";
 }
 function st(k, v, cls="", sub=""){ return `<div class="st"><div class="k">${esc(k)}</div><div class="v ${cls}">${v}</div>${sub ? `<div class="s">${sub}</div>` : ""}</div>`; }
 function renderOverview(k, a, ap){
@@ -640,7 +702,7 @@ function renderStatus(k){
       st("Supervisor", sup.alive ? "KØRER" : "STOPPET", sup.alive ? "good" : "bad")
     + st("Agenter aktive", `${k.agents_active}/${k.agents_total}`, k.agents_active ? "good" : "", k.agents_with_output_24h == null ? "" : `${k.agents_with_output_24h} med output 24 t`)
     + st("Arbejder nu", num(k.agents_running, 0))
-    + st("Jobs i kø", num(k.queued_jobs, 0))
+    + st("Jobs i kø", `${num((k.research || {}).runnable_jobs ?? k.queued_jobs, 0)} klar`, "", (k.research && k.queued_jobs > (k.research.runnable_jobs || 0)) ? `${k.queued_jobs - (k.research.runnable_jobs || 0)} planlagt · næste ${utc(k.research.next_job_due_ts).slice(0, 10)}` : "")
     + st("Tests kørt", num(k.tests_completed.variant_evaluations + k.tests_completed.validation_runs, 0))
     + st("Tests/min", num(k.tests_per_min, 1), "", `sidste ${Math.round(k.window_s/60)} min`)
     + st("Fejl · gentag.", `${k.errors_window} · ${k.retries_window}`, k.errors_window ? "bad" : "")
@@ -673,6 +735,7 @@ function celebrate(eid, text, to){
   $("#found-s").textContent = (text || "") + " · " + note;
   const el = $("#found"); el.classList.remove("show"); void el.offsetWidth; el.classList.add("show");
   ["VALIDATION", "PAPER_ELIGIBLE", "PAPER_TRADING"].forEach((s, i) => setTimeout(() => Orbits.pulse(s, "#5fd39a", true), i * 300));
+  const m = $("#m-bal"); m.classList.remove("glow"); void m.offsetWidth; m.classList.add("glow");
 }
 
 /* ---------------- agents ---------------- */
@@ -1013,7 +1076,7 @@ async function refresh(full){
       if ($("#more").open) await Promise.all([loadJobs(), loadLog(), loadRisk(), refreshAudit()]);
       else await refreshAudit();
     }
-    lastOk = Date.now(); $("#b-off").classList.remove("show"); document.querySelectorAll(".st,.ov").forEach(n => n.classList.remove("stale"));
+    lastOk = Date.now(); $("#b-off").classList.remove("show"); document.querySelectorAll(".st,.ov,.mcard").forEach(n => n.classList.remove("stale"));
     const skew = Math.abs(Date.now()/1000 - k.now);
     $("#foot").textContent = `Sidst opdateret ${new Date().toISOString().slice(11,19)} UTC · hændelse #${k.last_event_id}` + (skew > 60 ? ` · urforskel ${dur(skew)}` : "");
     if (link === "offline") setLink(es ? "live" : "polling");
@@ -1022,7 +1085,7 @@ async function refresh(full){
 }
 function showOffline(){
   setLink("offline");
-  document.querySelectorAll(".st,.ov").forEach(n => n.classList.add("stale"));
+  document.querySelectorAll(".st,.ov,.mcard").forEach(n => n.classList.add("stale"));
   const b = $("#b-off"); b.classList.add("show");
   b.textContent = lastOk ? `FORBINDELSEN ER TABT — lab-serveren svarer ikke. Tallene er fra for ${dur((Date.now()-lastOk)/1000)} siden og er IKKE live.` : "KAN IKKE NÅ LAB-SERVEREN — start den med: py -m lab web";
 }
