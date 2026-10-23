@@ -339,6 +339,14 @@ noget, ændrer en gate eller rører indsamleren:
   afgørelse; for UNTESTABLE udelukkelserne summeret pr. underårsag og pr. type (hændelser, største n); for SCREEN_FAIL
   de fejlede tjek og hvilke nøgler, hvis placebo-tjek fejlede uden en placebo-værdi; for hver låst måling resultatet
   og screeningens træfrate på uafhængige data. Den ændrer intet og afgør intet.
+- Indeks `events_exp ON events(exp_id, kind, id)` (tilføjet 2026-10-23 kl. ca. 14:00, før kode; brugeren bad om at
+  fjerne målt spild). Målt: webprocessen brugte 15,5 % af en kerne hele tiden (3008 s CPU på 19316 s), mere end flåden
+  (6,1 %), fordi den åbne dashboardfane henter ~13 endpoints hvert 10.-20. sekund. Opslag med `kind=? AND exp_id=?`
+  (fx `pipeline.recorded_sha`, 9 ms pr. kald, 51 kald pr. visning) brugte `events_kind` og læste alle ~4.300
+  `job.done`-rækker. På en kopi af registret (22.174 hændelser) faldt de dashboardfunktioner, der kaldes ved hver
+  opdatering, fra 1,47 s til 0,77 s (`balance` 0,21→0,05 s, `rejected` 0,31→0,02 s, `paper2` 0,36→0,11 s); output var
+  identisk med fastfrosset ur (kun disk/RAM-målinger afveg). Indekset bygges på 0,03 s ved næste start; det ændrer
+  ingen række, ingen hashkæde og ingen afgørelse.
 
 ### Før pm_lp-holdouten: watchdog og strøm (tjekket 2026-10-22)
 
