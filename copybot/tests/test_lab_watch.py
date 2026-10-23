@@ -83,9 +83,10 @@ class Checks(Base):
         self.lab_event("job.done", NOW - 60)
         r = self.res()
         self.assertIsNone(r["paper"]["ok"])                              # no paper ledger: not judged
-        self.assertTrue(all(v["ok"] for k, v in r.items() if k != "paper"), {k: v for k, v in r.items() if not v["ok"]})
+        self.assertTrue(all(v["ok"] for k, v in r.items() if k not in ("paper", "pm_coverage")),   # no panel here
+                        {k: v for k, v in r.items() if not v["ok"]})
         self.assertEqual({k for k in r if not k.startswith("agent:")},
-                         {"lab", "lab_state", "progress", "paper", "dashboard", "collector", "awake"})
+                         {"lab", "lab_state", "progress", "paper", "dashboard", "collector", "pm_coverage", "awake"})
         self.assertEqual(len([k for k in r if k.startswith("agent:")]), len(ROLES))
 
     def test_whole_fleet_down_or_hung_and_agents_are_not_judged_then(self):
@@ -109,6 +110,32 @@ class Checks(Base):
         self.assertIn("500 s old", self.res()[f"agent:{AGENT}"]["detail"])
         self.lab_sql("UPDATE heartbeats SET ts=? WHERE worker='discovery-scanner'", NOW - 3700)   # hourly agent
         self.assertTrue(self.res()["agent:discovery-scanner"]["ok"])
+
+    def test_pm_lp_snapshot_coverage_below_90_percent_is_a_fault(self):
+        """research/LINUX_DRIFT.md 2026-10-23 (the user's yes): today's running snapshot coverage, read-only."""
+        day = int(NOW) // 86400                                   # 12:00 UTC: 720 minutes so far
+        con = pm_lp.open_db(self.pm)
+        con.execute("DELETE FROM snaps")
+        con.executemany("INSERT INTO panel VALUES(?, ?)", [(day, "a"), (day, "b"), (day - 1, "a")])
+        rows = lambda n, c: [(day * 86400 + 60 * i, c, 0.4, 0.6, 0, 0, 0.04, 20, 10, 0.01) for i in range(n)]  # noqa
+        con.executemany("INSERT INTO snaps VALUES(?,?,?,?,?,?,?,?,?,?)", rows(720, "a") + rows(0, "b"))   # 50 %
+        con.commit()
+        con.close()
+        watch._PMCOV.clear()
+        r = self.res()["pm_coverage"]
+        self.assertFalse(r["ok"])
+        self.assertIn("snapshot coverage today 50.0% < 90% (D1)", r["detail"])
+        con = pm_lp.open_db(self.pm)
+        con.executemany("INSERT INTO snaps VALUES(?,?,?,?,?,?,?,?,?,?)", rows(650, "b"))                   # 95.1 %
+        con.commit()
+        con.close()
+        self.assertFalse(self.res()["pm_coverage"]["ok"])                         # cached: at most once an hour
+        watch._PMCOV.clear()
+        r = self.res()["pm_coverage"]
+        self.assertTrue(r["ok"])
+        self.assertIn("snapshot coverage today 95.1%; yesterday 0.0%", r["detail"])
+        watch._PMCOV.clear()
+        self.assertTrue(watch.check_pm_coverage(self.pm, day * 86400 + 3600)[0])  # 01:00: too early to judge
 
     def test_a_fresh_heartbeat_without_a_successful_pass_is_not_healthy(self):
         """research/LINUX_DRIFT.md 2026-10-23: periodic agents are judged by their last successful pass."""

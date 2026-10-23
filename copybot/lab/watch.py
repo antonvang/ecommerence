@@ -379,6 +379,51 @@ def check_dashboard(port):
         (False, f"no answer on 127.0.0.1:{port}")
 
 
+PMCOV_MIN = 0.90                # research/pm_lp.py coverage: D1 needs >= 90 % snapshot coverage
+PMCOV_AFTER_S = 2 * 3600        # judged after 2 h of the UTC day (fewer minutes say too little)
+_PMCOV = {}                     # (pm_db, hour) -> result: the query runs at most once an hour per database
+
+
+def check_pm_coverage(pm_db, now):
+    """research/LINUX_DRIFT.md 2026-10-23 (the user's yes): today's running snapshot coverage = snapshots today /
+    (markets in today's panel x minutes since 00:00 UTC), as research/pm_lp.py coverage counts it; below 90 % after
+    2 h of the day is a fault. Read-only, at most once an hour; yesterday's full day is shown in the detail."""
+    from research import pm_lp
+    key = (pm_db, int(now) // 3600)
+    if key in _PMCOV:
+        return _PMCOV[key]
+    con = _ro(pm_db)
+    if con is None:
+        return (None, "not judged: pm_lp database missing")
+    try:
+        d0 = con.execute("SELECT v FROM meta WHERE k='D0'").fetchone()
+        day = int(now) // 86400
+        if d0 is None or day > int(d0[0]) + pm_lp.HOLD_DAYS[1]:
+            res = (None, "not judged: no snapshot phase today")
+        else:
+            def cov(d, minutes):
+                q = con.execute("SELECT COUNT(*) FROM snaps s JOIN panel p ON p.cid=s.cid AND p.day=s.t/86400 "
+                                "WHERE p.day=? AND s.t<?", (d, int(now))).fetchone()[0]
+                md = con.execute("SELECT COUNT(*) FROM panel WHERE day=?", (d,)).fetchone()[0]
+                return (q / (md * minutes)) if md and minutes else None
+            mins = (now - day * 86400) / 60
+            today, yday = cov(day, mins), cov(day - 1, 1440)
+            prev = "" if yday is None else f"; yesterday {yday:.1%}"
+            if today is None:
+                res = (None, "not judged: no panel for today yet" + prev)
+            elif now - day * 86400 < PMCOV_AFTER_S:
+                res = (True, f"today {today:.1%} so far (judged from 02:00 UTC){prev}")
+            elif today < PMCOV_MIN:
+                res = (False, f"snapshot coverage today {today:.1%} < {PMCOV_MIN:.0%} (D1){prev}")
+            else:
+                res = (True, f"snapshot coverage today {today:.1%}{prev}")
+    finally:
+        con.close()
+    _PMCOV.clear()
+    _PMCOV[key] = res
+    return res
+
+
 def check(db_path=DEFAULT_DB, pm_db=PM_DB, port=8770, now=None):
     """Every probe is isolated: one that raises marks its own component(s) down and the others are still judged."""
     from lab.fleet import ROLES
@@ -391,7 +436,7 @@ def check(db_path=DEFAULT_DB, pm_db=PM_DB, port=8770, now=None):
         out["lab_state"] = (None, "not judged: lab check failed")
         out.update({f"agent:{n}": (None, "not judged: lab check failed") for n in ROLES})
     for comp, fn in (("dashboard", lambda: check_dashboard(port)), ("collector", lambda: check_collector(pm_db, now)),
-                     ("awake", check_awake)):
+                     ("pm_coverage", lambda: check_pm_coverage(pm_db, now)), ("awake", check_awake)):
         try:
             out[comp] = fn()
         except Exception as e:
@@ -520,7 +565,7 @@ class Watcher:
 def summary(res):
     """Lines for --once: lab-level components, then agents (only the bad or unknown ones are listed)."""
     lines = []
-    for k in ("lab", "lab_state", "progress", "paper", "dashboard", "collector", "awake"):
+    for k in ("lab", "lab_state", "progress", "paper", "dashboard", "collector", "pm_coverage", "awake"):
         if k in res:
             ok = res[k]["ok"]
             lines.append(f"  [{'OK ' if ok else '?? ' if ok is None else 'NO '}] {k}: {res[k]['detail']}")
