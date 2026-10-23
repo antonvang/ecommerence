@@ -427,6 +427,15 @@ noget, ændrer en gate eller rører indsamleren:
   dem. Feltet "Jobs i kø" viser klar og planlagt hver for sig ("0 klar", "3 planlagt · næste 2027-05-07"), fordi
   de tre jobs er fremadtestenes afgørelser i 2027, ikke en fastlåst kø.
 
+### `lab status` viser en senere afgørelse frem for en gammel PASS (tilføjet 2026-10-23 kl. 21:10, før kode)
+
+`python3 -m lab status` viste `E_vol_managed_long_p1  REJECTED  EXPLORATORY  PASS (screen): all validation gates
+passed; eligible for a human-approved sealed holdout`. Tilstanden er rigtig (brugerens afgørelse 2026-10-17 15:33,
+MISSION6_FLEET_RUN.md), men kolonnen viser det seneste resultats dom, og den er den gamle screen-PASS. Dashboardet viser
+allerede den rigtige grund (`last_reason`). Ændring, kun visning i CLI: når et eksperiment er i en sluttilstand
+(REJECTED, RETIRED, WITHDRAWN), og resultatets dom begynder med PASS, viser `lab status` i stedet den seneste
+overgangs tilstand og grund efterfulgt af "(tidligere: PASS …)". Ingen tilstand, intet resultat og ingen gate ændres.
+
 ### Eksterne poster vises ikke som kørende uden livstegn (tilføjet 2026-10-23 kl. 19:05, før kode)
 
 Hypoteseregistret viste `X02_copybot_paper` og `X03_funding_live_v0` som RUNNING. Statussen er den importerede tekst
