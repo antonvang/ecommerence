@@ -401,7 +401,17 @@ def strategy_pass(db):
             "lane_report_queued": lane.enqueue_report(db),  # amendment 12d: the daily account report
             "ingest_queued": ingest.enqueue(db) if ingest.auto(db) else 0,   # amendment 14: one unit at a time
             "hypotheses_queued": hypogen.enqueue(db),       # amendment 17: one screening at a time, locked measurements
+            "benchmarks": _benchmarks(db),                  # LINUX_DRIFT 2026-10-23: forward tests vs buy-and-hold
             **({"families": fams} if fams else {})}
+
+
+def _benchmarks(db):
+    """Forward tests vs buy-and-hold, at most hourly; a network failure is reported here and retried next pass."""
+    from lab import benchmark
+    try:
+        return benchmark.update(db)
+    except Exception as e:                                  # noqa: BLE001 - display only, never stops the pass
+        return f"benchmark unavailable: {e!r}"[:120]
 
 
 def external_watch(db, now=None):

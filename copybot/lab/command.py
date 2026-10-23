@@ -939,6 +939,28 @@ def balance(db, now=None):
             db.con.execute("COMMIT")
 
 
+def _forward_vs_buy_and_hold(db, fw):
+    """research/LINUX_DRIFT.md 2026-10-23, display only: the forward ledgers' P&L next to the equal-weight buy-and-hold
+    of the coins each has traded (lab/benchmark.py), summed over the ledgers that have a recorded benchmark."""
+    from lab import benchmark
+    try:
+        bh = benchmark.latest(db)
+    except Exception:                                       # noqa: BLE001 - no observations table or rows yet
+        bh = {}
+    pnl = cap = bh_pnl = 0.0
+    n, ts = 0, None
+    for s in fw:
+        b = bh.get(s["exp_id"])
+        if not b:
+            continue
+        eq = s["equity"][-1]["equity"] if s["equity"] else s["capital"]
+        pnl, cap, bh_pnl, n = pnl + eq - s["capital"], cap + s["capital"], bh_pnl + s["capital"] * b["bh_return"], n + 1
+        ts = max(ts or 0, b["ts"])
+    if not n:
+        return {"bh_ledgers": 0}
+    return {"bh_ledgers": n, "bh_pnl": bh_pnl, "bh_pnl_of": pnl, "vs_bh": pnl - bh_pnl, "bh_ts": ts}
+
+
 def _balance(db, now=None):
     """Simulated paper account. The formal headline (capital ... history) is every approved paper and shadow ledger,
     as before; forward tests (amendment 7) are never in it. Amendment 9 section 5 adds, for display only: `forward`
@@ -966,6 +988,7 @@ def _balance(db, now=None):
            "paused": sum(1 for s in active if s["paused"] or s["state"] == "PAUSED"),
            "shadow": sum(1 for s in st if s["shadow"]), "funding_t0": p["funding_t0"],
            "real_account_profit": REAL_ACCOUNT, "source": p["source"]}
+    out["forward"].update(_forward_vs_buy_and_hold(db, fw))
     if not st:
         out.update({"capital": None, "equity": None, "pnl": None, "pnl_pct": None, "today": None, "realized": None,
                     "unrealized": None, "fees": None, "funding": None, "open_positions": 0, "closed_trades": 0,

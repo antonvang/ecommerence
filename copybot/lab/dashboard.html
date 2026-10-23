@@ -653,7 +653,8 @@ function renderSim(b, f, c, r){
   $("#simcap").title = r.ok === false ? r.problems.join("\n") : `${r.checks || 0} kontroller (tolerance ${r.tolerance}): pr. konto, formel = sum, fremadtest = sum, samlet = formel + fremadtest, gebyrer og funding = tabellerne`;
   animate("fwd", f.ledgers ? f.equity : null, v => usd(v));
   $("#fwdsub").textContent = f.ledgers ? `start ${usd(f.capital)} · P&L ${usd(f.pnl, true)} · ${f.running} handler, ${f.paused} på pause · ${f.open_positions} åbne positioner` : "ingen fremadtest-konti";
-  $("#fwdsub").title = "Fremadtest (simuleret, ikke godkendt). Tæller ikke i den formelle saldo.";
+  if (f.bh_ledgers) $("#fwdsub").innerHTML = esc($("#fwdsub").textContent) + ` · køb-og-hold af samme mønter ${usd(f.bh_pnl, true)} → <b class="${f.vs_bh >= 0 ? "pos" : "neg"}">forskel ${usd(f.vs_bh, true)}</b>`;
+  $("#fwdsub").title = "Fremadtest (simuleret, ikke godkendt). Tæller ikke i den formelle saldo." + (f.bh_ledgers ? ` Køb-og-hold: lige vægt af de mønter, hver konto har handlet, fra kontoens start (${f.bh_ledgers} konti, målt ${utc(f.bh_ts)}); uden gebyrer og funding; protokollens benchmark (lige-vægtet køb-og-hold af samme perps) — for markedsneutrale strategier indeholder forskellen markedets stigning; afgør intet (LINUX_DRIFT 2026-10-23).` : "");
   animate("comb", c.equity, v => usd(v));
   $("#combsub").textContent = c.equity == null ? "" : `formel ${usd(b.equity ?? 0)} + fremadtest ${usd(f.equity ?? 0)} · start ${usd(c.capital)}`;
   animate("combpnl", c.pnl, v => usd(v, true));
