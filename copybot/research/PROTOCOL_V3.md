@@ -1973,6 +1973,31 @@ netforbindelse som pm_lp-indsamleren, hvis dækning (D1 ≥ 90 %) holdouten 10-3
 3. **Ærligt:** en variant, der hverken holder noget nu eller har 5 mønter med bøger, får nu 11b's 24-timers
    genforsøg i stedet for det permanente "fewer than 5"-spring; ved genforsøget gælder reglen som før.
 
+## Ændring 11i (2026-10-23): en gennemgang bestilles kun for en kandidat, der holder noget nu — før kode
+
+**Beslutning:** Claude under brugerens mandat ("Optimize safely ... reduces wasted CPU", 2026-10-23). Kun simuleret
+handel; ingen gate, gennemgang, tærskel eller startregel ændres, kun hvornår gennemgangen (11c) bestilles.
+
+**Data (produktionens register til 2026-10-23 16:20 lokal tid):** 3 666 gennemgange brugte 170 219 CPU-sekunder
+(162 489 s de seneste 72 timer). Af 1 597 kandidater, der bestod gennemgangen efter metode 15, blev 4 startet; 510 blev
+bagefter sprunget over med "would hold nothing now (11b)" (alle 510 efter gennemgangen) og 1 083 blev aldrig prøvet.
+62 762 CPU-sekunder gik til beståede gennemgange, der aldrig blev til en start (250 s til de 4 startede). Alle 1 124
+afviste gennemgange fejlede på placebo-tjekket (legitime afvisninger, ingen tekniske fejl; 2 timeouts).
+
+1. **Rækkefølge:** gennemgangen bestilles af banens startgennemløb (hvert minut, med adgang til markedsdata) i stedet
+   for strategiagentens gennemløb. For hver ikke-gennemgået kandidat i den sædvanlige rækkefølge, der ikke er prøvet
+   (11b-genforsøg, 24 t) og hvis funktion har plads (11g), tjekkes først 11b punkt 1 med de samme timedata som i 11h
+   (ingen ordrebøger). Holder den intet, registreres `lane.skipped` med samme årsag og samme 24-timers genforsøg som i
+   dag. Holder den noget, bestilles dens gennemgang.
+2. **Mængde:** højst så mange gennemgange i kø eller i gang som ledige banepladser (højst `REVIEW_QUEUE_MAX`), og højst
+   20 11b-tjek af ikke-gennemgåede kandidater pr. gennemløb.
+3. **Uændret:** en start kræver stadig en bestået gennemgang efter metode 15, 11b på kurven, 5 mønter med bøger og 11b
+   på dem (11h); 3 forsøg pr. gennemløb, en konto pr. 10 min, højst 2 pr. funktion, 6 pladser, 11e og 11g; gennemgangens
+   indhold (look-ahead, gift, forsinkelse, placebo) og dens data (explore0) er de samme.
+4. **Ærligt:** en kandidat får nu sin gennemgang, når den holder noget, i stedet for på forhånd; en start kan derfor
+   komme en gennemgang (typisk 20–45 s) senere end før. Effekten kan først måles, når en plads bliver ledig (i dag er
+   6 af 6 optaget, og der køes ingen gennemgange).
+
 ## Ændring 17e (2026-10-23): placebo fremad for nynoterede mønter (metode m17e) — før kode
 
 **Beslutning:** brugeren 2026-10-23 ("fiks 4", svar på morgenrapportens punkt 4 om placeboens blinde vinkel). Det er
