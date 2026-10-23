@@ -410,6 +410,12 @@ noget, ændrer en gate eller rører indsamleren:
   visning: alderen måles fra seneste datarække; ny tilstand `failing` ("fejler") når seneste fejl er nyere end seneste
   data og der ikke er kommet data i over 2 t; ellers som før (`stale` efter kildens grænse, `errors` ved en fejl inden
   for 2 t, `ok`). En enkelt fejl lige efter frisk data er stadig `errors`, ikke `failing`.
+  **GDELT undersøgt samme dag kl. 18:35 (3 manuelle opslag):** første svar 200 med tom krop (`{}`, 15,8 s), de næste
+  to — med 8 s mellemrum og andre forespørgsler (`bitcoin`; `... sourcelang:eng`) — HTTP 429 "Please limit requests to
+  one every 5 seconds ... switch to our ngrams dataset". GDELT begrænser altså denne adresse, også ved én forespørgsel
+  i døgnet; det er ikke en fejl i vores kode og løses ikke af en kortere backoff. Ingen hypotese bruger GDELT
+  (ændring 17 læser kun Binances meddelelser), så intet forskningsarbejde er blokeret. Kilden står som `failing` med
+  backoff op til 24 t (ændring 17 punkt 9); ingen ændring.
 - **Pengekortene tilbage (tilføjet 2026-10-23 kl. 17:20, før kode; brugeren: "dashboard skal beholde de gamle penge
   profit ting").** De syv kort (saldo, total P&L, i dag, aktive strategier; fremadtest-saldo, samlet simuleret værdi,
   samlet simuleret P&L) med tal-animation og glød vises igen under Overblik; kontotabellen pr. gruppe bliver under
