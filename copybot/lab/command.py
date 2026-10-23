@@ -989,6 +989,7 @@ def _balance(db, now=None):
            "shadow": sum(1 for s in st if s["shadow"]), "funding_t0": p["funding_t0"],
            "real_account_profit": REAL_ACCOUNT, "source": p["source"]}
     out["forward"].update(_forward_vs_buy_and_hold(db, fw))
+    out["shadow_bh"] = _forward_vs_buy_and_hold(db, [s for s in st if s["shadow"]])
     if not st:
         out.update({"capital": None, "equity": None, "pnl": None, "pnl_pct": None, "today": None, "realized": None,
                     "unrealized": None, "fees": None, "funding": None, "open_positions": 0, "closed_trades": 0,

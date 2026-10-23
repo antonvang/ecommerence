@@ -73,6 +73,17 @@ class Benchmark(unittest.TestCase):
         self.assertAlmostEqual(r["vs_bh"], -21.0)                    # +279 USD is 21 USD behind buy-and-hold
         self.assertEqual(command._forward_vs_buy_and_hold(self.db, [])["bh_ledgers"], 0)
 
+    def test_the_shadow_ledger_is_benchmarked_too_and_lanes_are_not(self):
+        for led in ("SHADOW_E_y_p3", "LANE_abc"):
+            self.db.append("sim_equity", exp_id=led, ts=T0, equity=10000.0, cash=0.0, exposure=0.0, peak=10000.0,
+                           drawdown=0.0)
+            self.db.append("sim_equity", exp_id=led, ts=NOW - 600, equity=10000.0, cash=0.0, exposure=0.0,
+                           peak=10000.0, drawdown=0.0)
+            self.db.append("sim_fills", fill_id=f"g{led}", order_id=f"p{led}", exp_id=led, ts=T0, instrument="AAAUSDT",
+                           side="buy", px=1.0, qty=1.0, fee=0.0, slippage=0.0, liquidity="taker", mid=1.0, book_ts=T0)
+        self.assertEqual(benchmark.update(self.db, NOW, self.feed), 2)
+        self.assertEqual(set(benchmark.latest(self.db)), {"FWD_E_x_p1", "SHADOW_E_y_p3"})
+
 
 if __name__ == "__main__":
     unittest.main()

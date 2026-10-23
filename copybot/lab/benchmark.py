@@ -11,7 +11,7 @@ import time
 
 DETECTOR = "benchmark/1"
 EVERY_S = 3600
-PREFIX = "FWD_"
+PREFIXES = ("FWD_", "SHADOW_")      # forward tests and the shadow ledger (the Total P&L card)
 RETRY_S = 600                   # after a failed or empty attempt: no new network call for 10 min
 _TRIED = {"t": 0.0}
 
@@ -22,10 +22,10 @@ def _get(path):
 
 
 def _ledgers(db, now):
-    """{ledger: (start ts, sorted traded symbols)} for forward ledgers with a mark in the last day."""
+    """{ledger: (start ts, sorted traded symbols)} for forward and shadow ledgers with a mark in the last day."""
     out = {}
-    for led, t0 in db.q("SELECT exp_id, MIN(ts) FROM sim_equity WHERE exp_id LIKE ? GROUP BY exp_id "
-                        "HAVING MAX(ts) > ?", PREFIX + "%", int(now) - 86400):
+    for led, t0 in db.q("SELECT exp_id, MIN(ts) FROM sim_equity WHERE (exp_id LIKE ? OR exp_id LIKE ?) GROUP BY exp_id "
+                        "HAVING MAX(ts) > ?", *(p + "%" for p in PREFIXES), int(now) - 86400):
         syms = sorted(r[0] for r in db.q("SELECT DISTINCT instrument FROM sim_fills WHERE exp_id=?", led))
         if syms:
             out[led] = (int(t0), syms)

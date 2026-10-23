@@ -612,6 +612,8 @@ function renderMoney(b){
   $("#pnl").className = "big " + (b.pnl > 0 ? "pos" : b.pnl < 0 ? "neg" : "");
   $("#m-pnl").className = "mcard pnl" + (b.pnl == null || b.pnl === 0 ? " zero" : b.pnl < 0 ? " neg" : "");
   $("#pnlsub").textContent = b.pnl == null ? "simuleret · rigtig konto: ikke tilgængelig" : `${(b.pnl_pct*100).toFixed(2)}% · realiseret ${usd(b.realized, true)} · urealiseret ${usd(b.unrealized, true)}` + (b.funding_t0 ? ` · inkl. funding fra ${utc(b.funding_t0)} (${usd(b.funding || 0, true)})` : " · ekskl. funding (bogføres fra første afregning efter deploy)");
+  const sb = b.shadow_bh || {};
+  if (sb.bh_ledgers) $("#pnlsub").innerHTML = esc($("#pnlsub").textContent) + ` · køb-og-hold af samme mønter ${usd(sb.bh_pnl, true)} → <b class="${sb.vs_bh >= 0 ? "pos" : "neg"}">forskel ${usd(sb.vs_bh, true)}</b>`;
   animate("today", b.today, v => usd(v, true));
   $("#today").className = "big " + (b.today > 0 ? "pos" : b.today < 0 ? "neg" : "");
   $("#todaysub").textContent = b.capital == null ? "" : `${b.open_positions} åbne positioner`;
