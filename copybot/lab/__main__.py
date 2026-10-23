@@ -268,6 +268,7 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
     me = sub.add_parser("measure"); me.add_argument("hypothesis", choices=("H1", "H2", "H3", "H4", "H5"))
     me.add_argument("--data-dir", help="market cache with funding/ and ingest/ (default data/lab/market)")
     me.add_argument("--record", action="store_true", help="record the outcome as an event (once per hypothesis)")
+    sub.add_parser("coinbase-listings")
     nw = sub.add_parser("news"); nw.add_argument("--backfill", action="store_true",
                                                  help="fetch Binance announcements backwards once (amendment 16)")
     wt = sub.add_parser("watch"); wt.add_argument("--once", action="store_true")
@@ -316,6 +317,14 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
         return family_check(args.file, db_path, out)
     if args.cmd == "measure":         # research/PROTOCOL_V3.md amendment 14a: read-only data, one run per hypothesis
         return measure_cmd(args, db_path, out)
+    if args.cmd == "coinbase-listings":   # amendment 17g: first trade per Coinbase USD market (observations only)
+        from lab import coinbase
+        db = DB(db_path)
+        try:
+            out(json.dumps(coinbase.backfill(db), indent=1, default=str))
+            return 0
+        finally:
+            db.close()
     if args.cmd == "news":            # amendment 16: one pass, or the one-time Binance backfill (observations only)
         from lab import news
         db = DB(db_path)

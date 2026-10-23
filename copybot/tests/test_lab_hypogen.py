@@ -16,7 +16,7 @@ from unittest import mock
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from lab import fleet, hypogen, jobs, measure, news, pipeline  # noqa: E402
+from lab import coinbase, fleet, hypogen, jobs, measure, news, pipeline  # noqa: E402
 from lab.db import DB  # noqa: E402
 from lab.engine import data  # noqa: E402
 
@@ -356,6 +356,75 @@ class Screening(Base):
         v = hypogen.view(self.db, NOW + 3)
         self.assertEqual(v["total"], 108)
         self.assertEqual([r["key"] for r in v["results"]], [first])
+
+
+def iso(ts):
+    return datetime.fromtimestamp(ts, timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f") + "123Z"
+
+
+class CoinbaseListings(Base):
+    """Amendment 17g: Coinbase USD listings from CoinMetrics' catalogue as one more event type (m17g)."""
+
+    def catalogue(self, listings, extra=()):
+        rows = [{"market": f"coinbase-{c.lower()}-usd-spot", "base": c.lower(), "quote": "usd", "status": "online",
+                 "trades": {"min_time": iso(t - coinbase.LAG_S)}} for c, t in listings] + list(extra)
+        raw = json.dumps({"data": rows}).encode()
+        urls = []
+        out = coinbase.backfill(self.db, get=lambda u: urls.append(u) or raw, now=NOW)
+        self.assertEqual(urls, [coinbase.URL])
+        return out
+
+    def test_each_market_is_stored_once_and_nothing_from_2024_keeps_a_time(self):
+        extra = [{"market": "coinbase-old-usd-spot", "base": "old", "quote": "usd", "trades": {"min_time": iso(T(2019, 5))}},
+                 {"market": "coinbase-new-usd-spot", "base": "new", "quote": "usd", "trades": {"min_time": iso(T(2024, 2))}},
+                 {"market": "coinbase-none-usd-spot", "base": "none", "quote": "usd"},
+                 {"market": "coinbase-aaa-eur-spot", "base": "aaa", "quote": "eur", "trades": {"min_time": iso(T(2020, 6))}}]
+        out = self.catalogue([("AAA", T(2020, 6, 10, 3) + 900)], extra)
+        self.assertEqual((out["cb_listing"], out["cb_none"], out["skipped"]), (1, 3, 0))
+        self.assertEqual(self.catalogue([("AAA", T(2020, 6, 10, 3) + 900)], extra)["skipped"], 4)   # rerun
+        p = json.loads(self.db.one("SELECT payload FROM observations WHERE metric='cb_listing'")[0])
+        self.assertEqual((p["coin"], p["usable_from"]), ("AAA", T(2020, 6, 10, 3) + 900))
+        new = json.loads(self.db.one("SELECT payload FROM observations WHERE instrument='coinbase-new-usd-spot'")[0])
+        self.assertNotIn("first_trade_ts", new)
+        self.assertIsNone(self.db.one("SELECT value FROM observations WHERE instrument='coinbase-new-usd-spot'")[0])
+        bad = coinbase.backfill(self.db, get=lambda u: b"error code: 1015", now=NOW)
+        self.assertIn("error", bad)
+        self.assertEqual(self.db.one("SELECT COUNT(*) FROM observations WHERE metric='cb_error'")[0], 1)
+
+    def test_one_event_per_coin_its_earliest_market(self):
+        items = [(1, {"coin": "AAA", "usable_from": T(2020, 6)}), (2, {"coin": "AAA", "usable_from": T(2021, 6)}),
+                 (3, {"coin": "BBB", "usable_from": T(2019, 6)}), (4, {"coin": "BBB", "usable_from": T(2020, 7)})]
+        a, b = hypogen.bounds("explore0")
+        self.assertEqual(hypogen.events_g(items, a, b), [{"obs": 1, "coin": "AAA", "t": T(2020, 6)}])
+
+    def test_a_coinbase_effect_is_screened_in_explore0_under_m17g(self):
+        self.assertFalse([c for c in hypogen.candidates(self.db, NOW, fresh=True) if c["key"].endswith("|m17g")])
+        evs = [(f"C{i:02d}", T(2020 + i % 2, 6, 10 + i // 2, 3) + 900) for i in range(20)]
+        self.catalogue(evs)
+        self.jump_market(evs, [(2020, 4), (2020, 5), (2020, 6), (2021, 4), (2021, 5), (2021, 6)])
+        g = [c for c in hypogen.candidates(self.db, NOW, fresh=True) if c["key"].endswith("|m17g")]
+        self.assertEqual(len(g), 9)
+        self.assertEqual({(c["events"], c["rule"], c["sources"]["detector"]) for c in g},
+                         {(20, hypogen.RULE_G, coinbase.DETECTOR)})
+        res = hypogen.screen(self.db, "coinbase_listing|ar_1d|m17g", no_net)
+        self.assertEqual((res["verdict"], res["n"], res["rule"], res["placebo"]["shift_days"]),
+                         ("SCREEN_PASS", 20, hypogen.RULE_G, -30), res.get("reason"))
+        with open(hypogen.draft(res)) as f:
+            spec = json.load(f)
+        self.assertEqual(spec["method"], "m17g")
+        self.assertIn("Coinbase", spec["claim"])
+        self.assertIn("133", spec["risks"])
+
+    def test_a_locked_m17g_key_is_measured_on_train3_then_validation3(self):
+        evs = [(f"T{i:02d}", T(2022, 6, 5 + i, 3) + 900) for i in range(16)] + \
+              [(f"V{i:02d}", T(2023, 9, 5 + i, 3) + 900) for i in range(10)]     # n 8 cannot reach p < 1/256
+        self.catalogue(evs)
+        self.jump_market(evs, [(2022, 6), (2023, 9)])
+        k = "coinbase_listing|ar_1d|m17g"
+        spec = {"key": k, "type": "coinbase_listing", "outcome": "ar_1d", "direction": 1, "method": "m17g"}
+        res = hypogen.measure_locked(self.db, k, "0" * 64, 5, spec, get=no_net)
+        self.assertEqual((res["verdict"], res["alpha"], res["phases"]["train3"]["n"],
+                          res["phases"]["validation3"]["n"]), ("PASS", 0.0015625, 16, 10), res)
 
 
 class Locked(Base):
