@@ -396,3 +396,19 @@ noget, ændrer en gate eller rører indsamleren:
   - Vagten er tilladt nu, fordi den startes i hånden, kun læser og aldrig genstarter noget.
 - **Når S7 er åben og du har godkendt det**, er den understøttede kontrol: `ssh anton@192.168.1.108 'cd
   ~/ecommerence/copybot && python3 -m lab watch --once'`. Exit-koden 0 betyder, at alt kører.
+- **Genstart 2026-10-23 viste hullet (tilføjet samme dag ca. 15:40, før kode).** Pc'en frøs ca. 15:05 og blev
+  slukket. Efter opstarten 15:09 kørte kun pm_lp-indsamleren (systemd, linger). Laboratoriet og vagten kom ikke op:
+  der findes ingen autostart for dem, med vilje (reglen ovenfor). Laboratoriet blev startet i hånden 15:16; vagten
+  venter på brugerens ja. S7 talte ikke udfaldet (huller under 2 t tolereres): 4,11 af 7 dage.
+  **Forberedt, ikke installeret:** `lab/automation/s7_install_linux.sh` med to systemd-brugerenheder
+  (`copybot-lab.service`, `copybot-watch.service`), Linux-udgaven af `s7_install_task.ps1`. Scriptet afviser og
+  installerer intet, medmindre `python3 -m lab gate --require` slutter med 0 (S7 åben). Det slår enhederne til ved
+  næste opstart (`enable`, ikke `--now`), så det aldrig starter en ekstra flåde ved siden af en kørende.
+  - `copybot-lab.service` kører `START_LAB.sh` ved opstart (efter linger, før login) og genstarter **ikke** efter et
+    nedbrud (`Restart=no`): som i dag skal et menneske se årsagen (START_LAB.sh: "Intet genstartes automatisk").
+    START_LAB.sh's kodevagt og preflight gælder uændret; `lab.lock` forhindrer to flåder.
+  - `copybot-watch.service` kører `START_WATCH.sh` og genstartes efter 60 s, hvis den dør (den læser kun og
+    genstarter aldrig noget; `watch.lock` forhindrer to vagter).
+  - Ventetid på navneopslag før start som i pm-lp-collector.service (højst 10 min).
+  - Fortryd: `systemctl --user disable copybot-lab copybot-watch` og slet de to filer.
+  - Installation kræver begge dele: S7 åben og brugerens ja (han kører scriptet selv).
