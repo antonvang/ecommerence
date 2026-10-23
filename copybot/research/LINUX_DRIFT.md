@@ -386,6 +386,17 @@ noget, ændrer en gate eller rører indsamleren:
   Forskellen (ca. 9 point) er tre gange større end spredningen mellem gentagelser. **Ændring:** `.led.live` (forbindelses-
   lampen) lyser fast grønt uden animation; farven og teksten ("live"/"polling"/"offline") viser stadig tilstanden.
   Forventet: dashboardfanen ca. 14 % → ca. 5 % af en kerne i headless Firefox (målt; brugerens egen Firefox er ikke målt).
+- **Dashboardets top gøres entydig (tilføjet 2026-10-23 kl. 16:45, før kode; brugeren bad om et "meget bedre, mere
+  clean" dashboard).** Skærmbillede af produktionen (1600 px bred) viste: syv pengekort i to rækker, hvor det største
+  "TOTAL P&L" kun er MVRV-skyggekontoen (−18,97 $), fremadtest og samlet værdi i en anden række, og banekontiene (−220 $
+  for alle 14) først længere nede; ingen samlet dom over, om noget kræver handling; "Startforsøg" og "Senest stoppet"
+  fylder med rækker som "intet spotpar". Ændring, kun visning (samme API, ingen ny beregning af tal):
+  - **Overblik** øverst: én dom ("Alt kører" eller "N kræver opmærksomhed") og en liste over det, der kræver handling,
+    fra de eksisterende felter: FAIL_CLOSED, supervisor, vagt, agenternes `health` (FAILED/STALE/BLOCKED), fejl i
+    vinduet, pause/ressourcestop, data ældre end 2 t og godkendelser, der venter. Grøn kun, når listen er tom.
+  - **Papirkonti**: én tabel med en række pr. gruppe (baner og scanner, fremadtest, skyggehandel) og I alt: konti,
+    startkapital, saldo, netto, gebyrer, funding — fra `/api/balance` som før; alt mærket simuleret og ikke bevis.
+  - "Senest stoppet" og "Startforsøg" foldes sammen som standard (et klik åbner dem).
 
 ### Før pm_lp-holdouten: watchdog og strøm (tjekket 2026-10-22)
 
