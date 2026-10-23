@@ -357,6 +357,11 @@ noget, ændrer en gate eller rører indsamleren:
   afgørelse; for UNTESTABLE udelukkelserne summeret pr. underårsag og pr. type (hændelser, største n); for SCREEN_FAIL
   de fejlede tjek og hvilke nøgler, hvis placebo-tjek fejlede uden en placebo-værdi; for hver låst måling resultatet
   og screeningens træfrate på uafhængige data. Den ændrer intet og afgør intet.
+  **Automatisk efter hver døgnrapport (tilføjet 2026-10-23 kl. 18:55, før kode; brugerens directive om automatiske
+  afstemningskontroller):** banens rapportjob kører samme kontroller (`lab/reportcheck.py checks`, kun læsning) lige
+  efter rapporten og registrerer `research.lane_report_verified` (dag, OK/afviger, de fejlede kontroller). Dashboardet
+  viser "verificeret" eller "AFVIGER" ved seneste døgnrapport, og en afvigelse står i Overblik. En fejl i selve
+  kontrollen stopper ikke rapporten; den registreres som ikke verificeret med årsagen.
 - Indeks `events_exp ON events(exp_id, kind, id)` (tilføjet 2026-10-23 kl. ca. 14:00, før kode; brugeren bad om at
   fjerne målt spild). Målt: webprocessen brugte 15,5 % af en kerne hele tiden (3008 s CPU på 19316 s), mere end flåden
   (6,1 %), fordi den åbne dashboardfane henter ~13 endpoints hvert 10.-20. sekund. Opslag med `kind=? AND exp_id=?`
