@@ -2052,3 +2052,36 @@ en ændring af et screeningskriterium, besluttet efter at explore0-resultaterne 
 LÅS-17 spot_listing|sar_1d|m17e 5b7a5ebe9071d00913f41c8ab4e834ec97536df1d03e0f6e984e80d9e130f298
 
 5. En papirkonto, der udnytter et PASS, kræver sin egen daterede ændring med omkostninger og stopregler.
+
+## Ændring 17g (2026-10-24): ny begivenhedstype `coinbase_listing` — handelsstart på Coinbase Exchange (metode m17g) — før kode
+
+**Beslutning:** Claude under brugerens mandat (ny nøglefri datakilde, automatisk hypotesegenerering; "Kør efter det
+lange prompt", 2026-10-24). Forskningskøen er tom (alle 28 katalogskabeloner har et eksperiment; alle SCREEN_PASS
+under 17 er afgjort). Ingen gate, intet vindue, ingen alfa og intet holdout ændres; typen følger ændring 17's regler.
+
+1. **Kilde (nøglefri, kun GET).** `https://api.exchange.coinbase.com/products` (alle produkter, også afnoterede) og
+   samme værts `/products/<id>/candles` (dag og time). For hvert produkt med kvotevaluta USD findes den første
+   handelstime: findes der dagscandles i de 300 dage før 2020-03-01, er produktet ældre og giver ingen begivenhed;
+   ellers den første dag med en candle i [2020-03-01, 2024-01-01), derefter den første timecandle den dag (højst 2
+   døgn frem og aldrig fra 2024-01-01). Coinbase-kurserne bruges kun til at finde tidspunktet, aldrig som udfald. Hvert
+   produkt gemmes én gang som observation (detektor `coinbase/1`, metrik `cb_listing` med tidspunktet, eller `cb_none`
+   med årsagen); en fejl gemmes som `cb_error`, og en ny kørsel springer det gemte over. Kørslen er en engangskommando
+   (`python3 -m lab coinbase-listings`) som news-backfillen i ændring 16; højst ét kald pr. 0,25 s.
+2. **Begivenhed.** Mønt = produktets basisvaluta som skrevet (fx `CGLD` matcher ikke Binance' `CELO`; sådanne mønter
+   får ingen data og udelades). t = første handelstime + 1 time (timen er først kendt, når den er gået). Én begivenhed
+   pr. mønt: den tidligste USD-notering; en mønt, hvis første notering lå før vinduet, giver ingen begivenhed.
+3. **Kandidater.** `coinbase_listing|<udfald>|m17g` for de 9 udfald i ændring 17 og 17a (ar_1d, ar_7d, fund_7d,
+   vol_3d, volume_1d, far_1d, far_7d, sar_1d, sar_7d), målt på Binance som alle andre (data.binance.vision, Reader-
+   grænserne uændret). Screening kun i explore0 (2020-03..2021-12) med ændring 17 punkt 5's tjek uændret: n ≥ 15,
+   p ≤ 0,005, samme fortegn i 2020 og 2021, placebo med t − 30 d (n ≥ 15, p > 0,05) og |gennemsnit| ≥ 0,46 % for
+   afkast. Ingen fremad-placebo (17e gælder ikke m17g).
+4. **Låsning og alfa uændret.** Et SCREEN_PASS kræver en dateret LÅS-17-ændring; næste lås er k = 5, alpha 0,0015625.
+   Målingen bruger train3 (2022-01..2023-06) og validation3 (2023-07..2023-12) som ændring 17 punkt 8.
+5. **Hvad der er set før denne tekst (sonderende, i scratchpad, intet i registret):** 493 USD-produkter; første
+   dagscandle i [2020-03, 2021-12] for 121, heraf 96 med et Binance USDT-spotpar og 73 med en USD-M-perp i dag. Kun
+   datoer og antal er talt; ingen Binance-kurs omkring en Coinbase-notering er læst, og ingen dato efter 2021 er talt.
+   Upbit blev undersøgt samme nat og forkastet (4 meddelelser i explore0; `research/studies/DISCOVERY_2026-10-24.md`).
+6. **Forbehold, nævnt før screening:** Coinbase' annoncering kommer typisk før handelsstarten; t måler handelsstarten,
+   ikke annonceringen, så en effekt ved annonceringen er allerede i kursen. Produktlisten kan mangle produkter, Coinbase
+   har fjernet helt (overlevelsesskævhed). Pipelinen har nu 133 kandidater (124 + 9). Et PASS i screeningen er
+   udforskning og aldrig bevis; en papirkonto kræver sin egen daterede ændring.
