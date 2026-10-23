@@ -396,7 +396,7 @@ noget, ændrer en gate eller rører indsamleren:
   - Vagten er tilladt nu, fordi den startes i hånden, kun læser og aldrig genstarter noget.
 - **Når S7 er åben og du har godkendt det**, er den understøttede kontrol: `ssh anton@192.168.1.108 'cd
   ~/ecommerence/copybot && python3 -m lab watch --once'`. Exit-koden 0 betyder, at alt kører.
-- **Genstart 2026-10-23 viste hullet (tilføjet samme dag ca. 15:40, før kode).** Pc'en frøs ca. 15:05 og blev
+- **Genstart 2026-10-23 viste hullet (tilføjet samme dag kl. 15:23, før kode).** Pc'en frøs ca. 15:05 og blev
   slukket. Efter opstarten 15:09 kørte kun pm_lp-indsamleren (systemd, linger). Laboratoriet og vagten kom ikke op:
   der findes ingen autostart for dem, med vilje (reglen ovenfor). Laboratoriet blev startet i hånden 15:16; vagten
   venter på brugerens ja. S7 talte ikke udfaldet (huller under 2 t tolereres): 4,11 af 7 dage.
@@ -412,7 +412,7 @@ noget, ændrer en gate eller rører indsamleren:
   - Ventetid på navneopslag før start som i pm-lp-collector.service (højst 10 min).
   - Fortryd: `systemctl --user disable copybot-lab copybot-watch` og slet de to filer.
   - Installation kræver begge dele: S7 åben og brugerens ja (brugeren kører scriptet selv).
-- **Agenternes sundhed bygger på udført arbejde, ikke på puls (tilføjet 2026-10-23 ca. 16:10, før kode; brugeren bad
+- **Agenternes sundhed bygger på udført arbejde, ikke på puls (tilføjet 2026-10-23 kl. 15:34, før kode; brugeren bad
   om, at en kørende proces eller en frisk puls aldrig fremstår som sund uden nyligt arbejde).** I dag dømmer både
   dashboardet (`status`) og vagten (`agent:<navn>`) kun ud fra pulsen og `ok`-flaget: en periodisk agent, hvis gennemløb
   udebliver eller fejler, men som stadig sender puls, vises som sund. Nyt felt `health` pr. agent i `/api/agents`, med
@@ -426,7 +426,7 @@ noget, ændrer en gate eller rører indsamleren:
   - `UNKNOWN`: periodisk agent uden registreret succes.
   Vagten får samme dom for periodiske agenter: intet vellykket gennemløb inden for grænsen er en fejl, også med frisk
   puls. Dashboardets agentliste viser `health` og grunden. Ingen gate, ingen beslutning og ingen genstart ændres.
-- `python3 -m lab research-memory [--json FIL]` (tilføjet 2026-10-23 ca. 16:45, før kode; brugeren bad om en
+- `python3 -m lab research-memory [--json FIL]` (tilføjet 2026-10-23 kl. 15:47, før kode; brugeren bad om en
   læringsløkke: for hver afgjort hypotese hypotese og låst protokol, data og dataversion, resultat og usikkerhed,
   omkostninger og baselines, afvisningsgrund, og hvilken ny evidens der kan retfærdiggøre en gentest). Kun læsning af
   registret; samler, hvad der allerede er registreret: låste målinger (`research.measurement`: lås-sha256, alfa, n,

@@ -16,6 +16,7 @@
   python3 -m lab deploy-check [--commit SHA]                                (read-only: did the deploy land?)
   python3 -m lab report-verify [--day YYYY-MM-DD]                          (read-only: recompute the daily report)
   python3 -m lab hypo-audit                                                (read-only: hypothesis pipeline audit)
+  python3 -m lab research-memory [--json FILE]                             (read-only: one learning record per decided hypothesis)
   python3 -m lab web [--port 8770] [--duration S]                           (dashboard on 127.0.0.1; manual start only)
   python3 -m lab gate [--require]                                           (S7 automation gate: 7 days of clean operation)
   python3 -m lab fleet [--duration S]                                       (research agent fleet under the supervisor; manual)
@@ -275,6 +276,7 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
     dc = sub.add_parser("deploy-check"); dc.add_argument("--port", type=int, default=8770); dc.add_argument("--commit")
     rv = sub.add_parser("report-verify"); rv.add_argument("--day", help="UTC day (default: the latest report)")
     sub.add_parser("hypo-audit")
+    rm = sub.add_parser("research-memory"); rm.add_argument("--json", default=None)
     pf.add_argument("--dashboard-running", action="store_true", help="only check whether the dashboard answers")
     wb = sub.add_parser("web"); wb.add_argument("--port", type=int, default=8770); wb.add_argument("--duration", type=float)
     args = ap.parse_args(argv)
@@ -293,6 +295,9 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
     if args.cmd == "hypo-audit":      # read-only: hypothesis pipeline audit (research/LINUX_DRIFT.md 2026-10-22)
         from lab import hypoaudit
         return hypoaudit.main(db_path, out)
+    if args.cmd == "research-memory":     # read-only learning records (research/LINUX_DRIFT.md 2026-10-23)
+        from lab import memory
+        return memory.main(db_path, out, args.json)
     if args.cmd == "report-verify":   # read-only: recompute the daily lane report (research/LINUX_DRIFT.md 2026-10-22)
         from lab import reportcheck
         return reportcheck.main(db_path, args.day, out)
