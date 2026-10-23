@@ -79,18 +79,27 @@ def experiments(con):
     return out
 
 
-def screens(con):
-    res = {}
+def screens(con, measured=None):
+    """A screen pass that a locked measurement has since decided points to that decision, not to a lock it already
+    had (research/LINUX_DRIFT.md 2026-10-23: four measured passes still read "a LÅS-17 lock, then ...")."""
+    res, measured = {}, measured or {}
     for p in _payloads(con, hypogen.EV_SCREEN):
         res[p["key"]] = p
-    return [{"source": "screen", "id": k, "verdict": p.get("verdict"), "n": p.get("n"), "mean": p.get("mean"),
-             "p": p.get("p"), "excluded": p.get("excluded"),
-             "failed": [c for c, ok in (p.get("checks") or {}).items() if not ok] or None,
-             "retest": RETEST.get(p.get("verdict"), RETEST["SCREEN_FAIL"])} for k, p in sorted(res.items())]
+    out = []
+    for k, p in sorted(res.items()):
+        m = measured.get(k)
+        out.append({"source": "screen", "id": k, "verdict": p.get("verdict"), "n": p.get("n"), "mean": p.get("mean"),
+                    "p": p.get("p"), "excluded": p.get("excluded"),
+                    "failed": [c for c, ok in (p.get("checks") or {}).items() if not ok] or None,
+                    "measured": m,
+                    "retest": (f"decided by its locked measurement: {m}; " + RETEST["measurement"]) if m else
+                              RETEST.get(p.get("verdict"), RETEST["SCREEN_FAIL"])})
+    return out
 
 
 def memory(con):
-    return measurements(con) + experiments(con) + screens(con)
+    meas = measurements(con)
+    return meas + experiments(con) + screens(con, {r["id"]: r["verdict"] for r in meas})
 
 
 def main(db_path, out=print, json_path=None):

@@ -73,6 +73,14 @@ class Memory(unittest.TestCase):
         self.assertEqual(r["b|sar_7d|m17"]["failed"], ["same sign"])
         self.assertEqual(r["b|sar_7d|m17"]["retest"], memory.RETEST["SCREEN_FAIL"])
 
+    def test_a_measured_screen_pass_points_to_its_measurement(self):
+        self.db.event(hypogen.EV_SCREEN, "system:test", None, {"key": "x|sar_1d|m17", "verdict": "SCREEN_PASS", "n": 90})
+        self.db.event(hypogen.EV_SCREEN, "system:test", None, {"key": "z|sar_1d|m17", "verdict": "SCREEN_PASS", "n": 40})
+        r, _ = self.recs()
+        self.assertEqual(r["x|sar_1d|m17"]["measured"], "REJECTED")      # the measurement record has the same id
+        self.assertTrue(r["x|sar_1d|m17"]["retest"].startswith("decided by its locked measurement: REJECTED"))
+        self.assertEqual(r["z|sar_1d|m17"]["retest"], memory.RETEST["SCREEN_PASS"])   # not measured: still needs a lock
+
     def test_it_writes_nothing_to_the_registry(self):
         before = self.db.one("SELECT COUNT(*) FROM events")[0]
         self.recs()
