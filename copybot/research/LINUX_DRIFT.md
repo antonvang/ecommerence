@@ -434,6 +434,8 @@ fra 2026-10-17 ("RUNNING outside the lab (paper.py / funding.py)"); deres datafi
 findes ikke på denne maskine, så intet viser, at de kører. Ændring, kun visning: en ekstern post med resultatet RUNNING
 vises kun som RUNNING, når `ops.external_freshness` (filernes ændringstid, ingen fil åbnes) har set en skrivning inden
 for et døgn; ellers `UNVERIFIED` med årsagen. X01 (pm_lp, frisk fil) er uændret RUNNING. Ingen registerpost ændres.
+Samme pakke: listen "Strategityper" under Godkendelser (ca. 30 skabeloner fra det lukkede katalog, næsten alle
+"Afvist i test") foldes sammen som standard; "Venter på dig" står åben.
 
 ### Fremadtest mod køb-og-hold (tilføjet 2026-10-23 kl. 18:15, før kode; brugerens directive: "undersøg, om de nuværende rapporter kan give falsk optimisme")
 
