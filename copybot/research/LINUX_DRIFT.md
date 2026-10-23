@@ -427,6 +427,14 @@ noget, ændrer en gate eller rører indsamleren:
   dem. Feltet "Jobs i kø" viser klar og planlagt hver for sig ("0 klar", "3 planlagt · næste 2027-05-07"), fordi
   de tre jobs er fremadtestenes afgørelser i 2027, ikke en fastlåst kø.
 
+### Eksterne poster vises ikke som kørende uden livstegn (tilføjet 2026-10-23 kl. 19:05, før kode)
+
+Hypoteseregistret viste `X02_copybot_paper` og `X03_funding_live_v0` som RUNNING. Statussen er den importerede tekst
+fra 2026-10-17 ("RUNNING outside the lab (paper.py / funding.py)"); deres datafiler (`data/paper.db`, `data/funding.db`)
+findes ikke på denne maskine, så intet viser, at de kører. Ændring, kun visning: en ekstern post med resultatet RUNNING
+vises kun som RUNNING, når `ops.external_freshness` (filernes ændringstid, ingen fil åbnes) har set en skrivning inden
+for et døgn; ellers `UNVERIFIED` med årsagen. X01 (pm_lp, frisk fil) er uændret RUNNING. Ingen registerpost ændres.
+
 ### Fremadtest mod køb-og-hold (tilføjet 2026-10-23 kl. 18:15, før kode; brugerens directive: "undersøg, om de nuværende rapporter kan give falsk optimisme")
 
 Målt: `FWD_E_vol_managed_long_p1` står +2,79 % siden 10-18 20:15 UTC, mens lige-vægtet køb-og-hold af de 8 mønter, den
