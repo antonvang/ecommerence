@@ -66,3 +66,17 @@ Screeningens træfrate på uafhængige data er indtil videre 0 af 3 (for lidt ti
 - Ingen kodefejl, der ændrer en afgørelse. Den manglende testbarhed er manglende historiske data for nynoterede mønter.
 - Blind vinkel: placeboen for "første tilgængelige pris" på nynoterede mønter — en beslutning for brugeren.
 - Nye hypoteser kræver data, explore0 ikke har. Fremadrettede målinger (H5F, H5X) og `news-watch` samler evidensen.
+
+## Tillæg 2026-10-23: den blinde vinkel er lukket (ændring 17e/17f)
+
+Brugeren besluttede "fiks 4". Ændring 17e (tekst 64a9848 før kode 83a5392) giver de 7 nøgler ovenfor en placebo med
+t + 30 d, når t − 30 d har under 15 hændelser (metode m17e); måling, alfa og låse er uændrede. Resultat i explore0:
+`spot_listing|sar_1d|m17e` og `innovation_zone|sar_1d|m17e` SCREEN_PASS; de øvrige 5 SCREEN_FAIL, bl.a.
+`spot_listing|sar_7d` (fremad-placebo −5,2 %, p 0,014) og `futures_listing|far_7d` (−11 %, p 0,0001) — dér fortsætter
+faldet en måned senere, så det er ikke en hændelseseffekt.
+
+Ændring 17f låste `spot_listing|sar_1d|m17e` (k 4, alfa 0,003125); `innovation_zone|sar_1d|m17e` blev ikke låst (14
+hændelser i train3, 1 i validation3). Målingen: train3 n 28, −9,1 %, p 0,0069 (bestået); validation3 n 11, −2,9 %,
+p 0,3525 ≥ 0,003125 → **REJECTED**. Screeningens træfrate på uafhængige data er nu 0 af 4. `lab hypo-audit` viser
+stadig de 7 m17-nøgler under "uden placebo-værdi"; det er m17-resultaterne, og deres m17e-afgørelser står under deres
+egne nøgler.
