@@ -1239,6 +1239,21 @@ def report(db, day):
                     "a dated protocol"}
 
 
+def verify_report(db, day, worker, artifacts=None):
+    """research/LINUX_DRIFT.md 2026-10-23: the independent recomputation (lab/reportcheck.py, read-only) right after
+    the report; its outcome is recorded, and a failure of the check itself is recorded as not verified."""
+    from lab import reportcheck
+    try:
+        rows = reportcheck.checks(db.path, day, artifacts)
+        ok = bool(rows) and all(r[1] for r in rows)
+        failed = [f"{n}: {d}"[:160] for n, k, d in rows if not k][:10]
+        p = {"day": day, "ok": ok, "checks": len(rows), "failed": failed}
+    except Exception as e:                                  # noqa: BLE001 - never stops the report itself
+        p = {"day": day, "ok": False, "checks": 0, "failed": [f"check failed: {e!r}"[:200]]}
+    db.event("research.lane_report_verified", f"system:{worker}", None, {**p, "decisional": False})
+    return p
+
+
 def step_report(db, job, worker):
     day = (job.get("payload") or {}).get("day")
     end = explore._day_start(day) + DAY
@@ -1249,4 +1264,5 @@ def step_report(db, job, worker):
     db.event("research.lane_report", f"system:{worker}", None,
              {"day": day, "accounts": len(out["accounts"]), "met": out["met"], "net_total": out["net_total"],
               "decisional": False, "artifact_sha256": art["sha256"]})
+    verify_report(db, day, worker)
     return {"day": day, "accounts": len(out["accounts"]), "met": out["met"], "artifact": art}

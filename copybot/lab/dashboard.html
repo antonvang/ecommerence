@@ -666,7 +666,7 @@ function renderSim(b, f, c, r){
   $("#combpnlsub").title = "Realiseret indeholder gebyrer og funding; de vises også hver for sig.";
 }
 function st(k, v, cls="", sub=""){ return `<div class="st"><div class="k">${esc(k)}</div><div class="v ${cls}">${v}</div>${sub ? `<div class="s">${sub}</div>` : ""}</div>`; }
-function renderOverview(k, a, ap){
+function renderOverview(k, a, ap, ln){
   const items = [], H = (a && a.health) || {}, ag = (a && a.agents) || [];
   const add = (lvl, what, how) => items.push({lvl, what, how});
   if (k.fail_closed) add("bad", "Laboratoriet er FAIL_CLOSED", "ingen nye jobs eller handler, før et menneske rydder det (se banneret)");
@@ -681,6 +681,8 @@ function renderOverview(k, a, ap){
   const c = k.control || {};
   if (c.paused) add("warn", "Flåden er sat på pause", "genoptag i agentpanelet"); if (c.hold) add("warn", "Ressourcestop", "for lidt RAM eller disk");
   const nd = k.data && k.data.newest_ts; if (nd && Date.now()/1000 - nd > 7200) add("warn", "Data er gamle", `nyeste data ${ago(nd)}`);
+  const rv = ln && ln.report && ln.report.verified;
+  if (rv && !rv.ok) add("bad", `Døgnrapporten ${ln.report.day} afviger fra genberegningen`, (rv.failed || []).slice(0, 2).join(" · "));
   const w = (ap && ap.waiting) || []; if (w.length) add("warn", `${w.length} venter på din godkendelse`, w.slice(0, 3).map(x => x.name).join(" · "));
   const bad = items.some(x => x.lvl === "bad");
   $("#overview").className = "panel corner ov " + (items.length ? (bad ? "bad" : "warn") : "ok");
@@ -862,7 +864,7 @@ function renderLanes(l){
   $("#lanes-sum").innerHTML = metric("Aktive konti", `${c.lane} bane · ${c.scanner} scanner · ${c.hl ?? 0} HL`, `pladser: ${c.lane_slots} bane · ${c.scanner_slots} scanner · ${c.hl_slots ?? 0} Hyperliquid` + (l.policy_on ? "" : " · SLÅET FRA (lane-off)"))
     + metric("Netto, aktive konti (sim.)", sgn(l.net_active) + " USD", `alle konti nogensinde: ${l.net_all > 0 ? "+" : ""}${num(l.net_all)} USD · ${l.stopped_total} stoppet`)
     + (l.market ? metric("Funding på markedet nu", l.market.median != null ? `${(l.market.median*100).toFixed(4)}% median` : `<span class="na">${NA}</span>`, (l.market.median != null ? `Binance: ${pct(l.market.above_floor, 0)} over rentegulvet · højest ${esc(l.market.top_symbol || "?")} ${(l.market.top*100).toFixed(3)}%` : "") + (l.market.hl_top != null ? ` · Hyperliquid ×8: median ${(l.market.hl_median*100).toFixed(4)}% · højest ${esc(l.market.hl_top_symbol || "?")} ${(l.market.hl_top*100).toFixed(3)}%` : "") + ` · konti kræver Binance ${(l.market.entry_min*100).toFixed(2)}%` + (l.market.hl_entry_min != null ? ` / Hyperliquid ×8 ${(l.market.hl_entry_min*100).toFixed(2)}%` : "") + ((c.scanner + (c.hl ?? 0)) === 0 && (l.market.top ?? 0) < l.market.entry_min && (l.market.hl_top ?? 0) < (l.market.hl_entry_min ?? l.market.entry_min) ? " · <b>venter: ingen mønt er høj nok</b>" : "")) : "")
-    + metric("Seneste døgnrapport", r ? esc(r.day) : `<span class="na">${NA}</span>`, r ? `${r.accounts} konti · netto ${num(r.net_total)} USD · pilotens papirkrav opfyldt: ${(r.met || []).length ? esc(r.met.join(", ")) : "ingen endnu"}` : "skrives kl. 00:30 UTC");
+    + metric("Seneste døgnrapport", r ? esc(r.day) : `<span class="na">${NA}</span>`, r ? `${r.verified ? (r.verified.ok ? `<span class="good">verificeret ✓</span> · ` : `<span class="bad">AFVIGER</span> · `) : ""}${r.accounts} konti · netto ${num(r.net_total)} USD · pilotens papirkrav opfyldt: ${(r.met || []).length ? esc(r.met.join(", ")) : "ingen endnu"}` : "skrives kl. 00:30 UTC");
   const cols = [
     {h:"Konto", f:x => `<div style="font-weight:700">${esc(x.name)}</div><div class="dim">${x.hl ? "Hyperliquid" : x.scanner ? "scanner" : "bane"} · ${esc(x.ledger)}</div>`},
     {h:"Mønter", f:x => esc(x.coins.slice(0, 6).join(", ") + (x.coins.length > 6 ? ` +${x.coins.length - 6}` : "")) + (x.held.length ? `<div class="dim">position i ${x.held.length}</div>` : `<div class="dim">ingen position</div>`)},
@@ -1070,7 +1072,7 @@ async function refresh(full){
   if (fastBusy) return; fastBusy = true;
   try {
     const [k, a, b, f, ap, ln] = await Promise.all([api("/api/kpis"), api("/api/agents"), api("/api/balance"), api("/api/feed?limit=40"), api("/api/approvals"), api("/api/lanes")]);
-    renderStatus(k); renderAgents(a); renderMoney(b); renderLanes(ln); renderFeed(f); renderApprovals(ap); renderOverview(k, a, ap);
+    renderStatus(k); renderAgents(a); renderMoney(b); renderLanes(ln); renderFeed(f); renderApprovals(ap); renderOverview(k, a, ap, ln);
     await loadExperiments();
     if (full || Date.now() - slowAt > 20000) {
       slowAt = Date.now();

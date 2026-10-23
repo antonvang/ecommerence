@@ -4,6 +4,7 @@ import json
 import os
 import sys
 import unittest
+from unittest import mock
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -74,6 +75,27 @@ class ReportVerify(Base):
         self.assertFalse(rows["accounts are exactly the ones live that day"])
         self.assertIn(f"missing {led2}", "\n".join(lines))
         self.assertFalse(rows["net_total is the sum"])
+
+    def test_the_report_job_verifies_its_report_and_records_the_outcome(self):
+        """research/LINUX_DRIFT.md 2026-10-23: automatic, right after the report."""
+        from lab import command
+        path = self.record()
+        p = lane.verify_report(self.db, DAY_, "report-1", artifacts=pipeline.ARTIFACTS)
+        self.assertTrue(p["ok"], p)
+        self.assertGreater(p["checks"], 3)
+        rep = self.db.one("SELECT payload FROM events WHERE kind='research.lane_report' ORDER BY id DESC LIMIT 1")
+        self.assertTrue(command._report_with_check(self.db, rep)["verified"]["ok"])
+        art = load(path)
+        art["net_total"] += 1
+        with open(path, "w") as f:
+            json.dump(art, f, sort_keys=True)
+        p = lane.verify_report(self.db, DAY_, "report-1", artifacts=pipeline.ARTIFACTS)
+        self.assertFalse(p["ok"])
+        self.assertTrue(any(x.startswith("report 2026-10-20: artifact SHA-256") for x in p["failed"]))
+        self.assertFalse(command._report_with_check(self.db, rep)["verified"]["ok"])      # the newest check counts
+        with mock.patch("lab.reportcheck.checks", side_effect=OSError("disk")):
+            p = lane.verify_report(self.db, DAY_, "report-1")
+        self.assertEqual((p["ok"], p["failed"]), (False, ["check failed: OSError('disk')"]))
 
     def test_no_report_is_a_failure(self):
         rc, rows, lines = self.run_check()

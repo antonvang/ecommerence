@@ -784,7 +784,7 @@ def lane_view(db, now=None):
                        "scanner": sum(1 for r in act if r["scanner"]), "scanner_slots": lane.SCAN_SLOTS,
                        "hl": sum(1 for r in act if r["hl"]), "hl_slots": lane.HL_SLOTS},
             "net_active": sum(r["net"] for r in act), "net_all": sum(r["net"] for r in rows),
-            "report": _j(rep["payload"]) if rep else None, "policy_on": lane.policy_on(db), "market": market,
+            "report": _report_with_check(db, rep), "policy_on": lane.policy_on(db), "market": market,
             "simulated": True, "evidence": False, "label": "BANE- OG SCANNERKONTI (simuleret, aldrig bevis)"}
 
 
@@ -937,6 +937,16 @@ def balance(db, now=None):
     finally:
         if own:
             db.con.execute("COMMIT")
+
+
+def _report_with_check(db, rep):
+    """The latest daily lane report with its automatic verification of the same day, if one is recorded."""
+    if not rep:
+        return None
+    r = _j(rep["payload"]) or {}
+    v = db.one("SELECT payload FROM events WHERE kind='research.lane_report_verified' AND payload LIKE ? "
+               "ORDER BY id DESC LIMIT 1", f'%"day":"{r.get("day")}"%')
+    return {**r, "verified": _j(v["payload"]) if v else None}
 
 
 def _forward_vs_buy_and_hold(db, fw):
