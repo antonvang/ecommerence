@@ -119,7 +119,8 @@ def sources(db, now=None, root=None):
     """One row per source: coverage from the cache or the observation chain, last seen, rows in 24 h, and health."""
     now = now or time.time()
     obs = {r["source"]: dict(r) for r in db.q(
-        "SELECT source, MAX(ts) last_ts, SUM(CASE WHEN ts>=? THEN 1 ELSE 0 END) n_24h, "
+        "SELECT source, MAX(CASE WHEN metric NOT IN ('error', 'news_error') THEN ts END) last_ts, "
+        "SUM(CASE WHEN ts>=? THEN 1 ELSE 0 END) n_24h, "
         "SUM(CASE WHEN ts>=? AND metric IN ('error', 'news_error') THEN 1 ELSE 0 END) errors_24h, "
         "MAX(CASE WHEN metric IN ('error', 'news_error') THEN ts END) last_err FROM observations "
         "GROUP BY source",
@@ -147,15 +148,16 @@ def sources(db, now=None, root=None):
                 row["period"] = row["period"] or row["read_window"]
         else:
             m = [v for s, v in obs.items() if s and s.startswith(prefix)]
-            last = max((v["last_ts"] for v in m), default=None)
+            last = max((v["last_ts"] for v in m if v["last_ts"]), default=None)        # data rows only, not errors
             n = sum(v["n_24h"] or 0 for v in m)
             err = sum(v["errors_24h"] or 0 for v in m)
             last_err = max((v["last_err"] or 0 for v in m), default=0) or None
             age = (now - last) if last else None
             recent = last_err is not None and now - last_err < ERROR_RECENT_S     # an outage hours ago is not a problem now
+            failing = last_err is not None and last is not None and last_err > last and age > ERROR_RECENT_S
             row |= {"rows_24h": n, "errors_24h": err, "last_ts": last, "age_s": age, "last_error_ts": last_err,
-                    "health": ("never seen" if last is None else "stale" if age > stale_s else
-                               "errors" if recent else "ok")}
+                    "health": ("never seen" if last is None else "failing" if failing else "stale" if age > stale_s
+                               else "errors" if recent else "ok")}
         rows.append(row)
     from lab import ingest
     return {"sources": rows, "ingest": ingest.status(db), "gaps": [{"data": g, "why": w, "status": s} for g, w, s in GAPS],

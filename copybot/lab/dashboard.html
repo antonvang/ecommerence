@@ -821,9 +821,9 @@ function renderLanes(l){
     {h:"3 døgns funding", num:1, f:x => x.execution ? pct(x.execution.funding_3d, 3) : dash()}],
     l.probes || [], "Ingen startforsøg endnu.");
 }
-const HEALTH = {ok: ["good", "ok"], cached: ["", "i cache"], pending: ["", "afventer indsamling"], stale: ["bad", "forældet"], errors: ["bad", "fejl"], "never seen": ["bad", "aldrig set"], missing: ["bad", "mangler"]};
+const HEALTH = {ok: ["good", "ok"], cached: ["", "i cache"], pending: ["", "afventer indsamling"], stale: ["bad", "forældet"], errors: ["bad", "fejl"], failing: ["bad", "fejler (ingen data siden)"], "never seen": ["bad", "aldrig set"], missing: ["bad", "mangler"]};
 function renderCoverage(c, h){
-  const live = c.sources.filter(x => x.kind === "live"), bad = c.sources.filter(x => ["stale", "errors", "never seen", "missing"].includes(x.health));
+  const live = c.sources.filter(x => x.kind === "live"), bad = c.sources.filter(x => ["stale", "errors", "failing", "never seen", "missing"].includes(x.health));
   const st = h.by_status || {};
   $("#cov-sum").innerHTML = metric("Kilder", `${c.sources.length} · ${bad.length ? `<span class="bad">${bad.length} med problem</span>` : `<span class="good">alle sunde</span>`}`, `${live.length} live · ${c.sources.length - live.length} historiske · betalte kilder: ${c.paid_sources_active} · nøgler: ${c.keys_used}`)
     + (c.ingest ? metric("Indsamling (ændring 14)", `${c.ingest.done} af ${c.ingest.units} enheder`, `${num(c.ingest.spent_bytes / 1e9, 2)} af ${num(c.ingest.budget_bytes / 1e9, 0)} GB budget · ` + c.ingest.by_source.map(b => `${esc(b.source)} ${b.done}/${b.units}`).join(" · ") + (c.ingest.failed.length ? ` · <span class="bad">${c.ingest.failed.length} fejlet</span>` : "") + (c.ingest.refused.length ? ` · <span class="bad">${c.ingest.refused.length} afvist</span>` : "")) : "")

@@ -82,6 +82,18 @@ class Sources(Base):
                  if r["source"] == "Binance fapi premiumIndex (live)")
         self.assertEqual((b["errors_24h"], b["health"], b["last_error_ts"]), (1, "ok", NOW - 5 * 3600))
 
+    def test_a_source_whose_every_attempt_fails_is_failing_not_ok(self):
+        """research/LINUX_DRIFT.md 2026-10-23: GDELT showed 'ok' with no item for 31 h because its error rows counted
+        as its last sign of life."""
+        gdelt = "https://api.gdeltproject.org/api/v2/doc/doc"
+        self.obs(NOW - 31 * 3600, gdelt)                          # the last item
+        self.obs(NOW - 15 * 3600, gdelt, "news_error")            # HTTP 429, then a 24 h backoff
+        g = next(r for r in coverage.sources(self.db, NOW, self.root)["sources"] if r["source"].startswith("GDELT"))
+        self.assertEqual((g["health"], g["last_ts"], g["age_s"]), ("failing", NOW - 31 * 3600, 31 * 3600))
+        self.obs(NOW - 600, gdelt)                                # data again
+        g = next(r for r in coverage.sources(self.db, NOW, self.root)["sources"] if r["source"].startswith("GDELT"))
+        self.assertEqual(g["health"], "ok")
+
     def test_never_seen_and_no_paid_source(self):
         out = coverage.sources(self.db, NOW, self.root)
         live = [r for r in out["sources"] if r["kind"] == "live"]
