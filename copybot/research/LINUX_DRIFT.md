@@ -411,4 +411,4 @@ noget, ændrer en gate eller rører indsamleren:
     genstarter aldrig noget; `watch.lock` forhindrer to vagter).
   - Ventetid på navneopslag før start som i pm-lp-collector.service (højst 10 min).
   - Fortryd: `systemctl --user disable copybot-lab copybot-watch` og slet de to filer.
-  - Installation kræver begge dele: S7 åben og brugerens ja (han kører scriptet selv).
+  - Installation kræver begge dele: S7 åben og brugerens ja (brugeren kører scriptet selv).

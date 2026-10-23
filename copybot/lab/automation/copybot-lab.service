@@ -1,0 +1,21 @@
+# Forskningslaboratoriet (flåde + dashboard) som systemd-brugertjeneste: FORBEREDT, IKKE AKTIVERET.
+# Installeres kun af lab/automation/s7_install_linux.sh, når S7-gaten er åben og brugeren har sagt ja
+# (research/LINUX_DRIFT.md, "Ekstern sundhedskontrol og S7"). Kun simuleret handel, ingen rigtige penge.
+# Starter START_LAB.sh ved opstart (linger: før login). Genstarter IKKE efter et nedbrud: et menneske skal se årsagen
+# (START_LAB.sh: "Intet genstartes automatisk"). Kodevagt, preflight og lab.lock i START_LAB.sh gælder uændret.
+# Fortryd: systemctl --user disable copybot-lab && rm ~/.config/systemd/user/copybot-lab.service
+[Unit]
+Description=Copybot forskningslaboratorium (paper, flåde + dashboard)
+
+[Service]
+Type=simple
+WorkingDirectory=%h/ecommerence/copybot
+ExecStartPre=/bin/sh -c 'i=0; until getent hosts data.binance.vision >/dev/null; do i=$$((i+1)); [ $$i -ge 120 ] && exit 1; sleep 5; done'
+ExecStart=%h/ecommerence/copybot/START_LAB.sh
+StandardOutput=append:%h/ecommerence/copybot/data/lab/start.log
+StandardError=append:%h/ecommerence/copybot/data/lab/start.log
+Restart=no
+TimeoutStopSec=120
+
+[Install]
+WantedBy=default.target

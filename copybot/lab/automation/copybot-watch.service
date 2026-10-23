@@ -1,0 +1,21 @@
+# Laboratoriets uafhængige vagt (lab/watch.py) som systemd-brugertjeneste: FORBEREDT, IKKE AKTIVERET.
+# Installeres kun af lab/automation/s7_install_linux.sh, når S7-gaten er åben og brugeren har sagt ja
+# (research/LINUX_DRIFT.md, "Ekstern sundhedskontrol og S7"). Vagten læser kun og genstarter aldrig noget;
+# den genstartes selv efter 60 s, hvis den dør (watch.lock forhindrer to vagter).
+# Fortryd: systemctl --user disable copybot-watch && rm ~/.config/systemd/user/copybot-watch.service
+[Unit]
+Description=Copybot vagt (kun læsning)
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+WorkingDirectory=%h/ecommerence/copybot
+ExecStart=%h/ecommerence/copybot/START_WATCH.sh
+StandardOutput=append:%h/ecommerence/copybot/data/lab/watch.log
+StandardError=append:%h/ecommerence/copybot/data/lab/watch.log
+Restart=on-failure
+RestartSec=60
+TimeoutStopSec=30
+
+[Install]
+WantedBy=default.target
