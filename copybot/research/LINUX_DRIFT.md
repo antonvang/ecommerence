@@ -404,6 +404,11 @@ noget, ændrer en gate eller rører indsamleren:
   visning: alderen måles fra seneste datarække; ny tilstand `failing` ("fejler") når seneste fejl er nyere end seneste
   data og der ikke er kommet data i over 2 t; ellers som før (`stale` efter kildens grænse, `errors` ved en fejl inden
   for 2 t, `ok`). En enkelt fejl lige efter frisk data er stadig `errors`, ikke `failing`.
+- **Pengekortene tilbage (tilføjet 2026-10-23 kl. 17:20, før kode; brugeren: "dashboard skal beholde de gamle penge
+  profit ting").** De syv kort (saldo, total P&L, i dag, aktive strategier; fremadtest-saldo, samlet simuleret værdi,
+  samlet simuleret P&L) med tal-animation og glød vises igen under Overblik; kontotabellen pr. gruppe bliver under
+  dem. Feltet "Jobs i kø" viser klar og planlagt hver for sig ("0 klar", "3 planlagt · næste 2027-05-07"), fordi
+  de tre jobs er fremadtestenes afgørelser i 2027, ikke en fastlåst kø.
 
 ### Før pm_lp-holdouten: watchdog og strøm (tjekket 2026-10-22)
 
