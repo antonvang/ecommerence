@@ -416,6 +416,16 @@ noget, ændrer en gate eller rører indsamleren:
   dem. Feltet "Jobs i kø" viser klar og planlagt hver for sig ("0 klar", "3 planlagt · næste 2027-05-07"), fordi
   de tre jobs er fremadtestenes afgørelser i 2027, ikke en fastlåst kø.
 
+### Vagten måler pm_lp-dækningen (tilføjet 2026-10-23 kl. 17:55, før kode; brugerens ja samme dag: "ja til pm_lp dækning")
+
+Indtil nu opdagede vagten kun et totalt stop (seneste snapshot ældre end 300 s). En delvis forringelse — som natten
+til 2026-10-22, hvor timer lå på 32–85 % og døgnet endte på 91,4 % — blev ikke meldt, før døgnrapporten. Ny kontrol
+`pm_coverage` i `lab watch`, kun læsning (`mode=ro`, samme forbindelse som kontrollen af indsamleren), højst én
+gang i timen: dagens løbende snapshot-dækning = snapshots i dag ÷ (markeder i dagens panel × minutter siden 00:00 UTC),
+samme tælling som `research/pm_lp.py coverage` (D1 ≥ 90 %). Under 90 % efter mindst 2 timer af døgnet er en fejl i
+vagten (log, skrivebordsbesked, statusfil); gårsdagens færdige døgn vises i detaljen. Indsamleren, dens database og
+holdouten røres ikke; intet genstartes.
+
 ### Før pm_lp-holdouten: watchdog og strøm (tjekket 2026-10-22)
 
 - **Watchdog: aktiv** (brugeren 2026-10-22 17:02, med sudo). `/etc/systemd/system.conf` har `RuntimeWatchdogSec=60`,
