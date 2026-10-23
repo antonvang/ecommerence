@@ -426,3 +426,14 @@ noget, ændrer en gate eller rører indsamleren:
   - `UNKNOWN`: periodisk agent uden registreret succes.
   Vagten får samme dom for periodiske agenter: intet vellykket gennemløb inden for grænsen er en fejl, også med frisk
   puls. Dashboardets agentliste viser `health` og grunden. Ingen gate, ingen beslutning og ingen genstart ændres.
+- `python3 -m lab research-memory [--json FIL]` (tilføjet 2026-10-23 ca. 16:45, før kode; brugeren bad om en
+  læringsløkke: for hver afgjort hypotese hypotese og låst protokol, data og dataversion, resultat og usikkerhed,
+  omkostninger og baselines, afvisningsgrund, og hvilken ny evidens der kan retfærdiggøre en gentest). Kun læsning af
+  registret; samler, hvad der allerede er registreret: låste målinger (`research.measurement`: lås-sha256, alfa, n,
+  middel og p pr. fase, antal datafiler og en samlet sha256 over deres sha256'er), katalog- og familieeksperimenter
+  (`results`: protokolversion, dom, fejlede gates, Sharpe/DSR, omkostningsmodel) og screeningen (17: dom og årsag).
+  Gentestbetingelsen er en fast regel pr. slags, aldrig et nyt kriterium: låst måling → kun en ny dateret ændring med et
+  fremadvindue efter låsen (2022–2023 er brugt, 2024 er holdout, 2025+ er reserveret); katalogskabelon → kataloget er
+  lukket (ændring 8), kun som familie; screening FAIL → explore0 er brugt; UNTESTABLE → ≥ 15 hændelser med data.
+  Fanget ved bygningen: H5 (16c) står som PASS på validation3 (n 26), mens min statusrapport sagde "0 af 4"; det tal
+  gjaldt kun ændring 17's screening. Den ændrer intet og afgør intet; ingen holdout læses.
