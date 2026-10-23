@@ -1,0 +1,40 @@
+{
+ "baseline": "0: ingen ændring (afkast er fratrukket BTCUSDT; de andre måles mod (t - 7 d, t])",
+ "claim": "`sar_1d` efter Binance-meddelelser af typen `spot_listing` er lavere end 0",
+ "costs": "afkast (ar_, far_, sar_): 0,46 % rundtur (F1); andre udfald handles ikke",
+ "criterion": "train3 ensidet p < 0.05 med n >= 15; validation3 ensidet p < alpha_k med n >= 8; alpha_k = 0,05 * 2^-k (ændring 17 punkt 7)",
+ "data": "Binance' meddelelser i registret (news/1); USD-M 1 t-klines og fundingRate fra data.binance.vision",
+ "direction": -1,
+ "key": "spot_listing|sar_1d|m17e",
+ "mechanism": "meddelelsen ændrer efterspørgsel, opmærksomhed eller afdækning i mønten (ikke undersøgt)",
+ "method": "m17e",
+ "outcome": "sar_1d",
+ "placebo": "samme mønter med t + 30 d",
+ "plan": "låses ved en dateret ændring (LÅS-17); måles derefter automatisk én gang",
+ "risks": "screeningen valgte blandt 124 kandidater; overlappende begivenheder; tynde perps",
+ "rule": "research/PROTOCOL_V3.md amendment 17e",
+ "screen": {
+  "events_sha256": "ad1ad2da9426d3cb27dfd53fba547a468fdf5215a8f81cb2feb033f2a51a4bdb",
+  "halves": {
+   "2020": [
+    40,
+    -0.07397058796838092
+   ],
+   "2021": [
+    77,
+    -0.091975437453162
+   ]
+  },
+  "mean": -0.08581993335580095,
+  "median": -0.06926620168262304,
+  "n": 117,
+  "p": 9.99950002499875e-05,
+  "placebo": {
+   "mean": 0.017457694432978378,
+   "n": 110,
+   "p": 0.06589670516474176,
+   "shift_days": 30
+  }
+ },
+ "type": "spot_listing"
+}

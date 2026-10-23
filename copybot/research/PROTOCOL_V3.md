@@ -2000,3 +2000,30 @@ en ændring af et screeningskriterium, besluttet efter at explore0-resultaterne 
    futures-listninger er læst ved målingen af `futures_listing|sar_7d|m17` (ændring 17b, REJECTED).
 5. **Forbehold, nævnt før screening:** pipelinen har nu 124 kandidater (108 + 9 + 7); kriteriet er valgt efter at
    have set explore0-resultaterne for netop disse nøgler. Et PASS i screeningen er udforskning og aldrig bevis.
+
+## Ændring 17f (2026-10-23): låsning af `spot_listing|sar_1d|m17e` — før data
+
+**Beslutning:** Claude under brugerens mandat, efter ændring 17 punkt 7 og ændring 17e. Ingen kode ændres.
+
+1. **Screening under m17e** (explore0, hændelser `research.hypothesis_screen`, 2026-10-23; alle 7 m17e-kandidater er
+   screenet: 2 PASS, 5 FAIL):
+   - `spot_listing|sar_1d|m17e`: spotkursen (mod BTCUSDT spot) 1 døgn fra første spotpris efter en spot-listning: n 117,
+     gennemsnit −8,6 %, median −6,9 %, p 0,0001; 2020 −7,4 % (40), 2021 −9,2 % (77); placebo (t + 30 d) +1,7 %,
+     p 0,066 (n 110).
+   - `innovation_zone|sar_1d|m17e`: n 34, −9,7 %, p 0,0004; placebo (t + 30 d) +3,0 %, p 0,16 (n 33). **Låses ikke:**
+     train3 har 14 innovation-zone-begivenheder (kræver 15 med data) og validation3 1 (kræver 8); den kan ikke måles og
+     ville kun bruge en alfaplads. Optalt fra titler og antal, ingen priser.
+   - FAIL: `spot_listing|sar_7d` (placebo fremad −5,2 %, p 0,014: faldet fortsætter en måned senere),
+     `futures_listing|far_7d` (placebo fremad −11,0 %, p 0,0001), `futures_listing|far_1d`, `innovation_zone|sar_7d`
+     og `staking|sar_7d` (p > 0,005).
+2. **Kendte forbehold, nævnt før målingen:** kriteriet (17e) er valgt efter at have set explore0-resultaterne; valgt
+   blandt 124 kandidater; placeboens p 0,066 ligger tæt på grænsen 0,05; innovation-zone-mønterne er for en stor del
+   også spot-listninger, så de to PASS er ikke uafhængige. `margin|sar_1d|m17c` (17d, REJECTED p 0,44) målte samme
+   udfald på train3/validation3 for margin-meddelelser, hvis mønter delvis overlapper.
+3. **Ingen 2022–2023-priser er læst** for spot-listning-begivenheder af pipelinen. Train3 har 29 og validation3 11
+   spot-listning-begivenheder (kun titler og antal er talt).
+4. **Lås** (ensidet, retning negativ; k = låsens nummer i filen = 4, alpha_k = 0,05 · 2^−4 = 0,003125):
+
+LÅS-17 spot_listing|sar_1d|m17e 5b7a5ebe9071d00913f41c8ab4e834ec97536df1d03e0f6e984e80d9e130f298
+
+5. En papirkonto, der udnytter et PASS, kræver sin egen daterede ændring med omkostninger og stopregler.
