@@ -121,6 +121,18 @@ hybrid-sleep.target`. Fortryd med `unmask`. Kræver din godkendelse.
   `python3 -m lab gate` viser tællingen.
 - **Varm journal efter `kill -9` eller strømsvigt.** Vagten kan så melde "pm_lp database unreadable". Indsamleren
   ruller journalen tilbage selv, næste gang den starter. Slet aldrig `pm_lp.db-journal` i hånden.
+- **Afprøvet efter strømsvigt 2026-10-23** (pc'en frøs ca. 15:05, blev slukket, startede 15:09). Tjekliste, i
+  rækkefølge, alle kommandoer fra `~/ecommerence/copybot`:
+  1. `systemctl --user show pm-lp-collector -p ActiveState -p NRestarts` → active (linger; kom selv 15:09:52).
+  2. `git -C ~/ecommerence status --short` → tom (ellers tomme filer efter nedbrud: gendan, se ovenfor).
+  3. `python3 -m lab verify` (hashkæderne) og `python3 -c "import sqlite3; print(sqlite3.connect('data/lab/lab.db').execute('PRAGMA quick_check').fetchone())"` → ok.
+  4. `(setsid nohup ./START_LAB.sh >> data/lab/start.log 2>&1 < /dev/null &)` (kodevagt + preflight kører selv).
+  5. Vagten: `setsid nohup ./START_WATCH.sh >> data/lab/watch.log 2>&1 < /dev/null &` — kun efter brugerens ja,
+     indtil S7-scriptet er installeret. Den melder selv sit hul ("overvågningen var nede … 54 min").
+  6. `python3 -m lab deploy-check --commit $(git rev-parse --short HEAD)` → DEPLOY OK.
+  Målt: laben nede 15:08–15:16, vagten 15:07–16:02 (ventede på ja), pm_lp mistede 2 min snapshots, S7 talte ikke
+  udfaldet (`system.alive` 14:58 og 15:15). Vagtens detektion er afprøvet på en kopi af registret med den rigtige kode:
+  tavs supervisor (900 s), agent med puls men uden gennemløb (1200 s), fejlet agent og FAIL_CLOSED blev alle meldt.
 
 ## pm_lp: beskyttelse af holdout (godkendt af brugeren 2026-10-19)
 
