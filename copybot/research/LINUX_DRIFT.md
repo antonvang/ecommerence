@@ -347,6 +347,10 @@ noget, ændrer en gate eller rører indsamleren:
   opdatering, fra 1,47 s til 0,77 s (`balance` 0,21→0,05 s, `rejected` 0,31→0,02 s, `paper2` 0,36→0,11 s); output var
   identisk med fastfrosset ur (kun disk/RAM-målinger afveg). Indekset bygges på 0,03 s ved næste start; det ændrer
   ingen række, ingen hashkæde og ingen afgørelse.
+  **Målt efter deploy (e4791cb, 2026-10-23 ca. 14:20):** endpoints i produktionen `balance` 0,24→0,07 s, `paper2`
+  0,43→0,18 s, `rejected` 0,33→0,03 s, `v2/experiments` 0,39→0,11 s. Webprocessens samlede CPU kan ikke sammenlignes
+  før/efter: den følger, hvor ofte den åbne fane spørger (ca. 3 nye forbindelser/s mens fanen ses; 24 % målt, med
+  ~0,1-0,2 s CPU pr. tråd). Browserens egen fane-proces brugte samtidig >1,5 kerner (top), langt mere end serveren.
 
 ### Før pm_lp-holdouten: watchdog og strøm (tjekket 2026-10-22)
 
