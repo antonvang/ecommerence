@@ -228,6 +228,18 @@ class Api(unittest.TestCase):
         self.assertIn(self.srv.token, html)
 
 
+class Index(unittest.TestCase):
+    def test_lookups_by_experiment_use_the_exp_index(self):
+        """research/LINUX_DRIFT.md 2026-10-23: kind + exp_id lookups (pipeline.recorded_sha, paper.forward_active) read
+        one experiment's rows, not every row of the kind."""
+        db = DB(":memory:")
+        for q in ("SELECT payload FROM events WHERE kind='job.done' AND exp_id=? ORDER BY id DESC",
+                  "SELECT kind, actor FROM events WHERE kind IN ('forward.approved','forward.stopped') AND exp_id=? "
+                  "ORDER BY id DESC LIMIT 1"):
+            plan = " ".join(r[3] for r in db.q("EXPLAIN QUERY PLAN " + q, "E_x"))
+            self.assertIn("events_exp", plan)
+
+
 class Gate(unittest.TestCase):
     def test_s7_gate_closed_and_installer_refuses(self):
         db = DB(":memory:")

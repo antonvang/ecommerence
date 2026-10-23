@@ -54,6 +54,7 @@ CREATE INDEX IF NOT EXISTS sim_fills_exp ON sim_fills(exp_id, id);
 CREATE INDEX IF NOT EXISTS risk_exp ON risk_events(exp_id, id);
 CREATE INDEX IF NOT EXISTS observations_det ON observations(detector, metric, instrument, ts);
 CREATE INDEX IF NOT EXISTS events_kind ON events(kind, actor, ts);
+CREATE INDEX IF NOT EXISTS events_exp ON events(exp_id, kind, id);       -- research/LINUX_DRIFT.md 2026-10-23
 CREATE INDEX IF NOT EXISTS sim_fills_order ON sim_fills(order_id);
 CREATE INDEX IF NOT EXISTS sim_equity_ts ON sim_equity(exp_id, ts);
 CREATE UNIQUE INDEX IF NOT EXISTS sim_funding_key ON sim_funding(exp_id, instrument, settle_ts);
