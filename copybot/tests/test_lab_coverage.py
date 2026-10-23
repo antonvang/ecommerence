@@ -94,6 +94,22 @@ class Sources(Base):
         g = next(r for r in coverage.sources(self.db, NOW, self.root)["sources"] if r["source"].startswith("GDELT"))
         self.assertEqual(g["health"], "ok")
 
+    def test_an_external_row_is_running_only_with_a_fresh_file(self):
+        """research/LINUX_DRIFT.md 2026-10-23: X02/X03 were shown RUNNING with no data file on the host."""
+        from unittest import mock
+        from lab import legacy
+        legacy.import_legacy(self.db)
+        fresh = {"X01_pm_lp_v1": {"label": "pm_lp", "last_write_age_s": 30.0},
+                 "X02_copybot_paper": {"label": "copy-bot paper process", "last_write_age_s": None},
+                 "X03_funding_live_v0": {"label": "funding live", "last_write_age_s": 3 * 86400.0}}
+        with mock.patch("lab.ops.external_freshness", lambda now=None: fresh):
+            ex = {e["exp_id"]: e for m in coverage.hypotheses(self.db)["mechanisms"] for e in m["experiments"]}
+        self.assertEqual(ex["X01_pm_lp_v1"]["verdict"], "RUNNING")
+        self.assertEqual(ex["X02_copybot_paper"]["verdict"], "UNVERIFIED")
+        self.assertIn("no data file of copy-bot paper process on this host", ex["X02_copybot_paper"]["verdict_text"])
+        self.assertEqual(ex["X03_funding_live_v0"]["verdict"], "UNVERIFIED")
+        self.assertIn("last write 72 h ago", ex["X03_funding_live_v0"]["verdict_text"])
+
     def test_never_seen_and_no_paid_source(self):
         out = coverage.sources(self.db, NOW, self.root)
         live = [r for r in out["sources"] if r["kind"] == "live"]

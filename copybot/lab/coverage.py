@@ -239,6 +239,9 @@ def _head(verdict):
     return v.split()[0] if v else "NO RESULT"
 
 
+EXTERNAL_ALIVE_S = 86400               # an external process that has not written its file for a day is not shown running
+
+
 def hypotheses(db):
     """One row per mechanism (deduplicated by mechanism_tag): experiments, variants tested, latest verdict, alpha
     spent; plus the multiple-testing totals and the exploration lane's own count (exploratory, not decisional). An
@@ -250,6 +253,8 @@ def hypotheses(db):
         latest[r["exp_id"]] = (r["verdict"], r["ts"])
     trials = {r["exp_id"]: r["n"] for r in db.q("SELECT exp_id, COUNT(DISTINCT variant) n FROM trials GROUP BY exp_id")}
     alpha = {r["exp_id"]: r["a"] for r in db.q("SELECT exp_id, SUM(alpha) a FROM alpha_ledger GROUP BY exp_id")}
+    from lab import ops
+    ext = ops.external_freshness()
     mech = {}
     for r in db.q("SELECT exp_id, mechanism_tag, spec_json, created_ts FROM experiments ORDER BY id"):
         tag = r["mechanism_tag"] or "untagged"
@@ -270,6 +275,12 @@ def hypotheses(db):
         head = _head(v)
         if st in lifecycle.FINAL:                  # a later rejection/retirement overrides an earlier screening verdict
             head = "REJECTED"
+        if head == "RUNNING" and r["exp_id"] in ext:  # an external process claimed running: show it only with a sign of
+            age = ext[r["exp_id"]]["last_write_age_s"]  # life (research/LINUX_DRIFT.md 2026-10-23)
+            if age is None or age > EXTERNAL_ALIVE_S:
+                head = "UNVERIFIED"
+                v = (f"no data file of {ext[r['exp_id']]['label']} on this host" if age is None else
+                     f"{ext[r['exp_id']]['label']}: last write {int(age // 3600)} h ago") + f" (recorded: {v or ''})"
         m["experiments"].append({"exp_id": r["exp_id"], "verdict": head, "verdict_text": (v or "")[:200],
                                  "verdict_ts": ts, "state": st})
         m["variants_tested"] += trials.get(r["exp_id"], 0)
