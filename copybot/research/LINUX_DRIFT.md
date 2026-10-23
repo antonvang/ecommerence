@@ -336,6 +336,12 @@ noget, ændrer en gate eller rører indsamleren:
   tomt lab-modul, og alle lab-moduler kan importeres.
 - `scripts/suite.sh [LOG]`: hele testsamlingen med `nice`, timeout 2700 s og én opsummeringslinje (exitkode, antal,
   resultat, sekunder, de 15 langsomste tests, efterladte `data/ingest` eller `data/lab/hypotheses`).
+- `scripts/suite_parallel.sh [N=3] [LOGDIR]` (tilføjet 2026-10-23 kl. 17:45): samme tests fordelt på N isolerede
+  `git worktree`-kopier af HEAD plus arbejdstræets ucommittede og usporede filer, så tests, der skriver under `data/`,
+  aldrig deler mappe; fordeling efter hvert moduls målte sekunder fra sidste kørsel (`~/.cache/copybot-suite-weights`).
+  Målt: tre kørsler i træk 966 tests OK (1 sprunget over, som den serielle), intet efterladt, 361 s, 375 s og 265 s
+  (balanceret: 263/242/246 s pr. del) mod 568–677 s seriel. Bruges som den fulde suite før deploy; `suite.sh` består
+  som reference, hvis de to nogensinde giver forskelligt antal tests eller resultat.
 - **Obsidian-vault: droppet samme dag (2026-10-22), før deploy.** Brugeren skrev "Jeg kommer ikke til at bruge den";
   ubrugt kode skal ikke køre. Koden fjernes; intet blev skrevet i produktionen.
 - `python3 -m lab report-verify [--day YYYY-MM-DD]` (tilføjet 2026-10-22 kl. ca. 22:40, før kode; brugeren bad om, at
