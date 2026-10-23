@@ -31,7 +31,7 @@ en dateret ændring låser den, før data findes; med 78–85 noteringer om åre
 Kilde: CoinMetrics' katalog (første handel pr. Coinbase USD-marked; allerede tilladt vært; `api.exchange.coinbase.com`
 blev ikke tilføjet, fordi den også er en handelsvært). Engangskørslen i produktionen (2026-10-24 ca. 01:37) gemte 254
 `cb_listing` og 254 `cb_none`; 121 begivenheder i explore0. Screenet automatisk af pipelinen (hændelser
-`research.hypothesis_screen`, ca. 01:46–02:05), explore0, ændring 17's uændrede tjek:
+`research.hypothesis_screen`, ca. 01:46–01:53), explore0, ændring 17's uændrede tjek:
 
 | Udfald | n | gennemsnit | p (tosidet) |
 |---|---|---|---|
