@@ -268,6 +268,18 @@ class Health(unittest.TestCase):
         self.assertTrue(all(a["health"] in command.HEALTH and a["health_reason"] for a in out["agents"]))
 
 
+class DashboardCost(unittest.TestCase):
+    def test_the_live_lamp_does_not_animate(self):
+        """research/LINUX_DRIFT.md 2026-10-23: the blinking lamp cost ~9 points of a core (14.1 % vs 5.1 %)."""
+        import re
+        with open(os.path.join(HERE, "lab", "dashboard.html"), encoding="utf-8") as f:
+            html = f.read()
+        rule = re.search(r"\.led\.live\{([^}]*)\}", html)
+        self.assertIsNotNone(rule)
+        self.assertNotIn("animation", rule.group(1))
+        self.assertNotIn("infinite", re.sub(r"\.sk\{[^}]*\}", "", html))    # only the loading skeleton may loop
+
+
 class Index(unittest.TestCase):
     def test_lookups_by_experiment_use_the_exp_index(self):
         """research/LINUX_DRIFT.md 2026-10-23: kind + exp_id lookups (pipeline.recorded_sha, paper.forward_active) read

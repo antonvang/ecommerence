@@ -42,8 +42,7 @@ a{color:var(--amber);text-decoration:none} a:hover{text-decoration:underline}
 .chip.paper{border-color:#d4512c99;color:#ffb38a;background:#2a0f0866}
 .led{width:8px;height:8px;border-radius:50%;background:var(--dim);flex:none}
 .led.ok{background:var(--green);box-shadow:0 0 8px var(--green)} .led.warn{background:var(--amber);box-shadow:0 0 8px var(--amber)}
-.led.bad{background:var(--red);box-shadow:0 0 8px var(--red)} .led.live{animation:blink 2s ease-in-out infinite}
-@keyframes blink{50%{opacity:.35}}
+.led.bad{background:var(--red);box-shadow:0 0 8px var(--red)} .led.live{background:var(--green);box-shadow:0 0 8px var(--green)}   /* no blink: ~9 points of a core (LINUX_DRIFT 2026-10-23) */
 .clock{font:600 12px var(--mono);color:var(--sand)}
 
 .banner{display:none;border-radius:12px;padding:11px 14px;font:600 12px var(--mono);align-items:center;gap:12px;flex-wrap:wrap}
