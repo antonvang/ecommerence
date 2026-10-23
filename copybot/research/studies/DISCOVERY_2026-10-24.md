@@ -25,3 +25,27 @@ Ikke testbar under protokollen: screening må kun bruge explore0, og ændring 17
 hændelser med data. 2022–2023 er brugt (train3/validation3), 2024 er holdout, 2025+ er reserveret; ingen af dem må
 bruges til at screene en ny kilde. Ingen kode, ingen ændring. Kilden kan blive relevant som fremadtest (som H5F), hvis
 en dateret ændring låser den, før data findes; med 78–85 noteringer om året ville 15 hændelser tage ca. 2–3 måneder.
+
+## Opfølgning samme nat: Coinbase-noteringer (ændring 17g) — screenet, alle 9 SCREEN_FAIL
+
+Kilde: CoinMetrics' katalog (første handel pr. Coinbase USD-marked; allerede tilladt vært; `api.exchange.coinbase.com`
+blev ikke tilføjet, fordi den også er en handelsvært). Engangskørslen i produktionen (2026-10-24 ca. 01:37) gemte 254
+`cb_listing` og 254 `cb_none`; 121 begivenheder i explore0. Screenet automatisk af pipelinen (hændelser
+`research.hypothesis_screen`, ca. 01:46–02:05), explore0, ændring 17's uændrede tjek:
+
+| Udfald | n | gennemsnit | p (tosidet) |
+|---|---|---|---|
+| ar_1d | 35 | +0,26 % | 0,94 |
+| ar_7d | 35 | −2,9 % | 0,60 |
+| far_1d | 40 | +1,1 % | 0,74 |
+| far_7d | 40 | −6,7 % | 0,20 |
+| fund_7d | 33 | ≈ 0 | 0,99 |
+| sar_1d | 68 | +1,25 % | 0,61 |
+| sar_7d | 68 | −4,2 % | 0,30 |
+| vol_3d | 33 | −16 % | 0,021 |
+| volume_1d | 33 | +25 % | 0,037 |
+
+Ingen når p ≤ 0,005; intet udkast, ingen lås. Perp-udfaldene dækker kun 33–40 af 121 mønter (de fleste havde ingen
+USD-M-perp i 2020–21). Fortolkning (ikke en test): handelsstarten på Coinbase flytter ikke Binance-kursen målbart;
+en eventuel effekt ligger ved annonceringen, som denne kilde ikke har tidspunktet for. Efter ændring 17 punkt 4
+screenes nøglerne aldrig igen under m17g.
