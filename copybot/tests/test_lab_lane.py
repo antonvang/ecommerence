@@ -998,8 +998,10 @@ class Review(Base):
     def test_an_old_method_review_does_not_count(self):
         self.publish([result("k1", sharpe=5)], reviewed=False)
         self.db.event("research.lane_review", "system:adversarial-1", None, {"key": "k1", "ok": True})   # 11c
-        self.assertIsNone(lane.manage(self.db, NOW, market(), fids=["fcarry"])["started"])
-        self.assertEqual(lane.enqueue_reviews(self.db, NOW, fids=["fcarry"]), 1)                     # reviewed again
+        out = lane.manage(self.db, NOW, market(), fids=["fcarry"])
+        self.assertIsNone(out["started"])
+        self.assertEqual(out["reviews_queued"], 1)                                    # reviewed again (11i: by manage)
+        self.assertEqual(lane.enqueue_reviews(self.db, NOW, fids=["fcarry"]), 0)      # already queued, not twice
 
     def test_the_market_shift_placebo_separates_timing_from_noise(self):
         import random
@@ -1077,6 +1079,29 @@ class Review(Base):
         self.assertEqual(ids, {f"lane_review|{lane.review_id(f'g{i}')}" for i in range(2)})
         lane.retire(self.db, "LANE_cap0", "flat", "fixture", now=NOW + 60)            # room again: its best first
         self.assertEqual(lane.enqueue_reviews(self.db, NOW + 120, fids=["fcarry"]), 4)
+
+    def test_11i_a_review_is_ordered_only_for_a_candidate_that_holds_something_now(self):
+        """Amendment 11i: the start pass checks 11b on the hourly data first; a candidate holding nothing gets 11b's
+        skip and 24 h retry instead of a review; at most the free slots wait for a review."""
+        self.publish([result(f"k{i}", sharpe=10 - i * 0.5) for i in range(4)], reviewed=False)
+        held = {"k1", "k3"}
+        with mock.patch.object(lane, "_would_hold", lambda r, coins, get, now, skip_unreadable=False:
+                               coins if r["key"] in held else []):
+            out = lane.manage(self.db, NOW, market(), fids=["fcarry"])
+        self.assertEqual(out["reviews_queued"], 2)
+        self.assertIsNone(out["started"])                                            # no start without a review
+        ids = {r[0] for r in self.db.q("SELECT job_id FROM jobs WHERE kind='lane_review'")}
+        self.assertEqual(ids, {f"lane_review|{lane.review_id(k)}" for k in held})
+        skipped = {json.loads(p)["key"]: json.loads(p) for (p,) in self.db.q(
+            "SELECT payload FROM events WHERE kind='lane.skipped'")}
+        self.assertEqual(set(skipped), {"k0", "k2"})
+        self.assertTrue(all(p["retry"] and p["reason"] == "would hold nothing now (11b)" and p["books_read"] is False
+                            and p["reviewed"] is False for p in skipped.values()))
+        self.assertEqual(lane.enqueue_reviews(self.db, NOW + 60, fids=["fcarry"], holds=lambda r: True), 0)  # tried
+        with mock.patch.object(lane, "SLOTS", 1):                                  # one free slot: one review at most
+            self.db.con.execute("DELETE FROM jobs WHERE kind='lane_review'")
+            self.assertEqual(lane.enqueue_reviews(self.db, NOW + 60, fids=["fcarry"], cap=1,
+                                                  holds=lambda r: True), 1)
 
     def test_reviews_are_queued_best_first_at_most_six(self):
         self.publish([result(f"k{i}", sharpe=10 - i * 0.5) for i in range(9)], reviewed=False)

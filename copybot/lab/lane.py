@@ -457,15 +457,28 @@ def _would_hold(r, coins, get, now, skip_unreadable=False):
     return [s for s, v in want.items() if v > 0]
 
 
+def _lane_base(r):
+    return {k: r.get(k) for k in ("key", "family", "function", "params", "net_sharpe_ann", "artifact",
+                                  "artifact_sha256", "evaluated_coins")} | {"basket": r.get("coins")}
+
+
+def _basket(r, fam):
+    return list(r.get("evaluated_coins") or r.get("coins") or explore.universe(fam))   # the coins _probe reads
+
+
+def _skip_unheld(db, r, basket, now, **extra):
+    """11b/11h: the variant holds nothing now on the basket's hourly data; retried after RETRY_S."""
+    db.event("lane.skipped", ACTOR, ledger_id(r["key"]), {
+        **_lane_base(r), "coins": basket, "dropped": [], "books_read": False, "reason": "would hold nothing now (11b)",
+        "retry": True, "t": int(now), "simulated": True, **extra})
+
+
 def _start(db, r, get, now):
     led, fam = ledger_id(r["key"]), families.load(r["family"])
-    base = {k: r.get(k) for k in ("key", "family", "function", "params", "net_sharpe_ann", "artifact",
-                                  "artifact_sha256", "evaluated_coins")} | {"basket": r.get("coins")}
-    basket = list(r.get("evaluated_coins") or r.get("coins") or explore.universe(fam))   # the coins _probe reads
+    base = _lane_base(r)
+    basket = _basket(r, fam)
     if not _would_hold(r, basket, get, now, skip_unreadable=True):  # 11h: before any book is read
-        db.event("lane.skipped", ACTOR, led, {**base, "coins": basket, "dropped": [], "books_read": False,
-                                              "reason": "would hold nothing now (11b)", "retry": True, "t": int(now),
-                                              "simulated": True})
+        _skip_unheld(db, r, basket, now)
         return None
     coins, dropped = _probe(r, fam, get, now)
     base["dropped"] = dropped
@@ -513,7 +526,12 @@ def manage(db, now=None, get=None, fids=None):
     info = started(db)
     act = [a for a in active(db) if is_lane(info[a])]
     last = max((i["ts"] for i in info.values() if is_lane(i)), default=None)
-    if len(act) >= SLOTS or (last is not None and now - last < START_EVERY):
+    if len(act) >= SLOTS:
+        return out
+    out["reviews_queued"] = enqueue_reviews(                    # 11i: only for a candidate that holds something now
+        db, now, actor="paper-1", fids=fids, cap=SLOTS - len(act),
+        holds=lambda r: bool(_would_hold(r, _basket(r, families.load(r["family"])), get, now, skip_unreadable=True)))
+    if last is not None and now - last < START_EVERY:
         return out
     busy = collections.Counter((info[a]["family"], info[a]["function"]) for a in act)
     done, passed = tried_keys(db, now), {k for k, p in reviews(db).items() if p.get("ok")}    # 11c
@@ -1066,10 +1084,15 @@ def reviews(db):
             if p.get("method") == REVIEW_METHOD}
 
 
-def enqueue_reviews(db, now=None, actor="strategy-1", fids=None):
+REVIEW_HOLD_CHECKS = 20                         # 11i: 11b checks of unreviewed candidates per pass at most
+
+
+def enqueue_reviews(db, now=None, actor="strategy-1", fids=None, holds=None, cap=None):
     """Point 3: queue reviews for the best unreviewed candidates, at most REVIEW_QUEUE_MAX waiting or running, and
     (amendment 11e) only while a lane slot is free: with every slot taken a review cannot lead to a start; (11g) nor
-    for a function that already has PER_FUNCTION active accounts."""
+    for a function that already has PER_FUNCTION active accounts. 11i: with `holds` (the lane start pass), a candidate
+    is first checked by 11b on the hourly data: holding nothing, it gets 11b's skip and 24 h retry instead of a review;
+    at most `cap` (the free slots) reviews wait or run, and at most REVIEW_HOLD_CHECKS candidates are checked."""
     now = now or time.time()
     jobs.init(db)
     info = started(db)
@@ -1077,15 +1100,27 @@ def enqueue_reviews(db, now=None, actor="strategy-1", fids=None):
     if len(act) >= SLOTS:
         return 0
     busy = collections.Counter((info[a]["family"], info[a]["function"]) for a in act)       # 11g
+    limit = REVIEW_QUEUE_MAX if cap is None else min(REVIEW_QUEUE_MAX, cap)
     waiting = db.one("SELECT COUNT(*) FROM jobs WHERE kind='lane_review' AND status IN ('queued','running','blocked')")[0]
-    if waiting >= REVIEW_QUEUE_MAX:
+    if waiting >= limit:
         return 0
-    done, tried, n = reviews(db), tried_keys(db, now), 0
+    done, tried, n, checks = reviews(db), tried_keys(db, now), 0, 0
+    queued = {r[0] for r in db.q("SELECT job_id FROM jobs WHERE kind='lane_review' AND status IN "
+                                 "('queued','running','blocked')")}
     for r in candidates(db, explore.eligible(db) if fids is None else fids):
-        if waiting >= REVIEW_QUEUE_MAX:
+        if waiting >= limit:
             break
         if r["key"] in done or r["key"] in tried or busy[(r["family"], r["function"])] >= PER_FUNCTION:
             continue
+        if f"lane_review|{review_id(r['key'])}" in queued:
+            continue
+        if holds is not None:
+            if checks >= REVIEW_HOLD_CHECKS:
+                break
+            checks += 1
+            if not holds(r):
+                _skip_unheld(db, r, _basket(r, families.load(r["family"])), now, reviewed=False)
+                continue
         added = jobs.enqueue(db, f"lane_review|{review_id(r['key'])}", "lane_review", None, {"key": r["key"]},
                              actor=f"system:{actor}", now=now, **REVIEW_JOB)[1]
         waiting, n = waiting + added, n + added

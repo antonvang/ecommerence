@@ -399,7 +399,6 @@ def strategy_pass(db):
             "scan_research_queued": scanresearch.enqueue(db),           # amendment 9 section 3: digest and dossiers
             "explore_queued": explore.enqueue(db),          # amendments 10/10a: one lane job at a time, hourly
             "lane_report_queued": lane.enqueue_report(db),  # amendment 12d: the daily account report
-            "lane_reviews_queued": lane.enqueue_reviews(db),  # amendment 11c: adversarial review of candidates
             "ingest_queued": ingest.enqueue(db) if ingest.auto(db) else 0,   # amendment 14: one unit at a time
             "hypotheses_queued": hypogen.enqueue(db),       # amendment 17: one screening at a time, locked measurements
             **({"families": fams} if fams else {})}
