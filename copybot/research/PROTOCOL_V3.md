@@ -2085,3 +2085,16 @@ under 17 er afgjort). Ingen gate, intet vindue, ingen alfa og intet holdout ænd
    ikke annonceringen, så en effekt ved annonceringen er allerede i kursen. Produktlisten kan mangle produkter, Coinbase
    har fjernet helt (overlevelsesskævhed). Pipelinen har nu 133 kandidater (124 + 9). Et PASS i screeningen er
    udforskning og aldrig bevis; en papirkonto kræver sin egen daterede ændring.
+
+### Præcisering af ændring 17g (2026-10-24, før kode): kilden er CoinMetrics' katalog, ikke Coinbase' handelsvært
+
+`api.exchange.coinbase.com` er også Coinbase' handelsvært; sikkerhedstestens værtsliste holder handelsværter ude
+(som `api.binance.com`), og den liste ændres ikke uden brugerens ja. Punkt 1 erstattes derfor: kilden er
+`https://community-api.coinmetrics.io/v4/catalog-all/markets?exchange=coinbase&type=spot` (allerede tilladt vært, ét
+GET), som for hvert Coinbase-marked giver tidspunktet for den første handel (`trades.min_time`), også for markeder, der
+ikke længere handles. Kun markeder med kvote `usd`; mønt = `base` med store bogstaver. Første handel før 2020-03-01
+giver ingen begivenhed, og første handel fra 2024-01-01 gemmes ikke. t = første handel + 1 time (punkt 2 ellers
+uændret). Hvert marked gemmes én gang (`coinbase/1`, `cb_listing` eller `cb_none`). Krydstjek i scratchpad før
+denne tekst: for 122 USD-produkter med første dagscandle hos Coinbase i 2020–21 giver kataloget samme dato for 116 og
+én dag tidligere for 6; kataloget har 121 USD-markeder med første handel i explore0. Ingen Coinbase-vært bruges af
+laboratoriet.
