@@ -351,6 +351,14 @@ noget, ændrer en gate eller rører indsamleren:
   0,43→0,18 s, `rejected` 0,33→0,03 s, `v2/experiments` 0,39→0,11 s. Webprocessens samlede CPU kan ikke sammenlignes
   før/efter: den følger, hvor ofte den åbne fane spørger (ca. 3 nye forbindelser/s mens fanen ses; 24 % målt, med
   ~0,1-0,2 s CPU pr. tråd). Browserens egen fane-proces brugte samtidig >1,5 kerner (top), langt mere end serveren.
+- Dashboardets planet tegnes kun, når billedet ændrer sig (tilføjet 2026-10-23 kl. ca. 14:45, før kode; brugeren bad
+  om at måle og rette browserens CPU). Målt: Firefox-fanen med dashboardet (indholdsproces 8687) har brugt 17,9 % af
+  en kerne i snit i 49 timer, og hovedprocessen 16 %. Årsag: `Planet` tegner kloden pixel for pixel i JavaScript i
+  hver animationsramme (~60/s), men billedet flyttes kun én teksturkolonne ad gangen (512 kolonner pr. omdrejning på
+  4 min ≈ 2,1 skift/s; i standby 0,3/s). Over 96 % af tegningerne er identiske. Rettelse: en ramme tegnes kun, når
+  kolonneforskydningen har ændret sig; layout og vinduesændring tegner som før. Samme billede, samme hastighed.
+  Måling før/efter under ens forhold: headless Firefox 1600×1000, dev-webserver på port 8791 mod en kopi af registret,
+  20 s opvarmning, 60 s målt CPU for hele Firefox-procestræet. Før: 31,4 %.
 
 ### Før pm_lp-holdouten: watchdog og strøm (tjekket 2026-10-22)
 
