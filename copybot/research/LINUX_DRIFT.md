@@ -359,6 +359,14 @@ noget, ændrer en gate eller rører indsamleren:
   kolonneforskydningen har ændret sig; layout og vinduesændring tegner som før. Samme billede, samme hastighed.
   Måling før/efter under ens forhold: headless Firefox 1600×1000, dev-webserver på port 8791 mod en kopi af registret,
   20 s opvarmning, 60 s målt CPU for hele Firefox-procestræet. Før: 31,4 %.
+  **Rettelse samme dag (ca. 15:20): planet-rettelsen er IKKE indført.** Målt efter: 31,1 % (ingen forskel). Enkelte
+  kørsler (hver 1 gang, 20 s opvarmning): tom side 17,9 % (en ny profils egen opstart), planet slået fra 31,4 %, alle
+  CSS-animationer fra 21,9 %, kun LED-blinket `.led.live` fra 21,6 %, skelet-animationen fra 31,4 %, blink i 4 trin
+  23,7 %, i 2 trin 27,8 % og 29,5 % (samme variant to gange: støj ca. ±4 point). Peger på LED-blinket (ca. −10
+  point), men en serie med 60 s opvarmning og 2 gentagelser blev afbrudt, da pc'en frøs ca. 15:05 og blev slukket
+  af brugeren (laben nede ca. 15:08–15:16, pm_lp mistede 2 minutter; registret `quick_check` ok). **Ingen afgørelse,
+  ingen ændring af dashboardet.** Headless Firefox kørte ved siden af brugerens egen Firefox, da pc'en frøs; årsagen
+  er ukendt (intet i journalen), men flere browser-benchmarks kører ikke uden brugerens ja.
 
 ### Før pm_lp-holdouten: watchdog og strøm (tjekket 2026-10-22)
 

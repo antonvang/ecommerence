@@ -111,3 +111,27 @@ grupper: "Binance Liquid Swap Adds" 39, "Notice of Removal of (Trading Pairs)" 3
 Futures Will List" 8 og "Binance Futures: New Listings" 5. En ny type kræver en ny ændring (17 punkt 1). Ingen er
 tilføjet: screeningen har indtil nu 0 af 4 træffere på uafhængige data, og hver ny lås halverer alfa. En ny type
 bør kun låses ind med en mekanisme, der er skrevet før data — ikke fordi den findes i titlerne.
+
+## Tillæg 2026-10-23 (sen eftermiddag): kæden rådata → parser → typefilter → hændelse → testbarhed
+
+Brugeren bad om at spore delisting- og marginnøglerne gennem hele kæden. Kun læsning (explore0-titler fra registret
+og 28 HEAD-opslag mod data.binance.vision). **Rettelse af tillægget ovenfor:** klasse 3 ("ny dataindsamling", 36
+nøgler) var for groft. Den korrekte opdeling:
+
+| Nøgler | Rådata (titler i explore0) | Parser/typefilter | Afgørelse |
+|---|---|---|---|
+| `margin` m17 (9) | 302 titler med "Margin" | typefiltret rammer, men nyhedsparseren finder kun mønter som `(XYZ)` eller `XYZUSDT`; margintitler nævner `FIL`, `RAD & RARE` uden parentes → 0 hændelser | **matcherfejl, allerede løst** af 17c (`coins_c`): 318 hændelser, screenet (`margin|*|m17c`) |
+| `margin_tiers` (9) | 13 titler | typefiltret rammer 13; kun 1 nævner én mønt ("…Tiers of OMG USDⓈ-M…"), resten gælder "Binance Futures Contracts" | **reelt fravær**: højst 1 hændelse selv med perfekt parser (< 15) |
+| `funding_interval` (9) | 1 titel (OMG) | mønten uden parentes → 0 | **reelt fravær**: højst 1 |
+| `futures_delisting` (9) | 1 titel (DOTECO) | mønten uden parentes → 0 | **reelt fravær**: højst 1 |
+| `delisting` (9, i klasse 4) | 28 spot-afnoteringer (fx "Binance Will Delist ARN, FUEL and LUN") | **matcherfejl**: nyhedsparseren 3 mønter, 16e-parseren (`lane.delist_coins`) 28 | **kombination**: kun 1 af 28 mønter (MCO) havde en USDT-spotfil i hændelsesmåneden (HEAD 200; 27 gav 404, de handlede mod BTC/ETH). En rettet parser giver n = 1 → stadig UNTESTABLE |
+
+Matcherfejlen (mønter uden parentes) er dokumenteret, men **ikke rettet**: den ændrer ingen afgørelse (samme praksis
+som 1000-præfiks-fejlen), og en ny udtræksmetode kræver en ændring af 17. Live siden 2026-08-18 (66 dage): 2
+`futures_delisting` (1 med mønt), 2 `margin` med mønt, 0 `margin_tiers` med mønt (nutidens titler: "Update on the Margin
+Tiers of USDⓈ-M Perpetual Contracts") og 0 `funding_interval` (nutidens titel "Important Updates on the Funding Rate of
+…" matcher ikke filtret; typen er fast efter 17 punkt 1). En billig indsamling kan ikke afklare noget: der er ikke
+hændelser nok, hverken historisk eller i nuværende tempo.
+
+Ny klassifikation af de 87: matcherfejl allerede løst 9 · reelt fravær af hændelser 27 · mønten havde ingen perp eller
+USDT-spot 51 (heraf `delisting` 9 med både matcherfejl og manglende USDT-data).
