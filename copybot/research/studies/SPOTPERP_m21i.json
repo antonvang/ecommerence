@@ -1,0 +1,137 @@
+{
+ "code_commit": "4887626764eba9fd88016e223ce817f905e52e00",
+ "files": 2943,
+ "files_sha256": "5a6bc9859823c9ecc8a9f01cb824a13224a0a889eac0b77175c12f6d4c107fef",
+ "method": "m21i",
+ "results": [
+  {
+   "checks": {
+    "p <= 0.005": false,
+    "placebo p > 0.05 (>= 15 clusters)": true,
+    "same sign in 2020 and 2021": false,
+    "|mean| >= 0.004650917905583458": false
+   },
+   "cost_hurdle": 0.004650917905583458,
+   "cost_rule": "max(0.46 %, 2 x (2 x 0.040 % + RT_est(V_30d))) per event; RT_est from the 2026-10-24 snapshot is an ESTIMATE carried back to 2020-21",
+   "descriptive_not_tested": {
+    "symbols with spot and perp": 130
+   },
+   "direction": "continuation",
+   "event_mean": 0.000839382536036414,
+   "event_median": -0.0,
+   "events_sha256": "1f36ad3db5ad514a50427f15f456a972071b8ffd24b145bb44c5581933f29709",
+   "excluded": {
+    "no volume history": 5,
+    "window outside the phase or missing price": 2
+   },
+   "halves": {
+    "2020": [
+     204,
+     -6.142717741454746e-05
+    ],
+    "2021": [
+     295,
+     0.0018618846185701667
+    ]
+   },
+   "key": "spot_lead|perp_1h|m21i",
+   "label": "EXPLORATORY (never evidence)",
+   "label_extra": "zero-latency entry: information only, not a tradable result",
+   "mean": 0.0010756008382477587,
+   "method": "m21i",
+   "n_clusters": 499,
+   "n_events": 4151,
+   "p": 0.03879806009699515,
+   "placebo": {
+    "mean": -0.00023233721229257162,
+    "n_clusters": 497,
+    "n_events": 4086,
+    "p": 0.5748712564371782,
+    "shift_days": -30
+   },
+   "reason": "failed: p <= 0.005; same sign in 2020 and 2021; |mean| >= 0.004650917905583458",
+   "rule": "research/PROTOCOL_V3.md amendment 21i",
+   "se": 0.0005266178945458544,
+   "share_positive": 0.49843411226210554,
+   "verdict": "SCREEN_FAIL",
+   "window": "explore0 2020-03..2021-12"
+  },
+  {
+   "checks": {
+    "p <= 0.005": false,
+    "placebo p > 0.05 (>= 15 clusters)": true,
+    "same sign in 2020 and 2021": true,
+    "|mean| >= 0.004657281344969441": false
+   },
+   "cost_hurdle": 0.004657281344969441,
+   "cost_rule": "max(0.46 %, 2 x (2 x 0.040 % + RT_est(V_30d))) per event; RT_est from the 2026-10-24 snapshot is an ESTIMATE carried back to 2020-21",
+   "descriptive_not_tested": {
+    "perp-led (faded)": {
+     "mean": 0.014096534966048456,
+     "n_events": 1190
+    },
+    "spot-led (followed)": {
+     "mean": -0.003677634228109478,
+     "n_events": 814
+    }
+   },
+   "direction": "continuation",
+   "event_mean": 0.006876887399159953,
+   "event_median": 0.0034679083734151595,
+   "events_sha256": "04a4e148048950a7d72588c7feb624e1df42d4adf71c35a50d8c5ec4fb03a59e",
+   "excluded": {
+    "missing funding in the holding window": 41,
+    "missing price": 3,
+    "no funding file": 39,
+    "no spot bar": 110
+   },
+   "halves": {
+    "2020": [
+     171,
+     0.001922008215684813
+    ],
+    "2021": [
+     265,
+     0.0002132430249835117
+    ]
+   },
+   "key": "perp_led|move_24h|m21i",
+   "label": "EXPLORATORY (never evidence)",
+   "mean": 0.0008834238681255357,
+   "method": "m21i",
+   "n_clusters": 436,
+   "n_events": 2004,
+   "p": 0.7894605269736513,
+   "placebo": {
+    "mean": -0.0023160949332473356,
+    "n_clusters": 430,
+    "n_events": 1936,
+    "p": 0.30918454077296137,
+    "shift_days": -30
+   },
+   "reason": "failed: p <= 0.005; |mean| >= 0.004657281344969441",
+   "rule": "research/PROTOCOL_V3.md amendment 21i",
+   "se": 0.003461233665172009,
+   "share_positive": 0.530439121756487,
+   "verdict": "SCREEN_FAIL",
+   "window": "explore0 2020-03..2021-12"
+  }
+ ],
+ "rule": "research/PROTOCOL_V3.md amendment 21i",
+ "spread_regimes": {
+  "by_volatility_tercile_median": {
+   "high": 0.012940974545383524,
+   "low": 0.005028790066842738,
+   "mid": 0.007712900890416962
+  },
+  "event_days_vs_placebo": {
+   "median_event": 0.01230077393380857,
+   "median_placebo": 0.006771284496175771,
+   "n": 2120,
+   "share_event_higher": 0.814622641509434
+  },
+  "label": "ESTIMATED (Abdi-Ranaldo from 1 h bars), descriptive, not tested"
+ },
+ "symbols": 132,
+ "symbols_with_spot": 130
+}
