@@ -2780,3 +2780,21 @@ Målelogen (21p) viste ved første deploy: scanneren henter 722 timebarer. 721 e
 Teksten "de 720 foregående timeafkast" er altså én for højt for den levende detektor. Screeningerne m21c–m21j brugte
 præcis 720 i cachen. Forskellen er ét afkast ud af 720 og ændrer ingen dom. Detektoren ændres ikke; tallet står nu i
 hver observation.
+
+## Ændring 21q (2026-10-24 kl. 21:32, før kode): fremadrettet indsamling af on-chain-børsstrømme (point-in-time fra start)
+
+**Beslutning:** brugeren svarede "JA" 2026-10-24 ca. kl. 21:31 på forslaget om en daglig fremadrettet indsamler
+(`research/drafts/ONCHAIN_KILDEAUDIT_2026-10-24.md`, konklusion punkt 2). Kun data, aldrig en beslutning. Ingen
+historisk forespørgsel: hver kørsel henter kun de seneste 3 døgn.
+
+1. **Kilde:** `community-api.coinmetrics.io/v4/timeseries/asset-metrics` (tilladt vært, kun GET, CC BY-NC 4.0,
+   ikke-kommerciel forskning med kreditering), `assets=btc,eth`, `metrics=FlowInExNtv,FlowOutExNtv,SplyExNtv`,
+   `frequency=1d`, `start_time` = i dag − 3 døgn. Kontrolleret i kataloget samme dag: alle seks serier er gratis
+   (seneste dato 2026-10-23).
+2. **Point-in-time:** første gang en (aktiv, metrik, dato) ses, gemmes værdien som observationen `onchain/1` /
+   `flow_first` med `fetched_ts` og `usable_from` = `fetched_ts`. Ses en anden værdi senere, gemmes den som
+   `flow_revision` med den gamle og den nye værdi. Revisioner måles altså uden at overskrive noget.
+3. **Takt:** fra news-watch' gennemløb, højst én gang hver 6. time (3 forespørgsler pr. døgn × 1 kald). En fejl
+   gemmes som `onchain_error` og stopper intet andet.
+4. **Brug:** ingen før en senere dateret ændring med en hypotese (mekanisme: udbudschok via børsindstrømning). Data
+   fra før 2026-10-24 bruges aldrig fra denne kilde (revideret, ikke point-in-time). Dækningssiden viser kilden.
