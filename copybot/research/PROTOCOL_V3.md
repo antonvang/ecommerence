@@ -2864,3 +2864,26 @@ P&L ændres.
    - en fill uden midtpris;
    - en mark, der er ældre end det seneste fill.
    En afvigelse over 0,01 USD vises som en advarsel i rapporten og fejler den natlige `reportcheck`.
+
+## Ændring 21u (2026-10-24 kl. 22:23, før kode): tidsrækkefølge og sporbarhed i den natlige rapportkontrol
+
+**Beslutning:** Claude under brugerens mandat (master prompt 2 "MARKET INTELLIGENCE CENTER" 2026-10-24 ca. kl. 22:20).
+Kun en kontrol i `reportcheck` (rapport-fejl), aldrig i `PaperEngine.reconcile` (som kan sætte lab'en i FAIL_CLOSED).
+
+1. **Tidsstemplernes betydning (fra koden):**
+   - `sim_orders.ts` = indsendelse, `int(now)`.
+   - Et taker-fill har `ts` = ordrens `ts` (samme `int(now)`).
+   - Et maker-fill har `ts` = handelsprintets tid, som er ≥ ordrens.
+   - `book_ts` = lokal hentetid for bogen (float), læst lige før ordren. `risk.entry_allowed` afviser en bog, der er
+     ældre end `data_max_age_s` (60 s som standard).
+   - `sim_equity.ts` = mark-tid. Et fill efter den seneste mark er lovligt; den næste mark tager det med. "fill ≤ mark"
+     er derfor **ikke** en invariant.
+2. **Invarianter pr. bane- og scannerkonto i døgnrapporten:**
+   - (a) ordre-ts ≤ fill-ts;
+   - (b) taker: fill-ts = ordre-ts;
+   - (c) floor(`book_ts`) ≤ fill-ts (fill-ts er afkortet til hele sekunder);
+   - (d) fill-ts − `book_ts` ≤ 60 s + 1 s afrunding;
+   - (e) hver ordre har `signal_ref`;
+   - (f) hvert fill har en ordre (dækket af `reconcile`, gentaget her som tal).
+   Et brud giver en rapport-fejl med antal og første eksempel, ikke FAIL_CLOSED.
+3. **Status i dag (skrivebeskyttet):** 0 brud på (a)–(e) blandt 1 972 fills og 1 776 ordrer i hele produktionen.
