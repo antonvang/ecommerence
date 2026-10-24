@@ -2360,3 +2360,23 @@ den sluttede (scanningen 14:50:33 så timen, der sluttede 14:00; målt med ændr
 2. Intet andet ændres: samme detektorer, tærskler, dedup og data. En ekstra scanning lige efter en genstart var der også
    før.
 3. Målet er tid fra timens slutning til observationen (ændring 21d punkt 6). Det bør være under 3 minutter.
+
+## Ændring 21e (2026-10-24 kl. 16:05, før kode): hver analysepost får en begrundet vurdering (triage)
+
+**Beslutning:** Claude under brugerens mandat (master follow-up, prioritet 1: "Hvis der ikke findes en interessant
+mulighed, skal systemet registrere en begrundet afvisning i stedet for at producere en kunstig kandidat"). Kun
+beskrivende: intet handles, ingen kandidat oprettes, ingen tærskel i ændring 21 ændres.
+
+1. **Felt `triage` i `opportunity.move`** med faste regler, fastlagt før nogen post er vurderet:
+   - `tails_720h`: antal timer blandt de 720 foregående med |afkast / σ| ≥ 4 (hvor almindelige 4σ-timer er i markedet);
+   - `explanations` (alle, der gælder): `volume_only` (kun volumenflag og |z_1t| < 2: ingen prisbevægelse);
+     `illiquid` (bogen fejlede eller rundturen for 5 000 USD > 0,5 %); `routine_tail` (`tails_720h` ≥ 3);
+     `macro_release` (ændring 21a's felt har en udgivelse); `news` (mindst én nyhed udgivet før bevægelsestimens
+     slutning); `unexplained` (ingen af de to sidste);
+   - `verdict` (den første, der gælder): `REJECT_NOT_DIRECTIONAL` (volume_only); `REJECT_ILLIQUID` (illiquid);
+     `REJECT_TESTED` (krypto: m21c, ændring 21c, gav SCREEN_FAIL for 4σ-flag i explore0 ved 4 og 24 t);
+     `FORWARD_ONLY` (TradFi: historikken ligger i den reserverede periode; udfaldet efter 24 t indsamles, og en test
+     kræver en dateret lås);
+   - `reason` og `next` som tekst.
+2. **Visning:** feedet viser dommen og forklaringerne ud for "BEVÆGELSE".
+3. **Ændres senere kun ved en ny dateret ændring.** En ny screening, der består, kan ændre en `REJECT_TESTED`-regel.
