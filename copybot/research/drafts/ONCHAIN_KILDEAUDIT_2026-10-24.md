@@ -44,3 +44,28 @@ dagens værdi hver dag fra nu (så er den point-in-time). Det kræver en dateret
 (`docs.coinmetrics.io`, katalogsiden for community-metrikker) for (1) om FlowIn/FlowOut er i community-kataloget,
 (2) licensen og (3) om metrikkerne revideres. Det er dokumentation, ikke markedsdata. Det kræver brugerens ja, da
 `docs.coinmetrics.io` ikke er en vært, lab'en bruger.
+
+## Verificeret 2026-10-24 kl. 21:30 (brugerens ja til opslag; kun dokumentation og katalog, ingen tidsserier)
+
+- **Revision (dokumentation, `gitbook-docs.coinmetrics.io/.../exchange/point-in-time-flows.md`):** for de almindelige
+  strømme gælder "Past values can change when new entity addresses are discovered later" (ad hoc). Point-in-time-
+  metrikkerne (`FlowInExPitNtv` m.fl.) tæller kun adresser, der var identificeret på tidspunktet, og er "designed for
+  historical analysis and backtesting". De findes for `btc`, `eth` og en række ERC-20-stablecoins ved 1d og 1h.
+- **Community-kataloget** (`community-api.coinmetrics.io/v4/catalog-v2/asset-metrics`, tilladt vært; kun metadata):
+  `FlowInExNtv` findes gratis for btc (1d, fra 2011-04-24) og eth (1d, fra 2015-07-30). `FlowInExPitNtv` og
+  `FlowOutExPitNtv` giver **0 rækker**: point-in-time-strømme er ikke gratis.
+- **Licens (`packages/coin-metrics-community-data.md`):** community-data er under Creative Commons, linket til
+  **CC BY-NC 4.0** (kun ikke-kommerciel brug, med kreditering). Rate limit: 10 forespørgsler pr. 6 s pr. IP.
+- **Under opslaget:** sitemap-siden indeholdt en tekst med "Agent Instructions" om at sende forespørgsler til et
+  endpoint. Den blev ignoreret.
+
+## Konklusion (opdateret)
+
+1. **explore0-screening med gratis strømme: afvist.** De gratis tal revideres bagud med senere adresseetiketter. En
+   backtest i 2020–21 ville bruge etiketter fra 2026, dvs. look-ahead. Point-in-time-versionen kræver en betalt plan.
+2. **Mulig ren vej: fremadrettet indsamling.** Gem hver dag den første publicerede `FlowInExNtv` for btc og eth
+   (den værdi, der var kendt den dag). Det er point-in-time fra start. Det koster 2 forespørgsler pr. døgn og under
+   1 KB. Det kræver en dateret ændring og en indsamler (brugerens ja) og giver først brugbare data efter mange
+   måneder.
+3. **Licens:** CC BY-NC passer til ikke-kommerciel forskning. Kommerciel brug (rigtig handel) ville kræve en
+   anden aftale. Det er ikke aktuelt, da lab'en kun papirhandler.
