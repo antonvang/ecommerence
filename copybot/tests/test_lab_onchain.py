@@ -70,7 +70,8 @@ class Collector(unittest.TestCase):
         self.assertEqual(self.db.one("SELECT COUNT(*) FROM observations WHERE metric='onchain_error'")[0], 1)
         from unittest import mock
         with mock.patch("lab.news.run", return_value={"stored": {}, "errors": []}), \
-                mock.patch.object(onchain, "run", side_effect=RuntimeError("boom")):
+                mock.patch.object(onchain, "run", side_effect=RuntimeError("boom")), \
+                mock.patch("lab.capacity.run", return_value={"skipped": "test"}):          # no network in tests
             self.assertIn("boom", fleet.news_pass(self.db)["onchain"]["error"])
 
 

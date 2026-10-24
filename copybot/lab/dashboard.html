@@ -363,6 +363,8 @@ details.more[open]>summary{margin-bottom:12px}
     <div class="rs-bar"><span class="mk-sub">status</span><select id="rs-filter"><option value="">alle</option></select><span id="rs-counts"></span></div>
     <div class="scroll" id="rs-table" style="max-height:420px"><div class="sk" style="height:160px"></div></div>
     <details class="fold"><summary>Fremadrettede tests og kapacitet</summary><div class="grid2"><div id="rs-forward"></div><div id="rs-capacity"></div></div></details>
+    <details class="fold" open><summary>Monitor for aftagende fordel (ændring 21w)</summary><div class="scroll" id="rs-monitor"></div></details>
+    <details class="fold"><summary>Nutidig kapacitetskurve fra dybe bøger (ændring 21v)</summary><div class="scroll" id="rs-curve"></div></details>
     <div class="note" id="rs-foot"></div></section>
 
   <section class="money" aria-label="Saldo og profit">
@@ -1241,6 +1243,19 @@ function renderResearch(v){
   $("#rs-capacity").innerHTML = `<h3 class="mk-sub">Kapacitet pr. papirkonto</h3>` + table([
     {h:"Konto", f:c => `<span class="mono">${esc(c.ledger)}</span>`},
     {h:"Status", f:c => `<span class="st UNTESTABLE">${esc(c.status)}</span>`}], v.capacity, "Ingen papirkonti.") + (v.capacity.length ? `<div class="dim">${esc(v.capacity[0].why)}</div>` : "");
+  const em = v.edge_monitor || {ledgers: []}, M = ["M1", "M2", "M3", "M4", "M5"];
+  const mval = x => x.ratio != null ? num(x.ratio, 2) : x.p_one_sided != null ? "p " + Number(x.p_one_sided).toPrecision(2) : x.p95_s != null ? num(x.p95_s, 2) + " s" : x.share != null ? num(x.share, 2) : na();
+  $("#rs-monitor").innerHTML = table([
+    {h:"Konto", f:r => `<span class="mono">${esc(r.ledger)}</span>`},
+    {h:"Status", f:r => `<span class="st ${r.status === "stabil" ? "PASS" : r.status === "utilstrækkelige data" ? "NO_DECISION" : "REJECTED"}">${esc(r.status)}</span>` + (r.flagged_by.length ? `<div class="dim">udløst af ${esc(r.flagged_by.join(", "))}</div>` : "")},
+    ...M.map(k => ({h:k, num:1, f:r => { const x = r.measures[k]; return `${mval(x)}<div class="dim">${esc(x.status)}</div>`; }}))],
+    em.ledgers, "Ingen papirkonti.") + `<div class="dim">${M.map(k => em.ledgers[0] ? `${k}: ${esc(em.ledgers[0].measures[k].name)} (${esc(em.ledgers[0].measures[k].need)})` : "").join(" · ")}</div><div class="dim">${esc(em.action || "")} · ${esc(em.holm || "")}</div>`;
+  const cv = v.capacity_curve || {books: {}}, SZ = [500, 2000, 5000, 20000, 50000];
+  const books = Object.entries(cv.books);
+  $("#rs-curve").innerHTML = (cv.ts ? `<div class="dim">målt ${esc(new Date(cv.ts * 1000).toISOString().slice(0, 16).replace("T", " "))} UTC · rundtur uden gebyrer · nutidig, aldrig historisk · * = papirmotorens 20 niveauer kan ikke fylde størrelsen</div>` : "") + table([
+    {h:"Bog", f:b => `<span class="mono">${esc(b[0])}</span>`},
+    ...SZ.map(s => ({h:`${num(s, 0)} USD`, num:1, f:b => { const r = b[1].find(x => x.size_usd === s); return !r ? na() : r.censored ? `<span class="dim">for tynd</span>` : pct(r.round_trip, 3) + (r.fits_20_levels ? "" : "*"); }}))],
+    books, "Ingen kapacitetskurve endnu: den første måles ved næste news-watch-pass (højst én gang pr. 23 timer).");
   $("#rs-note").textContent = `${v.records.length} afprøvede hypoteser og eksperimenter · statusser fra research-memory, aldrig slået sammen`;
   $("#rs-foot").textContent = v.notes.join(" · ");
 }

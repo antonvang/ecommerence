@@ -126,6 +126,8 @@ class Dashboard(unittest.TestCase):
         sec = html[html.index('id="markets"'):html.index('<section class="money"')]
         self.assertNotRegex(sec, r"\d+[.,]\d+\s*%|\$\s*\d|USD\s*\d")              # no hardcoded figures in the markup
         self.assertIn("Ingen scanning endnu", js)                                   # honest empty state
+        for wired in ("v.edge_monitor", "v.capacity_curve", "#rs-monitor", "#rs-curve", "Ingen kapacitetskurve endnu"):
+            self.assertIn(wired, js)                                                 # 21v/21w panels
 
 
 if __name__ == "__main__":

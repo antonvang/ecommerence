@@ -7,7 +7,7 @@ from __future__ import annotations
 import collections
 import time
 
-from lab import coverage, memory
+from lab import capacity, coverage, edgemonitor, memory
 
 STAGES = ("opdaget", "undersøgt", "hypotese", "protokol", "screening", "validering", "papir/skygge", "overvågning")
 STAGE_OF = {"screen": "screening", "study": "screening", "measurement": "validering", "catalogue": "validering",
@@ -37,6 +37,7 @@ def view(db, now=None):
     return {"stages": [{"stage": s, "n": stage_counts.get(s, 0)} for s in STAGES],
             "by_status": dict(sorted(by_status.items())), "records": rows, "forward": forward,
             "capacity": [{"ledger": led, "status": CAPACITY, "why": CAPACITY_WHY} for led in paper],
+            "capacity_curve": capacity.latest(db), "edge_monitor": edgemonitor.view(db, now),
             "notes": ["statusser fra research-memory, aldrig slået sammen; intet genåbnes herfra",
                       "trinene 'opdaget', 'undersøgt', 'hypotese' og 'protokol' tælles ikke automatisk endnu: de står "
                       "i scannerens poster og i protokollen"],

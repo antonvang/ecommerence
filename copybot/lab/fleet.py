@@ -490,6 +490,11 @@ def news_pass(db):
         res["onchain"] = onchain.run(db, news.http_get)
     except Exception as e:                    # noqa: BLE001 - never stops news-watch
         res["onchain"] = {"error": repr(e)[:200]}
+    try:                                      # amendment 21v: current capacity curve, at most every 23 h
+        from lab import capacity
+        res["capacity"] = capacity.run(db, news.http_get)
+    except Exception as e:                    # noqa: BLE001 - never stops news-watch
+        res["capacity"] = {"error": repr(e)[:200]}
     return res
 
 
