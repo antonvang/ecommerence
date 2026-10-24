@@ -49,3 +49,19 @@ Ingen når p ≤ 0,005; intet udkast, ingen lås. Perp-udfaldene dækker kun 33�
 USD-M-perp i 2020–21). Fortolkning (ikke en test): handelsstarten på Coinbase flytter ikke Binance-kursen målbart;
 en eventuel effekt ligger ved annonceringen, som denne kilde ikke har tidspunktet for. Efter ændring 17 punkt 4
 screenes nøglerne aldrig igen under m17g.
+
+## Opfølgning: Upbit KRW-noteringer (ændring 17h) — screenet: 7 UNTESTABLE, 2 SCREEN_FAIL tæt på grænsen
+
+Engangskørslen (2026-10-24 ca. 02:56) gemte 54 `cb_listing` og 334 `cb_none` (detektor `upbit/1`); 33 begivenheder i
+explore0 efter dækningsreglen. Screenet automatisk ca. 02:58–03:11:
+
+- `ar_1d`, `ar_7d`, `far_1d`, `far_7d`, `fund_7d`, `vol_3d`, `volume_1d`: UNTESTABLE (14 mønter med USD-M-perp-data, < 15).
+- `sar_1d` (spot mod BTC, 1 døgn fra første spotpris): n 23, −4,8 %, p 0,0076; 2020 −4,3 % (11), 2021 −5,2 % (12);
+  placebo (t − 30 d) p 0,135 (n 21). **SCREEN_FAIL** (p > 0,005).
+- `sar_7d`: n 23, −11,7 %, p 0,0087; 2020 −9,2 % (11), 2021 −13,9 % (12); placebo p 0,289 (n 21). **SCREEN_FAIL**.
+
+Begge spot-udfald falder i begge halvår og har en ren placebo, men når ikke screeningens p ≤ 0,005; reglen lempes
+ikke, og nøglerne screenes aldrig igen under m17h (ændring 17 punkt 4). Mønsteret (fald efter en Upbit-KRW-notering)
+ligner `spot_listing|sar_1d|m17e` (Binance, også et fald; REJECTED på validation3). Den eneste ærlige vej videre er en
+**fremadtest** på noteringer efter en dateret lås (som H5F, ændring 16d): Upbit noterer ca. 80 KRW-mønter om året, så
+n ≈ 20 med 7-døgns-udfald tager ca. 3–4 måneder. Det er et forslag til brugeren, ikke låst.
