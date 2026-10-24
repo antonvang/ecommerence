@@ -2198,3 +2198,34 @@ Ingen fremaddata findes (fcarrys vindue starter tidligst 2026-12-01); præciseri
 3. **Uger på vinduets kanter:** kun hele uger (mandag 01:00 til mandag 01:00 UTC) inden for fremadvinduet tæller.
 4. **Reproducerbarhed:** rapporten angiver kørslens artefakt-SHA-256, listen af fundingfiler med deres SHA-256 og
    antallet af åbne, lukkede, ukendte og udeladte uger pr. medlem og `gate_day`.
+
+## Ændring 21 (2026-10-24): usædvanlige bevægelser på tværs af markeder — detektor `abnormal_move/1` og analyseposter — kun data, før kode
+
+**Beslutning:** brugerens ordre 2026-10-24 kl. ca. 14:00 ("CONTINUOUS MULTI-MARKET OPPORTUNITY HUNTER … følg til punkt og
+prikke"). Som ændring 16: kun data og beskrivende analyse; intet handles, ingen kandidat registreres, ingen gate,
+alfa eller periode ændres.
+
+1. **Markeder (fast liste, kontrolleret 2026-10-24 i `fapi/v1/exchangeInfo`):** krypto BTCUSDT, ETHUSDT; råvarer
+   XAUUSDT (guld), XAGUSDT (sølv), XPTUSDT (platin), COPPERUSDT, CLUSDT (WTI), BZUSDT (Brent), NATGASUSDT;
+   aktiefonde SPYUSDT, QQQUSDT; valuta USDBRLUSDT. Alle er **Binance USD-M-perps** (TradFi-kontrakter for alt andet end
+   krypto), ikke spotguld, indeks eller interbankvaluta: posterne mærkes sådan, og mark- og indekspris gemmes, så
+   forskellen ses. Andre valutapar, renter og indeks har ingen kilde på de tilladte værter med timedata og er
+   BLOKERET (FRED har kun dagsdata med forsinkelse).
+2. **Kilde:** `fapi.binance.com` (allerede tilladt, kun GET): `/fapi/v1/klines` (1 t, de seneste 722 timer) og
+   `/fapi/v1/premiumIndex` pr. marked i hver scanning (hver time); `/fapi/v1/depth` kun for et marked med en flagget
+   bevægelse.
+3. **Mål pr. marked (observationer):** z_1t = seneste afsluttede times log-afkast / σ, hvor σ er standardafvigelsen af
+   de 720 foregående timeafkast; z_24t = de seneste 24 timers log-afkast / (σ · √24); volumenforhold = seneste
+   afsluttede times omsætning / medianen af de 720 foregående timers; dataalder = nu − seneste afsluttede times slut;
+   præmie = (mark − indeks) / indeks.
+4. **Flag (faste, før data):** |z_1t| ≥ 4, |z_24t| ≥ 3 eller volumenforhold ≥ 5. Under 600 gyldige timeafkast: intet
+   flag ("for kort historik"). Dataalder over 2 timer: en datafejl for markedet, intet flag. De 720 timer bruges kun
+   som skala for en levende tærskel; intet udfald eller signal undersøges på dem.
+5. **Analysepost (`opportunity.move`, højst én pr. marked pr. 6 t):** bevægelsen; samtidige z_1t og z_24t for alle
+   markeder på listen (hvem bevægede sig også); præmien; omkostning for en rundtur på 5 000 USD gået igennem bogen
+   (gebyrer for TradFi-kontrakter er ikke verificeret og indgår ikke); nyheder fra news-watch (ændring 16) i de 3 timer
+   før og efter bevægelsens time, hvis titel nævner markedets nøgleord; og næste skridt: kun beskrivende — en test
+   kræver sin egen daterede lås, og historik fra 2025 og frem er reserveret og screenes ikke.
+6. **Fremadrettet udfald (`opportunity.outcome`):** ved den første scanning mindst 24 timer efter en analysepost gemmes
+   markedets log-afkast fra bevægelsens time til +24 t. Det er data til en senere, låst test; ingen kode læser dem til
+   en afgørelse før en sådan lås.
