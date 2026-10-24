@@ -64,6 +64,82 @@ class Sessions(unittest.TestCase):
             sessions.equity(T("2027-07-06T15:00"))                                 # no calendar: never guessed
 
 
+def nyse_rules(year):
+    """An independent rule-based NYSE calendar (closures, early closes) to cross-check the hand-written list."""
+    d = dt.date
+    obs = lambda x: x - dt.timedelta(days=1) if x.weekday() == 5 else x + dt.timedelta(days=1) if x.weekday() == 6 else x
+    nth = lambda m, wd, n: [x for x in (d(year, m, k) for k in range(1, 29)) if x.weekday() == wd][n - 1]
+    last = lambda m, wd: [x for x in (d(year, m, k) for k in range(1, 32) if k <= [31, 28, 31, 30, 31, 30, 31, 31,
+                                                                                   30, 31, 30, 31][m - 1])
+                          if x.weekday() == wd][-1]
+    a, b, c = year % 19, year // 100, year % 100                    # Anonymous Gregorian Easter
+    dd, e = b // 4, b % 4
+    f = (b + 8) // 25
+    g = (b - f + 1) // 3
+    h = (19 * a + b - dd - g + 15) % 30
+    i, k = c // 4, c % 4
+    l_ = (32 + 2 * e + 2 * i - h - k) % 7
+    m = (a + 11 * h + 22 * l_) // 451
+    easter = d(year, (h + l_ - 7 * m + 114) // 31, ((h + l_ - 7 * m + 114) % 31) + 1)
+    closed = {obs(d(year, 1, 1)), nth(1, 0, 3), nth(2, 0, 3), easter - dt.timedelta(days=2), last(5, 0),
+              obs(d(year, 6, 19)), obs(d(year, 7, 4)), nth(9, 0, 1), nth(11, 3, 4), obs(d(year, 12, 25))}
+    early = {nth(11, 3, 4) + dt.timedelta(days=1)}
+    if d(year, 12, 24).weekday() < 5:
+        early.add(d(year, 12, 24))
+    if d(year, 7, 3).weekday() < 5:
+        early.add(d(year, 7, 3))
+    return {x for x in closed if x.weekday() < 5}, early
+
+
+class Calendar(unittest.TestCase):
+    def test_the_list_matches_an_independent_rule_based_calendar(self):     # 21y precision 3 point 4
+        lo, hi = dt.date(2026, 10, 24), sessions.CALENDAR_UNTIL
+        closed, early = set(), set()
+        for y in (2026, 2027):
+            c, e = nyse_rules(y)
+            closed |= {x for x in c if lo <= x <= hi}
+            early |= {x for x in e if lo <= x <= hi}
+        self.assertEqual(set(sessions.NYSE_CLOSED), closed)
+        self.assertEqual(set(sessions.NYSE_EARLY), early)
+
+
+class Integrity(unittest.TestCase):
+    def test_a_scan_before_the_close_is_never_usable_and_reasons_are_counted(self):
+        db = DB(":memory:")
+        o = T("2026-10-31T10:00")
+        good = {"open_s": o, "close_s": o + H, "ret_1h": 0.01, "price": 1.0, "mark": 1.0, "index": 1.0,
+                "quality": {"missing_bars": 0}}
+        rows = [("BTCUSDT", o + H + 120, good), ("SPYUSDT", o + H - 5, good),            # before the close
+                ("QQQUSDT", o + H + 900, good),                                          # late
+                ("XAUUSDT", o + H + 120, dict(good, quality={"missing_bars": 2}))]
+        for sym, ts, p in rows:
+            db.append("observations", ts=ts, detector="abnormal_move/1", source="t", instrument=sym, metric="z_1h",
+                      value=0.0, threshold=4, flagged=0, payload=p)
+        why = {s: k1k2.hours(db, s)[o]["why"] for s, _, _ in rows}
+        self.assertEqual(why, {"BTCUSDT": None, "SPYUSDT": "scan_before_close", "QQQUSDT": "late_scan",
+                               "XAUUSDT": "missing_bars"})
+        r = k1k2.readiness(db, o + 3 * H)
+        w = r["weekends"][0]
+        self.assertEqual(w["weekend"], "2026-10-31")
+        self.assertEqual(w["markets"]["SPYUSDT"]["reasons"]["scan_before_close"], 1)
+        self.assertEqual(w["markets"]["BTCUSDT"]["usable"], 1)
+        self.assertEqual(w["markets"]["BTCUSDT"]["no_book"], 1)
+        self.assertGreater(w["markets"]["BTCUSDT"]["reasons"]["no_scan"], 0)
+        self.assertFalse(w["complete_k1"])
+        self.assertNotIn("net", json.dumps(r))                                         # counts only
+
+    def test_rescans_and_out_of_order_rows_use_the_earliest_scan(self):
+        db = DB(":memory:")
+        o = T("2026-10-31T10:00")
+        for ts, mark in ((o + H + 900, 2.0), (o + H + 120, 1.0)):                     # later rescan stored first
+            db.append("observations", ts=ts, detector="abnormal_move/1", source="t", instrument="SPYUSDT",
+                      metric="z_1h", value=0.0, threshold=4, flagged=0,
+                      payload={"open_s": o, "close_s": o + H, "ret_1h": 0.0, "price": mark, "mark": mark,
+                               "index": mark, "quality": {"missing_bars": 0}})
+        h = k1k2.hours(db, "SPYUSDT")[o]
+        self.assertEqual((h["scan_ts"], h["mark"], h["usable"]), (o + H + 120, 1.0, True))
+
+
 class Funding(unittest.TestCase):
     def test_forward_only_once_and_errors(self):
         db = DB(":memory:")

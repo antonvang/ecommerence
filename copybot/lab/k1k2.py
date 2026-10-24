@@ -44,12 +44,16 @@ def hours(db, sym):
         if o is None or o in out:
             continue
         ts = r["ts"]
-        usable = (ts - p["close_s"] <= MAX_SCAN_DELAY_S and (p.get("quality") or {}).get("missing_bars", 0) == 0
-                  and not any(abs(ts - b) <= 60 for b in bad) and p.get("mark") and p.get("index"))
+        delay = ts - p["close_s"]
+        missing = (p.get("quality") or {}).get("missing_bars", 0)
+        err = any(abs(ts - b) <= 60 for b in bad) or not (p.get("mark") and p.get("index"))
+        why = ("scan_before_close" if delay < 0 else "late_scan" if delay > MAX_SCAN_DELAY_S else      # precision 3
+               "missing_bars" if missing else "error" if err else None)
+        usable = why is None
         out[o] = {"open_s": o, "scan_ts": ts, "ret_1h": p.get("ret_1h"), "close": p.get("price"), "mark": p.get("mark"),
                   "index": p.get("index"), "sigma_1h": p.get("sigma_1h"), "book_rt": book.get(ts),
                   "premium": ((p["mark"] - p["index"]) / p["index"]) if p.get("index") else None,
-                  "usable": bool(usable)}
+                  "usable": bool(usable), "why": why}
     return out
 
 
@@ -284,6 +288,42 @@ def k2(db, now=None, min_weekends=MIN_WEEKENDS):
             "instruments": out, "note": "en PASS er kun en screening; validering kræver en ny dateret LÅS"}
 
 
+def readiness(db, now=None, weekends=None):
+    """21y precision 3: per weekend (Sat UTC date) and market, usable equity-weekend hours and the reason for every
+    missing or unusable hour. Counts only - no returns, means or p-values."""
+    now = now or time.time()
+    syms = ("BTCUSDT",) + K1_SYMS + K2_SYMS
+    hm = {s: hours(db, s) for s in syms}
+    first = min((o for m in hm.values() for o in m), default=None)
+    if first is None:
+        return {"weekends": [], "rule": RULE + " C"}
+    sat = dt.datetime.fromtimestamp(first, dt.timezone.utc).date()
+    sat -= dt.timedelta(days=(sat.weekday() - 5) % 7)
+    out = []
+    while True:
+        t0 = int(dt.datetime(sat.year, sat.month, sat.day, tzinfo=dt.timezone.utc).timestamp())
+        if t0 > now:
+            break
+        bars = [t0 + i * H for i in range(48) if t0 + (i + 1) * H <= now - MAX_SCAN_DELAY_S]
+        mk = {}
+        for s in syms:
+            reasons = {}
+            for o in bars:
+                h = hm[s].get(o)
+                why = "no_scan" if h is None else h["why"]
+                if why:
+                    reasons[why] = reasons.get(why, 0) + 1
+            usable = sum(1 for o in bars if hm[s].get(o, {}).get("usable"))
+            no_book = sum(1 for o in bars if hm[s].get(o, {}).get("usable") and hm[s][o]["book_rt"] is None)
+            mk[s] = {"usable": usable, "reasons": reasons, "no_book": no_book}
+        k1_ok = all(mk[s]["usable"] >= MIN_WEEKEND_HOURS for s in ("BTCUSDT",) + K1_SYMS)
+        out.append({"weekend": sat.isoformat(), "hours_elapsed": len(bars), "complete_k1": k1_ok and len(bars) == 48,
+                    "markets": mk})
+        sat += dt.timedelta(days=7)
+    return {"weekends": out[-(weekends or len(out)):], "rule": RULE + " C (precision 3)",
+            "note": "kun antal og grunde; ingen afkast eller test før 12 komplette weekender"}
+
+
 def status(db, now=None):
     """Counts only, for the dashboard: never a statistic before 12 complete weekends."""
     now = now or time.time()
@@ -291,4 +331,5 @@ def status(db, now=None):
     strip = lambda r: {k: v for k, v in r.items() if k in ("status", "complete_weekends", "needed", "earliest_test",
                                                              "why", "usable_hours", "rule")}
     return {"K1": strip(a), "K2": {**strip(b), "complete_weekends": max(
-        (v.get("complete_weekends", 0) for v in b.get("instruments", {}).values()), default=0)}}
+        (v.get("complete_weekends", 0) for v in b.get("instruments", {}).values()), default=0)},
+            "readiness": readiness(db, now, weekends=2)}
