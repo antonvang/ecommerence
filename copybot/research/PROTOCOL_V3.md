@@ -2136,3 +2136,16 @@ laboratoriet.
    nøgler `upbit_listing|sar_1d|m17h` og `upbit_listing|sar_7d|m17h` forbliver SCREEN_FAIL og låses ikke.
 3. **Data:** CoinMetrics' katalog og Binance' månedsarkiver (begge tilladte værter) læses én gang ved målingen. Koden
    skrives, når data findes, og må ikke ændre den låste tekst. Ingen ny vært, ingen indsamler.
+
+## Ændring 17j (2026-10-24): M1F — kursfald efter Binance' Monitoring Tag, målt fremad — før data findes
+
+**Beslutning:** brugeren 2026-10-24 ("Lås D1", udkast D1 i `research/drafts/DISCOVERY_2026-10-24_UDKAST.md`). Kun
+måling; intet handles.
+
+1. **Låst tekst:** `research/drafts/M1F_MONITORING_FREMAD.md` (git-blob dccceba6181520d49ca16adc7e28998dac402a15, sha256 db9924c4f02a9ca7958fa30ede462d76b87fdd7b989817f86460fb19405cb48b), skrevet før nogen
+   begivenhed i stikprøven findes (meddelelser med `usable_from` ≥ 2026-10-25 00:00 UTC).
+2. **Fejlrate:** egen α = 0,05, uden for alle andre budgetter. Testen vender fortegn pr. meddelelse, fordi mønter i
+   samme meddelelse ikke er uafhængige. Programmets fremadtests med egen α (H5F, H5X, U1F, M1F) nævnes ved hvert
+   resultat.
+3. **Data:** meddelelserne indsamles allerede af `news-watch`; Binance' månedsarkiver læses én gang ved målingen.
+   Koden skrives, når data findes, og må ikke ændre den låste tekst. Ingen ny vært, ingen indsamler.
