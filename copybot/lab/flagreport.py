@@ -62,6 +62,7 @@ def report(q, now=None):
                       "book_rt": book_at.get((ts, sym)),
                       "median_qvol_derived": p["quote_volume_1h"] / p["volume_ratio"]
                       if p.get("quote_volume_1h") and p.get("volume_ratio") else None,
+                      "median_qvol_stored": p.get("median_qvol_720"),           # 21p: stored from the next deploy
                       "market_median_book_rt": statistics.median(books[sym]) if books.get(sym) else None})
     events = collections.defaultdict(list)
     for f in flags:
@@ -87,7 +88,8 @@ def report(q, now=None):
             "data_quality": {"inconsistent": sum(1 for f in flags if not f["consistent_with_scan"]),
                              "older_than_2h": sum(1 for f in flags if (f["age_s"] or 0) > 7200),
                              "without_market_hour": no_hour,
-                             "median_derived": [{k: f[k] for k in ("market", "open_s", "median_qvol_derived")}
+                             "median_derived": [{k: f[k] for k in ("market", "open_s", "median_qvol_derived",
+                                                                   "median_qvol_stored")}
                                                 for f in flags if f["metric"] == "volume_ratio"],
                              "note": "the 720 h median is not stored; median_qvol_derived = quote_volume_1h / "
                                      "volume_ratio is algebraically the stored value, not an independent recomputation "

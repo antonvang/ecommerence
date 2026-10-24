@@ -10,6 +10,7 @@ test. Nothing here registers a candidate, trades or reads data for a decision.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 import statistics
@@ -76,7 +77,33 @@ def stats(klines, now):
             "tails_720h": sum(1 for r in trail if sigma > 0 and abs(r) / sigma >= Z1),
             "z_24h": r24 / (sigma * math.sqrt(24)) if sigma > 0 else 0.0,
             "volume_ratio": rows[-1][2] / med if med > 0 else None, "quote_volume_1h": rows[-1][2],
-            "age_s": now - rows[-1][3], "returns": len(trail)}
+            "age_s": now - rows[-1][3], "returns": len(trail), **_log(rows, trail, med, now)}
+
+
+def _log(rows, trail, med, now):
+    """Amendment 21p: the inputs behind the numbers (no raw data): the trailing window, the volume median, sigma's
+    sums and the data quality."""
+    win = rows[-1 - HIST:-1]
+    first, last = win[0][0], win[-1][0]
+    return {"window": {"first_open_s": first, "last_open_s": last, "n_returns": len(trail), "n_bars": len(win)},
+            "median_qvol_720": med,
+            "sigma_basis": {"n": len(trail), "sum": math.fsum(trail), "sumsq": math.fsum(r * r for r in trail)},
+            "quality": {"age_s": now - rows[-1][3], "missing_bars": (last - first) // HOUR + 1 - len(win)}}
+
+
+_VERSION = {}
+
+
+def version():
+    """Detector and git commit, read once per process (a deploy restarts the process)."""
+    if not _VERSION:
+        try:
+            from lab import registry
+            commit = registry.git("rev-parse", "HEAD")
+        except Exception:                                       # noqa: BLE001 - no git: recorded as unknown
+            commit = None
+        _VERSION.update(detector=f"{DETECTOR}/1", commit=commit)
+    return dict(_VERSION)
 
 
 def detect(get, post, now):
@@ -102,7 +129,12 @@ def detect(get, post, now):
                            payload={**base, "error": f"{sym}: last closed hour is {s['age_s'] // 60} min old"}))
             continue
         mark, index = float(prem.get("markPrice") or 0), float(prem.get("indexPrice") or 0)
-        p = {**base, **s, "mark": mark, "index": index}
+        flags = [{"metric": m, "value": v, "threshold": t, "rule": "research/PROTOCOL_V3.md amendment 21 point 4"}
+                 for m, v, t in (("z_1h", s["z_1h"], Z1), ("z_24h", s["z_24h"], Z24),
+                                 ("volume_ratio", s["volume_ratio"], VOLUME_RATIO))
+                 if v is not None and (abs(v) >= t if m != "volume_ratio" else v >= t)]
+        p = {**base, **s, "mark": mark, "index": index, "flags": flags, "version": version(),     # 21p
+             "klines_sha256": hashlib.sha256(json.dumps(kl, separators=(",", ":")).encode()).hexdigest()}
         out.append(obs(DETECTOR, src, sym, "z_1h", s["z_1h"], Z1, abs(s["z_1h"]) >= Z1, p))
         out.append(obs(DETECTOR, src, sym, "z_24h", s["z_24h"], Z24, abs(s["z_24h"]) >= Z24, p))
         if s["volume_ratio"] is not None:

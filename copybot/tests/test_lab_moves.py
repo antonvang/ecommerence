@@ -79,6 +79,16 @@ class Detect(unittest.TestCase):
         self.assertIn("min old", by[("BZUSDT", "error")]["payload"]["error"])
         self.assertEqual(by[("NATGASUSDT", "history_short")]["value"], 98)
         self.assertAlmostEqual(by[("XAUUSDT", "premium")]["value"], 0.001)
+        lg = by[("XAUUSDT", "z_1h")]["payload"]                                       # amendment 21p: the log
+        self.assertAlmostEqual(lg["median_qvol_720"] * lg["volume_ratio"], lg["quote_volume_1h"])
+        sb = lg["sigma_basis"]
+        self.assertAlmostEqual(math.sqrt(sb["sumsq"] / sb["n"] - (sb["sum"] / sb["n"]) ** 2), lg["sigma_1h"], places=9)
+        self.assertEqual((lg["window"]["n_bars"], lg["quality"]["missing_bars"]), (720, 0))
+        self.assertEqual([f["metric"] for f in lg["flags"]],
+                         [m for m in ("z_1h", "z_24h", "volume_ratio") if by[("XAUUSDT", m)]["flagged"]])
+        self.assertEqual(len(lg["klines_sha256"]), 64)
+        self.assertEqual(lg["version"]["detector"], "abnormal_move/1")
+        self.assertEqual(by[("BTCUSDT", "z_1h")]["payload"]["flags"], [])
         self.assertGreater(by[("BTCUSDT", "book_rt")]["value"], 0)                     # 21h point 3: every market
         self.assertAlmostEqual(by[("BTCUSDT", "spread")]["value"], 0.02 / 100.01, places=6)
         self.assertNotIn(("CLUSDT", "book_rt"), by)                                    # a failed market: no book
