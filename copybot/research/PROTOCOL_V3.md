@@ -2616,3 +2616,31 @@ Kun rækker inden for explore0 (2020-03-01 – 2021-12-31) bruges; senere række
    tilbage), og den informationsværdi står ikke mål med risikoen for et falsk fund. Fremadrettede regimedata indsamles
    (21h punkt 3).
 6. **Aldrig:** ordrer, papirkonti, familier, alfa, train3, validation3, holdout 2024, data fra 2025 og frem, `pm_lp`.
+
+## Ændring 21k (2026-10-24 kl. 19:26, før kode og før nogen beregning): omkostningsrapport (R1), taker-flow afvist som genbrug (R4), beslutningsanalyse for gulvet (R2) og plan for minutreaktion (R3)
+
+**Beslutning:** Claude under brugerens mandat (master follow-up 4 "COST REALITY CHECK" 2026-10-24 ca. kl. 19:25). Ingen
+gate, alfa, periode, tærskel, lås eller afsluttet dom ændres. Intet deployes uden brugerens udtrykkelige ok.
+
+1. **R1 — omkostningsrapport (beskrivende, ingen dom).** Programmet `lab/costreport.py` læser registret
+   skrivebeskyttet: scannerens `book_rt` og `spread` (ændring 21h punkt 3) og samme scannings `z_1h`-observation for
+   markedet.
+   - Grupper: klasse (krypto / TradFi) × session (`off_hours` sand/falsk, ændring 21g) og hvert marked for sig.
+   - Pr. gruppe: antal observationer, antal uden bog (fejl/tynd), median, 25 %- og 75 %-fraktil, maks, samt et 95 %
+     bootstrap-interval for medianen (2 000 træk, seed 7) over **døgn-klynger** (timer samme døgn er ikke uafhængige).
+   - Mod 21i-modellen: RT_est(V) med V = 24 · `quote_volume_1h` / `volume_ratio` (24 × medianen af timeomsætningen over
+     720 t). Det er median- og ikke gennemsnitsbaseret som i 21i, og det står i rapporten. Forholdet målt / model pr. marked.
+   - Omkostning og bevægelse: medianen af `book_rt` i timer med |z_1h| ≥ 2 eller et flag mod øvrige timer, pr. marked.
+   - Mærkning: FORELØBIG indtil 7 døgn (2026-10-31 18:21) og mindst 2 weekender. Ingen tærskel ændres på grundlag af
+     rapporten; en ændring kræver en ny dateret tekst og brugerens godkendelse.
+2. **R4 — taker-købsandel betinget af handelsaktivitet: AFVIST SOM GENBRUG, ingen beregning.** Mekanismen
+   ("aggressivt købsflow forudsiger efterfølgende afkast", Chordia & Subrahmanyam 2004) er allerede afvist to gange
+   omkring timehorisonten: MISSION3 M1 (BTC, minut-orderflow, nul brutto efter én minuts forsinkelse) og katalogets
+   `taker_pressure` (dagligt, tværsnit, REJECTED i train3). En time-version med handelsaktivitet som betingelse er den
+   samme mekanisme med en ekstra parameter, ikke en ny mekanisme. Den kan heller ikke på forhånd adskilles fra
+   almindeligt momentum og markedsuro: taker-andelen er stærkt korreleret med samtidige afkast, og 4σ-betingelser blev
+   afvist i m21c, m21h og m21i. Gennemsnitlig handelsstørrelse som proxy for detailhandel er tæt på ændring 14a H3
+   (REJECTED) og `smart_vs_crowd` (REJECTED).
+3. **R2 — omkostningsgulvet:** analysen står i `research/drafts/GULV_BESLUTNING_2026-10-24.md`. Ingen regel ændres.
+4. **R3 — minutreaktion på makroudgivelser:** planen står i `research/drafts/R3_MINUTMAKRO_PLAN.md`. Ingen data hentes
+   før 2026-11-14 00:00 UTC (ændring 10b). Planen bliver en hypotese først ved en senere dateret ændring før data.
