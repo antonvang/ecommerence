@@ -427,6 +427,17 @@ noget, ændrer en gate eller rører indsamleren:
   dem. Feltet "Jobs i kø" viser klar og planlagt hver for sig ("0 klar", "3 planlagt · næste 2027-05-07"), fordi
   de tre jobs er fremadtestenes afgørelser i 2027, ikke en fastlåst kø.
 
+### `/api/overview` og `/api/mission` bruger dashboardets trinvise kædetjek (tilføjet 2026-10-24 kl. 10:55, før kode)
+
+Målt 2026-10-24: `/api/overview` svarer på 5,9 s og `/api/mission` på 6,2 s; profilen (kopi af registret) viser, at
+94 % af tiden er `db.verify()`, der hasher alle 184 897 kæderækker igen ved hvert kald og vokser med registret.
+`/api/audit` bruger allerede `web.verify_chains` (samme resultat som `db.verify()`, men kun nye rækker hashes; de
+triggere, der forbyder UPDATE og DELETE, tjekkes ved hvert kald, og mangler én, gås hele kæden igennem; en baggrundstråd
+går alle kæder igennem fra start hvert 10. minut; supervisoren laver stadig den fulde `db.verify()` ved start).
+Ændring, efter brugerens "Fix alt" samme dag: `/api/overview` og `/api/mission` bruger den samme trinvise funktion og
+den samme cache som `/api/audit`. `lab verify`, preflight, risikotjekket og supervisoren er uændrede (fuld gennemgang).
+Ingen tærskel, ingen gate og ingen kæderegel ændres.
+
 ### `lab status` viser en senere afgørelse frem for en gammel PASS (tilføjet 2026-10-23 kl. 21:10, før kode)
 
 `python3 -m lab status` viste `E_vol_managed_long_p1  REJECTED  EXPLORATORY  PASS (screen): all validation gates
