@@ -2676,3 +2676,29 @@ Ingen tærskel, gulv, gate, alfa eller lås ændres. Intet deployes uden brugere
    likviditet og volatilitet (`xs_illiquidity`, `xs_high_volume`, `xs_low_volatility`, `vol_managed_long`), kalender
    (`hour_of_day`, `day_of_week`, `turn_of_month`, J1), opmærksomhed (14a H2, J2), momentum og reversal (`xs_momentum`,
    `daily_reversal`, tsmom, m21c) og spot–perp (m21i). Ingen ny screening, før en ny datakilde eller mekanisme findes.
+
+## Ændring 21m (2026-10-24 kl. 19:40, før kode og før beregningen): brugerens beslutninger — 4σ-fald (1a, så drop), mulighed C og deploy
+
+**Beslutning:** brugeren svarede "JA" 2026-10-24 ca. kl. 19:36 og valgte i opfølgningsspørgsmålet: "Deploy
+forskningskoden", "4σ-fald: drop (mulighed 3)", "4σ-fald: leave-one-day-out først (1a)" og "R2 mulighed C (lavere krav
+for likvide)".
+
+1. **4σ-fald: først 1a, derefter DROPPED.** Leave-one-day-out køres én gang, præcis som beskrevet i
+   `research/drafts/DROP4S_BESLUTNINGSOPLAEG.md` (tilføjelsen kl. 18:15, "Hvad den ville måle"): fald-hændelserne efter
+   m21c's regel og y = ln(C_h+25 / C_h+1), (a) klyngegennemsnit pr. UTC-døgn med og uden hvert døgn (min, median, maks),
+   (b) uden de k største døgn efter antal hændelser, k = 1…10, (c) det samme med ISO-uge-klynger, (d) andelen af døgn
+   med positivt gennemsnit, (e) det ubetingede 24 t-afkast (alle mønter, hver 6. time) som sammenligning.
+   - Kun explore0 og kun cachen; beskrivende, ingen dom, intet alfa, ingen LÅS, ingen train3 eller validation3.
+   - Bagefter registreres hypotesen `abnormal_move_drop|rebound_24h|posthoc` som **DROPPED efter brugerens beslutning**,
+     uanset resultatet (brugeren valgte begge). Resultatet gemmes som `research/studies/DROP4S_LOO_m21c.json` og `.md`,
+     så det kan findes i research-memory. En senere test kræver en ny mekanisme og en ny dateret ændring.
+2. **Mulighed C indføres for fremtidige screeninger** med formlen fra ændring 21l punkt 2, uændret:
+   - For et marked med 24 t-omsætning ≥ 100 mio. USD ved hændelsen og en R1-måling med konklusionen "enough data"
+     (21l punkt 1): c = max(2 · 2 · gebyr, 2 · (2 · gebyr + q95)), hvor q95 er 95 %-fraktilen af den observerede
+     `book_rt` i bevægelsestimer for markedet.
+   - Ellers gælder 21i (B) uændret.
+   - Indtil R1 har "enough data" for et marked (tidligst 2026-10-31), er C uvirksom. For explore0 bygger C på
+     antagelsen, at 2026-fraktilen gælder for 2020–21, og hver rapport skal skrive det.
+   - Ingen afsluttet dom ændres. Ingen afsluttet screening køres igen under C.
+3. **Deploy:** den testede kode (fuld suite grøn) deployes med de tilladte kommandoer. Kontrol: DEPLOY OK, pm_lp-collectoren
+   urørt, scannerens næste kørsel kl. HH:02.
