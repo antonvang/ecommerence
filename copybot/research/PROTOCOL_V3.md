@@ -2263,3 +2263,11 @@ intet. Kun beskrivende; intet afgøres eller handles.
 `www.cnbc.com` blev afvist af assistentmiljøets sikkerhedskontrol og er ikke foretaget. Indtil brugeren selv har
 tilføjet de to værter (eller udtrykkeligt bedt om det igen), indsamles kun Fed-pressemeddelelser og BLS' seneste
 nøgletal (punkt 1, allerede tilladte værter); ECB og CNBC står som BLOKERET på dækningssiden.
+
+#### Præcisering af ændring 21 punkt 5 (2026-10-24 kl. 14:36): nyheder vælges efter udgivelsestidspunkt
+
+"Nyheder i de 3 timer før og efter bevægelsens time" betyder kildens udgivelsestidspunkt (`published_ts`), ikke
+tidspunktet, hvor news-watch gemte overskriften. Fejlen i den første version: ved første hentning af en ny kilde (Fed og
+BLS 2026-10-24 14:35) gemmes dens ældre overskrifter med tidspunktet "nu" og ville i 3 timer blive vist som nyheder ved
+en bevægelse. En overskrift uden udgivelsestidspunkt bruges ikke. Analyseposten før rettelsen (USDBRL 14:23) havde 0
+nyheder og ændres ikke.
