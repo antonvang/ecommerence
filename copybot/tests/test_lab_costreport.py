@@ -47,7 +47,21 @@ class Report(unittest.TestCase):
         self.assertAlmostEqual(r["markets"]["BTCUSDT"]["total_round_trip_bp_with_fees"], 10.01)
         self.assertIn("never added", " ".join(r["notes"]))
 
+    def test_b_and_c_side_by_side_once_a_market_has_enough_data(self):
+        start = T0 - (T0 // 86400 + 3) % 7 * 86400 + 5 * 86400                     # a Saturday (epoch day 0 = Thu)
+        for h in range(16 * 24):
+            self.add(start + h * 3600, "BTCUSDT", "crypto", 1e-6 * (1 + h % 3), z=3.0 if h % 10 == 0 else 0.1,
+                     vr=1.0, q1=1e7)                                                # 24 x 1e7 = 240 M a day: liquid
+        m = costreport.report(self.db.q)["markets"]["BTCUSDT"]
+        self.assertEqual(m["conclusion"], "enough data")
+        bc = m["B_vs_C"]
+        self.assertTrue(bc["liquid"])
+        self.assertAlmostEqual(bc["B"], 0.0046)                                     # the floor
+        self.assertAlmostEqual(bc["C"], max(4 * 0.0004, 2 * (2 * 0.0004 + bc["q95"])))
+        self.assertIn("never activated automatically", bc["note"])
+
     def test_sufficiency_is_fixed_in_advance(self):
+        self.assertFalse(costreport.sufficient({"days": 7, "n": 100}, {"n": 10}, weekends=1))   # 21n: 2 weekends
         self.assertTrue(costreport.sufficient({"days": 7, "n": 100}, {"n": 10}))
         self.assertFalse(costreport.sufficient({"days": 7, "n": 100}, {"n": 9}))
         self.assertFalse(costreport.sufficient({"days": 6, "n": 500}, {"n": 50}))

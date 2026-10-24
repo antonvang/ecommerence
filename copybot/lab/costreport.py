@@ -22,7 +22,7 @@ from lab import m21iscreen, moves
 
 DAY = 86400
 DRAWS, SEED, MOVE_Z = 2000, 7, 2.0
-MIN_DAYS, MIN_OBS, MIN_MOVE = 7, 100, 10                      # 21l point 1, fixed before the data
+MIN_DAYS, MIN_OBS, MIN_MOVE, MIN_WEEKENDS = 7, 100, 10, 2      # 21l point 1 and 21n point 2, fixed before data
 FEE = {"crypto": 0.0005, "tradfi": 0.0004}                    # taker per side (2026 standard; TradFi promo, 21g)
 NOTES = ["book_rt = (buy VWAP - sell VWAP) / mid for 5 000 USD each way: spread and slippage, no fees",
          "total round trip = book_rt + 2 x taker fee; spread is shown separately and never added to book_rt",
@@ -91,9 +91,40 @@ def describe(rs):
     return out
 
 
-def sufficient(d, moved):
-    """21l point 1: >= 7 days, >= 100 hourly observations and >= 10 move hours, else 'too few data'."""
-    return d["days"] >= MIN_DAYS and d["n"] >= MIN_OBS and moved["n"] >= MIN_MOVE
+def sufficient(d, moved, weekends=MIN_WEEKENDS):
+    """21l point 1 and 21n point 2: >= 7 days, >= 100 hourly observations, >= 10 move hours and >= 2 weekends of
+    this market, else 'too few data'."""
+    return d["days"] >= MIN_DAYS and d["n"] >= MIN_OBS and moved["n"] >= MIN_MOVE and weekends >= MIN_WEEKENDS
+
+
+def weekends_of(rs):
+    return len({r["ts"] // (7 * DAY) for r in rs if time.gmtime(r["ts"]).tm_wday >= 5})
+
+
+def b_and_c(mr, moved):
+    """21n point 2: amendment 21i's requirement (B) and option C (21l point 2) side by side at the market's current
+    V, with fee 0.040 % (the explore0 fee both rules use) and a day-bootstrap interval of C's q95."""
+    fee = m21iscreen.FEE
+    vs = [r["v24"] for r in mr if r["v24"]]
+    v = statistics.median(vs) if vs else None
+    b = max(m21iscreen.FLOOR, 2 * (2 * fee + m21iscreen.rt_est(v))) if v else None
+    vals = sorted(r["rt"] for r in moved if r["rt"] is not None)
+    if len(vals) < MIN_MOVE:
+        return {"v24": v, "B": b, "C": None, "liquid": v is not None and v >= 1e8}
+    q95 = statistics.quantiles(vals, n=20)[-1]
+    days = collections.defaultdict(list)
+    for r in moved:
+        if r["rt"] is not None:
+            days[r["ts"] // DAY].append(r["rt"])
+    keys, rnd, qs = sorted(days), random.Random(SEED), []
+    for _ in range(DRAWS if len(keys) >= 2 else 0):
+        pick = sorted(x for _ in keys for x in days[rnd.choice(keys)])
+        qs.append(statistics.quantiles(pick, n=20)[-1] if len(pick) >= 2 else pick[0])
+    qs.sort()
+    return {"v24": v, "liquid": v is not None and v >= 1e8, "B": b, "q95": q95,
+            "q95_ci95_day_bootstrap": [qs[int(0.025 * len(qs))], qs[int(0.975 * len(qs)) - 1]] if qs else None,
+            "C": max(4 * fee, 2 * (2 * fee + q95)),
+            "note": "C is never activated automatically (21n): the user decides per market"}
 
 
 def report(q, now=None):
@@ -115,12 +146,14 @@ def report(q, now=None):
                         "measured_over_model": (d["median"] / statistics.median(model))
                         if model and d["median"] is not None and statistics.median(model) > 0 else None,
                         "move_hours": dm, "other_hours": describe(calm),
-                        "conclusion": "enough data" if sufficient(d, dm) else "too few data",
+                        "weekends": weekends_of(mr),
+                        "conclusion": "enough data" if sufficient(d, dm, weekends_of(mr)) else "too few data",
+                        "B_vs_C": b_and_c(mr, moved) if sufficient(d, dm, weekends_of(mr)) else None,
                         "total_round_trip_bp_with_fees": None if d["median"] is None else
                         round((d["median"] + 2 * FEE[d_class(mr)]) * 1e4, 3)}
     span = (max(r["ts"] for r in rs) - min(r["ts"] for r in rs)) if rs else 0
     weekends = len({r["ts"] // (7 * DAY) for r in rs if r["off"] and r["class"] == "tradfi"})
-    return {"rule": "research/PROTOCOL_V3.md amendments 21k point 1 and 21l point 1", "generated": now, "scans": len({r["ts"] for r in rs}),
+    return {"rule": "research/PROTOCOL_V3.md amendments 21k, 21l and 21n", "generated": now, "scans": len({r["ts"] for r in rs}),
             "span_hours": span / 3600, "status": "FINAL" if span >= FINAL_AFTER_S and weekends >= 2 else "PRELIMINARY",
             "label": "OBSERVED book cost for 5 000 USD (fees excluded); the model column is the 21i ESTIMATE",
             "notes": NOTES,
