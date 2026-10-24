@@ -655,3 +655,11 @@ holdouten røres ikke; intet genstartes.
   - **Filtre og sortering** i browseren (alle, krypto, TradFi, kun flaggede; |z|, volumen, præmie, bogomkostning,
     dataalder). Ingen tal er hardcodede: tomme og forældede data vises som sådan.
   - Ingen tærskel, scanneradfærd eller beregning ændres.
+
+- **2026-10-24 kl. 22:27 (før kode): omkostningsopdeling for alle papirkonti, med kontoens egen kapital.**
+  - `lane.decomposition` regnede netto mod konstanten `CAPITAL` (10 000). Alle 25 konti har i dag kapital 10 000, så
+    intet tal er forkert. En konto med anden kapital ville dog få forkert opdeling; nu bruges kapitalen fra kontoens
+    `paper.started`.
+  - Opdelingen (funding, gebyrer, spread/slippage med målt bog og modelleret tillæg, pris/basis, den uafhængige
+    kontrol fra 21t) beregnes også for fremadtests og shadow-konti i `/api/paper2` og vises i papirpanelet. Tallene
+    er de samme fills og funding, som ledgeren bruger; ingen ny formel for netto.
