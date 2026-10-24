@@ -2098,3 +2098,29 @@ uændret). Hvert marked gemmes én gang (`coinbase/1`, `cb_listing` eller `cb_no
 denne tekst: for 122 USD-produkter med første dagscandle hos Coinbase i 2020–21 giver kataloget samme dato for 116 og
 én dag tidligere for 6; kataloget har 121 USD-markeder med første handel i explore0. Ingen Coinbase-vært bruges af
 laboratoriet.
+
+## Ændring 17h (2026-10-24): ny begivenhedstype `upbit_listing` — første handel på Upbits KRW-marked (metode m17h) — før kode
+
+**Beslutning:** Claude under brugerens mandat (samme som 17g). Følger 17g og dens præcisering med disse forskelle:
+
+1. **Kilde.** `https://community-api.coinmetrics.io/v4/catalog-all/markets?exchange=upbit&type=spot` (tilladt vært, ét
+   GET); kun markeder med kvote `krw` (Upbits egne meddelelser om "KRW-marked tilføjet" er den kendte begivenhed; et
+   tidligere BTC- eller USDT-marked på Upbit ændrer ikke, at KRW-tilføjelsen er begivenheden). Detektor `upbit/1`,
+   samme metrikker som 17g (`cb_listing`, `cb_none`, `cb_error`). Upbits egen vært (`api.upbit.com`) er en handelsvært
+   og bruges ikke.
+2. **Dækningsartefakter (forudbestemt, kun metadata).** CoinMetrics' "første handel" springer på dage, hvor kataloget
+   begyndte at dække mange markeder på én gang (fx 2020-09-09: 19 på OKX og 21 på Huobi; 2019-03-15: 187 på Upbit). En
+   UTC-dag er en dækningsdag, når mindst 10 basisvalutaer har deres første handel den dag talt sammen over
+   CoinMetrics' kataloger for `okex`, `huobi` og `kraken` (hver valutas tidligste marked pr. børs; tre GET ved samme
+   kørsel). En Upbit-KRW-første-handel på en dækningsdag gemmes som `cb_none` med årsagen. Reglen fjerner også
+   omdøbninger, der står som nye markeder alle steder samme dag (fx GNT → GLM 2020-12-10).
+3. **Hvad der er set før denne tekst (scratchpad, kun datoer og antal):** Upbits arkiverede meddelelser 2021-10..2026
+   (222 mønt-meddelelser med et KRW-marked i kataloget) har samme dato i kataloget ± 2 dage for 211; de 11 afvigere er
+   genoteringer eller huller, hvor kataloget viser en senere dato. Explore0: 49 KRW-første-handler, 33 efter reglen i
+   punkt 2 (16 på dækningsdage). Ingen Binance-kurs omkring en Upbit-notering er læst; train3/validation3 er ikke talt.
+4. **Kandidater, tjek, lås og alfa** som 17g: `upbit_listing|<udfald>|m17h` for de 9 udfald; explore0, ændring 17
+   punkt 5's tjek uændret, placebo t − 30 d; lås kræver en dateret LÅS-17-ændring (næste k = 5, alpha 0,0015625).
+   Pipelinen har nu 142 kandidater (133 + 9).
+5. **Forbehold, nævnt før screening:** Upbits kendte kursspring sker ved annonceringen og i den første handelstime;
+   t = første handel + 1 time måler det, der kommer efter. Kataloget kan vise en for sen dato (5 % i valideringen) og
+   dermed en falsk ny notering; reglen i punkt 2 er en grov heuristik og kan fjerne rigtige noteringer.
