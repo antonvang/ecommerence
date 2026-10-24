@@ -733,7 +733,7 @@ def lane_view(db, now=None):
                      "stopped": g.get("ts") if g else None, "stop_detail": g.get("detail") if g else None,
                      "equity": equity, "net": equity - lane.CAPITAL, "net_pct": (equity - lane.CAPITAL) / lane.CAPITAL,
                      "funding": book["funding"], "fees": book["fees"], "funding_minus_fees": book["funding"] - book["fees"],
-                     "days": (now - i["ts"]) / 86400 if i.get("ts") else None,
+                     "days": (((g.get("ts") or now) if g else now) - i["ts"]) / 86400 if i.get("ts") else None,
                      "trigger": _lane_trigger(i.get("trigger")), "rules": lane.rules_text(i),
                      "decomposition": lane.decomposition(db, led)})
     act = sorted((r for r in rows if r["active"]), key=lambda r: -(r["started"] or 0))

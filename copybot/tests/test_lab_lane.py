@@ -820,6 +820,8 @@ class LaneView(Base):
         self.assertEqual((r["status"], len(r["held"])), ("aktiv", len(COINS)))
         self.assertAlmostEqual(r["funding_minus_fees"], r["funding"] - r["fees"])
         self.assertEqual(v["recent"][0]["status"], "stoppet: edge")
+        self.assertAlmostEqual(v["recent"][0]["days"], 60 / 86400)        # lifetime, not age today (2026-10-24)
+        self.assertAlmostEqual(r["days"], (NOW + 2 * HOUR - lane.started(self.db)[led]["ts"]) / 86400)   # active: age
         self.assertFalse(v["evidence"])
 
 
@@ -958,6 +960,10 @@ class Execution(Base):
         self.assertLess(d["fees"], 0)
         self.assertGreater(d["funding"], 0)
         self.assertEqual(d["fills_without_mid"], 0)
+        self.assertAlmostEqual(d["book"] + d["allowance"], d["spread_slippage"], places=9)    # 2026-10-24 split
+        notional = sum(f["px"] * f["qty"] for f in self.db.q("SELECT px, qty FROM sim_fills WHERE exp_id=?", led))
+        self.assertAlmostEqual(-d["allowance"] / notional, lane.COSTS.extra_slippage, delta=1e-6)
+        self.assertLess(d["book"], 0)
 
     def test_classes_and_view(self):
         self.assertEqual(lane.classify("lane.started", {}), "afventer fremadtest")

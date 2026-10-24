@@ -1038,15 +1038,20 @@ def classify(kind, payload, ready=False):
 
 def decomposition(db, ledger):
     """12h point 3, observed from the fills: net = funding - fees - paid distance from the mid + the rest (price and
-    basis moves measured at the mid). Each part counted once; the parts sum to net."""
-    fills = db.q("SELECT px, qty, fee, mid FROM sim_fills WHERE exp_id=?", ledger)
+    basis moves measured at the mid). Each part counted once; the parts sum to net. The paid distance splits into the
+    measured book distance (`book`) and the modelled slippage allowance (`allowance`)."""
+    fills = db.q("SELECT px, qty, fee, mid, side FROM sim_fills WHERE exp_id=?", ledger)
     funding = db.one("SELECT COALESCE(SUM(amount), 0) FROM sim_funding WHERE exp_id=?", ledger)[0]
     eq = db.one("SELECT equity FROM sim_equity WHERE exp_id=? ORDER BY id DESC LIMIT 1", ledger)
     net = (eq["equity"] if eq else CAPITAL) - CAPITAL
     fees = sum(f["fee"] for f in fills)
     paid = sum(abs(f["px"] - f["mid"]) * f["qty"] for f in fills if f["mid"])
     unknown = sum(1 for f in fills if not f["mid"])
+    s = (started(db).get(ledger, {}).get("costs") or {}).get("extra_slippage", COSTS.extra_slippage)
+    # research/LINUX_DRIFT.md 2026-10-24: a fill's price is the book level x (1 +- s); the allowance is modelled
+    allowance = sum(f["px"] * f["qty"] * s / ((1 + s) if f["side"] == "buy" else (1 - s)) for f in fills if f["mid"])
     return {"net": net, "funding": funding, "fees": -fees, "spread_slippage": -paid,
+            "book": -(paid - allowance), "allowance": -allowance,
             "price_basis": net - funding + fees + paid, "fills": len(fills),
             "fills_without_mid": unknown, "observed": True}
 

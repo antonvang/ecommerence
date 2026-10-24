@@ -872,7 +872,7 @@ function renderLanes(l){
     {h:"Netto (USD)", num:1, f:x => sgn(x.net) + `<div class="dim">${pct(x.net_pct)}</div>`},
     {h:"Funding − gebyrer", num:1, f:x => sgn(x.funding_minus_fees) + `<div class="dim">${num(x.funding)} − ${num(x.fees)}</div>`},
     {h:"Dage", num:1, f:x => num(x.days, 1)},
-    {h:"Opdeling (observeret)", f:x => { const d = x.decomposition; return d && !(d.funding || d.fees || d.spread_slippage || d.price_basis) ? `<span class="dim">–</span>` : d ? `funding ${sgn(d.funding)}<br>gebyrer ${sgn(d.fees)}<br>spread/slip ${sgn(d.spread_slippage)}<br>pris/basis ${sgn(d.price_basis)}` : na(); }},
+    {h:"Opdeling (observeret)", f:x => { const d = x.decomposition; return d && !(d.funding || d.fees || d.spread_slippage || d.price_basis) ? `<span class="dim">–</span>` : d ? `funding ${sgn(d.funding)}<br>gebyrer ${sgn(d.fees)}<br>spread/slip ${sgn(d.spread_slippage)}${d.allowance ? ` <span class="dim" title="heraf modelleret slippage-tillæg; resten er målt i ordrebogen">(model ${sgn(d.allowance)})</span>` : ""}<br>pris/basis ${sgn(d.price_basis)}` : na(); }},
     {h:"Udløser / regler", f:x => (x.trigger ? `${esc(x.trigger)}<br>` : "") + `<span class="dim" title="${esc(x.rules)}" style="cursor:help">stopregler ⓘ</span>`}];
   $("#lanes-act").innerHTML = table(cols, l.active, "Ingen aktive konti lige nu: de starter af sig selv, når banen eller scanneren finder noget.");
   $("#lanes-old").innerHTML = table(cols, l.recent, "Ingen konti er stoppet endnu.");
