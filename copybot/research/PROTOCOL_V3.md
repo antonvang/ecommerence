@@ -2271,3 +2271,9 @@ tidspunktet, hvor news-watch gemte overskriften. Fejlen i den første version: v
 BLS 2026-10-24 14:35) gemmes dens ældre overskrifter med tidspunktet "nu" og ville i 3 timer blive vist som nyheder ved
 en bevægelse. En overskrift uden udgivelsestidspunkt bruges ikke. Analyseposten før rettelsen (USDBRL 14:23) havde 0
 nyheder og ændres ikke.
+
+#### Præcisering af ændring 21b (2026-10-24 kl. 14:45, før kode): ECB og CNBC tilføjes efter brugerens udtrykkelige ordre
+
+Brugeren gav samme dag den præcise linje til `tests/test_lab_safety.py` `ALLOWED_HOSTS` og bad assistenten skrive den
+("Du skriver komandoen"). Værterne `www.ecb.europa.eu` og `www.cnbc.com` er nu tilladt (kun GET), og news-watch
+indsamler ECB-pressemeddelelser og CNBC Economy som punkt 1 og 2 beskriver. BLOKERET-rækken på dækningssiden fjernes.
