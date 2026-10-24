@@ -2887,3 +2887,75 @@ Kun en kontrol i `reportcheck` (rapport-fejl), aldrig i `PaperEngine.reconcile` 
    - (f) hvert fill har en ordre (dækket af `reconcile`, gentaget her som tal).
    Et brud giver en rapport-fejl med antal og første eksempel, ikke FAIL_CLOSED.
 3. **Status i dag (skrivebeskyttet):** 0 brud på (a)–(e) blandt 1 972 fills og 1 776 ordrer i hele produktionen.
+
+## Ændring 21v (2026-10-24 kl. 22:44, før kode og før nogen indsamling): nutidig kapacitetskurve fra dybe ordrebøger
+
+**Beslutning:** brugerens udtrykkelige ja 2026-10-24 ca. kl. 22:43 ("Kapacitetskurve", svar på spørgsmål efter "JA").
+Kun offentlige GET-kald til værter, der allerede bruges (`fapi.binance.com`, `data-api.binance.vision`). Ingen ordre,
+ingen gate, ingen omkostningsregel og intet papirfill ændres. Forslaget i
+`research/drafts/SYSTEMKORT_OG_RISICI_2026-10-24.md` punkt 5 gennemføres med de præciseringer, der står herunder.
+
+1. **Univers:** 
+   - de 12 markeder i `moves.WATCH`;
+   - hvert perp-symbol med et papirfill de seneste 14 døgn;
+   - for hvert spot-ben (`<SYM>.SPOT`) med et fill de seneste 14 døgn: spot-bogen.
+   I dag giver det ca. 40 bøger.
+2. **Hyppighed:** højst én gang pr. 23 timer, kørt fra `news-watch` på samme måde som on-chain-collectoren (21q). Højst
+   4 kald i sekundet.
+3. **Bog:**
+   - USD-M `fapi/v1/depth?limit=500` (vægt 10);
+   - spot `api/v3/depth?limit=500` (vægt 25).
+   I alt under 1 000 vægt i døgnet.
+4. **Måling pr. bog og størrelse S ∈ {500, 2 000, 5 000, 20 000, 50 000} USD:**
+   - køb- og salgs-VWAP gennem bogen;
+   - rundtur = (VWAP_køb − VWAP_salg) / mid, uden gebyrer;
+   - spread;
+   - dybde i USD på hver side;
+   - `fits_20_levels`: om de første 20 niveauer alene kan fylde S. Papirmotoren ser kun 20 niveauer
+     (`paper_runner.fetch_book`), så en størrelse, der ikke kan fyldes i 20 niveauer, kan papirmotoren ikke handle.
+   Kan bogens 500 niveauer ikke fylde S, gemmes værdien som tom og mærkes `censored` (bogen er for tynd). Der gættes
+   ikke på en værdi.
+5. **Lagring:** én observation pr. (bog, S): detektor `capacity/1`, metric `rt_<S>`. Den er append-only som alle
+   observationer.
+6. **Sprog og brug:** kurven er **nutidig** og bliver aldrig til en historisk kurve.
+   - Kapacitetsstatus pr. papirkonto forbliver `UNTESTABLE_CAPACITY`, så længe kontoen ikke har en dokumenteret
+     nettofordel. Kurven vises ved siden af som data.
+   - Der beregnes ingen break-even-størrelse, før en fordel findes og er låst.
+   - Kurven ændrer ikke omkostningsreglerne B og C (21i/21l). Ønskes det, kræver det en ny ændring og brugerens ja.
+
+## Ændring 21w (2026-10-24 kl. 22:44, før kode): monitor for aftagende fordel med vedtagne tærskler
+
+**Beslutning:** brugerens udtrykkelige ja 2026-10-24 ca. kl. 22:43 ("Tærskler i monitoren"). Monitoren er
+**skrivebeskyttet og uden automatisk handling**:
+- den skifter ingen livscyklus-tilstand;
+- den stopper ingen konto og sætter intet i FAIL_CLOSED;
+- den viser en status pr. papirkonto på dashboardet (`/api/research`).
+En handling på baggrund af en status kræver en ny ændring og brugerens ja.
+
+**Data:** kun registret (`sim_equity`, `sim_fills`, `sim_orders`, `lane.decomposition`). Ingen nye data. Et døgn er et
+afsluttet UTC-døgn. Døgnets netto = sidste equity i døgnet − sidste equity dagen før. For første døgn er basis
+kontoens første mark. Vinduet er de seneste højst 28 afsluttede døgn.
+
+| # | Måling | Formel | Mindste stikprøve | "forringelse mistænkt" | "fordel ikke længere støttet" |
+|---|---|---|---|---|---|
+| M1 | Nettoforventning | t = gennemsnit/(sd/√n) af døgnnetto; ensidet p for gennemsnit < 0 (Students t, n−1 frihedsgrader) | ≥ 14 døgn | gennemsnit < 0 | Holm-justeret p < 0,05 |
+| M2 | Udførelse | r = gennemsnitlig realiseret `slippage` / gennemsnitlig modelleret (`expected_spread`/2 + `extra_slippage` fra ordrens `cost_model`), taker-fills i vinduet | ≥ 30 fills | r > 1,25 | r > 2,0 |
+| M3 | Omkostning pr. bruttokant | (gebyrer + betalt afstand) / \|pris-/basis-P&L\| fra `lane.decomposition` | ≥ 28 døgn | ≥ 0,5 | ≥ 1,0 |
+| M4 | Bogens alder ved fill | p95 af fill-ts − `book_ts`, taker-fills | ≥ 30 fills | > 30 s | > 60 s |
+| M5 | Koncentration | (sum af de 3 bedste døgn) / samlet netto; kun når samlet netto > 0 | ≥ 28 døgn | ≥ 0,75 | ≥ 1,0 |
+
+**Kun beskrivende, ingen tærskel:**
+- funding pr. døgn;
+- signalforsinkelse (ordre-ts − signaltid fra `signal_ref`), da den afhænger af strategiens design;
+- datapauser.
+
+**Status pr. konto:**
+- den værste af M1–M5 blandt de målinger, der har stikprøve nok;
+- "stabil", hvis ingen af dem udløser;
+- "utilstrækkelige data", hvis ingen har stikprøve nok.
+
+**Holm:** M1 er den eneste test med p-værdi. Holm over målingerne pr. konto er derfor p selv. Der korrigeres ikke på
+tværs af konti, fordi statussen ikke udløser nogen handling. Det skrives ved siden af statussen.
+
+**Status ved start (2026-10-24):** papirkontiene er højst 6 døgn gamle. Alle forventes "utilstrækkelige data" for M1,
+M3 og M5. M2 og M4 kan allerede vurderes for de fremadrettede konti.
