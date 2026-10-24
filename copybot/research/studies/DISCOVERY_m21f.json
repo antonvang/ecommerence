@@ -1,0 +1,122 @@
+{
+ "catalyst_coins": 1354,
+ "code_commit": "e736fa6d036042a530e0848617e60f6e055e157f",
+ "files": 971,
+ "files_sha256": "3f384de3fddfdd9a146c42216abeb002dfa5d0bee9be5a75644cde42c1007aca",
+ "method": "m21f",
+ "results": [
+  {
+   "checks": {
+    "p <= 0.005": false,
+    "placebo p > 0.05 (>= 15 clusters)": true,
+    "same sign in 2020 and 2021": false,
+    "|mean| >= 0.0111": false
+   },
+   "cost_hurdle": 0.0111,
+   "descriptive_not_tested": {
+    "alt excess in the event hour (s-signed, mean)": -0.000987335514920682,
+    "mean alts per event": 42.71333333333333
+   },
+   "direction": "continuation",
+   "event_mean": 0.00047496077389466105,
+   "event_median": 8.333343633485805e-05,
+   "events_sha256": "66915375c7889f9ff1119ec986cd4979ec778feb46ce7d269e34e1cdf89b4429",
+   "excluded": {
+    "window outside the phase": 1
+   },
+   "halves": {
+    "2020": [
+     68,
+     -0.001962105175034848
+    ],
+    "2021": [
+     82,
+     0.002495942292519132
+    ]
+   },
+   "key": "btc_lead|alt_excess_24h|m21f",
+   "label": "EXPLORATORY (never evidence)",
+   "mean": 0.00047496077389466105,
+   "method": "m21f",
+   "n_clusters": 150,
+   "n_events": 150,
+   "p": 0.8992550372481376,
+   "placebo": {
+    "mean": -0.0013607379591709455,
+    "n_clusters": 150,
+    "n_events": 150,
+    "p": 0.5743712814359282,
+    "shift_days": -30
+   },
+   "reason": "failed: p <= 0.005; same sign in 2020 and 2021; |mean| >= 0.0111",
+   "rule": "research/PROTOCOL_V3.md amendment 21f",
+   "se": 0.003617573155524445,
+   "share_positive": 0.5,
+   "verdict": "SCREEN_FAIL",
+   "window": "explore0 2020-03..2021-12"
+  },
+  {
+   "checks": {
+    "p <= 0.005": false,
+    "placebo p > 0.05 (>= 15 clusters)": true,
+    "same sign in 2020 and 2021": false,
+    "|mean| >= 0.0065": true
+   },
+   "cost_hurdle": 0.0065,
+   "direction": "continuation",
+   "event_mean": 0.009683207582669592,
+   "event_median": -0.0015858808797609718,
+   "events_sha256": "d568f25cfec1830b98a06171518f8cde94ed740e52feae101e3ed67c35a4af23",
+   "excluded": {},
+   "halves": {
+    "2020": [
+     41,
+     -0.0028396339007035337
+    ],
+    "2021": [
+     48,
+     0.024626453346782737
+    ]
+   },
+   "key": "squeeze_break|cont_24h|m21f",
+   "label": "EXPLORATORY (never evidence)",
+   "mean": 0.011973536749626142,
+   "method": "m21f",
+   "n_clusters": 89,
+   "n_events": 143,
+   "p": 0.8685565721713915,
+   "placebo": {
+    "mean": -0.000696288349137801,
+    "n_clusters": 86,
+    "n_events": 133,
+    "p": 0.9486525673716314,
+    "shift_days": -30
+   },
+   "reason": "failed: p <= 0.005; same sign in 2020 and 2021",
+   "rule": "research/PROTOCOL_V3.md amendment 21f",
+   "se": 0.020254097159902985,
+   "share_positive": 0.4825174825174825,
+   "verdict": "SCREEN_FAIL",
+   "window": "explore0 2020-03..2021-12"
+  },
+  {
+   "cost_hurdle": 0.0065,
+   "descriptive_not_tested": {
+    "4-sigma moves without a catalyst (not tested; ~m21c)": 2188
+   },
+   "events_sha256": "8d394468fe849f33fa38b5e34f3f0f181a4941dd5f48f2fc743d164692033170",
+   "excluded": {},
+   "key": "catalyst_move|cont_24h|m21f",
+   "label": "EXPLORATORY (never evidence)",
+   "method": "m21f",
+   "n_clusters": 9,
+   "n_events": 9,
+   "reason": "9 day clusters with data (< 15)",
+   "rule": "research/PROTOCOL_V3.md amendment 21f",
+   "verdict": "UNTESTABLE",
+   "window": "explore0 2020-03..2021-12"
+  }
+ ],
+ "rule": "research/PROTOCOL_V3.md amendment 21f",
+ "symbols": 132
+}
