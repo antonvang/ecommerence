@@ -2847,3 +2847,20 @@ eller kasse ændres.
 3. **Rettelse:** gebyret for et vendende fill fordeles efter mængde: lukket mængde / fill-mængde til den lukkede
    handel, resten til den nye. Ledgeren beregnes altid fra fills, så den historiske handel vises fremover med den
    rigtige fordeling. Risikobeslutninger, der allerede er truffet og registreret, ændres ikke (de står i loggen).
+
+## Ændring 21t (2026-10-24 kl. 22:07, før kode): banernes pris-/basis-post kontrolleres uafhængigt
+
+**Beslutning:** Claude under brugerens mandat (master mission 2026-10-24). Kun en kontrol; ingen omkostning, gate eller
+P&L ændres.
+
+1. **Fund (skrivebeskyttet, i dag):** `lane.decomposition`'s `price_basis` er en rest-post (net − funding + gebyrer +
+   betalt afstand). Uafhængigt beregnet som pris-P&L målt fra midtprisen,
+   Σ(−fortegn · mid · mængde) + (equity − kasse) fra samme `sim_equity`-række,
+   er den **identisk** for alle 10 bane- og scannerkonti (samlet afvigelse 0,0000). Der er 0 fills uden midtpris,
+   0 fills bedre end midtprisen og 0 fills efter seneste mark.
+2. **Kontrol fremover:** `decomposition` viser også `price_basis_independent`, `price_basis_gap` og antallet af fills,
+   der er bedre end midtprisen eller ligger efter seneste mark. Tre ting kan bryde identiteten:
+   - et maker-fill bedre end midtprisen (`abs()` ville regne en forbedring som omkostning);
+   - en fill uden midtpris;
+   - en mark, der er ældre end det seneste fill.
+   En afvigelse over 0,01 USD vises som en advarsel i rapporten og fejler den natlige `reportcheck`.
