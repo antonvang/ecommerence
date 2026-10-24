@@ -681,3 +681,38 @@ holdouten røres ikke; intet genstartes.
     `research/drafts/SYSTEMKORT_OG_RISICI_2026-10-24.md`. Ingen kurve eller break-even vises, før en dateret ændring
     og brugerens ja foreligger.
   - Ingen status ændres, og intet genåbnes.
+
+- **2026-10-24 kl. 23:11 (før kode): "war room" i dashboardet (master mission 3).** Kun visning og læsning; ingen
+  gate, omkostningsregel, tærskel eller status ændres.
+  - **Audit før kode (skrivebeskyttet):**
+    - 41 `agent.error` fra paper-1 (FileNotFoundError) ligger alle 2026-10-18 kl. 09:40–10:22 UTC og er ikke
+      gentaget.
+    - premium-watch havde 10 netværksfejl 10-22.
+    - De 20 `worker.heartbeat_stale` det seneste døgn er "from previous run", én pr. opstart (dagens deploys).
+    - Ingen aktiv fejl.
+    - P&L-identiteter på alle 25 konti: realiseret + urealiseret = total, opdelingens netto = total, afstemning OK.
+      0 brud.
+  - **Hændelser (`/api/events`, nyt):** én liste over de seneste 72 timer fra eksisterende registreringer:
+    - `opportunity.move`: hvad, bevægelsestime, hvornår Copybot vidste det (scan-ts), berørte markeder (andre
+      overvågede markeder med |z_1h| ≥ 2 i samme scan), flag og værdier, nyheder og makro i vinduet, triagens
+      alternative forklaringer og dom, og næste skridt fra triagen;
+    - `risk.pause` (datapauser);
+    - on-chain-revisioner (`flow_revision`);
+    - kapacitetsfejl (tomme bøger).
+    Nyheder vises som tidsmæssigt sammenfald, aldrig som årsag. Mangler en kilde, står det. "Aktuel" = højst 6 timer
+    siden Copybot kendte til hændelsen.
+  - **Scanner:**
+    - seneste forudsagte funding pr. marked fra `pricing_constraint/2` (`predicted_funding`), med alder;
+    - en datakvalitetsmærkning (frisk scan, bog uden fejl, ingen `history_short`/`error` i seneste scan);
+    - forskningsstatus fra seneste undersøgelse (triagens dom eller "ingen flag").
+    Sortering efter signal kan ikke placere en række med dårlig datakvalitet over en med god: dårlig kvalitet sorteres
+    sidst i signal-sorteringen.
+  - **Monitorhistorik (21w):** M1, M2, M4 og M5 rekonstrueres as-of slutningen af hvert af de seneste 14 afsluttede
+    UTC-døgn fra de append-only tabeller, med ts ≤ as-of i hver forespørgsel. M3 bygger på `lane.decomposition`, som
+    ikke er as-of, og vises kun for nu. Det står i visningen. Samme regler og tærskler som 21w.
+  - **Økonomi og kapacitet:** egne paneler fra `/api/paper2` og `/api/research`.
+    - Samlet sum kun for P&L og omkostninger, ikke for equity.
+    - Hvert tal mærket: bogført simuleret, nutidig likviditetsmåling eller utilstrækkelige data.
+    - Kapaciteten deles i likvide og tynde bøger. Tomme og censurerede bøger vises som sådan.
+  - **Animation:** kun en kort markering af et nyt flag eller en ny hændelse og glidende talskift. Slås fra ved
+    `prefers-reduced-motion`. Data ældre end markedsscannerens grænse vises dæmpet med "forældet".
