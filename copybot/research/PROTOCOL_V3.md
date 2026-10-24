@@ -2239,3 +2239,20 @@ slutning, læst med ændring 14's tolkere (`ingest.parse_fomc`, `ingest.parse_bl
 tilladte værter, kun GET), højst én gang i døgnet pr. kørende proces. Kontrolleret 2026-10-24: 8 FOMC-møder og 24
 BLS-udgivelser i 2026 tolkes (næste FOMC 2026-10-28 18:00 UTC). En fejl i hentningen skrives i feltet og stopper
 intet. Kun beskrivende; intet afgøres eller handles.
+
+### Ændring 21b (2026-10-24 kl. 14:27, før kode): makronyheder i news-watch; to nye nyhedsværter efter brugerens ja
+
+**Beslutning:** brugeren 2026-10-24 ("Jeg siger ja", svar på forslaget om en makronyhedskilde). Kun overskrifter
+(RSS, GET); ingen handelsvært, ingen nøgle, ingen betaling.
+
+1. **Kilder (kontrolleret samme dag):** Federal Reserve pressemeddelelser
+   `https://www.federalreserve.gov/feeds/press_all.xml` og BLS "Major Economic Indicators Latest Numbers"
+   `https://www.bls.gov/feed/bls_latest.rss` (allerede tilladte værter); ECB pressemeddelelser
+   `https://www.ecb.europa.eu/rss/press.html` og CNBC Economy `https://www.cnbc.com/id/20910258/device/rss/rss.html`
+   (**nye værter** `www.ecb.europa.eu` og `www.cnbc.com`, kun GET, godkendt af brugeren 2026-10-24).
+2. **Indsamling:** samme news-watch-gennemløb hvert 10. minut og samme deduplikering som ændring 16; kategorien er
+   `macro` (de eksisterende krypto-RSS-kilder beholder `media`). Kun fremad (ingen bagudhentning).
+3. **Brug:** ændring 21's analysepost læser alle news-watch-titler med markedets nøgleord, nu også disse. Ændring 17's
+   hypotesepipeline læser kun Binance-meddelelser og påvirkes ikke.
+4. **Dækningssiden** viser de fire kilder og `abnormal_move` med friskhedsgrænser efter kildernes takt: Fed 30
+   døgn, BLS 14 døgn, ECB og CNBC 3 døgn; Binance-klines 3 timer.
