@@ -14,6 +14,7 @@ import json
 import math
 import statistics
 import time
+import urllib.parse
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
@@ -109,6 +110,11 @@ def detect(get, post, now):
                            s["volume_ratio"] >= VOLUME_RATIO, p))
         if index > 0:
             out.append(obs(DETECTOR, src, sym, "premium", (mark - index) / index, None, False, p))
+        b = book_cost(get, sym)                                 # amendment 21h point 3: every market, every scan
+        bp = {**base, "open_s": s["open_s"], "off_hours": off_hours(cls, s["open_s"]), **b}
+        out.append(obs(DETECTOR, f"{BN}/fapi/v1/depth", sym, "book_rt", b.get("round_trip"), None, False, bp))
+        if b.get("spread") is not None:
+            out.append(obs(DETECTOR, f"{BN}/fapi/v1/depth", sym, "spread", b["spread"], None, False, bp))
     return out, []
 
 
@@ -126,7 +132,7 @@ def walk(levels, usd):
 def book_cost(get, sym):
     """Round trip of SIZE_USD through the current book: (buy vwap - sell vwap) / mid, fees excluded (point 5)."""
     try:
-        d = get(f"{BN}/fapi/v1/depth?symbol={sym}&limit=100")
+        d = get(f"{BN}/fapi/v1/depth?symbol={urllib.parse.quote(sym)}&limit=100")     # non-ASCII symbols exist
         bids = [(float(p), float(q)) for p, q in d.get("bids") or []]
         asks = [(float(p), float(q)) for p, q in d.get("asks") or []]
     except Exception as e:                                      # noqa: BLE001

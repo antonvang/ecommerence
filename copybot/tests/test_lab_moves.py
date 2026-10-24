@@ -79,6 +79,13 @@ class Detect(unittest.TestCase):
         self.assertIn("min old", by[("BZUSDT", "error")]["payload"]["error"])
         self.assertEqual(by[("NATGASUSDT", "history_short")]["value"], 98)
         self.assertAlmostEqual(by[("XAUUSDT", "premium")]["value"], 0.001)
+        self.assertGreater(by[("BTCUSDT", "book_rt")]["value"], 0)                     # 21h point 3: every market
+        self.assertAlmostEqual(by[("BTCUSDT", "spread")]["value"], 0.02 / 100.01, places=6)
+        self.assertNotIn(("CLUSDT", "book_rt"), by)                                    # a failed market: no book
+        obs, _ = moves.detect(market(depth=False), None, NOW)
+        thin = {(o["instrument"], o["metric"]): o for o in obs}[("XAUUSDT", "book_rt")]
+        self.assertIsNone(thin["value"])
+        self.assertEqual(thin["payload"]["error"], "empty book")
 
 
 class Triage(unittest.TestCase):
@@ -116,6 +123,12 @@ class Triage(unittest.TestCase):
         self.assertEqual(t["verdict"], "FORWARD_ONLY")
         self.assertIn("åbningstid", t["reason"])
         self.assertNotIn("off_hours", self.t(move_hour_s=sat)["explanations"])     # crypto trades 24/7
+
+    def test_a_non_ascii_symbol_is_url_encoded(self):                   # costsnap 2026-10-24: 5 of 746 failed
+        urls = []
+        moves.book_cost(lambda u: urls.append(u) or {"bids": [], "asks": []}, "龙虾USDT")
+        self.assertTrue(urls[0].isascii())
+        self.assertIn("symbol=%E9%BE%99%E8%99%BEUSDT", urls[0])
 
     def test_tails_are_counted_in_the_trailing_window(self):
         self.assertEqual(moves.stats(klines(), NOW)["tails_720h"], 0)
