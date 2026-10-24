@@ -60,6 +60,9 @@ SOURCES = (
      "https://www.cnbc.com", 3 * 86400),
     ("Binance fapi klines, 12 markets (amendment 21)", "live", "hourly bars of crypto and TradFi perps for abnormal "
      "moves", "1 h", "free (weight limit 2,400/min)", "no", (), "https://fapi.binance.com/fapi/v1/klines", 3 * 3600),
+    ("CoinMetrics community exchange flows (amendment 21q)", "live", "btc/eth daily exchange inflow, outflow and "
+     "exchange supply; point-in-time only from 2026-10-24 (the free series are revised)", "1 d (polled every 6 h)",
+     "free, CC BY-NC 4.0", "no", (), "https://community-api.coinmetrics.io/v4/timeseries", 2 * 86400),
     ("GDELT DOC 2.0 (amendment 16)", "live", "world news mentioning crypto (titles, URLs)", "30 min, backoff to 24 h",
      "free, but limits this address (HTTP 429, amendment 17 point 9)", "no", (), "https://api.gdeltproject.org", 86400),
 )
@@ -132,10 +135,10 @@ def sources(db, now=None, root=None):
     """One row per source: coverage from the cache or the observation chain, last seen, rows in 24 h, and health."""
     now = now or time.time()
     obs = {r["source"]: dict(r) for r in db.q(
-        "SELECT source, MAX(CASE WHEN metric NOT IN ('error', 'news_error') THEN ts END) last_ts, "
+        "SELECT source, MAX(CASE WHEN metric NOT IN ('error', 'news_error', 'onchain_error') THEN ts END) last_ts, "
         "SUM(CASE WHEN ts>=? THEN 1 ELSE 0 END) n_24h, "
-        "SUM(CASE WHEN ts>=? AND metric IN ('error', 'news_error') THEN 1 ELSE 0 END) errors_24h, "
-        "MAX(CASE WHEN metric IN ('error', 'news_error') THEN ts END) last_err FROM observations "
+        "SUM(CASE WHEN ts>=? AND metric IN ('error', 'news_error', 'onchain_error') THEN 1 ELSE 0 END) errors_24h, "
+        "MAX(CASE WHEN metric IN ('error', 'news_error', 'onchain_error') THEN ts END) last_err FROM observations "
         "GROUP BY source",
         int(now - DAY), int(now - DAY))}
     windows = [dict(r) for r in db.q("SELECT source, MIN(window_start) a, MAX(window_end) b, COUNT(*) n "
@@ -186,7 +189,7 @@ def progress(db, rows=None, now=None):
     now = now or time.time()
     hours = {r["source"]: r["h"] for r in db.q(
         "SELECT source, COUNT(DISTINCT ts / 3600) h FROM observations WHERE ts>=? AND metric NOT IN "
-        "('error', 'news_error') GROUP BY source", int(now - DAY))}
+        "('error', 'news_error', 'onchain_error') GROUP BY source", int(now - DAY))}
     live = []
     for row in rows or []:
         if row.get("kind") == "live":

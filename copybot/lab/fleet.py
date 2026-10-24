@@ -484,8 +484,13 @@ def scanner_pass(db):
 
 
 def news_pass(db):
-    from lab import news                      # amendment 16: announcements and news (observations only)
-    return news.run(db)
+    from lab import news, onchain             # amendment 16: announcements and news (observations only)
+    res = news.run(db)
+    try:                                      # amendment 21q: forward on-chain flows, at most every 6 h
+        res["onchain"] = onchain.run(db, news.http_get)
+    except Exception as e:                    # noqa: BLE001 - never stops news-watch
+        res["onchain"] = {"error": repr(e)[:200]}
+    return res
 
 
 def premium_pass(db):
