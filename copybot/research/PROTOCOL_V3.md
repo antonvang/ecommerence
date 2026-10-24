@@ -2729,3 +2729,29 @@ intet deployes uden brugerens ja.
      21l punkt 2 med q95 og dets bootstrap-interval over døgn, og om V ≥ 100 mio. USD.
    - C aktiveres aldrig automatisk. Brugeren afgør pr. marked på grundlag af tabellen. Ingen afsluttet screening
      regnes om.
+
+## Ændring 21o (2026-10-24 kl. 20:32, før kode): flagrapportens identitet og median, R1-beslutningstabel, forslag til målelog og præcisering af R3-udkastet
+
+**Beslutning:** Claude under brugerens mandat (master follow-up 7 "REPRODUCIBLE MEASUREMENTS" 2026-10-24 ca. kl. 20:31).
+Ingen scannerændring, tærskel, gate, alfa eller lås. Intet deployes.
+
+1. **Flagrapporten (`lab/flagreport.py`):**
+   - Identiteten af en markedstime er (marked, `open_s`, metrik), hvor `open_s` er den afsluttede bars åbningstid i UTC
+     epoch-sekunder, som scanneren selv gemmer. Den er uafhængig af scanningstid, genstart og deploy.
+   - Mangler `open_s` (ingen z_1h-observation i scanningen), bruges ikke en erstatning. Flaget tælles under
+     datakvalitet som "uden markedstime" og indgår ikke i rater eller hændelser.
+   - Nævneren er alle observerede markedstimer fra scannerens z_1h-observationer, også timer uden flag.
+   - Medianen bag volumenforholdet: rapporten viser den **afledte** median = `quote_volume_1h` / `volume_ratio` pr. flag.
+     Det er algebraisk den gemte værdi, **ikke** en uafhængig genberegning; den kræver de 720 timers klines, som ikke
+     hentes. Det står i rapporten.
+2. **R1-beslutningstabel (`lab/costreport.py`):** pr. marked hvert krav for sig (døgn, observationer,
+   bevægelsestimer, weekender) med opfyldt/ikke, antal døgnklynger, samlet rundtur med gebyrer (median og
+   bootstrap-interval), manglende og censurerede, B og C (kun ved opfyldte krav), hvilke input der er observeret
+   (`book_rt`, `spread`, `volume_ratio`, `quote_volume_1h`) og hvilke der er antaget (gebyrsats, RT_est-sammenhængen,
+   overførsel til 2020–21), og en anbefaling: "NO_DECISION", indtil alle krav er opfyldt. Derefter "kan forelægges
+   brugeren", aldrig en automatisk aktivering.
+3. **Målelog (forslag, ikke implementeret i denne runde):** `research/drafts/MAALELOG_FORSLAG.md`. En implementering
+   ændrer scannerens gemte felter og kræver en senere dateret ændring og brugerens ja til deploy.
+4. **R3-udkastet præciseres (indhold uændret):** minutbar k åbner ved T + k min. Signal fra bar 0 (kendt ved T + 1 min).
+   Indgang ved lukkekursen for bar 1 (tid T + 2 min). Udgang ved lukkekursen for bar 61 (T + 62 min). Holdetiden er
+   altså 60 min.
