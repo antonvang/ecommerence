@@ -174,13 +174,14 @@ class PaperEngine:
             cash -= sgn * px * q + fee
             fees += fee
             p0 = pos.get(inst, 0.0)
-            realized[inst] = realized.get(inst, 0.0) - fee
             if p0 == 0 or (p0 > 0) == (sgn > 0):                     # opening / adding
+                realized[inst] = realized.get(inst, 0.0) - fee
                 basis[inst] = (basis.get(inst, 0.0) * abs(p0) + px * q) / (abs(p0) + q)
                 pos[inst] = p0 + sgn * q
             else:                                                     # reducing (and possibly flipping)
                 closed = min(q, abs(p0))
-                realized[inst] += closed * (px - basis[inst]) * (1 if p0 > 0 else -1)
+                realized[inst] = (realized.get(inst, 0.0) - fee * closed / q
+                                  + closed * (px - basis[inst]) * (1 if p0 > 0 else -1))
                 pos[inst] = p0 + sgn * q
                 if abs(pos[inst]) < 1e-12:
                     pos[inst] = 0.0
@@ -188,7 +189,7 @@ class PaperEngine:
                     realized[inst] = 0.0
                 elif (pos[inst] > 0) != (p0 > 0):                     # flipped: the excess opens a new trade
                     trades.append((f["ts"], realized[inst]))
-                    realized[inst] = 0.0
+                    realized[inst] = -fee * (q - closed) / q          # 21s: its share of the fill's fee
                     basis[inst] = px
         funding = self.db.one(f"SELECT COALESCE(SUM(amount), 0) FROM sim_funding WHERE exp_id=?{cut}", *args)[0]
         cash += funding
