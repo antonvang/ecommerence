@@ -2959,3 +2959,22 @@ tværs af konti, fordi statussen ikke udløser nogen handling. Det skrives ved s
 
 **Status ved start (2026-10-24):** papirkontiene er højst 6 døgn gamle. Alle forventes "utilstrækkelige data" for M1,
 M3 og M5. M2 og M4 kan allerede vurderes for de fremadrettede konti.
+
+### 21w præcisering (2026-10-24 kl. 22:47, efter en tørkørsel på en kopi af produktionen, før kode commit og deploy)
+
+Tørkørslen (skrivebeskyttet backup, ingen status vist nogen steder) viste to fejl i 21w's egen definition. Begge er
+rettet før første visning.
+
+1. **M2 gælder ikke bane- og scannerkonti (`LANE_`).**
+   - Banens indgangsport (12g/12h) regner omkostningen fra den faktisk gennemgåede bog. Ordrens generiske
+     `cost_model.expected_spread` (0,04 %) er ikke det, banen antog.
+   - Tørkørslen gav forhold på 1,1–8,4 for tynde alt-spot-ben, altså falske alarmer: "fordel ikke længere støttet" for
+     LANE_4c87acd9ce og "forringelse mistænkt" for LANE_d9f91862c8.
+   - For `LANE_`-konti vises M2 kun beskrivende med status "ikke anvendelig". De fremadrettede og skyggekonti
+     (`FWD_`, `SHADOW_`) bruger den generiske model og beholder M2. Forholdet dér var 0,61–0,91, altså under modellen.
+2. **"stabil" kræver, at M1 har stikprøve nok.**
+   - En konto, hvis nettoforventning (M1) har under 14 døgn, kan ikke kaldes "stabil", fordi intet er målt om fordelen.
+   - Statussen er "utilstrækkelige data", medmindre en anden måling med stikprøve nok udløser "forringelse mistænkt"
+     eller "fordel ikke længere støttet". En sådan måling vises da med navn.
+3. **M4's fortegn:** fill-ts er afkortet til hele sekunder, og `book_ts` er et decimaltal. Små negative værdier (ned
+   til −1 s) betyder derfor en bog under 1 s gammel. Tærsklerne bruges uændret.
