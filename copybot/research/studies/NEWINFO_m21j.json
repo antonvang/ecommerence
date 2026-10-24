@@ -1,0 +1,128 @@
+{
+ "calendar_events": 58,
+ "code_commit": "223b92b9863eaabedc9b2c701c1f5b7d1c98a9c5",
+ "files": 152,
+ "files_sha256": "736f392cdfc7655aafd08b0d8bdb32914b9fa499bd23d823aceebb44733c6c68",
+ "method": "m21j",
+ "results": [
+  {
+   "checks": {
+    "p <= 0.005": false,
+    "placebo p > 0.05 (>= 15 clusters)": true,
+    "same sign in 2020 and 2021": false,
+    "|mean| >= 0.0046": false
+   },
+   "cost_hurdle": 0.0046,
+   "cost_rule": "max(0.46 %, 2 x (2 x 0.040 % + RT_est(V_30d))) per event; RT_est from the 2026-10-24 snapshot is an ESTIMATE carried back to 2020-21",
+   "descriptive_not_tested": {
+    "Consumer Price Index": {
+     "mean": 0.004911703854573307,
+     "n": 22
+    },
+    "Employment Situation": {
+     "mean": -0.00030702776101288034,
+     "n": 22
+    },
+    "FOMC statement": {
+     "mean": -0.00243892057562427,
+     "n": 14
+    }
+   },
+   "direction": "continuation",
+   "event_mean": 0.0011578963103377519,
+   "event_median": -0.0005220377937683422,
+   "events_sha256": "473a065f649bf764061ce75c7750eb52463d654cecdbf2f8008d5bc50432befc",
+   "excluded": {},
+   "halves": {
+    "2020": [
+     25,
+     0.005050390283887988
+    ],
+    "2021": [
+     32,
+     -0.0007398281234968629
+    ]
+   },
+   "key": "macro_release|post_drift_24h|m21j",
+   "label": "EXPLORATORY (never evidence)",
+   "mean": 0.0017997413534263172,
+   "method": "m21j",
+   "n_clusters": 57,
+   "n_events": 58,
+   "p": 0.728263586820659,
+   "placebo": {
+    "mean": 0.0017873816627160405,
+    "n_clusters": 50,
+    "n_events": 57,
+    "p": 0.7139643017849108,
+    "shift_days": "-7 (-14 if that day had a calendar event)"
+   },
+   "reason": "failed: p <= 0.005; same sign in 2020 and 2021; |mean| >= 0.0046",
+   "rule": "research/PROTOCOL_V3.md amendment 21j",
+   "se": 0.004948660389964825,
+   "share_positive": 0.4827586206896552,
+   "verdict": "SCREEN_FAIL",
+   "window": "explore0 2020-03..2021-12"
+  },
+  {
+   "checks": {
+    "p <= 0.005": false,
+    "placebo p > 0.05 (>= 15 clusters)": true,
+    "same sign in 2020 and 2021": false,
+    "|mean| >= 0.004628069153066551": true
+   },
+   "cost_hurdle": 0.004628069153066551,
+   "cost_rule": "max(0.46 %, 2 x (2 x 0.040 % + RT_est(V_30d))) per event; RT_est from the 2026-10-24 snapshot is an ESTIMATE carried back to 2020-21",
+   "descriptive_not_tested": {
+    "shocks per coin": {
+     "ADAUSDT": 2,
+     "BTCUSDT": 3,
+     "DOGEUSDT": 13,
+     "DOTUSDT": 1,
+     "ETHUSDT": 4,
+     "LINKUSDT": 0,
+     "LTCUSDT": 9
+    }
+   },
+   "direction": "reversal",
+   "event_mean": -0.03307273133469066,
+   "event_median": -0.03200861297729582,
+   "events_sha256": "9409f9ae6ee8cc1fc2e387bda1678d87ebcd41985e28d89d7464aca886cfe73d",
+   "excluded": {
+    "missing price or window": 2,
+    "no volume history": 1
+   },
+   "halves": {
+    "2020": [
+     5,
+     -0.18990644529018924
+    ],
+    "2021": [
+     17,
+     0.0062025122205207174
+    ]
+   },
+   "key": "attention_shock|cont_7d|m21j",
+   "label": "EXPLORATORY (never evidence)",
+   "mean": -0.038367705395549734,
+   "method": "m21j",
+   "n_clusters": 22,
+   "n_events": 32,
+   "p": 0.5874706264686765,
+   "placebo": {
+    "mean": -0.0072506674787914255,
+    "n_clusters": 22,
+    "n_events": 32,
+    "p": 0.8497575121243938,
+    "shift_days": -28
+   },
+   "reason": "failed: p <= 0.005; same sign in 2020 and 2021",
+   "rule": "research/PROTOCOL_V3.md amendment 21j",
+   "se": 0.06707719902159748,
+   "share_positive": 0.46875,
+   "verdict": "SCREEN_FAIL",
+   "window": "explore0 2020-03..2021-12"
+  }
+ ],
+ "rule": "research/PROTOCOL_V3.md amendment 21j"
+}
