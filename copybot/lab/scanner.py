@@ -6,6 +6,8 @@ Detectors (predefined, explainable):
                      selection)
 - pricing_constraint (a) Hyperliquid vs Binance perpetual mid-price gaps beyond two-venue taker costs,
                      (b) Binance perpetual premium (mark vs index), (c) Polymarket negRisk sum-of-asks (sampled)
+- abnormal_move      unusual moves of a fixed list of Binance USD-M perps across asset classes (amendment 21,
+                     lab/moves.py): observations and analysis records only, never a proposal
 
 A proposal becomes a candidate only if the same flag was seen in >= PERSIST distinct scans. Candidates are then
 deduplicated: an existing fingerprint -> "seen again"; an active experiment on the same mechanism and execution ->
@@ -29,7 +31,8 @@ PERSIST_BUCKET = 3600
 PERSIST_WINDOW = 24 * 3600         # ... within the last 24 h (PROTOCOL_V3 amendment 5)
 EVENT_DEDUP_S = 6 * 3600           # one market.event per detector/metric/instrument/decision per 6 h
 GRAVEYARD = ("REJECTED", "WITHDRAWN", "SUPPRESSED")
-VERSION = {"venue_subsidy": 1, "pricing_constraint": 2}   # persistence only counts observations of the same version
+VERSION = {"venue_subsidy": 1, "pricing_constraint": 2,    # persistence only counts observations of the same version
+           "abnormal_move": 1}
 GAP_IDENTITY_MAX = 0.03            # larger gaps are treated as an instrument-identity mismatch, never as an opportunity
 SUBSIDY_YIELD_DAY = 0.005          # 0.5 %/day gross reward yield (median of the sample) flags a subsidy class
 SUBSIDY_SAMPLE = 60
@@ -340,7 +343,19 @@ def pricing_constraint(get, post, now):
     return out, props
 
 
-DETECTORS = {"venue_subsidy": venue_subsidy, "pricing_constraint": pricing_constraint}
+def _abnormal_move(get, post, now):
+    from lab import moves
+    return moves.detect(get, post, now)
+
+
+def _after_moves(db, observations, now, get):
+    from lab import moves
+    return moves.record(db, observations, now, get)
+
+
+DETECTORS = {"venue_subsidy": venue_subsidy, "pricing_constraint": pricing_constraint,
+             "abnormal_move": _abnormal_move}                     # amendment 21: data and analysis records only
+AFTER = {"abnormal_move": _after_moves}                           # runs after the detector's observations are stored
 
 
 # ---------- scanner ----------
@@ -419,6 +434,11 @@ def run(db, names=None, get=http_get, post=http_post, now=None):
                 summary["flagged"] += o["flagged"]
                 if o["metric"] == "error":
                     summary["errors"].append(o["payload"].get("error"))
+        if name in AFTER:
+            try:
+                summary[f"{name}_records"] = AFTER[name](db, observations, now, get)
+            except Exception as e:                    # noqa: BLE001 - the analysis never stops the scan
+                summary["errors"].append(f"{name} records failed: {e!r}"[:300])
         for p in proposals:
             summary["proposals"] += 1
             if persisted(db, p, now) < PERSIST:

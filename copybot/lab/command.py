@@ -1075,7 +1075,7 @@ def feed(db, limit=40):
              "system.resource_hold", "risk.pause", "risk.fail_closed", "risk.clear", "agent.error",
              "agent.recovered", "external.stale", "external.recovered", "job.timeout", "market.event",
              "research.diagnostic", "scan.finished", "forward.approved", "forward.stopped", "research.digest",
-             "research.dossier", "lane.started", "lane.retired", "lane.promising")
+             "research.dossier", "lane.started", "lane.retired", "lane.promising", "opportunity.move")
     rows = db.q(f"SELECT id, ts, kind, actor, exp_id, payload FROM events WHERE kind IN ({','.join('?' * len(kinds))}) "
                 f"AND NOT (kind='paper.order' AND substr(exp_id, 1, 4)='FWD_') "     # shown per account instead
                 f"AND NOT (kind='paper.order' AND substr(exp_id, 1, 5)='LANE_') "
@@ -1134,6 +1134,11 @@ def feed(db, limit=40):
             e.update(tag="UNDERSØG" if p.get("decision") == "INVESTIGATE" else "INGEN HANDLING",
                      text=f"Marked: {what} - {sr.why_da(p.get('why'), STAGE_DA)}"[:220], detail=p.get("decision"),
                      priority=p.get("priority"))
+        elif k == "opportunity.move":                             # amendment 21: descriptive, nothing is traded
+            e.update(tag="BEVÆGELSE",
+                     text=(f"{p.get('label')}: {p.get('ret_1h', 0):+.2%} på 1 t (z {p.get('z_1h', 0):.1f}), "
+                           f"{p.get('ret_24h', 0):+.2%} på 24 t (z {p.get('z_24h', 0):.1f}) - beskrivende, intet handles")[:220],
+                     detail=", ".join(x.get("title", "") for x in (p.get("news") or [])[:2]) or None)
         elif k in ("lane.started", "lane.retired", "lane.promising"):
             e.update(tag="BANEKONTO", text=(f"{nm} startet (simuleret, aldrig bevis)" if k == "lane.started"
                                             else f"{nm} stoppet: {p.get('detail')}" if k == "lane.retired"
