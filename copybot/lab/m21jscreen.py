@@ -90,6 +90,8 @@ def j1(px, vol, a, b, cal):
         "excluded": excl, "descriptive_not_tested": {k: {"n": len(v), "mean": statistics.fmean(v)}
                                                      for k, v in sorted(by_type.items())}})
     res.update(method=METHOD, rule=RULE)
+    if "placebo" in res:
+        res["placebo"]["shift_days"] = "-7 (-14 if that day had a calendar event)"
     return res
 
 
@@ -129,6 +131,8 @@ def j2(px, vol, a, b, views):
         "excluded": excl, "descriptive_not_tested": {"shocks per coin": {s: sum(1 for r in rows if r["sym"] == s)
                                                                          for s in sorted(set(ARTICLES.values()))}}})
     res.update(method=METHOD, rule=RULE)
+    if "placebo" in res:
+        res["placebo"]["shift_days"] = -28
     return res
 
 
