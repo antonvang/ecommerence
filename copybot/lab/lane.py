@@ -1042,7 +1042,7 @@ def decomposition(db, ledger):
     measured book distance (`book`) and the modelled slippage allowance (`allowance`)."""
     fills = db.q("SELECT px, qty, fee, mid, side FROM sim_fills WHERE exp_id=?", ledger)
     funding = db.one("SELECT COALESCE(SUM(amount), 0) FROM sim_funding WHERE exp_id=?", ledger)[0]
-    eq = db.one("SELECT equity FROM sim_equity WHERE exp_id=? ORDER BY id DESC LIMIT 1", ledger)
+    eq = db.one("SELECT equity, cash, ts FROM sim_equity WHERE exp_id=? ORDER BY id DESC LIMIT 1", ledger)
     net = (eq["equity"] if eq else CAPITAL) - CAPITAL
     fees = sum(f["fee"] for f in fills)
     paid = sum(abs(f["px"] - f["mid"]) * f["qty"] for f in fills if f["mid"])
@@ -1050,10 +1050,19 @@ def decomposition(db, ledger):
     s = (started(db).get(ledger, {}).get("costs") or {}).get("extra_slippage", COSTS.extra_slippage)
     # research/LINUX_DRIFT.md 2026-10-24: a fill's price is the book level x (1 +- s); the allowance is modelled
     allowance = sum(f["px"] * f["qty"] * s / ((1 + s) if f["side"] == "buy" else (1 - s)) for f in fills if f["mid"])
+    # 21t: the residual checked against an independent mid-based price P&L from the same mark
+    mv = (eq["equity"] - eq["cash"]) if eq else 0.0
+    indep = sum((-1 if f["side"] == "buy" else 1) * f["mid"] * f["qty"] for f in fills if f["mid"]) + mv
+    better = sum(1 for f in fills if f["mid"] and ((f["side"] == "buy" and f["px"] < f["mid"]) or
+                                                   (f["side"] == "sell" and f["px"] > f["mid"])))
+    after = db.one("SELECT COUNT(*) FROM sim_fills WHERE exp_id=? AND ts>?", ledger, eq["ts"])[0] if eq else len(fills)
+    resid = net - funding + fees + paid
     return {"net": net, "funding": funding, "fees": -fees, "spread_slippage": -paid,
             "book": -(paid - allowance), "allowance": -allowance,
-            "price_basis": net - funding + fees + paid, "fills": len(fills),
-            "fills_without_mid": unknown, "observed": True}
+            "price_basis": resid, "fills": len(fills),
+            "fills_without_mid": unknown, "observed": True,
+            "price_basis_independent": indep, "price_basis_gap": resid - indep,
+            "fills_better_than_mid": better, "fills_after_mark": after}
 
 
 def closed_trades(db, source):

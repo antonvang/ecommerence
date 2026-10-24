@@ -15,6 +15,7 @@ from lab import pipeline
 
 DAY = 86400
 TOL = 1e-6
+PRICE_GAP_USD = 0.01                                # amendment 21t
 FIELDS = ("equity", "net", "funding", "fees", "max_drawdown")
 
 
@@ -76,6 +77,14 @@ def expected(con, day):
             fund = con.execute("SELECT COALESCE(SUM(amount), 0) FROM sim_funding WHERE exp_id=? AND ts<=?",
                                (led, mark["ts"])).fetchone()[0]
             cash = {"marked": mark["cash"], "replayed": base + flows[0] - flows[1] + fund}
+            # 21t: residual price/basis (net - funding + fees + paid distance) = mid-based price P&L at the mark
+            fs = con.execute("SELECT px, qty, mid, side, fee FROM sim_fills WHERE exp_id=? AND ts<=?",
+                             (led, mark["ts"])).fetchall()
+            paid = sum(abs(f["px"] - f["mid"]) * f["qty"] for f in fs if f["mid"])
+            resid = (mark["equity"] - base) - fund + sum(f["fee"] for f in fs) + paid
+            indep = sum((-1 if f["side"] == "buy" else 1) * f["mid"] * f["qty"] for f in fs if f["mid"]) \
+                + (mark["equity"] - mark["cash"])
+            cash["price_gap"] = resid - indep
         out[led] = {"equity": equity, "net": equity - capital, "funding": funding, "fees": fees,
                     "max_drawdown": dd or 0.0, "status": status, "cash": cash}
     return out
@@ -118,6 +127,9 @@ def checks(db_path, day=None, artifacts=None):
                 bad.append(f"status {r.get('status')!r} vs {w['status']!r}")
             if w["cash"] is not None and not _close(w["cash"]["marked"], w["cash"]["replayed"]):
                 bad.append(f"marked cash {w['cash']['marked']} vs replayed {w['cash']['replayed']}")
+            if w["cash"] is not None and abs(w["cash"].get("price_gap", 0.0)) > PRICE_GAP_USD:
+                bad.append(f"price/basis residual differs from the mid-based price P&L by "
+                           f"{w['cash']['price_gap']:.4f} USD (21t)")
             add(f"{led}", not bad, "; ".join(bad) or f"equity {w['equity']:.2f}, {w['status']}")
         total = sum(w["net"] for w in want.values())
         add("net_total is the sum", _close(art.get("net_total"), total) and _close(rec.get("net_total"), total),

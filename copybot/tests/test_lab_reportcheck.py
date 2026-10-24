@@ -97,6 +97,17 @@ class ReportVerify(Base):
             p = lane.verify_report(self.db, DAY_, "report-1")
         self.assertEqual((p["ok"], p["failed"]), (False, ["check failed: OSError('disk')"]))
 
+    def test_a_fill_better_than_mid_breaks_the_price_identity(self):          # amendment 21t
+        mark_ts = self.db.one("SELECT MAX(ts) FROM sim_equity WHERE exp_id=?", self.led)[0]
+        self.db.append("sim_orders", order_id="x1", exp_id=self.led, ts=mark_ts, instrument="BBBUSDT", side="buy",
+                       qty=1.0, limit_px=None, style="maker", reduce_only=0, signal_ref=None, cost_model={})
+        self.db.append("sim_fills", fill_id="x1|0", order_id="x1", exp_id=self.led, ts=mark_ts, instrument="BBBUSDT",
+                       side="buy", px=99.0, qty=1.0, fee=0.0, slippage=None, liquidity="maker", mid=100.0, book_ts=None)
+        self.record()
+        rc, rows, lines = self.run_check()
+        self.assertEqual(rc, 1)
+        self.assertRegex("\n".join(lines), r"price/basis residual differs from the mid-based price P&L by [\d.]+ USD \(21t\)")
+
     def test_no_report_is_a_failure(self):
         rc, rows, lines = self.run_check()
         self.assertEqual((rc, rows), (1, {"a recorded report": False}))

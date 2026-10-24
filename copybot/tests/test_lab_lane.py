@@ -964,6 +964,8 @@ class Execution(Base):
         notional = sum(f["px"] * f["qty"] for f in self.db.q("SELECT px, qty FROM sim_fills WHERE exp_id=?", led))
         self.assertAlmostEqual(-d["allowance"] / notional, lane.COSTS.extra_slippage, delta=1e-6)
         self.assertLess(d["book"], 0)
+        self.assertAlmostEqual(d["price_basis_gap"], 0.0, places=6)           # 21t: residual = mid-based price P&L
+        self.assertEqual((d["fills_better_than_mid"], d["fills_after_mark"]), (0, 0))
 
     def test_classes_and_view(self):
         self.assertEqual(lane.classify("lane.started", {}), "afventer fremadtest")
