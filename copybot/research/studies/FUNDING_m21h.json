@@ -1,0 +1,72 @@
+{
+ "code_commit": "fd0e19d68d8e27e97df986bafd7e98ccf2d745b1",
+ "files": 1816,
+ "files_sha256": "f5f64a5cefe3ca55e824e61283effb2297291d94dba58e3b46e2b51d37352c07",
+ "method": "m21h",
+ "results": [
+  {
+   "checks": {
+    "p <= 0.005": false,
+    "placebo p > 0.05 (>= 15 clusters)": true,
+    "same sign in 2020 and 2021": false,
+    "|mean| >= 0.0046": false
+   },
+   "cost_hurdle": 0.0046,
+   "descriptive_not_tested": {
+    "against the crowd (reversal)": {
+     "mean": 0.015251540281317841,
+     "n_events": 604
+    },
+    "share of events in the 5 busiest coins": 0.1962134251290878,
+    "share of events on the 5 busiest days": 0.13941480206540446,
+    "with the crowd (continuation)": {
+     "mean": 0.008410869188492522,
+     "n_events": 558
+    }
+   },
+   "direction": "continuation",
+   "event_mean": 0.011966605281492945,
+   "event_median": 0.005825694150488393,
+   "events_sha256": "2ae7f1ae37da54517c7f8535b64fcc984c1becaf92bd030778124cb2e78e0176",
+   "excluded": {
+    "missing price": 2,
+    "neutral funding": 860,
+    "no funding file": 76,
+    "no recent funding": 97
+   },
+   "halves": {
+    "2020": [
+     117,
+     0.0012179400315565575
+    ],
+    "2021": [
+     195,
+     -0.00038194255801738954
+    ]
+   },
+   "key": "funding_crowd|squeeze_24h|m21h",
+   "label": "EXPLORATORY (never evidence)",
+   "mean": 0.0002180134130728406,
+   "method": "m21f",
+   "n_clusters": 312,
+   "n_events": 1162,
+   "p": 0.9558522073896305,
+   "placebo": {
+    "mean": 0.0007242488795673243,
+    "n_clusters": 308,
+    "n_events": 1115,
+    "p": 0.808159592020399,
+    "shift_days": -30
+   },
+   "reason": "failed: p <= 0.005; same sign in 2020 and 2021; |mean| >= 0.0046",
+   "rule": "research/PROTOCOL_V3.md amendment 21f",
+   "se": 0.0049125426744170584,
+   "share_positive": 0.5481927710843374,
+   "verdict": "SCREEN_FAIL",
+   "window": "explore0 2020-03..2021-12"
+  }
+ ],
+ "rule": "research/PROTOCOL_V3.md amendment 21h point 5",
+ "symbols": 132,
+ "symbols_with_funding": 115
+}
