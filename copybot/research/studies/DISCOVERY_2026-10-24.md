@@ -65,3 +65,20 @@ ikke, og nøglerne screenes aldrig igen under m17h (ændring 17 punkt 4). Mønst
 ligner `spot_listing|sar_1d|m17e` (Binance, også et fald; REJECTED på validation3). Den eneste ærlige vej videre er en
 **fremadtest** på noteringer efter en dateret lås (som H5F, ændring 16d): Upbit noterer ca. 80 KRW-mønter om året, så
 n ≈ 20 med 7-døgns-udfald tager ca. 3–4 måneder. Det er et forslag til brugeren, ikke låst.
+
+## Flaskehals: scannerkontiene står tomme (0 af 10) — strukturelt, ikke en fejl
+
+Målt 2026-10-24 ca. 10:45 lokal tid, kun læsning (`lane.skipped`/`lane.started` med kilde `scanner`, og
+Hyperliquids offentlige `metaAndAssetCtxs`). Intet her ændrer en regel.
+
+- Seneste scannerstart var 2026-10-20 05:37 (MITOUSDT); 3 starter de sidste 7 døgn.
+- Det seneste døgn: 251 overspringninger over 41 mønter med "intet spotpar på Binance (19)", 3 "not persistent".
+  Over 7 døgn har 54 forskellige mønter med høj forudsagt funding intet Binance-spotpar (nye perps som SIREN, PIPPIN,
+  TRUST, LIGHT, FHE, CYS).
+- Spørgsmålet var, om et perp-mod-perp-hedge på Hyperliquid kunne dække dem. Svar: nej, 0 af de 51 ASCII-mønter
+  findes i Hyperliquids univers (234 markeder). Overspringningerne bruger ingen probe (regel 19 tjekker før), så de
+  fortrænger ikke handelbare mønter.
+- Konklusion: mulighederne med høj funding ligger i øjeblikket i mønter, som laboratoriet ikke kan hedge med sine
+  tilladte værter. En anden spotbørs ville være en handelsvært og kræver brugerens ja (sikkerhedslisten); det
+  foreslås ikke. HL-kontiene er også tomme (højeste HL-funding 0,01 %/8 t mod indgangskravet 0,1 %), dvs. markedet
+  er roligt.
