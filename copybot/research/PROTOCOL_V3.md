@@ -3103,3 +3103,17 @@ For råvarer og FX (K2): lukket = `moves.off_hours` (21g, Binances egne vinduer)
 4. **Placebo for K2 (BTC, ETH):** vinduerne er aktiernes WEEKEND mod RTH.
 5. **Carry-positionens fortegn:** præmiens fortegn i weekendens første brugbare lukkede time, låst for hele vinduet.
    Funding tælles for afregninger i [første lukkede bar, sidste lukkede bar + 1 time).
+
+### 21y præcisering 2 (2026-10-24 kl. 23:37, før nogen måling; fundet af syntetiske tests, ingen rigtige data set)
+1. **Wilcoxon eksakt for n ≤ 25 (styrke, ikke svækkelse):**
+   - Med 12 weekender er normalapproksimationens mindste p ≈ 0,0011. Efter Holm over 10 instrumenter bliver det
+     ≈ 0,011, så K2 ville aldrig kunne bestå (en død test).
+   - Den eksakte fordeling giver 1/4096 ≈ 0,00024 (Holm ≈ 0,0024 ≤ 0,005), når alle 12 weekender har d > 0.
+   - Fremover: eksakt fordeling for n ≤ 25 (nuller fjernet, midtrang ved bånd) og normalapproksimation over 25.
+     Grænsen 0,005 og Holm over 10 er uændrede.
+   - **Konsekvens, skrevet før data:** med 12 weekender kræver en K2-PASS reelt, at næsten alle weekender peger
+     samme vej. Testen er streng med vilje. Svarer den ikke ved 12 weekender, forlænges den ikke for at nå en PASS;
+     resultatet står.
+2. **Placebo:** en placebo med ≥ 12 komplette weekender og uden p-værdi (alle d = 0) tæller som ikke-signifikant.
+   En placebo uden data tæller som ikke bestået. Begge placebo skal have p > 0,05; det kan fejle af ren tilfældighed
+   (ca. 10 % under nul), hvilket er konservativt.
