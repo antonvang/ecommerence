@@ -2509,3 +2509,61 @@ lås ændres. 4σ-faldshypotesen indgår ikke; den venter på brugerens beslutni
      igen. En SCREEN_PASS kræver brugerens beslutning før en lås (rækken har 0,003125 tilbage).
 6. **Aldrig:** ordrer, papirkonti, familier, alfa, train3, validation3, holdout 2024, data fra 2025 og frem i
    screeningen, `pm_lp`.
+
+## Ændring 21i (2026-10-24 kl. 18:32, før kode og før nogen beregning): gebyrer verificeret, fremadrettet omkostningskrav, spot–perp lead/lag (metode m21i) og beskrevne omkostningsregimer
+
+**Beslutning:** Claude under brugerens mandat (master follow-up "SPOT–PERP LEAD/LAG, COST-AWARE DISCOVERY & REGIME
+ANALYSIS" 2026-10-24 ca. kl. 18:30). Ingen gate, alfa, periode eller lås ændres; ingen afsluttet screening ændres.
+4σ-faldshypotesen indgår ikke.
+
+1. **Gebyrer (verificeret i Binances meddelelser via den tilladte vært, kun GET):**
+   - `360037673592` (2019-12-18): USDⓈ-M-futures fra 2019-12-20 08:00 UTC, almindelige brugere maker 0,020 % og taker
+     0,040 %. Blandt registrets Binance-meddelelser fra 2020–2021 med "Fee" i titlen er der ingen senere ændring for
+     USDT-perps (kun BUSD-kampagner og forsikringsgebyrer). Det gælder explore0.
+   - 2026: TradFi-meddelelsen `a4c3f195…` giver almindelige brugere taker 0,0400 % som "20 % rabat" i forhold til
+     standardsatsen for USDT. Standard-taker er altså 0,0500 %. Labbens model på 5 bp pr. side er konservativ for
+     explore0 og passer til i dag.
+2. **Omkostningskrav for screeninger fra og med denne ændring (fremadrettet, aldrig strengere end nødvendigt og
+   aldrig lempeligere end ændring 17):** pr. hændelse
+   c_i = max(0,46 %, 2 · (2 · 0,040 % + RT_est(V_i))),
+   hvor V_i er møntens gennemsnitlige 24 t-omsætning i quote over de 30 døgn før hændelsen (point-in-time fra klines'
+   quote volume). RT_est(V) = exp(0,8999) · V^(−0,4540) er bogens rundtur for 5 000 USD fra
+   `research/studies/COSTS_2026-10-24.md` (krypto, n 516).
+   - **Begrænsning (står i hver rapport):** sammenhængen er målt i 2026 på ét tidspunkt og overføres til 2020–21. Det
+     er et ESTIMAT, ikke en observeret historisk omkostning. Faktoren 2 er sikkerhedsmarginen. 0,46 %-gulvet betyder, at
+     kravet aldrig bliver lempeligere end ændring 17's.
+   - Kravet for en kandidat: |gennemsnit af klyngeværdier| ≥ gennemsnittet af klyngernes c (klyngens c er gennemsnittet
+     af dens c_i). Regimespecifikke krav indføres ikke; der er ingen historiske bogdata (punkt 5).
+3. **S1 `spot_lead|perp_1h|m21i` (lead/lag i samme mønt).**
+   - Data: mønter med både USD-M-perp og Binance-spot `<mønt>USDT` 1 t-klines i explore0 (cachen, `Reader("explore0")`
+     kinds `klines` og `spot`). Barerne har samme åbningstid; kun timer, hvor begge findes.
+   - x_t = r_spot,t − r_perp,t (log-afkast samme time); σ_x = standardafvigelsen af x over de 720 foregående timer (mindst
+     600). Hændelse: |x_t / σ_x| ≥ 3. Alle timer, der opfylder det, tæller (udfaldsvinduerne overlapper ikke).
+   - Kendt ved bar t's lukning (begge lukkekurser). y = sign(x_t) · r_perp,t+1 (perpens afkast i næste time; positiv =
+     perpen indhenter spot).
+   - **Forbehold:** indgang ved bar t's lukning er en nul-forsinkelse. Med timebarer kan en realistisk forsinkelse ikke
+     måles, så en SCREEN_PASS er kun information og kræver minutdata før enhver tale om handel. Det står i rapporten.
+4. **S2 `perp_led|move_24h|m21i` (hvem førte bevægelsen?).**
+   - Hændelser: m21c's 4σ-perp-bevægelser (højst én pr. mønt pr. 24 t) med en spotbar i samme time og fundingfiler.
+     e = s · (r_perp,h − r_spot,h): perp-ført, hvis e > 0 (basis udvidet i bevægelsens retning, gearet spekulation);
+     ellers spot-ført.
+   - Regel: perp-ført → gå imod (d = −s); spot-ført → følg (d = s). v = d · ln(C_h+25 / C_h+1) − d · funding afregnet i
+     (h + 1 t, h + 25 t] (som m21h; mindst 2 afregninger, ellers udelukket).
+   - Forskel fra m21h: betingelsen er den samtidige spot–perp-forskel i bevægelsestimen, ikke funding før bevægelsen.
+     Den er korreleret (funding følger basis); begge registreres.
+5. **Test for S1 og S2:** som 21c punkt 5 (døgnklynger, tosidet fortegnsskift 20 000 / seed 7, p ≤ 0,005, samme
+   fortegn i 2020 og 2021, placebo samme mønt t − 30 d med samme fortegn/d, mindst 15 klynger) med kravet fra punkt 2
+   i stedet for den faste sats. Registrering: `research/studies/SPOTPERP_m21i.json` og `.md`. Nøglerne screenes aldrig
+   igen. En SCREEN_PASS kræver brugerens beslutning før en lås.
+6. **Omkostningsregimer, kun beskrivende (ESTIMAT, ingen test, ingen dom):** der findes ingen historiske bogdata.
+   Spreadet estimeres med Abdi & Ranaldo (2017, RFS 30(12)) fra perpens 1 t-klines i explore0:
+   s² = max(0, 4 · (c_t − η_t) · (c_t − η_t+1)), hvor c er log-lukkekursen og η gennemsnittet af log-high og log-low;
+   døgnets estimat er √ af gennemsnittet over døgnets 23 par. Rapporten viser estimatet (a) på døgn med en m21c-hændelse
+   i mønten mod samme mønt 30 døgn før og (b) efter terciler af døgnets realiserede volatilitet inden for mønten. Det er
+   kun til at beskrive, om ekstreme bevægelser ledsages af dårligere eksekverbarhed. Fremadrettet giver ændring 21h
+   punkt 3 observerede bogdata; en rapport tidligst efter 7 døgn.
+7. **Funding (prioritet D):** ingen ny fundinghypotese i denne ændring. "Funding før et volatilitetsskift" har ingen
+   handelsretning, og "funding forklarer omkostninger" har ingen historiske omkostningsdata. `funding_crowd|squeeze`
+   screenes ikke igen.
+8. **Aldrig:** ordrer, papirkonti, familier, alfa, train3, validation3, holdout 2024, data fra 2025 og frem i
+   screeningen, `pm_lp`.
