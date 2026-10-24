@@ -88,7 +88,7 @@ class Memory(unittest.TestCase):
         self.assertEqual(recs["btc_lead|alt_excess_24h|m21f"]["cost_hurdle"], 0.0111)
         self.assertEqual(recs["abnormal_move|cont_4h|m21c"]["cost_hurdle"], hypogen.COST)
         self.assertEqual(recs["squeeze_break|cont_24h|m21f"]["retest"], memory.RETEST["SCREEN_FAIL"])
-        self.assertIn("study 5:", text)
+        self.assertRegex(text, r"study \d+: SCREEN_FAIL")
 
     def test_it_writes_nothing_to_the_registry(self):
         before = self.db.one("SELECT COUNT(*) FROM events")[0]
