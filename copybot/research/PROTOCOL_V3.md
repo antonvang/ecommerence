@@ -2149,3 +2149,18 @@ måling; intet handles.
    resultat.
 3. **Data:** meddelelserne indsamles allerede af `news-watch`; Binance' månedsarkiver læses én gang ved målingen.
    Koden skrives, når data findes, og må ikke ændre den låste tekst. Ingen ny vært, ingen indsamler.
+
+### Præcisering af ændring 16d og 16f (2026-10-24 kl. 13:01, før data): TradFi-perps er ikke nye kryptolistninger
+
+Siden 2026-10-06 lancerer Binance "TradFi USDⓈ-Margined Perpetual Contracts" på aktier og ETF'er (fx 2026-10-21:
+CEGUSDT, BACUSDT, IBKRUSDT, MDTUSDT; `fapi/v1/exchangeInfo` `contractType` = `TRADIFI_PERPETUAL`) med meddelelser
+af formen "Binance Futures Will Launch … Perpetual". H5 (16c), som H5F og H5X gentager, handler om nye kryptomønter
+(mekanismen er afdækning af airdrops og lock-ups); en aktie-perp er ikke en sådan listning.
+
+1. **Præcisering:** et symbol, hvis `contractType` i `fapi/v1/exchangeInfo` (læst ved målingen) er
+   `TRADIFI_PERPETUAL`, er ikke med i H5F's eller H5X's stikprøve og tælles som udelukket med årsagen "TradFi".
+   Alt andet i de låste tekster er uændret.
+2. **Før data:** begge tests har 0 indsamlede kandidater (dashboardets tæller 2026-10-24; Binance' listing-katalog har
+   ingen meddelelse efter 2026-10-21 03:31 UTC, og de eneste nye USD-M-perps siden 2026-10-10 er TradFi). Ingen
+   funding for nogen kandidat er læst.
+3. Dashboardets tæller springer meddelelser med "TradFi" i titlen over; den endelige afgørelse er punkt 1 ved målingen.
