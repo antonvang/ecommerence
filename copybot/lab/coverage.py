@@ -223,7 +223,8 @@ def forward(db, now=None):
         p = json.loads(r["payload"]) if isinstance(r["payload"], str) else r["payload"]
         t = p.get("title") or ""
         if p.get("backfill") or p.get("category") != "listing" or (p.get("fetched_ts") or 0) < FORWARD_FROM \
-                or "Futures Will Launch" not in t or "Perpetual" not in t or "Coin-Margined" in t:
+                or "Futures Will Launch" not in t or "Perpetual" not in t or "Coin-Margined" in t \
+                or "TradFi" in t:                       # precision of 16d/16f (2026-10-24): not a crypto listing
             continue
         for c in p.get("coins") or []:
             coins.setdefault(c, p.get("published_ts") or p.get("fetched_ts"))

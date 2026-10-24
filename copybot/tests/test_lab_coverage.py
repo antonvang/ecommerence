@@ -251,6 +251,7 @@ class Progress(Base):
         self.news(t0 + 240, "Binance Futures Will Launch DDD Coin-Margined Perpetual Contract", ["DDD"])
         self.news(t0 + 300, "Binance Will List EEE (EEE)", ["EEE"])                                     # spot listing
         self.news(t0 + 360, "Binance Futures Will Delist FFFUSDT Perpetual Contract", ["FFF"], category="delisting")
+        self.news(t0 + 370, "Binance Futures Will Launch USDⓈ-M TSLAUSDT TradFi Perpetual Contract", ["TSLA"])
         f = {x["hypothesis"]: x for x in coverage.forward(self.db, t0 + 400)}
         self.assertEqual(sorted(f), ["H5F", "H5X", "M1F", "U1F"])
         self.assertIsNone(f["U1F"]["collected"])                         # counted only when the measurement runs
