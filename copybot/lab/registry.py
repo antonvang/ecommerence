@@ -85,13 +85,18 @@ def last_commit(path):
 _WORKING = {}
 
 
+RACY_S = 2.0                                     # git's "racy clean" rule (research/LINUX_DRIFT.md 2026-10-24)
+
+
 def hash_object(full):
-    """`git hash-object` of a working-tree file, remembered while its inode, size, mtime and ctime stay the same."""
+    """`git hash-object` of a working-tree file, remembered while its inode, size, mtime and ctime stay the same. A
+    file changed less than RACY_S before the hash is not remembered: file times are set from a coarse clock, so a
+    rewrite of the same size within one tick would keep the same key."""
     st = _stat(full)
     if st is not None and _WORKING.get(full, (None,))[0] == st:
         return _WORKING[full][1]
     h = git("hash-object", full)
-    if st is not None:
+    if st is not None and time.time() - max(st[2], st[3]) / 1e9 >= RACY_S:
         _WORKING[full] = (st, h)
     return h
 

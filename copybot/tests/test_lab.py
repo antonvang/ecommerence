@@ -221,17 +221,28 @@ class GitCaches(unittest.TestCase):
             f = os.path.join(d, "x.json")
             with open(f, "w") as fh:
                 fh.write("{}")
-            a, b = registry.hash_object(f), registry.hash_object(f)
-            self.assertEqual(a, b)
-            self.assertEqual(len(self.calls), 1)
+            a = registry.hash_object(f)
             st = os.stat(f)
             with open(f, "w") as fh:
-                fh.write("[]")                                             # same size
-            os.utime(f, ns=(st.st_atime_ns, st.st_mtime_ns))               # even with the old mtime put back
+                fh.write("[]")                                             # same size, possibly the same clock tick
+            os.utime(f, ns=(st.st_atime_ns, st.st_mtime_ns))               # and the old mtime put back
             c = registry.hash_object(f)
-            self.assertEqual(len(self.calls), 2)                           # ctime moved: hashed again
-            self.assertNotEqual(a, c)
+            self.assertNotEqual(a, c)                                      # a just-written file is never remembered
             self.assertEqual(c, registry.git("hash-object", f))
+            self.assertEqual(len(self.calls), 3)
+
+    def test_an_old_file_is_remembered_until_it_changes(self):
+        with tempfile.TemporaryDirectory() as d:
+            f = os.path.join(d, "x.json")
+            with open(f, "w") as fh:
+                fh.write("{}")
+            later = os.stat(f).st_ctime + 10
+            with mock.patch.object(registry.time, "time", lambda: later):
+                a, b = registry.hash_object(f), registry.hash_object(f)
+            self.assertEqual((a, len(self.calls)), (b, 1))                 # older than RACY_S: one git call
+            with open(f, "w") as fh:
+                fh.write("[1]")
+            self.assertNotEqual(registry.hash_object(f), a)                # size and ctime moved: hashed again
 
 
 class StatusCli(unittest.TestCase):
