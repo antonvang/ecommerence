@@ -3092,3 +3092,14 @@ For råvarer og FX (K2): lukket = `moves.off_hours` (21g, Binances egne vinduer)
   - (3) gennemsnitlig afregnet funding pr. lukket vindue > c for det instrument, før en handelsregel må foreslås.
   Uden (3) er resultatet "mekanisme bekræftet, ingen handlebar carry" (SCREEN_FAIL for handel).
 - **UNTESTABLE / tidligste test:** som K1 (12 komplette weekender, tidligst 2027-01-18; ingen tal før).
+
+### 21y præcisering (2026-10-24 kl. 23:34, før kode og før nogen måling)
+1. **Manglende bog:** har indgangsscanningen ingen `book_rt` (bogfejl eller ikke målt), udelades parret fra K1 og
+   K2's carry og tælles som "uden omkostning". Der gættes ingen omkostning.
+2. **Status før 12 komplette weekender:** `NO_DECISION` (data indsamles). `UNTESTABLE` bruges først, hvis der pr.
+   2027-03-31 stadig er færre end 12.
+3. **K2's weekender for råvarer/FX:** en lukket time hører til weekenden med lørdagen i samme UTC-uge (fredag →
+   lørdag efter, søndag → lørdag før). Komplet = ≥ 44 brugbare lukkede timer.
+4. **Placebo for K2 (BTC, ETH):** vinduerne er aktiernes WEEKEND mod RTH.
+5. **Carry-positionens fortegn:** præmiens fortegn i weekendens første brugbare lukkede time, låst for hele vinduet.
+   Funding tælles for afregninger i [første lukkede bar, sidste lukkede bar + 1 time).
