@@ -125,3 +125,10 @@ positivt gennemsnit; (e) det ubetingede 24 t-afkast som sammenligning, gemt denn
   udvidet kryptoliste kræver en ny ændring og flere depth-kald.
 - *Drop:* koster intet og passer med m21c, m21f og m21h, som alle er nul på døgnniveau. Ulempen er, at en reel
   likviditetspræmie i krak (Nagel 2012) aldrig bliver testet.
+
+## Status 2026-10-24 kl. 18:31: AFVENTER BRUGERENS BESLUTNING (nedprioriteret)
+
+Brugerens foreløbige prioritering (master follow-up "SPOT–PERP LEAD/LAG" 2026-10-24 ca. kl. 18:30): den næste
+alfa-plads bruges ikke på denne hypotese. Indtil en eksplicit beslutning foreligger: leave-one-day-out køres ikke, der
+oprettes ingen LÅS, intet alfabudget bruges, og train3 og validation3 læses ikke for den. Oplægget bevares uændret.
+Den er **ikke** markeret DROPPED; det er brugerens afgørelse.
