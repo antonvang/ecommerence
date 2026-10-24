@@ -2229,3 +2229,13 @@ alfa eller periode ændres.
 6. **Fremadrettet udfald (`opportunity.outcome`):** ved den første scanning mindst 24 timer efter en analysepost gemmes
    markedets log-afkast fra bevægelsens time til +24 t. Det er data til en senere, låst test; ingen kode læser dem til
    en afgørelse før en sådan lås.
+
+### Ændring 21a (2026-10-24 kl. 14:09, før kode): analyseposten får makrokalenderen
+
+Analyseposten (`opportunity.move`, ændring 21 punkt 5) får feltet `macro`: planlagte FOMC-beslutninger og BLS'
+CPI- og beskæftigelsesudgivelser, hvis offentliggørelsestidspunkt ligger fra 3 timer før bevægelsens time til dens
+slutning, læst med ændring 14's tolkere (`ingest.parse_fomc`, `ingest.parse_bls`) fra
+`www.federalreserve.gov/monetarypolicy/fomccalendars.htm` og `www.bls.gov/schedule/<år>/home.htm` (begge allerede
+tilladte værter, kun GET), højst én gang i døgnet pr. kørende proces. Kontrolleret 2026-10-24: 8 FOMC-møder og 24
+BLS-udgivelser i 2026 tolkes (næste FOMC 2026-10-28 18:00 UTC). En fejl i hentningen skrives i feltet og stopper
+intet. Kun beskrivende; intet afgøres eller handles.
