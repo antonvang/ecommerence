@@ -2124,3 +2124,15 @@ laboratoriet.
 5. **Forbehold, nævnt før screening:** Upbits kendte kursspring sker ved annonceringen og i den første handelstime;
    t = første handel + 1 time måler det, der kommer efter. Kataloget kan vise en for sen dato (5 % i valideringen) og
    dermed en falsk ny notering; reglen i punkt 2 er en grov heuristik og kan fjerne rigtige noteringer.
+
+## Ændring 17i (2026-10-24): U1F — Upbit-KRW-noteringernes fald mod BTC gentages fremad — før data findes
+
+**Beslutning:** brugeren 2026-10-24 ("Ja jeg godkender", svar på forslaget i
+`research/studies/DISCOVERY_2026-10-24.md`). Kun måling; intet handles.
+
+1. **Låst tekst:** `research/drafts/U1F_UPBIT_FREMAD.md` (git-blob 7eb45722ec1fcf1c4ac15456b0d0d4260985450e, sha256 881c17c86989b3e9c40eab34c9f5b1458b2cb13472928b0c7a76c272444b81e8), skrevet før nogen begivenhed i
+   stikprøven findes (første handel ≥ 2026-10-25 00:00 UTC).
+2. **Fejlrate:** egen familie-α = 0,05 med Holm over `sar_7d` og `sar_1d`, uden for alle andre budgetter. Ændring 17's
+   nøgler `upbit_listing|sar_1d|m17h` og `upbit_listing|sar_7d|m17h` forbliver SCREEN_FAIL og låses ikke.
+3. **Data:** CoinMetrics' katalog og Binance' månedsarkiver (begge tilladte værter) læses én gang ved målingen. Koden
+   skrives, når data findes, og må ikke ændre den låste tekst. Ingen ny vært, ingen indsamler.
