@@ -47,11 +47,17 @@ class Curve(unittest.TestCase):
 
         def get(u):
             urls.append(u)
+            if u.endswith("/fapi/v1/exchangeInfo"):                                 # 21x point 2
+                return json.dumps({"symbols": [{"symbol": "ETHUSDT", "status": "SETTLING"},
+                                               {"symbol": "XAUUSDT", "status": "TRADING"}]}).encode()
             if "BTCUSDT" in u:
                 raise OSError("down")
             return json.dumps(book()).encode()
         r = capacity.run(db, get, NOW, sleep=lambda s: None)
-        self.assertEqual((r["books"], r["errors"]), (len(uni) - 1, 1))
+        self.assertEqual((r["books"], r["errors"], r["not_trading"]), (len(uni) - 2, 1, 1))
+        self.assertEqual(urls[0], "https://fapi.binance.com/fapi/v1/exchangeInfo")
+        urls = urls[1:]
+        self.assertFalse(any("ETHUSDT" in u for u in urls))                         # no book call for SETTLING
         self.assertTrue(all(u.endswith("&limit=500") for u in urls))
         self.assertIn("https://data-api.binance.vision/api/v3/depth?symbol=ABCUSDT&limit=500", urls)
         self.assertTrue(all(u.startswith(("https://fapi.binance.com/fapi/v1/depth?", "https://data-api.binance.vision/api/v3/depth?"))
@@ -64,6 +70,19 @@ class Curve(unittest.TestCase):
         self.assertEqual([x["size_usd"] for x in latest["books"]["ABCUSDT.SPOT"]], list(capacity.SIZES))
         self.assertEqual(latest["books"]["ABCUSDT.SPOT"][0]["label"], "nutidig, ikke historisk")
         self.assertNotIn("BTCUSDT", latest["books"])
+        self.assertEqual(latest["missing"]["ETHUSDT"], {"kind": "not_trading", "detail": "SETTLING"})
+        self.assertEqual(latest["missing"]["BTCUSDT"]["kind"], "error")
+
+    def test_without_exchange_info_the_curve_runs_as_before(self):
+        db = DB(":memory:")
+
+        def get(u):
+            if "exchangeInfo" in u:
+                raise OSError("down")
+            return json.dumps(book()).encode()
+        r = capacity.run(db, get, NOW, sleep=lambda s: None)
+        self.assertEqual((r["errors"], r["not_trading"]), (0, 0))
+        self.assertEqual(r["books"], len(capacity.universe(db, NOW)))
 
 
 if __name__ == "__main__":

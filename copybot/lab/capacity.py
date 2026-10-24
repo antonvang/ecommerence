@@ -57,9 +57,21 @@ def run(db, get, now=None, sleep=time.sleep):
     now = now or time.time()
     if not due(db, now):
         return {"skipped": "less than 23 h since the last curve"}
-    done, errors = 0, 0
+    done, errors, skipped = 0, 0, 0
+    status = {}
+    try:                                                         # 21x point 2: one exchangeInfo per run
+        status = {x["symbol"]: x.get("status") for x in json.loads(get(f"{PERP}/fapi/v1/exchangeInfo"))["symbols"]}
+    except Exception:                                            # noqa: BLE001 - without it the curve runs as before
+        status = {}
     for inst in universe(db, now):
         src = url(inst)
+        st = None if inst.endswith(SPOT_SUFFIX) else status.get(inst)
+        if st is not None and st != "TRADING":
+            db.append("observations", ts=int(now), detector=DETECTOR, source=f"{PERP}/fapi/v1/exchangeInfo",
+                      instrument=inst, metric="not_trading", value=None, threshold=None, flagged=0,
+                      payload={"status": st, "rule": "research/PROTOCOL_V3.md amendment 21x point 2"})
+            skipped += 1
+            continue
         try:
             d = json.loads(get(src))
             bids = [(float(p), float(q)) for p, q in d.get("bids") or []]
@@ -80,17 +92,22 @@ def run(db, get, now=None, sleep=time.sleep):
                                                   "rule": "research/PROTOCOL_V3.md amendment 21v"})
             done += 1
         sleep(PACE_S)
-    return {"books": done, "errors": errors}
+    return {"books": done, "errors": errors, "not_trading": skipped}
 
 
 def latest(db):
     """The newest curve per instrument: {inst: {"ts", "rows": [payload per size]}} (for the dashboard)."""
     last = db.one("SELECT MAX(ts) FROM observations WHERE detector=?", DETECTOR)[0]
     if last is None:
-        return {"ts": None, "books": {}}
+        return {"ts": None, "books": {}, "missing": {}}
     out = {}
     for r in db.q("SELECT instrument, metric, payload FROM observations WHERE detector=? AND ts>=? AND metric LIKE 'rt_%' "
                   "ORDER BY id", DETECTOR, last - 3600):
         p = json.loads(r["payload"]) if isinstance(r["payload"], str) else r["payload"]
         out.setdefault(r["instrument"], {})[p["size_usd"]] = p
-    return {"ts": last, "books": {k: [v[s] for s in sorted(v)] for k, v in sorted(out.items())}}
+    meta = {}
+    for r in db.q("SELECT instrument, metric, payload FROM observations WHERE detector=? AND ts>=? AND metric IN "
+                  "('error', 'not_trading') ORDER BY id", DETECTOR, last - 3600):
+        p = json.loads(r["payload"]) if isinstance(r["payload"], str) else r["payload"]
+        meta[r["instrument"]] = {"kind": r["metric"], "detail": p.get("status") or p.get("error")}
+    return {"ts": last, "books": {k: [v[s] for s in sorted(v)] for k, v in sorted(out.items())}, "missing": meta}

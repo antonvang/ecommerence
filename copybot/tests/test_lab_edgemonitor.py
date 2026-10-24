@@ -75,6 +75,49 @@ class Monitor(unittest.TestCase):
         self.assertEqual(r["measures"]["M5"]["status"], em.UNSUPPORTED)
         self.assertEqual(r["measures"]["M1"]["n_days"], em.WINDOW_DAYS)      # the window is the last 28 days
 
+    def test_history_is_as_of_each_closed_day(self):
+        now = ledger(self.db, "FWD_i", [1.0] * 5, fills=0)
+        h = em.history(self.db, "FWD_i", now, days=3)
+        self.assertEqual([x["measures"]["M1"]["n_days"] for x in h], [3, 4, 5])
+        self.assertEqual([x["asof"] % DAY for x in h], [DAY - 1] * 3)
+        self.assertTrue(all(x["measures"]["M3"]["status"] == em.INSUFFICIENT for x in h))     # M3 only now
+        later = T0 + 5 * DAY + 3 * 3600                                    # a mark after the as-of time is not read
+        self.db.append("sim_equity", exp_id="FWD_i", ts=later, equity=1.0, cash=1.0, exposure=0, peak=1.0, drawdown=0)
+        em._HIST.clear()
+        self.assertEqual(em.history(self.db, "FWD_i", now, days=3)[-1]["measures"]["M1"]["mean_usd"], 1.0)
+
+    def test_boundaries_missing_data_and_account_types(self):
+        r = lambda led, **kw: em.ledger(self.db, led, ledger(self.db, led, **kw))
+        # M2: > 1.25 and > 2.0 are strict; exactly at the line is the milder status
+        self.assertEqual(r("FWD_m1", nets=[1] * 3, fills=30, slip=0.0004 * 1.25)["measures"]["M2"]["status"], em.STABLE)
+        self.assertEqual(r("FWD_m2", nets=[1] * 3, fills=30, slip=0.0004 * 2.0)["measures"]["M2"]["status"], em.SUSPECT)
+        self.assertEqual(r("FWD_m3", nets=[1] * 3, fills=29, slip=0.0004 * 9)["measures"]["M2"]["status"],
+                         em.INSUFFICIENT)                                   # 29 fills: below the sample
+        self.assertEqual(r("SHADOW_m4", nets=[1] * 3, fills=30, slip=0.0004 * 2.1)["measures"]["M2"]["status"],
+                         em.UNSUPPORTED)                                    # shadow ledgers keep M2
+        # M4: > 30 s strict
+        self.assertEqual(r("FWD_m5", nets=[1] * 3, fills=30, age=30)["measures"]["M4"]["status"], em.STABLE)
+        # M1: 13 days insufficient, 14 measured; one outlier day decides nothing alone
+        self.assertEqual(r("FWD_m6", nets=[-5] * 13)["measures"]["M1"]["status"], em.INSUFFICIENT)
+        m1 = r("FWD_m7", nets=[2, 1, 3, 2, 1, 2, 3, 1, 2, 2, 1, 3, 2, -200])["measures"]["M1"]
+        self.assertEqual((m1["n_days"], m1["status"]), (14, em.SUSPECT))   # mean < 0, but p is not < 0.05
+        self.assertGreater(m1["p_one_sided"], 0.05)
+        # M5: >= 0.75 inclusive; a non-positive net has no share
+        m5 = r("FWD_m8", nets=[30, 30, 30] + [0.5] * 23 + [-2.5, -2.5])["measures"]["M5"]      # exactly 28 days
+        self.assertAlmostEqual(m5["share"], 90 / 96.5)
+        self.assertEqual(m5["status"], em.SUSPECT)
+        self.assertIsNone(r("FWD_m9", nets=[-1] * 30)["measures"]["M5"]["share"])
+        # a fill without a cost model is left out of M2, not guessed
+        led = "FWD_m10"
+        now = ledger(self.db, led, nets=[1] * 3, fills=30)
+        self.db.append("sim_orders", order_id="x", exp_id=led, ts=now - 100, instrument="X", side="buy", qty=1,
+                       limit_px=None, style="taker", reduce_only=0, signal_ref="x@1", cost_model=None)
+        self.db.append("sim_fills", fill_id="x|0", order_id="x", exp_id=led, ts=now - 100, instrument="X", side="buy",
+                       px=1.0, qty=1.0, fee=0.0, slippage=0.5, liquidity="taker", mid=1.0, book_ts=now - 100.5)
+        self.assertEqual(em.ledger(self.db, led, now)["measures"]["M2"]["n_fills"], 30)
+        # an account with no marks at all
+        self.assertEqual(em.ledger(self.db, "FWD_none", T0)["status"], em.INSUFFICIENT)
+
     def test_the_view_writes_nothing(self):
         now = ledger(self.db, "FWD_h", [1, 2], fills=3)
         before = self.db.one("SELECT COUNT(*) FROM events")[0], self.db.one("SELECT COUNT(*) FROM observations")[0]

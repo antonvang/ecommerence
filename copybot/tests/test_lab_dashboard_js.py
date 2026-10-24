@@ -126,8 +126,27 @@ class Dashboard(unittest.TestCase):
         sec = html[html.index('id="markets"'):html.index('<section class="money"')]
         self.assertNotRegex(sec, r"\d+[.,]\d+\s*%|\$\s*\d|USD\s*\d")              # no hardcoded figures in the markup
         self.assertIn("Ingen scanning endnu", js)                                   # honest empty state
-        for wired in ("v.edge_monitor", "v.capacity_curve", "#rs-monitor", "#rs-curve", "Ingen kapacitetskurve endnu"):
+        for wired in ("v.edge_monitor", "v.capacity_curve", "#mo-table", "#ca-table", "Ingen kapacitetskurve endnu"):
             self.assertIn(wired, js)                                                 # 21v/21w panels
+
+    def test_the_war_room_is_wired_and_honest(self):                                # LINUX_DRIFT 2026-10-24 23:11
+        js = script()
+        with open(os.path.join(HERE, "lab", "dashboard.html"), encoding="utf-8") as f:
+            html = f.read()
+        nav = html[html.index('<nav class="wr-nav"'):html.index("</nav>")]
+        for anchor in re.findall(r'href="#([a-z]+)"', nav):                          # every nav link has its section
+            self.assertRegex(html, rf'<section[^>]* id="{anchor}"')
+        self.assertIn('api("/api/events")', js)
+        self.assertIn("renderEconomy(p)", js)
+        self.assertIn("loadEvents()", js)
+        for sec in ("events", "monitor", "economy", "capacity"):                     # no hardcoded figures in markup
+            start = html.index(f'id="{sec}"')
+            body = html[start:html.index("</section>", start)]
+            self.assertNotRegex(body, r"\d+[.,]\d+\s*%|\$\s*\d|\d+\s*USD|\d+\s*bp")
+        self.assertIn("ikke historisk", html)                                       # capacity is current, not history
+        self.assertIn("equity summeres ikke", js)
+        self.assertIn('if (reduce || from == null', js)                               # tweens respect reduced motion
+        self.assertIn("prefers-reduced-motion: reduce){.wr-new td", html)
 
 
 if __name__ == "__main__":

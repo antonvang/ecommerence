@@ -51,6 +51,14 @@ def view(db, now=None):
         pts = sorted(spark.get(sym, {}).items())[-SPARK_HOURS:]
         status = ("fejl" if recent_problems else "ingen data" if ts is None else
                   "forældet" if now - ts > FRESH_S else "frisk")
+        book_err = rt[2].get("error") if rt else "ingen bogmåling"
+        quality = ("god" if status == "frisk" and not book_err else "begrænset" if status == "frisk" else "dårlig")
+        strength = max([abs(p["z_1h"]) / moves.Z1 if p.get("z_1h") is not None else 0.0,
+                        abs(p["z_24h"]) / moves.Z24 if p.get("z_24h") is not None else 0.0,
+                        p["volume_ratio"] / moves.VOLUME_RATIO if p.get("volume_ratio") is not None else 0.0])
+        inv = moves_ev.get(sym)
+        research = ((inv.get("triage") or {}).get("verdict") or "undersøgt") if inv else \
+            ("ingen flag" if not p.get("flags") else "afventer undersøgelse")
         out.append({
             "symbol": sym, "label": label, "class": cls, "venue": "Binance USD-M perpetual", "status": status,
             "scan_ts": ts, "data_age_s": (now - p["close_s"]) if p.get("close_s") else None,
@@ -59,10 +67,15 @@ def view(db, now=None):
             "premium": ((p["mark"] - p["index"]) / p["index"]) if p.get("index") else None,
             "book_rt": rt[1] if rt else None, "spread": (b.get("spread") or (None, None))[1],
             "book_error": (rt[2].get("error") if rt else None), "off_hours": bool(rt[2].get("off_hours")) if rt else None,
+            "funding_rate": p.get("funding_rate"), "next_funding_ts": p.get("next_funding_ts"),       # 21x point 1
+            "quality": quality, "quality_why": [x for x in (None if status == "frisk" else f"scan {status}",
+                                                            book_err) if x],
+            "signal_strength": strength, "research_status": research,
             "flags": p.get("flags") or [], "spark": [[o, px] for o, px in pts if px is not None],
             "problems": [{"ts": t, "kind": k, "detail": d} for t, k, d in recent_problems],
-            "investigation": moves_ev.get(sym)})
+            "investigation": inv})
     return {"markets": out, "last_scan_ts": last_scan, "now": now,
             "cadence": "hver time kl. HH:02 UTC (ikke realtid)",
             "thresholds": {"z_1h": moves.Z1, "z_24h": moves.Z24, "volume_ratio": moves.VOLUME_RATIO},
+            "strength_note": "signalstyrke = største af |z_1h|/4, |z_24h|/3 og volumen/5 (1 = flaggrænsen)",
             "label": "observationer, ikke handelsmuligheder; et flag starter en undersøgelse, aldrig en ordre"}

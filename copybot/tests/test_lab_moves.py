@@ -42,7 +42,8 @@ def market(jumps=None, fail=(), stale=(), short=(), depth=True):
                 return klines(end=NOW - 120 - 4 * H)
             return klines(n=100 if sym in short else 722, jump=jumps.get(sym, 0.0), seed=sum(map(ord, sym)))
         if "/premiumIndex" in url:
-            return {"markPrice": "100.1", "indexPrice": "100.0"}
+            return {"markPrice": "100.1", "indexPrice": "100.0", "lastFundingRate": "0.00012",
+                    "nextFundingTime": (NOW // (8 * H) + 1) * 8 * H * 1000}
         if "/depth" in url:
             if not depth:
                 return {"bids": [], "asks": []}
@@ -78,6 +79,9 @@ class Detect(unittest.TestCase):
         self.assertIn("boom", by[("CLUSDT", "error")]["payload"]["error"])
         self.assertIn("min old", by[("BZUSDT", "error")]["payload"]["error"])
         self.assertEqual(by[("NATGASUSDT", "history_short")]["value"], 98)
+        p = by[("BTCUSDT", "z_1h")]["payload"]                                 # 21x point 1: descriptive only
+        self.assertEqual((p["funding_rate"], p["next_funding_ts"]), (0.00012, (NOW // (8 * H) + 1) * 8 * H))
+        self.assertFalse(any(f["metric"].startswith("funding") for f in p["flags"]))
         self.assertAlmostEqual(by[("XAUUSDT", "premium")]["value"], 0.001)
         lg = by[("XAUUSDT", "z_1h")]["payload"]                                       # amendment 21p: the log
         self.assertAlmostEqual(lg["median_qvol_720"] * lg["volume_ratio"], lg["quote_volume_1h"])

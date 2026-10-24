@@ -133,7 +133,10 @@ def detect(get, post, now):
                  for m, v, t in (("z_1h", s["z_1h"], Z1), ("z_24h", s["z_24h"], Z24),
                                  ("volume_ratio", s["volume_ratio"], VOLUME_RATIO))
                  if v is not None and (abs(v) >= t if m != "volume_ratio" else v >= t)]
+        fr = prem.get("lastFundingRate")
         p = {**base, **s, "mark": mark, "index": index, "flags": flags, "version": version(),     # 21p
+             "funding_rate": float(fr) if fr not in (None, "") else None,                         # 21x point 1
+             "next_funding_ts": int(prem["nextFundingTime"]) // 1000 if prem.get("nextFundingTime") else None,
              "klines_sha256": hashlib.sha256(json.dumps(kl, separators=(",", ":")).encode()).hexdigest()}
         out.append(obs(DETECTOR, src, sym, "z_1h", s["z_1h"], Z1, abs(s["z_1h"]) >= Z1, p))
         out.append(obs(DETECTOR, src, sym, "z_24h", s["z_24h"], Z24, abs(s["z_24h"]) >= Z24, p))

@@ -314,6 +314,48 @@ details.more[open]>summary{margin-bottom:12px}
 .gnode{transition:transform 1.2s cubic-bezier(.4,.1,.2,1)}
 .na{color:var(--dim)} td .na,td.num{white-space:nowrap}
 @media (prefers-reduced-motion: reduce){.gnode{transition:none}.found.show{animation:none;opacity:1}}
+
+/* war room (LINUX_DRIFT 2026-10-24 23:11) */
+:root{--pos:#5fd39a;--neg:#ff6b6b;--neu:#9a958f;--warn:#f4b860;--err:#ff5d5d;--info:#7fb0ff}
+.wr-nav{position:sticky;top:0;z-index:20;display:flex;gap:4px;flex-wrap:wrap;align-items:center;padding:7px 8px;border:1px solid var(--line);
+  border-radius:12px;background:#0b0d11e6;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.wr-nav a{font:600 11px var(--mono);letter-spacing:.05em;color:var(--mute);padding:5px 10px;border-radius:8px;white-space:nowrap}
+.wr-nav a:hover,.wr-nav a:focus-visible{color:var(--sand);background:#ffffff08;text-decoration:none}
+.wr-nav .cnt{display:inline-block;min-width:16px;margin-left:5px;padding:0 5px;border-radius:999px;background:#f4b86022;color:var(--warn);font-size:10px;text-align:center}
+.wr-nav .cnt:empty{display:none}
+section[id]{scroll-margin-top:62px}
+.kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:0 0 12px}
+.kpi{border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:#0c0e12;min-width:0}
+.kpi .k{font:600 10px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+.kpi .v{font:700 17px var(--mono);font-variant-numeric:tabular-nums;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi .s{font:11px var(--mono);color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (max-width:900px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.q{display:inline-block;font:600 10px var(--mono);border-radius:6px;padding:2px 6px;border:1px solid var(--line);white-space:nowrap}
+.q.god{color:var(--pos);border-color:#5fd39a66} .q.begrænset{color:var(--warn);border-color:#f4b86066} .q.dårlig{color:var(--err);border-color:#ff5d5d66}
+.sbar{display:inline-block;width:64px;height:6px;border-radius:3px;background:#ffffff0d;vertical-align:middle;margin-left:6px;overflow:hidden}
+.sbar i{display:block;height:100%;border-radius:3px}
+.tagd{display:inline-block;font:600 9px var(--mono);letter-spacing:.06em;text-transform:uppercase;border-radius:5px;padding:1px 5px;border:1px solid var(--line);color:var(--mute);white-space:nowrap}
+.tagd.sim{color:#ffb38a;border-color:#d4512c66} .tagd.now{color:var(--info);border-color:#7fb0ff55} .tagd.ins{color:var(--dim)}
+.pos{color:var(--pos)} .neg{color:var(--neg)}
+@keyframes wrIn{0%{background:#f4b86026}100%{background:transparent}}
+.wr-new td,.ev.wr-new{animation:wrIn 2.4s ease-out}
+.stale-data{opacity:.55}
+.ev-list{display:grid;gap:8px}
+.ev{border:1px solid var(--line);border-left:3px solid var(--line);border-radius:10px;padding:9px 12px;background:#0c0e12}
+.ev.move{border-left-color:var(--warn)} .ev.data_pause{border-left-color:var(--info)} .ev.book_missing{border-left-color:var(--err)} .ev.onchain_revision{border-left-color:var(--violet)}
+.ev.old{opacity:.62}
+.ev .t{font-weight:700} .ev .m{font:11px var(--mono);color:var(--dim)}
+.ev details{margin-top:6px} .ev summary{cursor:pointer;font:600 11px var(--mono);color:var(--mute)}
+.ev .g{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:8px;font-size:12px}
+.ev h4{font:700 10px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--mute);margin:0 0 4px}
+@media (max-width:900px){.ev .g{grid-template-columns:1fr}}
+.hist{display:inline-flex;gap:2px;vertical-align:middle}
+.hist i{display:block;width:9px;height:14px;border-radius:2px;background:#ffffff14}
+.hist i.stabil{background:var(--pos)} .hist i.mist{background:var(--warn)} .hist i.ikke{background:var(--err)}
+.heat{display:inline-block;min-width:58px;padding:2px 6px;border-radius:5px;font:600 11px var(--mono);text-align:right}
+.cap-grp{font:700 10px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--mute);margin:12px 0 6px}
+.scroll table{min-width:100%}
+@media (prefers-reduced-motion: reduce){.wr-new td,.ev.wr-new{animation:none}}
 </style>
 </head>
 <body>
@@ -333,6 +375,13 @@ details.more[open]>summary{margin-bottom:12px}
     </div>
   </div>
 
+
+  <nav class="wr-nav" aria-label="Sektioner">
+    <a href="#overview">Overblik</a><a href="#markets">Scanner<span class="cnt" id="n-flags"></span></a>
+    <a href="#events">Hændelser<span class="cnt" id="n-events"></span></a><a href="#research">Forskning</a>
+    <a href="#monitor">Monitor</a><a href="#economy">Økonomi</a><a href="#capacity">Kapacitet</a>
+    <a href="#accounts">Konti</a><a href="#lanes">Baner</a><a href="#coverage">Data</a>
+  </nav>
   <div class="banner red" id="b-fail">LAB ER FAIL_CLOSED — ingen nye simulerede handler eller jobs, før et menneske rydder det. Ryd det i en terminal, når årsagen er væk: <span class="mono">python3 -m lab clear-fail-closed --reason "..."</span></div>
   <div class="banner amber" id="b-ctl"></div>
   <div class="banner amber" id="b-off"></div>
@@ -351,21 +400,45 @@ details.more[open]>summary{margin-bottom:12px}
       <button type="button" data-mkf="flag" aria-pressed="false">Kun flaggede</button>
       <span class="sp"></span>
       <label class="mk-sub" for="mk-sort">sortér</label>
-      <select id="mk-sort"><option value="z">|z| 1 t</option><option value="vol">volumen mod median</option>
+      <select id="mk-sort"><option value="signal">signalstyrke (dårlige data sidst)</option><option value="z">|z| 1 t</option>
+        <option value="fund">|funding|</option><option value="vol">volumen mod median</option>
         <option value="prem">|præmie|</option><option value="book">bogomkostning</option><option value="age">dataalder</option>
         <option value="name">navn</option></select>
     </div>
+    <div class="kpis" id="mk-kpis"></div>
     <div class="scroll" id="mk-table"><div class="sk" style="height:220px"></div></div>
     <div class="note" id="mk-foot"></div></section>
+
+  <section class="panel corner" id="events" aria-label="Markedshændelser"><h2>Markedshændelser og nyheder <span class="tagx" id="ev-note">henter …</span></h2>
+    <div class="mk-bar" role="toolbar" aria-label="Hændelsesfilter" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+      <div class="tabs" id="ev-tabs"><button type="button" class="on" data-evf="">alle</button><button type="button" data-evf="move">bevægelser</button>
+        <button type="button" data-evf="data_pause">datapauser</button><button type="button" data-evf="book_missing">bøger</button>
+        <button type="button" data-evf="onchain_revision">on-chain</button><button type="button" data-evf="current">kun aktuelle</button></div></div>
+    <div class="ev-list" id="ev-list"><div class="sk" style="height:120px"></div></div>
+    <div class="note" id="ev-foot"></div></section>
 
   <section class="panel corner" id="research" aria-label="Forskningspipeline"><h2>Forskningspipeline <span class="tagx" id="rs-note">henter …</span></h2>
     <div class="rs-stages" id="rs-stages"></div>
     <div class="rs-bar"><span class="mk-sub">status</span><select id="rs-filter"><option value="">alle</option></select><span id="rs-counts"></span></div>
     <div class="scroll" id="rs-table" style="max-height:420px"><div class="sk" style="height:160px"></div></div>
     <details class="fold"><summary>Fremadrettede tests og kapacitet</summary><div class="grid2"><div id="rs-forward"></div><div id="rs-capacity"></div></div></details>
-    <details class="fold" open><summary>Monitor for aftagende fordel (ændring 21w)</summary><div class="scroll" id="rs-monitor"></div></details>
-    <details class="fold"><summary>Nutidig kapacitetskurve fra dybe bøger (ændring 21v)</summary><div class="scroll" id="rs-curve"></div></details>
+
     <div class="note" id="rs-foot"></div></section>
+
+  <section class="panel corner" id="monitor" aria-label="Monitor for aftagende fordel"><h2>Monitor for aftagende fordel <span class="tagx" id="mo-note">ændring 21w · ingen automatisk handling</span></h2>
+    <div class="kpis" id="mo-kpis"></div>
+    <div class="scroll" id="mo-table"><div class="sk" style="height:160px"></div></div>
+    <div class="note" id="mo-foot"></div></section>
+
+  <section class="panel corner" id="economy" aria-label="Økonomi"><h2>Økonomi og P&amp;L <span class="tagx" id="ec-note"><span class="tagd sim">bogført simuleret</span> fra papirledgeren · ingen rigtige penge</span></h2>
+    <div class="kpis" id="ec-kpis"></div>
+    <div class="scroll" id="ec-table"><div class="sk" style="height:200px"></div></div>
+    <div class="note" id="ec-foot"></div></section>
+
+  <section class="panel corner" id="capacity" aria-label="Kapacitet"><h2>Kapacitet og likviditet <span class="tagx" id="ca-note"><span class="tagd now">nutidig likviditetsmåling</span> ikke historisk eksekverbarhed</span></h2>
+    <div class="kpis" id="ca-kpis"></div>
+    <div class="scroll" id="ca-table"><div class="sk" style="height:200px"></div></div>
+    <div class="note" id="ca-foot"></div></section>
 
   <section class="money" aria-label="Saldo og profit">
     <div class="mcard" id="m-bal"><div class="lab">Saldo (paper)</div><div class="big" id="bal">–</div><div class="sub" id="balsub"></div></div>
@@ -1136,7 +1209,7 @@ function setLink(state){
 }
 let fastBusy = false, slowAt = 0;
 /* ---------------- market scanner (LINUX_DRIFT 2026-10-24 22:23) ---------------- */
-const MK = {filter: "all", sort: "z", open: null, last: null};
+const MK = {filter: "all", sort: "signal", open: null, last: null, seen: null};
 const CLASS_DA = {crypto: "krypto", commodity: "råvare-perp", equity_etf: "aktiefond-perp", fx: "valuta-perp"};
 const VERDICT_DA = {REJECT_NOT_DIRECTIONAL: "afvist: kun volumen", REJECT_ILLIQUID: "afvist: illikvid", REJECT_TESTED: "afvist: testet (m21c)",
   NOT_SCREENED: "ikke screenet", FORWARD_ONLY: "kun fremad"};
@@ -1182,7 +1255,8 @@ function renderMarkets(v){
   MK.last = v;
   const sev = {fejl: 0, "ingen data": 0, "forældet": 1, frisk: 2};
   let rows = v.markets.filter(m => MK.filter === "all" || (MK.filter === "crypto" ? m.class === "crypto" : MK.filter === "tradfi" ? m.class !== "crypto" : (m.flags || []).length));
-  const key = {z: m => -Math.abs(m.z_1h ?? 0), vol: m => -(m.volume_ratio ?? 0), prem: m => -Math.abs(m.premium ?? 0),
+  const key = {signal: m => (m.quality === "dårlig" ? 1000 : 0) - (m.signal_strength ?? 0), fund: m => -Math.abs(m.funding_rate ?? 0),
+               z: m => -Math.abs(m.z_1h ?? 0), vol: m => -(m.volume_ratio ?? 0), prem: m => -Math.abs(m.premium ?? 0),
                book: m => -(m.book_rt ?? (m.book_error ? 1 : 0)), age: m => -(m.data_age_s ?? 1e12), name: m => m.label}[MK.sort];
   rows = rows.slice().sort((a, b) => { const x = key(a), y = key(b); return typeof x === "string" ? x.localeCompare(y) : x - y; });
   const fresh = v.markets.filter(m => m.status === "frisk").length, flagged = v.markets.filter(m => (m.flags || []).length).length;
@@ -1190,22 +1264,37 @@ function renderMarkets(v){
   if (!rows.length) { $("#mk-table").innerHTML = `<div class="empty">${v.last_scan_ts ? "Ingen markeder i dette filter." : "Ingen scanning endnu: scanneren kører hver time kl. HH:02 UTC."}</div>`; }
   else {
     const head = `<table><thead><tr><th>Marked</th><th>Kurs · seneste timer</th><th class="num">1 t</th><th class="num">24 t</th><th class="num">z 1 t</th>
-      <th class="num">Volumen</th><th class="num hide-s">Præmie</th><th class="num hide-s">Bog 5k</th><th>Status</th><th class="num hide-s">Data</th></tr></thead><tbody>`;
+      <th class="num">Volumen</th><th class="num">Signal</th><th class="num hide-s">Funding</th><th class="num hide-s">Præmie</th><th class="num hide-s">Bog 5k</th><th>Status · forskning</th><th>Kvalitet</th><th class="num hide-s">Data</th></tr></thead><tbody>`;
     const body = rows.map(m => {
       const open = MK.open === m.symbol;
       const sess = m.class === "crypto" ? "" : m.off_hours ? `<span class="pill off" title="Binance prissætter perpens indeks fra dens egen ordrebog (21g)">weekend/lukket</span>` : `<span class="pill">åbent marked</span>`;
-      return `<tr class="mk-row" tabindex="0" data-mk="${esc(m.symbol)}" aria-expanded="${open}">
+      const fk = (m.flags || []).map(f => `${m.symbol}|${f.metric}|${m.scan_ts}`), isNew = MK.seen && fk.some(k => !MK.seen.has(k));
+      const sc = Math.min(1, (m.signal_strength ?? 0)), scol = (m.signal_strength ?? 0) >= 1 ? "var(--warn)" : "var(--info)";
+      return `<tr class="mk-row${isNew ? " wr-new" : ""}${m.quality === "dårlig" ? " stale-data" : ""}" tabindex="0" data-mk="${esc(m.symbol)}" aria-expanded="${open}">
         <td><div class="mk-name">${esc(m.label)}</div><div class="mk-sub">${esc(m.symbol)} · ${esc(CLASS_DA[m.class] || m.class)} ${sess}</div></td>
         <td>${spark(m.spark)}<div class="mk-sub">${num(m.price, 6)}</div></td>
         <td class="num">${signed(m.ret_1h, 2)}</td><td class="num">${signed(m.ret_24h, 2)}</td>
         <td class="num">${zcell(m.z_1h, v.thresholds.z_1h)}</td>
         <td class="num">${m.volume_ratio == null ? na() : `<span class="${m.volume_ratio >= v.thresholds.volume_ratio ? "dn" : ""}">×${m.volume_ratio.toFixed(2)}</span>`}</td>
+        <td class="num" title="${esc(v.strength_note || "")}">${m.signal_strength == null ? na() : m.signal_strength.toFixed(2)}<span class="sbar"><i style="width:${(sc*100).toFixed(0)}%;background:${scol}"></i></span></td>
+        <td class="num hide-s" title="${m.next_funding_ts ? "næste afregning " + esc(utc(m.next_funding_ts)) : ""}">${m.funding_rate == null ? na() : `<span class="${m.funding_rate > 0 ? "up" : m.funding_rate < 0 ? "dn" : "flat"}">${(m.funding_rate*1e4).toFixed(2)} bp</span>`}</td>
         <td class="num hide-s">${m.premium == null ? na() : (m.premium*1e4).toFixed(1) + " bp"}</td>
         <td class="num hide-s">${m.book_error ? `<span class="dn">${esc(m.book_error)}</span>` : m.book_rt == null ? na() : (m.book_rt*1e4).toFixed(2) + " bp"}</td>
-        <td>${mkStatus(m)}</td><td class="num hide-s">${dur(m.data_age_s)}</td></tr>` + (open ? `<tr class="mk-detail"><td colspan="10">${mkDetail(m, v)}</td></tr>` : "");
+        <td>${mkStatus(m)}</td><td><span class="q ${esc(m.quality)}" title="${esc((m.quality_why || []).join("; ") || "frisk scanning og bog uden fejl")}">${esc(m.quality || "?")}</span></td><td class="num hide-s">${dur(m.data_age_s)}</td></tr>` + (open ? `<tr class="mk-detail"><td colspan="13">${mkDetail(m, v)}</td></tr>` : "");
     }).join("");
     $("#mk-table").innerHTML = head + body + "</tbody></table>";
   }
+  MK.seen = new Set(v.markets.flatMap(m => (m.flags || []).map(f => `${m.symbol}|${f.metric}|${m.scan_ts}`)));
+  $("#n-flags").textContent = flagged || "";
+  const top = v.markets.filter(m => m.quality !== "dårlig").sort((a, b) => (b.signal_strength ?? 0) - (a.signal_strength ?? 0))[0];
+  const poor = v.markets.filter(m => m.quality !== "god").length, off = v.markets.filter(m => m.off_hours).length;
+  const fund = v.markets.filter(m => m.funding_rate != null).sort((a, b) => Math.abs(b.funding_rate) - Math.abs(a.funding_rate))[0];
+  kpis("#mk-kpis", [
+    {k: "flag i seneste scan", v: flagged, s: `tærskler |z1|≥${v.thresholds.z_1h} · |z24|≥${v.thresholds.z_24h} · vol≥${v.thresholds.volume_ratio}×`},
+    {k: "stærkeste signal", v: top ? top.signal_strength : null, f: x => x.toFixed(2), s: top ? `${top.label} · 1 = flaggrænsen` : NA},
+    {k: "datakvalitet ikke god", v: poor, s: poor ? v.markets.filter(m => m.quality !== "god").map(m => m.symbol).join(", ") : "alle friske, bøger uden fejl", cls: poor ? "bad" : "good"},
+    {k: "største |funding|", v: fund ? fund.funding_rate * 1e4 : null, f: x => x.toFixed(2) + " bp", s: fund ? `${fund.symbol} · forudsagt, pr. periode` : "ikke målt endnu (21x)"},
+    {k: "TradFi lukket", v: off, s: "perp-indeks fra egen bog (21g)"}]);
   $("#mk-foot").textContent = "Observationer fra scannerens egne målinger (abnormal_move), ikke handelsmuligheder. Et flag starter en undersøgelse, aldrig en ordre. TradFi-perps er Binance-kontrakter, ikke guld, olie, aktieindeks eller valuta selv. Bogomkostning er uden gebyrer.";
 }
 document.addEventListener("click", e => {
@@ -1243,24 +1332,174 @@ function renderResearch(v){
   $("#rs-capacity").innerHTML = `<h3 class="mk-sub">Kapacitet pr. papirkonto</h3>` + table([
     {h:"Konto", f:c => `<span class="mono">${esc(c.ledger)}</span>`},
     {h:"Status", f:c => `<span class="st UNTESTABLE">${esc(c.status)}</span>`}], v.capacity, "Ingen papirkonti.") + (v.capacity.length ? `<div class="dim">${esc(v.capacity[0].why)}</div>` : "");
-  const em = v.edge_monitor || {ledgers: []}, M = ["M1", "M2", "M3", "M4", "M5"];
-  const mval = x => x.ratio != null ? num(x.ratio, 2) : x.p_one_sided != null ? "p " + Number(x.p_one_sided).toPrecision(2) : x.p95_s != null ? num(x.p95_s, 2) + " s" : x.share != null ? num(x.share, 2) : na();
-  $("#rs-monitor").innerHTML = table([
-    {h:"Konto", f:r => `<span class="mono">${esc(r.ledger)}</span>`},
-    {h:"Status", f:r => `<span class="st ${r.status === "stabil" ? "PASS" : r.status === "utilstrækkelige data" ? "NO_DECISION" : "REJECTED"}">${esc(r.status)}</span>` + (r.flagged_by.length ? `<div class="dim">udløst af ${esc(r.flagged_by.join(", "))}</div>` : "")},
-    ...M.map(k => ({h:k, num:1, f:r => { const x = r.measures[k]; return `${mval(x)}<div class="dim">${esc(x.status)}</div>`; }}))],
-    em.ledgers, "Ingen papirkonti.") + `<div class="dim">${M.map(k => em.ledgers[0] ? `${k}: ${esc(em.ledgers[0].measures[k].name)} (${esc(em.ledgers[0].measures[k].need)})` : "").join(" · ")}</div><div class="dim">${esc(em.action || "")} · ${esc(em.holm || "")}</div>`;
-  const cv = v.capacity_curve || {books: {}}, SZ = [500, 2000, 5000, 20000, 50000];
-  const books = Object.entries(cv.books);
-  $("#rs-curve").innerHTML = (cv.ts ? `<div class="dim">målt ${esc(new Date(cv.ts * 1000).toISOString().slice(0, 16).replace("T", " "))} UTC · rundtur uden gebyrer · nutidig, aldrig historisk · * = papirmotorens 20 niveauer kan ikke fylde størrelsen</div>` : "") + table([
-    {h:"Bog", f:b => `<span class="mono">${esc(b[0])}</span>`},
-    ...SZ.map(s => ({h:`${num(s, 0)} USD`, num:1, f:b => { const r = b[1].find(x => x.size_usd === s); return !r ? na() : r.censored ? `<span class="dim">for tynd</span>` : pct(r.round_trip, 3) + (r.fits_20_levels ? "" : "*"); }}))],
-    books, "Ingen kapacitetskurve endnu: den første måles ved næste news-watch-pass (højst én gang pr. 23 timer).");
+  renderMonitor(v.edge_monitor); renderCapacity(v.capacity_curve, v.capacity);
   $("#rs-note").textContent = `${v.records.length} afprøvede hypoteser og eksperimenter · statusser fra research-memory, aldrig slået sammen`;
   $("#rs-foot").textContent = v.notes.join(" · ");
 }
 $("#rs-filter").addEventListener("change", e => { RS.filter = e.target.value; if (RS.last) renderResearch(RS.last); });
 async function loadResearch(){ try { renderResearch(await api("/api/research")); } catch (e) { $("#rs-note").textContent = "kan ikke hente forskningspipelinen"; } }
+
+
+/* ---------------- war room (LINUX_DRIFT 2026-10-24 23:11) ---------------- */
+const KP = {};
+function kpis(sel, items){
+  const box = $(sel); if (!box) return;
+  if (box.children.length !== items.length) box.innerHTML = items.map(() => `<div class="kpi"><div class="k"></div><div class="v"></div><div class="s"></div></div>`).join("");
+  items.forEach((it, i) => {
+    const el = box.children[i], vEl = el.querySelector(".v"), key = sel + "|" + it.k, fmt = it.f || (x => num(x, 0));
+    el.querySelector(".k").textContent = it.k; el.querySelector(".s").textContent = it.s || "";
+    vEl.className = "v " + (it.cls || "");
+    if (it.v == null || typeof it.v !== "number") { vEl.innerHTML = it.v == null ? na() : esc(it.v); KP[key] = null; return; }
+    const from = KP[key], to = it.v; KP[key] = to;
+    if (reduce || from == null || from === to) { vEl.innerHTML = fmt(to); return; }
+    const t0 = performance.now(), T = 450;
+    const step = t => { const k = Math.min(1, (t - t0) / T), e = 1 - Math.pow(1 - k, 3); vEl.innerHTML = fmt(from + (to - from) * e); if (k < 1 && KP[key] === to) requestAnimationFrame(step); };
+    requestAnimationFrame(step);
+  });
+}
+const usd = (v, d=2) => v == null ? na() : `<span class="${v > 0 ? "pos" : v < 0 ? "neg" : ""}">${v > 0 ? "+" : v < 0 ? "−" : ""}${Math.abs(v).toLocaleString("en-US", {minimumFractionDigits: d, maximumFractionDigits: d})}</span>`;
+function eqSpark(rows, cap){
+  if (!rows || rows.length < 2) return `<span class="dim">for få marks</span>`;
+  const ys = rows.map(r => r.equity), lo = Math.min(cap, ...ys), hi = Math.max(cap, ...ys), w = 110, h = 26, n = ys.length;
+  const Y = y => (hi === lo ? h/2 : h - (y - lo) / (hi - lo) * (h - 2) - 1).toFixed(1);
+  const xy = ys.map((y, i) => `${(i/(n-1)*w).toFixed(1)},${Y(y)}`).join(" ");
+  const col = ys[n-1] >= cap ? "var(--pos)" : "var(--neg)";
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img" aria-label="equity over ${n} marks"><line x1="0" x2="${w}" y1="${Y(cap)}" y2="${Y(cap)}" stroke="#ffffff22" stroke-dasharray="2 3"/><polyline points="${xy}" fill="none" stroke="${col}" stroke-width="1.4"/></svg>`;
+}
+
+/* events */
+const EV = {filter: "", seen: null, last: null};
+const KIND_DA = {move: "bevægelse", data_pause: "datapause", book_missing: "bog mangler", onchain_revision: "on-chain-revision"};
+const EXPL_DA = {volume_only: "kun volumen", routine_tail: "almindelig hale", unexplained: "uforklaret", off_hours: "uden for åbningstid", news: "nyhed", macro: "makroudgivelse", co_move: "fælles bevægelse"};
+function evCard(e, isNew){
+  const ev = e.evidence || {}, ex = [];
+  if (e.kind === "move") {
+    ex.push(`z 1 t ${num(ev.z_1h, 2)} · z 24 t ${num(ev.z_24h, 2)} · 1 t ${pct(ev.ret_1h, 2)} · 24 t ${pct(ev.ret_24h, 2)} · volumen ×${num(ev.volume_ratio, 1)}`);
+    ex.push(`σ 1 t ${pct(ev.sigma_1h, 3)} · haler ≥4σ på 720 t: ${num(ev.tails_720h, 0)} · bog 5k ${ev.book_round_trip == null ? NA : (ev.book_round_trip*1e4).toFixed(1) + " bp"}`);
+  } else for (const [k, v] of Object.entries(ev)) ex.push(`${esc(k)}: ${esc(v ?? NA)}`);
+  const news = (e.news || []).length ? `<ul>${e.news.map(n => `<li>${n.url ? `<a href="${esc(n.url)}" target="_blank" rel="noopener noreferrer">${esc(n.title)}</a>` : esc(n.title)} <span class="dim">${esc(n.source || "")} · ${utc(n.published_ts)}</span></li>`).join("")}</ul><div class="dim">${esc(e.news_note || "")}</div>` : `<div class="dim">${esc(e.news_note || "ingen nyhedskilde for denne type")}</div>`;
+  const macro = (e.macro || []).length ? `<div>${e.macro.map(x => esc(x.event) + " " + utc(x.ts)).join(", ")}</div>` : (e.macro_note ? `<div class="dim">${esc(e.macro_note)}</div>` : "");
+  const alt = (e.explanations || []).length ? e.explanations.map(x => `<span class="pill">${esc(EXPL_DA[x] || x)}</span>`).join(" ") : `<span class="dim">ingen registreret</span>`;
+  const when = e.kind === "move" ? `bevægelse ${utc(e.occurred_ts)}–${(e.occurred_end_ts ? utc(e.occurred_end_ts).slice(11) : "")} · Copybot vidste det ${utc(e.known_ts)}` : `registreret ${utc(e.known_ts)}`;
+  return `<div class="ev ${esc(e.kind)}${e.current ? "" : " old"}${isNew ? " wr-new" : ""}">
+    <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><span class="t">${esc(e.title)}</span>
+      <span>${e.current ? `<span class="pill flag">aktuel</span>` : `<span class="pill">ældre end 6 t</span>`} <span class="pill">${esc(KIND_DA[e.kind] || e.kind)}</span>${e.verdict ? ` <span class="pill rej">${esc(VERDICT_DA[e.verdict] || e.verdict)}</span>` : ""}</span></div>
+    <div class="m">${when}${(e.markets || []).length ? " · markeder: " + esc(e.markets.join(", ")) : ""}${e.ledger ? " · konto " + esc(e.ledger) : ""}</div>
+    <details><summary>data, forklaringer og næste skridt</summary><div class="g">
+      <div><h4>Data</h4>${ex.map(x => `<div>${x}</div>`).join("")}${(e.co_moving || []).length ? `<div class="dim">samtidig |z 1 t| ≥ 2: ${esc(e.co_moving.join(", "))}</div>` : ""}</div>
+      <div><h4>Nyheder og makro</h4>${news}${macro}</div>
+      <div><h4>Alternative forklaringer · næste skridt</h4><div>${alt}</div>${e.reason ? `<div class="dim">${esc(e.reason)}</div>` : ""}<div style="margin-top:4px">næste: ${esc(e.next || "–")}</div></div>
+    </div></details></div>`;
+}
+function renderEvents(v){
+  EV.last = v;
+  let rows = v.events.filter(e => !EV.filter || (EV.filter === "current" ? e.current : e.kind === EV.filter));
+  const nCur = v.events.filter(e => e.current).length;
+  $("#n-events").textContent = nCur || "";
+  $("#ev-note").textContent = `${v.events.length} hændelser de seneste ${v.lookback_h} t · ${nCur} aktuelle · ${v.news_items_72h} nyhedsposter indsamlet`;
+  $("#ev-list").innerHTML = rows.length ? rows.slice(0, 60).map(e => evCard(e, EV.seen && !EV.seen.has(e.kind + e.id))).join("") : `<div class="empty">Ingen registrerede hændelser i dette filter de seneste ${v.lookback_h} timer.</div>`;
+  EV.seen = new Set(v.events.map(e => e.kind + e.id));
+  $("#ev-foot").textContent = v.notes.join(" · ");
+}
+document.addEventListener("click", e => { const b = e.target.closest("[data-evf]"); if (!b) return;
+  EV.filter = b.dataset.evf; document.querySelectorAll("[data-evf]").forEach(x => x.classList.toggle("on", x === b)); if (EV.last) renderEvents(EV.last); });
+async function loadEvents(){ try { renderEvents(await api("/api/events")); } catch (e) { $("#ev-note").textContent = "kan ikke hente hændelser"; } }
+
+/* edge monitor (21w) */
+const MO_CLS = {"stabil": "stabil", "forringelse mistænkt": "mist", "fordel ikke længere støttet": "ikke"};
+function renderMonitor(em){
+  em = em || {ledgers: []};
+  const M = ["M1", "M2", "M3", "M4", "M5"], L = em.ledgers;
+  const by = em.by_status || {};
+  kpis("#mo-kpis", [
+    {k: "konti", v: L.length, s: "alle papir- og skyggekonti"},
+    {k: "utilstrækkelige data", v: by["utilstrækkelige data"] || 0, s: "M1 kræver 14 afsluttede døgn"},
+    {k: "stabil", v: by["stabil"] || 0, cls: "good"},
+    {k: "forringelse mistænkt", v: by["forringelse mistænkt"] || 0, cls: (by["forringelse mistænkt"] ? "hot" : "")},
+    {k: "ikke længere støttet", v: by["fordel ikke længere støttet"] || 0, cls: (by["fordel ikke længere støttet"] ? "bad" : "")}]);
+  const mval = x => x.ratio != null ? num(x.ratio, 2) : x.p_one_sided != null ? "p " + Number(x.p_one_sided).toPrecision(2) : x.p95_s != null ? num(x.p95_s, 2) + " s" : x.share != null ? num(x.share, 2) : na();
+  const nOf = x => x.n_days != null ? `${x.n_days} d` : x.n_fills != null ? `${x.n_fills} fills` : "";
+  $("#mo-table").innerHTML = table([
+    {h: "Konto", f: r => `<span class="mono">${esc(r.ledger)}</span>`},
+    {h: "Status", f: r => `<span class="q ${r.status === "stabil" ? "god" : r.status === "utilstrækkelige data" ? "" : r.status === "forringelse mistænkt" ? "begrænset" : "dårlig"}">${esc(r.status)}</span>` + (r.flagged_by.length ? `<div class="dim">udløst af ${esc(r.flagged_by.join(", "))}</div>` : "")},
+    {h: "14 døgn as-of", f: r => `<span class="hist">${(r.history || []).map(h => `<i class="${MO_CLS[h.status] || ""}" title="${esc(utc(h.asof))}: ${esc(h.status)} · M1 ${h.measures.M1.n_days ?? 0} døgn · M2 ${h.measures.M2.n_fills ?? 0} fills"></i>`).join("")}</span>`},
+    ...M.map(k => ({h: k, num: 1, f: r => { const x = r.measures[k]; return `${mval(x)}<div class="dim">${esc(x.status)} · ${esc(nOf(x))}</div>`; }})),
+    {h: "Funding/døgn", num: 1, f: r => usd(r.descriptive.funding_per_day)},
+    {h: "Signal→ordre (median)", num: 1, f: r => r.descriptive.signal_lag_median_s == null ? na() : dur(r.descriptive.signal_lag_median_s)}],
+    L, "Ingen papirkonti.");
+  const first = L[0];
+  $("#mo-foot").textContent = (first ? M.map(k => `${k}: ${first.measures[k].name} (${first.measures[k].need})`).join(" · ") + " · " : "") + `${em.action || ""} · ${em.holm || ""} · historik: ${em.history_note || ""}`;
+}
+
+/* economy */
+function renderEconomy(p){
+  const S = p.strategies || [];
+  const typ = s => s.lane ? "bane/scanner" : s.shadow ? "skygge" : s.forward ? "fremadtest" : "papir";
+  const sum = f => S.reduce((a, s) => a + (f(s) ?? 0), 0);
+  const ident = s => { const d = s.decomposition || {}; return s.reconciliation && s.reconciliation.ok &&
+    Math.abs((s.realized ?? 0) + (s.unrealized ?? 0) - (s.total_pnl ?? 0)) < 0.01 && Math.abs((d.net ?? 0) - (s.total_pnl ?? 0)) < 0.01 && Math.abs(d.price_basis_gap ?? 0) <= 0.01; };
+  const ok = S.filter(ident).length, cap = sum(s => s.capital), pnl = sum(s => s.total_pnl);
+  kpis("#ec-kpis", [
+    {k: "samlet simuleret P&L", v: pnl, f: x => usd(x), s: `${S.length} konti · sum af P&L, ikke af equity`},
+    {k: "gebyrer betalt", v: sum(s => s.fees), f: x => num(x, 2) + " USD", s: "allerede i P&L"},
+    {k: "funding netto", v: sum(s => s.funding), f: x => usd(x), s: "allerede i P&L"},
+    {k: "spread/slippage", v: sum(s => (s.decomposition || {}).spread_slippage), f: x => usd(x), s: "betalt afstand fra midtpris"},
+    {k: "afstemt", v: `${ok} / ${S.length}`, s: "ledger, P&L-identiteter og 21t-kontrol", cls: ok === S.length ? "good" : "bad"}]);
+  const rows = S.slice().sort((a, b) => (b.total_pnl ?? 0) - (a.total_pnl ?? 0));
+  $("#ec-table").innerHTML = table([
+    {h: "Konto", f: s => `<div class="mono" style="font-weight:700">${esc(s.exp_id)}</div><div class="dim">${esc(typ(s))} · ${esc(s.state || "")}${s.paused ? " · pauset" : ""}</div>`},
+    {h: "Equity-kurve", f: s => eqSpark(s.equity, s.capital)},
+    {h: "Start", num: 1, f: s => num(s.capital, 0)},
+    {h: "Equity", num: 1, f: s => { const e = (s.equity || []).slice(-1)[0]; return e ? num(e.equity, 2) : na(); }},
+    {h: "Kontanter", num: 1, f: s => num(s.cash, 2)},
+    {h: "Positioner", num: 1, f: s => { const e = (s.equity || []).slice(-1)[0]; return e ? num(e.equity - e.cash, 2) : na(); }},
+    {h: "P&L", num: 1, f: s => `${usd(s.total_pnl)}<div class="dim">${s.total_pnl == null ? "" : pct(s.total_pnl / s.capital, 2)}</div>`},
+    {h: "Realiseret", num: 1, f: s => usd(s.realized)},
+    {h: "Urealiseret", num: 1, f: s => usd(s.unrealized)},
+    {h: "Gebyrer", num: 1, f: s => num(s.fees, 2)},
+    {h: "Funding", num: 1, f: s => usd(s.funding)},
+    {h: "Spread/slip", num: 1, f: s => usd((s.decomposition || {}).spread_slippage)},
+    {h: "Pris/basis", num: 1, f: s => usd((s.decomposition || {}).price_basis)},
+    {h: "Åbne · fills", num: 1, f: s => `${num(s.open_positions, 0)} · ${num(s.fills, 0)}`},
+    {h: "Max DD", num: 1, f: s => pct(s.max_drawdown, 2)},
+    {h: "Afstemt", f: s => ident(s) ? `<span class="q god">ok</span>` : `<span class="q dårlig" title="${esc(((s.reconciliation || {}).problems || []).join("; "))}">fejl</span>`}],
+    rows, "Ingen papirkonti endnu.") ;
+  $("#ec-foot").textContent = `Alle tal er bogført simuleret fra papirledgeren (sim_fills, sim_funding, sim_equity) pr. seneste time-mark; ingen rigtige penge og intet bevis for en fordel. P&L = realiseret + urealiseret; gebyrer, funding og spread/slip er allerede indeholdt og vises kun for opdelingen (pris/basis er resten). Startkapital i alt ${num(cap, 0)} USD i ${S.length} separate konti; equity summeres ikke.`;
+}
+
+/* capacity (21v) */
+function heat(bp){
+  if (bp == null) return `<span class="heat dim">for tynd</span>`;
+  const t = Math.min(1, Math.log10(1 + bp) / Math.log10(1 + 300)), hue = 140 - 140 * t;
+  return `<span class="heat" style="background:hsla(${hue.toFixed(0)},70%,45%,.22);color:hsl(${hue.toFixed(0)},75%,70%)">${bp < 10 ? bp.toFixed(2) : bp.toFixed(0)} bp</span>`;
+}
+function renderCapacity(cv, capStatus){
+  cv = cv || {books: {}, missing: {}};
+  const SZ = [500, 2000, 5000, 20000, 50000], books = Object.entries(cv.books || {});
+  const rt5 = rows => { const r = rows.find(x => x.size_usd === 5000); return r && !r.censored ? r.round_trip * 1e4 : null; };
+  const liquid = books.filter(b => rt5(b[1]) != null && rt5(b[1]) <= 5), thin = books.filter(b => !liquid.includes(b));
+  const n20 = books.filter(b => b[1].some(r => r.size_usd <= 20000 && !r.fits_20_levels)).length, miss = Object.keys(cv.missing || {});
+  kpis("#ca-kpis", [
+    {k: "bøger målt", v: books.length, s: cv.ts ? `${utc(cv.ts)} · højst én gang pr. 23 t` : "ikke målt endnu"},
+    {k: "likvide (≤ 5 bp ved 5k)", v: liquid.length, cls: "good", s: "kun visningsgruppe, ingen regel"},
+    {k: "tynde", v: thin.length, cls: thin.length ? "hot" : "", s: "dyre eller censurerede ved 5k"},
+    {k: "20 niveauer for lidt ≤ 20k", v: n20, s: "papirmotoren ser kun 20 niveauer"},
+    {k: "uden bog", v: miss.length, cls: miss.length ? "bad" : "", s: miss.length ? miss.join(", ") : "ingen"}]);
+  const cols = [
+    {h: "Bog", f: b => `<span class="mono" style="font-weight:700">${esc(b[0])}</span><div class="dim">${b[0].endsWith(".SPOT") ? "spot (data-api)" : "USD-M perp"}</div>`},
+    ...SZ.map(sz => ({h: `${num(sz, 0)} USD`, num: 1, f: b => { const r = b[1].find(x => x.size_usd === sz); return !r ? na() : heat(r.censored ? null : r.round_trip * 1e4) + (r.fits_20_levels ? "" : `<span title="papirmotorens 20 niveauer kan ikke fylde størrelsen" class="neg"> *</span>`); }})),
+    {h: "Spread", num: 1, f: b => num(b[1][0].spread * 1e4, 2) + " bp"},
+    {h: "Dybde bud · udbud", num: 1, f: b => `${num(b[1][0].depth_bid_usd / 1000, 0)}k · ${num(b[1][0].depth_ask_usd / 1000, 0)}k`}];
+  const sortRt = a => a.slice().sort((x, y) => (rt5(x[1]) ?? 1e9) - (rt5(y[1]) ?? 1e9));
+  const missRows = miss.map(k => `<tr><td class="mono">${esc(k)}</td><td colspan="7"><span class="q dårlig">${esc(cv.missing[k].kind === "not_trading" ? "handles ikke: " + cv.missing[k].detail : "ingen bog: " + cv.missing[k].detail)}</span></td></tr>`).join("");
+  $("#ca-table").innerHTML = books.length || miss.length ?
+    `<div class="cap-grp">Likvide bøger · rundtur ≤ 5 bp ved 5 000 USD</div>` + table(cols, sortRt(liquid), "Ingen.") +
+    `<div class="cap-grp">Tynde bøger · dyrere eller censureret</div>` + table(cols, sortRt(thin), "Ingen.") +
+    (missRows ? `<div class="cap-grp">Uden brugbar bog</div><table><tbody>${missRows}</tbody></table>` : "")
+    : `<div class="empty">Ingen kapacitetskurve endnu: den første måles ved næste news-watch-pass (højst én gang pr. 23 timer).</div>`;
+  const cap = (capStatus || [])[0];
+  $("#ca-foot").textContent = `Nutidig måling af den offentlige ordrebog (500 niveauer), rundtur = (køb-VWAP − salg-VWAP)/mid uden gebyrer; ikke historisk likviditet og ikke bevis for eksekverbarhed. * = papirmotorens 20 niveauer kan ikke fylde størrelsen. Kapacitetsstatus pr. konto: ${cap ? cap.status : "UNTESTABLE_CAPACITY"} (${cap ? cap.why : "ingen dokumenteret fordel"}); ingen break-even beregnes.`;
+}
 
 async function refresh(full){
   if (fastBusy) return; fastBusy = true;
@@ -1271,8 +1510,8 @@ async function refresh(full){
     if (full || Date.now() - slowAt > 20000) {
       slowAt = Date.now();
       const [p, d, c, r, cv, hy] = await Promise.all(["/api/paper2", "/api/distribution", "/api/costs", "/api/rejected", "/api/coverage", "/api/hypotheses"].map(api));
-      renderPaper(p); renderDist(d); renderCosts(c); renderRejected(r); renderCoverage(cv, hy);
-      await Promise.all([loadMarkets(), loadResearch()]);
+      renderPaper(p); renderEconomy(p); renderDist(d); renderCosts(c); renderRejected(r); renderCoverage(cv, hy);
+      await Promise.all([loadMarkets(), loadResearch(), loadEvents()]);
       if ($("#more").open) await Promise.all([loadJobs(), loadLog(), loadRisk(), refreshAudit()]);
       else await refreshAudit();
     }

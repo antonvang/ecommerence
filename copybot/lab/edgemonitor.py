@@ -62,7 +62,7 @@ def _day(ts):
 
 def daily_net(db, ledger, now):
     """Net per closed UTC day: last equity of the day minus the last of the day before (first day: the first mark)."""
-    rows = db.q("SELECT ts, equity FROM sim_equity WHERE exp_id=? ORDER BY ts, id", ledger)
+    rows = db.q("SELECT ts, equity FROM sim_equity WHERE exp_id=? AND ts<=? ORDER BY ts, id", ledger, now)
     if not rows:
         return []
     last = collections.OrderedDict()
@@ -70,7 +70,7 @@ def daily_net(db, ledger, now):
         last[_day(r["ts"])] = r["equity"]
     prev, out = rows[0]["equity"], []
     for d, eq in last.items():
-        if d + DAY > now:
+        if d + DAY > now + 1:                     # a day is closed at its last second (as-of history)
             break
         out.append((d, eq - prev))
         prev = eq
@@ -83,7 +83,9 @@ def _status(value, n, need, suspect, unsupported):
     return UNSUPPORTED if unsupported(value) else SUSPECT if suspect(value) else STABLE
 
 
-def ledger(db, led, now):
+def ledger(db, led, now, asof=False):
+    """Every measure as of `now` (all reads ts <= now). With asof=True M3 is skipped: lane.decomposition is not as-of
+    (LINUX_DRIFT 2026-10-24 23:11)."""
     days = daily_net(db, led, now)[-WINDOW_DAYS:]
     since = now - WINDOW_DAYS * DAY
     out = {}
@@ -101,7 +103,7 @@ def ledger(db, led, now):
                  "p_holm": p, "need": "≥ 14 døgn", "status": st}
     # M2 execution: realized vs modelled slippage, taker fills in the window
     fills = db.q("SELECT f.slippage, f.ts, f.book_ts, o.cost_model FROM sim_fills f JOIN sim_orders o "
-                 "ON o.order_id=f.order_id WHERE f.exp_id=? AND f.ts>=? AND f.liquidity='taker'", led, since)
+                 "ON o.order_id=f.order_id WHERE f.exp_id=? AND f.ts>=? AND f.ts<=? AND f.liquidity='taker'", led, since, now)
     real, model = [], []
     for f in fills:
         cm = json.loads(f["cost_model"]) if f["cost_model"] else None
@@ -115,15 +117,16 @@ def ledger(db, led, now):
                  "modelled_mean": statistics.mean(model) if model else None, "need": "≥ 30 fills",
                  "status": NOT_APPLICABLE if led.startswith("LANE_") else
                  _status(r, len(real), 30, lambda v: v > 1.25, lambda v: v > 2.0)}
-    # M3 cost per gross edge, whole ledger
-    dec = lane.decomposition(db, led)
-    gross = abs(dec["price_basis"])
-    cost = -(dec["fees"] + dec["spread_slippage"])
-    c = cost / gross if gross > 0 else None
+    # M3 cost per gross edge, whole ledger (now only)
+    dec = None if asof else lane.decomposition(db, led)
+    gross = abs(dec["price_basis"]) if dec else None
+    cost = -(dec["fees"] + dec["spread_slippage"]) if dec else None
+    c = cost / gross if dec and gross > 0 else None
     n_all = len(daily_net(db, led, now))
     out["M3"] = {"name": "omkostning pr. bruttokant", "n_days": n_all, "ratio": c, "cost_usd": cost,
                  "gross_usd": gross, "need": "≥ 28 døgn",
-                 "status": _status(c, n_all, 28, lambda v: v >= 0.5, lambda v: v >= 1.0)}
+                 "status": INSUFFICIENT if asof else _status(c, n_all, 28, lambda v: v >= 0.5, lambda v: v >= 1.0),
+                 "asof": "kun nu" if asof else None}
     # M4 book age at fill
     ages = sorted(f["ts"] - f["book_ts"] for f in fills if f["book_ts"] is not None)
     p95 = ages[min(len(ages) - 1, math.ceil(0.95 * len(ages)) - 1)] if ages else None
@@ -136,10 +139,11 @@ def ledger(db, led, now):
                  "need": "≥ 28 døgn og netto > 0",
                  "status": _status(share, len(nets), 28, lambda v: v >= 0.75, lambda v: v >= 1.0)}
     # descriptive only
-    orders = db.q("SELECT ts, signal_ref FROM sim_orders WHERE exp_id=? AND ts>=?", led, since)
+    orders = db.q("SELECT ts, signal_ref FROM sim_orders WHERE exp_id=? AND ts>=? AND ts<=?", led, since, now)
     lags = sorted(o["ts"] - int(o["signal_ref"].rsplit("@", 1)[1]) for o in orders
                   if o["signal_ref"] and "@" in o["signal_ref"] and o["signal_ref"].rsplit("@", 1)[1].isdigit())
-    fund = db.one("SELECT COALESCE(SUM(amount), 0) FROM sim_funding WHERE exp_id=? AND ts>=?", led, since)[0]
+    fund = db.one("SELECT COALESCE(SUM(amount), 0) FROM sim_funding WHERE exp_id=? AND ts>=? AND ts<=?", led, since,
+                  now)[0]
     status = max((x["status"] for x in out.values()), key=RANK.get)
     if status == STABLE and out["M1"]["status"] == INSUFFICIENT:            # 21w precision 2
         status = INSUFFICIENT
@@ -149,10 +153,32 @@ def ledger(db, led, now):
                             "signal_lag_median_s": lags[len(lags) // 2] if lags else None, "n_orders": len(orders)}}
 
 
+HISTORY_DAYS = 14
+_HIST = {}                                       # (ledger, as-of) -> row: a closed day's reconstruction never changes
+
+
+def history(db, led, now, days=HISTORY_DAYS):
+    """The monitor as of the end of each of the last `days` closed UTC days, oldest first (LINUX_DRIFT 23:11)."""
+    out = []
+    for k in range(days, 0, -1):
+        asof = (int(now) // DAY - k + 1) * DAY - 1
+        key = (led, asof)
+        if key not in _HIST:
+            r = ledger(db, led, asof, asof=True)
+            _HIST[key] = {"asof": asof, "status": r["status"], "flagged_by": r["flagged_by"],
+                          "measures": {m: {k2: x.get(k2) for k2 in ("status", "n_days", "n_fills", "mean_usd",
+                                                                    "p_one_sided", "ratio", "p95_s", "share")}
+                                       for m, x in r["measures"].items()}}
+        out.append(_HIST[key])
+    return out
+
+
 def view(db, now=None):
     now = now or time.time()
     leds = [r[0] for r in db.q("SELECT DISTINCT exp_id FROM sim_equity ORDER BY exp_id")]
-    rows = [ledger(db, led, now) for led in leds]
+    rows = [dict(ledger(db, led, now), history=history(db, led, now)) for led in leds]
     return {"rule": RULE, "now": now, "ledgers": rows,
             "by_status": dict(collections.Counter(r["status"] for r in rows)), "holm": HOLM_NOTE,
-            "action": "ingen: monitoren skifter ingen tilstand og stopper intet (21w)"}
+            "action": "ingen: monitoren skifter ingen tilstand og stopper intet (21w)",
+            "history_note": f"as-of ved slutningen af hvert af de seneste {HISTORY_DAYS} afsluttede UTC-døgn; "
+                            "M3 kun nu (opdelingen er ikke as-of)"}
