@@ -52,3 +52,7 @@ præmiekonvergensen viste for orderflow). Et nulresultat er sandsynligt, men det
   opfølgning ikke kræver andet; (2) dateret ændring med hypotesen ovenfor, før data; (3) hentning af de 44 filer med
   banens hentevej (højst 2 ad gangen, læser kun explore0); (4) kode med tests (et tjek for, at minutbaren åbner ≥ T);
   (5) én kørsel, registrering med sha256, uanset resultat.
+
+**Præcisering 2026-10-24 kl. 20:33 (ændring 21o punkt 4, indholdet uændret):** minutbar k åbner ved T + k min.
+Signal fra bar 0 (kendt ved T + 1 min). Indgang ved lukkekursen for bar 1 (T + 2 min). Udgang ved lukkekursen for
+bar 61 (T + 62 min). Formuleringerne ovenfor ("minutbaren, der starter T+2m", "C_T+62m / C_T+2m") skal læses sådan.

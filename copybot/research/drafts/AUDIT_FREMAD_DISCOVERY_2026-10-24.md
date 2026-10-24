@@ -60,11 +60,21 @@ revisionspraksis (efter 11-14, ingen forespørgsel før).
 > ændring 10b tillader banens hentning fra 2026-11-14 00:00 UTC, og pm_lp's opfølgning er uberørt.
 > Data: `futures/um/monthly/klines/{BTCUSDT,ETHUSDT}/1m/…-1m-YYYY-MM.zip` for 2020-03…2021-12 (44 filer) via banens
 > hentevej, højst 2 ad gangen, læser kun explore0. Begivenheder: kalenderens planlagte FOMC, CPI og Employment
-> Situation med `ts` i explore0. T = `ts`. Minutbaren B0 åbner ved T (kontrol: åbningstid ≥ T; ellers udelukket).
-> s = fortegn af gennemsnittet af ln(C_B0 / O_B0) for BTC og ETH. Indgang: lukkekursen for minutbaren, der åbner
-> T + 2 min. y = s · ln(C(T + 62 min − 1 min-bar) / C(T + 2 min-bar)), gennemsnit af BTC og ETH. Placebo: samme
+> Situation med `ts` i explore0. T = `ts`. Minutbar k åbner ved T + k min (kontrol: bar 0's åbningstid = T;
+> ellers udelukket). s = fortegn af gennemsnittet af ln(C_bar0 / O_bar0) for BTC og ETH (kendt ved T + 1 min).
+> Indgang: lukkekursen for bar 1 (tid T + 2 min). Udgang: lukkekursen for bar 61 (T + 62 min), altså 60 min holdetid.
+> y = s · ln(C_bar61 / C_bar1), gennemsnit af BTC og ETH. (Præciseret i ændring 21o punkt 4; indholdet er uændret.) Placebo: samme
 > klokkeslæt 7 døgn før (14, hvis det døgn har en kalenderbegivenhed). Klynger: UTC-døgn. SCREEN_PASS: p ≤ 0,005
 > (tosidet fortegnsskift, 20 000, seed 7), samme fortegn i 2020 og 2021 (≥ 5 klynger hver), placebo-p > 0,05,
 > ≥ 15 klynger, |gennemsnit| ≥ kravet efter 21i (B) eller, kun hvis brugeren har aktiveret C for BTC/ETH, C. Manglende
 > minutbarer: udelukket med årsag. Dubletter (samme `ts` to gange i kalenderen): én begivenhed. Tidszoner: kalenderens
 > `ts` er UTC epoch; ET-konverteringen er sket i ændring 14's tolkere. Én kørsel; resultatet registreres uanset udfald.
+
+## 5. Tilføjet 20:33 (master follow-up 7): reproducerbarhed af de fremadrettede rapporter
+
+- **FOMC (21d):** `lab/eventreport.py` findes og er testet. Den kan genereres reproducerbart efter T + 25 t (klines-svar
+  hashes, registret læses skrivebeskyttet).
+- **M1F, U1F, H5F, H5X:** de låste tekster bestemmer, at målekoden skrives, når data findes, og ikke før. Det er
+  bevidst, så koden ikke kan tilpasses observationerne. Dashboardets tællere er kun visning. Rapporterne kan altså ikke
+  genereres i dag; deres regler (dedup pr. mønt, fortegnsskift pr. meddelelse for M1F, Holm for U1F) står i teksterne.
+- **Ingen ændring** af kriterier eller parametre. Ingen uregistreret gentest.
