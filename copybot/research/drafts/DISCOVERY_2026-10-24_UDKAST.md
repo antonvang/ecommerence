@@ -40,7 +40,8 @@ til ejeren, ikke låst.
 6. **Afvisning:** de samme gates som familiens øvrige medlemmer (train-gate, validering, attribution, 2× omkostninger).
 7. **Forbehold:** idéen er opstået efter at have set floor/hyst's train3/validation3-tal, så screeningen på de faser
    er ikke uvildig; kun familiens fremadvindue kan afgøre. Et nyt medlem efter kohortens fastlæggelse ændrer M og
-   dermed α pr. medlem; det er ejerens beslutning ved F2 (fra 2026-11-28). **Ikke startet.**
+   dermed α pr. medlem; det er ejerens beslutning ved F2 (fra 2026-11-28). **Ikke startet.** (Rettet samme dag: F2
+   er `dbasis`, og fcarrys kohorte er lukket; se opfølgningen nederst: D2 er blokeret.)
 
 ## D3 `seed_tag`: forkastet før udkast
 
