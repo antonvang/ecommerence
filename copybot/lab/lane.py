@@ -1039,11 +1039,17 @@ def classify(kind, payload, ready=False):
 def decomposition(db, ledger):
     """12h point 3, observed from the fills: net = funding - fees - paid distance from the mid + the rest (price and
     basis moves measured at the mid). Each part counted once; the parts sum to net. The paid distance splits into the
-    measured book distance (`book`) and the modelled slippage allowance (`allowance`)."""
-    fills = db.q("SELECT px, qty, fee, mid, side FROM sim_fills WHERE exp_id=?", ledger)
-    funding = db.one("SELECT COALESCE(SUM(amount), 0) FROM sim_funding WHERE exp_id=?", ledger)[0]
+    measured book distance (`book`) and the modelled slippage allowance (`allowance`). Everything is cut at the last
+    mark's time (LINUX_DRIFT 2026-10-24 22:27): fills after it wait for the next mark (`fills_after_mark`)."""
     eq = db.one("SELECT equity, cash, ts FROM sim_equity WHERE exp_id=? ORDER BY id DESC LIMIT 1", ledger)
-    net = (eq["equity"] if eq else CAPITAL) - CAPITAL
+    cut = eq["ts"] if eq else None
+    fills = db.q("SELECT px, qty, fee, mid, side FROM sim_fills WHERE exp_id=?" + (" AND ts<=?" if eq else ""),
+                 *((ledger, cut) if eq else (ledger,)))
+    funding = db.one("SELECT COALESCE(SUM(amount), 0) FROM sim_funding WHERE exp_id=?" + (" AND ts<=?" if eq else ""),
+                     *((ledger, cut) if eq else (ledger,)))[0]
+    ps = db.one("SELECT payload FROM events WHERE kind='paper.started' AND exp_id=? ORDER BY id LIMIT 1", ledger)
+    capital = float(json.loads(ps["payload"])["capital"]) if ps else CAPITAL     # LINUX_DRIFT 2026-10-24 22:27
+    net = (eq["equity"] if eq else capital) - capital
     fees = sum(f["fee"] for f in fills)
     paid = sum(abs(f["px"] - f["mid"]) * f["qty"] for f in fills if f["mid"])
     unknown = sum(1 for f in fills if not f["mid"])
@@ -1055,14 +1061,15 @@ def decomposition(db, ledger):
     indep = sum((-1 if f["side"] == "buy" else 1) * f["mid"] * f["qty"] for f in fills if f["mid"]) + mv
     better = sum(1 for f in fills if f["mid"] and ((f["side"] == "buy" and f["px"] < f["mid"]) or
                                                    (f["side"] == "sell" and f["px"] > f["mid"])))
-    after = db.one("SELECT COUNT(*) FROM sim_fills WHERE exp_id=? AND ts>?", ledger, eq["ts"])[0] if eq else len(fills)
+    after = db.one("SELECT COUNT(*) FROM sim_fills WHERE exp_id=? AND ts>?", ledger, cut)[0] if eq else \
+        db.one("SELECT COUNT(*) FROM sim_fills WHERE exp_id=?", ledger)[0]
     resid = net - funding + fees + paid
     return {"net": net, "funding": funding, "fees": -fees, "spread_slippage": -paid,
             "book": -(paid - allowance), "allowance": -allowance,
             "price_basis": resid, "fills": len(fills),
             "fills_without_mid": unknown, "observed": True,
             "price_basis_independent": indep, "price_basis_gap": resid - indep,
-            "fills_better_than_mid": better, "fills_after_mark": after}
+            "fills_better_than_mid": better, "fills_after_mark": after, "as_of_mark_ts": cut}
 
 
 def closed_trades(db, source):

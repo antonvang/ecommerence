@@ -966,6 +966,16 @@ class Execution(Base):
         self.assertLess(d["book"], 0)
         self.assertAlmostEqual(d["price_basis_gap"], 0.0, places=6)           # 21t: residual = mid-based price P&L
         self.assertEqual((d["fills_better_than_mid"], d["fills_after_mark"]), (0, 0))
+        mark_ts = self.db.one("SELECT MAX(ts) FROM sim_equity WHERE exp_id=?", led)[0]       # a fill after the mark
+        self.db.append("sim_orders", order_id="late", exp_id=led, ts=mark_ts + 60, instrument="BBBUSDT", side="buy",
+                       qty=1.0, limit_px=None, style="taker", reduce_only=0, signal_ref="t", cost_model={})
+        self.db.append("sim_fills", fill_id="late|0", order_id="late", exp_id=led, ts=mark_ts + 60,
+                       instrument="BBBUSDT", side="buy", px=101.5, qty=1.0, fee=0.05, slippage=None, liquidity="taker",
+                       mid=101.0, book_ts=mark_ts + 59.5)
+        d2 = lane.decomposition(self.db, led)
+        self.assertEqual(d2["fills_after_mark"], 1)
+        self.assertAlmostEqual(d2["price_basis_gap"], 0.0, places=6)          # LINUX_DRIFT 22:27: cut at the mark
+        self.assertAlmostEqual(d2["fees"], d["fees"], places=9)                 # the late fill waits for the next mark
 
     def test_classes_and_view(self):
         self.assertEqual(lane.classify("lane.started", {}), "afventer fremadtest")

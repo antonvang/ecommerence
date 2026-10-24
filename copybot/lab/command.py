@@ -852,7 +852,8 @@ def paper_view(db, reconcile=True, edges=True, now=None):
                     "orders": orders, "fills": db.one("SELECT COUNT(*) FROM sim_fills WHERE exp_id=?", eid)[0],
                     "rejected_orders": refused, "reconciliation": pe.reconcile(eid) if reconcile else None,
                     "paused": rk.paused(eid), "warming": rk.warming(eid), "pause": _pause_info(rk, eid),
-                    "edge": edge(db, eid, now) if (edges and not is_lane) else None})
+                    "edge": edge(db, eid, now) if (edges and not is_lane) else None,
+                    "decomposition": lane.decomposition(db, eid)})                 # LINUX_DRIFT 2026-10-24 22:27
     out.sort(key=lambda s: (s["lane"], s["forward"], s["shadow"], s["exp_id"]))  # approved, shadow, forward, lane
     return {"strategies": out, "simulated": True, "real_account_profit": REAL_ACCOUNT, "funding_t0": funding_t0(db),
             "source": "lab.db sim_orders / sim_fills / sim_equity / sim_funding (simulated fills against public order "
