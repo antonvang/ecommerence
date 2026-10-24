@@ -81,6 +81,15 @@ class Memory(unittest.TestCase):
         self.assertTrue(r["x|sar_1d|m17"]["retest"].startswith("decided by its locked measurement: REJECTED"))
         self.assertEqual(r["z|sar_1d|m17"]["retest"], memory.RETEST["SCREEN_PASS"])   # not measured: still needs a lock
 
+    def test_the_committed_21c_and_21f_screens_are_listed(self):          # LINUX_DRIFT 2026-10-24 17:44
+        recs, text = self.recs()
+        self.assertEqual(recs["abnormal_move|cont_24h|m21c"]["verdict"], "SCREEN_FAIL")
+        self.assertEqual(recs["catalyst_move|cont_24h|m21f"]["verdict"], "UNTESTABLE")
+        self.assertEqual(recs["btc_lead|alt_excess_24h|m21f"]["cost_hurdle"], 0.0111)
+        self.assertEqual(recs["abnormal_move|cont_4h|m21c"]["cost_hurdle"], hypogen.COST)
+        self.assertEqual(recs["squeeze_break|cont_24h|m21f"]["retest"], memory.RETEST["SCREEN_FAIL"])
+        self.assertIn("study 5:", text)
+
     def test_it_writes_nothing_to_the_registry(self):
         before = self.db.one("SELECT COUNT(*) FROM events")[0]
         self.recs()

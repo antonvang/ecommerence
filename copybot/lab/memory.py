@@ -7,8 +7,10 @@ The retest rule is the same for every record of a kind; it is never a new criter
 """
 from __future__ import annotations
 
+import glob
 import hashlib
 import json
+import os
 import sqlite3
 
 from lab import hypogen
@@ -97,9 +99,30 @@ def screens(con, measured=None):
     return out
 
 
-def memory(con):
+STUDIES = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "research", "studies")
+
+
+def studies(root=None):
+    """The committed screens of amendments 21c and 21f (research/LINUX_DRIFT.md 2026-10-24 17:44)."""
+    out = []
+    for path in sorted(glob.glob(os.path.join(root or STUDIES, "*_m21*.json"))):
+        with open(path, "rb") as f:
+            raw = f.read()
+        rep = json.loads(raw)
+        for r in rep.get("results") or []:
+            out.append({"source": "study", "id": r["key"], "verdict": r.get("verdict"), "n": r.get("n_events"),
+                        "clusters": r.get("n_clusters"), "mean": r.get("mean"), "p": r.get("p"),
+                        "cost_hurdle": r.get("cost_hurdle", hypogen.COST), "rule": r.get("rule"),
+                        "failed": [c for c, ok in (r.get("checks") or {}).items() if not ok] or None,
+                        "events_sha256": r.get("events_sha256"), "file": os.path.basename(path),
+                        "file_sha256": hashlib.sha256(raw).hexdigest(),
+                        "retest": RETEST.get(r.get("verdict"), RETEST["SCREEN_FAIL"])})
+    return out
+
+
+def memory(con, root=None):
     meas = measurements(con)
-    return meas + experiments(con) + screens(con, {r["id"]: r["verdict"] for r in meas})
+    return meas + experiments(con) + screens(con, {r["id"]: r["verdict"] for r in meas}) + studies(root)
 
 
 def main(db_path, out=print, json_path=None):
@@ -120,7 +143,7 @@ def main(db_path, out=print, json_path=None):
                        f"p={v['p'] if v['p'] is None else format(v['p'], '.2g')}" for k, v in r["phases"].items())
         out(f"  {r['id']}: {r['verdict']} ({r['reason']}) alpha {r['alpha']}"
             f"{' [not decisional for trading]' if not r['decisional_for_trading'] else ''}" + (f" | {ph}" if ph else ""))
-    for kind in ("catalogue", "family", "legacy", "screen"):
+    for kind in ("catalogue", "family", "legacy", "screen", "study"):
         rs = [r for r in recs if r["source"] == kind]
         verdicts = {}
         for r in rs:
