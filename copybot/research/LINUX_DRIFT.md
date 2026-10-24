@@ -634,3 +634,24 @@ holdouten røres ikke; intet genstartes.
   et nyt navn. Nu læses `research/studies/*_m21*.json`: hver nøgle med dom, n hændelser, n klynger, gennemsnit, p,
   omkostningskrav, fejlede tjek, sha256 af hændelserne og filen. Gentestreglen er den samme faste regel pr. dom som
   ændring 17's screening. Kun læsning; den ændrer og afgør intet.
+
+- **2026-10-24 kl. 22:23 (før kode): dashboardet får en markedsscanner som hovedvisning (`/api/markets`).**
+  - **Kilde:** kun registret (skrivebeskyttet), ingen nye datakilder og ingen beregning, der kan afvige fra
+    detektoren. Pr. marked på ændring 21's liste vises den seneste scanning fra `abnormal_move`'s egne observationer:
+    - kurs og afkast 1 t og 24 t med z;
+    - volumenforhold mod 720 t-medianen;
+    - præmie (mark − indeks);
+    - bogens rundtur for 5 000 USD og spread;
+    - weekend- og helligdagstid (`off_hours`);
+    - dataalder;
+    - flag med tærskel og regel fra målelogen.
+  - **Sparkline:** de seneste 48 markedstimers lukkekurser, én pr. `open_s`, med den tidligste scanning af timen.
+  - **Undersøgelse:** den seneste analysepost (`opportunity.move`) med triage, forklaringer, næste skridt og
+    nyheder.
+  - **Status:** "frisk" (scanning ≤ 75 min gammel), "forældet" (ældre) og "fejl" (fejl eller for kort historik i
+    seneste scanning).
+  - **Ingen påstand om realtid:** visningen siger "opdateres hver time kl. HH:02 UTC". Et flag vises som en
+    observation, aldrig som en handelsmulighed.
+  - **Filtre og sortering** i browseren (alle, krypto, TradFi, kun flaggede; |z|, volumen, præmie, bogomkostning,
+    dataalder). Ingen tal er hardcodede: tomme og forældede data vises som sådan.
+  - Ingen tærskel, scanneradfærd eller beregning ændres.
