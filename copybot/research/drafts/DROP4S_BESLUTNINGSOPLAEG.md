@@ -132,3 +132,10 @@ Brugerens foreløbige prioritering (master follow-up "SPOT–PERP LEAD/LAG" 2026
 alfa-plads bruges ikke på denne hypotese. Indtil en eksplicit beslutning foreligger: leave-one-day-out køres ikke, der
 oprettes ingen LÅS, intet alfabudget bruges, og train3 og validation3 læses ikke for den. Oplægget bevares uændret.
 Den er **ikke** markeret DROPPED; det er brugerens afgørelse.
+
+## Status 2026-10-24 kl. 19:41: DROPPED efter brugerens beslutning (1a kørt først)
+
+Brugeren valgte 1a og 3 (ændring 21m). Leave-one-day-out er kørt: `research/studies/DROP4S_LOO_m21c.md`. Mønstret holdt
+sig over +1,2 % uden et vilkårligt døgn eller de 10 travleste. Det svækker koncentrationsargumentet i punkt 3, men ikke
+argumenterne om efterfølgende valg og regime. Hypotesen er registreret som DROPPED, og research-memory viser den med
+den faste gentestregel.

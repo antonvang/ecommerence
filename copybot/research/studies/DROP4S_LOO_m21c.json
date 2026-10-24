@@ -1,0 +1,66 @@
+{
+ "baseline_unconditional_24h": {
+  "day_cluster_mean": 0.002610473559325786,
+  "days": 670
+ },
+ "by_day": {
+  "cluster_mean": 0.01573038777195043,
+  "clusters": 167,
+  "events": 1020,
+  "leave_one_out": {
+   "max": 0.02047952255615025,
+   "median": 0.015699829729045444,
+   "min": 0.012873557387742342
+  },
+  "share_positive_clusters": 0.6526946107784432,
+  "without_k_busiest": {
+   "1": 0.014584442590143448,
+   "2": 0.014021242275022234,
+   "3": 0.013949730841600285,
+   "4": 0.01381967287512848,
+   "5": 0.012922173217013947,
+   "6": 0.012843251247411834,
+   "7": 0.013104806309939213,
+   "8": 0.013051084478810437,
+   "9": 0.01291882658717858,
+   "10": 0.012761649463616532
+  }
+ },
+ "by_iso_week": {
+  "cluster_mean": 0.011682305569643944,
+  "clusters": 74,
+  "events": 1020,
+  "leave_one_out": {
+   "max": 0.022426254774779063,
+   "median": 0.01152620519495792,
+   "min": 0.009746746970286158
+  },
+  "share_positive_clusters": 0.7162162162162162,
+  "without_k_busiest": {
+   "1": 0.009867629824752346,
+   "2": 0.009599011854235916,
+   "3": 0.008222562488671713,
+   "4": 0.00801303051320386,
+   "5": 0.007757306534490454,
+   "6": 0.007787438267927493,
+   "7": 0.0075316348041051615,
+   "8": 0.005327900735640658,
+   "9": 0.005920242139914027,
+   "10": 0.005461645624524006
+  }
+ },
+ "events_sha256": "384b6e26cbcf7b450f9bba0393631b62939b2c18ca321877a86808f685055221",
+ "files": 971,
+ "files_sha256": "3f384de3fddfdd9a146c42216abeb002dfa5d0bee9be5a75644cde42c1007aca",
+ "label": "DESCRIPTIVE (post hoc), never evidence",
+ "results": [
+  {
+   "key": "abnormal_move_drop|rebound_24h|posthoc",
+   "n_events": 1020,
+   "reason": "the user's decision 2026-10-24 (option 3 after 1a); no test",
+   "rule": "research/PROTOCOL_V3.md amendment 21m point 1",
+   "verdict": "DROPPED"
+  }
+ ],
+ "rule": "research/PROTOCOL_V3.md amendment 21m point 1"
+}
