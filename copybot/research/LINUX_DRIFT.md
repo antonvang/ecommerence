@@ -663,3 +663,9 @@ holdouten røres ikke; intet genstartes.
   - Opdelingen (funding, gebyrer, spread/slippage med målt bog og modelleret tillæg, pris/basis, den uafhængige
     kontrol fra 21t) beregnes også for fremadtests og shadow-konti i `/api/paper2` og vises i papirpanelet. Tallene
     er de samme fills og funding, som ledgeren bruger; ingen ny formel for netto.
+  - **Fund kl. 22:27 (21t-kontrollen på en kopi af registret):** 4 ikke-bane-konti (SHADOW_E_mvrv_value_p3,
+    FWD_E_vol_managed_long_p1, FWD_E_xs_betting_against_beta_p2, FWD_E_xs_max_lottery_p2) har en afvigelse på
+    ~±10 USD og hver 1 fill efter seneste mark. Opdelingen tog netto fra den seneste mark, men gebyrer, spread og
+    funding fra **alle** fills og afregninger. Komponenterne passede altså ikke til netto, når et fill lå efter marken.
+    **Rettelse:** fills og funding skæres ved markens tid (ts ≤ mark). Senere fills tælles i `fills_after_mark`, og
+    den næste mark tager dem med. Ingen ledger, kasse eller equity ændres; kun den viste opdeling.
