@@ -172,6 +172,7 @@ class Agent:
                  db_path=None):
         self.name, self.role, self.kinds, self.every, self.fn = name, role, tuple(kinds or ()), every, fn
         self.interval, self.stale_after, self.heavy, self.db_path = interval, stale_after, heavy, db_path
+        self.align = ALIGN.get(name)       # periodic passes at a fixed offset into the period (None: every s after)
         self.started = time.time()
         self.always_run = name == "risk-1"
         self.next_periodic = 0.0
@@ -234,12 +235,12 @@ class Agent:
             self.counters["tasks_done"] += 1
             summary = _summary(res)
             self.log("periodic.done", result=summary, seconds=round(time.time() - t0, 2))
-            self.next_periodic = time.time() + self.every
+            self.next_periodic = next_slot(time.time(), self.every, self.align)
             if self.failing:
                 db.event("agent.recovered", f"agent:{self.name}", None, {"agent": self.name, "after": self.failing})
             self.failing = None
             self.beat(db, "idle", detail="ok", current_job=None, current_exp=None, last_result=summary,
-                      last_ok_ts=time.time(), next_action=f"next run in {int(self.every)} s")
+                      last_ok_ts=time.time(), next_action=f"next run in {int(self.next_periodic - time.time())} s")
         except Exception as e:
             self.counters["errors"] += 1
             self.next_periodic = time.time() + min(self.every, 60)
@@ -493,6 +494,16 @@ def premium_pass(db):
 
 
 # ---------- roster ----------
+ALIGN = {"discovery-scanner": 120}      # amendment 21 point 2 precision: the hour + 120 s, not an hour after start
+
+
+def next_slot(now, every, align=None):
+    """The next periodic run: `every` s after now, or the next multiple of `every` plus `align` s."""
+    if align is None:
+        return now + every
+    return ((now - align) // every + 1) * every + align
+
+
 ROSTER = (
     # name, role, kinds, periodic fn, every s, heavy
     ("data-1", "Data agent: downloads and quality-checks market data per experiment; free new sources (amendment 14)",

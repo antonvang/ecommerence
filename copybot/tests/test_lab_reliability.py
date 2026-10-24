@@ -75,6 +75,19 @@ class AgentHealth(Tmp):
         a(self.db)
         self.assertEqual(self.row()["status"], "idle")
 
+    def test_the_scanner_runs_two_minutes_after_the_hour(self):         # precision of amendment 21 point 2
+        self.assertEqual(fleet.next_slot(1000.0, 60), 1060.0)                          # others: every s after a pass
+        h = 1_800_000_000 - 1_800_000_000 % 3600
+        self.assertEqual(fleet.next_slot(h + 3000, 3600, 120), h + 3600 + 120)
+        self.assertEqual(fleet.next_slot(h + 60, 3600, 120), h + 120)                  # a start at HH:01 runs at HH:02
+        self.assertEqual(fleet.next_slot(h + 120, 3600, 120), h + 3600 + 120)
+        a = {x.name: x for x in fleet.agents(self.path)}
+        self.assertEqual((a["discovery-scanner"].align, a["news-watch"].align), (120, None))
+        s = fleet.Agent("discovery-scanner", "probe", every=3600, fn=lambda db: {}, db_path=self.path)
+        with mock.patch.object(fleet.time, "time", return_value=h + 3000):
+            s(self.db)
+        self.assertEqual(s.next_periodic, h + 3600 + 120)
+
     def test_failed_agents_show_red_in_the_dashboard_api(self):
         def fn(db):
             raise RuntimeError("cannot complete")
