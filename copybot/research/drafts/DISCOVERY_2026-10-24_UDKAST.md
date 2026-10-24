@@ -55,3 +55,9 @@ Se analysens punkt 3: validation3 ville have 7 begivenheder (< 8), så en screen
 (`research/drafts/M1F_MONITORING_FREMAD.md`). Ændringer fra udkastet, før låsen: udfaldet måles mod medianen af de
 øvrige altcoins (ikke kun BTC), og testen vender fortegn pr. meddelelse, fordi mønter i samme meddelelse ikke er
 uafhængige.
+
+**Opfølgning 2026-10-24 kl. 13:10 (D2):** brugeren sagde ja til D2. Det kan ikke være et nyt fcarry-medlem: fcarrys
+kohorte er lukket (M = 2), og ændring 8 punkt 9–10 tillader kun forhåndsopregnede efterfølgere før lukningen og
+genberegner aldrig M. Som ny familie (`research/families/drafts/fregime.json`) afvises den af `family-check`: højst
+én åben familie pr. mekanisme-tag (punkt 3), og fcarry er åben til sit fremadvindue slutter. **D2 er BLOKERET**;
+udkastet gemmes, intet modul, ingen alfa, ingen registrering. Tagget ændres ikke for at komme uden om reglen.
