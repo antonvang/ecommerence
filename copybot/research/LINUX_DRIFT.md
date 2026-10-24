@@ -427,6 +427,16 @@ noget, ændrer en gate eller rører indsamleren:
   dem. Feltet "Jobs i kø" viser klar og planlagt hver for sig ("0 klar", "3 planlagt · næste 2027-05-07"), fordi
   de tre jobs er fremadtestenes afgørelser i 2027, ikke en fastlåst kø.
 
+### Dashboardets "Fremadtest (låst)" viser også U1F og M1F (tilføjet 2026-10-24 kl. 12:54, før kode)
+
+Metrikken viste kun H5F og H5X (USD-M-listninger). Ændring, kun visning: `coverage.forward` får en række for M1F
+(ændring 17j), talt fra news-watch' titler efter den låste tekst: meddelelser med `usable_from` ≥ 2026-10-25 00:00
+UTC, der matcher punkt 2's regel; mønter, der har stået i en tidligere "Extend the Monitoring Tag"-titel (punkt 3a),
+og stablecoins/BTC (punkt 3c) tælles ikke. Punkt 3b og 3d (afnotering, spotpris) anvendes først ved målingen, så tallet
+er kandidater. Rækken viser mønter (af 20), meddelelser (mindst 6) og tidligste kørsel (den 20. mønts t + 7 døgn +
+72 timer). U1F (ændring 17i) får en række uden tal: dens katalog læses først ved målingen. Hver række får sin egen
+forklaring. Ingen kurs læses; ingen regel, lås eller alfa ændres.
+
 ### Git-opslagene bag familiegodkendelsen caches præcist (tilføjet 2026-10-24 kl. 11:42, før kode)
 
 Målt 2026-10-24 (kopi af registret): `/api/kpis`, som dashboardet henter hvert 15. sekund, bruger 0,20 af 0,29 s på
