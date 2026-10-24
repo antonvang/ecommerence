@@ -2429,3 +2429,30 @@ mindst 5 klynger); placebo (samme mønt/hændelse og retning, h − 30 døgn) me
    brugt op.
 6. **Aldrig:** ordrer, papirkonti, familier efter ændring 8, alfa, train3, validation3, holdout 2024, data fra 2025 og
    frem, netværk, `pm_lp`.
+
+## Ændring 21g (2026-10-24 kl. 17:43, før kode): TradFi-perps uden for det underliggende markeds åbningstid; gebyrskemaet er verificeret
+
+**Data (Binance' egne meddelelser, hentet 2026-10-24 via `www.binance.com/bapi/composite/v1/public/cms/article/detail/query`,
+allerede tilladt vært, kun GET):**
+- `f69c05eb…` (2026-09-15, råvarer XAU, XAG, XPT, XPD, COPPER, CL, BZ, NATGAS): normal handelstid søndag 18:00 ET til fredag
+  17:00 ET (indeks fra tredjepartskurser); weekend og helligdage fredag 17:00 ET til søndag 18:00 ET i
+  "Orderbook EWMA mode".
+- `533eb2f3…` (2026-09-18, USDBRLUSDT, FX): normal tid søndag 17:00 ET til fredag 17:00 ET; weekend fredag 17:00 ET til
+  søndag 17:00 ET i "Orderbook EWMA mode".
+- `53bfc176…` (2026-05-13, aktiebaserede, SPY og QQQ): "Orderbook EWMA mode" under den daglige vedligeholdelse, i
+  weekender og på helligdage. Meddelelsen angiver ingen klokkeslæt.
+- `a4c3f195…` (2026-03-27): TradFi-perps fra 2026-03-31 02:00 UTC "until further notice": maker 0,0000 %, taker
+  0,0400 % for almindelige brugere (VIP 0–1). Det er en kampagne, ikke standardsatsen.
+
+I EWMA-tilstand følger perpens indeks dens egen ordrebog, ikke det underliggende marked. En bevægelse eller et
+volumenflag dér er en bevægelse i perpen, ikke i guld, olie, SPY eller USD/BRL. Dagens flag (USDBRL kl. 14:23 og SPY
+kl. 17:02, lørdag) lå i denne tilstand.
+
+1. **Triage (ændring 21e) får forklaringen `off_hours`** for en TradFi-post, hvis bevægelsestimens start ligger i et
+   EWMA-vindue efter meddelelserne: råvarer fredag 17:00 ET til søndag 18:00 ET; FX fredag 17:00 ET til søndag 17:00 ET;
+   aktier lørdag og søndag (UTC-døgn), fordi meddelelsen ikke giver klokkeslæt. Helligdage og den daglige
+   vedligeholdelse kendes ikke og markeres ikke. ET følger amerikansk sommertid. Dommen er fortsat `FORWARD_ONLY`;
+   `reason` nævner "uden for det underliggende markeds åbningstid".
+2. **Bogens omkostning** i analyseposten får feltet `fees` med kampagnesatsen for TradFi (taker 0,04 % pr. side, maker 0)
+   og kilden. For krypto bruges det eksisterende ord "not included". Rundturen i bogen ændres ikke.
+3. Ingen tærskel, ingen dedup og intet andet ændres.
