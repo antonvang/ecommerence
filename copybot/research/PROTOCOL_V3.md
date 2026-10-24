@@ -2772,3 +2772,11 @@ beregning og flag er uændrede.
    - `klines_sha256`: sha256 af det rå klines-svar.
 2. Ingen rådata gemmes (ca. 0,4 KB pr. observation). Eksisterende felter bevares uændret.
 3. Flagrapporten bruger `median_qvol_720`, når feltet findes, og den afledte median ellers.
+
+#### Præcisering af ændring 21 punkt 3 (2026-10-24 kl. 21:31): σ bygger på 719 afkast i den levende scanner
+
+Målelogen (21p) viste ved første deploy: scanneren henter 722 timebarer. 721 er lukkede, og de giver 720 afkast.
+σ beregnes på afkastene før den seneste time, dvs. **719** (`window.n_returns`). Volumenmedianen bruger 720 barer.
+Teksten "de 720 foregående timeafkast" er altså én for højt for den levende detektor. Screeningerne m21c–m21j brugte
+præcis 720 i cachen. Forskellen er ét afkast ud af 720 og ændrer ingen dom. Detektoren ændres ikke; tallet står nu i
+hver observation.
