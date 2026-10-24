@@ -64,7 +64,7 @@ def overview(db):
     by_mech = {}
     for x in tested:
         by_mech[x["mechanism"]] = by_mech.get(x["mechanism"], 0) + 1
-    chains, triggers = db.verify()
+    chains, triggers = chains_for(db)
     return {"fail_closed": rk.fail_closed(), "heartbeats": hb, "pipeline": counts, "experiments": len(st),
             "finished": len(tested), "rejected": counts.get("REJECTED", 0), "last_scan_ts": last_obs,
             "alpha_spent": db.one("SELECT COALESCE(SUM(alpha),0) FROM alpha_ledger WHERE COALESCE(note, '') "
@@ -199,6 +199,14 @@ def verify_chains(db, cache):
     return out, triggers_ok
 
 
+def chains_for(db):
+    """verify_chains with the shared dashboard cache (research/LINUX_DRIFT.md 2026-10-24); an in-memory registry has no
+    stable path to key a cache by, so it gets the full walk."""
+    if db.path == ":memory:":
+        return db.verify()
+    return verify_chains(db, _VERIFY.setdefault(db.path, {}))
+
+
 def _full_verify_loop(db_path, stop):
     """Background: re-walk every chain from the start every FULL_VERIFY_EVERY seconds and swap in the fresh state, so
     dashboard requests stay incremental and fast."""
@@ -269,7 +277,7 @@ class Handler(BaseHTTPRequestHandler):
                       "/api/candidates": lambda: candidates(db), "/api/paper": lambda: paper(db),
                       "/api/risk": lambda: risk(db), "/api/data": lambda: data_quality(db),
                       "/api/audit": lambda: audit(db, (qs.get("kind") or [None])[0], (qs.get("limit") or [200])[0])}
-            routes.update({"/api/mission": lambda: mission.mission(db), "/api/pipeline": lambda: mission.pipeline_rows(db),
+            routes.update({"/api/mission": lambda: mission.mission(db, verify=lambda: chains_for(db)), "/api/pipeline": lambda: mission.pipeline_rows(db),
                            "/api/throughput": lambda: mission.throughput(db), "/api/results": lambda: mission.results_view(db)})
             one = lambda k, d=None: (qs.get(k) or [d])[0]  # noqa: E731
             routes.update({

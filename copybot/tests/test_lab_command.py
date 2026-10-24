@@ -343,6 +343,30 @@ class Performance(unittest.TestCase):
         self.assertFalse(c[1])                                             # trigger missing is reported
         self.assertEqual(c[0]["events"][1], last)                          # and a full walk locates the broken row
 
+    def test_overview_and_mission_use_the_incremental_check_and_still_report_a_break(self):
+        from lab import db as dbmod, mission
+        with tempfile.TemporaryDirectory() as d:
+            db = DB(os.path.join(d, "lab.db"))
+            for i in range(5):
+                db.event("x.test", "t", None, {"i": i})
+            web._VERIFY.pop(db.path, None)
+            self.assertTrue(web.overview(db)["chain_ok"])
+            db.event("x.test", "t", None, {"i": 5})
+            calls = []
+            real = dbmod.row_hash
+            with mock.patch("lab.db.row_hash", lambda *a: calls.append(1) or real(*a)):
+                ov = web.overview(db)
+                m = mission.mission(db, verify=lambda: web.chains_for(db))
+            self.assertTrue(ov["chain_ok"] and m["chain_ok"])
+            self.assertEqual(ov["rows"]["events"], db.verify()[0]["events"][0])
+            self.assertLessEqual(len(calls), 2)                            # only the new row, not the whole chain
+            db.con.execute("DROP TRIGGER events_no_update")                # tamper with an old row
+            db.con.execute("UPDATE events SET payload='{}' WHERE id=1")
+            self.assertFalse(web.overview(db)["chain_ok"])
+            self.assertFalse(mission.mission(db, verify=lambda: web.chains_for(db))["chain_ok"])
+            web._VERIFY.pop(db.path, None)
+            db.close()
+
 
 class StopState(unittest.TestCase):
     def test_stop_is_pending_only_until_the_supervisor_stopped(self):

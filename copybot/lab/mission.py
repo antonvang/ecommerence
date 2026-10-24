@@ -181,13 +181,14 @@ def pipeline_rows(db, now=None):
     return {"stages": list(STAGES), "counts": counts, "experiments": out, "pm_lp_schedule": sched}
 
 
-def mission(db, now=None):
+def mission(db, now=None, verify=None):
+    """`verify` returns (chains, triggers) like db.verify(); the dashboard passes its incremental check."""
     now = now or time.time()
     pr = pipeline_rows(db, now)
     st = {}
     for r in pr["experiments"]:
         st[r["state"]] = st.get(r["state"], 0) + 1
-    chains, triggers = db.verify()
+    chains, triggers = (verify or db.verify)()
     detectors = [dict(r) for r in db.q("SELECT detector, MAX(ts) last_ts, COUNT(*) n, SUM(flagged) flagged, "
                                        "SUM(CASE WHEN metric='error' THEN 1 ELSE 0 END) errors FROM observations "
                                        "GROUP BY detector ORDER BY detector")]
