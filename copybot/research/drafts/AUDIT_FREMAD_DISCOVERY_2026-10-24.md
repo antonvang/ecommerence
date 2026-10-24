@@ -78,3 +78,36 @@ revisionspraksis (efter 11-14, ingen forespørgsel før).
   bevidst, så koden ikke kan tilpasses observationerne. Dashboardets tællere er kun visning. Rapporterne kan altså ikke
   genereres i dag; deres regler (dedup pr. mønt, fortegnsskift pr. meddelelse for M1F, Holm for U1F) står i teksterne.
 - **Ingen ændring** af kriterier eller parametre. Ingen uregistreret gentest.
+
+## 6. Tilføjet 21:49 (master follow-up 8): integritet, forward-tests og tre kandidater
+
+**Målelog (kontrolleret mod produktionen, skrivebeskyttet):** 24 observationer med målelog (2 scanninger × 12
+markeder) er alle internt konsistente:
+- σ genberegnet fra `sigma_basis` = gemt σ;
+- z = afkast/σ;
+- median × volumenforhold = timeomsætning;
+- antal afkast stemmer, og der mangler 0 barer;
+- flagene følger tærsklerne.
+
+En uafhængig reproduktion fra de rå klines er ikke mulig uden en ny forespørgsel (kun `klines_sha256` gemmes). Det er
+bevidst; se ændring 21r punkt 3.
+
+**R1-integritet:** genstarter havde dubleret 36 af 48 markedstimer i bogdataene. Rettet i 21r (én observation pr.
+time, den tidligste). Ingen afgørelse var truffet på de dublerede tal.
+
+**Forward-tests:** uændret siden afsnit 2 og 5. FOMC-rapporten (`lab/eventreport.py`) læser scannerens observationer
+pr. scanning, og dens låste vinduer bruger klines fra børsen, ikke scannerens rækker, så dubletterne påvirker ikke
+afkastene. Scannerens forsinkelser og flag tæller dog pr. række. Rapporten kører efter 10-29 kl. 21:00 med ændring
+21d's definitioner. En dublet vises der som en ekstra scanning, ikke som en ekstra hændelse, fordi analyseposterne er
+deduplikeret (6 t).
+
+**Tre kandidater (ingen vinder valgt):**
+
+| | Ny information | Datadækning, der kræves | Tid til svar | Største bias-risici |
+|---|---|---|---|---|
+| On-chain-strømme fremad (21q) | udbud på vej til eller fra børser (ikke pris, funding eller orderflow) | ≥ 6–12 måneders daglige point-in-time-værdier for BTC/ETH (2 aktiver, så få uafhængige klynger) | 6–12 mdr. | revisioner (håndteret: første værdi), leverandørens metodeskift, korrelation med prisuro |
+| Overskriftsdrevne makrobevægelser fremad | om flag med en samtidig makrooverskrift (Fed, ECB, CNBC) opfører sig anderledes end flag uden | mange måneders flag; i dag 4 hændelser på et døgn, alle i weekend | måneder | få hændelser, overskrifter med upræcis udgivelsestid, valg af nøgleord |
+| R3 minutmakro (2026-11-14) | prisreaktionen inden for 1–60 min efter planlagte udgivelser | 44 filer 1m-klines 2020–21, ~57 klynger | dage efter 11-14 | lav styrke, omkostningsgulvet (0,46 %) gør PASS usandsynligt, tidsstempler (kalenderen er planlagt tid) |
+
+R3 er den eneste, der kan give et svar inden for få uger. De to andre kræver måneders fremadrettede data. Ingen
+screening, ingen LÅS, intet alfa.
