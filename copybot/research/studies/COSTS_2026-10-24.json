@@ -1,0 +1,6888 @@
+{
+ "fee_per_side": {
+  "crypto": 0.0005,
+  "tradfi": 0.0004
+ },
+ "rows": [
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 1.2547059315071185e-06,
+   "spread": 1.2547059315071185e-06,
+   "symbol": "BTCUSDT",
+   "underlying": "COIN",
+   "volume_24h": 9189795011.64
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 4.342680954181797e-06,
+   "spread": 4.342680954181797e-06,
+   "symbol": "ETHUSDT",
+   "underlying": "COIN",
+   "volume_24h": 6791673045.45
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.000245900644220384,
+   "spread": 3.725019090719452e-05,
+   "symbol": "BCHUSDT",
+   "underlying": "COIN",
+   "volume_24h": 76350125.68
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 7.89421748569086e-05,
+   "spread": 7.89421748569086e-05,
+   "symbol": "XRPUSDT",
+   "underlying": "COIN",
+   "volume_24h": 533701467.9771
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.00019626857110799714,
+   "spread": 0.0001797429675563586,
+   "symbol": "LTCUSDT",
+   "underlying": "COIN",
+   "volume_24h": 76043664.01
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 3.039375104464687e-05,
+   "spread": 3.039375104464687e-05,
+   "symbol": "TRXUSDT",
+   "underlying": "COIN",
+   "volume_24h": 25622586.57077
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.00028690762023043486,
+   "spread": 0.00013387776959628432,
+   "symbol": "ETCUSDT",
+   "underlying": "COIN",
+   "volume_24h": 21781778.581
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.00017172015068240898,
+   "spread": 8.800880088003922e-05,
+   "symbol": "LINKUSDT",
+   "underlying": "COIN",
+   "volume_24h": 101981964.779
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0001835490499392055,
+   "spread": 5.9426533947466946e-05,
+   "symbol": "XLMUSDT",
+   "underlying": "COIN",
+   "volume_24h": 40229229.58335
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0004927322000493556,
+   "spread": 0.0004927322000493556,
+   "symbol": "ADAUSDT",
+   "underlying": "COIN",
+   "volume_24h": 148243138.0918
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.00024450606145091214,
+   "spread": 1.6723107153293873e-05,
+   "symbol": "XMRUSDT",
+   "underlying": "COIN",
+   "volume_24h": 72500735.94
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.000579172188139949,
+   "spread": 0.0002029838627830126,
+   "symbol": "DASHUSDT",
+   "underlying": "COIN",
+   "volume_24h": 43232999.26
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 6.834225234054419e-05,
+   "spread": 8.723529540043972e-06,
+   "symbol": "ZECUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1438165873.9
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0022712922690812753,
+   "spread": 0.0006901311249136576,
+   "symbol": "XTZUSDT",
+   "underlying": "COIN",
+   "volume_24h": 2222853.70291
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 1.3874340101686295e-05,
+   "spread": 1.3874340101686295e-05,
+   "symbol": "BNBUSDT",
+   "underlying": "COIN",
+   "volume_24h": 315369712.204
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0007254891654946208,
+   "spread": 0.0006170934896636161,
+   "symbol": "ATOMUSDT",
+   "underlying": "COIN",
+   "volume_24h": 27789524.546
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0022716810582128454,
+   "spread": 0.0008040201005024797,
+   "symbol": "ONTUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1621364.950201
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0022391670671371333,
+   "spread": 0.0004710315591144415,
+   "symbol": "IOTAUSDT",
+   "underlying": "COIN",
+   "volume_24h": 2693541.896442
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0014166737431073105,
+   "spread": 0.0002535818435400802,
+   "symbol": "BATUSDT",
+   "underlying": "COIN",
+   "volume_24h": 20074584.248475
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.001892828821989921,
+   "spread": 0.00014837895986351103,
+   "symbol": "VETUSDT",
+   "underlying": "COIN",
+   "volume_24h": 7307405.218377
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0017677342848885019,
+   "spread": 0.0004820438659919662,
+   "symbol": "NEOUSDT",
+   "underlying": "COIN",
+   "volume_24h": 2766702.167
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.002411550302486396,
+   "spread": 0.00048620396256224133,
+   "symbol": "QTUMUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1211962.55643
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0011496621561032853,
+   "spread": 0.00027401013837512656,
+   "symbol": "IOSTUSDT",
+   "underlying": "COIN",
+   "volume_24h": 37094683.2496539
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0018810256962759563,
+   "spread": 0.0005372011818426901,
+   "symbol": "THETAUSDT",
+   "underlying": "COIN",
+   "volume_24h": 3275892.6447
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.000969629564740407,
+   "spread": 9.812098317221334e-05,
+   "symbol": "ALGOUSDT",
+   "underlying": "COIN",
+   "volume_24h": 8956329.119951
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.002428283484295867,
+   "spread": 0.0005111167901866255,
+   "symbol": "ZILUSDT",
+   "underlying": "COIN",
+   "volume_24h": 6211088.984413
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0027935955460307504,
+   "spread": 0.0008322929671244516,
+   "symbol": "KNCUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1218291.2317
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.002587102923402478,
+   "spread": 0.0009935419771485631,
+   "symbol": "ZRXUSDT",
+   "underlying": "COIN",
+   "volume_24h": 967086.6578
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0018796142994862372,
+   "spread": 0.0004287245444800862,
+   "symbol": "COMPUSDT",
+   "underlying": "COIN",
+   "volume_24h": 6633460.48
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.00017951821563656892,
+   "spread": 0.0001322139221259486,
+   "symbol": "DOGEUSDT",
+   "underlying": "COIN",
+   "volume_24h": 357836349.26803
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0011407558314031382,
+   "spread": 0.0001422778686776695,
+   "symbol": "KAVAUSDT",
+   "underlying": "COIN",
+   "volume_24h": 5945525.5568
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.004409607552143602,
+   "spread": 0.0009861932938856298,
+   "symbol": "BANDUSDT",
+   "underlying": "COIN",
+   "volume_24h": 989849.7063
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0013181414005974483,
+   "spread": 0.0001753309371438397,
+   "symbol": "RLCUSDT",
+   "underlying": "COIN",
+   "volume_24h": 14759296.7994
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.00236777607076818,
+   "spread": 0.0005140066820868105,
+   "symbol": "SNXUSDT",
+   "underlying": "COIN",
+   "volume_24h": 3275959.08868
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0004235093207699486,
+   "spread": 9.629736626702198e-05,
+   "symbol": "DOTUSDT",
+   "underlying": "COIN",
+   "volume_24h": 58093294.2122
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0022339919934178825,
+   "spread": 0.0004698144233027954,
+   "symbol": "YFIUSDT",
+   "underlying": "COIN",
+   "volume_24h": 2385715.6
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0006828976210909919,
+   "spread": 0.00028567347521795316,
+   "symbol": "CRVUSDT",
+   "underlying": "COIN",
+   "volume_24h": 26684179.67231
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.001568858608563453,
+   "spread": 0.000173455523112955,
+   "symbol": "TRBUSDT",
+   "underlying": "COIN",
+   "volume_24h": 6164561.67
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0012053877115489372,
+   "spread": 0.00016190399093335867,
+   "symbol": "RUNEUSDT",
+   "underlying": "COIN",
+   "volume_24h": 4052394.6113
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0017807004369366332,
+   "spread": 0.0005016302984699723,
+   "symbol": "SUSHIUSDT",
+   "underlying": "COIN",
+   "volume_24h": 3500589.5377
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0016322653628759597,
+   "spread": 0.0006186204763376986,
+   "symbol": "EGLDUSDT",
+   "underlying": "COIN",
+   "volume_24h": 7407799.309
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.00010025565191242784,
+   "spread": 0.00010025565191242784,
+   "symbol": "SOLUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1359435835.6651
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.00027921219028453193,
+   "spread": 0.00015150367396414422,
+   "symbol": "UNIUSDT",
+   "underlying": "COIN",
+   "volume_24h": 159312980.01
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0002503072525771231,
+   "spread": 0.0001136299073915625,
+   "symbol": "AVAXUSDT",
+   "underlying": "COIN",
+   "volume_24h": 107713714.262
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0019549274598317404,
+   "spread": 0.000806451612903193,
+   "symbol": "ENJUSDT",
+   "underlying": "COIN",
+   "volume_24h": 2770296.60864
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0022634105757603595,
+   "spread": 0.00026381743833264477,
+   "symbol": "KSMUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1476077.753
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.00022621875353474354,
+   "spread": 0.00022621875353474354,
+   "symbol": "NEARUSDT",
+   "underlying": "COIN",
+   "volume_24h": 686687394.095
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.00023735846238170488,
+   "spread": 7.393988687190584e-05,
+   "symbol": "AAVEUSDT",
+   "underlying": "COIN",
+   "volume_24h": 82626773.628
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.00031706471949397757,
+   "spread": 0.00010833649314770487,
+   "symbol": "FILUSDT",
+   "underlying": "COIN",
+   "volume_24h": 92232592.63731
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0014634462033687537,
+   "spread": 0.0006125574272587541,
+   "symbol": "RSRUSDT",
+   "underlying": "COIN",
+   "volume_24h": 7943701.650755
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.005777287225977432,
+   "spread": 0.0003792907263417255,
+   "symbol": "BELUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1091343.74882
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0010073428978866008,
+   "spread": 0.00010688899577787289,
+   "symbol": "AXSUSDT",
+   "underlying": "COIN",
+   "volume_24h": 7020589.621
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0011630167545486957,
+   "spread": 0.00017868310551243346,
+   "symbol": "ZENUSDT",
+   "underlying": "COIN",
+   "volume_24h": 9177271.447
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0026985821795384654,
+   "spread": 0.0005130836326321871,
+   "symbol": "SKLUSDT",
+   "underlying": "COIN",
+   "volume_24h": 2766663.020919
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.001772745821884783,
+   "spread": 0.00044873233116444214,
+   "symbol": "GRTUSDT",
+   "underlying": "COIN",
+   "volume_24h": 3440513.80604
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0011732755449981014,
+   "spread": 0.00011391467790636214,
+   "symbol": "1INCHUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1964112.77314
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0017219597160586409,
+   "spread": 0.0007902015013828205,
+   "symbol": "CHZUSDT",
+   "underlying": "COIN",
+   "volume_24h": 6914587.42287
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0005608189794977041,
+   "spread": 0.00020331401850149687,
+   "symbol": "SANDUSDT",
+   "underlying": "COIN",
+   "volume_24h": 26909180.34549
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.004019547449200546,
+   "spread": 0.0004808848280835293,
+   "symbol": "ANKRUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1709856.600752
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0023628923404456536,
+   "spread": 0.0007415647015201454,
+   "symbol": "RVNUSDT",
+   "underlying": "COIN",
+   "volume_24h": 3977660.73698
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.005192406124074446,
+   "spread": 0.0008097165991901942,
+   "symbol": "SFPUSDT",
+   "underlying": "COIN",
+   "volume_24h": 926447.3663
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.002127893383190407,
+   "spread": 0.00018891092849723865,
+   "symbol": "COTIUSDT",
+   "underlying": "COIN",
+   "volume_24h": 9513465.515543
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0033642420876645006,
+   "spread": 0.0005819028222286641,
+   "symbol": "CHRUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1224767.46399
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0012527264359383189,
+   "spread": 0.00012803277639070637,
+   "symbol": "MANAUSDT",
+   "underlying": "COIN",
+   "volume_24h": 4416221.87252
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.002734645805773734,
+   "spread": 0.0007544322897019162,
+   "symbol": "ALICEUSDT",
+   "underlying": "COIN",
+   "volume_24h": 2250414.28178
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0004188488681600148,
+   "spread": 0.0001314492277357361,
+   "symbol": "HBARUSDT",
+   "underlying": "COIN",
+   "volume_24h": 34386965.473
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0022029682072860035,
+   "spread": 7.663716135942047e-05,
+   "symbol": "ONEUSDT",
+   "underlying": "COIN",
+   "volume_24h": 6468769.9908235
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.003415833477990845,
+   "spread": 0.00041554124246818996,
+   "symbol": "CELRUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1291099.598815
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0025525948034968073,
+   "spread": 0.0005858230814294225,
+   "symbol": "HOTUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1129857.3537873
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.003975881168792691,
+   "spread": 0.00038146099561315656,
+   "symbol": "MTLUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1456464.6783
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.001979800459781667,
+   "spread": 0.0003696174459434334,
+   "symbol": "OGNUSDT",
+   "underlying": "COIN",
+   "volume_24h": 6772739.20821
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.00038782324035725404,
+   "spread": 0.00020831163420479803,
+   "symbol": "1000SHIBUSDT",
+   "underlying": "COIN",
+   "volume_24h": 32792356.091379
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.002108399113858244,
+   "spread": 0.00048684580095503794,
+   "symbol": "GTCUSDT",
+   "underlying": "COIN",
+   "volume_24h": 55141180.023094
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.00024157465069830794,
+   "spread": 1.7704285322165642e-05,
+   "symbol": "BTCDOMUSDT",
+   "underlying": "INDEX",
+   "volume_24h": 2437928.3
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0034566560756388526,
+   "spread": 0.0005320563979781409,
+   "symbol": "IOTXUSDT",
+   "underlying": "COIN",
+   "volume_24h": 3037653.127414
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0031763613025470624,
+   "spread": 0.0007064641469446363,
+   "symbol": "C98USDT",
+   "underlying": "COIN",
+   "volume_24h": 1623697.40123
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.002091224205145563,
+   "spread": 0.0005103342689462451,
+   "symbol": "MASKUSDT",
+   "underlying": "COIN",
+   "volume_24h": 6302870.5949
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0021103068142071203,
+   "spread": 0.0009315323707497809,
+   "symbol": "DYDXUSDT",
+   "underlying": "COIN",
+   "volume_24h": 3832053.04247
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.00449929039192403,
+   "spread": 0.0004743457980868682,
+   "symbol": "1000XECUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1380075.871867
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0011016113587173366,
+   "spread": 0.0005762028233937861,
+   "symbol": "GALAUSDT",
+   "underlying": "COIN",
+   "volume_24h": 12023201.407204
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0034673624590709482,
+   "spread": 0.0002604166666667464,
+   "symbol": "CELOUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1383719.661498
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0013044633962176345,
+   "spread": 0.00030106879421944595,
+   "symbol": "ARUSDT",
+   "underlying": "COIN",
+   "volume_24h": 10703166.075
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0024221197005307466,
+   "spread": 0.0005194535348812838,
+   "symbol": "ARPAUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1094219.658982
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0030365856870855166,
+   "spread": 0.0003612064294744299,
+   "symbol": "CTSIUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1743023.46892
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0021440696018935677,
+   "spread": 0.0006870491240122912,
+   "symbol": "LPTUSDT",
+   "underlying": "COIN",
+   "volume_24h": 3209154.205
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.001126922181198008,
+   "spread": 0.00019251131003952913,
+   "symbol": "ENSUSDT",
+   "underlying": "COIN",
+   "volume_24h": 3932112.257
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.001503352494698798,
+   "spread": 0.0001358049840429324,
+   "symbol": "PEOPLEUSDT",
+   "underlying": "COIN",
+   "volume_24h": 4638690.421696
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0025075871123111703,
+   "spread": 0.00029940119760483015,
+   "symbol": "ROSEUSDT",
+   "underlying": "COIN",
+   "volume_24h": 2947282.038218
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0030063980042733664,
+   "spread": 0.0008162895106797231,
+   "symbol": "DUSKUSDT",
+   "underlying": "COIN",
+   "volume_24h": 5418227.41135
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.002502400827703298,
+   "spread": 0.0003726476616359081,
+   "symbol": "FLOWUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1795125.942216
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0025692033382802367,
+   "spread": 0.000726480203414377,
+   "symbol": "IMXUSDT",
+   "underlying": "COIN",
+   "volume_24h": 2506185.0053
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.002699478702786817,
+   "spread": 0.00039658933174693237,
+   "symbol": "API3USDT",
+   "underlying": "COIN",
+   "volume_24h": 2022737.7316
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0017895922943227025,
+   "spread": 0.00014500108750817555,
+   "symbol": "GMTUSDT",
+   "underlying": "COIN",
+   "volume_24h": 2423609.400865
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0016787554843721584,
+   "spread": 0.0007939658594679553,
+   "symbol": "APEUSDT",
+   "underlying": "COIN",
+   "volume_24h": 7083537.9026
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0034881105651306333,
+   "spread": 0.0010035122930255487,
+   "symbol": "WOOUSDT",
+   "underlying": "COIN",
+   "volume_24h": 16524021.59443
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0010922751213903294,
+   "spread": 0.000231240605850418,
+   "symbol": "JASMYUSDT",
+   "underlying": "COIN",
+   "volume_24h": 7223154.692544
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0005494270367155479,
+   "spread": 9.090495886547088e-05,
+   "symbol": "OPUSDT",
+   "underlying": "COIN",
+   "volume_24h": 30796487.678544
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.00035656606100139334,
+   "spread": 0.00013309376455717493,
+   "symbol": "INJUSDT",
+   "underlying": "COIN",
+   "volume_24h": 58101232.1615
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0037239238143593496,
+   "spread": 0.0012414649286156285,
+   "symbol": "SPELLUSDT",
+   "underlying": "COIN",
+   "volume_24h": 702082.5597287
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0015991345649821256,
+   "spread": 0.00022724690376100582,
+   "symbol": "1000LUNCUSDT",
+   "underlying": "COIN",
+   "volume_24h": 5481534.13003
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0018913583117810553,
+   "spread": 0.0002401825387295079,
+   "symbol": "LUNA2USDT",
+   "underlying": "COIN",
+   "volume_24h": 2549858.00076
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0007173154004493175,
+   "spread": 0.00027416038382450713,
+   "symbol": "LDOUSDT",
+   "underlying": "COIN",
+   "volume_24h": 19989636.2153
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0007076734286000728,
+   "spread": 0.0003829216925138387,
+   "symbol": "ICPUSDT",
+   "underlying": "COIN",
+   "volume_24h": 23839153.731
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0006343209031935263,
+   "spread": 0.00014248058702000284,
+   "symbol": "APTUSDT",
+   "underlying": "COIN",
+   "volume_24h": 37152081.98628
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0005447357974234867,
+   "spread": 5.671667186564334e-05,
+   "symbol": "QNTUSDT",
+   "underlying": "COIN",
+   "volume_24h": 53766532.928
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0006121958791524469,
+   "spread": 0.000581226387678098,
+   "symbol": "FETUSDT",
+   "underlying": "COIN",
+   "volume_24h": 47780767.8023
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0011057551654267488,
+   "spread": 0.00023534949399849666,
+   "symbol": "MAGICUSDT",
+   "underlying": "COIN",
+   "volume_24h": 9515956.742901
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0038313233751770155,
+   "spread": 0.00022195094884014323,
+   "symbol": "TUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1263755.900002
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0014178135322922582,
+   "spread": 0.0001574927159618257,
+   "symbol": "MINAUSDT",
+   "underlying": "COIN",
+   "volume_24h": 7300452.67856
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.004770820509229218,
+   "spread": 0.0003392705682782469,
+   "symbol": "ASTRUSDT",
+   "underlying": "COIN",
+   "volume_24h": 874029.021333
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.002719139452626269,
+   "spread": 0.0004903162539837655,
+   "symbol": "GMXUSDT",
+   "underlying": "COIN",
+   "volume_24h": 4021536.22928
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0013739500868770974,
+   "spread": 0.00021077036568650274,
+   "symbol": "CFXUSDT",
+   "underlying": "COIN",
+   "volume_24h": 7452674.32784
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0012009613120103444,
+   "spread": 0.0003357394661742118,
+   "symbol": "STXUSDT",
+   "underlying": "COIN",
+   "volume_24h": 10923171.8401
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.002365570996040999,
+   "spread": 0.0001981178801387088,
+   "symbol": "ACHUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1428178.387393
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.00373577183204891,
+   "spread": 0.0008206811653673465,
+   "symbol": "SSVUSDT",
+   "underlying": "COIN",
+   "volume_24h": 2147553.93811
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.003858113131878634,
+   "spread": 0.00021479969928038742,
+   "symbol": "CKBUSDT",
+   "underlying": "COIN",
+   "volume_24h": 2065357.2899549
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.004431477139654788,
+   "spread": 0.001015744032503838,
+   "symbol": "LQTYUSDT",
+   "underlying": "COIN",
+   "volume_24h": 695538.85024
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 9.994318231483183e-07,
+   "spread": 9.994318231483183e-07,
+   "symbol": "USDCUSDT",
+   "underlying": "COIN",
+   "volume_24h": 3241898.052375
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.002185652820598602,
+   "spread": 0.0006506180871827972,
+   "symbol": "IDUSDT",
+   "underlying": "COIN",
+   "volume_24h": 4201496.5702
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.00038444951640950574,
+   "spread": 6.053085560353649e-05,
+   "symbol": "ARBUSDT",
+   "underlying": "COIN",
+   "volume_24h": 87239382.781913
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.005273362835283742,
+   "spread": 0.0003489792357355806,
+   "symbol": "JOEUSDT",
+   "underlying": "COIN",
+   "volume_24h": 969365.72585
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0028043260003484324,
+   "spread": 0.0008543357539512309,
+   "symbol": "TLMUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1032633.258646
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.005486424051005269,
+   "spread": 0.00033653037186602385,
+   "symbol": "XVSUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1043480.7994
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.002572425087589535,
+   "spread": 0.001269841269841218,
+   "symbol": "BLURUSDT",
+   "underlying": "COIN",
+   "volume_24h": 5703517.43381
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0024284979811553236,
+   "spread": 0.0006393861892582859,
+   "symbol": "EDUUSDT",
+   "underlying": "COIN",
+   "volume_24h": 6028028.63462
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0002313364560438847,
+   "spread": 0.00010828956630027504,
+   "symbol": "SUIUSDT",
+   "underlying": "COIN",
+   "volume_24h": 197784525.74774
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0003376472198658125,
+   "spread": 7.011885145320224e-05,
+   "symbol": "1000PEPEUSDT",
+   "underlying": "COIN",
+   "volume_24h": 388424698.9063639
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0016248733878995807,
+   "spread": 0.0004414036636503903,
+   "symbol": "1000FLOKIUSDT",
+   "underlying": "COIN",
+   "volume_24h": 5734837.39717
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.002951683942383639,
+   "spread": 0.000281096275474319,
+   "symbol": "UMAUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1314297.4071
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0015972266125457231,
+   "spread": 9.966611850313671e-05,
+   "symbol": "NMRUSDT",
+   "underlying": "COIN",
+   "volume_24h": 6239844.583
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.003991723031221571,
+   "spread": 0.0005316603753522034,
+   "symbol": "MAVUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1295056.146097
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.004022086471398796,
+   "spread": 0.000420964007577408,
+   "symbol": "XVGUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1647811.323299
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0004076928249450556,
+   "spread": 0.00021699034392967125,
+   "symbol": "WLDUSDT",
+   "underlying": "COIN",
+   "volume_24h": 302215553.7532
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0011423874203860662,
+   "spread": 0.00020661157024791114,
+   "symbol": "PENDLEUSDT",
+   "underlying": "COIN",
+   "volume_24h": 18648105.3252
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0028503060033857105,
+   "spread": 0.0008100445524504079,
+   "symbol": "ARKMUSDT",
+   "underlying": "COIN",
+   "volume_24h": 12559615.8896
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.003556536390441983,
+   "spread": 0.0005897965202004659,
+   "symbol": "AGLDUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1216010.3015
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.002513441455925729,
+   "spread": 0.00040774719673800585,
+   "symbol": "YGGUSDT",
+   "underlying": "COIN",
+   "volume_24h": 2887041.04654
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.004078835675076113,
+   "spread": 9.129501985675812e-05,
+   "symbol": "DODOXUSDT",
+   "underlying": "COIN",
+   "volume_24h": 2592417.082396
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.004218625436251742,
+   "spread": 0.0010247651579845156,
+   "symbol": "BNTUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1054643.7179
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0006919023662443268,
+   "spread": 0.00018926847733502646,
+   "symbol": "SEIUSDT",
+   "underlying": "COIN",
+   "volume_24h": 18502965.85696
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0032398301944797326,
+   "spread": 0.000659848234906082,
+   "symbol": "CYBERUSDT",
+   "underlying": "COIN",
+   "volume_24h": 3798123.39072
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.001862202775994814,
+   "spread": 0.0005523336095002306,
+   "symbol": "ARKUSDT",
+   "underlying": "COIN",
+   "volume_24h": 68520878.241
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.002858835681801306,
+   "spread": 0.0006633499170812334,
+   "symbol": "BICOUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1978698.35349
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0015139701850217702,
+   "spread": 0.0006088280060882289,
+   "symbol": "BIGTIMEUSDT",
+   "underlying": "COIN",
+   "volume_24h": 12104069.687027
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0037966557175322007,
+   "spread": 0.00022591212018527792,
+   "symbol": "WAXPUSDT",
+   "underlying": "COIN",
+   "volume_24h": 884344.551995
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.002316767064232287,
+   "spread": 0.0005936479667558067,
+   "symbol": "BSVUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1095303.117
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0028767090062426096,
+   "spread": 0.0004269550985553031,
+   "symbol": "RIFUSDT",
+   "underlying": "COIN",
+   "volume_24h": 991302.49803
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0034293348963468522,
+   "spread": 0.0003006162633399387,
+   "symbol": "POLYXUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1831194.81093
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.00300670653547046,
+   "spread": 0.0008594757198108207,
+   "symbol": "GASUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1141272.7828
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.003926837216402315,
+   "spread": 0.00019042178425204462,
+   "symbol": "POWRUSDT",
+   "underlying": "COIN",
+   "volume_24h": 6574241.30541
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0005769120840518445,
+   "spread": 0.00019078508060667553,
+   "symbol": "TIAUSDT",
+   "underlying": "COIN",
+   "volume_24h": 73036857.6914
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0008733694283278747,
+   "spread": 4.9238041310820574e-05,
+   "symbol": "CAKEUSDT",
+   "underlying": "COIN",
+   "volume_24h": 8794670.5115
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0017028666398749804,
+   "spread": 0.0004349717268377661,
+   "symbol": "MEMEUSDT",
+   "underlying": "COIN",
+   "volume_24h": 2798945.8340222
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.002786816332118714,
+   "spread": 0.00047348484848479635,
+   "symbol": "TWTUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1039406.1736
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.000986310134168853,
+   "spread": 0.0002835672763364055,
+   "symbol": "ORDIUSDT",
+   "underlying": "COIN",
+   "volume_24h": 7616345.5912
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.00443143665822218,
+   "spread": 0.0006187480664123388,
+   "symbol": "STEEMUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1156452.3561
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0030261690220136266,
+   "spread": 0.00032878513891168495,
+   "symbol": "ILVUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1123660.4557
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0018079146804950699,
+   "spread": 0.00028340654669131536,
+   "symbol": "KASUSDT",
+   "underlying": "COIN",
+   "volume_24h": 4334118.50149
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0019971087762022514,
+   "spread": 0.0006193868070609574,
+   "symbol": "BEAMXUSDT",
+   "underlying": "COIN",
+   "volume_24h": 11893877.297527
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.000765990132957953,
+   "spread": 0.00033755274261607857,
+   "symbol": "1000BONKUSDT",
+   "underlying": "COIN",
+   "volume_24h": 28776982.287928
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0011596197192502607,
+   "spread": 0.0001471562063131484,
+   "symbol": "PYTHUSDT",
+   "underlying": "COIN",
+   "volume_24h": 15816889.7968
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.003882059472988159,
+   "spread": 0.00039658933174705814,
+   "symbol": "SUPERUSDT",
+   "underlying": "COIN",
+   "volume_24h": 2774471.93078
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.004185279420999962,
+   "spread": 0.0002038112707633003,
+   "symbol": "USTCUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1403960.061214
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.001431827900830089,
+   "spread": 0.00013645357167218564,
+   "symbol": "ONGUSDT",
+   "underlying": "COIN",
+   "volume_24h": 4287292.57645
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.005039635395845623,
+   "spread": 0.0008976660682225223,
+   "symbol": "ETHWUSDT",
+   "underlying": "COIN",
+   "volume_24h": 589833.1035
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0011561343299335183,
+   "spread": 0.0002385211687537006,
+   "symbol": "JTOUSDT",
+   "underlying": "COIN",
+   "volume_24h": 10314575.58
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0022674568617141936,
+   "spread": 0.0010126582278480916,
+   "symbol": "1000SATSUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1672793.22782296
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0035825737310081983,
+   "spread": 0.00029634019854790037,
+   "symbol": "AUCTIONUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1475843.52192
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.004331880187489155,
+   "spread": 0.0005514199062585935,
+   "symbol": "1000RATSUSDT",
+   "underlying": "COIN",
+   "volume_24h": 3415605.23552
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0016244289569571071,
+   "spread": 0.00014418571119616467,
+   "symbol": "ACEUSDT",
+   "underlying": "COIN",
+   "volume_24h": 7008098.866546
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.001385843931296641,
+   "spread": 9.061664627791129e-05,
+   "symbol": "MOVRUSDT",
+   "underlying": "COIN",
+   "volume_24h": 8184595.790559
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0030523984077791676,
+   "spread": 0.00025933609958509666,
+   "symbol": "XAIUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1861355.501441
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0005560189046428509,
+   "spread": 0.0005560189046428509,
+   "symbol": "WIFUSDT",
+   "underlying": "COIN",
+   "volume_24h": 22710952.18685
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0029085623824583375,
+   "spread": 0.00032180209171358306,
+   "symbol": "MANTAUSDT",
+   "underlying": "COIN",
+   "volume_24h": 3390729.17817
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.00030319750564981586,
+   "spread": 0.0002492211838005956,
+   "symbol": "ONDOUSDT",
+   "underlying": "COIN",
+   "volume_24h": 69550099.28585
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0015490526482564862,
+   "spread": 0.00011931038596921793,
+   "symbol": "LSKUSDT",
+   "underlying": "COIN",
+   "volume_24h": 10479043.16741
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0018034004562074541,
+   "spread": 0.00014980151299517122,
+   "symbol": "ALTUSDT",
+   "underlying": "COIN",
+   "volume_24h": 34737988.668357
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.000685754383397777,
+   "spread": 0.0003568242640499161,
+   "symbol": "JUPUSDT",
+   "underlying": "COIN",
+   "volume_24h": 16448271.4612
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0025065813238360365,
+   "spread": 0.00025519969376044564,
+   "symbol": "ZETAUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1930871.20462
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0033613234434802983,
+   "spread": 0.0003756574004507736,
+   "symbol": "RONINUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1540619.940378
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.003037576841124506,
+   "spread": 0.0005613247263541731,
+   "symbol": "DYMUSDT",
+   "underlying": "COIN",
+   "volume_24h": 2514570.403916
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0030106514380582486,
+   "spread": 0.0004089979550102792,
+   "symbol": "PIXELUSDT",
+   "underlying": "COIN",
+   "volume_24h": 3458060.39588
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0005933246482588046,
+   "spread": 0.00021383513311228744,
+   "symbol": "STRKUSDT",
+   "underlying": "COIN",
+   "volume_24h": 64039066.978433
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0034829354683803,
+   "spread": 0.00028268551236751237,
+   "symbol": "GLMUSDT",
+   "underlying": "COIN",
+   "volume_24h": 958459.8783
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0039023908373885734,
+   "spread": 0.0007238508867174323,
+   "symbol": "PORTALUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1112236.911758
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0036764929292613527,
+   "spread": 0.00041631973355535357,
+   "symbol": "AXLUSDT",
+   "underlying": "COIN",
+   "volume_24h": 6769688.76571
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0026324895020610316,
+   "spread": 0.0002890591125884925,
+   "symbol": "METISUSDT",
+   "underlying": "COIN",
+   "volume_24h": 4182121.6112
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0030302165020246047,
+   "spread": 0.00046285582041192283,
+   "symbol": "AEVOUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1525369.049072
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0012247716987330221,
+   "spread": 0.00016456841932024723,
+   "symbol": "BOMEUSDT",
+   "underlying": "COIN",
+   "volume_24h": 11277610.3570482
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0008698060942919399,
+   "spread": 0.00016381358014577602,
+   "symbol": "ETHFIUSDT",
+   "underlying": "COIN",
+   "volume_24h": 23671594.25436
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.00025892657525672494,
+   "spread": 5.350597929323952e-05,
+   "symbol": "ENAUSDT",
+   "underlying": "COIN",
+   "volume_24h": 323176066.6261
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0011058021267682044,
+   "spread": 0.00016362595107586233,
+   "symbol": "WUSDT",
+   "underlying": "COIN",
+   "volume_24h": 17335423.2001252
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.003847699282690573,
+   "spread": 0.0006816632583504655,
+   "symbol": "TNSRUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1385016.725609
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0019715268825534855,
+   "spread": 0.0005673758865247995,
+   "symbol": "SAGAUSDT",
+   "underlying": "COIN",
+   "volume_24h": 4540386.958946
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0003109541875674644,
+   "spread": 4.070583925260377e-05,
+   "symbol": "TAOUSDT",
+   "underlying": "COIN",
+   "volume_24h": 105009956.16
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0024071794016270304,
+   "spread": 0.00023405500292571858,
+   "symbol": "REZUSDT",
+   "underlying": "COIN",
+   "volume_24h": 16873125.029981
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.002839776874279353,
+   "spread": 0.0005311379630858669,
+   "symbol": "BBUSDT",
+   "underlying": "COIN",
+   "volume_24h": 2997533.218419
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0026037579944855134,
+   "spread": 0.0005417118093173095,
+   "symbol": "NOTUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1673170.0984502
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.001808661994272716,
+   "spread": 0.0001222718102340872,
+   "symbol": "TURBOUSDT",
+   "underlying": "COIN",
+   "volume_24h": 2043054.6019397
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0025239899118057376,
+   "spread": 0.0006889424733034033,
+   "symbol": "IOUSDT",
+   "underlying": "COIN",
+   "volume_24h": 4393926.65154
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0013495300027180233,
+   "spread": 0.00024603272235203434,
+   "symbol": "ZKUSDT",
+   "underlying": "COIN",
+   "volume_24h": 12525867.450609
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0017389579245881259,
+   "spread": 0.00022131238242780225,
+   "symbol": "MEWUSDT",
+   "underlying": "COIN",
+   "volume_24h": 7941682.0050436
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.006415863569351442,
+   "spread": 0.0009084420219323938,
+   "symbol": "LISTAUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1482089.57768
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0007522156487403828,
+   "spread": 5.9229425178422124e-05,
+   "symbol": "ZROUSDT",
+   "underlying": "COIN",
+   "volume_24h": 39049304.83684
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.001133475864551603,
+   "spread": 0.0005993407252023446,
+   "symbol": "RENDERUSDT",
+   "underlying": "COIN",
+   "volume_24h": 18253268.7221
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.004228240212213652,
+   "spread": 0.0009100561201274423,
+   "symbol": "BANANAUSDT",
+   "underlying": "COIN",
+   "volume_24h": 615009.1261
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0037175610433437052,
+   "spread": 0.0008173273395994763,
+   "symbol": "RAREUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1560743.52165
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0015403857523762369,
+   "spread": 0.0002722940776038483,
+   "symbol": "GUSDT",
+   "underlying": "COIN",
+   "volume_24h": 3172715.402421
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0027218585248160506,
+   "spread": 0.0005399932500843519,
+   "symbol": "SYNUSDT",
+   "underlying": "COIN",
+   "volume_24h": 9996729.69348
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.003880083351142252,
+   "spread": 0.00021941854086673232,
+   "symbol": "BRETTUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1671080.673741
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.003012853460512638,
+   "spread": 0.000232315019165899,
+   "symbol": "POPCATUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1776183.96524
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0004101544512250115,
+   "spread": 6.15327815892398e-05,
+   "symbol": "SUNUSDT",
+   "underlying": "COIN",
+   "volume_24h": 698334.018177
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0034670939675871385,
+   "spread": 0.0002906554279899672,
+   "symbol": "DOGSUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1564904.05640225
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0042581105741692805,
+   "spread": 0.00047472110135299067,
+   "symbol": "FLUXUSDT",
+   "underlying": "COIN",
+   "volume_24h": 861290.51199
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0035995464950721594,
+   "spread": 0.0006942034015967454,
+   "symbol": "RPLUSDT",
+   "underlying": "COIN",
+   "volume_24h": 945080.5654
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.000738323606230937,
+   "spread": 0.00011369450287074212,
+   "symbol": "POLUSDT",
+   "underlying": "COIN",
+   "volume_24h": 11593638.35082
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0018800266834434298,
+   "spread": 0.00028981307056948974,
+   "symbol": "1MBABYDOGEUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1335720.4457166
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0016334740592401614,
+   "spread": 0.00015205656504232307,
+   "symbol": "NEIROUSDT",
+   "underlying": "COIN",
+   "volume_24h": 5440116.18572382
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0023508619809238275,
+   "spread": 0.000576535024502715,
+   "symbol": "FIDAUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1256214.38141
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.005538921769402584,
+   "spread": 0.00021540118470643238,
+   "symbol": "CATIUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1250156.6172
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0033747376301578166,
+   "spread": 0.0007109847138286699,
+   "symbol": "HMSTRUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1169182.0135755
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0010009681177285937,
+   "spread": 0.0004996252810391655,
+   "symbol": "EIGENUSDT",
+   "underlying": "COIN",
+   "volume_24h": 13444608.1119
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.005361654845927688,
+   "spread": 0.0013908205841446854,
+   "symbol": "DIAUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1068332.8452
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.004770030237260111,
+   "spread": 0.0005915409642117218,
+   "symbol": "1000CATUSDT",
+   "underlying": "COIN",
+   "volume_24h": 695304.127631
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.003871756365206541,
+   "spread": 0.0010288065843620982,
+   "symbol": "SCRUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1530897.14776
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.004922323541890783,
+   "spread": 0.0007155635062611515,
+   "symbol": "GOATUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1201300.69851
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0018111085569966154,
+   "spread": 0.0005098139179199384,
+   "symbol": "MOODENGUSDT",
+   "underlying": "COIN",
+   "volume_24h": 6327154.41564
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.00335757193214496,
+   "spread": 0.000710263304753697,
+   "symbol": "SAFEUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1908120.78154
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.004421034887392744,
+   "spread": 0.00022611644997183605,
+   "symbol": "SANTOSUSDT",
+   "underlying": "COIN",
+   "volume_24h": 528246.6973
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.003892233420899675,
+   "spread": 0.0007914523149981538,
+   "symbol": "COWUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1066707.0557
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.005743660382536815,
+   "spread": 0.00046761748889406556,
+   "symbol": "CETUSUSDT",
+   "underlying": "COIN",
+   "volume_24h": 935349.59396
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.004346716313009805,
+   "spread": 0.001010611419909074,
+   "symbol": "1000000MOGUSDT",
+   "underlying": "COIN",
+   "volume_24h": 928263.77932
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0015894393890652186,
+   "spread": 0.00016309222865528662,
+   "symbol": "GRASSUSDT",
+   "underlying": "COIN",
+   "volume_24h": 13635979.79698
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.005115799761747191,
+   "spread": 0.0007366482504603751,
+   "symbol": "DRIFTUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1524677.10031
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0041270325137586295,
+   "spread": 0.0003583159151985107,
+   "symbol": "ACTUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1368073.558727
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0019463042658621175,
+   "spread": 0.0002446483180428884,
+   "symbol": "PNUTUSDT",
+   "underlying": "COIN",
+   "volume_24h": 3252677.49082
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.007407304992352201,
+   "spread": 0.000670578373847416,
+   "symbol": "BANUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1279248.60275
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.002698507476714152,
+   "spread": 0.00031089693766512974,
+   "symbol": "AKTUSDT",
+   "underlying": "COIN",
+   "volume_24h": 3465628.40685
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0053804921415358245,
+   "spread": 0.0002244417012681011,
+   "symbol": "1000CHEEMSUSDT",
+   "underlying": "COIN",
+   "volume_24h": 511438.6086926
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.004841055565651883,
+   "spread": 0.0009647853352629317,
+   "symbol": "THEUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1632933.842775
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0011332938212359363,
+   "spread": 0.0002351668508805695,
+   "symbol": "MORPHOUSDT",
+   "underlying": "COIN",
+   "volume_24h": 7484621.29966
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.004907871490219729,
+   "spread": 0.0008441489922970695,
+   "symbol": "CHILLGUYUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1314627.450454
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.001589558588674989,
+   "spread": 0.0005610098176717864,
+   "symbol": "KAIAUSDT",
+   "underlying": "COIN",
+   "volume_24h": 5906818.43441
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.000741071166782049,
+   "spread": 0.00028768699654772433,
+   "symbol": "AEROUSDT",
+   "underlying": "COIN",
+   "volume_24h": 30715725.93076
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.001375898522913797,
+   "spread": 0.0006018657839301173,
+   "symbol": "ORCAUSDT",
+   "underlying": "COIN",
+   "volume_24h": 6334063.3417
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0024012050762791063,
+   "spread": 0.0002911631969719414,
+   "symbol": "MOVEUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1927370.879764
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0011390800605592236,
+   "spread": 0.00011443611603820906,
+   "symbol": "RAYSOLUSDT",
+   "underlying": "COIN",
+   "volume_24h": 13242687.69078
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.00647744609961277,
+   "spread": 0.00039029467247777243,
+   "symbol": "KOMAUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1410245.68155
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0007290046025821988,
+   "spread": 0.00016341204346758556,
+   "symbol": "VIRTUALUSDT",
+   "underlying": "COIN",
+   "volume_24h": 15205090.49873
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.002079113418552376,
+   "spread": 0.00029546461811211255,
+   "symbol": "SPXUSDT",
+   "underlying": "COIN",
+   "volume_24h": 5417959.8318
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0021667255332660997,
+   "spread": 0.00016470394465952501,
+   "symbol": "MEUSDT",
+   "underlying": "COIN",
+   "volume_24h": 5131035.023756
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.002710958840176044,
+   "spread": 0.0005012531328321641,
+   "symbol": "AVAUSDT",
+   "underlying": "COIN",
+   "volume_24h": 44538260.96106
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.005180519194802236,
+   "spread": 0.0003284611594679935,
+   "symbol": "VELODROMEUSDT",
+   "underlying": "COIN",
+   "volume_24h": 2204835.2969
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0032977168224885395,
+   "spread": 0.00022779043280185256,
+   "symbol": "MOCAUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1287219.940957
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0034733672048634138,
+   "spread": 0.00035275442412849436,
+   "symbol": "VANAUSDT",
+   "underlying": "COIN",
+   "volume_24h": 4386464.304256
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0004899450631553195,
+   "spread": 0.00013441763559380774,
+   "symbol": "PENGUUSDT",
+   "underlying": "COIN",
+   "volume_24h": 56111614.70759
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.002953901457896219,
+   "spread": 0.0002721088435374982,
+   "symbol": "LUMIAUSDT",
+   "underlying": "COIN",
+   "volume_24h": 14490154.168053
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0028666817711347527,
+   "spread": 0.0005053312446308349,
+   "symbol": "USUALUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1137732.029328
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.002805265213035893,
+   "spread": 0.0005499037668407805,
+   "symbol": "AIXBTUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1700127.62263
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0015797848607562118,
+   "spread": 0.0008206811653671645,
+   "symbol": "FARTCOINUSDT",
+   "underlying": "COIN",
+   "volume_24h": 47430793.39822
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0013857977813124941,
+   "spread": 0.0002542265158256785,
+   "symbol": "KMNOUSDT",
+   "underlying": "COIN",
+   "volume_24h": 24008084.63975
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0033853314293551397,
+   "spread": 0.0009871668311944317,
+   "symbol": "CGPTUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1383543.97238
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0029828990436446116,
+   "spread": 0.00041955108034401475,
+   "symbol": "HIVEUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1184687.16628
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0014960157087914843,
+   "spread": 0.0006255864873318047,
+   "symbol": "DEXEUSDT",
+   "underlying": "COIN",
+   "volume_24h": 6137471.91339
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0018733783205081762,
+   "spread": 0.0001995012468828541,
+   "symbol": "PHAUSDT",
+   "underlying": "COIN",
+   "volume_24h": 28981139.82932
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.005970759786763643,
+   "spread": 0.0004354136429608705,
+   "symbol": "GRIFFAINUSDT",
+   "underlying": "COIN",
+   "volume_24h": 2169502.973899
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0035433471114372584,
+   "spread": 3.383007155063516e-05,
+   "symbol": "ZEREBROUSDT",
+   "underlying": "COIN",
+   "volume_24h": 7311093.276389
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0013660674309347337,
+   "spread": 0.00044853106077594044,
+   "symbol": "BIOUSDT",
+   "underlying": "COIN",
+   "volume_24h": 4639094.45671
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.00443745787347557,
+   "spread": 0.000572180580191085,
+   "symbol": "COOKIEUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1019115.183651
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.008414934476372756,
+   "spread": 0.0008151066431190139,
+   "symbol": "ALCHUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1491660.97143
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.007366022861447057,
+   "spread": 0.00092521202775635,
+   "symbol": "SWARMSUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1647789.151342
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.005911222831428879,
+   "spread": 0.0004669624095261761,
+   "symbol": "SONICUSDT",
+   "underlying": "COIN",
+   "volume_24h": 3116621.079908
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.001988157055641875,
+   "spread": 0.00018431480969502057,
+   "symbol": "PROMUSDT",
+   "underlying": "COIN",
+   "volume_24h": 5860460.2033
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0011695185936140583,
+   "spread": 0.0002097095522701701,
+   "symbol": "SUSDT",
+   "underlying": "COIN",
+   "volume_24h": 10505743.07522
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.004441015941162622,
+   "spread": 0.00046082949308761875,
+   "symbol": "SOLVUSDT",
+   "underlying": "COIN",
+   "volume_24h": 3009098.556564
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0034804793623313926,
+   "spread": 0.0005002084201751104,
+   "symbol": "ARCUSDT",
+   "underlying": "COIN",
+   "volume_24h": 7849706.23019
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.006166329014111018,
+   "spread": 0.0001369206544807466,
+   "symbol": "AVAAIUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1572108.924569
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0006091989034419067,
+   "spread": 0.0006091989034419067,
+   "symbol": "TRUMPUSDT",
+   "underlying": "COIN",
+   "volume_24h": 71963400.75692
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.003420304522375615,
+   "spread": 0.0003600792174278611,
+   "symbol": "MELANIAUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1850954.431972
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0025544691894226253,
+   "spread": 0.00017347558331155905,
+   "symbol": "VTHOUSDT",
+   "underlying": "COIN",
+   "volume_24h": 3194679.7505192
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0030952054668026362,
+   "spread": 0.0003128421711247091,
+   "symbol": "ANIMEUSDT",
+   "underlying": "COIN",
+   "volume_24h": 20655730.054114
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0028393951930017953,
+   "spread": 0.0006559527714004325,
+   "symbol": "PIPPINUSDT",
+   "underlying": "COIN",
+   "volume_24h": 2434441.06332
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0008442369573542054,
+   "spread": 8.48896434634504e-05,
+   "symbol": "VVVUSDT",
+   "underlying": "COIN",
+   "volume_24h": 25466272.96587
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0018792211945009155,
+   "spread": 0.0006642311524411607,
+   "symbol": "BERAUSDT",
+   "underlying": "COIN",
+   "volume_24h": 6670311.94342
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0044673741102239815,
+   "spread": 0.0013840830449827625,
+   "symbol": "TSTUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1485651.881319
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.002639720138439421,
+   "spread": 0.000617093489663659,
+   "symbol": "LAYERUSDT",
+   "underlying": "COIN",
+   "volume_24h": 2947573.123629
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.005269474555919784,
+   "spread": 0.00047449584816127636,
+   "symbol": "HEIUSDT",
+   "underlying": "COIN",
+   "volume_24h": 2727295.331358
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.003471631331437945,
+   "spread": 0.00012474271814373673,
+   "symbol": "GPSUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1707962.786395
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.004685996274140595,
+   "spread": 0.0008936550491509913,
+   "symbol": "SHELLUSDT",
+   "underlying": "COIN",
+   "volume_24h": 2071814.22322
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0011386663169540736,
+   "spread": 0.0004012036108324533,
+   "symbol": "KAITOUSDT",
+   "underlying": "COIN",
+   "volume_24h": 6626091.76606
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.002753748216458462,
+   "spread": 0.0006903693476008905,
+   "symbol": "REDUSDT",
+   "underlying": "COIN",
+   "volume_24h": 8816057.3048
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0014078113517440075,
+   "spread": 0.0002749896878865976,
+   "symbol": "BMTUSDT",
+   "underlying": "COIN",
+   "volume_24h": 269013564.99605
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0014508083268175845,
+   "spread": 0.00019333011116473897,
+   "symbol": "MUBARAKUSDT",
+   "underlying": "COIN",
+   "volume_24h": 10951823.60544
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0022784455547639917,
+   "spread": 0.00046242774566468897,
+   "symbol": "FORMUSDT",
+   "underlying": "COIN",
+   "volume_24h": 2331512.49356
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.002276002558580161,
+   "spread": 0.0005808887598024741,
+   "symbol": "TUTUSDT",
+   "underlying": "COIN",
+   "volume_24h": 2827009.85724
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.003916846970862008,
+   "spread": 0.001083423618634842,
+   "symbol": "BROCCOLI714USDT",
+   "underlying": "COIN",
+   "volume_24h": 1235974.15475
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.007698836868828194,
+   "spread": 0.00039960039960045267,
+   "symbol": "BROCCOLIF3BUSDT",
+   "underlying": "COIN",
+   "volume_24h": 995018.694396
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.002895776662233598,
+   "spread": 0.00041797283176591815,
+   "symbol": "SIRENUSDT",
+   "underlying": "COIN",
+   "volume_24h": 11354441.48126
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0027546040317486505,
+   "spread": 0.0001704593880508195,
+   "symbol": "BANANAS31USDT",
+   "underlying": "COIN",
+   "volume_24h": 737604.352021
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0020451571641982203,
+   "spread": 0.00021661431820640958,
+   "symbol": "BRUSDT",
+   "underlying": "COIN",
+   "volume_24h": 22418984.28545
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.001988965616955739,
+   "spread": 0.0006482982171798764,
+   "symbol": "PLUMEUSDT",
+   "underlying": "COIN",
+   "volume_24h": 4971393.63839
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0025646197743984613,
+   "spread": 0.00012224191675320732,
+   "symbol": "NILUSDT",
+   "underlying": "COIN",
+   "volume_24h": 18760135.690936
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.002283112763437744,
+   "spread": 0.00029338418659243247,
+   "symbol": "PARTIUSDT",
+   "underlying": "COIN",
+   "volume_24h": 9621297.4595
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.004162610880677266,
+   "spread": 0.00019792182088067536,
+   "symbol": "JELLYJELLYUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1299400.82856
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0043985302688877665,
+   "spread": 0.0015854141894570684,
+   "symbol": "MAVIAUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1130694.91773
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 3.894512626647421e-06,
+   "spread": 2.5049566830912363e-06,
+   "symbol": "PAXGUSDT",
+   "underlying": "COIN",
+   "volume_24h": 45651814.2509
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0017544559796145772,
+   "spread": 0.0002902336380785408,
+   "symbol": "WALUSDT",
+   "underlying": "COIN",
+   "volume_24h": 7245168.37372
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.004588041092039498,
+   "spread": 0.0009546539379476207,
+   "symbol": "GUNUSDT",
+   "underlying": "COIN",
+   "volume_24h": 2244730.726633
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0023588651728142355,
+   "spread": 0.0006925207756233606,
+   "symbol": "ATHUSDT",
+   "underlying": "COIN",
+   "volume_24h": 4392587.555339
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0023110748170512676,
+   "spread": 0.0007642338555597702,
+   "symbol": "BABYUSDT",
+   "underlying": "COIN",
+   "volume_24h": 6398530.07751
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.004001423059545009,
+   "spread": 0.0003176115610606995,
+   "symbol": "STOUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1408452.20128
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.004578043463264595,
+   "spread": 0.0005569479253689553,
+   "symbol": "FHEUSDT",
+   "underlying": "COIN",
+   "volume_24h": 5329434.13154
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.003027602935945392,
+   "spread": 0.0008045052292839576,
+   "symbol": "KERNELUSDT",
+   "underlying": "COIN",
+   "volume_24h": 9811174.92465
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0023843490581932185,
+   "spread": 0.0005474952094170853,
+   "symbol": "WCTUSDT",
+   "underlying": "COIN",
+   "volume_24h": 13377414.20677
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.00218312566626729,
+   "spread": 0.00041197473221645496,
+   "symbol": "INITUSDT",
+   "underlying": "COIN",
+   "volume_24h": 46701164.73589
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.001276065348980111,
+   "spread": 0.00042202996412743585,
+   "symbol": "BANKUSDT",
+   "underlying": "COIN",
+   "volume_24h": 6832940.48211
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0033845256252284157,
+   "spread": 0.000603682463024634,
+   "symbol": "DEEPUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1787559.33927
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0028890065024055073,
+   "spread": 0.00047996160307190117,
+   "symbol": "HYPERUSDT",
+   "underlying": "COIN",
+   "volume_24h": 4711784.5047
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0009950425101408064,
+   "spread": 7.126313914135044e-05,
+   "symbol": "JSTUSDT",
+   "underlying": "COIN",
+   "volume_24h": 3518506.58028
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0029048291898035802,
+   "spread": 0.00046479200557748515,
+   "symbol": "SIGNUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1937891.28146
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0021909518698038383,
+   "spread": 0.0005003252113873467,
+   "symbol": "PUNDIXUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1325140.21067
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.005399316733488613,
+   "spread": 0.0008996851102113269,
+   "symbol": "CTKUSDT",
+   "underlying": "COIN",
+   "volume_24h": 937733.4385
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.006812613086580246,
+   "spread": 0.0004588208304657375,
+   "symbol": "AIOTUSDT",
+   "underlying": "COIN",
+   "volume_24h": 5193075.78577
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.007666293107318746,
+   "spread": 0.0004026575397624156,
+   "symbol": "DOLOUSDT",
+   "underlying": "COIN",
+   "volume_24h": 826169.13176
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.004467556069338667,
+   "spread": 0.0005036514731805386,
+   "symbol": "HAEDALUSDT",
+   "underlying": "COIN",
+   "volume_24h": 2064872.7493
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.005439723232296526,
+   "spread": 0.0007182188173329017,
+   "symbol": "SXTUSDT",
+   "underlying": "COIN",
+   "volume_24h": 2236767.571611
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0043070115694535,
+   "spread": 0.0003997068816202491,
+   "symbol": "ASRUSDT",
+   "underlying": "COIN",
+   "volume_24h": 726560.57933
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.005243672864310711,
+   "spread": 0.0006666666666665932,
+   "symbol": "ALPINEUSDT",
+   "underlying": "COIN",
+   "volume_24h": 677844.45551
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.006713530086806653,
+   "spread": 0.0007026583909122074,
+   "symbol": "B2USDT",
+   "underlying": "COIN",
+   "volume_24h": 1544002.7926
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0026564424457899568,
+   "spread": 0.0001727066002705866,
+   "symbol": "SYRUPUSDT",
+   "underlying": "COIN",
+   "volume_24h": 6365255.64391
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0033761423859745387,
+   "spread": 0.000650406504065127,
+   "symbol": "DOODUSDT",
+   "underlying": "COIN",
+   "volume_24h": 43832718.517144
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0035453978227750114,
+   "spread": 0.00038707180181919487,
+   "symbol": "OGUSDT",
+   "underlying": "COIN",
+   "volume_24h": 799155.7629
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0037221346361590315,
+   "spread": 0.0003235722375020091,
+   "symbol": "SKYAIUSDT",
+   "underlying": "COIN",
+   "volume_24h": 4152659.24102
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0031388211647409904,
+   "spread": 0.0005901445854235276,
+   "symbol": "NXPCUSDT",
+   "underlying": "COIN",
+   "volume_24h": 3134277.5281
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0030413372104842996,
+   "spread": 0.00044893378226709723,
+   "symbol": "CVCUSDT",
+   "underlying": "COIN",
+   "volume_24h": 2393654.03216
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.002753843527029218,
+   "spread": 0.00014877631481062447,
+   "symbol": "AGTUSDT",
+   "underlying": "COIN",
+   "volume_24h": 177375869.401049
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.005385369616625253,
+   "spread": 0.0003166561114630482,
+   "symbol": "AWEUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1339000.00325
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.005343271034316746,
+   "spread": 0.0015384615384615825,
+   "symbol": "BUSDT",
+   "underlying": "COIN",
+   "volume_24h": 4953891.9059
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.001650213614648612,
+   "spread": 0.00033019646689776784,
+   "symbol": "SOONUSDT",
+   "underlying": "COIN",
+   "volume_24h": 9285321.6784
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.002600298701545392,
+   "spread": 0.00019932627718318206,
+   "symbol": "HUMAUSDT",
+   "underlying": "COIN",
+   "volume_24h": 6080249.370619
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0024674856357631805,
+   "spread": 0.0003379710471469864,
+   "symbol": "AUSDT",
+   "underlying": "COIN",
+   "volume_24h": 4787734.03711
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.003038937036304023,
+   "spread": 0.0006918021445865899,
+   "symbol": "SOPHUSDT",
+   "underlying": "COIN",
+   "volume_24h": 20591658.875392
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.002916070643547955,
+   "spread": 0.0007593014426727102,
+   "symbol": "MERLUSDT",
+   "underlying": "COIN",
+   "volume_24h": 2663681.78506
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.00014926111169976332,
+   "spread": 1.3297253452173957e-05,
+   "symbol": "HYPEUSDT",
+   "underlying": "COIN",
+   "volume_24h": 437215058.05458
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.002053470161525025,
+   "spread": 0.0003235722375020091,
+   "symbol": "LAUSDT",
+   "underlying": "COIN",
+   "volume_24h": 62179429.303206
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0023053601612163283,
+   "spread": 0.0001942313295134763,
+   "symbol": "HOMEUSDT",
+   "underlying": "COIN",
+   "volume_24h": 4572692.910935
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0036174726328492054,
+   "spread": 0.0005915409642119528,
+   "symbol": "RESOLVUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1750128.27693
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.005784162413892002,
+   "spread": 0.0006383657835941062,
+   "symbol": "TAIKOUSDT",
+   "underlying": "COIN",
+   "volume_24h": 4118424.96857
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.005215840306695977,
+   "spread": 0.0005028916268545668,
+   "symbol": "SQDUSDT",
+   "underlying": "COIN",
+   "volume_24h": 2048682.50229
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0021686141513158706,
+   "spread": 0.0005550929780738046,
+   "symbol": "SPKUSDT",
+   "underlying": "COIN",
+   "volume_24h": 3151227.52367
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.003169159990798304,
+   "spread": 0.0006724949562878005,
+   "symbol": "MYXUSDT",
+   "underlying": "COIN",
+   "volume_24h": 3353112.08285
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0028572083332075917,
+   "spread": 0.00030070666065257337,
+   "symbol": "FUSDT",
+   "underlying": "COIN",
+   "volume_24h": 12153425.18459
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0036893299211777923,
+   "spread": 0.00023081361800353286,
+   "symbol": "NEWTUSDT",
+   "underlying": "COIN",
+   "volume_24h": 5249099.3506
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0023718516591245014,
+   "spread": 0.00019772614928330326,
+   "symbol": "HUSDT",
+   "underlying": "COIN",
+   "volume_24h": 4131634.21987
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.002133879369894342,
+   "spread": 0.00012651021570004429,
+   "symbol": "SAHARAUSDT",
+   "underlying": "COIN",
+   "volume_24h": 11663039.32199
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.00230320401700683,
+   "spread": 0.0005067139599695414,
+   "symbol": "ICNTUSDT",
+   "underlying": "COIN",
+   "volume_24h": 17440147.4217
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0033774158111756474,
+   "spread": 0.00047286913346729364,
+   "symbol": "BULLAUSDT",
+   "underlying": "COIN",
+   "volume_24h": 11694375.316742
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.008392654722526736,
+   "spread": 0.000632711167352078,
+   "symbol": "IDOLUSDT",
+   "underlying": "COIN",
+   "volume_24h": 2502899.032756
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0037908935502360677,
+   "spread": 0.0005080526342529654,
+   "symbol": "MUSDT",
+   "underlying": "COIN",
+   "volume_24h": 24674241.9563
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.000347942711213476,
+   "spread": 0.00024064492840816576,
+   "symbol": "PUMPUSDT",
+   "underlying": "COIN",
+   "volume_24h": 141198895.381409
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.004477322116206118,
+   "spread": 0.0004978839930295692,
+   "symbol": "CROSSUSDT",
+   "underlying": "COIN",
+   "volume_24h": 674625.90138
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.008243019375125702,
+   "spread": 0.0008033203909491312,
+   "symbol": "AINUSDT",
+   "underlying": "COIN",
+   "volume_24h": 7616406.39665
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.004785007904513278,
+   "spread": 0.00037163208423663356,
+   "symbol": "CUSDT",
+   "underlying": "COIN",
+   "volume_24h": 2363954.35751
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0035810873659693587,
+   "spread": 0.0001761028440609855,
+   "symbol": "VELVETUSDT",
+   "underlying": "COIN",
+   "volume_24h": 2307063.33474
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.005066089412811607,
+   "spread": 0.0008729812309036514,
+   "symbol": "TACUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1952842.076287
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.001447763372275898,
+   "spread": 0.00046003450258783496,
+   "symbol": "ERAUSDT",
+   "underlying": "COIN",
+   "volume_24h": 183286251.77385
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.006159099870151416,
+   "spread": 0.0005910747709585706,
+   "symbol": "TAUSDT",
+   "underlying": "COIN",
+   "volume_24h": 2670714.80368
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0022068627773639353,
+   "spread": 0.00042292239374088983,
+   "symbol": "CVXUSDT",
+   "underlying": "COIN",
+   "volume_24h": 4729627.9363
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.004036285067763012,
+   "spread": 0.0007630675314763473,
+   "symbol": "SLPUSDT",
+   "underlying": "COIN",
+   "volume_24h": 660905.6388258
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.002897796186921601,
+   "spread": 0.00029594554601957167,
+   "symbol": "ZORAUSDT",
+   "underlying": "COIN",
+   "volume_24h": 19569279.371573
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0057600310614402475,
+   "spread": 0.0006843846241586702,
+   "symbol": "TAGUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1128177.7215927
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.002629787133063485,
+   "spread": 0.0002531004808909473,
+   "symbol": "ESPORTSUSDT",
+   "underlying": "COIN",
+   "volume_24h": 3604448.128843
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.002519175148051934,
+   "spread": 0.00022755717373997185,
+   "symbol": "TREEUSDT",
+   "underlying": "COIN",
+   "volume_24h": 90232954.66738
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.00547911931187139,
+   "spread": 0.000665557404326096,
+   "symbol": "PLAYUSDT",
+   "underlying": "COIN",
+   "volume_24h": 2507950.11429
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.006411813130728204,
+   "spread": 0.00033927056827818804,
+   "symbol": "NAORISUSDT",
+   "underlying": "COIN",
+   "volume_24h": 680756.83261
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.003920533477709259,
+   "spread": 0.0007029876977152308,
+   "symbol": "TOWNSUSDT",
+   "underlying": "COIN",
+   "volume_24h": 2368823.761774
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0025316603125399456,
+   "spread": 0.0005439216752788509,
+   "symbol": "PROVEUSDT",
+   "underlying": "COIN",
+   "volume_24h": 3604687.62039
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.001655841780582396,
+   "spread": 0.00017086715079024173,
+   "symbol": "ALLUSDT",
+   "underlying": "INDEX",
+   "volume_24h": 2532218.5876
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.002220682197119531,
+   "spread": 0.0006295247088450149,
+   "symbol": "INUSDT",
+   "underlying": "COIN",
+   "volume_24h": 211161514.09676
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0061427639095780395,
+   "spread": 0.0016844469399215187,
+   "symbol": "CARVUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1753510.34782
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.006030504235274573,
+   "spread": 0.0003211819495744208,
+   "symbol": "AIOUSDT",
+   "underlying": "COIN",
+   "volume_24h": 2299344.08153
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.006934726388533309,
+   "spread": 0.0007378712414683016,
+   "symbol": "XNYUSDT",
+   "underlying": "COIN",
+   "volume_24h": 14646736.860619
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0015327417757393783,
+   "spread": 0.00013196964698114315,
+   "symbol": "USELESSUSDT",
+   "underlying": "COIN",
+   "volume_24h": 26359169.77477
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.003694881350942858,
+   "spread": 0.0003604902667627827,
+   "symbol": "SAPIENUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1471320.73191
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.000880873108992354,
+   "spread": 0.00013834128795733728,
+   "symbol": "XPLUSDT",
+   "underlying": "COIN",
+   "volume_24h": 26788023.70768
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0005430680048482838,
+   "spread": 0.00018859028760024633,
+   "symbol": "WLFIUSDT",
+   "underlying": "COIN",
+   "volume_24h": 23195265.66885
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.005220430473192138,
+   "spread": 0.000582920431361055,
+   "symbol": "SOMIUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1361076.9323
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.004817669936882251,
+   "spread": 0.0005406866720736572,
+   "symbol": "BASUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1240161.884229
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.005388247615899112,
+   "spread": 0.0003552397868561134,
+   "symbol": "BTRUSDT",
+   "underlying": "COIN",
+   "volume_24h": 35750343.2596
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.002484742653196599,
+   "spread": 0.00021614611477361562,
+   "symbol": "HEMIUSDT",
+   "underlying": "COIN",
+   "volume_24h": 4228119.537874
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.002728791457386778,
+   "spread": 0.00039611804317674754,
+   "symbol": "LINEAUSDT",
+   "underlying": "COIN",
+   "volume_24h": 2655938.672606
+  },
+  {
+   "class": "crypto",
+   "error": "book too thin for 5 000 USD",
+   "round_trip": null,
+   "spread": 0.00042060988433218746,
+   "symbol": "QUSDT",
+   "underlying": "COIN",
+   "volume_24h": 141376604.386397
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.003918731423854881,
+   "spread": 0.000537995965030427,
+   "symbol": "ARIAUSDT",
+   "underlying": "COIN",
+   "volume_24h": 20897218.85393
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.005613853323342579,
+   "spread": 0.00044414834554724067,
+   "symbol": "TAKEUSDT",
+   "underlying": "COIN",
+   "volume_24h": 2752597.91311
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.00298652940123705,
+   "spread": 0.0010422094841063352,
+   "symbol": "OPENUSDT",
+   "underlying": "COIN",
+   "volume_24h": 7259777.35
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0018890550497865086,
+   "spread": 0.0004830917874395938,
+   "symbol": "FLOCKUSDT",
+   "underlying": "COIN",
+   "volume_24h": 3596595.28669
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0011769880161618539,
+   "spread": 0.00014612405932631144,
+   "symbol": "SKYUSDT",
+   "underlying": "COIN",
+   "volume_24h": 4556720.58116
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0023507605656813728,
+   "spread": 0.0001797752808988067,
+   "symbol": "AVNTUSDT",
+   "underlying": "COIN",
+   "volume_24h": 4674158.01678
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.003655585182758201,
+   "spread": 0.00017293558149582573,
+   "symbol": "HOLOUSDT",
+   "underlying": "COIN",
+   "volume_24h": 2333965.35672
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.006366270685204536,
+   "spread": 0.0008584919158678132,
+   "symbol": "XPINUSDT",
+   "underlying": "COIN",
+   "volume_24h": 2526296.0860027
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.00301637626054533,
+   "spread": 8.264804330754266e-05,
+   "symbol": "UBUSDT",
+   "underlying": "COIN",
+   "volume_24h": 2228259.06306
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.002842150904938829,
+   "spread": 0.00029677993767630395,
+   "symbol": "ZKCUSDT",
+   "underlying": "COIN",
+   "volume_24h": 14277692.13651
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.003710946617040238,
+   "spread": 0.0009420631182289441,
+   "symbol": "TOSHIUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1834035.8012504
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.00499477664797152,
+   "spread": 0.00037785754770449997,
+   "symbol": "STBLUSDT",
+   "underlying": "COIN",
+   "volume_24h": 3198787.80241
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0016202582176148232,
+   "spread": 0.0004795013186287065,
+   "symbol": "0GUSDT",
+   "underlying": "COIN",
+   "volume_24h": 8102332.5694
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.003065581714446807,
+   "spread": 0.0008861320336730426,
+   "symbol": "BARDUSDT",
+   "underlying": "COIN",
+   "volume_24h": 3829227.7942
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.00044203379656428094,
+   "spread": 0.00014500108750814034,
+   "symbol": "ASTERUSDT",
+   "underlying": "COIN",
+   "volume_24h": 37657928.4752
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0039307948514657135,
+   "spread": 0.00033068783068779424,
+   "symbol": "TRADOORUSDT",
+   "underlying": "COIN",
+   "volume_24h": 962469.6079
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.004980009620930092,
+   "spread": 0.0004894163709776741,
+   "symbol": "BLESSUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1765863.501176
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.002872083039977624,
+   "spread": 0.00046783625730988993,
+   "symbol": "FLUIDUSDT",
+   "underlying": "COIN",
+   "volume_24h": 2181911.9275
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.004354489112532929,
+   "spread": 0.0003969041476482992,
+   "symbol": "COAIUSDT",
+   "underlying": "COIN",
+   "volume_24h": 2049211.5099
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.004815119064395958,
+   "spread": 0.0008288437629507938,
+   "symbol": "HANAUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1905521.37543
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0026341041996774998,
+   "spread": 0.00042789901583224614,
+   "symbol": "MIRAUSDT",
+   "underlying": "COIN",
+   "volume_24h": 7279783.96917
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0015763181646722751,
+   "spread": 0.00024400871459695205,
+   "symbol": "AKEUSDT",
+   "underlying": "COIN",
+   "volume_24h": 183622371.394386
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0016414028013178677,
+   "spread": 0.0002827654460623815,
+   "symbol": "ORDERUSDT",
+   "underlying": "COIN",
+   "volume_24h": 589309993.16153
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.003885387536836509,
+   "spread": 0.001092697140775897,
+   "symbol": "LIGHTUSDT",
+   "underlying": "COIN",
+   "volume_24h": 37553812.2337
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.005319091312688374,
+   "spread": 0.0004811161895598425,
+   "symbol": "XANUSDT",
+   "underlying": "COIN",
+   "volume_24h": 2102112.619766
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.001814367606537134,
+   "spread": 0.00010014521055540534,
+   "symbol": "FFUSDT",
+   "underlying": "COIN",
+   "volume_24h": 3406822.82774
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0033430323950412208,
+   "spread": 0.00036225321499726835,
+   "symbol": "EDENUSDT",
+   "underlying": "COIN",
+   "volume_24h": 3076119.99131
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0034977900261025812,
+   "spread": 0.0006412311638345084,
+   "symbol": "NOMUSDT",
+   "underlying": "COIN",
+   "volume_24h": 2495739.748836
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0018519806256469902,
+   "spread": 5.365814396485392e-05,
+   "symbol": "TRUTHUSDT",
+   "underlying": "COIN",
+   "volume_24h": 4126741.039077
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0019262324257044226,
+   "spread": 0.00034620045006057096,
+   "symbol": "2ZUSDT",
+   "underlying": "COIN",
+   "volume_24h": 7023220.69569
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.004955013245344019,
+   "spread": 0.0004008016032063687,
+   "symbol": "EVAAUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1778023.37725
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.004114346749402309,
+   "spread": 0.0007742934572202549,
+   "symbol": "LYNUSDT",
+   "underlying": "COIN",
+   "volume_24h": 3699094.39353
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.004997083491824695,
+   "spread": 0.0009722897423432461,
+   "symbol": "KGENUSDT",
+   "underlying": "COIN",
+   "volume_24h": 4363580.5836
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0035043168590453474,
+   "spread": 0.000264678636022874,
+   "symbol": "4USDT",
+   "underlying": "COIN",
+   "volume_24h": 6076659.428238
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.00168794238294766,
+   "spread": 0.00034240712206819255,
+   "symbol": "GIGGLEUSDT",
+   "underlying": "COIN",
+   "volume_24h": 6712797.0821
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0013396084524543092,
+   "spread": 0.0004834421078075703,
+   "symbol": "MONUSDT",
+   "underlying": "COIN",
+   "volume_24h": 12834774.93921
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.005502271267324279,
+   "spread": 0.00046996161980108477,
+   "symbol": "YBUSDT",
+   "underlying": "COIN",
+   "volume_24h": 5167673.16791
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0014545793521652365,
+   "spread": 0.00033151002817849993,
+   "symbol": "METUSDT",
+   "underlying": "COIN",
+   "volume_24h": 7738044.9895
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0034557691273955056,
+   "spread": 0.0003400204012242247,
+   "symbol": "EULUSDT",
+   "underlying": "COIN",
+   "volume_24h": 5309048.2042
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0025388200413721178,
+   "spread": 0.00015650676891773845,
+   "symbol": "ENSOUSDT",
+   "underlying": "COIN",
+   "volume_24h": 5267986.17892
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.005787036478487035,
+   "spread": 0.001134644478063494,
+   "symbol": "CLOUSDT",
+   "underlying": "COIN",
+   "volume_24h": 2619576.53323
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0044837718234935235,
+   "spread": 0.0005399568034557015,
+   "symbol": "RECALLUSDT",
+   "underlying": "COIN",
+   "volume_24h": 5245963.02945
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.001317803317536082,
+   "spread": 0.00026518164942975663,
+   "symbol": "ZBTUSDT",
+   "underlying": "COIN",
+   "volume_24h": 7081341.80023
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0019085320138996563,
+   "spread": 0.0002660635891977151,
+   "symbol": "LABUSDT",
+   "underlying": "COIN",
+   "volume_24h": 9014311.66449
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0012111388784327257,
+   "spread": 0.0010126582278481022,
+   "symbol": "RIVERUSDT",
+   "underlying": "COIN",
+   "volume_24h": 8575183.5392
+  },
+  {
+   "class": "crypto",
+   "error": "UnicodeEncodeError('ascii', 'GET /fapi/v1/depth?symbol=\u5e01\u5b89\u4eba\u751fUSDT&limit=100 HTTP/1.1', 26, 30, 'ordinal not in range(128)')",
+   "round_trip": null,
+   "spread": null,
+   "symbol": "\u5e01\u5b89\u4eba\u751fUSDT",
+   "underlying": "COIN",
+   "volume_24h": 4338842.84084
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.006262964830593396,
+   "spread": 0.0006839945280436686,
+   "symbol": "BLUAIUSDT",
+   "underlying": "COIN",
+   "volume_24h": 10860021.174545
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0041923436630585745,
+   "spread": 0.0005617977528091608,
+   "symbol": "TURTLEUSDT",
+   "underlying": "COIN",
+   "volume_24h": 2054532.11482
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.002947518120858488,
+   "spread": 0.0003925417075564119,
+   "symbol": "APRUSDT",
+   "underlying": "COIN",
+   "volume_24h": 24546761.0831
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.006350289411201488,
+   "spread": 0.0007815552950370377,
+   "symbol": "ONUSDT",
+   "underlying": "COIN",
+   "volume_24h": 4614421.7891
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0024178427141721137,
+   "spread": 8.905115989132305e-05,
+   "symbol": "KITEUSDT",
+   "underlying": "COIN",
+   "volume_24h": 4478225.93851
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0034325524942127638,
+   "spread": 0.0007238508867172565,
+   "symbol": "ATUSDT",
+   "underlying": "COIN",
+   "volume_24h": 3967281.8283
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0014816731530792409,
+   "spread": 0.0001009947987678243,
+   "symbol": "CCUSDT",
+   "underlying": "COIN",
+   "volume_24h": 8412804.58705
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0027705718812389545,
+   "spread": 0.0007296607077708062,
+   "symbol": "MMTUSDT",
+   "underlying": "COIN",
+   "volume_24h": 5479991.7793
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.00448594902127933,
+   "spread": 0.0003919263178522278,
+   "symbol": "TRUSTUSDT",
+   "underlying": "COIN",
+   "volume_24h": 15395172.49251
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.00232535666751176,
+   "spread": 0.0003510619624363314,
+   "symbol": "UAIUSDT",
+   "underlying": "COIN",
+   "volume_24h": 4107354.7672
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.004327768851700353,
+   "spread": 0.00041160732661055114,
+   "symbol": "FOLKSUSDT",
+   "underlying": "COIN",
+   "volume_24h": 2073770.6848
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.002478520808754218,
+   "spread": 0.00036839196905505953,
+   "symbol": "STABLEUSDT",
+   "underlying": "COIN",
+   "volume_24h": 6193765.197374
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0018710392068595108,
+   "spread": 0.0004289697576321439,
+   "symbol": "JCTUSDT",
+   "underlying": "COIN",
+   "volume_24h": 315535571.210043
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0013855787438974592,
+   "spread": 0.0003849643907939313,
+   "symbol": "ALLOUSDT",
+   "underlying": "COIN",
+   "volume_24h": 4479219.24519
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0058465217728621835,
+   "spread": 0.0008113590263691511,
+   "symbol": "CLANKERUSDT",
+   "underlying": "COIN",
+   "volume_24h": 2041354.37
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0011101739216787037,
+   "spread": 0.00014882059677053533,
+   "symbol": "BEATUSDT",
+   "underlying": "COIN",
+   "volume_24h": 4810523.19351
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.003181810864118647,
+   "spread": 9.571667863124095e-05,
+   "symbol": "PIEVERSEUSDT",
+   "underlying": "COIN",
+   "volume_24h": 3323457.9522
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0022350570448644224,
+   "spread": 0.00047270148900983513,
+   "symbol": "SENTUSDT",
+   "underlying": "COIN",
+   "volume_24h": 9314565.41413
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0025179039266813976,
+   "spread": 0.00041025641025639354,
+   "symbol": "IRYSUSDT",
+   "underlying": "COIN",
+   "volume_24h": 2448415228.073389
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.004719572477158268,
+   "spread": 0.0003989626969878615,
+   "symbol": "POWERUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1301454.56599
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0028616503263685826,
+   "spread": 0.000188697046891143,
+   "symbol": "WETUSDT",
+   "underlying": "COIN",
+   "volume_24h": 39084072.17392
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0015934778522490843,
+   "spread": 0.0002716284123318246,
+   "symbol": "NIGHTUSDT",
+   "underlying": "COIN",
+   "volume_24h": 5654618.15206
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 2.5059547750888747e-06,
+   "spread": 2.5059547750888747e-06,
+   "symbol": "XAUUSDT",
+   "underlying": "COMMODITY",
+   "volume_24h": 602126842.05
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0025995939076718833,
+   "spread": 0.00019938191606006685,
+   "symbol": "USUSDT",
+   "underlying": "COIN",
+   "volume_24h": 12545117.889717
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0038078506327625136,
+   "spread": 0.0009411764705882622,
+   "symbol": "CYSUSDT",
+   "underlying": "COIN",
+   "volume_24h": 3651840.6975
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0026173286437086727,
+   "spread": 0.0007249003262052681,
+   "symbol": "RAVEUSDT",
+   "underlying": "COIN",
+   "volume_24h": 3041233.8019
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0035145229424254267,
+   "spread": 0.00046674445740954926,
+   "symbol": "ZKPUSDT",
+   "underlying": "COIN",
+   "volume_24h": 7121514.97748
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.008799321754978733,
+   "spread": 0.0003341687552213732,
+   "symbol": "GUAUSDT",
+   "underlying": "COIN",
+   "volume_24h": 2141976.56304
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0010214141834569534,
+   "spread": 3.251873892337318e-05,
+   "symbol": "LITUSDT",
+   "underlying": "COIN",
+   "volume_24h": 40716212.27662
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.004496623953464556,
+   "spread": 0.0003708969524634017,
+   "symbol": "BREVUSDT",
+   "underlying": "COIN",
+   "volume_24h": 7916185.06131
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.004515361310331404,
+   "spread": 0.0004402377283733037,
+   "symbol": "COLLECTUSDT",
+   "underlying": "COIN",
+   "volume_24h": 3245321.35695
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0021138972814822407,
+   "spread": 0.0001359526884643994,
+   "symbol": "MAGMAUSDT",
+   "underlying": "COIN",
+   "volume_24h": 128855397.98132
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0001871432581640874,
+   "spread": 0.0001871432581640874,
+   "symbol": "XAGUSDT",
+   "underlying": "COMMODITY",
+   "volume_24h": 229567202.5022
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0016978920151627082,
+   "spread": 0.00014623089858901807,
+   "symbol": "ZAMAUSDT",
+   "underlying": "COIN",
+   "volume_24h": 9704906.45914
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0031987283852949306,
+   "spread": 0.0007665772326562918,
+   "symbol": "FOGOUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1887289.662157
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.005870777471163138,
+   "spread": 0.001179941002949941,
+   "symbol": "FRAXUSDT",
+   "underlying": "COIN",
+   "volume_24h": 720255.2182
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.009546057332084306,
+   "spread": 0.0006412311638345362,
+   "symbol": "SPORTFUNUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1088398.79495
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.004435187458766212,
+   "spread": 0.00027461211039415246,
+   "symbol": "AIAUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1750947.91052
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.005981146256422007,
+   "spread": 0.000263863846255352,
+   "symbol": "ACUUSDT",
+   "underlying": "COIN",
+   "volume_24h": 9106011.47122
+  },
+  {
+   "class": "crypto",
+   "error": "UnicodeEncodeError('ascii', 'GET /fapi/v1/depth?symbol=\u6211\u8e0f\u9a6c\u6765\u4e86USDT&limit=100 HTTP/1.1', 26, 31, 'ordinal not in range(128)')",
+   "round_trip": null,
+   "spread": null,
+   "symbol": "\u6211\u8e0f\u9a6c\u6765\u4e86USDT",
+   "underlying": "COIN",
+   "volume_24h": 1380705.604123
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0051491611796370095,
+   "spread": 0.0004069175991861953,
+   "symbol": "ELSAUSDT",
+   "underlying": "COIN",
+   "volume_24h": 22093192.27069
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0031844343087629383,
+   "spread": 0.00013884068031935198,
+   "symbol": "SKRUSDT",
+   "underlying": "COIN",
+   "volume_24h": 3370608.667544
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.004825095113861762,
+   "spread": 0.0005546311702717226,
+   "symbol": "SPACEUSDT",
+   "underlying": "COIN",
+   "volume_24h": 984472.446251
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.005543419338889226,
+   "spread": 0.0009235031553024365,
+   "symbol": "FIGHTUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1511612.471569
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.00014384571076807404,
+   "spread": 2.7014979806278022e-05,
+   "symbol": "TSLAUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 34156592.9459
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0023556796041929945,
+   "spread": 0.0005165022467847166,
+   "symbol": "BIRBUSDT",
+   "underlying": "COIN",
+   "volume_24h": 895786027.32386
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0029617654574939146,
+   "spread": 0.0004753981459472115,
+   "symbol": "GWEIUSDT",
+   "underlying": "COIN",
+   "volume_24h": 3917254.47558
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0004266664483152614,
+   "spread": 3.8806066681869676e-05,
+   "symbol": "XPTUSDT",
+   "underlying": "COMMODITY",
+   "volume_24h": 2600564.465
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0004053499475113997,
+   "spread": 0.00014386902164278373,
+   "symbol": "XPDUSDT",
+   "underlying": "COMMODITY",
+   "volume_24h": 2427642.547
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.002721349318777172,
+   "spread": 0.00022239519626382877,
+   "symbol": "MEGAUSDT",
+   "underlying": "COIN",
+   "volume_24h": 7527001.87771
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.006245711023304537,
+   "spread": 0.0007116593523900837,
+   "symbol": "INXUSDT",
+   "underlying": "COIN",
+   "volume_24h": 5799323.821391
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.00026185874013801995,
+   "spread": 0.000232937339855698,
+   "symbol": "INTCUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 46686536.543
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0004210946394129957,
+   "spread": 0.00010617401921740091,
+   "symbol": "HOODUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 11830686.9551
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.003950028773684779,
+   "spread": 0.0008016032064127583,
+   "symbol": "TRIAUSDT",
+   "underlying": "COIN",
+   "volume_24h": 4088523.195876
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.00019423885924180488,
+   "spread": 7.038040609487916e-05,
+   "symbol": "MSTRUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 179061821.7112
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.00022106468652361187,
+   "spread": 4.0367342819622186e-05,
+   "symbol": "AMZNUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 5582834.4478
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.00023645479361446596,
+   "spread": 0.00011909724289888781,
+   "symbol": "CRCLUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 127256772.8139
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.00026763241471288774,
+   "spread": 6.163138270001482e-05,
+   "symbol": "COINUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 29682378.3195
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.00047487370285252434,
+   "spread": 0.00010220246307926726,
+   "symbol": "PLTRUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 6028119.6655
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0023526591881043637,
+   "spread": 0.00047858339315623807,
+   "symbol": "ESPUSDT",
+   "underlying": "COIN",
+   "volume_24h": 3333425.00776
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.003499167745510038,
+   "spread": 0.001210653753026585,
+   "symbol": "AZTECUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1898986.63724
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.002678132157605601,
+   "spread": 0.00020208143881976604,
+   "symbol": "OPNUSDT",
+   "underlying": "COIN",
+   "volume_24h": 3792447.63035
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.003127582890247215,
+   "spread": 0.0001771950031009361,
+   "symbol": "ROBOUSDT",
+   "underlying": "COIN",
+   "volume_24h": 2860311.397585
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0022067632405366943,
+   "spread": 0.00046072333563701114,
+   "symbol": "KATUSDT",
+   "underlying": "COIN",
+   "volume_24h": 59797760.086629
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.003216987328127456,
+   "spread": 0.0010666666666666927,
+   "symbol": "MANTRAUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1980105.506576
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0002693552119044147,
+   "spread": 0.00015407133502803264,
+   "symbol": "COPPERUSDT",
+   "underlying": "COMMODITY",
+   "volume_24h": 5559620.4821
+  },
+  {
+   "class": "crypto",
+   "error": "UnicodeEncodeError('ascii', 'GET /fapi/v1/depth?symbol=\u9f99\u867eUSDT&limit=100 HTTP/1.1', 26, 28, 'ordinal not in range(128)')",
+   "round_trip": null,
+   "spread": null,
+   "symbol": "\u9f99\u867eUSDT",
+   "underlying": "COIN",
+   "volume_24h": 8572876.37452
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.00020640366896063328,
+   "spread": 6.649599361632414e-05,
+   "symbol": "EWYUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 25246290.7008
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0030284580734654533,
+   "spread": 0.0009647853352629317,
+   "symbol": "CFGUSDT",
+   "underlying": "COIN",
+   "volume_24h": 3280683.6602
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0012657392490965512,
+   "spread": 0.0002124044180118524,
+   "symbol": "EWJUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 226640.1246
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0028744268057532218,
+   "spread": 0.00032128514056239195,
+   "symbol": "EDGEUSDT",
+   "underlying": "COIN",
+   "volume_24h": 5835481.0903
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.004941616592342693,
+   "spread": 0.0013422818791946022,
+   "symbol": "PAYPUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 129378.4178
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0002692197045958257,
+   "spread": 1.560464082016573e-05,
+   "symbol": "METAUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 19232427.9242
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 4.733167672473945e-05,
+   "spread": 4.733167672460492e-05,
+   "symbol": "NVDAUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 48845834.9673
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0002112057699935535,
+   "spread": 6.255277890714606e-05,
+   "symbol": "GOOGLUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 22112288.3806
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.002927221780006828,
+   "spread": 0.000405802982651906,
+   "symbol": "BSBUSDT",
+   "underlying": "COIN",
+   "volume_24h": 4150604.3974
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 7.491252052445449e-06,
+   "spread": 2.5085699019822164e-06,
+   "symbol": "XAUTUSDT",
+   "underlying": "COIN",
+   "volume_24h": 22798888.36
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.002804532284773512,
+   "spread": 0.00019314340898122766,
+   "symbol": "BASEDUSDT",
+   "underlying": "COIN",
+   "volume_24h": 3782011.13807
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 9.631591620520219e-05,
+   "spread": 9.631591620520219e-05,
+   "symbol": "CLUSDT",
+   "underlying": "COMMODITY",
+   "volume_24h": 499634963.7453
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 8.940945057897193e-05,
+   "spread": 8.940945057884488e-05,
+   "symbol": "BZUSDT",
+   "underlying": "COMMODITY",
+   "volume_24h": 207089670.2759
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0003535862678780537,
+   "spread": 0.0003261046796022612,
+   "symbol": "NATGASUSDT",
+   "underlying": "COMMODITY",
+   "volume_24h": 27162375.3143
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.003977542502072974,
+   "spread": 0.0010487676979549331,
+   "symbol": "PRLUSDT",
+   "underlying": "COIN",
+   "volume_24h": 4489102.9614
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 2.2153629333710907e-05,
+   "spread": 1.4217773638812964e-05,
+   "symbol": "QQQUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 51133682.2968
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 1.315227041066768e-05,
+   "spread": 1.315227041066768e-05,
+   "symbol": "SPYUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 146284430.4039
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.00015537099280459613,
+   "spread": 2.8843796420458633e-05,
+   "symbol": "AAPLUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 18190797.1629
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0004371026147904519,
+   "spread": 2.390714465029286e-05,
+   "symbol": "TSMUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 5269955.7805
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.000162692176752691,
+   "spread": 1.1436086571164944e-05,
+   "symbol": "MUUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 140006668.7448
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 4.4843975824477034e-05,
+   "spread": 8.179122789259404e-06,
+   "symbol": "SNDKUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 815195586.7422
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0026182618366015114,
+   "spread": 0.0003337226764560137,
+   "symbol": "GENIUSUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1949398.9673
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.002041297535644968,
+   "spread": 0.00024076080414115955,
+   "symbol": "CHIPUSDT",
+   "underlying": "COIN",
+   "volume_24h": 10225623.42413
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0002296210761080119,
+   "spread": 1.914333572623289e-05,
+   "symbol": "MSFTUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 6944296.5738
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.00030340617715886894,
+   "spread": 3.1098878885387895e-05,
+   "symbol": "AVGOUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 6273754.3219
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.000538264527812693,
+   "spread": 0.00010059856144047991,
+   "symbol": "BABAUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 2212617.4706
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0037579179209389505,
+   "spread": 0.0008322929671244516,
+   "symbol": "OPGUSDT",
+   "underlying": "COIN",
+   "volume_24h": 2922265.7813
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.003985430396629877,
+   "spread": 0.0005354752342703932,
+   "symbol": "AIGENSYNUSDT",
+   "underlying": "COIN",
+   "volume_24h": 5662914.59758
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0002960917748791307,
+   "spread": 1.9425208092524025e-05,
+   "symbol": "AMDUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 19885338.9654
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0011146794321067045,
+   "spread": 0.00022884604382397185,
+   "symbol": "QCOMUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 3443457.5436
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0026787247639677345,
+   "spread": 0.001078167115902942,
+   "symbol": "USARUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 1647610.0181
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.002539453415432805,
+   "spread": 0.00035606195478002454,
+   "symbol": "BILLUSDT",
+   "underlying": "COIN",
+   "volume_24h": 9219724.699103
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0050989699197744745,
+   "spread": 0.0006151007227432815,
+   "symbol": "PHAROSUSDT",
+   "underlying": "COIN",
+   "volume_24h": 5032788.3173
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.010130160635867975,
+   "spread": 0.0003284611594679935,
+   "symbol": "STARUSDT",
+   "underlying": "COIN",
+   "volume_24h": 2274301.28779
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0004619008906133344,
+   "spread": 3.992148774074016e-05,
+   "symbol": "LITEUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 19728804.7577
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0003419371700793172,
+   "spread": 0.00015975716910293173,
+   "symbol": "ORCLUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 7061571.9493
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0022542772958594696,
+   "spread": 0.00026715347967408285,
+   "symbol": "DISUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 84066.7774
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0016122202220704021,
+   "spread": 0.00014917580368471866,
+   "symbol": "UBERUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 512518.204
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.002004120667783102,
+   "spread": 9.388349058809468e-05,
+   "symbol": "CSCOUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 177544.6888
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.002134292847234842,
+   "spread": 0.00028160640811018627,
+   "symbol": "HDUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 111455.6081
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.00012075107166565122,
+   "spread": 0.00012075107166565122,
+   "symbol": "SOXLUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 704935646.9027
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.00047278073749036816,
+   "spread": 4.423115200031362e-05,
+   "symbol": "MRVLUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 21367297.2456
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0005462094157198816,
+   "spread": 0.00018592544389696032,
+   "symbol": "CRWVUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 17720981.2093
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.001320043650193259,
+   "spread": 0.0002495113735601209,
+   "symbol": "WMTUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 216520.2422
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0015299130433135241,
+   "spread": 0.0001816805450414699,
+   "symbol": "JPMUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 536153.8693
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0017331499209639668,
+   "spread": 0.0002447081854887212,
+   "symbol": "VUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 292753.1094
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0012519921815972608,
+   "spread": 0.00016561318280941022,
+   "symbol": "BRKBUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 331690.5306
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0022613276472079292,
+   "spread": 0.00036449790413717293,
+   "symbol": "FLNCUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 1647429.83882
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0003590390659725579,
+   "spread": 0.000213880868356283,
+   "symbol": "DRAMUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 33518055.0138
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0007887370549003383,
+   "spread": 0.0003858769052672801,
+   "symbol": "RKLBUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 6435849.1687
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0007692911188051671,
+   "spread": 9.07317515765106e-05,
+   "symbol": "CBRSUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 27689454.0815
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 6.839711364193651e-05,
+   "spread": 6.839711364193651e-05,
+   "symbol": "SPCXUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 198589413.716
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0012599871474384787,
+   "spread": 0.00011443038698916092,
+   "symbol": "OPENAIUSDT",
+   "underlying": "PREMARKET",
+   "volume_24h": 8125811.3595
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0005554414485500498,
+   "spread": 6.423638991501092e-05,
+   "symbol": "NBISUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 27164671.0131
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0009551619806120665,
+   "spread": 0.00011726422561643007,
+   "symbol": "WDCUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 11425710.6142
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.001030816879461227,
+   "spread": 0.0003349362424938069,
+   "symbol": "ARMUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 3685531.263
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0008379157728572686,
+   "spread": 0.0001579654055761848,
+   "symbol": "BEUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 23679789.6968
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0007249565545279458,
+   "spread": 0.00024369440721327132,
+   "symbol": "COHRUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 4587887.8881
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.004035421816532714,
+   "spread": 0.00017664203491621463,
+   "symbol": "CTRUSDT",
+   "underlying": "COIN",
+   "volume_24h": 6785285.123912
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0021277818781935704,
+   "spread": 0.00027552004408315224,
+   "symbol": "QNTXUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 944017.9626
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.002370088036301661,
+   "spread": 0.0003984857541342735,
+   "symbol": "SLXUSDT",
+   "underlying": "COIN",
+   "volume_24h": 7268673.50289
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0011368878508614148,
+   "spread": 0.00021236181734522703,
+   "symbol": "LLYUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 1818735.3566
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0014347736838815981,
+   "spread": 0.00025997660210575873,
+   "symbol": "NVOUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 2328404.6338
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0013431984305156172,
+   "spread": 0.0003375527426160466,
+   "symbol": "BBXUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 2651850.1057
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.001567477641281377,
+   "spread": 0.001236858379715496,
+   "symbol": "NOKUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 1429314.5492
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.003062189694848554,
+   "spread": 0.00047899602433297084,
+   "symbol": "EWTUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 189041.7501
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0015797994020439949,
+   "spread": 0.0005138746145941194,
+   "symbol": "ASTSUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 1678354.7025
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 7.712033506792991e-05,
+   "spread": 1.068016639710417e-05,
+   "symbol": "SKHYNIXUSDT",
+   "underlying": "KR_EQUITY",
+   "volume_24h": 214326329.937
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.00042336447921591827,
+   "spread": 6.238108605465148e-05,
+   "symbol": "SAMSUNGUSDT",
+   "underlying": "KR_EQUITY",
+   "volume_24h": 19126195.6561
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0021951725927211473,
+   "spread": 0.0009132837115850817,
+   "symbol": "HYUNDAIUSDT",
+   "underlying": "KR_EQUITY",
+   "volume_24h": 697095.623
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0018571848993112865,
+   "spread": 0.00011678646126406866,
+   "symbol": "ANTHROPICUSDT",
+   "underlying": "PREMARKET",
+   "volume_24h": 6931880.1231
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0007049216930259504,
+   "spread": 2.2040267568953524e-05,
+   "symbol": "DELLUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 4549861.414
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0007962191347932735,
+   "spread": 3.9667585632364405e-05,
+   "symbol": "IBMUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 2041674.639
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0014115786180375575,
+   "spread": 0.00031503008537322476,
+   "symbol": "NOWUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 920348.9472
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.002154737158131985,
+   "spread": 0.00048305289429182883,
+   "symbol": "CRMUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 375720.7135
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0011420983871551424,
+   "spread": 0.0004087471898629884,
+   "symbol": "IRENUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 5122663.8799
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0016127955561571878,
+   "spread": 0.0004899158977709012,
+   "symbol": "ONDSUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 1014662.78151
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.004462373996287093,
+   "spread": 0.0003324099722991939,
+   "symbol": "ZESTUSDT",
+   "underlying": "COIN",
+   "volume_24h": 2532734.46324
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0014356406099528853,
+   "spread": 0.00011516093741001784,
+   "symbol": "BTWUSDT",
+   "underlying": "COIN",
+   "volume_24h": 105032379.67557
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.002224234180268472,
+   "spread": 8.475653684782731e-05,
+   "symbol": "BXUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 360337.1946
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.001861798806476167,
+   "spread": 0.0005283085321826896,
+   "symbol": "HPEUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 471027.303
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0013202271548165012,
+   "spread": 0.0003466897793186091,
+   "symbol": "AMATUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 1003782.3453
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0013484625308432517,
+   "spread": 0.00019620538779999358,
+   "symbol": "CRWDUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 1993162.857
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0018037356963008595,
+   "spread": 0.00034003196300440644,
+   "symbol": "CRDOUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 2637376.0506
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0009115863229006822,
+   "spread": 0.00015086369465195921,
+   "symbol": "AAOIUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 16120058.7633
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0010003463912392795,
+   "spread": 7.246901949410033e-05,
+   "symbol": "IWMUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 221587.0285
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0013265342516044249,
+   "spread": 0.0003869220352099657,
+   "symbol": "AXTIUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 6636750.5662
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0005665627361708486,
+   "spread": 0.00015219541891775215,
+   "symbol": "NFLXUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 2722113.1145
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0018353075544448958,
+   "spread": 0.0002992906810857812,
+   "symbol": "COSTUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 332033.6982
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0036694076598644894,
+   "spread": 0.00024041351123928382,
+   "symbol": "URNMUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 418938.5418
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0015228718130919252,
+   "spread": 0.0003625158600689347,
+   "symbol": "HIMSUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 1073392.3869
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0015470337099008286,
+   "spread": 0.00041748423997003606,
+   "symbol": "EBAYUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 402981.0668
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0033315558629986508,
+   "spread": 0.00031392246115210734,
+   "symbol": "ZMUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 570329.651
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0035231819440982577,
+   "spread": 0.0014447387430773482,
+   "symbol": "DKNGUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 266219.5492
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0033527812706853274,
+   "spread": 0.0016949152542374024,
+   "symbol": "RIVNUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 423163.691
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0013013770729053138,
+   "spread": 0.0004031445273129615,
+   "symbol": "GMEUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 1041245.6482
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0018012521633530198,
+   "spread": 0.00014342058085342583,
+   "symbol": "XLEUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 503207.9944
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.002678559546275474,
+   "spread": 0.0002266288951842519,
+   "symbol": "EWZUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 3492628.9249
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0008166902788172564,
+   "spread": 0.0004565167769916258,
+   "symbol": "BMNRUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 7303825.5723
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.001328340757908426,
+   "spread": 0.0005320563979782688,
+   "symbol": "UVXYUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 1629435.6657
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0013462070358440435,
+   "spread": 0.0004563258166328771,
+   "symbol": "ADBEUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 531141.6781
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0010442618839350969,
+   "spread": 0.0002453285357975315,
+   "symbol": "GLWUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 2822001.9657
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.001738690019321328,
+   "spread": 0.0006228887664406481,
+   "symbol": "STXXUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 1273895.4391
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0009733457367627689,
+   "spread": 0.0002870621106718964,
+   "symbol": "ASMLUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 1540643.2754
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0013641973102987385,
+   "spread": 0.0002689256420599408,
+   "symbol": "REUSDT",
+   "underlying": "COIN",
+   "volume_24h": 5717093.8023
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0018824445175273155,
+   "spread": 0.0005247507433969064,
+   "symbol": "LRCXUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 907125.6823
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0016108767960007148,
+   "spread": 0.000347499739375077,
+   "symbol": "KLACUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 759024.8661
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0024641134438063094,
+   "spread": 0.0007850217843545828,
+   "symbol": "ALABUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 1099253.5272
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.001149951478330812,
+   "spread": 0.0003044603440401282,
+   "symbol": "SMCIUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 2114120.9683
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.002887525161790661,
+   "spread": 0.0009779025567420144,
+   "symbol": "CIENUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 388136.9699
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0009647853352628835,
+   "spread": 0.0009647853352628835,
+   "symbol": "KORUUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 223577110.0084
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0032013613157284423,
+   "spread": 0.000768049155145913,
+   "symbol": "SONYUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 134718.412
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.005275876678896829,
+   "spread": 0.0004905567819474564,
+   "symbol": "ARXUSDT",
+   "underlying": "COIN",
+   "volume_24h": 2954780.6867
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.001072926199931268,
+   "spread": 0.00039880358923222376,
+   "symbol": "MVLLUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 9049479.8927
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0003408064307723443,
+   "spread": 0.00015221858588941497,
+   "symbol": "TQQQUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 31116785.4458
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0005039462031507855,
+   "spread": 0.00024915908807768804,
+   "symbol": "SQQQUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 14760098.9106
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.004762893870726484,
+   "spread": 0.0010095911155980715,
+   "symbol": "OUSDT",
+   "underlying": "COIN",
+   "volume_24h": 1764687.7645
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.002651812862376702,
+   "spread": 0.0006651147322914317,
+   "symbol": "CAPUSDT",
+   "underlying": "COIN",
+   "volume_24h": 12982694.86036
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.001359847649912477,
+   "spread": 0.0008146639511200732,
+   "symbol": "GRAMUSDT",
+   "underlying": "COIN",
+   "volume_24h": 37929192.7453
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.00025879034102612786,
+   "spread": 0.00010100499974753917,
+   "symbol": "STRCUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 2674088.6232
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0036259299608006304,
+   "spread": 0.0014838090250501614,
+   "symbol": "CATUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 462895.6611
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.004641072554456545,
+   "spread": 0.0007393975670298384,
+   "symbol": "TXNUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 223945.7533
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0018819960042562411,
+   "spread": 0.00013200448815266474,
+   "symbol": "FLEXUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 244192.6124
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0035992018975088374,
+   "spread": 0.0018391408584846867,
+   "symbol": "TERUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 269493.6046
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0016112890781344632,
+   "spread": 0.00019504583577136748,
+   "symbol": "TTWOUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 538250.7892
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0017383187422337022,
+   "spread": 0.0005163955589982732,
+   "symbol": "KSTRUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 1154937.7728
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0032487100508765978,
+   "spread": 0.0004507550146496084,
+   "symbol": "BSPUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 1272955.7424
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.00284949923102828,
+   "spread": 0.0006642311524411607,
+   "symbol": "DATAIPUSDT",
+   "underlying": "COIN",
+   "volume_24h": 9750540.3672
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0033674717388903572,
+   "spread": 0.0008888888888890278,
+   "symbol": "BOTUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 1061019.3226
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0034540157193322252,
+   "spread": 0.0008082114281095762,
+   "symbol": "WENUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 248997.22844
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.001467279892980457,
+   "spread": 0.0006466214031684312,
+   "symbol": "INTWUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 4858508.036
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0012602394454946171,
+   "spread": 0.001260239445494729,
+   "symbol": "SNXXUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 171340937.1429
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0028170023466975187,
+   "spread": 0.00046918462414955716,
+   "symbol": "XBIUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 161723.2566
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0020252447038776136,
+   "spread": 0.00018784634169239143,
+   "symbol": "BNCUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 4468759.97449
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.002885456837127744,
+   "spread": 0.00014899798852707232,
+   "symbol": "FWDIUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 570453.51871
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.003388583642086141,
+   "spread": 0.0007278244832753559,
+   "symbol": "GEVUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 458981.9236
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0023924062910230313,
+   "spread": 0.00056333700355919,
+   "symbol": "VRTUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 330334.3753
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.003717120872668167,
+   "spread": 0.000835073068893472,
+   "symbol": "SNOWUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 473225.8555
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0020444550113286127,
+   "spread": 0.0005430566330488221,
+   "symbol": "APPUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 424511.2766
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.00011571823833119643,
+   "spread": 7.35699834468959e-05,
+   "symbol": "SKHYUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 108947354.6745
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0008441104870962024,
+   "spread": 0.000419375131054794,
+   "symbol": "MUUUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 32048323.3873
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.00034629408978163555,
+   "spread": 0.0001886258606055855,
+   "symbol": "SOXSUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 154000382.071
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.004341955458873879,
+   "spread": 0.001641025641025606,
+   "symbol": "TZAUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 117065.5199
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0013833393501080646,
+   "spread": 0.00042507970244427476,
+   "symbol": "MINIMAXUSDT",
+   "underlying": "HK_EQUITY",
+   "volume_24h": 3375673.6328
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0010236594305237507,
+   "spread": 0.0003186743148502729,
+   "symbol": "ZHIPUUSDT",
+   "underlying": "HK_EQUITY",
+   "volume_24h": 4132242.0989
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0009069574041427772,
+   "spread": 5.223705174075224e-05,
+   "symbol": "HK0700USDT",
+   "underlying": "HK_EQUITY",
+   "volume_24h": 495377.1131
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0010403622569029416,
+   "spread": 0.00037544584193735926,
+   "symbol": "HK1810USDT",
+   "underlying": "HK_EQUITY",
+   "volume_24h": 971044.2334
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.001163353610708589,
+   "spread": 0.00020431096128317735,
+   "symbol": "TENCENTUSDT",
+   "underlying": "HK_EQUITY",
+   "volume_24h": 443938.531
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0032666682784478905,
+   "spread": 0.000887705281846408,
+   "symbol": "SHAZUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 957395.19
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.003388408504866916,
+   "spread": 0.0013755158184320048,
+   "symbol": "SOFIUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 528171.103
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.002310483311492749,
+   "spread": 0.0007398795053376301,
+   "symbol": "PANWUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 504939.3107
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0045948319032619814,
+   "spread": 0.0005694220366328392,
+   "symbol": "PENGUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 1550991.1887
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0018836096184644058,
+   "spread": 0.001202645820805747,
+   "symbol": "POPMARTUSDT",
+   "underlying": "HK_EQUITY",
+   "volume_24h": 549391.2988
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0026152704250769813,
+   "spread": 0.00034019391052893385,
+   "symbol": "TMFUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 674167.8932
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0040330346304927435,
+   "spread": 0.002322280996000421,
+   "symbol": "TBTUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 48904.6894
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.005057617487515815,
+   "spread": 0.0009358914365933354,
+   "symbol": "BITOUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 202354.1518
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.002131532581081032,
+   "spread": 0.0001754232084904484,
+   "symbol": "PYPLUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 37416.8333
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0025889490216792757,
+   "spread": 2.2768411106410232e-05,
+   "symbol": "GSUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 83602.661
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0019552508649525848,
+   "spread": 0.00038047407069216886,
+   "symbol": "SMHUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 1421609.4735
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0032168236795058164,
+   "spread": 0.00045197740112989373,
+   "symbol": "GRVTUSDT",
+   "underlying": "COIN",
+   "volume_24h": 5123401.6382
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0025513864764844635,
+   "spread": 0.0004591368227732582,
+   "symbol": "GIGADEVUSDT",
+   "underlying": "HK_EQUITY",
+   "volume_24h": 469511.8972
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0018543983647347365,
+   "spread": 0.00032277153155077656,
+   "symbol": "KOUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 317880.0547
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0023884587502468095,
+   "spread": 0.00013869625520118053,
+   "symbol": "RDDTUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 652119.5154
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0030817949517890713,
+   "spread": 0.001138627953316255,
+   "symbol": "KUAISHOUUSDT",
+   "underlying": "HK_EQUITY",
+   "volume_24h": 101872.40615
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.003927304741568114,
+   "spread": 0.0010982976386600535,
+   "symbol": "MEITUANUSDT",
+   "underlying": "HK_EQUITY",
+   "volume_24h": 61940.6079
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.001710816480243303,
+   "spread": 0.0004410143329657728,
+   "symbol": "CSOPSKHYNIX2LUSDT",
+   "underlying": "HK_EQUITY",
+   "volume_24h": 2878805.37468
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.002284381459626463,
+   "spread": 0.0005138306071765203,
+   "symbol": "CSOPSAMSUNG2LUSDT",
+   "underlying": "HK_EQUITY",
+   "volume_24h": 416264.07859
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0025488727053912703,
+   "spread": 0.00039769337840520573,
+   "symbol": "DOSUSDT",
+   "underlying": "COIN",
+   "volume_24h": 82031499.3096
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0013317302812633222,
+   "spread": 0.00032169856844138265,
+   "symbol": "ZHONGJIUSDT",
+   "underlying": "HK_EQUITY",
+   "volume_24h": 2494688.1915
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.004341847462221135,
+   "spread": 0.0002529769971630875,
+   "symbol": "SAMSUNGEMUSDT",
+   "underlying": "KR_EQUITY",
+   "volume_24h": 269956.5096
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.007977567765590526,
+   "spread": 0.0021296230567190415,
+   "symbol": "HANMIUSDT",
+   "underlying": "KR_EQUITY",
+   "volume_24h": 407065.5325
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.011995348232244296,
+   "spread": 0.0016154402074565126,
+   "symbol": "LGELECTRONICSUSDT",
+   "underlying": "KR_EQUITY",
+   "volume_24h": 108827.8155
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.005275303738392681,
+   "spread": 0.002314279102059796,
+   "symbol": "NAVERUSDT",
+   "underlying": "KR_EQUITY",
+   "volume_24h": 185855.0278
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.013194331452287843,
+   "spread": 0.0018354236769655026,
+   "symbol": "KODEX200USDT",
+   "underlying": "KR_EQUITY",
+   "volume_24h": 49660.0099
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.005549060936863629,
+   "spread": 0.001367053998632939,
+   "symbol": "GDXUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 66870.3989
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0024063673943262144,
+   "spread": 0.0005241979001247562,
+   "symbol": "NETUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 848680.2978
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.006084896481345736,
+   "spread": 0.0008608321377331747,
+   "symbol": "VSTUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 337124.7278
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0039664448641063286,
+   "spread": 0.0011268942202188412,
+   "symbol": "SHOPUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 315388.3458
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.006031776726754016,
+   "spread": 0.0011001100110010766,
+   "symbol": "LYTEUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 71030.9094
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0014730493148703847,
+   "spread": 0.00015623779392226323,
+   "symbol": "CXMTUSDT",
+   "underlying": "CN_EQUITY",
+   "volume_24h": 3580469.35985
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0005560979865928386,
+   "spread": 0.00010543518372071174,
+   "symbol": "UNITREEUSDT",
+   "underlying": "CN_EQUITY",
+   "volume_24h": 15608799.9026
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.00181353220479093,
+   "spread": 0.0006772773450727928,
+   "symbol": "SKUUUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 1923984.072
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.001047282601428978,
+   "spread": 0.0005917409865167314,
+   "symbol": "SKDDUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 2828914.56352
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0025100236993062415,
+   "spread": 0.001260239445494729,
+   "symbol": "RAMUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 1094358.0451
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.002249523033022971,
+   "spread": 0.00015672752919055466,
+   "symbol": "DJTUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 912911.56693
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.001473941056318258,
+   "spread": 0.00034378606684180033,
+   "symbol": "MRNAUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 15775766.3514
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.004945153398405405,
+   "spread": 0.0005944419676030058,
+   "symbol": "TEMUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 493616.5942
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.003983266626587209,
+   "spread": 0.0002070321935060981,
+   "symbol": "MRKUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 348563.0344
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0024014510058991993,
+   "spread": 0.0006480881399870245,
+   "symbol": "IONQUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 518737.3238
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.004008264875894118,
+   "spread": 0.0014336917562724984,
+   "symbol": "MARAUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 322724.0484
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0023553680272623044,
+   "spread": 0.0001264782141275015,
+   "symbol": "PDDUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 107348.4059
+  },
+  {
+   "class": "crypto",
+   "error": "UnicodeEncodeError('ascii', 'GET /fapi/v1/depth?symbol=\u725b\u6765USDT&limit=100 HTTP/1.1', 26, 28, 'ordinal not in range(128)')",
+   "round_trip": null,
+   "spread": null,
+   "symbol": "\u725b\u6765USDT",
+   "underlying": "COIN",
+   "volume_24h": 14962531.12081
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0072877279388959895,
+   "spread": 0.0008054772452678518,
+   "symbol": "HK0625USDT",
+   "underlying": "HK_EQUITY",
+   "volume_24h": 80246.3783
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0018826008919245265,
+   "spread": 0.0003036283588886025,
+   "symbol": "MARSCOINUSDT",
+   "underlying": "COIN",
+   "volume_24h": 15710656.7258
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.002743958394115189,
+   "spread": 0.0009713453132587853,
+   "symbol": "NVDLUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 156314.1722
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0027014419095941554,
+   "spread": 0.0010346611484738529,
+   "symbol": "TSLLUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 327916.9469
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.003639901962022949,
+   "spread": 0.0006685981724983538,
+   "symbol": "DDOGUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 176683.5249
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0036334536660462225,
+   "spread": 0.0007916611690196896,
+   "symbol": "TEAMUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 92629.5368
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.005969447408440068,
+   "spread": 0.0019839921727432585,
+   "symbol": "MDBUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 175083.5792
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.003724010259564532,
+   "spread": 0.0006611570247932292,
+   "symbol": "ZSUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 417382.1348
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0042979587227657216,
+   "spread": 0.0010678056593700351,
+   "symbol": "GTLBUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 72003.1044
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.005740743199799896,
+   "spread": 0.0019801980198019824,
+   "symbol": "GPROUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 349481.77397
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.002882107749908332,
+   "spread": 0.0011007154650522603,
+   "symbol": "BYDUSDT",
+   "underlying": "HK_EQUITY",
+   "volume_24h": 104203.129
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0037592744633403313,
+   "spread": 0.0008841732979663827,
+   "symbol": "HK0992USDT",
+   "underlying": "HK_EQUITY",
+   "volume_24h": 95960.9916
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0016273018776458827,
+   "spread": 0.0004392708104547188,
+   "symbol": "PONSUSDT",
+   "underlying": "COIN",
+   "volume_24h": 23433080.616
+  },
+  {
+   "class": "crypto",
+   "error": "UnicodeEncodeError('ascii', 'GET /fapi/v1/depth?symbol=\u54c8\u57fa\u7c73USDT&limit=100 HTTP/1.1', 26, 29, 'ordinal not in range(128)')",
+   "round_trip": null,
+   "spread": null,
+   "symbol": "\u54c8\u57fa\u7c73USDT",
+   "underlying": "COIN",
+   "volume_24h": 820217.55497
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0056276951474325005,
+   "spread": 0.0007176175098672255,
+   "symbol": "PATHUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 106126.8021
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.007791126870745426,
+   "spread": 0.001042209484106345,
+   "symbol": "AMCUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 211211.34242
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.007919314744371847,
+   "spread": 0.0010863661053775535,
+   "symbol": "CYPHUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 677255.44431
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.008088822161559308,
+   "spread": 0.00179559211097919,
+   "symbol": "ANETUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 116008.5714
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.006991849974118171,
+   "spread": 0.0008266512358435506,
+   "symbol": "HUTUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 191997.2465
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0048271903172996695,
+   "spread": 0.0005520287054927718,
+   "symbol": "APLDUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 438093.701
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.011407636903844795,
+   "spread": 0.00129449838187711,
+   "symbol": "AGPUUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 217571.905
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0018157269141816684,
+   "spread": 0.0003415472088562145,
+   "symbol": "USDBRLUSDT",
+   "underlying": "FX",
+   "volume_24h": 453250.58041
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.004935684498461961,
+   "spread": 0.0009504197687311131,
+   "symbol": "MOONSHOTUSDT",
+   "underlying": "PREMARKET",
+   "volume_24h": 2058546.8131
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0031257004512037644,
+   "spread": 0.0008216926869352147,
+   "symbol": "OURAUSDT",
+   "underlying": "PREMARKET",
+   "volume_24h": 140722.543
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.004461605039704923,
+   "spread": 0.0003813155386082579,
+   "symbol": "OKLOUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 167596.4633
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.007411974666351886,
+   "spread": 0.0005763273539369216,
+   "symbol": "TWSTUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 139703.0859
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0049240463455590975,
+   "spread": 0.001736111111111136,
+   "symbol": "CVNAUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 140177.7659
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.005890089642245516,
+   "spread": 0.0003562522265763768,
+   "symbol": "RUMUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 66377.98573
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0027641227438437673,
+   "spread": 0.00021719063908341227,
+   "symbol": "XOMUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 202379.0576
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.008879215656153114,
+   "spread": 0.00157878118092843,
+   "symbol": "CRMLUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 159821.25481
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.003767129996295543,
+   "spread": 0.0003449100730431183,
+   "symbol": "BWETUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 526446.6878
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.004864079088908438,
+   "spread": 0.0010043992687973323,
+   "symbol": "ACNUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 164615.848
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.002726302924565254,
+   "spread": 0.0010598834128245668,
+   "symbol": "MPUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 1025815.5237
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.007858292003540098,
+   "spread": 0.001296176279974049,
+   "symbol": "SECZUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 470862.9172
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.00479710659332153,
+   "spread": 4.7825151246997325e-05,
+   "symbol": "UNHUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 101028.5262
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0025144866560234532,
+   "spread": 0.0002673439379761532,
+   "symbol": "NKEUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 334114.328
+  },
+  {
+   "class": "crypto",
+   "error": null,
+   "round_trip": 0.0013956081343988848,
+   "spread": 0.00043694017040658373,
+   "symbol": "CTUSDT",
+   "underlying": "COIN",
+   "volume_24h": 31562502.25372
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.01359816325457857,
+   "spread": 0.0020100502512564174,
+   "symbol": "USDEXUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 1559767.0187
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.009426443842238764,
+   "spread": 0.000817661488143891,
+   "symbol": "VKTXUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 58286.474
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0017041402596202784,
+   "spread": 0.00024154589371981592,
+   "symbol": "MCDUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 300693.2035
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.00417504984093084,
+   "spread": 0.0016097011321565238,
+   "symbol": "AKAMUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 43472.0896
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.0035395382847249177,
+   "spread": 0.0003268507926132232,
+   "symbol": "ZCSHUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 453257.5784
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.002359783666182809,
+   "spread": 0.0009189768724151948,
+   "symbol": "MSTUUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 2218179.7618
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.006605908739214621,
+   "spread": 0.0012132524498367676,
+   "symbol": "SNPSUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 39711.921
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.004851802580194675,
+   "spread": 0.0011926058437686088,
+   "symbol": "RDWUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 141952.3531
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.005760168794751719,
+   "spread": 0.0014951211835064347,
+   "symbol": "CEGUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 42918.6249
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.008530738514074042,
+   "spread": 0.00019563728846714294,
+   "symbol": "BACUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 82646.6097
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.004081665885850132,
+   "spread": 0.00024630541871916285,
+   "symbol": "IBKRUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 979279.4845
+  },
+  {
+   "class": "tradfi",
+   "error": null,
+   "round_trip": 0.00830399033033231,
+   "spread": 0.0004191993292809897,
+   "symbol": "MDTUSDT",
+   "underlying": "EQUITY",
+   "volume_24h": 85670.0921
+  }
+ ],
+ "rule": "research/PROTOCOL_V3.md amendment 21h point 2",
+ "size_usd": 5000.0,
+ "summary": {
+  "crypto": {
+   "deciles_by_volume": [
+    {
+     "n": 51,
+     "round_trip_max": 0.009546057332084306,
+     "round_trip_median": 0.004346716313009805,
+     "volume_median": 958459.8783
+    },
+    {
+     "n": 52,
+     "round_trip_max": 0.008414934476372756,
+     "round_trip_median": 0.0038597278239485572,
+     "volume_median": 1374074.715297
+    },
+    {
+     "n": 51,
+     "round_trip_max": 0.008799321754978733,
+     "round_trip_median": 0.003710946617040238,
+     "volume_median": 1905521.37543
+    },
+    {
+     "n": 52,
+     "round_trip_max": 0.010130160635867975,
+     "round_trip_median": 0.0030844600503657574,
+     "volume_median": 2571137.5415780004
+    },
+    {
+     "n": 52,
+     "round_trip_max": 0.005784162413892002,
+     "round_trip_median": 0.0025921281612430553,
+     "volume_median": 3604567.8746165
+    },
+    {
+     "n": 51,
+     "round_trip_max": 0.006812613086580246,
+     "round_trip_median": 0.0024284979811553236,
+     "volume_median": 5193075.78577
+    },
+    {
+     "n": 52,
+     "round_trip_max": 0.008243019375125702,
+     "round_trip_median": 0.0017827822683055962,
+     "volume_median": 7234161.533132
+    },
+    {
+     "n": 51,
+     "round_trip_max": 0.006934726388533309,
+     "round_trip_median": 0.0019971087762022514,
+     "volume_median": 11893877.297527
+    },
+    {
+     "n": 52,
+     "round_trip_max": 0.005388247615899112,
+     "round_trip_median": 0.0010774450240042782,
+     "volume_median": 26736101.689995
+    },
+    {
+     "n": 52,
+     "round_trip_max": 0.002753843527029218,
+     "round_trip_median": 0.0004156010728575021,
+     "volume_median": 118284556.12166
+    }
+   ],
+   "loglog_fit": {
+    "intercept": 0.8999223175098736,
+    "n": 516,
+    "slope": -0.45395180641107913
+   },
+   "n": 516,
+   "net_median": 0.003617795240155092,
+   "share_net_over": {
+    "0.0046": 0.2868217054263566,
+    "0.0065": 0.07364341085271318
+   }
+  },
+  "symbols": 746,
+  "thin_or_error_symbols": [
+   "QUSDT",
+   "\u5e01\u5b89\u4eba\u751fUSDT",
+   "\u6211\u8e0f\u9a6c\u6765\u4e86USDT",
+   "\u9f99\u867eUSDT",
+   "\u725b\u6765USDT",
+   "\u54c8\u57fa\u7c73USDT"
+  ],
+  "too_thin_or_error": 6,
+  "tradfi": {
+   "deciles_by_volume": [
+    {
+     "n": 22,
+     "round_trip_max": 0.013194331452287843,
+     "round_trip_median": 0.004547532658043626,
+     "volume_median": 71517.00690000001
+    },
+    {
+     "n": 22,
+     "round_trip_max": 0.011995348232244296,
+     "round_trip_median": 0.004656703809949799,
+     "volume_median": 141337.44805
+    },
+    {
+     "n": 23,
+     "round_trip_max": 0.011407636903844795,
+     "round_trip_median": 0.0027641227438437673,
+     "volume_median": 266219.5492
+    },
+    {
+     "n": 22,
+     "round_trip_max": 0.007977567765590526,
+     "round_trip_median": 0.003370682456385734,
+     "volume_median": 418160.3383
+    },
+    {
+     "n": 23,
+     "round_trip_max": 0.007919314744371847,
+     "round_trip_median": 0.002310483311492749,
+     "volume_median": 536153.8693
+    },
+    {
+     "n": 22,
+     "round_trip_max": 0.01359816325457857,
+     "round_trip_median": 0.0020415163715730776,
+     "volume_median": 1067205.85475
+    },
+    {
+     "n": 22,
+     "round_trip_max": 0.004935684498461961,
+     "round_trip_median": 0.0013300355195858741,
+     "volume_median": 2215398.6162
+    },
+    {
+     "n": 23,
+     "round_trip_max": 0.002678559546275474,
+     "round_trip_median": 0.0010236594305237507,
+     "volume_median": 5122663.8799
+    },
+    {
+     "n": 22,
+     "round_trip_max": 0.001473941056318258,
+     "round_trip_median": 0.0004883634703205769,
+     "volume_median": 19179311.79015
+    },
+    {
+     "n": 23,
+     "round_trip_max": 0.0012602394454946171,
+     "round_trip_median": 0.00014384571076807404,
+     "volume_median": 154000382.071
+    }
+   ],
+   "loglog_fit": {
+    "intercept": 0.32201295337407565,
+    "n": 224,
+    "slope": -0.48379960000051186
+   },
+   "n": 224,
+   "net_median": 0.002659491852893727,
+   "share_net_over": {
+    "0.0046": 0.21428571428571427,
+    "0.0065": 0.10267857142857142
+   }
+  },
+  "with_cost": 740
+ },
+ "ts": 1792858449.0266123
+}
