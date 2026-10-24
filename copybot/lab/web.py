@@ -20,7 +20,7 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
-from lab import command, control, coverage, lifecycle, mission, registry
+from lab import command, control, coverage, lifecycle, markets, mission, registry, researchview
 from lab.data import AccessRefused
 from lab.db import DB, DEFAULT_DB
 from lab.paper import PaperEngine
@@ -293,7 +293,8 @@ class Handler(BaseHTTPRequestHandler):
                 "/api/paper2": lambda: command.paper_view(db), "/api/rejected": lambda: command.rejected(db),
                 "/api/balance": lambda: command.balance(db), "/api/lanes": lambda: command.lane_view(db), "/api/coverage": lambda: coverage.sources(db),
                 "/api/hypotheses": lambda: coverage.hypotheses(db), "/api/feed": lambda: command.feed(db, int(one("limit", 40))),
-                "/api/approvals": lambda: command.approvals(db)})
+                "/api/approvals": lambda: command.approvals(db),
+                "/api/markets": lambda: markets.view(db), "/api/research": lambda: researchview.view(db)})
             if u.path == "/api/capital":                    # planning only: the user's own amount, never an order
                 from lab import capital
                 opt = lambda k: None if one(k) in (None, "") else one(k)  # noqa: E731

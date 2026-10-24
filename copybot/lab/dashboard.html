@@ -50,6 +50,43 @@ a{color:var(--amber);text-decoration:none} a:hover{text-decoration:underline}
 .banner.red{border:1px solid var(--red);background:#3a0d0d99;color:#ffb3b3}
 .banner.amber{border:1px solid var(--amber);background:#2e210a99;color:#ffd8a0}
 
+/* market scanner (LINUX_DRIFT 2026-10-24 22:23) */
+#markets .mk-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 10px}
+#markets .mk-bar button{font:600 11px var(--mono);letter-spacing:.04em;background:#0c0e12;border:1px solid var(--line);color:var(--mute);
+  border-radius:999px;padding:5px 11px;cursor:pointer}
+#markets .mk-bar button[aria-pressed="true"]{border-color:var(--mars);color:var(--sand);background:#2a0f0866}
+#markets .mk-bar select{font:600 11px var(--mono);background:#0c0e12;border:1px solid var(--line);color:var(--text);border-radius:8px;padding:5px 8px}
+#markets .mk-bar .sp{flex:1}
+#markets table{width:100%} #markets td{vertical-align:middle}
+#markets tr.mk-row{cursor:pointer} #markets tr.mk-row:hover td{background:#ffffff05}
+#markets tr.mk-row:focus-visible td{outline:1px solid var(--amber)}
+#markets .up{color:var(--green)} #markets .dn{color:var(--red)} #markets .flat{color:var(--mute)}
+#markets .mk-name{font-weight:700} #markets .mk-sub{font:11px var(--mono);color:var(--dim)}
+#markets .pill{display:inline-block;font:600 10px var(--mono);letter-spacing:.04em;border-radius:6px;padding:2px 6px;margin:1px 4px 1px 0;
+  border:1px solid var(--line);color:var(--mute);white-space:nowrap}
+#markets .pill.flag{border-color:var(--amber);color:var(--amber)} #markets .pill.off{border-color:#7fb0ff77;color:var(--blue)}
+#markets .pill.bad{border-color:var(--red);color:var(--red)} #markets .pill.ok{border-color:#5fd39a77;color:var(--green)}
+#markets .pill.rej{border-color:#9a958f66;color:var(--mute)}
+#markets .spark{display:block} #markets .zbar{display:inline-block;height:4px;border-radius:2px;vertical-align:middle;margin-left:6px}
+#markets tr.mk-detail td{background:#0b0d11;border-top:0;padding:12px 14px}
+#markets .mk-det{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;font-size:12px}
+#markets .mk-det h4{font:700 10px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--mute);margin:0 0 6px}
+#markets .mk-det ul{margin:0;padding-left:16px} #markets .mk-det li{margin:2px 0}
+@media (max-width:900px){#markets .mk-det{grid-template-columns:1fr} #markets .hide-s{display:none}}
+
+/* research pipeline (LINUX_DRIFT 2026-10-24 22:28) */
+#research .rs-stages{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:6px;margin-bottom:10px}
+#research .rs-stage{border:1px solid var(--line);border-radius:10px;padding:8px;background:#0c0e12}
+#research .rs-stage .k{font:600 10px var(--mono);letter-spacing:.08em;color:var(--mute);text-transform:uppercase}
+#research .rs-stage .v{font:700 18px var(--mono);color:var(--sand)}
+#research .rs-bar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:6px 0 10px}
+#research .st{font:600 10px var(--mono);border:1px solid var(--line);border-radius:6px;padding:2px 6px;color:var(--mute)}
+#research .st.PASS,#research .st.OBSERVATION{border-color:#5fd39a77;color:var(--green)}
+#research .st.SCREEN_FAIL,#research .st.REJECTED,#research .st.DROPPED{border-color:#ff5d5d66;color:#ff9a9a}
+#research .st.UNTESTABLE,#research .st.BLOCKED,#research .st.NO_DECISION{border-color:#f4b86066;color:var(--amber)}
+#research select{font:600 11px var(--mono);background:#0c0e12;border:1px solid var(--line);color:var(--text);border-radius:8px;padding:5px 8px}
+@media (max-width:900px){#research .rs-stages{grid-template-columns:repeat(4,minmax(0,1fr))}}
+
 /* panels */
 .panel{background:linear-gradient(180deg,#12151bee,#0e1116ee);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;
   min-width:0;position:relative;box-shadow:0 1px 0 #ffffff08 inset,0 18px 40px #00000055}
@@ -305,6 +342,28 @@ details.more[open]>summary{margin-bottom:12px}
       <div class="ov-when" id="ov-when"></div></div>
     <ul class="ov-list" id="ov-list"></ul><div class="ov-fine" id="ov-fine"></div>
   </section>
+
+  <section class="panel corner" id="markets" aria-label="Markedsscanner"><h2>Markedsscanner <span class="tagx" id="mk-note">henter …</span></h2>
+    <div class="mk-bar" role="toolbar" aria-label="Filtre og sortering">
+      <button type="button" data-mkf="all" aria-pressed="true">Alle</button>
+      <button type="button" data-mkf="crypto" aria-pressed="false">Krypto</button>
+      <button type="button" data-mkf="tradfi" aria-pressed="false">TradFi</button>
+      <button type="button" data-mkf="flag" aria-pressed="false">Kun flaggede</button>
+      <span class="sp"></span>
+      <label class="mk-sub" for="mk-sort">sortér</label>
+      <select id="mk-sort"><option value="z">|z| 1 t</option><option value="vol">volumen mod median</option>
+        <option value="prem">|præmie|</option><option value="book">bogomkostning</option><option value="age">dataalder</option>
+        <option value="name">navn</option></select>
+    </div>
+    <div class="scroll" id="mk-table"><div class="sk" style="height:220px"></div></div>
+    <div class="note" id="mk-foot"></div></section>
+
+  <section class="panel corner" id="research" aria-label="Forskningspipeline"><h2>Forskningspipeline <span class="tagx" id="rs-note">henter …</span></h2>
+    <div class="rs-stages" id="rs-stages"></div>
+    <div class="rs-bar"><span class="mk-sub">status</span><select id="rs-filter"><option value="">alle</option></select><span id="rs-counts"></span></div>
+    <div class="scroll" id="rs-table" style="max-height:420px"><div class="sk" style="height:160px"></div></div>
+    <details class="fold"><summary>Fremadrettede tests og kapacitet</summary><div class="grid2"><div id="rs-forward"></div><div id="rs-capacity"></div></div></details>
+    <div class="note" id="rs-foot"></div></section>
 
   <section class="money" aria-label="Saldo og profit">
     <div class="mcard" id="m-bal"><div class="lab">Saldo (paper)</div><div class="big" id="bal">–</div><div class="sub" id="balsub"></div></div>
@@ -966,8 +1025,14 @@ function renderPaper(p){
       <div>${ddc}<div class="cap">Drawdown from running peak · source sim_equity</div></div></div>
       <div class="grid3">${metric("Realised P&L (sim.)", num(s.realized), `closed trades, fees and funding, USD · gebyrer ${num(s.fees)} · funding ${num(s.funding)}`)}${metric("Unrealised P&L (sim.)", num(s.unrealized), "open positions at the last mark, USD")}${metric("Total P&L (sim.)", num(s.total_pnl), `capital ${num(s.capital,0)} USD`)}</div>
       <div class="grid3">${metric("Max / daily drawdown", `${pct(s.max_drawdown)} / ${pct(s.daily_drawdown)}`, "from sim_equity")}${metric("Orders · fills · rejected", `${s.orders} · ${s.fills} · ${s.rejected_orders}`, `${s.open_positions} open positions · ${s.closed_trades} closed trades`)}${metric("Reconciliation", s.reconciliation.ok ? "OK" : "MISMATCH", s.reconciliation.ok ? "orders = fills + cancels · kontant = start + fills − gebyrer + funding" : esc(s.reconciliation.problems.join("; ")), s.reconciliation.ok ? "good" : "bad")}</div>
-      ${edgeRow(s.edge)}${laneRow(s.lane_info)}</div>`;
+      ${costRow(s.decomposition)}${edgeRow(s.edge)}${laneRow(s.lane_info)}</div>`;
   }).join("") + `<div class="cap">Source: ${esc(p.source)}</div>`;
+}
+function costRow(d){                                             /* LINUX_DRIFT 2026-10-24 22:27: from the same fills */
+  if (!d || !d.fills) return "";
+  const sg = v => `<span class="${v > 0 ? "good" : v < 0 ? "bad" : ""}">${v > 0 ? "+" : ""}${num(v)}</span>`;
+  const chk = Math.abs(d.price_basis_gap ?? 0) <= 0.01 && !d.fills_without_mid;
+  return `<div class="grid3">${metric("Omkostninger (observeret)", `${sg(d.fees)} gebyrer · ${sg(d.spread_slippage)} spread/slip`, `heraf målt i bogen ${num(d.book)} · modelleret tillæg ${num(d.allowance)} USD`)}${metric("Funding · pris/basis", `${sg(d.funding)} · ${sg(d.price_basis)}`, `netto ${num(d.net)} USD = funding + gebyrer + spread/slip + pris/basis`)}${metric("Kontrol af pris/basis (21t)", chk ? "OK" : "AFVIGER", chk ? `uafhængig midtpris-P&L stemmer (afvigelse ${num(d.price_basis_gap, 4)} USD) · ${d.fills} fills` : `afvigelse ${num(d.price_basis_gap, 4)} USD · uden midtpris ${d.fills_without_mid} · bedre end midt ${d.fills_better_than_mid} · efter mark ${d.fills_after_mark}`, chk ? "good" : "bad")}</div>`;
 }
 function laneRow(l){
   if (!l) return "";
@@ -1068,6 +1133,120 @@ function setLink(state){
   const [cls, txt] = map[state]; $("#c-link").innerHTML = `<span class="led ${cls}"></span>${txt}`;
 }
 let fastBusy = false, slowAt = 0;
+/* ---------------- market scanner (LINUX_DRIFT 2026-10-24 22:23) ---------------- */
+const MK = {filter: "all", sort: "z", open: null, last: null};
+const CLASS_DA = {crypto: "krypto", commodity: "råvare-perp", equity_etf: "aktiefond-perp", fx: "valuta-perp"};
+const VERDICT_DA = {REJECT_NOT_DIRECTIONAL: "afvist: kun volumen", REJECT_ILLIQUID: "afvist: illikvid", REJECT_TESTED: "afvist: testet (m21c)",
+  NOT_SCREENED: "ikke screenet", FORWARD_ONLY: "kun fremad"};
+const signed = (v, d, unit="") => v == null ? na() :
+  `<span class="${v > 0 ? "up" : v < 0 ? "dn" : "flat"}">${v > 0 ? "▲ +" : v < 0 ? "▼ " : "■ "}${(v*100).toFixed(d)}%${unit}</span>`;
+function spark(pts){
+  if (!pts || pts.length < 2) return `<span class="dim">for få timer</span>`;
+  const ys = pts.map(p => p[1]), lo = Math.min(...ys), hi = Math.max(...ys), w = 96, h = 24, n = ys.length;
+  const xy = ys.map((y, i) => `${(i/(n-1)*w).toFixed(1)},${(hi === lo ? h/2 : h - (y-lo)/(hi-lo)*(h-2) - 1).toFixed(1)}`).join(" ");
+  const col = ys[n-1] >= ys[0] ? "var(--green)" : "var(--red)";
+  return `<svg class="spark" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img" aria-label="kurs de seneste ${n} timer"><polyline points="${xy}" fill="none" stroke="${col}" stroke-width="1.4"/></svg>`;
+}
+function zcell(z, thr){
+  if (z == null) return na();
+  const w = Math.min(60, Math.abs(z) / thr * 60), col = Math.abs(z) >= thr ? "var(--amber)" : "var(--dim)";
+  return `${z.toFixed(2)}<span class="zbar" style="width:${w.toFixed(0)}px;background:${col}" title="|z| mod tærsklen ${thr}"></span>`;
+}
+function mkStatus(m, t){
+  const out = [];
+  if (m.status === "fejl") out.push(`<span class="pill bad">datafejl</span>`);
+  else if (m.status === "forældet") out.push(`<span class="pill bad">forældet</span>`);
+  else if (m.status === "ingen data") out.push(`<span class="pill bad">ingen data</span>`);
+  for (const f of m.flags || []) out.push(`<span class="pill flag">FLAG ${esc(f.metric === "volume_ratio" ? "volumen ×" + f.value.toFixed(1) : f.metric.replace("_", " ") + " " + f.value.toFixed(1))} ≥ ${esc(f.threshold)}</span>`);
+  const tr = m.investigation && m.investigation.triage;
+  if (tr) out.push(`<span class="pill rej" title="${esc(tr.reason || "")}">${esc(VERDICT_DA[tr.verdict] || tr.verdict)}</span>`);
+  if (!out.length) out.push(`<span class="pill ok">normal</span>`);
+  return out.join("");
+}
+function mkDetail(m, v){
+  const inv = m.investigation, tr = inv && inv.triage;
+  const flags = (m.flags || []).length ? `<ul>${m.flags.map(f => `<li>${esc(f.metric)} = ${num(f.value, 2)} mod tærskel ${esc(f.threshold)} <span class="dim">(${esc(f.rule)})</span></li>`).join("")}</ul>` : `<div class="dim">Intet flag i seneste scanning. Tærskler: |z 1 t| ≥ ${v.thresholds.z_1h}, |z 24 t| ≥ ${v.thresholds.z_24h}, volumen ≥ ${v.thresholds.volume_ratio} × median.</div>`;
+  const why = tr ? `<div><b>${esc(VERDICT_DA[tr.verdict] || tr.verdict)}</b> · ${esc(tr.reason || "")}</div><div class="dim">forklaringer undersøgt: ${esc((tr.explanations || []).join(", ") || "–")}</div><div>næste skridt: ${esc(tr.next || "–")}</div><div class="dim">analysepost #${inv.id} · ${ago(inv.ts)}</div>` : `<div class="dim">Ingen analysepost de seneste 24 t (en post skrives kun ved et flag, højst hver 6. time pr. marked).</div>`;
+  const news = inv && inv.news && inv.news.length ? `<ul>${inv.news.map(n => `<li>${esc(n.title)} <span class="dim">${esc(n.source || "")} · udgivet ${utc(n.published_ts)}</span></li>`).join("")}</ul>` : `<div class="dim">Ingen nyhed med markedets nøgleord i ±3 t (news-watch, udgivelsestid). Det udelukker ikke en årsag.</div>`;
+  const macro = inv && inv.macro && inv.macro.length ? `<div>makro: ${inv.macro.map(x => esc(x.event) + " " + utc(x.ts)).join(", ")}</div>` : "";
+  const probs = m.problems.length ? `<ul>${m.problems.map(x => `<li class="dn">${esc(x.kind)}: ${esc(x.detail)}</li>`).join("")}</ul>` : `<div class="dim">ingen fejl i seneste scanning</div>`;
+  return `<div class="mk-det">
+    <div><h4>Hvorfor (målinger)</h4>${flags}<div class="dim" style="margin-top:6px">kurs ${num(m.price, 6)} · timeomsætning ${num(m.quote_volume_1h, 0)} USD · dataalder ${dur(m.data_age_s)} · scanning ${utc(m.scan_ts)}</div></div>
+    <div><h4>Undersøgelse</h4>${why}${macro}</div>
+    <div><h4>Nyheder og datakvalitet</h4>${news}${probs}<div class="dim" style="margin-top:6px">bog 5 000 USD: ${m.book_error ? esc(m.book_error) : `rundtur ${num(m.book_rt*1e4, 2)} bp · spread ${num(m.spread*1e4, 2)} bp`} (uden gebyrer)</div></div>
+  </div>`;
+}
+function renderMarkets(v){
+  MK.last = v;
+  const sev = {fejl: 0, "ingen data": 0, "forældet": 1, frisk: 2};
+  let rows = v.markets.filter(m => MK.filter === "all" || (MK.filter === "crypto" ? m.class === "crypto" : MK.filter === "tradfi" ? m.class !== "crypto" : (m.flags || []).length));
+  const key = {z: m => -Math.abs(m.z_1h ?? 0), vol: m => -(m.volume_ratio ?? 0), prem: m => -Math.abs(m.premium ?? 0),
+               book: m => -(m.book_rt ?? (m.book_error ? 1 : 0)), age: m => -(m.data_age_s ?? 1e12), name: m => m.label}[MK.sort];
+  rows = rows.slice().sort((a, b) => { const x = key(a), y = key(b); return typeof x === "string" ? x.localeCompare(y) : x - y; });
+  const fresh = v.markets.filter(m => m.status === "frisk").length, flagged = v.markets.filter(m => (m.flags || []).length).length;
+  $("#mk-note").textContent = `${v.markets.length} markeder · ${fresh} friske · ${flagged} flagget · seneste scanning ${v.last_scan_ts ? ago(v.last_scan_ts) : NA} · ${v.cadence}`;
+  if (!rows.length) { $("#mk-table").innerHTML = `<div class="empty">${v.last_scan_ts ? "Ingen markeder i dette filter." : "Ingen scanning endnu: scanneren kører hver time kl. HH:02 UTC."}</div>`; }
+  else {
+    const head = `<table><thead><tr><th>Marked</th><th>Kurs · seneste timer</th><th class="num">1 t</th><th class="num">24 t</th><th class="num">z 1 t</th>
+      <th class="num">Volumen</th><th class="num hide-s">Præmie</th><th class="num hide-s">Bog 5k</th><th>Status</th><th class="num hide-s">Data</th></tr></thead><tbody>`;
+    const body = rows.map(m => {
+      const open = MK.open === m.symbol;
+      const sess = m.class === "crypto" ? "" : m.off_hours ? `<span class="pill off" title="Binance prissætter perpens indeks fra dens egen ordrebog (21g)">weekend/lukket</span>` : `<span class="pill">åbent marked</span>`;
+      return `<tr class="mk-row" tabindex="0" data-mk="${esc(m.symbol)}" aria-expanded="${open}">
+        <td><div class="mk-name">${esc(m.label)}</div><div class="mk-sub">${esc(m.symbol)} · ${esc(CLASS_DA[m.class] || m.class)} ${sess}</div></td>
+        <td>${spark(m.spark)}<div class="mk-sub">${num(m.price, 6)}</div></td>
+        <td class="num">${signed(m.ret_1h, 2)}</td><td class="num">${signed(m.ret_24h, 2)}</td>
+        <td class="num">${zcell(m.z_1h, v.thresholds.z_1h)}</td>
+        <td class="num">${m.volume_ratio == null ? na() : `<span class="${m.volume_ratio >= v.thresholds.volume_ratio ? "dn" : ""}">×${m.volume_ratio.toFixed(2)}</span>`}</td>
+        <td class="num hide-s">${m.premium == null ? na() : (m.premium*1e4).toFixed(1) + " bp"}</td>
+        <td class="num hide-s">${m.book_error ? `<span class="dn">${esc(m.book_error)}</span>` : m.book_rt == null ? na() : (m.book_rt*1e4).toFixed(2) + " bp"}</td>
+        <td>${mkStatus(m)}</td><td class="num hide-s">${dur(m.data_age_s)}</td></tr>` + (open ? `<tr class="mk-detail"><td colspan="10">${mkDetail(m, v)}</td></tr>` : "");
+    }).join("");
+    $("#mk-table").innerHTML = head + body + "</tbody></table>";
+  }
+  $("#mk-foot").textContent = "Observationer fra scannerens egne målinger (abnormal_move), ikke handelsmuligheder. Et flag starter en undersøgelse, aldrig en ordre. TradFi-perps er Binance-kontrakter, ikke guld, olie, aktieindeks eller valuta selv. Bogomkostning er uden gebyrer.";
+}
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-mkf]");
+  if (b) { MK.filter = b.dataset.mkf; document.querySelectorAll("[data-mkf]").forEach(x => x.setAttribute("aria-pressed", String(x === b))); if (MK.last) renderMarkets(MK.last); return; }
+  const r = e.target.closest("tr.mk-row");
+  if (r) { MK.open = MK.open === r.dataset.mk ? null : r.dataset.mk; if (MK.last) renderMarkets(MK.last); }
+});
+document.addEventListener("keydown", e => { const r = e.target.closest && e.target.closest("tr.mk-row"); if (r && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); r.click(); } });
+$("#mk-sort").addEventListener("change", e => { MK.sort = e.target.value; if (MK.last) renderMarkets(MK.last); });
+async function loadMarkets(){ try { renderMarkets(await api("/api/markets")); } catch (e) { $("#mk-note").textContent = "kan ikke hente markederne"; } }
+
+/* ---------------- research pipeline (LINUX_DRIFT 2026-10-24 22:28) ---------------- */
+const RS = {filter: "", last: null};
+const SRC_DA = {screen: "screening (17)", study: "studie (m21)", measurement: "låst måling", catalogue: "katalog", family: "familie", legacy: "legacy"};
+function renderResearch(v){
+  RS.last = v;
+  $("#rs-stages").innerHTML = v.stages.map(s => `<div class="rs-stage"><div class="k">${esc(s.stage)}</div><div class="v">${num(s.n, 0)}</div></div>`).join("");
+  const sel = $("#rs-filter"), have = new Set([...sel.options].map(o => o.value));
+  Object.keys(v.by_status).forEach(k => { if (!have.has(k)) sel.add(new Option(k, k)); });
+  $("#rs-counts").innerHTML = Object.entries(v.by_status).map(([k, n]) => `<span class="st ${esc(k)}">${esc(k)} ${n}</span>`).join(" ");
+  const rows = v.records.filter(r => !RS.filter || r.status === RS.filter);
+  $("#rs-table").innerHTML = table([
+    {h:"Hypotese / eksperiment", f:r => `<div class="mono" style="font-weight:700">${esc(r.id)}</div><div class="dim">${esc(SRC_DA[r.source] || r.source)}</div>`},
+    {h:"Status", f:r => `<span class="st ${esc(r.status)}">${esc(r.status)}</span>` + (r.failed ? `<div class="dim">fejlede: ${esc(r.failed.join("; "))}</div>` : "") + (r.reason ? `<div class="dim">${esc(String(r.reason).slice(0, 140))}</div>` : "")},
+    {h:"n · klynger", num:1, f:r => r.n == null ? na() : `${num(r.n, 0)}${r.clusters != null ? " · " + num(r.clusters, 0) : ""}`},
+    {h:"Effekt", num:1, f:r => r.mean == null ? na() : pct(r.mean, 3)},
+    {h:"p", num:1, f:r => r.p == null ? na() : Number(r.p).toPrecision(2)},
+    {h:"Krav (omk.)", num:1, f:r => r.cost_hurdle == null ? na() : pct(r.cost_hurdle, 2)},
+    {h:"Gentest kun hvis", f:r => `<span class="dim">${esc(r.retest || "–")}</span>`}], rows, "Ingen poster i dette filter.");
+  $("#rs-forward").innerHTML = `<h3 class="mk-sub">Fremadrettede tests (eget alfa)</h3>` + table([
+    {h:"Test", f:f => `<b>${esc(f.hypothesis)}</b><div class="dim">${esc(f.rule)}</div>`},
+    {h:"Indsamlet", num:1, f:f => f.collected == null ? `<span class="dim">tælles ved målingen</span>` : `${f.collected} / ${f.needed}`},
+    {h:"Hvad", f:f => `<span class="dim">${esc(f.what || "")}</span>`}], v.forward, "Ingen fremadrettede tests.");
+  $("#rs-capacity").innerHTML = `<h3 class="mk-sub">Kapacitet pr. papirkonto</h3>` + table([
+    {h:"Konto", f:c => `<span class="mono">${esc(c.ledger)}</span>`},
+    {h:"Status", f:c => `<span class="st UNTESTABLE">${esc(c.status)}</span>`}], v.capacity, "Ingen papirkonti.") + (v.capacity.length ? `<div class="dim">${esc(v.capacity[0].why)}</div>` : "");
+  $("#rs-note").textContent = `${v.records.length} afprøvede hypoteser og eksperimenter · statusser fra research-memory, aldrig slået sammen`;
+  $("#rs-foot").textContent = v.notes.join(" · ");
+}
+$("#rs-filter").addEventListener("change", e => { RS.filter = e.target.value; if (RS.last) renderResearch(RS.last); });
+async function loadResearch(){ try { renderResearch(await api("/api/research")); } catch (e) { $("#rs-note").textContent = "kan ikke hente forskningspipelinen"; } }
+
 async function refresh(full){
   if (fastBusy) return; fastBusy = true;
   try {
@@ -1078,6 +1257,7 @@ async function refresh(full){
       slowAt = Date.now();
       const [p, d, c, r, cv, hy] = await Promise.all(["/api/paper2", "/api/distribution", "/api/costs", "/api/rejected", "/api/coverage", "/api/hypotheses"].map(api));
       renderPaper(p); renderDist(d); renderCosts(c); renderRejected(r); renderCoverage(cv, hy);
+      await Promise.all([loadMarkets(), loadResearch()]);
       if ($("#more").open) await Promise.all([loadJobs(), loadLog(), loadRisk(), refreshAudit()]);
       else await refreshAudit();
     }
