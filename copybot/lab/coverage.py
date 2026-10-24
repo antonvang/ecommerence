@@ -54,6 +54,10 @@ SOURCES = (
      "10 min", "free", "no", (), "https://www.federalreserve.gov/feeds", 30 * 86400),
     ("BLS latest numbers RSS (amendment 21b)", "live", "CPI, jobs and other indicator releases (headlines)", "10 min",
      "free", "no", (), "https://www.bls.gov/feed", 14 * 86400),
+    ("ECB press releases RSS (amendment 21b)", "live", "ECB decisions, speeches and releases (headlines)", "10 min",
+     "free", "no", (), "https://www.ecb.europa.eu", 3 * 86400),
+    ("CNBC Economy RSS (amendment 21b)", "live", "economy and macro news headlines", "10 min", "free", "no", (),
+     "https://www.cnbc.com", 3 * 86400),
     ("Binance fapi klines, 12 markets (amendment 21)", "live", "hourly bars of crypto and TradFi perps for abnormal "
      "moves", "1 h", "free (weight limit 2,400/min)", "no", (), "https://fapi.binance.com/fapi/v1/klines", 3 * 3600),
     ("GDELT DOC 2.0 (amendment 16)", "live", "world news mentioning crypto (titles, URLs)", "30 min, backoff to 24 h",
@@ -72,10 +76,6 @@ GAPS = (
      "not available free"),
     ("Hyperliquid history", "live API only (fundingHistory per coin), not cached", "free, not fetched"),
     ("data after 2023-12", "2024 not fetched; 2025-01-01 onwards is reserved and never read", "reserved"),
-    ("macro news from ECB and CNBC (amendment 21b)", "BLOCKED: the user approved the hosts www.ecb.europa.eu and "
-                                                     "www.cnbc.com, but the allowlist change was refused in the "
-                                                     "assistant session", "the user adds both hosts to "
-                                                     "tests/test_lab_safety.py ALLOWED_HOSTS"),
     ("hourly FX, rates and index data (amendment 21)", "BLOCKED: no hourly source on the allowed hosts (FRED is "
                                                        "daily and lagged); only USDBRL and SPY/QQQ perps exist",
      "a new data host needs the user's yes"),

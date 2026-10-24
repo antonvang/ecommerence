@@ -78,13 +78,14 @@ class Scanner(Base):
         self.assertEqual({x["category"] for x in news.rss(get, NOW, "fed_press")}, {"macro"})
         self.assertEqual({x["category"] for x in news.rss(get, NOW, "bls_latest")}, {"macro"})
         self.assertEqual({x["category"] for x in news.rss(get, NOW, "coindesk")}, {"media"})
-        self.assertNotIn("ecb_press", news.RSS)                  # blocked until the user adds the host (21b precision)
+        self.assertEqual({x["category"] for x in news.rss(get, NOW, "ecb_press")}, {"macro"})
+        self.assertEqual({x["category"] for x in news.rss(get, NOW, "cnbc_economy")}, {"macro"})
 
     def test_items_are_stored_once_with_point_in_time_fields(self):
         r = news.run(self.db, self.get(), now=NOW)
         self.assertEqual(r["errors"], [])
         first = len(self.stored())
-        self.assertEqual(first, 3 * 3 + 4 * 2 + 1)                  # 3 Binance categories, 4 feeds (21b), GDELT
+        self.assertEqual(first, 3 * 3 + 6 * 2 + 1)                  # 3 Binance categories, 6 feeds (21b), GDELT
         news.run(self.db, self.get(), now=NOW + 600)                # same items again: nothing new
         self.assertEqual(len(self.stored()), first)
         x = [i for i in self.stored() if i["source"] == "binance"][0]

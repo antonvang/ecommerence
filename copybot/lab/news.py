@@ -26,8 +26,10 @@ BINANCE = "https://www.binance.com/bapi/composite/v1/public/cms/article/list/que
 CATALOGS = {48: "listing", 161: "delisting", 49: "binance_news"}
 RSS = {"cointelegraph": "https://cointelegraph.com/rss", "coindesk": "https://www.coindesk.com/arc/outboundfeeds/rss",
        "fed_press": "https://www.federalreserve.gov/feeds/press_all.xml",             # amendment 21b (macro)
-       "bls_latest": "https://www.bls.gov/feed/bls_latest.rss"}
-RSS_CATEGORY = {"fed_press": "macro", "bls_latest": "macro"}
+       "bls_latest": "https://www.bls.gov/feed/bls_latest.rss",
+       "ecb_press": "https://www.ecb.europa.eu/rss/press.html",
+       "cnbc_economy": "https://www.cnbc.com/id/20910258/device/rss/rss.html"}
+RSS_CATEGORY = {"fed_press": "macro", "bls_latest": "macro", "ecb_press": "macro", "cnbc_economy": "macro"}
 GDELT = "https://api.gdeltproject.org/api/v2/doc/doc"
 GDELT_QUERY = "(bitcoin OR ethereum OR crypto OR cryptocurrency OR stablecoin) sourcelang:english"
 GDELT_EVERY, GDELT_BACKOFF_MAX = 1800, 24 * 3600     # amendment 17 point 9 (was 900 and 6 h)

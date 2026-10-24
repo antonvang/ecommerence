@@ -35,6 +35,7 @@ ALLOWED_HOSTS = {
                                       # approved by the user 2026-10-21)
     "cointelegraph.com", "www.coindesk.com",   # crypto news RSS, GET only (amendment 16)
     "api.gdeltproject.org",           # GDELT DOC 2.0 article list, GET only (amendment 16)
+    "www.ecb.europa.eu", "www.cnbc.com",   # macro news RSS, GET only (amendment 21b, approved by the user 2026-10-24)
     "www.bls.gov",                    # BLS release schedule pages, GET only (amendment 14)
     "doi.org", "www.bis.org",         # citations in catalogue evidence
     "127.0.0.1", "localhost",         # the local dashboard
