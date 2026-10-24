@@ -2567,3 +2567,52 @@ ANALYSIS" 2026-10-24 ca. kl. 18:30). Ingen gate, alfa, periode eller lås ændre
    screenes ikke igen.
 8. **Aldrig:** ordrer, papirkonti, familier, alfa, train3, validation3, holdout 2024, data fra 2025 og frem i
    screeningen, `pm_lp`.
+
+## Ændring 21j (2026-10-24 kl. 18:47, før kode og før nogen beregning): nye informationskilder i explore0 — makroudgivelser og opmærksomhed (metode m21j); lead/lag med forsinkelse afgøres uden beregning
+
+**Beslutning:** Claude under brugerens mandat (master follow-up 2 "FIND REAL EDGES" 2026-10-24 ca. kl. 18:45). Kun
+explore0. Ingen gate, alfa, periode eller lås ændres. 4σ-faldshypotesen indgår ikke.
+
+**Datakortlægning (kontrolleret i cachen, ingen udfald set):** open interest og long/short (`metrics`, 30 mønter), DVOL,
+MVRV, FRED, aggTrades og historisk bogdybde dækker kun train3 og validation3. De kan **ikke screenes** (UNTESTABLE i
+explore0; brug kræver en LÅS). To kilder dækker explore0:
+- makrokalenderen `ingest/calendar/{fomc,bls}-{2020,2021}.json` (ændring 14; planlagte udgivelser kendt på forhånd);
+- Wikipedia-sidevisninger `ingest/pageviews/*.json` med `available_ts` = D + 2 døgn 00:00 UTC (ændring 14 punkt 3).
+Kun rækker inden for explore0 (2020-03-01 – 2021-12-31) bruges; senere rækker i filerne kasseres ved indlæsning.
+
+1. **J1 `macro_release|post_drift_24h|m21j` (makro-efterdrift).**
+   - Mekanisme: underreaktion på offentlig makroinformation (post-announcement drift).
+   - Hændelser: planlagte FOMC-erklæringer, CPI og Employment Situation med `ts` i explore0. Bar H er timebaren, der
+     indeholder `ts`.
+   - Retning pr. mønt (BTCUSDT og ETHUSDT perps): s = fortegnet af ln(C_H / C_H−1). y_mønt = s · ln(C_H+25 / C_H+1);
+     hændelsens y = gennemsnittet for BTC og ETH. Indgang en time efter reaktionsbaren.
+   - Klynge = UTC-døgn. **Placebo:** samme klokkeslæt 7 døgn før (14 døgn, hvis det døgn har en kalenderbegivenhed).
+     Det fanger mønstre for ugedag og tid på dagen, som ændring 14a's H1 viste.
+   - Beskrivende, ikke testet: gennemsnit pr. udgivelsestype.
+2. **J2 `attention_shock|cont_7d|m21j` (opmærksomhedschok).**
+   - Mekanisme: opmærksomhed giver midlertidigt købspres, som vender (Da, Engelberg & Gao 2011, J. Finance), eller
+     langsom spredning af information, som fortsætter. Tosidet.
+   - Artikler → perp: Bitcoin → BTC, Ethereum → ETH, Dogecoin → DOGE, Litecoin → LTC, Polkadot_(cryptocurrency) → DOT,
+     Cardano_(blockchain_platform) → ADA, Chainlink_(blockchain) → LINK. Ikke brugt: Binance, Cryptocurrency, Ripple_Labs
+     (ikke én mønt) og Avalanche (ingen data i explore0).
+   - Uger: ISO-uger fra mandag 00:00 UTC. V_w = summen af ugens 7 dages visninger (alle 7 til stede). Chok:
+     V_w / gennemsnittet af de 8 foregående uger ≥ 2 (alle 8 til stede og i explore0).
+   - Kendt: søndagens `available_ts` = tirsdag 00:00 UTC. Indgang P0 = lukkekursen for baren, der åbner tirsdag 00:00;
+     udgang 168 t senere. s = fortegnet af møntens afkast i uge w (mandag 00:00 → næste mandag 00:00).
+     y = s · ln(P1 / P0) (positiv = fortsættelse).
+   - Klynge = chokets ISO-uge (alle mønter samme uge er én klynge). **Placebo:** samme mønt 4 uger før med samme s.
+3. **Test (J1 og J2):** som 21c punkt 5 (tosidet fortegnsskift 20 000 / seed 7, p ≤ 0,005, samme fortegn i 2020 og
+   2021 med mindst 5 klynger hver, placebo-p > 0,05 med mindst 15 klynger, mindst 15 klynger) og
+   omkostningskravet fra 21i punkt 2 (pr. hændelse, point-in-time-omsætning; for J1 BTC og ETH, som giver gulvet
+   0,46 %). Registrering: `research/studies/NEWINFO_m21j.json` og `.md`. Nøglerne screenes aldrig igen. En SCREEN_PASS
+   kræver brugerens beslutning før en lås.
+4. **Lead/lag med forsinkelse (brugerens punkt 2) afgøres uden beregning:** S1 (21i) målte spots informationsforspring
+   med nul forsinkelse til +0,108 % pr. time mod et krav på 0,465 %. Information om næste time aftager med forsinkelsen,
+   så S1 med enhver realistisk forsinkelse ligger under det samme krav: **REJECTED af omkostningsgrænsen**, ingen ny
+   screening. Minutdata til at måle forsinkelsen findes ikke i cachen. Banens hentevej må først hente igen fra
+   2026-11-14 (ændring 10b): BLOCKED til da, og ikke nødvendig, fordi den øvre grænse allerede ligger under kravet.
+5. **Regimeopdelinger af de afsluttede screeninger:** gennemføres ikke. Hver regimeopdeling af explore0-resultater er
+   efterfølgende valgt og kan ikke screenes ærligt igen i explore0. Den kan kun føre til en LÅS i α-rækken (0,003125
+   tilbage), og den informationsværdi står ikke mål med risikoen for et falsk fund. Fremadrettede regimedata indsamles
+   (21h punkt 3).
+6. **Aldrig:** ordrer, papirkonti, familier, alfa, train3, validation3, holdout 2024, data fra 2025 og frem, `pm_lp`.
