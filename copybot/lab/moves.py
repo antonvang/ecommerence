@@ -139,11 +139,13 @@ def book_cost(get, sym):
 
 
 def news_near(db, sym, t0):
-    """news-watch titles usable within 3 h before or after the move hour that mention the market's keywords."""
+    """news-watch titles published (the source's own time) within 3 h before or after the move hour that mention the
+    market's keywords; a title without a publication time is not used (precision of amendment 21 point 5)."""
     words = WATCH[sym][2]
     out = []
-    for r in db.q("SELECT payload FROM observations WHERE detector='news/1' AND metric='news_item' AND ts BETWEEN ? "
-                  "AND ?", t0 - NEWS_WINDOW_S, t0 + HOUR + NEWS_WINDOW_S):
+    for r in db.q("SELECT payload FROM observations WHERE detector='news/1' AND metric='news_item' AND "
+                  "json_extract(payload, '$.published_ts') BETWEEN ? AND ?", t0 - NEWS_WINDOW_S,
+                  t0 + HOUR + NEWS_WINDOW_S):
         p = json.loads(r["payload"]) if isinstance(r["payload"], str) else r["payload"]
         title = (p.get("title") or "")
         low = f" {title.lower()} "

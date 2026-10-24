@@ -86,14 +86,16 @@ class Records(unittest.TestCase):
         moves._KLINES.clear()
         moves._MACRO.update(ts=NOW, events=[], error=None)       # no network in tests
 
-    def news(self, ts, title):
-        p = {"title": title, "source": "coindesk", "published_ts": ts, "url": "u", "usable_from": ts}
+    def news(self, ts, title, published=None):
+        p = {"title": title, "source": "coindesk", "published_ts": ts if published is None else published, "url": "u",
+             "usable_from": ts}
         self.db.append("observations", ts=ts, detector="news/1", source="rss", instrument=title, metric="news_item",
                        value=ts, threshold=None, flagged=0, payload=p)
 
     def test_a_flagged_market_gets_one_analysis_record_with_context_and_no_candidate(self):
         self.news(NOW - 2 * H, "Gold slides as the dollar jumps after hot CPI")
         self.news(NOW - 2 * H, "Bitcoin ETF flows steady")                              # not a gold keyword
+        self.news(NOW - 2 * H, "Fed statement on gold reserves", published=NOW - 9 * 86400)   # stored now, old
         s = scanner.run(self.db, ["abnormal_move"], get=market(jumps={"XAUUSDT": -0.03}), now=NOW)
         self.assertEqual(s["abnormal_move_records"], 1)
         self.assertEqual(s["created"], [])
