@@ -1,0 +1,273 @@
+{
+ "code_commit": "2bbfca71275116ab7e5f4cf3b954911d84f9f57f",
+ "files": 971,
+ "files_sha256": "3f384de3fddfdd9a146c42216abeb002dfa5d0bee9be5a75644cde42c1007aca",
+ "method": "m21c",
+ "results": [
+  {
+   "checks": {
+    "p <= 0.005": false,
+    "placebo p > 0.05 (>= 15 clusters)": true,
+    "same sign in 2020 and 2021": false,
+    "|mean| >= 0.0046": false
+   },
+   "descriptive_not_tested": {
+    "BTC+ETH": {
+     "mean": -0.0003695987983018159,
+     "n_events": 140
+    },
+    "down moves": {
+     "mean": -0.01298149523098451,
+     "n_events": 1020
+    },
+    "other coins": {
+     "mean": -0.006565472063180275,
+     "n_events": 2056
+    },
+    "up moves": {
+     "mean": -0.0002629500493679424,
+     "n_events": 1176
+    }
+   },
+   "direction": "reversal",
+   "event_mean": -0.006170471035364709,
+   "event_median": -0.003913195983356606,
+   "events": 2197,
+   "events_sha256": "07bff8fa1b14274b9af393a4b82f3ac629a9b0e0dfb4abddcccf8625403adcaa",
+   "excluded": {
+    "missing price": 1
+   },
+   "halves": {
+    "2020": [
+     176,
+     -0.001120078136645561
+    ],
+    "2021": [
+     274,
+     0.00015972814342334385
+    ]
+   },
+   "key": "abnormal_move|cont_4h|m21c",
+   "label": "EXPLORATORY (never evidence)",
+   "mean": -0.0003408183127813833,
+   "method": "m21c",
+   "n_clusters": 450,
+   "n_events": 2196,
+   "outcome": "cont_4h",
+   "p": 0.8224588770561472,
+   "placebo": {
+    "mean": -0.0003644365650619841,
+    "n_clusters": 443,
+    "n_events": 2120,
+    "p": 0.7128643567821609,
+    "shift_days": -30
+   },
+   "reason": "failed: p <= 0.005; same sign in 2020 and 2021; |mean| >= 0.0046",
+   "rule": "research/PROTOCOL_V3.md amendment 21c",
+   "share_positive": 0.43397085610200364,
+   "symbols": 132,
+   "verdict": "SCREEN_FAIL",
+   "window": "explore0 2020-03..2021-12"
+  },
+  {
+   "checks": {
+    "p <= 0.005": false,
+    "placebo p > 0.05 (>= 15 clusters)": true,
+    "same sign in 2020 and 2021": true,
+    "|mean| >= 0.0046": false
+   },
+   "descriptive_not_tested": {
+    "BTC+ETH": {
+     "mean": -0.0006064548518796564,
+     "n_events": 140
+    },
+    "down moves": {
+     "mean": -0.03858918738653035,
+     "n_events": 1020
+    },
+    "other coins": {
+     "mean": -0.01211745307437592,
+     "n_events": 2054
+    },
+    "up moves": {
+     "mean": 0.012254530528304653,
+     "n_events": 1174
+    }
+   },
+   "direction": "continuation",
+   "event_mean": -0.011382931765738968,
+   "event_median": -0.012816204617612218,
+   "events": 2197,
+   "events_sha256": "403cd211486258a21b70bbb2d4f3604596d7c18eba35bd5058fd39ed91adc04f",
+   "excluded": {
+    "missing price": 3
+   },
+   "halves": {
+    "2020": [
+     176,
+     0.0004408019156910142
+    ],
+    "2021": [
+     274,
+     0.006885354043715426
+    ]
+   },
+   "key": "abnormal_move|cont_24h|m21c",
+   "label": "EXPLORATORY (never evidence)",
+   "mean": 0.004364818100310322,
+   "method": "m21c",
+   "n_clusters": 450,
+   "n_events": 2194,
+   "outcome": "cont_24h",
+   "p": 0.21548922553872307,
+   "placebo": {
+    "mean": 0.0007225909925898454,
+    "n_clusters": 443,
+    "n_events": 2118,
+    "p": 0.767861606919654,
+    "shift_days": -30
+   },
+   "reason": "failed: p <= 0.005; |mean| >= 0.0046",
+   "rule": "research/PROTOCOL_V3.md amendment 21c",
+   "share_positive": 0.41659070191431175,
+   "symbols": 132,
+   "verdict": "SCREEN_FAIL",
+   "window": "explore0 2020-03..2021-12"
+  }
+ ],
+ "rule": "research/PROTOCOL_V3.md amendment 21c",
+ "symbols": [
+  "1000SHIBUSDT",
+  "1000XECUSDT",
+  "1INCHUSDT",
+  "AAVEUSDT",
+  "ADAUSDT",
+  "AKROUSDT",
+  "ALGOUSDT",
+  "ALICEUSDT",
+  "ALPHAUSDT",
+  "ANKRUSDT",
+  "ANTUSDT",
+  "ARPAUSDT",
+  "ARUSDT",
+  "ATAUSDT",
+  "ATOMUSDT",
+  "AUDIOUSDT",
+  "AVAXUSDT",
+  "AXSUSDT",
+  "BAKEUSDT",
+  "BALUSDT",
+  "BANDUSDT",
+  "BATUSDT",
+  "BCHUSDT",
+  "BELUSDT",
+  "BLZUSDT",
+  "BNBUSDT",
+  "BTCSTUSDT",
+  "BTCUSDT",
+  "BTSUSDT",
+  "BTTUSDT",
+  "BZRXUSDT",
+  "C98USDT",
+  "CELOUSDT",
+  "CELRUSDT",
+  "CHRUSDT",
+  "CHZUSDT",
+  "COMPUSDT",
+  "COTIUSDT",
+  "CRVUSDT",
+  "CTKUSDT",
+  "CTSIUSDT",
+  "CVCUSDT",
+  "DENTUSDT",
+  "DGBUSDT",
+  "DODOUSDT",
+  "DOGEUSDT",
+  "DOTUSDT",
+  "DYDXUSDT",
+  "EGLDUSDT",
+  "ENJUSDT",
+  "ENSUSDT",
+  "EOSUSDT",
+  "ETCUSDT",
+  "ETHUSDT",
+  "FILUSDT",
+  "FLMUSDT",
+  "FTMUSDT",
+  "GALAUSDT",
+  "GRTUSDT",
+  "GTCUSDT",
+  "HNTUSDT",
+  "HOTUSDT",
+  "ICPUSDT",
+  "ICXUSDT",
+  "IOSTUSDT",
+  "IOTAUSDT",
+  "IOTXUSDT",
+  "KAVAUSDT",
+  "KEEPUSDT",
+  "KLAYUSDT",
+  "KNCUSDT",
+  "KSMUSDT",
+  "LENDUSDT",
+  "LINAUSDT",
+  "LINKUSDT",
+  "LITUSDT",
+  "LPTUSDT",
+  "LRCUSDT",
+  "LTCUSDT",
+  "LUNAUSDT",
+  "MANAUSDT",
+  "MASKUSDT",
+  "MATICUSDT",
+  "MKRUSDT",
+  "MTLUSDT",
+  "NEARUSDT",
+  "NEOUSDT",
+  "NKNUSDT",
+  "NUUSDT",
+  "OCEANUSDT",
+  "OGNUSDT",
+  "OMGUSDT",
+  "ONEUSDT",
+  "ONTUSDT",
+  "PEOPLEUSDT",
+  "QTUMUSDT",
+  "RAYUSDT",
+  "REEFUSDT",
+  "RENUSDT",
+  "RLCUSDT",
+  "ROSEUSDT",
+  "RSRUSDT",
+  "RUNEUSDT",
+  "RVNUSDT",
+  "SANDUSDT",
+  "SCUSDT",
+  "SFPUSDT",
+  "SKLUSDT",
+  "SNXUSDT",
+  "SOLUSDT",
+  "SRMUSDT",
+  "STORJUSDT",
+  "SUSHIUSDT",
+  "SXPUSDT",
+  "THETAUSDT",
+  "TLMUSDT",
+  "TOMOUSDT",
+  "TRBUSDT",
+  "TRXUSDT",
+  "UNFIUSDT",
+  "UNIUSDT",
+  "VETUSDT",
+  "WAVESUSDT",
+  "XEMUSDT",
+  "XLMUSDT",
+  "XRPUSDT",
+  "XTZUSDT",
+  "YFIIUSDT",
+  "YFIUSDT",
+  "ZECUSDT",
+  "ZENUSDT",
+  "ZILUSDT"
+ ]
+}
