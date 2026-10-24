@@ -669,3 +669,15 @@ holdouten røres ikke; intet genstartes.
     funding fra **alle** fills og afregninger. Komponenterne passede altså ikke til netto, når et fill lå efter marken.
     **Rettelse:** fills og funding skæres ved markens tid (ts ≤ mark). Senere fills tælles i `fills_after_mark`, og
     den næste mark tager dem med. Ingen ledger, kasse eller equity ændres; kun den viste opdeling.
+
+- **2026-10-24 kl. 22:28 (før kode): forskningspipeline og kapacitet i dashboardet (`/api/research`).**
+  - **Kilder, kun læsning:** research-memory (låste målinger, katalog- og familieeksperimenter, ændring 17's
+    screeninger og de committede m21-studier) og de fremadrettede tests' tællere (`coverage.forward`).
+  - **Visning:** trin (opdaget → undersøgt → hypotese → protokol → screening → validering → papir/skygge →
+    overvågning) med antal pr. trin. Hver hypotese har sin dom med den eksisterende status: PASS, SCREEN_FAIL, REJECTED,
+    UNTESTABLE, DROPPED, OBSERVATION osv., aldrig slået sammen. Desuden n, klynger, effekt, p, omkostningskrav, årsag og
+    den faste gentestregel.
+  - **Kapacitet:** status pr. papirkonto er `UNTESTABLE_CAPACITY` med grunden fra
+    `research/drafts/SYSTEMKORT_OG_RISICI_2026-10-24.md`. Ingen kurve eller break-even vises, før en dateret ændring
+    og brugerens ja foreligger.
+  - Ingen status ændres, og intet genåbnes.
