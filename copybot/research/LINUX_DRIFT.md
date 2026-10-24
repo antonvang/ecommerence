@@ -427,6 +427,17 @@ noget, ændrer en gate eller rører indsamleren:
   dem. Feltet "Jobs i kø" viser klar og planlagt hver for sig ("0 klar", "3 planlagt · næste 2027-05-07"), fordi
   de tre jobs er fremadtestenes afgørelser i 2027, ikke en fastlåst kø.
 
+### Git-opslagene bag familiegodkendelsen caches præcist (tilføjet 2026-10-24 kl. 11:42, før kode)
+
+Målt 2026-10-24 (kopi af registret): `/api/kpis`, som dashboardet henter hvert 15. sekund, bruger 0,20 af 0,29 s på
+12 git-underprocesser fra `families.blobs` (ændring 8 punkt 5: de fire bundne filers committede og arbejdskopiens
+blobs). Ændring, kun hastighed, samme svar: `registry.blob_at(commit, sti)` huskes, når `commit` er en fuld sha (en
+commits indhold kan ikke ændres; kun fundne blobs huskes); `registry.last_commit(sti)` huskes, så længe HEAD peger det
+samme sted (nøgle: HEAD-filens indhold og stat for ref-filen og `packed-refs`; enhver commit, checkout eller pull
+skifter nøglen); arbejdskopiens blob regnes stadig af `git hash-object` og huskes, så længe filens inode, størrelse,
+mtime og ctime er de samme (enhver skrivning ændrer ctime). Godkendelsens binding, tærskler og registrering er
+uændrede; ingen gate ændres.
+
 ### `/api/overview` og `/api/mission` bruger dashboardets trinvise kædetjek (tilføjet 2026-10-24 kl. 10:55, før kode)
 
 Målt 2026-10-24: `/api/overview` svarer på 5,9 s og `/api/mission` på 6,2 s; profilen (kopi af registret) viser, at
