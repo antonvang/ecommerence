@@ -24,7 +24,10 @@ UA = "copybot-research/1.0 (paper research; contact via repository owner)"
 MAX_BYTES = 2 * 2 ** 20                          # a feed larger than this is refused, not parsed
 BINANCE = "https://www.binance.com/bapi/composite/v1/public/cms/article/list/query"
 CATALOGS = {48: "listing", 161: "delisting", 49: "binance_news"}
-RSS = {"cointelegraph": "https://cointelegraph.com/rss", "coindesk": "https://www.coindesk.com/arc/outboundfeeds/rss"}
+RSS = {"cointelegraph": "https://cointelegraph.com/rss", "coindesk": "https://www.coindesk.com/arc/outboundfeeds/rss",
+       "fed_press": "https://www.federalreserve.gov/feeds/press_all.xml",             # amendment 21b (macro)
+       "bls_latest": "https://www.bls.gov/feed/bls_latest.rss"}
+RSS_CATEGORY = {"fed_press": "macro", "bls_latest": "macro"}
 GDELT = "https://api.gdeltproject.org/api/v2/doc/doc"
 GDELT_QUERY = "(bitcoin OR ethereum OR crypto OR cryptocurrency OR stablecoin) sourcelang:english"
 GDELT_EVERY, GDELT_BACKOFF_MAX = 1800, 24 * 3600     # amendment 17 point 9 (was 900 and 6 h)
@@ -98,7 +101,7 @@ def rss(get, now, name):
             ts = email.utils.parsedate_to_datetime(pub).timestamp() if pub else None
         except (TypeError, ValueError):
             ts = None
-        out.append(item(name, guid or link, link, it.findtext("title"), ts, "media", now))
+        out.append(item(name, guid or link, link, it.findtext("title"), ts, RSS_CATEGORY.get(name, "media"), now))
     return out
 
 
