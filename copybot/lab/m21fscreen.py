@@ -23,7 +23,7 @@ import statistics
 import subprocess
 import sys
 
-from lab import hypogen, movescreen
+from lab import hypogen, movescreen, news
 from lab.engine import data
 
 METHOD, RULE = "m21f", "research/PROTOCOL_V3.md amendment 21f"
@@ -33,7 +33,6 @@ EXIT = 25                                                     # exit bar h + 25;
 COST_ALT, COST_PAIR = 0.0065, 0.0111
 Z_A, Z_B, COMPRESS, Z_C = 3.0, 2.5, 0.5, 4.0
 CATALYST_BEFORE, CATALYST_AFTER = DAY, HOUR
-BINANCE = "https://www.binance.com%"
 FAST = 0.98
 
 
@@ -172,8 +171,8 @@ def family_b(series, a, b):
 def catalysts(q):
     """{coin: sorted publication times} of Binance announcements in the registry that name the coin."""
     out = collections.defaultdict(list)
-    for (raw,) in q("SELECT payload FROM observations WHERE detector='news/1' AND metric='news_item' AND source LIKE ?",
-                    BINANCE):
+    for (raw,) in q("SELECT payload FROM observations WHERE detector='news/1' AND metric='news_item' AND source=?",
+                    news.BINANCE):
         p = json.loads(raw) if isinstance(raw, str) else raw
         if p.get("published_ts"):
             for c in p.get("coins") or []:
