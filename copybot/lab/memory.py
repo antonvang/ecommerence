@@ -24,6 +24,8 @@ RETEST = {
     "SCREEN_FAIL": "explore0 is used: none without new data",
     "UNTESTABLE": ">= 15 events with data in a phase the protocol allows",
     "SCREEN_PASS": "a LÅS-17 lock, then the locked measurement decides",
+    "DROPPED": "dropped by the user's decision without a test (amendment 21m); only a new mechanism in a new dated "
+               "amendment",
 }
 
 
