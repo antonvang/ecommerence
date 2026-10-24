@@ -89,3 +89,39 @@ være en del af beslutningen (punkt 8, mulighed 1a).
 
 **Claudes anbefaling:** 3 eller 1a → 3, medmindre leave-one-day-out viser en effekt, der ikke hænger på 2–3 døgn. Den
 lave styrke i validation3 gør 1 dyr i forhold til den forventede information.
+
+## Tilføjet 2026-10-24 kl. 18:15: rettelse og leave-one-day-out (ikke kørt)
+
+**Rettelse (ændring 21h punkt 1).** Punkt 5's "rundtur ~55–65 bp på alt-perps ved 5 000 USD" er forkert: tallet er en
+rundtur af et par med 4 ben inklusive banens gebyr på 10 bp pr. ben. Målt i dag (`research/studies/COSTS_2026-10-24.md`,
+740 perps, ét roligt tidspunkt): bogens rundtur for 5 000 USD har median 26 bp og fjerdedele 16 / 26 / 39 bp for
+krypto. Med 2 × 5 bp gebyr ligger 29 % over 0,46 %. Forslaget om et krav på 0,65 % bør derfor erstattes af et
+instrumentspecifikt krav (gebyr + bogens rundtur estimeret ud fra omsætningen, × 2 som sikkerhedsmargin), fastlagt
+før en eventuel test.
+
+**Nyt resultat, der berører hypotesen (afgør den ikke).** m21h (`research/studies/FUNDING_m21h.md`) viste, at reglen
+"følg med flokken, gå imod mod flokken" giver nul på døgnniveau (p 0,96). Hændelser mod en lang flok, typisk fald,
+gav dog +1,53 % på hændelsesniveau. Det er samme billede som 4σ-faldene: stærkt på hændelsesniveau, intet på
+døgnklynger.
+
+**Er en beskrivende leave-one-day-out tilladt?** Ja, efter min læsning, med forbehold:
+- Ændring 21c punkt 6 tillader opdelinger, der "vises beskrivende i rapporten og mærkes 'ikke testet'". Der bruges
+  ingen nye data (explore0 er allerede læst af m21c), ingen anden periode, ingen nøgle screenes igen (m21c's dedup
+  gælder dom-nøgler, og leave-one-day-out giver ingen dom), og intet alfa.
+- Den bør have sin egen daterede note før beregningen, fordi den kommer efter rapporten og er udvalgt efter at have
+  set data. Den kan kun bruges til at vælge mellem mulighederne 1, 2 og 3, ikke som evidens.
+
+**Hvad den ville måle (præcist):** fald-hændelserne efter m21c's regel (1 020) og y = −(cont_24h) = ln(C_h+25/C_h+1).
+(a) Klyngegennemsnittet over UTC-døgn med og uden hvert enkelt døgn: min, median og maks af de 167 værdier; (b) uden
+de k største døgn efter antal hændelser, k = 1…10; (c) det samme med klynger pr. ISO-uge; (d) andelen af døgn med
+positivt gennemsnit; (e) det ubetingede 24 t-afkast som sammenligning, gemt denne gang. **Beregning:** én kørsel af
+`movescreen.events` på cachen (~25 s CPU), ingen netværk. **Ikke kørt.**
+
+**Fordele og ulemper:**
+- *Lås og mål (k = 5):* den eneste vej til en afgørelse på uafhængige data (2022–23). Men α 0,0015625 og et roligt
+  validation3 giver lav styrke. Hvis den fejler på styrke, er halvdelen af rækkens rest (0,003125) brugt uden svar, og
+  den næste lås får kun 0,00078.
+- *Kun fremad:* koster ikke rækkens alfa (eget budget som H5F). Men med BTC og ETH kommer der få 4σ-fald om året; en
+  udvidet kryptoliste kræver en ny ændring og flere depth-kald.
+- *Drop:* koster intet og passer med m21c, m21f og m21h, som alle er nul på døgnniveau. Ulempen er, at en reel
+  likviditetspræmie i krak (Nagel 2012) aldrig bliver testet.
