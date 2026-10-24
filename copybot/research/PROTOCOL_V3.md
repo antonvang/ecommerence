@@ -2277,3 +2277,73 @@ nyheder og ændres ikke.
 Brugeren gav samme dag den præcise linje til `tests/test_lab_safety.py` `ALLOWED_HOSTS` og bad assistenten skrive den
 ("Du skriver komandoen"). Værterne `www.ecb.europa.eu` og `www.cnbc.com` er nu tilladt (kun GET), og news-watch
 indsamler ECB-pressemeddelelser og CNBC Economy som punkt 1 og 2 beskriver. BLOKERET-rækken på dækningssiden fjernes.
+
+## Ændring 21c (2026-10-24 kl. 15:58, før kode og før nogen beregning): screening af bevægelse → fortsættelse eller tilbagevenden, krypto-perps, explore0 (metode m21c)
+
+**Beslutning:** Claude under brugerens mandat (master follow-up 2026-10-24 kl. ca. 15:55, prioritet 3: "Momentum efter
+usædvanlige bevægelser. Mean reversion efter ekstreme prisændringer"). Spørgsmålet er, om ændring 21's flag
+(|z_1t| ≥ 4) bærer en retning, der kan handles. Det er udforskning, aldrig bevis; ingen gate, alfa, periode eller
+kandidat i andre ændringer ændres. Beslægtede, allerede afviste fund (gentestes ikke): `daily_reversal` (dagsbarer, z 2,0;
+PROTOCOL_V2), MISSION3 M2 (BTC, 5 min-likvidationskaskader: kun +4 til +7 bp brutto ved 15 min, negativt ved 1–4 t)
+og tsmom_v1 (ugentlig). Denne test er anderledes: timebarer, 4σ-hændelser med detektorens egen skala, hele
+krypto-perp-universet, og en realistisk indgang en time efter, at flaget kan ses.
+
+1. **Universe (fast):** hver Binance USD-M-perp `<mønt>USDT`, hvis 1 t-klines for en måned i explore0 (2020-03..2021-12)
+   ligger i lab'ens cache (`data/lab/market/klines`, hentet tidligere af banen og ændring 17; ingen ny hentning,
+   læseren er `hypogen.Reader("explore0")` uden netværk, som afviser alle andre måneder og alt fra 2024-01-01).
+   Undtaget: `BTCDOMUSDT` (et indeks, ikke en mønt). Kørslen registrerer fillisten med sha256.
+2. **Hændelse (detektorens regel, ændring 21 punkt 3–4):** time h på mønt c, hvor r_h = ln(C_h / C_{h−1}) (begge barer
+   til stede) og σ = standardafvigelsen af timeafkastene i de 720 foregående timer (kun afkast mellem to tilstedeværende,
+   på hinanden følgende barer; mindst 600), og |r_h / σ| ≥ 4. Retning s = fortegnet af r_h. Højst én hændelse pr. mønt
+   pr. 24 t (den første; senere i de 24 t springes over).
+3. **Beslutningstidspunkt og udfald:** flaget ses tidligst ved bar h's slutning (scanneren kører hvert time); indgang
+   P0 = lukkekursen for bar h+1 (én times forsinkelse, konservativt). `cont_4h`: y = s · ln(C_{h+5} / P0);
+   `cont_24h`: y = s · ln(C_{h+25} / P0). Positiv y = fortsættelse, negativ = tilbagevenden. Rå perp-afkast (ikke mod
+   BTC). Mangler en af kurserne: udelukket med årsag. Hele udfaldsvinduet skal ligge i explore0.
+4. **Afhængighed:** hændelser samme UTC-døgn er ikke uafhængige (hele markedet bevæger sig sammen). Testen bruges derfor
+   på klynger: klyngeværdien er gennemsnittet af y over døgnets hændelser; n er antal klynger.
+5. **Test og SCREEN_PASS (som ændring 17 punkt 5, på klynger):** mindst 15 klynger, ellers UNTESTABLE. Tosidet
+   fortegnsskift-test af klyngeværdierne (20 000 træk, seed 7). SCREEN_PASS kræver alle: p ≤ 0,005; samme fortegn i
+   2020 og 2021 (hver mindst 5 klynger, delt efter klyngens døgn); placebo (samme mønt og retning s, h − 30 døgn, samme
+   regler og klynger) med p > 0,05 og mindst 15 klynger; og |gennemsnit af klyngeværdier| ≥ 0,46 % (F1's rundtur).
+   Ellers SCREEN_FAIL med årsag.
+6. **Kandidater (2):** `abnormal_move|cont_4h|m21c` og `abnormal_move|cont_24h|m21c`. Ingen andre tærskler, horisonter,
+   undergrupper eller volumenflag testes under m21c; opdelinger (op/ned, BTC+ETH/øvrige, efter år) må vises
+   beskrivende i rapporten og mærkes "ikke testet".
+7. **Registrering:** resultatet (begge kandidater, også negative) committes som
+   `research/studies/MOVESCREEN_m21c.json` og `.md` med fillistens sha256, hændelseslistens sha256 og kodens commit. En
+   nøgle med et resultat screenes aldrig igen under m21c.
+8. **Efter en SCREEN_PASS:** intet automatisk. En måling i train3 og validation3 kræver en dateret LÅS-linje i denne fil
+   i ændring 17's α_k-række (næste α ≈ 0,0016, jf. effektvæggen) og egen kode. Gyldigheden gælder kun krypto-perps;
+   TradFi-perps har al historik i den reserverede periode (fra 2025) og er UNTESTABLE historisk.
+9. **Aldrig:** ordrer, papirkonti, familier, alfa, holdout 2024, data fra 2025 og frem, netværk, `pm_lp`.
+
+## Ændring 21d (2026-10-24 kl. 15:58, før begivenheden og før kode): FOMC 2026-10-28 som beskrivende integrationstest af kæden bevægelse + nyheder + kalender
+
+**Beslutning:** Claude under brugerens mandat (master follow-up, prioritet 2). Kun en test af datakæden; én
+makrobegivenhed er aldrig bevis for en strategi. Detektor, tærskler og nyhedskilder ændres ikke.
+
+1. **Begivenhed:** FOMC-erklæringen 2026-10-28. Datoen er kontrolleret 2026-10-24 kl. 15:58 på
+   `www.federalreserve.gov/monetarypolicy/fomccalendars.htm` ("27-28" oktober). Klokkeslættet 14:00 ET = 18:00 UTC (USA
+   har sommertid til 1. november) er Feds faste konvention, kodet i `ingest.parse_fomc`, og står ikke på siden;
+   rapporten angiver Fed-pressemeddelelsens egen `published_ts` som den faktiske tid. T = 2026-10-28 18:00:00 UTC.
+2. **Markeder:** ændring 21's 12 Binance USD-M-perps (beskrevet som kontrakterne, ikke de underliggende markeder).
+3. **Faste vinduer (låst nu):** referencekurs = lukkekursen for timebaren 17:00–18:00 UTC. Afkast til lukkekursen for
+   barerne, der slutter T+1 t, T+4 t og T+24 t. Begivenhedstimens (18:00–19:00) z_1t og volumenforhold efter ændring 21
+   punkt 3. Desuden scannerens egne observationer og analyseposter (`opportunity.move`) fra T til T+3 t, og deres
+   `opportunity.outcome`, når de findes.
+4. **Nyhedskæde:** Fed-pressemeddelelser med `published_ts` i [T − 30 min, T + 2 t]: udgivelsestid, gemt tid (news-watch
+   hvert 10. min) og forsinkelsen mellem dem. CNBC Economy- og ECB-poster i samme vindue: antal og første forsinkelse.
+   En nyhed kobles kun til en bevægelse, hvis dens `published_ts` lå før bevægelsens times slutning. Dubletter (samme
+   titel fra flere kilder) tælles.
+5. **Kalenderkæde:** om analyseposterne fra T til T+3 t har FOMC-erklæringen i `macro`-feltet.
+6. **Manglende data og fejl:** et marked uden kurs i et vindue står som "mangler" med årsag, aldrig udfyldt. Scannerens
+   fejl- og "for kort historik"-observationer, news-watch-fejl og forsinkede scanninger (tid fra timens slutning til
+   observationen) i [T − 1 t, T + 25 t] rapporteres. Et flag i begivenhedstimen uden samtidig nyhed tælles som "flag
+   uden forklaring", ikke som falsk alarm; en falsk alarm er et flag på en datafejl (dataalder, tom bog, prishop uden
+   volumen).
+7. **Rapport:** `research/studies/FOMC_2026-10-28.md` og `.json`, lavet af et script efter 2026-10-29 19:00 UTC. Det
+   læser registret (skrivebeskyttet) og Binance-klines (`fapi.binance.com`, allerede tilladt) og gemmer svarenes sha256.
+   Ingen vinduer ændres eller tilføjes bagefter; noget ekstra mærkes "efterfølgende, ikke låst".
+8. **Ikke:** ingen konklusion om en strategi, ingen ændring af tærskler på grundlag af denne ene begivenhed, ingen
+   ordrer. Testen blokerer ikke andet arbejde.
