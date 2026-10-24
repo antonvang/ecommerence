@@ -2978,3 +2978,21 @@ rettet før første visning.
      eller "fordel ikke længere støttet". En sådan måling vises da med navn.
 3. **M4's fortegn:** fill-ts er afkortet til hele sekunder, og `book_ts` er et decimaltal. Små negative værdier (ned
    til −1 s) betyder derfor en bog under 1 s gammel. Tærsklerne bruges uændret.
+
+## Ændring 21x (2026-10-24 kl. 23:13, før kode): funding i scannerens observation og markedsstatus i kapacitetskurven
+
+**Beslutning:** Claude under brugerens mandat (master mission 3, 2026-10-24 ca. kl. 23:05). Kun beskrivende felter.
+Ingen flagregel, tærskel, omkostningsregel eller gate ændres.
+
+1. **Scanner (21/21p):** `premiumIndex`, som detektoren allerede henter pr. marked, indeholder Binances forudsagte
+   funding for den løbende periode (`lastFundingRate`) og næste afregning (`nextFundingTime`). De gemmes i
+   observationens payload som `funding_rate` og `next_funding_ts`. Intet flag, ingen z-værdi og ingen triage bruger
+   dem. Målelogsfelterne (`version`, `klines_sha256`) er uændrede.
+2. **Kapacitetskurve (21v):**
+   - **Fund:** første kørsel gav tomme bøger for EPICUSDT og MITOUSDT. Binances `exchangeInfo` viser status
+     `SETTLING` for begge, så kontrakterne afvikles og kan ikke handles.
+   - **Fremover:** hver kørsel henter `fapi/v1/exchangeInfo` én gang (vægt 1, ca. 1,2 MB).
+   - Et perp med status ≠ `TRADING` får en observation `not_trading` med status i stedet for et bogkald. Det indgår
+     ikke i kurven.
+   - Fejler `exchangeInfo`, kører kurven som før.
+   - Spot-ben får ingen statuskontrol; en tom spot-bog registreres som fejl som hidtil.
