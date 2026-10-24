@@ -38,9 +38,10 @@ billede som 4σ-fald og m21h: på hændelsesniveau ligner det noget, men det for
 
 **Pålidelighed: lav.** Estimatoren er bygget til dagsdata. På timebarer opfanger den intradag-volatilitet: niveauerne
 (50–130 bp) er langt over de bogspreads, der er målt i dag (`COSTS_2026-10-24.json`: helt spread median 4,0 bp,
-90 %-fraktil 8,2 bp, 517 krypto-perps). Kun retningen er
-informativ: estimerede handelsomkostninger stiger stærkt med volatilitet og på dage med ekstreme bevægelser, netop
-der hvor m21c- og m21h-mønstrene var stærkest pr. hændelse. **Konsekvens:** et signal, der lever på ekstreme dage,
+90 %-fraktil 8,2 bp, 517 krypto-perps). Selv retningen er usikker: når estimatoren opfanger volatilitet, stiger den
+mekanisk på urolige dage, uanset om spreadet gør. Det er en svag indikation på, at handelsomkostninger stiger med
+volatilitet og på dage med ekstreme bevægelser, netop der hvor m21c- og m21h-mønstrene var stærkest pr. hændelse. Det
+passer med almindelig markedsmikrostruktur, men er ikke målt her. **Konsekvens (hvis bekræftet):** et signal, der lever på ekstreme dage,
 skal bære højere omkostninger end et roligt gennemsnit; et fast eller rent omsætningsbaseret krav undervurderer dem.
 Observerede bogdata fra scanneren (ændring 21h punkt 3, fra 2026-10-24 kl. 18:21) kan bekræfte eller afkræfte det;
 en rapport tidligst efter 7 døgn.
