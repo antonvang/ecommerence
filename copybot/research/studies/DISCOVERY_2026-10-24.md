@@ -82,3 +82,6 @@ Hyperliquids offentlige `metaAndAssetCtxs`). Intet her ændrer en regel.
   tilladte værter. En anden spotbørs ville være en handelsvært og kræver brugerens ja (sikkerhedslisten); det
   foreslås ikke. HL-kontiene er også tomme (højeste HL-funding 0,01 %/8 t mod indgangskravet 0,1 %), dvs. markedet
   er roligt.
+
+**Opfølgning 2026-10-24 ca. 11:05:** brugeren godkendte fremadtesten; den er låst som U1F i ændring 17i
+(`research/drafts/U1F_UPBIT_FREMAD.md`, noteringer fra 2026-10-25, første 20, senest 2027-06-30).
