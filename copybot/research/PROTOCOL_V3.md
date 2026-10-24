@@ -2996,3 +2996,99 @@ Ingen flagregel, tærskel, omkostningsregel eller gate ændres.
      ikke i kurven.
    - Fejler `exchangeInfo`, kører kurven som før.
    - Spot-ben får ingen statuskontrol; en tom spot-bog registreres som fejl som hidtil.
+
+## Ændring 21y (2026-10-24 kl. 23:32, før kode og før nogen måling): K1 og K2 som fremadrettede screeninger med sessionskalender og indsamling af afregnet funding
+
+**Beslutning:** Claude under brugerens mandat (mission 4, 2026-10-24 ca. kl. 23:27; "Du må alt" kl. ca. 23:31).
+
+**Uændret:**
+- Ingen LÅS og intet alfa. En PASS her er kun en screening; en validering kræver en ny dateret LÅS.
+- Ingen gate, omkostningsregel eller stikprøvekrav svækkes.
+- Ingen historisk forespørgsel. Data er kun det, scanneren har indsamlet siden 2026-10-24 12:23 UTC, plus afregnet
+  funding fra 2026-10-24 21:00 UTC og frem.
+- K1 og K2 er tjekket mod tidligere arbejde: m21i (samme aktiv, spot–perp), m21j (nyheder), m21c (4σ-flag), 21h
+  punkt 4 (weekend-afkast, volumen, bog og gab, beskrivende) og ændring 13 (HL-funding). Ingen af dem tester
+  tværs-af-aktiver-føring i lukkede timer eller præmie/funding efter session.
+
+### A. Sessionskalender (`lab/sessions.py`)
+Pr. timebar [t, t+1 t) (UTC, åbningstid t). New York-tid via `America/New_York`, så sommertid følger reglerne.
+- **RTH (aktier åbne):** handelsdag på NYSE, og baren ligger helt inden for 09:30–16:00 ET. På dage med tidlig lukning
+  er det 09:30–13:00 ET.
+- **WEEKEND (aktier lukket, Binance EWMA):** baren ligger helt i lørdag 00:00 – mandag 00:00 UTC. Det er samme
+  vindue som `moves.off_hours` for aktier (21g).
+- **HOLIDAY:** NYSE-lukkedag på en hverdag (ET-dato). Kun beskrivende, fordi Binance ikke angiver klokkeslæt for
+  helligdage.
+- **OTHER:** alt andet, dvs. hverdage uden for RTH og barer, der krydser en grænse. Kun beskrivende.
+
+For råvarer og FX (K2): lukket = `moves.off_hours` (21g, Binances egne vinduer). Åben = alt andet.
+
+**NYSE-kalender til 2027-06-30 (antagelse; skal kontrolleres mod NYSE's offentliggjorte kalender før første måling):**
+- **Lukket:** 2026-11-26, 2026-12-25, 2027-01-01, 2027-01-18, 2027-02-15, 2027-03-26, 2027-05-31, 2027-06-18.
+- **Tidlig lukning kl. 13:00:** 2026-11-27, 2026-12-24.
+
+### B. Afregnet funding (`lab/fundsettle.py`, kun fremad)
+- **Hvad:** hver scannerpass henter `fapi/v1/fundingRate?symbol=S&startTime=<2026-10-24 21:00 UTC>` (GET, vægt 1) for de
+  12 markeder i `moves.WATCH`.
+- **Lagring:** hver afregning (symbol, fundingTime) gemmes én gang som observation `funding_settled` (detektor
+  `funding_settled/1`) med sats, markpris og hentetid. Ældre afregninger end starttidspunktet hentes aldrig.
+- **Brug:** forudsagt funding (21x) og afregnet funding holdes adskilt. Kun afregnet funding tæller som indtægt eller
+  udgift.
+
+### C. Datagrundlag fælles for K1 og K2
+- **Én observation pr. (marked, markedstime):** den tidligste scanning (som 21r).
+- **Brugbar time:**
+  - scanningen ligger højst 10 minutter efter barens lukning;
+  - `quality.missing_bars` = 0;
+  - ingen `error`/`history_short` for markedet i samme scanning.
+- **Komplet weekend:** ≥ 44 af 48 WEEKEND-timer brugbare for de markeder, testen bruger.
+- **Driftsregel:** deploys lægges ikke i HH:00–HH:12 i weekender, så der ikke opstår huller.
+
+### D. K1 — BTC fører SPY/QQQ-perpen, når aktiemarkedet er lukket
+- **Signal:** s = fortegn af BTC-barens log-afkast for bar b (kendt ved BTC-scanningen af bar b).
+- **Udfald, kun det handlebare:**
+  - y = log(mark ved scanningen af bar b+1 / mark ved scanningen af bar b) for SPY og QQQ;
+  - mark er hentet ved scanningen (`premiumIndex`). Indgang og udgang ligger altså efter signalet;
+  - SPY/QQQ-scanningen af bar b skal ligge ≥ BTC-scanningen af bar b (point-in-time).
+- **Stratum:** holdetimen er bar b+1. Primært **WEEKEND**; **RTH** er sammenligningen.
+- **Omkostning pr. handel:** c = 2 × taker-gebyr (0,04 % TradFi-kampagne, 21g; 0,05 %, hvis kampagnen er slut) +
+  `book_rt` (5 000 USD) ved indgangsscanningen. Netto = s·y − c.
+- **Statistik:**
+  - **primær:** pr. komplet weekend gennemsnittet af nettoafkastet. Ensidet t-test over weekender (df = W − 1) for
+    middel > 0;
+  - **Holm** over de 2 instrumenter (SPY, QQQ).
+- **Placebo:** 1 000 cirkulære forskydninger af BTC-signalet inden for hver weekend (forskydning ≥ 3 timer, seed 21).
+  p_perm = andel med netto-middel ≥ observeret.
+- **Kun beskrivende:**
+  - samtidig korrelation (BTC bar b mod SPY bar b), som skiller samtidighed fra føring;
+  - samme statistik i RTH, OTHER og HOLIDAY;
+  - timer med en nyhed med markedets nøgleord (som 21e).
+- **PASS (screening)** kræver alle fire:
+  - (1) Holm-p ≤ 0,005;
+  - (2) netto-middel > 0;
+  - (3) p_perm ≤ 0,05;
+  - (4) bruttomiddel i WEEKEND > bruttomiddel i RTH (mekanismen: føring kun, når aktiemarkedet er lukket).
+- **SCREEN_FAIL:** ellers.
+- **UNTESTABLE:** færre end 12 komplette weekender pr. 2027-03-31.
+- **Tidligste test:** efter 12 komplette weekender. Første komplette weekend er 2026-10-31/11-01, så tidligst
+  2027-01-18. Før det beregnes **ingen** middelværdi, korrelation eller p-værdi. Programmet returnerer kun antal
+  og datakvalitet.
+
+### E. K2 — præmie og funding på TradFi-perps er større, når det underliggende er lukket
+- **Instrumenter:** de 10 TradFi-markeder i `moves.WATCH`. Placebo: BTC og ETH, som ikke har et lukket
+  underliggende, testet på de samme vinduer.
+- **Præmie** = (mark − indeks)/indeks ved scanningen.
+- **Primær (risikobetaling):** pr. komplet weekend w og instrument: d_w = median |præmie| i lukkede timer − median
+  |præmie| i åbne timer i de 5 handelsdage før w (aktier: RTH; råvarer/FX: ikke `off_hours`).
+  - Wilcoxons fortegnsrangtest over weekender (normalapproksimation), ensidet d > 0.
+  - Holm over de 10.
+- **Sekundær (information eller risikobetaling):** fortegnet af præmien i weekendens sidste brugbare time mod
+  fortegnet af gabet (log første åbne bars lukkekurs / sidste weekendbars lukkekurs). Binomialtest, beskrivende.
+- **Carry:** afregnet funding pr. lukket vindue for en position mod præmien (kort ved præmie > 0), mod c.
+  Beskrivende. En carry-PASS kræver en ny dateret ændring.
+- **Kontrol:** |præmie|/σ_1h og bogens rundtur i tercilgrupper, beskrivende.
+- **PASS (screening, mekanismen)** kræver alle tre:
+  - (1) Holm-p ≤ 0,005 for mindst ét instrument;
+  - (2) placebo (BTC, ETH) ikke signifikant (p > 0,05);
+  - (3) gennemsnitlig afregnet funding pr. lukket vindue > c for det instrument, før en handelsregel må foreslås.
+  Uden (3) er resultatet "mekanisme bekræftet, ingen handlebar carry" (SCREEN_FAIL for handel).
+- **UNTESTABLE / tidligste test:** som K1 (12 komplette weekender, tidligst 2027-01-18; ingen tal før).
