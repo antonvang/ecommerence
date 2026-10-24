@@ -1,6 +1,12 @@
 # Nye hypoteseudkast — master mission 3 (2026-10-24 kl. 23:2x)
 
-**Status:** udkast. Ingen screening, ingen LÅS og intet alfa er brugt. Ingen af kandidaterne kan screenes nu:
+**Status 2026-10-24 kl. 23:39:**
+- K1 og K2 er nu protokolleret i PROTOCOL_V3 ændring 21y med to præciseringer: sessioner, afregnet funding, regler for
+  brugbare timer, PASS/SCREEN_FAIL/UNTESTABLE og eksakt Wilcoxon.
+- Status er `NO_DECISION`: 0 af 12 komplette weekender. Tidligste test er 2027-01-18.
+- Ingen LÅS og intet alfa (mission 4).
+
+Udkastets oprindelige tekst står nedenfor. Ingen af kandidaterne kan screenes nu:
 - TradFi-perps fandtes ikke i explore0 (2020-03..2021-12);
 - historiske hentninger er spærret til 2026-11-14;
 - 2025+ læses aldrig.
@@ -72,3 +78,27 @@ Monitoren (21w, M2) viser realiseret slippage på 0,61–0,91 × den modellerede
 (likvide perps, 40–269 fills pr. konto). Det er **ikke** en fordel og ændrer ingen omkostningsregel. Enhver ændring af
 kravet kræver en dateret ændring og brugerens ja. Det er dokumentation for, at papirresultaterne ikke er pyntet af en
 for lav omkostningsmodel.
+
+---
+
+## K3 — prispres op til fundingafregning på mønter med ekstrem funding (UNTESTABLE i dag)
+
+1. **Mekanisme:** ved meget høj positiv forudsagt funding lukker lange positioner lige før afregningen for at undgå
+   betalingen. Prisen falder ind i afregningen og retter sig bagefter.
+2. **Forudsigelse:** log-afkastet fra afregning − 30 min til afregning er negativt for de 10 mønter med højeste
+   forudsagte funding og omvendt for laveste. Afkastet de næste 30 minutter efter afregning har modsat fortegn.
+3. **Nul og baseline:** samme 30-minutters afkast i tilfældige halve timer for de samme mønter (matchet på klokkeslæt
+   modulo 8 t), og i mønter med funding nær medianen.
+4. **Forstyrrelser:** generel markedsbevægelse (træk BTC-afkastet fra) og listninger/afnoteringer (udeluk mønter med
+   H5F/H5X/M1F-hændelse ±3 døgn).
+5. **Data:** forudsagt funding findes for top-mønterne (`pricing_constraint/2`, minutvis). **Mangler:** priser med
+   minutopløsning omkring afregningen. Scanneren har kun timebarer, og historiske minutdata er spærret til 2026-11-14
+   (og 2025+ læses aldrig).
+6. **Omkostninger:** to taker-ben pr. halv time på tynde mønter. Den første kapacitetskurve viser 5–245 bp rundtur ved
+   5 000 USD, så effekten skal være stor.
+7. **Stikprøve og test:** ≥ 60 afregninger fordelt på ≥ 20 døgn (klynger pr. døgn), Holm over 2 retninger, grænse
+   0,005.
+8. **Status:** `UNTESTABLE` indtil en fremadrettet minutindsamling omkring afregningerne er protokolleret og har kørt
+   ≥ 20 døgn. Ingen indsamling er bygget endnu. Den kræver en dateret ændring, og den lægger ca. 3 × 10 GET-kald pr.
+   afregning oven i den eksisterende belastning.
+9. **Informationsværdi:** middel. Den er sandsynligvis spist af omkostningerne på tynde mønter. Prioriteret efter K1/K2.

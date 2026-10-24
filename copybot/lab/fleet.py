@@ -479,8 +479,15 @@ def catalogue_pass(db):
 
 
 def scanner_pass(db):
-    from lab import scanner
-    return scanner.run(db)
+    from lab import fundsettle, scanner
+    res = scanner.run(db)
+    try:                                      # amendment 21y B: settled funding of the watched markets, forward only
+        fs = fundsettle.run(db, scanner.http_get)
+    except Exception as e:                    # noqa: BLE001 - never stops the scanner
+        fs = {"error": repr(e)[:200]}
+    if isinstance(res, dict):
+        res["funding_settled"] = fs
+    return res
 
 
 def news_pass(db):
