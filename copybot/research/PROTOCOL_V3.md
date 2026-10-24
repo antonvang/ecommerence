@@ -2347,3 +2347,16 @@ makrobegivenhed er aldrig bevis for en strategi. Detektor, tærskler og nyhedski
    Ingen vinduer ændres eller tilføjes bagefter; noget ekstra mærkes "efterfølgende, ikke låst".
 8. **Ikke:** ingen konklusion om en strategi, ingen ændring af tærskler på grundlag af denne ene begivenhed, ingen
    ordrer. Testen blokerer ikke andet arbejde.
+
+### Præcisering af ændring 21 punkt 2 (2026-10-24 kl. 16:04, før kode): scanningen ligger 2 minutter efter timeskiftet
+
+**Data (registret, skrivebeskyttet):** `discovery-scanner` kører hver 3600 s regnet fra lab'ens start. Efter dagens
+deploys lå scanningerne kl. ca. HH:50 lokal tid. Den sidst afsluttede time blev altså først set 50–51 minutter efter, at
+den sluttede (scanningen 14:50:33 så timen, der sluttede 14:00; målt med ændring 21d's script). En bevægelse i FOMC-timen
+(18:00–19:00 UTC) ville først blive analyseret ca. kl. 19:50 UTC.
+
+1. `discovery-scanner` kører én gang ved start som før, og derefter ved hvert timeskift + 120 s (HH:02:00 UTC). Ved en
+   fejl prøves igen efter højst 60 s som før.
+2. Intet andet ændres: samme detektorer, tærskler, dedup og data. En ekstra scanning lige efter en genstart var der også
+   før.
+3. Målet er tid fra timens slutning til observationen (ændring 21d punkt 6). Det bør være under 3 minutter.
