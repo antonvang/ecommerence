@@ -2164,3 +2164,24 @@ af formen "Binance Futures Will Launch … Perpetual". H5 (16c), som H5F og H5X 
    ingen meddelelse efter 2026-10-21 03:31 UTC, og de eneste nye USD-M-perps siden 2026-10-10 er TradFi). Ingen
    funding for nogen kandidat er læst.
 3. Dashboardets tæller springer meddelelser med "TradFi" i titlen over; den endelige afgørelse er punkt 1 ved målingen.
+
+## Ændring 20 (2026-10-24): forudregistreret regime-diagnostik af fcarrys fremadvindue — afgør intet — før data
+
+**Beslutning:** Claude under brugerens mandat (brugerens ja til D2 2026-10-24 og ordren om al tilladt forberedende
+research). D2/F3 er blokeret af ændring 8 punkt 3 og må efter punkt 4 ikke beregne signaler på noget vindue; denne
+diagnostik bruger kun fremtidige data. Ingen gate, alfa, kohorte, tærskel eller bundet fil ændres.
+
+1. **Hvornår:** én gang, når fcarrys fremadtest har afgjort (`observe`) eller er stoppet ved futilitetskigget
+   (`observe_interim`), på præcis de fremaddata (filer og hashes), som den afgørende kørsel brugte.
+2. **Hvad:** for hvert medlem i kohorten `fcarry:fwd202612m12` (`E_fcarry__floor_a8`, `E_fcarry__hyst_a8`) med
+   dets låste parametre: de daglige nettoafkast efter familiens omkostningsmodel, opdelt efter uge (mandag 01:00 UTC til
+   næste mandag 01:00 UTC) i "port åben" og "port lukket" efter D2's definition
+   (`research/drafts/F3_FREGIME_TESTPLAN.md` punkt 1) for `gate_day` 0,0004 og 0,0005.
+3. **Rapport:** pr. medlem og `gate_day`: antal åbne og lukkede uger, nettosum, gennemsnitligt dagligt netto og andel
+   af det samlede netto i åbne uger; forskellen i gennemsnitligt dagligt netto (åben − lukket) med et 95 %-interval
+   fra blok-bootstrap (5-dages blokke, 2 000 træk, seed 7).
+4. **Læsning, fastlagt nu:** D2's præmis **svækkes**, hvis nettosummen i lukkede uger er ≥ 0 for begge medlemmer
+   (carry betaler sig også ved gulvet); den **støttes**, hvis den er < 0 og intervallet for forskellen ligger over 0
+   for mindst ét medlem. Færre end 4 åbne uger: "uafklaret". Ingen af delene ændrer fcarrys afgørelse.
+5. **Pligt:** resultatet skrives i `research/families/drafts/fregime.json` (`drafting_data_access`), før F3 kan
+   foreslås til godkendelse.
