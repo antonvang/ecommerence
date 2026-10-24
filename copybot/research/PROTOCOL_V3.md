@@ -2644,3 +2644,35 @@ gate, alfa, periode, tærskel, lås eller afsluttet dom ændres. Intet deployes 
 3. **R2 — omkostningsgulvet:** analysen står i `research/drafts/GULV_BESLUTNING_2026-10-24.md`. Ingen regel ændres.
 4. **R3 — minutreaktion på makroudgivelser:** planen står i `research/drafts/R3_MINUTMAKRO_PLAN.md`. Ingen data hentes
    før 2026-11-14 00:00 UTC (ændring 10b). Planen bliver en hypotese først ved en senere dateret ændring før data.
+
+## Ændring 21l (2026-10-24 kl. 19:29, før kode): R1 gøres beslutningsklar; et eventuelt C-krav fastlægges på forhånd; discovery i explore0 lukkes
+
+**Beslutning:** Claude under brugerens mandat (master follow-up 5 "COST MODEL STRESS TEST" 2026-10-24 ca. kl. 19:28).
+Ingen tærskel, gulv, gate, alfa eller lås ændres. Intet deployes uden brugerens ja.
+
+1. **R1-rapporten (`lab/costreport.py`) udvides, før data er set ud over de 2 første scanninger:**
+   - **Enheder:** alle omkostninger vises også i basispoint (bp = 10⁻⁴ af prisen); `book_rt` og `spread` gemmes som
+     brøk.
+   - **Kombination uden dobbelttælling:** `book_rt` = (købs-VWAP − salgs-VWAP) / mid for 5 000 USD hver vej. Det
+     indeholder spread og slippage, men ikke gebyrer. Total rundtur = `book_rt` + 2 × taker-gebyr (krypto 5 bp i 2026,
+     TradFi 4 bp kampagne). `spread` vises separat og lægges aldrig oven i `book_rt`. Funding er ikke en ordreomkostning.
+   - **Størrelse:** 5 000 USD hver vej er samme størrelse som 21i-modellens RT_est (fra snapshot 2026-10-24).
+   - **Manglende bog som censur:** en bog, der er for tynd til 5 000 USD (`book_rt` mangler), er dyr. Rapporten viser
+     medianen (a) uden de manglende og (b) med de manglende sat til +∞ (en øvre grænse).
+   - **Tidspunkt:** målingen tages kl. HH:02, lige efter en afsluttet time, altså det tidspunkt, hvor scanneren ville
+     handle. Den måler ikke midt i en bevægelse. Det står i rapporten.
+   - **Tilstrækkelighed pr. marked (fastlagt nu):** en konklusion kræver mindst 7 døgn, mindst 100 timeobservationer
+     og mindst 10 "bevægelsestimer" (|z_1h| ≥ 2 eller et flag). Ellers står markedet som "for få data".
+   - **Usikkerhed:** bootstrap over døgn-klynger, som ændring 21k.
+2. **Hvis brugeren senere vælger mulighed C, er kravet fastlagt nu, før data:** for markeder med 24 t-omsætning
+   ≥ 100 mio. USD (24 × medianen af timeomsætningen over 720 t ved hændelsen) er kravet
+   2 × (2 × taker-gebyr + 95 %-fraktilen af den observerede `book_rt` i bevægelsestimer for markedet over mindst
+   7 døgn), dog aldrig under 2 × (2 × taker-gebyr). For explore0-screeninger (2020–21) findes ingen observeret bog,
+   så C kan kun bruges dér med en udtrykkeligt markeret antagelse om, at 2026-fraktilen gælder for 2020–21. Det er
+   ikke en regel. Den kræver brugerens ja i en senere dateret ændring og gælder kun fremtidige screeninger.
+3. **Discovery i explore0 lukkes.** Resterende felter og kombinationer i explore0 (antal handler, taker-køb,
+   high/low-spænd, forholdet mellem spot- og perp-volumen, kalender, sidevisninger) giver kun mekanismer, der allerede
+   er afprøvet: orderflow (M1, `taker_pressure`), gearing og spekulation (`leverage_cycle`, `oi_growth`, funding),
+   likviditet og volatilitet (`xs_illiquidity`, `xs_high_volume`, `xs_low_volatility`, `vol_managed_long`), kalender
+   (`hour_of_day`, `day_of_week`, `turn_of_month`, J1), opmærksomhed (14a H2, J2), momentum og reversal (`xs_momentum`,
+   `daily_reversal`, tsmom, m21c) og spot–perp (m21i). Ingen ny screening, før en ny datakilde eller mekanisme findes.
