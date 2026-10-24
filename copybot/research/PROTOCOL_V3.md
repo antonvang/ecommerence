@@ -2702,3 +2702,30 @@ for likvide)".
    - Ingen afsluttet dom ændres. Ingen afsluttet screening køres igen under C.
 3. **Deploy:** den testede kode (fuld suite grøn) deployes med de tilladte kommandoer. Kontrol: DEPLOY OK, pm_lp-collectoren
    urørt, scannerens næste kørsel kl. HH:02.
+
+## Ændring 21n (2026-10-24 kl. 20:20, før kode og før nogen beregning): flagrapport, R1-port pr. marked med C side om side
+
+**Beslutning:** Claude under brugerens mandat (master follow-up 6 "MAXIMUM RESEARCH THROUGHPUT WITHOUT GATE WEAKENING"
+2026-10-24 ca. kl. 20:18). Kun beskrivende rapporter. Ingen tærskel, gate, alfa, lås eller scanneradfærd ændres, og
+intet deployes uden brugerens ja.
+
+1. **Flagrapport (`lab/flagreport.py`, læser registret skrivebeskyttet):**
+   - Én række pr. (marked, bevægelsestime `open_s`, metrik); gentagne scanninger af samme time (genstart, deploy)
+     tælles som dubletter, ikke som nye flag.
+   - Pr. marked og metrik: antal flag og antal observerede timer, flagrate, og fordelingen på weekend/hverdag (UTC) og
+     `off_hours` (ændring 21g).
+   - **Uafhængige hændelser:** flag i samme bevægelsestime på flere markeder er én hændelse (klynge = `open_s`).
+   - **Datakvalitet:** for hvert flag: dataalder, og om den gemte værdi kan genberegnes fra observationens egne felter
+     (volumenforhold = `quote_volume_1h` / median).
+   - **Efterfølgende omkostning:** for flag med en bogmåling (fra 2026-10-24 18:21): `book_rt` i flag-scanningen mod
+     markedets median.
+   - **Konklusion:** NO_DECISION, indtil der er mindst 14 døgn og 2 weekender. Først da må en dateret ændring foreslå
+     en ny volumentærskel, med begrundelse, forventet effekt, risiko for falske positive og en fremadrettet validering.
+     Den gennemføres ikke uden brugerens godkendelse.
+2. **R1-porten pr. marked (`lab/costreport.py`):**
+   - "enough data" kræver nu også mindst 2 weekender for **det enkelte marked**, med observationer i weekendtimer
+     (lørdag eller søndag UTC). Ændring 21l punkt 1's tre krav står uændret.
+   - For hvert marked med "enough data" vises side om side: 21i-kravet (B) ved markedets aktuelle V, C-kravet efter
+     21l punkt 2 med q95 og dets bootstrap-interval over døgn, og om V ≥ 100 mio. USD.
+   - C aktiveres aldrig automatisk. Brugeren afgør pr. marked på grundlag af tabellen. Ingen afsluttet screening
+     regnes om.
