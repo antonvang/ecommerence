@@ -2456,3 +2456,56 @@ kl. 17:02, lørdag) lå i denne tilstand.
 2. **Bogens omkostning** i analyseposten får feltet `fees` med kampagnesatsen for TradFi (taker 0,04 % pr. side, maker 0)
    og kilden. For krypto bruges det eksisterende ord "not included". Rundturen i bogen ændres ikke.
 3. Ingen tærskel, ingen dedup og intet andet ændres.
+
+## Ændring 21h (2026-10-24 kl. 18:03, før kode og før nogen beregning): rettelse af omkostningstal, omkostningsmåling, weekend-TradFi-plan og en fundinghypotese (metode m21h)
+
+**Beslutning:** Claude under brugerens mandat (master mission "FUNDING EDGE, COST INTELLIGENCE & CONTINUOUS DISCOVERY"
+2026-10-24 ca. kl. 18:00). Kun data, beskrivende målinger og én screening i explore0. Ingen gate, alfa, periode eller
+lås ændres. 4σ-faldshypotesen indgår ikke; den venter på brugerens beslutning.
+
+1. **Rettelse (fejl i min tekst i ændring 21f og i `research/drafts/DROP4S_BESLUTNINGSOPLAEG.md`).** "~55–65 bp rundtur"
+   i `research/studies/ANALYSE_2026-10-24.md` afsnit 10 er en hel rundtur af et **par med 4 ben** (spot og perp, ind og
+   ud) inklusive banens gebyr på 10 bp pr. ben. Det er ikke én alt-perp ved 5 000 USD. Målt pr. ben (samme afsnit):
+   tynde mønter (HOT, MITO, EPIC) ved 4 600–5 100 $: bog 17,6 bp i median (perp), op til 30 bp; likvide 30v3-mønter ved
+   160–500 $: 0,85–1,67 bp. 21f's krav (0,65 % og 1,11 %) står som låst; alle tre 21f-kandidater fejlede på p eller var
+   UNTESTABLE, så ingen dom ændres. Oplægget rettes med en dateret note.
+2. **Omkostningsmåling nu (beskrivende, ét øjebliksbillede).** Én gennemgang af alle handlede Binance USD-M-perps
+   (`fapi/v1/exchangeInfo`: contractType PERPETUAL eller TRADIFI_PERPETUAL, status TRADING, quote USDT): `fapi/v1/depth`
+   (limit 100) pr. symbol i højst 4 kald pr. sekund og én `fapi/v1/ticker/24hr`. Allerede tilladt vært, kun GET. Pr.
+   symbol: halvt spread, bogens rundtur for 5 000 USD (købs- og salgs-VWAP, samme `moves.walk`), 24 t-omsætning og
+   klasse (krypto/TradFi). Rapport: rundtur i omsætningsdeciler, OLS af log(rundtur) mod log(omsætning), andelen over
+   0,46 % og 0,65 % inklusive et gebyr på 2 × 5 bp (krypto: labbens eksisterende modelantagelse, ikke verificeret fra en
+   kilde) eller 2 × 4 bp (TradFi, verificeret i 21g). Forbehold, der står i rapporten: ét tidspunkt (lørdag aften,
+   roligt marked), ingen historik og ingen krisesituation.
+3. **Bogmåling hver time for de 12 markeder (fremadrettet).** Scanneren gemmer i hver scanning observationen
+   `book_rt` (rundtur for 5 000 USD gennem bogen) og `spread` for alle markeder på ændring 21's liste, ikke kun for
+   flaggede. Det er 12 ekstra `depth`-kald pr. time. Formål: omkostning ved flag mod normalt (prioritet B) og i
+   weekend mod normal åbningstid for TradFi (prioritet C). Kun data.
+4. **Weekend-TradFi, kun fremad (data fra 2026-10-24 og frem; historikken er reserveret og læses ikke).** Sessioner
+   efter ændring 21g. Pr. marked og session: |timeafkast|/σ, volumenforhold, `book_rt` og `spread`. Weekendgabet:
+   g = ln(kursen ved genåbning / kursen ved lukning fredag 17:00 ET) og reaktionen fra genåbning til + 24 t. Kun
+   beskrivende. Klynger er weekender (én klynge pr. weekend, alle markeder sammen), så der kommer ca. 4 klynger pr.
+   måned. Ingen test før mindst 12 weekender, og kun efter en ny dateret lås, der fastlægger signal og regel før
+   resultatet ses.
+5. **Fundinghypotese F1 (`funding_crowd|squeeze_24h|m21h`), screenes i explore0.** Spørgsmål: tilfører funding
+   information om en 4σ-bevægelses efterforløb ud over prisbevægelsen selv?
+   - Hændelser: m21c's (|r_h/σ| ≥ 4, højst én pr. mønt pr. 24 t) på mønter med fundingfiler i cachen.
+   - Signal, kendt før bevægelsen: f = den seneste afregnede funding (`last_funding_rate`) med `calc_time` ≤ h (timens
+     start), højst 12 t gammel (ellers udelukket: "no recent funding"). Flokken c = +1 (lange betaler), hvis
+     f > 0,0001 (over den neutrale rente 0,01 %/8 t); c = −1, hvis f < 0; ellers neutral (udelukket med årsag).
+   - Regel: med flokken (s = c) → position d = s (fortsættelse); mod flokken (s ≠ c, presning/likvidation) →
+     d = −s (tilbagevenden).
+   - Udfald (netto for funding): v = d · ln(C_h+25 / C_h+1) − d · Σ f_k over afregninger i (h + 1 t, h + 25 t].
+     Fordi reglen skifter retning efter funding, ophæves en fælles drift (fx tyrmarkedets) delvist. v måler fundingens
+     merinformation.
+   - Test som 21c punkt 5: døgnklynger, tosidet fortegnsskift (20 000, seed 7), samme fortegn i 2020 og 2021, placebo
+     h − 30 d med samme d (og funding i placeboens vindue), |gennemsnit| ≥ 0,46 % (ændring 17's krav; punkt 1 viser, at
+     det svarer til en tynd mønts rundtur ved 5 000 USD med et gebyr på 5 bp). Mindst 15 klynger, ellers UNTESTABLE.
+   - Beskrivende, ikke testet: v for "med" og "mod" hver for sig; andelen af de 5 største døgn og de 5 største mønter.
+   - **Kendt overlap:** fald mod en lang flok er en stor del af 4σ-faldsmønstret. En SCREEN_PASS her er ikke en afgørelse
+     af den hypotese, som venter på brugeren. Beslægtet, afvist: `funding_contrarian` (ubetinget funding-hale, uden
+     prisbevægelse; PROTOCOL_V2). Det nye er samspillet mellem funding og en 4σ-bevægelse.
+   - Registrering: `research/studies/FUNDING_m21h.json` og `.md` med fil- og hændelses-sha256. Nøglen screenes aldrig
+     igen. En SCREEN_PASS kræver brugerens beslutning før en lås (rækken har 0,003125 tilbage).
+6. **Aldrig:** ordrer, papirkonti, familier, alfa, train3, validation3, holdout 2024, data fra 2025 og frem i
+   screeningen, `pm_lp`.
