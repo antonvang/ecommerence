@@ -44,6 +44,26 @@ class Collector(unittest.TestCase):
                                        "instrument='btc:FlowInExNtv'")["payload"])
         self.assertEqual((first["value"], first["usable_from"]), (100.0, NOW))       # the first value is kept
 
+    def test_poll_log_and_as_of_reconstruction(self):                     # amendment 21r
+        def at(date, v):
+            return lambda url: json.dumps({"data": [{"asset": "btc", "time": f"{date}T00:00:00.000000000Z",
+                                                     "FlowInExNtv": str(v)}]}).encode()
+        t1, t2, t3 = NOW, NOW + 7 * 3600, NOW + 14 * 3600
+        onchain.run(self.db, at("2026-10-25", 10.0), t1)
+        onchain.run(self.db, at("2026-10-25", 12.0), t2)                              # revised later
+        onchain.run(self.db, lambda url: json.dumps({"data": []}).encode(), t3)        # empty: logged, no value
+        polls = [json.loads(r["payload"]) for r in self.db.q("SELECT payload FROM observations WHERE "
+                                                             "metric='onchain_poll' ORDER BY id")]
+        self.assertEqual([p["rows"] for p in polls], [1, 1, 0])
+        self.assertEqual(polls[0]["latest_date"], {"btc:FlowInExNtv": "2026-10-25"})
+        key = ("btc", "FlowInExNtv", "2026-10-25")
+        self.assertEqual(onchain.asof(self.db, t1 - 1), {})
+        self.assertEqual(onchain.asof(self.db, t1)[key], 10.0)                        # what was known then
+        self.assertEqual(onchain.asof(self.db, t2)[key], 12.0)
+        onchain._STATE["last"] = 0.0
+        onchain.run(self.db, at("2026-10-22", 5.0), t3 + 7 * 3600)                     # before PIT_FROM: never used
+        self.assertNotIn(("btc", "FlowInExNtv", "2026-10-22"), onchain.asof(self.db, t3 + 8 * 3600))
+
     def test_an_error_is_recorded_and_news_watch_goes_on(self):
         r = onchain.run(self.db, lambda url: (_ for _ in ()).throw(OSError("down")), NOW)
         self.assertIn("down", r["error"])

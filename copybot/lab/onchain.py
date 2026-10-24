@@ -66,4 +66,34 @@ def run(db, get, now=None):
                               payload={"asset": key[0], "metric": m, "date": date, "old": known[key], "new": v,
                                        "fetched_ts": int(now)})
                     known[key], revised = v, revised + 1
+    latest = {}
+    for r in rows:
+        for m in METRICS:
+            if r.get(m) not in (None, ""):
+                k = f"{r.get('asset')}:{m}"
+                latest[k] = max(latest.get(k, ""), (r.get("time") or "")[:10])
+    db.append("observations", ts=int(now), detector=DETECTOR, source=SOURCE, instrument=None, metric="onchain_poll",
+              value=len(rows), threshold=None, flagged=0,                    # 21r: every collection, also an empty one
+              payload={"fetched_ts": int(now), "rows": len(rows), "latest_date": latest, "first": first,
+                       "revisions": revised})
     return {"first": first, "revisions": revised, "rows": len(rows)}
+
+
+PIT_FROM = "2026-10-24"                         # 21q point 4: earlier dates were fetched after possible revisions
+
+
+def asof(db, t):
+    """21r: exactly what the collector knew at time t - {(asset, metric, date): value}, first values usable by t with
+    the revisions fetched by t applied in order; only dates from PIT_FROM on."""
+    out = {}
+    for r in db.q("SELECT metric, payload FROM observations WHERE detector=? AND metric IN ('flow_first', "
+                  "'flow_revision') ORDER BY id", DETECTOR):
+        p = json.loads(r["payload"]) if isinstance(r["payload"], str) else r["payload"]
+        if p["date"] < PIT_FROM:
+            continue
+        key = (p["asset"], p["metric"], p["date"])
+        if r["metric"] == "flow_first" and p["usable_from"] <= t:
+            out[key] = p["value"]
+        elif r["metric"] == "flow_revision" and p["fetched_ts"] <= t and key in out:
+            out[key] = p["new"]
+    return out

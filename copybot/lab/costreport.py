@@ -33,27 +33,36 @@ NOTES = ["book_rt = (buy VWAP - sell VWAP) / mid for 5 000 USD each way: spread 
          "hours on one UTC day are not independent: the median interval bootstraps days"]
 
 
-def d_class(rs):
-    return rs[0]["class"] if rs else "crypto"
 FINAL_AFTER_S = 7 * DAY
 
 
-def rows(q):
-    """[{market, class, ts, rt, spread, off, z, flagged, v24}] - one per market per scan."""
+def d_class(rs):
+    return rs[0]["class"] if rs else "crypto"
+
+
+def rows(q, dupes=None):
+    """[{market, class, ts, open_s, rt, spread, off, z, flagged, v24}] - one per market hour (amendment 21r): the
+    earliest scan of each (market, open_s); later rescans of the same hour (restarts, deploys) are counted in `dupes`."""
     z = {}
     for r in q("SELECT ts, instrument, payload FROM observations WHERE detector='abnormal_move/1' AND metric='z_1h'"):
         p = json.loads(r[2])
         z[(r[0], r[1])] = p
     flags = {(r[0], r[1]) for r in q("SELECT ts, instrument FROM observations WHERE detector='abnormal_move/1' AND "
                                      "flagged=1")}
-    out = []
+    out, seen = [], set()
     for ts, sym, val, raw in q("SELECT ts, instrument, value, payload FROM observations WHERE detector='abnormal_move/1' "
-                               "AND metric='book_rt' ORDER BY ts"):
+                               "AND metric='book_rt' ORDER BY ts, id"):
         p, zp = json.loads(raw), z.get((ts, sym)) or {}
+        hour = p.get("open_s") or zp.get("open_s")
+        if hour is not None and (sym, hour) in seen:
+            if dupes is not None:
+                dupes.append((sym, hour, ts))
+            continue
+        seen.add((sym, hour))
         vr, q1 = zp.get("volume_ratio"), zp.get("quote_volume_1h")
-        out.append({"market": sym, "class": "crypto" if p.get("class") == "crypto" else "tradfi", "ts": ts, "rt": val,
-                    "spread": p.get("spread"), "off": bool(p.get("off_hours")), "z": zp.get("z_1h"),
-                    "flagged": (ts, sym) in flags, "v24": 24 * q1 / vr if vr and q1 else None})
+        out.append({"market": sym, "class": "crypto" if p.get("class") == "crypto" else "tradfi", "ts": ts,
+                    "open_s": hour, "rt": val, "spread": p.get("spread"), "off": bool(p.get("off_hours")),
+                    "z": zp.get("z_1h"), "flagged": (ts, sym) in flags, "v24": 24 * q1 / vr if vr and q1 else None})
     return out
 
 
@@ -129,7 +138,8 @@ def b_and_c(mr, moved):
 
 def report(q, now=None):
     now = now or time.time()
-    rs = rows(q)
+    dropped = []
+    rs = rows(q, dropped)
     groups = collections.defaultdict(list)
     for r in rs:
         groups[f"{r['class']}|{'off_hours' if r['off'] else 'regular'}"].append(r)
@@ -162,13 +172,16 @@ def report(q, now=None):
                       "total_rt_bp_ci95": [round((x + 2 * fee) * 1e4, 3) for x in ci] if ci else None,
                       "missing_or_censored": m["missing_book"],
                       "B": (m["B_vs_C"] or {}).get("B"), "C": (m["B_vs_C"] or {}).get("C"),
+                      "C_minus_B": None if not m["B_vs_C"] or None in (m["B_vs_C"].get("B"), m["B_vs_C"].get("C"))
+                      else m["B_vs_C"]["C"] - m["B_vs_C"]["B"],
                       "observed_inputs": ["book_rt", "spread", "volume_ratio", "quote_volume_1h"],
                       "assumed_inputs": ["taker fee rate", "RT_est volume relation (2026-10-24 snapshot)",
                                          "transfer of 2026 costs to 2020-21 (explore0)"],
                       "recommendation": "can be put to the user" if all(req.values()) else "NO_DECISION"}
     span = (max(r["ts"] for r in rs) - min(r["ts"] for r in rs)) if rs else 0
     weekends = len({r["ts"] // (7 * DAY) for r in rs if r["off"] and r["class"] == "tradfi"})
-    return {"rule": "research/PROTOCOL_V3.md amendments 21k, 21l and 21n", "generated": now, "scans": len({r["ts"] for r in rs}),
+    return {"rule": "research/PROTOCOL_V3.md amendments 21k, 21l, 21n and 21r", "generated": now, "scans": len({r["ts"] for r in rs}),
+            "rescans_dropped": len(dropped),
             "span_hours": span / 3600, "status": "FINAL" if span >= FINAL_AFTER_S and weekends >= 2 else "PRELIMINARY",
             "label": "OBSERVED book cost for 5 000 USD (fees excluded); the model column is the 21i ESTIMATE",
             "notes": NOTES,

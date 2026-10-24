@@ -74,6 +74,25 @@ class Report(unittest.TestCase):
         self.assertFalse(costreport.sufficient({"days": 7, "n": 100}, {"n": 9}))
         self.assertFalse(costreport.sufficient({"days": 6, "n": 500}, {"n": 50}))
 
+    def test_a_rescan_of_the_same_hour_counts_once(self):                   # amendment 21r
+        a = self.db.append
+        for ts in (T0 + 120, T0 + 1800):                                            # HH:02 and a restart at HH:30
+            a("observations", ts=ts, detector="abnormal_move/1", source="s", instrument="BTCUSDT", metric="z_1h",
+              value=0.1, threshold=4.0, flagged=0, payload={"z_1h": 0.1, "open_s": T0 - 3600})
+            a("observations", ts=ts, detector="abnormal_move/1", source="d", instrument="BTCUSDT", metric="book_rt",
+              value=1e-6 if ts == T0 + 120 else 9e-6, threshold=None, flagged=0,
+              payload={"class": "crypto", "open_s": T0 - 3600})
+        r = costreport.report(self.db.q)
+        self.assertEqual((r["markets"]["BTCUSDT"]["n"], r["rescans_dropped"]), (1, 1))
+        self.assertAlmostEqual(r["markets"]["BTCUSDT"]["median"], 1e-6)              # the HH:02 scan is kept
+
+    def test_b_and_c_edge_cases(self):
+        rows = [{"rt": None, "v24": None, "ts": T0}]
+        self.assertEqual(costreport.b_and_c(rows, rows), {"v24": None, "B": None, "C": None, "liquid": False})
+        thin = [{"rt": 1e-4, "v24": 0.0, "ts": T0 + i * 3600} for i in range(12)]       # zero volume: no B
+        self.assertIsNone(costreport.b_and_c(thin, thin[:5])["B"])
+        self.assertIsNone(costreport.b_and_c(thin, thin[:5])["C"])                   # < 10 move hours: no C
+
     def test_reads_only(self):
         self.add(T0, "BTCUSDT", "crypto", 1e-6)
         before = self.db.one("SELECT COUNT(*) FROM observations")[0]
