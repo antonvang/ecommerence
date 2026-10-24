@@ -151,13 +151,29 @@ def report(q, now=None):
                         "B_vs_C": b_and_c(mr, moved) if sufficient(d, dm, weekends_of(mr)) else None,
                         "total_round_trip_bp_with_fees": None if d["median"] is None else
                         round((d["median"] + 2 * FEE[d_class(mr)]) * 1e4, 3)}
+    table = {}
+    for sym, m in markets.items():                              # 21o point 2: the per-market decision table
+        req = {"days >= 7": m["days"] >= MIN_DAYS, "observations >= 100": m["n"] >= MIN_OBS,
+               "move hours >= 10": m["move_hours"]["n"] >= MIN_MOVE, "weekends >= 2": m["weekends"] >= MIN_WEEKENDS}
+        fee = FEE["crypto" if moves.WATCH[sym][0] == "crypto" else "tradfi"]
+        ci = m["median_ci95_day_bootstrap"]
+        table[sym] = {"requirements": req, "observations": m["n"], "day_clusters": m["days"],
+                      "total_rt_bp_median": m["total_round_trip_bp_with_fees"],
+                      "total_rt_bp_ci95": [round((x + 2 * fee) * 1e4, 3) for x in ci] if ci else None,
+                      "missing_or_censored": m["missing_book"],
+                      "B": (m["B_vs_C"] or {}).get("B"), "C": (m["B_vs_C"] or {}).get("C"),
+                      "observed_inputs": ["book_rt", "spread", "volume_ratio", "quote_volume_1h"],
+                      "assumed_inputs": ["taker fee rate", "RT_est volume relation (2026-10-24 snapshot)",
+                                         "transfer of 2026 costs to 2020-21 (explore0)"],
+                      "recommendation": "can be put to the user" if all(req.values()) else "NO_DECISION"}
     span = (max(r["ts"] for r in rs) - min(r["ts"] for r in rs)) if rs else 0
     weekends = len({r["ts"] // (7 * DAY) for r in rs if r["off"] and r["class"] == "tradfi"})
     return {"rule": "research/PROTOCOL_V3.md amendments 21k, 21l and 21n", "generated": now, "scans": len({r["ts"] for r in rs}),
             "span_hours": span / 3600, "status": "FINAL" if span >= FINAL_AFTER_S and weekends >= 2 else "PRELIMINARY",
             "label": "OBSERVED book cost for 5 000 USD (fees excluded); the model column is the 21i ESTIMATE",
             "notes": NOTES,
-            "groups": {k: describe(v) for k, v in sorted(groups.items())}, "markets": markets}
+            "groups": {k: describe(v) for k, v in sorted(groups.items())}, "markets": markets,
+            "decision_table": table}
 
 
 def main(argv=None):

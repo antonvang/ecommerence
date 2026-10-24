@@ -41,6 +41,19 @@ class Flags(unittest.TestCase):
         self.assertEqual(r["by_market_metric"]["BTCUSDT|volume_ratio"]["weekend"], 1)
         self.assertEqual(r["following_cost"][0]["book_rt"], 2e-6)
         self.assertEqual(r["conclusion"], "NO_DECISION")
+        self.assertEqual(r["data_quality"]["without_market_hour"], 0)
+
+    def test_a_flag_without_market_hour_gets_no_substitute_key(self):     # 21o point 1
+        self.db.append("observations", ts=SAT, detector="abnormal_move/1", source="s", instrument="XAUUSDT",
+                       metric="volume_ratio", value=7.0, threshold=5.0, flagged=1, payload={})
+        r = flagreport.report(self.db.q)
+        self.assertEqual((r["flags"], r["independent_events"], r["data_quality"]["without_market_hour"]), (0, 0, 1))
+
+    def test_the_median_is_derived_not_recomputed(self):
+        h = SAT + 10 * H
+        self.scan(h + H + 120, "BTCUSDT", 6.0, True, h)
+        r = flagreport.report(self.db.q)
+        self.assertIn("not an independent recomputation", r["data_quality"]["note"])
         self.assertIn("14 days", r["missing"])
 
 

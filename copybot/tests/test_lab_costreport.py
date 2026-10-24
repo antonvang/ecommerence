@@ -44,6 +44,10 @@ class Report(unittest.TestCase):
         self.assertEqual(x["median_upper_missing_as_inf"], float("inf"))
         self.assertAlmostEqual(x["bp"]["median"], 0.2)
         self.assertEqual(x["conclusion"], "too few data")                          # 2 days, 48 obs, 2 move hours
+        t = r["decision_table"]["XAUUSDT"]
+        self.assertEqual(t["recommendation"], "NO_DECISION")
+        self.assertFalse(t["requirements"]["days >= 7"])
+        self.assertIsNone(t["C"])                                                  # never shown before the gates
         self.assertAlmostEqual(r["markets"]["BTCUSDT"]["total_round_trip_bp_with_fees"], 10.01)
         self.assertIn("never added", " ".join(r["notes"]))
 
@@ -59,6 +63,10 @@ class Report(unittest.TestCase):
         self.assertAlmostEqual(bc["B"], 0.0046)                                     # the floor
         self.assertAlmostEqual(bc["C"], max(4 * 0.0004, 2 * (2 * 0.0004 + bc["q95"])))
         self.assertIn("never activated automatically", bc["note"])
+        t = costreport.report(self.db.q)["decision_table"]["BTCUSDT"]                   # 21o point 2
+        self.assertTrue(all(t["requirements"].values()))
+        self.assertEqual(t["recommendation"], "can be put to the user")
+        self.assertIn("transfer of 2026 costs to 2020-21 (explore0)", t["assumed_inputs"])
 
     def test_sufficiency_is_fixed_in_advance(self):
         self.assertFalse(costreport.sufficient({"days": 7, "n": 100}, {"n": 10}, weekends=1))   # 21n: 2 weekends

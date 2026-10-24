@@ -42,11 +42,14 @@ def report(q, now=None):
         if val is not None:
             books[sym].append(val)
             book_at[(ts, sym)] = val
-    seen, flags, dupes = set(), [], 0
+    seen, flags, dupes, no_hour = set(), [], 0, 0
     for ts, sym, metric, val in q("SELECT ts, instrument, metric, value FROM observations WHERE "
                                   "detector='abnormal_move/1' AND flagged=1 ORDER BY ts"):
         p = z.get((ts, sym)) or {}
-        key = (sym, p.get("open_s"), metric)
+        if not p.get("open_s"):                            # 21o: no substitute key; counted, never in rates
+            no_hour += 1
+            continue
+        key = (sym, p["open_s"], metric)
         if key in seen:
             dupes += 1
             continue
@@ -57,6 +60,8 @@ def report(q, now=None):
                       "consistent_with_scan": same is not None and abs(same - val) < 1e-9 * max(1.0, abs(val)),
                       "age_s": p.get("age_s"), "weekend": wd is not None and wd >= 5,
                       "book_rt": book_at.get((ts, sym)),
+                      "median_qvol_derived": p["quote_volume_1h"] / p["volume_ratio"]
+                      if p.get("quote_volume_1h") and p.get("volume_ratio") else None,
                       "market_median_book_rt": statistics.median(books[sym]) if books.get(sym) else None})
     events = collections.defaultdict(list)
     for f in flags:
@@ -81,7 +86,12 @@ def report(q, now=None):
             "by_market_metric": by_market,
             "data_quality": {"inconsistent": sum(1 for f in flags if not f["consistent_with_scan"]),
                              "older_than_2h": sum(1 for f in flags if (f["age_s"] or 0) > 7200),
-                             "note": "the 720 h median behind volume_ratio is not stored; no full recomputation"},
+                             "without_market_hour": no_hour,
+                             "median_derived": [{k: f[k] for k in ("market", "open_s", "median_qvol_derived")}
+                                                for f in flags if f["metric"] == "volume_ratio"],
+                             "note": "the 720 h median is not stored; median_qvol_derived = quote_volume_1h / "
+                                     "volume_ratio is algebraically the stored value, not an independent recomputation "
+                                     "(that needs the 720 h klines, which are not fetched)"},
             "following_cost": [{k: f[k] for k in ("market", "open_s", "book_rt", "market_median_book_rt")}
                                for f in flags if f["book_rt"] is not None],
             "conclusion": "enough data for a dated proposal" if enough else "NO_DECISION",
