@@ -3117,3 +3117,26 @@ For råvarer og FX (K2): lukket = `moves.off_hours` (21g, Binances egne vinduer)
 2. **Placebo:** en placebo med ≥ 12 komplette weekender og uden p-værdi (alle d = 0) tæller som ikke-signifikant.
    En placebo uden data tæller som ikke bestået. Begge placebo skal have p > 0,05; det kan fejle af ren tilfældighed
    (ca. 10 % under nul), hvilket er konservativt.
+
+### 21y præcisering 3 (2026-10-24 kl. 23:57, før nogen måling): look-ahead-værn, datarapport og målt TradFi-funding
+1. **Look-ahead-værn:** en time er kun brugbar, hvis scanningen ligger **efter** barens lukning:
+   0 ≤ scan-ts − close_s ≤ 600 s. Den hidtidige regel krævede kun ≤ 600 s og ville have godtaget en scanning før
+   lukningen. Det er ikke set i data; det er et værn.
+2. **Datarapport (`k1k2.readiness`), kun antal:** pr. weekend og marked tælles brugbare timer, og hver manglende eller
+   ubrugelig time får en grund:
+   - `no_scan` (laben kørte ikke);
+   - `late_scan`;
+   - `scan_before_close`;
+   - `missing_bars`;
+   - `error`;
+   - `no_book` (kun for omkostningen).
+   Ingen afkast, middelværdier, korrelationer eller p-værdier.
+3. **Målt i dag (Binance `fundingRate` og `fundingInfo`, kontrol af collectoren, ikke brugt i nogen test):**
+   - TradFi-perpenes afregnede funding er næsten altid præcis 0. XAUUSDT har haft 0 i de seneste 6 afregninger, og
+     SPY/CL har enkelte afregninger på 0,002–0,005 %.
+   - Intervallerne er 4 t for råvarer og 8 t for aktier og FX.
+   - **Konsekvens, skrevet før data:** K2's carry-betingelse (afregnet funding > omkostning) kan næppe opfyldes.
+     K2's mekanismedel (præmie) er uændret testbar. Intet kriterium ændres.
+4. **NYSE-kalenderen:** listen kontrolleres i testsuiten mod en uafhængig regelbaseret beregning (NYSE's regler for
+   faste helligdage, observerede datoer, påske og tidlige lukninger). Den officielle kalender er stadig ikke hentet,
+   så listen forbliver en antagelse, indtil den er kontrolleret.
