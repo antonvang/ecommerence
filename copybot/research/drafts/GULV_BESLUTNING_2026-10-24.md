@@ -30,3 +30,19 @@ flag-timer. Selv da gælder det kun likvide markeder (fx omsætning ≥ 100 mio.
 observerede 95 %-fraktil af rundturen i flag-timer), kun for fremtidige screeninger, i en dateret ændring og med
 brugerens ja. R3 (minutmakro på BTC/ETH) er den screening, hvor valget betyder noget.
 Næste beslutningspunkt: R1-rapporten 2026-10-31.
+
+## Tilføjet 2026-10-24 kl. 19:30: beslutningsrapport efter master follow-up 5 (ingen regel ændres)
+
+| | A: fast gulv | B: gulv + instrumentspecifikt (gældende, 21i) | C: anderledes for dokumenteret likvide markeder |
+|---|---|---|---|
+| Regler, der ændres | 21i punkt 2 rulles tilbage til ændring 17's faste 0,46 % (strengere for ingen, lempeligere for tynde mønter: frarådes) | ingen | 21i punkt 2 får en undtagelse for omsætning ≥ 100 mio. USD/døgn (formlen er fastlagt i 21l punkt 2) |
+| Omfang | fremtidige screeninger | fremtidige screeninger | kun fremtidige screeninger; udførelsesestimater for papirkonti (banens `extra_slippage`, 12g's bogvandring) ændres ikke |
+| Falske positive | lav for likvide, **højere for tynde mønter** (0,46 % < deres målte 0,5–1 %) | lavest | højere for likvide: små effekter (0,1–0,3 %) kan nå kravet; p ≤ 0,005, fortegn i begge år og placebo er stadig vagterne |
+| Krævede observationer | — | — | R1 med "enough data" (≥ 7 døgn, ≥ 100 timer, ≥ 10 bevægelsestimer) for hvert likvidt marked, mindst 2 weekender og helst en uroperiode; 95 %-fraktilen i bevægelsestimer bruges, ikke medianen |
+| Omkostninger ved store bevægelser | ignoreres | ignoreres (omsætning, ikke uro) | indbygget: kravet bruger 95 %-fraktilen i bevægelsestimer × 2 |
+| Ingen optimering efter tidligere resultater | — | — | formlen og grænsen på 100 mio. er låst i 21l **før** R1-data og uden at regne om på nogen afsluttet hypotese; afsluttede domme forbliver uændrede |
+
+**Anbefaling: B.** A frarådes, fordi den er lempeligere end B for tynde mønter. C kan tidligst vurderes efter
+R1-rapporten 2026-10-31 og kun med brugerens ja. For explore0 (2020–21) bygger C på antagelsen, at 2026-likviditet for
+BTC/ETH gælder i 2020–21. Den skal stå udtrykkeligt markeret og bør kun bruges, hvis R1 viser, at
+bevægelsestimernes 95 %-fraktil ligger klart under gulvet.

@@ -34,3 +34,21 @@
 
 Få klynger (~57) giver lav styrke ved p ≤ 0,005. Macro-reaktioner kan være udtømt efter 2 min (som MISSION3 M1 og
 præmiekonvergensen viste for orderflow). Et nulresultat er sandsynligt, men det ville lukke makro-sporet definitivt.
+
+## Beredskab, kontrolleret 2026-10-24 kl. 19:30 (intet hentet, ingen forespørgsel)
+
+- **Udgivelsestider:** kalenderfilerne har `ts` for 58 planlagte udgivelser i explore0 (ændring 14's tolkere: FOMC
+  14:00 ET, CPI og NFP 08:30 ET). De er kendt på forhånd. Ingen ikke-planlagt begivenhed bruges.
+- **Forsinkelse:** signalet kendes ved T+1 min (minutbarens lukning). Indgang ved lukkekursen for baren T+2 min. Det
+  er realistisk for en papirordre, der lægges 1 min efter signalet; scanneren kører i dag kun hver time, så en
+  live-version ville kræve en ny, hurtigere kørsel (ikke en del af denne plan).
+- **Låst indtil en dateret ændring:** 60 min-horisonten, placebo samme klokkeslæt ugen før (14 dage ved en
+  kalenderbegivenhed), døgnklynger, p ≤ 0,005 tosidet, fortegn i begge år, placebo-p > 0,05, ≥ 15 klynger.
+- **Multiple testing:** én nøgle (`macro_release|minute_drift_60m|<metode>`), screening i explore0 uden alfa. En
+  SCREEN_PASS kræver brugerens beslutning før en LÅS (k = 5, α 0,0015625).
+- **Omkostninger:** det gældende krav (B) giver gulvet 0,46 % for BTC/ETH. **Begrænsning:** en effekt på over 0,46 % på
+  60 min efter 2 min forsinkelse er usandsynlig. Det rapporteres som en begrænsning. Gulvet sænkes ikke for R3's skyld.
+- **Rækkefølge 2026-11-14 (hvis tilladt):** (1) kontrol af, at ændring 10b stadig tillader hentning, og at pm_lp's
+  opfølgning ikke kræver andet; (2) dateret ændring med hypotesen ovenfor, før data; (3) hentning af de 44 filer med
+  banens hentevej (højst 2 ad gangen, læser kun explore0); (4) kode med tests (et tjek for, at minutbaren åbner ≥ T);
+  (5) én kørsel, registrering med sha256, uanset resultat.
