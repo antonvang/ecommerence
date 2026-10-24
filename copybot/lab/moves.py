@@ -70,6 +70,7 @@ def stats(klines, now):
     med = statistics.median(vols) if vols else 0.0
     return {"open_s": rows[-1][0], "close_s": rows[-1][3], "price": px[-1], "ret_1h": r1, "ret_24h": r24,
             "sigma_1h": sigma, "z_1h": r1 / sigma if sigma > 0 else 0.0,
+            "tails_720h": sum(1 for r in trail if sigma > 0 and abs(r) / sigma >= Z1),
             "z_24h": r24 / (sigma * math.sqrt(24)) if sigma > 0 else 0.0,
             "volume_ratio": rows[-1][2] / med if med > 0 else None, "quote_volume_1h": rows[-1][2],
             "age_s": now - rows[-1][3], "returns": len(trail)}
@@ -182,6 +183,44 @@ def macro_near(events, error, hour_open):
     return {"releases": near, **({"error": error} if error else {})}
 
 
+TAIL_ROUTINE, ILLIQUID_RT = 3, 0.005                      # amendment 21e: fixed before any record was judged
+TESTED = "m21c (ændring 21c): 4σ-timeflag på krypto-perps gav SCREEN_FAIL i explore0 ved 4 og 24 t"
+
+
+def triage(rec):
+    """Amendment 21e: rule-based explanations, verdict, reason and next step of one analysis record."""
+    ex, flags, book = [], rec.get("flags") or [], rec.get("book") or {}
+    if flags == ["volume_ratio"] and abs(rec.get("z_1h") or 0) < 2:
+        ex.append("volume_only")
+    if "error" in book or (book.get("round_trip") or 0) > ILLIQUID_RT:
+        ex.append("illiquid")
+    if (rec.get("tails_720h") or 0) >= TAIL_ROUTINE:
+        ex.append("routine_tail")
+    if (rec.get("macro") or {}).get("releases"):
+        ex.append("macro_release")
+    end = rec["move_hour_s"] + HOUR
+    if any((n.get("published_ts") or float("inf")) <= end for n in rec.get("news") or []):
+        ex.append("news")
+    if "macro_release" not in ex and "news" not in ex:
+        ex.append("unexplained")
+    crypto = rec.get("class") == "crypto"
+    if "volume_only" in ex:
+        v = ("REJECT_NOT_DIRECTIONAL", "kun volumen, ingen prisbevægelse", "ingen")
+    elif "illiquid" in ex:
+        why = book.get("error") or f"rundtur {book.get('round_trip', 0):.2%} for 5 000 USD"
+        v = ("REJECT_ILLIQUID", f"bogen: {why}", "ingen; en handel ville koste mere end bevægelsen kan forklare")
+    elif crypto and "z_1h" in flags:
+        v = ("REJECT_TESTED", TESTED, "ingen; et nyt spor kræver en ny dateret ændring")
+    elif crypto:
+        v = ("NOT_SCREENED", "flaget er ikke screenet (kun z_1h er testet)", "ikke screenet; en screening kræver en "
+             "dateret ændring")
+    else:
+        v = ("FORWARD_ONLY", "historikken ligger i den reserverede periode (fra 2025)", "udfaldet efter 24 t indsamles; "
+             "en test kræver en dateret lås")
+    return {"tails_720h": rec.get("tails_720h"), "explanations": ex, "verdict": v[0], "reason": v[1], "next": v[2],
+            "rule": "research/PROTOCOL_V3.md amendment 21e"}
+
+
 def record(db, observations, now, get, fetch=None):
     """Point 5 and 6 after the scan's observations are stored: analysis records for flagged markets, then the
     forward outcomes that are due. Returns the number of records written."""
@@ -202,7 +241,7 @@ def record(db, observations, now, get, fetch=None):
                   sym, now - DEDUP_S):
             continue
         p = m["z_1h"]["payload"]
-        db.event("opportunity.move", ACTOR, None, {
+        rec = {
             "instrument": sym, "class": p["class"], "label": p["label"], "venue": p["venue"], "flags": sorted(flags),
             "move_hour_s": p["open_s"], "price": p["price"], "ret_1h": p["ret_1h"], "ret_24h": p["ret_24h"],
             "z_1h": p["z_1h"], "z_24h": p["z_24h"], "volume_ratio": p["volume_ratio"], "sigma_1h": p["sigma_1h"],
@@ -210,7 +249,10 @@ def record(db, observations, now, get, fetch=None):
             "book": book_cost(get, sym), "news": news_near(db, sym, p["open_s"]),
             "macro": macro_near(*calendar(now, fetch), p["open_s"]),
             "next": "beskrivende: en test kræver sin egen daterede lås; historik fra 2025 er reserveret (ændring 21)",
-            "rule": "research/PROTOCOL_V3.md amendment 21", "scan_ts": now, "decisional": False})
+            "tails_720h": p.get("tails_720h"),
+            "rule": "research/PROTOCOL_V3.md amendment 21", "scan_ts": now, "decisional": False}
+        rec["triage"] = triage(rec)
+        db.event("opportunity.move", ACTOR, None, rec)
         written += 1
     return written + outcomes(db, now)
 

@@ -1137,7 +1137,9 @@ def feed(db, limit=40):
         elif k == "opportunity.move":                             # amendment 21: descriptive, nothing is traded
             e.update(tag="BEVÆGELSE",
                      text=(f"{p.get('label')}: {p.get('ret_1h', 0):+.2%} på 1 t (z {p.get('z_1h', 0):.1f}), "
-                           f"{p.get('ret_24h', 0):+.2%} på 24 t (z {p.get('z_24h', 0):.1f}) - beskrivende, intet handles")[:220],
+                           f"{p.get('ret_24h', 0):+.2%} på 24 t (z {p.get('z_24h', 0):.1f}) - beskrivende, intet handles"
+                           + (f"; vurdering {tr['verdict']} ({', '.join(tr.get('explanations') or [])})"
+                              if (tr := p.get("triage")) else ""))[:260],
                      detail=", ".join(x.get("title", "") for x in (p.get("news") or [])[:2]) or None)
         elif k in ("lane.started", "lane.retired", "lane.promising"):
             e.update(tag="BANEKONTO", text=(f"{nm} startet (simuleret, aldrig bevis)" if k == "lane.started"

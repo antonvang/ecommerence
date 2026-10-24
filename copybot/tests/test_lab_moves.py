@@ -80,6 +80,31 @@ class Detect(unittest.TestCase):
         self.assertAlmostEqual(by[("XAUUSDT", "premium")]["value"], 0.001)
 
 
+class Triage(unittest.TestCase):
+    BASE = {"class": "crypto", "flags": ["z_1h"], "z_1h": 5.0, "move_hour_s": NOW, "tails_720h": 0,
+            "book": {"round_trip": 0.001}, "macro": {"releases": []}, "news": []}
+
+    def t(self, **kw):
+        return moves.triage({**self.BASE, **kw})
+
+    def test_fixed_rules_in_order(self):
+        self.assertEqual(self.t()["verdict"], "REJECT_TESTED")
+        self.assertEqual(self.t()["explanations"], ["unexplained"])
+        self.assertEqual(self.t(flags=["z_24h"])["verdict"], "NOT_SCREENED")
+        self.assertEqual(self.t(flags=["volume_ratio"], z_1h=0.5)["verdict"], "REJECT_NOT_DIRECTIONAL")
+        self.assertEqual(self.t(flags=["volume_ratio"], z_1h=3.0)["verdict"], "NOT_SCREENED")
+        self.assertEqual(self.t(book={"error": "empty book"})["verdict"], "REJECT_ILLIQUID")
+        self.assertEqual(self.t(book={"round_trip": 0.006})["verdict"], "REJECT_ILLIQUID")
+        self.assertEqual(self.t(**{"class": "fx"})["verdict"], "FORWARD_ONLY")
+        e = self.t(tails_720h=3, macro={"releases": [{"event": "FOMC statement"}]},
+                   news=[{"published_ts": NOW + H + 1}])["explanations"]
+        self.assertEqual(e, ["routine_tail", "macro_release"])                     # news after the hour explains nothing
+        self.assertIn("news", self.t(news=[{"published_ts": NOW + 10}])["explanations"])
+
+    def test_tails_are_counted_in_the_trailing_window(self):
+        self.assertEqual(moves.stats(klines(), NOW)["tails_720h"], 0)
+
+
 class Records(unittest.TestCase):
     def setUp(self):
         self.db = DB(":memory:")
@@ -108,12 +133,16 @@ class Records(unittest.TestCase):
         self.assertIn("BTCUSDT", p["others"])
         self.assertGreater(p["book"]["round_trip"], 0)
         self.assertEqual([x["title"] for x in p["news"]], ["Gold slides as the dollar jumps after hot CPI"])
+        self.assertEqual(p["triage"]["verdict"], "FORWARD_ONLY")                      # amendment 21e: TradFi
+        self.assertIn("news", p["triage"]["explanations"])
+        self.assertEqual(p["triage"]["tails_720h"], p["tails_720h"])
         again = scanner.run(self.db, ["abnormal_move"], get=market(jumps={"XAUUSDT": -0.03}), now=NOW + 60)
         self.assertEqual(again["abnormal_move_records"], 0)                            # deduplicated for 6 h
         f = [x for x in command.feed(self.db)["items"] if x.get("tag") == "BEVÆGELSE"]
         self.assertEqual(len(f), 1)
         self.assertIn("Guld", f[0]["text"])
         self.assertIn("intet handles", f[0]["text"])
+        self.assertIn("vurdering FORWARD_ONLY", f[0]["text"])
 
     def test_the_macro_calendar_marks_a_release_in_the_move_window(self):
         t = moves.stats(klines(jump=-0.03), NOW)["open_s"]
