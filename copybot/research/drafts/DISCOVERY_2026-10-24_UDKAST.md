@@ -50,3 +50,8 @@ Seed Tag (siden 2023) afløste Innovation Zone. Mønterne er for en stor del nye
 ## D4 `delisting` (parserrettelse): forkastet
 
 Se analysens punkt 3: validation3 ville have 7 begivenheder (< 8), så en screening kunne aldrig afgøres.
+
+**Opfølgning 2026-10-24 ca. 13:10:** D1 er låst efter brugerens ordre som M1F i ændring 17j
+(`research/drafts/M1F_MONITORING_FREMAD.md`). Ændringer fra udkastet, før låsen: udfaldet måles mod medianen af de
+øvrige altcoins (ikke kun BTC), og testen vender fortegn pr. meddelelse, fordi mønter i samme meddelelse ikke er
+uafhængige.
