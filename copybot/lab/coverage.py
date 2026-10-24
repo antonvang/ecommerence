@@ -207,6 +207,9 @@ def _hypotheses(db, now):
 
 FORWARD_FROM = 1792627200                       # 2026-10-22 00:00 UTC: amendments 16d and 16f collect from here
 FORWARD_TESTS = (("H5F", "16d", 20, 60 * DAY), ("H5X", "16f", 20, 7 * DAY))   # (id, amendment, symbols, window)
+M1F_FROM = 1792886400                           # 2026-10-25 00:00 UTC: amendment 17j point 2
+M1F_RX = re.compile(r"Extend the Monitoring Tag to (?:Include )?(.+?)(?:,? and Remove|,? Remove| on \d{4}-\d{2}-\d{2}|$)")
+M1F_STABLE = {"USDT", "USDC", "FDUSD", "DAI", "TUSD", "USDE", "USD1", "PYUSD", "EURC", "AEUR", "EURI", "BTC"}   # 3c
 
 
 def forward(db, now=None):
@@ -230,8 +233,47 @@ def forward(db, now=None):
         nth = first[n - 1][1] if len(first) >= n else None
         out.append({"hypothesis": hid, "rule": f"research/PROTOCOL_V3.md amendment {amendment}", "needed": n,
                     "collected": min(len(first), n), "coins": [c for c, _ in first[:n]],
-                    "earliest_run_ts": nth + window if nth else None, "deadline": "2027-06-30"})
-    return out
+                    "earliest_run_ts": nth + window if nth else None, "deadline": "2027-06-30",
+                    "what": "nye USD-M-listninger indsamlet siden 2026-10-22 (kandidater; de endelige stikprøveregler "
+                            "anvendes ved kørslen)"})
+    out.append({"hypothesis": "U1F", "rule": "research/PROTOCOL_V3.md amendment 17i", "needed": 20, "collected": None,
+                "coins": [], "earliest_run_ts": None, "deadline": "2027-06-30",
+                "what": "Upbit-KRW-noteringer fra 2026-10-25; tælles først ved målingen (CoinMetrics' katalog læses én "
+                        "gang)"})
+    return out + [monitoring_forward(db)]
+
+
+def monitoring_tagged(title):
+    """17j point 2: the coins an "Extend the Monitoring Tag" title adds (empty for any other title)."""
+    m = M1F_RX.search(title or "")
+    if not m:
+        return []
+    return [w for w in re.split(r"[\s,&]+|\band\b", m.group(1)) if re.fullmatch(r"(?=.*[A-Z])[A-Z0-9]{1,12}", w)]
+
+
+def monitoring_forward(db):
+    """Display only: M1F candidates counted from news-watch titles by 17j points 2, 3a and 3c; 3b and 3d (delisting,
+    spot price) are applied when the measurement runs."""
+    items = []
+    for r in db.q("SELECT payload FROM observations WHERE detector='news/1' AND metric='news_item' AND source LIKE "
+                  "'%binance.com%' AND payload LIKE '%Monitoring Tag%'"):
+        p = json.loads(r["payload"]) if isinstance(r["payload"], str) else r["payload"]
+        coins = monitoring_tagged(p.get("title"))
+        if coins and p.get("usable_from"):
+            items.append((p["usable_from"], coins))
+    seen, picked, notes = set(), [], set()
+    for t, coins in sorted(items):
+        for c in sorted(coins):
+            if t >= M1F_FROM and c not in seen and c not in M1F_STABLE and len(picked) < 20:
+                picked.append((c, t))
+                notes.add(t)
+            seen.add(c)
+    n = len(picked)
+    return {"hypothesis": "M1F", "rule": "research/PROTOCOL_V3.md amendment 17j", "needed": 20, "collected": n,
+            "announcements": len(notes), "coins": [c for c, _ in picked],
+            "earliest_run_ts": picked[-1][1] + 7 * DAY + 3 * DAY if n >= 20 else None, "deadline": "2027-06-30",
+            "what": f"Monitoring-Tag-mønter fra 2026-10-25 i {len(notes)} meddelelser (mindst 6; kandidater, afnotering "
+                    "og spotpris anvendes ved kørslen)"}
 
 
 def _head(verdict):

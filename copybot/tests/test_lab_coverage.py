@@ -252,7 +252,8 @@ class Progress(Base):
         self.news(t0 + 300, "Binance Will List EEE (EEE)", ["EEE"])                                     # spot listing
         self.news(t0 + 360, "Binance Futures Will Delist FFFUSDT Perpetual Contract", ["FFF"], category="delisting")
         f = {x["hypothesis"]: x for x in coverage.forward(self.db, t0 + 400)}
-        self.assertEqual(sorted(f), ["H5F", "H5X"])
+        self.assertEqual(sorted(f), ["H5F", "H5X", "M1F", "U1F"])
+        self.assertIsNone(f["U1F"]["collected"])                         # counted only when the measurement runs
         self.assertEqual((f["H5F"]["collected"], f["H5F"]["coins"], f["H5F"]["earliest_run_ts"]),
                          (3, ["AAA", "BBB", "CCC"], None))
         for i in range(20):
@@ -261,6 +262,29 @@ class Progress(Base):
         self.assertEqual(f["H5X"]["collected"], 20)
         self.assertEqual(f["H5X"]["earliest_run_ts"], t0 + 1016 - 60 + 7 * coverage.DAY)              # 20th: X16
         self.assertEqual(f["H5F"]["earliest_run_ts"], t0 + 1016 - 60 + 60 * coverage.DAY)
+
+    def tag(self, t, title):
+        p = {"title": title, "coins": [], "category": "other", "usable_from": t, "fetched_ts": t}
+        self.db.append("observations", ts=int(t), detector="news/1", source="https://www.binance.com/en/support",
+                       instrument=title, metric="news_item", value=t, threshold=None, flagged=0, payload=p)
+
+    def test_m1f_counts_new_monitoring_tag_coins_by_the_locked_title_rule(self):
+        t0 = coverage.M1F_FROM
+        self.tag(t0 - 86400, "Binance Will Extend the Monitoring Tag to Include OLD & AAA on 2026-10-20")   # before
+        self.tag(t0 + 60, "Binance Will Extend the Monitoring Tag to Include AAA, BBB & D, Remove the Monitoring Tag "
+                          "for ZZZ, and Remove the Seed Tag for YYY on 2026-10-26")
+        self.tag(t0 + 120, "Binance Will Remove the Monitoring Tag for QQQ on 2026-10-27")             # removal only
+        self.tag(t0 + 180, "Binance Will Extend the Monitoring Tag to AEUR and CCC on 2026-10-28")
+        m = {x["hypothesis"]: x for x in coverage.forward(self.db, t0 + 400)}["M1F"]
+        self.assertEqual((m["coins"], m["announcements"], m["earliest_run_ts"]), (["BBB", "D", "CCC"], 2, None))
+        for i in range(6):
+            self.tag(t0 + 1000 + i, f"Binance Will Extend the Monitoring Tag to Include N{i}A, N{i}B & N{i}C on 2026-11-0{i}")
+        m = {x["hypothesis"]: x for x in coverage.forward(self.db, t0 + 2000)}["M1F"]
+        self.assertEqual((m["collected"], m["announcements"]), (20, 8))
+        self.assertEqual(m["coins"][-1], "N5B")                                                        # 20th coin
+        self.assertEqual(m["earliest_run_ts"], t0 + 1005 + 10 * coverage.DAY)
+        self.assertEqual(coverage.monitoring_tagged("Binance Will Extend the Monitoring Tag to GPS on 2025-03-07"),
+                         ["GPS"])
 
 
 class Api(unittest.TestCase):
