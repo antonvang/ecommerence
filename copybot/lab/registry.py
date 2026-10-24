@@ -28,19 +28,72 @@ def git(*args):
     return subprocess.check_output(["git", *args], cwd=HERE, text=True, stderr=subprocess.DEVNULL).strip()
 
 
+_BLOBS, _LAST, _GITDIRS = {}, {}, []              # research/LINUX_DRIFT.md 2026-10-24: exact caches, same answers
+
+
 def blob_at(commit, path):
-    """Git blob hash of `path` (relative to copybot/) at `commit`, or None."""
+    """Git blob hash of `path` (relative to copybot/) at `commit`, or None. A found blob at a full commit sha is
+    remembered (a commit's content cannot change)."""
+    if (commit, path) in _BLOBS:
+        return _BLOBS[(commit, path)]
     try:
-        return git("rev-parse", f"{commit}:copybot/{path}")
+        b = git("rev-parse", f"{commit}:copybot/{path}")
     except Exception:
         return None
+    if len(commit or "") == 40 and all(c in "0123456789abcdef" for c in commit):
+        _BLOBS[(commit, path)] = b
+    return b
+
+
+def _stat(path):
+    try:
+        st = os.stat(path)
+        return st.st_ino, st.st_size, st.st_mtime_ns, st.st_ctime_ns
+    except OSError:
+        return None
+
+
+def head_key():
+    """What HEAD points at, read from the files git keeps it in (HEAD's content, stat of its ref file and packed-refs);
+    any commit, checkout or pull changes it. None when it cannot be read (then nothing is cached)."""
+    try:
+        if not _GITDIRS:
+            _GITDIRS.extend(os.path.join(HERE, d) for d in git("rev-parse", "--git-dir", "--git-common-dir").split("\n"))
+        gitdir, common = _GITDIRS
+        with open(os.path.join(gitdir, "HEAD"), encoding="utf-8") as f:
+            head = f.read().strip()
+    except Exception:
+        return None
+    ref = head[5:].strip() if head.startswith("ref:") else None
+    return (head, ref and _stat(os.path.join(common, ref)), _stat(os.path.join(common, "packed-refs")))
 
 
 def last_commit(path):
+    """The last commit that touched `path`, remembered while HEAD points at the same commit."""
+    key = head_key()
+    if key is not None and _LAST.get(path, (None,))[0] == key:
+        return _LAST[path][1]
     try:
-        return git("log", "-1", "--format=%H", "--", os.path.join(HERE, path)) or None
+        c = git("log", "-1", "--format=%H", "--", os.path.join(HERE, path)) or None
     except Exception:
         return None
+    if key is not None:
+        _LAST[path] = (key, c)
+    return c
+
+
+_WORKING = {}
+
+
+def hash_object(full):
+    """`git hash-object` of a working-tree file, remembered while its inode, size, mtime and ctime stay the same."""
+    st = _stat(full)
+    if st is not None and _WORKING.get(full, (None,))[0] == st:
+        return _WORKING[full][1]
+    h = git("hash-object", full)
+    if st is not None:
+        _WORKING[full] = (st, h)
+    return h
 
 
 def graveyard(db, mechanism_tag, execution, fp, exclude=()):

@@ -177,6 +177,63 @@ class Registry(unittest.TestCase):
         self.assertTrue(trig and all(b is None for _, b in chains.values()))
 
 
+class GitCaches(unittest.TestCase):
+    """research/LINUX_DRIFT.md 2026-10-24: the git lookups are remembered only while their answer cannot change."""
+
+    def setUp(self):
+        for c in (registry._BLOBS, registry._LAST, registry._WORKING):
+            c.clear()
+        self.calls = []
+        real = registry.git
+        self.git = mock.patch.object(registry, "git", lambda *a: self.calls.append(a) or real(*a))
+        self.git.start()
+        self.addCleanup(self.git.stop)
+
+    def test_a_blob_is_remembered_only_at_a_full_commit_sha(self):
+        sha = registry.git("rev-parse", "HEAD")
+        self.calls.clear()
+        a, b = registry.blob_at(sha, "lab/db.py"), registry.blob_at(sha, "lab/db.py")
+        self.assertEqual(a, b)
+        self.assertEqual(len(self.calls), 1)
+        registry.blob_at("HEAD", "lab/db.py"), registry.blob_at("HEAD", "lab/db.py")
+        self.assertEqual(len(self.calls), 3)                               # a symbolic name is asked every time
+        self.assertIsNone(registry.blob_at(sha, "no/such/file.py"))
+        self.assertIsNone(registry.blob_at(sha, "no/such/file.py"))
+        self.assertEqual(len(self.calls), 5)                               # a miss is never remembered
+
+    def test_last_commit_is_asked_again_when_head_moves(self):
+        keys = iter([("k1",), ("k1",), ("k2",)])
+        with mock.patch.object(registry, "head_key", lambda: next(keys)):
+            c = [registry.last_commit("lab/db.py") for _ in range(3)]
+        self.assertEqual(len({x for x in c}), 1)
+        self.assertEqual(len([x for x in self.calls if x[0] == "log"]), 2)
+        with mock.patch.object(registry, "head_key", lambda: None):        # unreadable HEAD: nothing is cached
+            registry.last_commit("lab/db.py"), registry.last_commit("lab/db.py")
+        self.assertEqual(len([x for x in self.calls if x[0] == "log"]), 4)
+
+    def test_the_real_head_key_is_readable_and_stable(self):
+        k = registry.head_key()
+        self.assertIsNotNone(k)
+        self.assertEqual(k, registry.head_key())
+
+    def test_a_working_file_is_hashed_again_after_any_write(self):
+        with tempfile.TemporaryDirectory() as d:
+            f = os.path.join(d, "x.json")
+            with open(f, "w") as fh:
+                fh.write("{}")
+            a, b = registry.hash_object(f), registry.hash_object(f)
+            self.assertEqual(a, b)
+            self.assertEqual(len(self.calls), 1)
+            st = os.stat(f)
+            with open(f, "w") as fh:
+                fh.write("[]")                                             # same size
+            os.utime(f, ns=(st.st_atime_ns, st.st_mtime_ns))               # even with the old mtime put back
+            c = registry.hash_object(f)
+            self.assertEqual(len(self.calls), 2)                           # ctime moved: hashed again
+            self.assertNotEqual(a, c)
+            self.assertEqual(c, registry.git("hash-object", f))
+
+
 class StatusCli(unittest.TestCase):
     def test_a_later_final_decision_outranks_an_old_pass_verdict(self):
         with tempfile.TemporaryDirectory() as tmp:

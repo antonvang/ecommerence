@@ -293,7 +293,7 @@ def blobs(fid):
         full = os.path.join(HERE, rel)
         committed = registry.blob_at(registry.last_commit(rel) or "HEAD", rel.replace(os.sep, "/"))
         try:
-            working = registry.git("hash-object", full) if os.path.exists(full) else None
+            working = registry.hash_object(full) if os.path.exists(full) else None
         except Exception:
             working = None
         out[k] = {"path": rel.replace(os.sep, "/"), "committed": committed, "working": working,
