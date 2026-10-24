@@ -2185,3 +2185,16 @@ diagnostik bruger kun fremtidige data. Ingen gate, alfa, kohorte, tærskel eller
    for mindst ét medlem. Færre end 4 åbne uger: "uafklaret". Ingen af delene ændrer fcarrys afgørelse.
 5. **Pligt:** resultatet skrives i `research/families/drafts/fregime.json` (`drafting_data_access`), før F3 kan
    foreslås til godkendelse.
+
+### Præcisering af ændring 20 (2026-10-24 kl. 13:27, før data): manglende data og porten
+
+Ingen fremaddata findes (fcarrys vindue starter tidligst 2026-12-01); præciseringen ændrer ikke, hvad der måles.
+
+1. **Portens input:** fundingfilerne og mønterne, som den afgørende fremadkørsel brugte (samme hashes); en mønt tæller
+   med i medianen for en beslutning, hvis den har afregninger i alle 7 døgn før beslutningen. Har under halvdelen af
+   kørslens mønter det, er ugens port "ukendt".
+2. **Uger uden data:** en uge, hvor fremadkørslen ikke har et dagligt netto for et medlem, eller hvor porten er
+   "ukendt", udelades for det medlem og tælles med årsag i rapporten.
+3. **Uger på vinduets kanter:** kun hele uger (mandag 01:00 til mandag 01:00 UTC) inden for fremadvinduet tæller.
+4. **Reproducerbarhed:** rapporten angiver kørslens artefakt-SHA-256, listen af fundingfiler med deres SHA-256 og
+   antallet af åbne, lukkede, ukendte og udeladte uger pr. medlem og `gate_day`.
