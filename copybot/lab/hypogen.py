@@ -34,7 +34,10 @@ M17C, RULE_C = "m17c", "research/PROTOCOL_V3.md amendment 17c"
 M17E, RULE_E = "m17e", "research/PROTOCOL_V3.md amendment 17e"
 M17G, RULE_G = "m17g", "research/PROTOCOL_V3.md amendment 17g"
 G_TYPE = "coinbase_listing"                                # 17g: first trade on Coinbase (detector coinbase/1)
-CANDIDATES = {M17C: 117, M17E: 124, M17G: 133}             # how many candidates a draft was selected among
+M17H, RULE_H = "m17h", "research/PROTOCOL_V3.md amendment 17h"
+LISTING = {M17G: (G_TYPE, "coinbase/1", RULE_G, "Coinbase (USD)"),       # method -> type, detector, rule, venue
+           M17H: ("upbit_listing", "upbit/1", RULE_H, "Upbit (KRW)")}
+CANDIDATES = {M17C: 117, M17E: 124, M17G: 133, M17H: 142}  # how many candidates a draft was selected among
 HOUR, DAY = 3600, 86400
 _T = lambda y, m: int(datetime(y, m, 1, tzinfo=timezone.utc).timestamp())          # noqa: E731
 PHASES = {"explore0": ((2020, 3), (2021, 12)), "train3": ((2022, 1), (2023, 6)), "validation3": ((2023, 7), (2023, 12))}
@@ -171,12 +174,11 @@ def events(items, a, b, method=METHOD):
     return out
 
 
-# ---------- amendment 17g: Coinbase listings (detector coinbase/1) ----------
-def _items_g(db):
-    from lab import coinbase
+# ---------- amendments 17g/17h: Coinbase and Upbit listings (detectors coinbase/1, upbit/1) ----------
+def _items_g(db, method=M17G):
     out = []
     for r in db.q("SELECT id, payload FROM observations WHERE detector=? AND metric='cb_listing' ORDER BY id",
-                  coinbase.DETECTOR):
+                  LISTING[method][1]):
         out.append((r["id"], json.loads(r["payload"]) if isinstance(r["payload"], str) else r["payload"]))
     return out
 
@@ -191,9 +193,9 @@ def events_g(items, a, b):
 
 
 def _evs(db, etype, method, a, b, items=None):
-    """The events of one key: Coinbase listings under m17g, announcements otherwise."""
-    if method == M17G:
-        return events_g(_items_g(db), a, b)
+    """The events of one key: Coinbase / Upbit listings under m17g / m17h, announcements otherwise."""
+    if method in LISTING:
+        return events_g(_items_g(db, method), a, b)
     return events(items if items is not None else _items(db), a, b, method)[etype]
 
 
@@ -325,19 +327,20 @@ def candidates(db, now=None, fresh=False):
                         "sources": {"detector": news.DETECTOR, "events": len(ids), "first_obs": min(ids, default=None),
                                     "last_obs": max(ids, default=None), "events_sha256": hashlib.sha256(json.dumps(
                                         evs[etype], sort_keys=True).encode()).hexdigest()}})
-    from lab import coinbase                                # amendment 17g point 3: 9 candidates once listings exist
-    evg = events_g(_items_g(db), a, b)
-    if evg:
+    for method, (gtype, det, grule, _) in LISTING.items():  # 17g/17h point 3: 9 candidates once listings exist
+        evg = events_g(_items_g(db, method), a, b)
+        if not evg:
+            continue
         miss = missing(evg, SCREEN)
         ids = [e["obs"] for e in evg]
         for o in OUTCOMES:
-            k = key(G_TYPE, o, M17G)
+            k = key(gtype, o, method)
             res = done.get(k)
             overlap = 0.25 if any(x.split("|")[1] == o and x != k for x in done) else 0
-            out.append({"key": k, "type": G_TYPE, "outcome": o, "events": len(ids), "live_30d": 0,
+            out.append({"key": k, "type": gtype, "outcome": o, "events": len(ids), "live_30d": 0,
                         "missing_files": miss, "overlap": overlap, "status": res["verdict"] if res else
-                        "QUEUED_FOR_SCREEN", "priority": priority(len(ids), 0, miss, overlap), "rule": RULE_G,
-                        "sources": {"detector": coinbase.DETECTOR, "events": len(ids), "first_obs": min(ids),
+                        "QUEUED_FOR_SCREEN", "priority": priority(len(ids), 0, miss, overlap), "rule": grule,
+                        "sources": {"detector": det, "events": len(ids), "first_obs": min(ids),
                                     "last_obs": max(ids), "events_sha256": hashlib.sha256(json.dumps(
                                         evg, sort_keys=True).encode()).hexdigest()}})
     out.sort(key=lambda x: (-x["priority"], x["key"]))
@@ -489,7 +492,7 @@ def measure_events(reader, evs, name):
 # ---------- screening (point 5) ----------
 def screen(db, k, get=None, items=None):
     etype, name, method = k.split("|")[:3]
-    rule = {M17C: RULE_C, M17E: RULE_E, M17G: RULE_G}.get(method, RULE)
+    rule = {M17C: RULE_C, M17E: RULE_E, M17G: RULE_G, M17H: RULE_H}.get(method, RULE)
     if k in COVERED:
         return {"key": k, "verdict": "COVERED", "reason": COVERED[k], "method": METHOD, "rule": RULE}
     a, b = bounds(SCREEN)
@@ -542,13 +545,13 @@ def draft(res, root=None):
     os.makedirs(d, exist_ok=True)
     word = "højere" if res["direction"] > 0 else "lavere"
     fwd = (res.get("placebo") or {}).get("shift_days", -30) > 0         # amendment 17e
-    g = res.get("method") == M17G                                       # amendment 17g
+    g = LISTING.get(res.get("method"))                                  # amendments 17g/17h
     spec = {"key": res["key"], "type": res["type"], "outcome": res["outcome"], "direction": res["direction"],
-            "claim": f"`{res['outcome']}` efter " + ("den første handel på Coinbase (USD)" if g else
+            "claim": f"`{res['outcome']}` efter " + (f"den første handel på {g[3]}" if g else
                                                      f"Binance-meddelelser af typen `{res['type']}`") + f" er {word} end 0",
             "mechanism": ("noteringen ændrer efterspørgsel, opmærksomhed eller afdækning i mønten (ikke undersøgt)" if g
                           else "meddelelsen ændrer efterspørgsel, opmærksomhed eller afdækning i mønten (ikke undersøgt)"),
-            "data": ("CoinMetrics' katalog: første handel pr. Coinbase USD-marked (coinbase/1); " if g else
+            "data": (f"CoinMetrics' katalog: første handel pr. {g[3]}-marked ({g[1]}); " if g else
                      "Binance' meddelelser i registret (news/1); ") +
                     "USD-M 1 t-klines og fundingRate fra data.binance.vision",
             "baseline": "0: ingen ændring (afkast er fratrukket BTCUSDT; de andre måles mod (t - 7 d, t])",
@@ -599,7 +602,7 @@ def locks(text=None, read=None):
 def measure_locked(db, k, sha, idx, spec, get=None, items=None):
     etype, name, direction = spec["type"], spec["outcome"], spec["direction"]
     alpha = ALPHA * 2 ** -idx
-    items = items if items is not None or spec.get("method") == M17G else _items(db)
+    items = items if items is not None or spec.get("method") in LISTING else _items(db)
     res = {"hypothesis": k, "name": f"{etype} {name}", "rule": "17", "artifact_id": f"MEASURE_17_{idx}",
            "draft_sha256": sha, "alpha": alpha, "direction": direction, "phases": {}}
     for phase, n_min, p_max in (("train3", MIN_TRAIN, P_TRAIN), ("validation3", MIN_VALID, alpha)):

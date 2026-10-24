@@ -427,6 +427,47 @@ class CoinbaseListings(Base):
                           res["phases"]["validation3"]["n"]), ("PASS", 0.0015625, 16, 10), res)
 
 
+class UpbitListings(Base):
+    """Amendment 17h: Upbit KRW listings; a first trade on a coverage day (>= 10 first trades summed over okex, huobi
+    and kraken) is no event."""
+
+    def test_krw_only_coverage_days_dropped_and_screened_under_m17h(self):
+        evs = [(f"U{i:02d}", T(2020 + i % 2, 6, 10 + i // 2, 3) + 900) for i in range(20)]
+        spike = T(2020, 9, 9, 12)
+        up = [{"market": f"upbit-{c.lower()}-krw-spot", "base": c.lower(), "quote": "krw",
+               "trades": {"min_time": iso(t - coinbase.LAG_S)}} for c, t in evs]
+        up += [{"market": "upbit-zzz-krw-spot", "base": "zzz", "quote": "krw", "trades": {"min_time": iso(spike)}},
+               {"market": "upbit-u00-btc-spot", "base": "u00", "quote": "btc", "trades": {"min_time": iso(T(2020, 4))}}]
+        cover = [{"market": f"okex-x{i}-usdt-spot", "base": f"x{i}", "quote": "usdt",
+                  "trades": {"min_time": iso(spike + i)}} for i in range(6)]
+        cover2 = [{"market": f"huobi-x{i}-usdt-spot", "base": f"x{i}", "quote": "usdt",
+                   "trades": {"min_time": iso(spike + i)}} for i in range(4)]
+        cats = {"upbit": up, "okex": cover, "huobi": cover2, "kraken": []}
+        got = coinbase.backfill(self.db, get=lambda u: json.dumps({"data": cats[u.split("exchange=")[1].split("&")[0]]
+                                                                   }).encode(), now=NOW, source="upbit")
+        self.assertEqual((got["cb_listing"], got["cb_none"]), (20, 1))           # the BTC market is not read
+        why = json.loads(self.db.one("SELECT payload FROM observations WHERE instrument='upbit-zzz-krw-spot'")[0])
+        self.assertIn("coverage day 2020-09-09", why["reason"])
+        self.assertEqual(self.db.one("SELECT COUNT(*) FROM observations WHERE detector='upbit/1'")[0], 21)
+        self.jump_market(evs, [(2020, 4), (2020, 5), (2020, 6), (2021, 4), (2021, 5), (2021, 6)])
+        h = [c for c in hypogen.candidates(self.db, NOW, fresh=True) if c["key"].endswith("|m17h")]
+        self.assertEqual({(c["type"], c["events"], c["sources"]["detector"]) for c in h},
+                         {("upbit_listing", 20, "upbit/1")})
+        self.assertFalse([c for c in hypogen.candidates(self.db, NOW, fresh=True) if c["key"].endswith("|m17g")])
+        res = hypogen.screen(self.db, "upbit_listing|ar_1d|m17h", no_net)
+        self.assertEqual((res["verdict"], res["n"], res["rule"]), ("SCREEN_PASS", 20, hypogen.RULE_H), res.get("reason"))
+        with open(hypogen.draft(res)) as f:
+            spec = json.load(f)
+        self.assertIn("Upbit (KRW)", spec["claim"])
+        self.assertIn("142", spec["risks"])
+
+    def test_coverage_days_count_each_base_once_per_catalogue(self):
+        d = T(2021, 1, 26, 1)
+        rows = [{"base": "a", "trades": {"min_time": iso(d)}}, {"base": "a", "trades": {"min_time": iso(d + 60)}}]
+        self.assertEqual(coinbase.spike_days([rows] * 9), set())                  # 9 < 10
+        self.assertEqual(coinbase.spike_days([rows] * 10), {"2021-01-26"})
+
+
 class Locked(Base):
     KEY = "spot_listing|ar_1d|m17"
 
