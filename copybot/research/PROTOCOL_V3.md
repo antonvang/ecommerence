@@ -2256,3 +2256,10 @@ intet. Kun beskrivende; intet afgøres eller handles.
    hypotesepipeline læser kun Binance-meddelelser og påvirkes ikke.
 4. **Dækningssiden** viser de fire kilder og `abnormal_move` med friskhedsgrænser efter kildernes takt: Fed 30
    døgn, BLS 14 døgn, ECB og CNBC 3 døgn; Binance-klines 3 timer.
+
+#### Præcisering af ændring 21b (2026-10-24 kl. 14:28, før kode): kun de allerede tilladte værter i denne omgang
+
+Ændringen af sikkerhedstestens værtsliste (`tests/test_lab_safety.py` `ALLOWED_HOSTS`) for `www.ecb.europa.eu` og
+`www.cnbc.com` blev afvist af assistentmiljøets sikkerhedskontrol og er ikke foretaget. Indtil brugeren selv har
+tilføjet de to værter (eller udtrykkeligt bedt om det igen), indsamles kun Fed-pressemeddelelser og BLS' seneste
+nøgletal (punkt 1, allerede tilladte værter); ECB og CNBC står som BLOKERET på dækningssiden.
