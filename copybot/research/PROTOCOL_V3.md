@@ -2755,3 +2755,20 @@ Ingen scannerændring, tærskel, gate, alfa eller lås. Intet deployes.
 4. **R3-udkastet præciseres (indhold uændret):** minutbar k åbner ved T + k min. Signal fra bar 0 (kendt ved T + 1 min).
    Indgang ved lukkekursen for bar 1 (tid T + 2 min). Udgang ved lukkekursen for bar 61 (T + 62 min). Holdetiden er
    altså 60 min.
+
+## Ændring 21p (2026-10-24 kl. 21:22, før kode): målelog i scannerens observationer (brugerens ja)
+
+**Beslutning:** brugeren svarede "Ja til deploy osv" 2026-10-24 ca. kl. 21:20 på listen, hvor implementering af
+målelogen (`research/drafts/MAALELOG_FORSLAG.md`) stod. Ingen tærskel, gate, alfa eller lås ændres; detektorens
+beregning og flag er uændrede.
+
+1. `abnormal_move`'s fælles `payload` (z_1h, z_24h, volumenforhold, præmie) får fra næste deploy disse felter:
+   - `window`: første og sidste bar-åbningstid, antal afkast og antal barer;
+   - `median_qvol_720`: medianen bag volumenforholdet;
+   - `sigma_basis`: antal, Σr og Σr² for σ;
+   - `quality`: dataalder og manglende barer i vinduet;
+   - `flags`: metrik, værdi, tærskel og regel for hvert flag;
+   - `version`: detektor og git-commit, læst én gang pr. proces;
+   - `klines_sha256`: sha256 af det rå klines-svar.
+2. Ingen rådata gemmes (ca. 0,4 KB pr. observation). Eksisterende felter bevares uændret.
+3. Flagrapporten bruger `median_qvol_720`, når feltet findes, og den afledte median ellers.
