@@ -1,6 +1,6 @@
 # F3 `fregime` (D2): præcis definition, sammenligning, bias og testplan — udkast, BLOKERET
 
-Skrevet 2026-10-24 kl. 13:15 af Claude. Familiefilen er `research/families/drafts/fregime.json` (status BLOKERET:
+Skrevet 2026-10-24 kl. 13:13 af Claude. Familiefilen er `research/families/drafts/fregime.json` (status BLOKERET:
 ændring 8 punkt 3, én åben familie pr. mekanisme-tag; fcarry er åben til sit fremadvindue slutter). Ingen
 registrering, lås, godkendelse eller alfa. **Ændring 8 punkt 4 forbyder udkastet at beregne afkast eller signaler
 på data fra noget vindue**, så denne plan indeholder ingen backtest og ingen optælling af, hvor tit porten var åben.
