@@ -2798,3 +2798,32 @@ historisk forespørgsel: hver kørsel henter kun de seneste 3 døgn.
    gemmes som `onchain_error` og stopper intet andet.
 4. **Brug:** ingen før en senere dateret ændring med en hypotese (mekanisme: udbudschok via børsindstrømning). Data
    fra før 2026-10-24 bruges aldrig fra denne kilde (revideret, ikke point-in-time). Dækningssiden viser kilden.
+
+## Ændring 21r (2026-10-24 kl. 21:47, før kode): målingernes integritet — én observation pr. markedstime i R1, on-chain-pollinglog og as-of-rekonstruktion
+
+**Beslutning:** Claude under brugerens mandat (master follow-up 8 "MEASUREMENT INTEGRITY" 2026-10-24 ca. kl. 21:45).
+Integritetsrettelser, ingen ny hypotese. Ingen tærskel, gate, alfa, omkostningskrav eller scanneradfærd ændres. Intet
+deployes uden brugerens ja.
+
+1. **Fejl i R1 (fundet i dag, skrivebeskyttet optælling):** `costreport` talte en række pr. scanning. Genstarter og
+   deploys scannede samme markedstime igen: 96 `book_rt`-rækker, men kun 48 forskellige markedstimer (36 dubleret).
+   Kravet "≥ 100 timeobservationer" (21l) betyder forskellige markedstimer.
+   - **Rettelse:** R1 bruger én observation pr. (marked, `open_s`): den tidligste scanning af timen (normalt kl. HH:02,
+     den planlagte). Antallet af kasserede dubletter vises.
+   - Det samme gælder `costrule.observed_q95`. Ingen afgørelse er truffet på de dublerede tal.
+2. **On-chain (21q):**
+   - Hver indsamling skriver nu observationen `onchain_poll` med hentetid, antal rækker, seneste dato pr. serie,
+     antal nye værdier og antal revisioner. Et tomt svar står som 0 rækker, ikke som en værdi. Huller og leverandørens
+     forsinkelse kan derfor ses bagefter.
+   - Funktionen `onchain.asof(db, t)` rekonstruerer præcis det, systemet kendte på tidspunkt t: første værdier med
+     `usable_from` ≤ t, med revisioner hentet ≤ t lagt ovenpå.
+   - Ifølge 21q punkt 4 bruges kun datoer fra og med 2026-10-24 (de 18 værdier fra 21.–23. oktober er pilotdata, hentet
+     efter at de kunne være revideret).
+3. **Målelogens integritet (kontrolleret i dag, ingen kodeændring nødvendig):**
+   - Alle registrets tabeller er append-only (triggere afviser UPDATE og DELETE) og hash-kædede, og scannerens
+     observationer skrives i én transaktion (en afbrudt scanning efterlader ingen halve rækker).
+   - Identiteten er (marked, `open_s`, metrik). Hver flagværdi bærer sin tærskel og regel, og hver observation sin
+     commit, så en senere kode- eller tærskelændring ikke kan ændre tolkningen af ældre målinger lydløst.
+   - Uafhængig reproduktion kræver de rå klines, som ikke gemmes; kun `klines_sha256`. Uden ny forespørgsel kan man kun
+     kontrollere den interne konsistens: z = r/σ fra `sigma_basis`, volumenforhold = q/median og flag = værdi mod
+     tærskel.
