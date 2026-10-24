@@ -427,6 +427,16 @@ noget, ændrer en gate eller rører indsamleren:
   dem. Feltet "Jobs i kø" viser klar og planlagt hver for sig ("0 klar", "3 planlagt · næste 2027-05-07"), fordi
   de tre jobs er fremadtestenes afgørelser i 2027, ikke en fastlåst kø.
 
+### Git-cachen husker ikke en fil, der netop er ændret ("racy"), rettelse (tilføjet 2026-10-24 kl. 14:14, før kode)
+
+Fundet af den fulde suite 2026-10-24 (testen `GitCaches.test_a_working_file_is_hashed_again_after_any_write` fejlede
+under belastning): `registry.hash_object` (d66304a) husker `git hash-object` pr. (inode, størrelse, mtime, ctime).
+Linux sætter filtider med et groft ur (millisekunder), så en fil, der skrives om inden for samme tik med samme
+størrelse, har samme nøgle, og cachen ville give den gamle blob. For familiegodkendelsens bundne filer kunne en netop
+ændret fil i princippet se uændret ud. Rettelse (git's egen "racy clean"-regel): en hash huskes kun, når filens mtime og
+ctime ligger mindst 2 sekunder før beregningen; ellers regnes den igen ved hvert kald. Ingen binding, tærskel eller
+gate ændres; svaret bliver aldrig forkert, kun lidt langsommere for en fil, der lige er skrevet.
+
 ### En stoppet kontos "dage" er dens levetid, ikke alderen i dag (tilføjet 2026-10-24 kl. 13:38, før kode)
 
 `command.lane_view` regnede `days` = (nu − start) også for stoppede konti, så de tre `scanner_premium`-konti viste 4,2–4,5
