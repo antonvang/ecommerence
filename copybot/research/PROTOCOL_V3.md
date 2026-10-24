@@ -2386,3 +2386,46 @@ beskrivende: intet handles, ingen kandidat oprettes, ingen tærskel i ændring 2
 m21c testede kun |z_1t| ≥ 4. En kryptopost uden z_1t-flag (kun z_24t, eller volumen med en prisbevægelse) får derfor
 `NOT_SCREENED` med `next` = "ikke screenet; en screening kræver en dateret ændring", ikke `REJECT_TESTED`.
 Rækkefølgen er: REJECT_NOT_DIRECTIONAL, REJECT_ILLIQUID, REJECT_TESTED, NOT_SCREENED (krypto), FORWARD_ONLY (TradFi).
+
+## Ændring 21f (2026-10-24 kl. 17:40, før kode og før nogen beregning): tre nye hypotesefamilier screenes i explore0 (metode m21f)
+
+**Beslutning:** Claude under brugerens mandat (master follow-up "AGGRESSIVE DISCOVERY, FAST REJECTION" 2026-10-24,
+punkt 3: mindst tre reelt forskellige familier). Udforskning, aldrig bevis. Ingen gate, alfa, periode, kandidat eller
+lås i andre ændringer ændres. Den efterfølgende 4σ-fald-idé (`research/drafts/DROP4S_BESLUTNINGSOPLAEG.md`) er
+**ikke** blandt dem; den venter på brugerens beslutning.
+
+**Fælles regler (som ændring 21c, medmindre andet står):** data kun via `hypogen.Reader("explore0")` (2020-03..2021-12,
+kun cache, intet netværk; læseren afviser alt andet og alt fra 2024-01-01). Universe: ændring 21c punkt 1 (de cachede
+USD-M `<mønt>USDT`, undtagen BTCDOMUSDT). σ = standardafvigelsen af de 720 foregående timeafkast (mindst 600 afkast
+mellem på hinanden følgende barer). Indgang P0 = lukkekursen for bar h+1, udgang = lukkekursen for bar h+25 (24 t).
+Klynger pr. UTC-døgn for hændelsestimen h; tosidet fortegnsskift-test på klyngeværdierne (20 000 træk, seed 7).
+**SCREEN_PASS** kræver alle: mindst 15 klynger (ellers UNTESTABLE); p ≤ 0,005; samme fortegn i 2020 og 2021 (hver
+mindst 5 klynger); placebo (samme mønt/hændelse og retning, h − 30 døgn) med p > 0,05 og mindst 15 klynger;
+|gennemsnit af klyngeværdier| ≥ familiens omkostningskrav. Ellers SCREEN_FAIL med årsag.
+**Omkostningskrav (strengere end ændring 17's 0,46 %, fordi alt-perps koster mere;
+`research/studies/ANALYSE_2026-10-24.md` afsnit 10 målte en rundtur på ~55–65 bp ved 5 000 USD):** én alt-perp
+0,65 %; lang/kort-kurv mod BTC 1,11 % (0,65 % + 0,46 %).
+
+1. **Familie A — tværgående (`btc_lead|alt_excess_24h|m21f`).** Hændelse: time h, hvor BTCUSDT har |r_h/σ| ≥ 3; højst
+   én pr. 24 t. s = fortegnet af BTC's r_h. For hver anden mønt c med kurs ved bar h+1 og h+25:
+   x_c = ln(C_c,h+25 / C_c,h+1) − ln(B_h+25 / B_h+1) (BTC = B). Hændelsens y = s · gennemsnittet af x_c (ligevægtet).
+   Spørgsmål: fortsætter alt-mønternes merafkast over BTC i BTC's retning (langsom spredning) eller vender det? Krav
+   1,11 %. Mønternes samtidige merafkast i time h vises kun beskrivende.
+2. **Familie B — volatilitetsregime (`squeeze_break|cont_24h|m21f`).** Hændelse på mønt c: kompression
+   σ_72 / σ ≤ 0,5 (σ_72 = standardafvigelsen af de 72 timeafkast før h, mindst 65) og udbrud |r_h/σ| ≥ 2,5; højst én pr.
+   mønt pr. 24 t. y = s · ln(C_h+25 / C_h+1). Spørgsmål: fortsætter et udbrud efter en stille periode? Krav 0,65 %.
+   Beslægtet med m21c (fortsættelse efter bevægelser, SCREEN_FAIL). Det nye er betingelsen på det forudgående regime og
+   den lavere tærskel; det er klassificeret med information fra før h.
+3. **Familie C — katalysator (`catalyst_move|cont_24h|m21f`).** Hændelse: m21c's hændelser (|r_h/σ| ≥ 4, højst én pr.
+   mønt pr. 24 t), hvor en Binance-meddelelse i registret (news/1, kilde www.binance.com, alle kategorier) nævner
+   mønten (`coins`) med udgivelsestid (`published_ts`) i [h − 24 t, h + 1 t]. Nyheden er altså offentlig før timens
+   slutning og før indgangen ved h+2 t (også med bagudhentningens 1 t-forsinkelse, ændring 16 punkt 3).
+   y = s · ln(C_h+25 / C_h+1). Spørgsmål: fortsætter bevægelser med en dateret katalysator (underreaktion på nyheder)?
+   Krav 0,65 %. Hændelser uden katalysator er næsten m21c's (allerede testet) og testes ikke; deres antal vises.
+4. **Registrering:** alle tre resultater, også negative, committes som `research/studies/DISCOVERY_m21f.json` og `.md`
+   med fillistens og hændelseslisternes sha256 og kodens commit. En nøgle screenes aldrig igen under m21f.
+5. **Efter en SCREEN_PASS:** intet automatisk. En måling kræver en dateret LÅS i ændring 17's α_k-række (næste
+   α = 0,05 · 2⁻⁵ = 0,0015625, verificeret i `hypogen.measure_locked`) og brugerens beslutning, fordi rækken næsten er
+   brugt op.
+6. **Aldrig:** ordrer, papirkonti, familier efter ændring 8, alfa, train3, validation3, holdout 2024, data fra 2025 og
+   frem, netværk, `pm_lp`.
