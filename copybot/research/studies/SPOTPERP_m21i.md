@@ -37,7 +37,8 @@ billede som 4σ-fald og m21h: på hændelsesniveau ligner det noget, men det for
 | Efter terciler af døgnets realiserede volatilitet (inden for mønten) | lav 0,50 %, mellem 0,77 %, høj 1,29 % |
 
 **Pålidelighed: lav.** Estimatoren er bygget til dagsdata. På timebarer opfanger den intradag-volatilitet: niveauerne
-(50–130 bp) er langt over de bogspreads, der er målt i dag (median under 5 bp i halvt spread). Kun retningen er
+(50–130 bp) er langt over de bogspreads, der er målt i dag (`COSTS_2026-10-24.json`: helt spread median 4,0 bp,
+90 %-fraktil 8,2 bp, 517 krypto-perps). Kun retningen er
 informativ: estimerede handelsomkostninger stiger stærkt med volatilitet og på dage med ekstreme bevægelser, netop
 der hvor m21c- og m21h-mønstrene var stærkest pr. hændelse. **Konsekvens:** et signal, der lever på ekstreme dage,
 skal bære højere omkostninger end et roligt gennemsnit; et fast eller rent omsætningsbaseret krav undervurderer dem.
