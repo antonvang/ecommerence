@@ -108,6 +108,29 @@ class ReportVerify(Base):
         self.assertEqual(rc, 1)
         self.assertRegex("\n".join(lines), r"price/basis residual differs from the mid-based price P&L by [\d.]+ USD \(21t\)")
 
+    def test_ordering_and_traceability_violations_are_named(self):          # amendment 21u
+        con = reportcheck._ro(self.db.path)
+        end = NOW + 86400
+        self.assertTrue(all(n == 0 for n, _ in reportcheck.ordering(con, self.led, end).values()))
+        con.close()
+        t = self.db.one("SELECT MIN(ts) FROM sim_fills WHERE exp_id=?", self.led)[0]
+        self.db.append("sim_orders", order_id="late", exp_id=self.led, ts=t + 5, instrument="BBBUSDT", side="buy",
+                       qty=1.0, limit_px=None, style="taker", reduce_only=0, signal_ref=None, cost_model={})
+        self.db.append("sim_fills", fill_id="late|0", order_id="late", exp_id=self.led, ts=t, instrument="BBBUSDT",
+                       side="buy", px=100.0, qty=1.0, fee=0.0, slippage=None, liquidity="taker", mid=100.0,
+                       book_ts=t + 200.5)
+        con = reportcheck._ro(self.db.path)
+        got = reportcheck.ordering(con, self.led, end)
+        con.close()
+        for k in ("order before fill", "taker fill at its order's time", "book read before the fill",
+                  "order has a signal_ref"):
+            self.assertEqual(got[k], (1, "late" if k == "order has a signal_ref" else "late|0"), k)
+        self.assertEqual(got["book at most 61 s old"][0], 0)                       # a future book is not "old"
+        self.record()
+        rc, rows, lines = self.run_check()
+        self.assertEqual(rc, 1)
+        self.assertIn("order before fill: 1 violation(s), first late|0 (21u)", "\n".join(lines))
+
     def test_no_report_is_a_failure(self):
         rc, rows, lines = self.run_check()
         self.assertEqual((rc, rows), (1, {"a recorded report": False}))

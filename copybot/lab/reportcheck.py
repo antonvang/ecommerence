@@ -42,6 +42,29 @@ def _close(a, b):
     return a is not None and b is not None and abs(a - b) <= TOL * max(1.0, abs(a), abs(b))
 
 
+BOOK_MAX_AGE_S = 60 + 1                                # risk DEFAULTS data_max_age_s + 1 s rounding (21u)
+
+
+def ordering(con, led, end):
+    """21u: timestamp ordering and traceability of one account's orders and fills before `end`.
+    Returns {check: (violations, first example)}."""
+    rows = con.execute("SELECT f.fill_id, f.ts fts, f.book_ts, f.liquidity, o.order_id, o.ts ots, o.signal_ref "
+                       "FROM sim_fills f LEFT JOIN sim_orders o ON o.order_id=f.order_id "
+                       "WHERE f.exp_id=? AND f.ts<?", (led, end)).fetchall()
+    bad = {"order before fill": [r["fill_id"] for r in rows if r["ots"] is not None and r["ots"] > r["fts"]],
+           "taker fill at its order's time": [r["fill_id"] for r in rows if r["liquidity"] == "taker" and
+                                              r["ots"] is not None and r["fts"] != r["ots"]],
+           "book read before the fill": [r["fill_id"] for r in rows if r["book_ts"] is not None and
+                                         int(r["book_ts"]) > r["fts"]],
+           "book at most 61 s old": [r["fill_id"] for r in rows if r["book_ts"] is not None and
+                                     r["fts"] - r["book_ts"] > BOOK_MAX_AGE_S],
+           "fill has an order": [r["fill_id"] for r in rows if r["order_id"] is None]}
+    orders = con.execute("SELECT order_id FROM sim_orders WHERE exp_id=? AND ts<? AND (signal_ref IS NULL OR "
+                         "signal_ref='')", (led, end)).fetchall()
+    bad["order has a signal_ref"] = [r["order_id"] for r in orders]
+    return {k: (len(v), v[0] if v else None) for k, v in bad.items()}
+
+
 def expected(con, day):
     """Every account of the day recomputed: started before the day ended and not retired before it began."""
     a = _day_start(day)
@@ -86,7 +109,7 @@ def expected(con, day):
                 + (mark["equity"] - mark["cash"])
             cash["price_gap"] = resid - indep
         out[led] = {"equity": equity, "net": equity - capital, "funding": funding, "fees": fees,
-                    "max_drawdown": dd or 0.0, "status": status, "cash": cash}
+                    "max_drawdown": dd or 0.0, "status": status, "cash": cash, "ordering": ordering(con, led, end)}
     return out
 
 
@@ -127,6 +150,9 @@ def checks(db_path, day=None, artifacts=None):
                 bad.append(f"status {r.get('status')!r} vs {w['status']!r}")
             if w["cash"] is not None and not _close(w["cash"]["marked"], w["cash"]["replayed"]):
                 bad.append(f"marked cash {w['cash']['marked']} vs replayed {w['cash']['replayed']}")
+            for check, (n, first) in w["ordering"].items():
+                if n:
+                    bad.append(f"{check}: {n} violation(s), first {first} (21u)")
             if w["cash"] is not None and abs(w["cash"].get("price_gap", 0.0)) > PRICE_GAP_USD:
                 bad.append(f"price/basis residual differs from the mid-based price P&L by "
                            f"{w['cash']['price_gap']:.4f} USD (21t)")
