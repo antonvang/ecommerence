@@ -2827,3 +2827,23 @@ deployes uden brugerens ja.
    - Uafhængig reproduktion kræver de rå klines, som ikke gemmes; kun `klines_sha256`. Uden ny forespørgsel kan man kun
      kontrollere den interne konsistens: z = r/σ fra `sigma_basis`, volumenforhold = q/median og flag = værdi mod
      tærskel.
+
+## Ændring 21s (2026-10-24 kl. 22:06, før kode): papirregnskabet — gebyret ved en positionsvending fordeles forholdsmæssigt
+
+**Beslutning:** Claude under brugerens mandat (master mission "COMPLETE, SELF-CRITICAL MARKET RESEARCH AND
+EXECUTION-REALITY SYSTEM" 2026-10-24 ca. kl. 22:00). En regnskabsrettelse. Ingen gate, tærskel, risikoregel, alfa
+eller kasse ændres.
+
+1. **Fund (uafhængig orakeltest, `tests/test_lab_paper_oracle.py`):** over tilfældige, seedede fill-sekvenser stemmer
+   `PaperEngine` med en simpel gennemsnitsprismodel for kasse, positioner, basis, urealiseret P&L og equity-
+   invarianten (equity = kapital + lukket P&L − gebyrer + urealiseret). P&L pr. handel afviger dog ved en
+   **positionsvending** (et fill, der lukker en position og åbner den modsatte): hele fill'ets gebyr lægges på den
+   lukkede handel, og den nye handel starter uden sin andel. Summen er korrekt; fordelingen mellem de to handler er
+   forkert.
+2. **Betydning:** `trades` bruges af risikobremsen for tabende handler (`risk.after_trade_closed`). I produktionen er
+   der **1 vending ud af 1 972 fills**: `FWD_E_xs_momentum_p2` DOTUSDT (ts 1792368017). Den lukkede handel bar
+   0,579 USD for meget gebyr, og den nye handel 0,579 USD for lidt. Kasse, equity og nattens afstemning er
+   uberørte.
+3. **Rettelse:** gebyret for et vendende fill fordeles efter mængde: lukket mængde / fill-mængde til den lukkede
+   handel, resten til den nye. Ledgeren beregnes altid fra fills, så den historiske handel vises fremover med den
+   rigtige fordeling. Risikobeslutninger, der allerede er truffet og registreret, ændres ikke (de står i loggen).
