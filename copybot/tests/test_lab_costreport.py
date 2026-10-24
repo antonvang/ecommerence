@@ -40,6 +40,17 @@ class Report(unittest.TestCase):
         self.assertEqual(x["move_hours"]["n"], 2)                                  # |z| >= 2 and a flag
         self.assertAlmostEqual(x["model_rt_median"], m21iscreen.rt_est(24e6))
         self.assertIsNotNone(r["markets"]["BTCUSDT"]["median_ci95_day_bootstrap"])
+        # 21l: half of XAU's books are missing (too thin) -> the censored median is the upper bound (inf)
+        self.assertEqual(x["median_upper_missing_as_inf"], float("inf"))
+        self.assertAlmostEqual(x["bp"]["median"], 0.2)
+        self.assertEqual(x["conclusion"], "too few data")                          # 2 days, 48 obs, 2 move hours
+        self.assertAlmostEqual(r["markets"]["BTCUSDT"]["total_round_trip_bp_with_fees"], 10.01)
+        self.assertIn("never added", " ".join(r["notes"]))
+
+    def test_sufficiency_is_fixed_in_advance(self):
+        self.assertTrue(costreport.sufficient({"days": 7, "n": 100}, {"n": 10}))
+        self.assertFalse(costreport.sufficient({"days": 7, "n": 100}, {"n": 9}))
+        self.assertFalse(costreport.sufficient({"days": 6, "n": 500}, {"n": 50}))
 
     def test_reads_only(self):
         self.add(T0, "BTCUSDT", "crypto", 1e-6)

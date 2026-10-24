@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import collections
 import json
+import math
 import random
 import sqlite3
 import statistics
@@ -21,6 +22,19 @@ from lab import m21iscreen, moves
 
 DAY = 86400
 DRAWS, SEED, MOVE_Z = 2000, 7, 2.0
+MIN_DAYS, MIN_OBS, MIN_MOVE = 7, 100, 10                      # 21l point 1, fixed before the data
+FEE = {"crypto": 0.0005, "tradfi": 0.0004}                    # taker per side (2026 standard; TradFi promo, 21g)
+NOTES = ["book_rt = (buy VWAP - sell VWAP) / mid for 5 000 USD each way: spread and slippage, no fees",
+         "total round trip = book_rt + 2 x taker fee; spread is shown separately and never added to book_rt",
+         "funding is not an order cost (it is netted in outcomes where a position is held)",
+         "5 000 USD each way = the size of the 21i RT_est model",
+         "sampled at HH:02 after a closed hour (when the scanner would trade), not inside a move",
+         "missing book = too thin for 5 000 USD: median_upper_missing_as_inf is the upper bound",
+         "hours on one UTC day are not independent: the median interval bootstraps days"]
+
+
+def d_class(rs):
+    return rs[0]["class"] if rs else "crypto"
 FINAL_AFTER_S = 7 * DAY
 
 
@@ -66,9 +80,20 @@ def describe(rs):
     vals = sorted(r["rt"] for r in rs if r["rt"] is not None)
     med, ci = med_ci(rs)
     q = statistics.quantiles(vals, n=4) if len(vals) >= 4 else None
-    return {"n": len(rs), "missing_book": sum(1 for r in rs if r["rt"] is None), "days": len({r["ts"] // DAY for r in rs}),
-            "median": med, "median_ci95_day_bootstrap": ci, "q25": q[0] if q else None, "q75": q[2] if q else None,
-            "max": vals[-1] if vals else None}
+    censored = sorted(r["rt"] if r["rt"] is not None else math.inf for r in rs)      # 21l: a thin book is expensive
+    bp = (lambda x: None if x is None else (math.inf if x == math.inf else round(x * 1e4, 3)))   # noqa: E731
+    out = {"n": len(rs), "missing_book": len(rs) - len(vals), "days": len({r["ts"] // DAY for r in rs}),
+           "median": med, "median_ci95_day_bootstrap": ci, "q25": q[0] if q else None, "q75": q[2] if q else None,
+           "max": vals[-1] if vals else None,
+           "median_upper_missing_as_inf": statistics.median(censored) if censored else None}
+    out["bp"] = {k: bp(out[k]) for k in ("median", "q25", "q75", "max", "median_upper_missing_as_inf")}
+    out["bp"]["median_ci95"] = [bp(x) for x in ci] if ci else None
+    return out
+
+
+def sufficient(d, moved):
+    """21l point 1: >= 7 days, >= 100 hourly observations and >= 10 move hours, else 'too few data'."""
+    return d["days"] >= MIN_DAYS and d["n"] >= MIN_OBS and moved["n"] >= MIN_MOVE
 
 
 def report(q, now=None):
@@ -85,15 +110,20 @@ def report(q, now=None):
         model = [m21iscreen.rt_est(r["v24"]) for r in mr if r["v24"]]
         moved = [r for r in mr if r["flagged"] or (r["z"] is not None and abs(r["z"]) >= MOVE_Z)]
         calm = [r for r in mr if r not in moved]
-        markets[sym] = {**describe(mr), "model_rt_median": statistics.median(model) if model else None,
-                        "measured_over_model": (describe(mr)["median"] / statistics.median(model))
-                        if model and describe(mr)["median"] is not None and statistics.median(model) > 0 else None,
-                        "move_hours": describe(moved), "other_hours": describe(calm)}
+        d, dm = describe(mr), describe(moved)
+        markets[sym] = {**d, "model_rt_median": statistics.median(model) if model else None,
+                        "measured_over_model": (d["median"] / statistics.median(model))
+                        if model and d["median"] is not None and statistics.median(model) > 0 else None,
+                        "move_hours": dm, "other_hours": describe(calm),
+                        "conclusion": "enough data" if sufficient(d, dm) else "too few data",
+                        "total_round_trip_bp_with_fees": None if d["median"] is None else
+                        round((d["median"] + 2 * FEE[d_class(mr)]) * 1e4, 3)}
     span = (max(r["ts"] for r in rs) - min(r["ts"] for r in rs)) if rs else 0
     weekends = len({r["ts"] // (7 * DAY) for r in rs if r["off"] and r["class"] == "tradfi"})
-    return {"rule": "research/PROTOCOL_V3.md amendment 21k point 1", "generated": now, "scans": len({r["ts"] for r in rs}),
+    return {"rule": "research/PROTOCOL_V3.md amendments 21k point 1 and 21l point 1", "generated": now, "scans": len({r["ts"] for r in rs}),
             "span_hours": span / 3600, "status": "FINAL" if span >= FINAL_AFTER_S and weekends >= 2 else "PRELIMINARY",
             "label": "OBSERVED book cost for 5 000 USD (fees excluded); the model column is the 21i ESTIMATE",
+            "notes": NOTES,
             "groups": {k: describe(v) for k, v in sorted(groups.items())}, "markets": markets}
 
 
