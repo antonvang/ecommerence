@@ -427,6 +427,31 @@ noget, ændrer en gate eller rører indsamleren:
   dem. Feltet "Jobs i kø" viser klar og planlagt hver for sig ("0 klar", "3 planlagt · næste 2027-05-07"), fordi
   de tre jobs er fremadtestenes afgørelser i 2027, ikke en fastlåst kø.
 
+### Skrevne klokkeslæt kontrolleres mod commit-tiden; erratum for 2026-10-23 (tilføjet 2026-10-24 kl. 13:24, før kode)
+
+Fejlen: klokkeslæt i daterede noter blev skrevet efter skøn (ud fra planlagte vækninger), ikke aflæst. Fem gange
+2026-10-24 lå den skrevne tid efter den commit, der skrev den (rettet: 8231fee, 1190b74, b93e0a6 og to før push);
+`scripts/check_note_times.py` (git blame, kun læsning) finder yderligere 8 linjer fra 2026-10-23, 2–17 minutter efter
+deres commit. Klassifikation: forfatterfejl i prosa ("fremtidigt tidsstempel"), ikke en fejl i lab-data: ingen
+signaler, funding, hændelsesrækkefølge eller P&L bruger disse tekster, og "før kode" afgøres af commit-rækkefølgen,
+som er intakt i alle 8 tilfælde. De 8 historiske linjer omskrives ikke (en af dem står i en ændring i PROTOCOL_V3);
+de korrekte tider er commit-tiderne:
+
+| Fil | Skrevet | Commit |
+|---|---|---|
+| LINUX_DRIFT.md, `suite_parallel.sh` | 17:45 | 17:44 |
+| LINUX_DRIFT.md, dashboardets top | 16:45 | 16:43 |
+| LINUX_DRIFT.md, falsk grøn for live-kilder | 17:03 | 17:00 |
+| LINUX_DRIFT.md, pengekortene tilbage | 17:20 | 17:11 |
+| LINUX_DRIFT.md, `lab status` senere afgørelse | 21:10 | 21:00 |
+| LINUX_DRIFT.md, fremadtest mod køb-og-hold | 18:15 | 17:58 |
+| LINUX_DRIFT.md, vagten måler pm_lp-dækningen | 17:55 | 17:46 |
+| PROTOCOL_V3.md ændring 11i, "registret til 16:20" | 16:20 | 16:17 |
+
+Ændring: kontrollen bliver en test (`tests/test_note_times.py`), der kører over `research/` for linjer committet fra
+2026-10-24; "kl." skal være ≤ commit-tiden, "ca." må runde højst 5 minutter op. Klokkeslæt aflæses med `date` i samme
+trin, som noten skrives.
+
 ### Dashboardets "Fremadtest (låst)" viser også U1F og M1F (tilføjet 2026-10-24 kl. 12:54, før kode)
 
 Metrikken viste kun H5F og H5X (USD-M-listninger). Ændring, kun visning: `coverage.forward` får en række for M1F
