@@ -427,6 +427,12 @@ noget, ændrer en gate eller rører indsamleren:
   dem. Feltet "Jobs i kø" viser klar og planlagt hver for sig ("0 klar", "3 planlagt · næste 2027-05-07"), fordi
   de tre jobs er fremadtestenes afgørelser i 2027, ikke en fastlåst kø.
 
+### En stoppet kontos "dage" er dens levetid, ikke alderen i dag (tilføjet 2026-10-24 kl. 13:38, før kode)
+
+`command.lane_view` regnede `days` = (nu − start) også for stoppede konti, så de tre `scanner_premium`-konti viste 4,2–4,5
+døgn, skønt de levede fra 10-19 23:24 / 10-20 04:18 / 10-20 05:37 til 10-21 01:42 / 10-22 05:13 / 10-21 19:02 (lokal tid).
+Ændring, kun visning: `days` = ((stop eller nu) − start) / 86 400. Ingen stopregel bruger feltet.
+
 ### Bane-opdelingen adskiller målt bogafstand fra det modellerede slippage-tillæg (tilføjet 2026-10-24 kl. 13:36, før kode)
 
 Målt 2026-10-24 (rå `sim_fills`): `paper.submit_taker` sætter fyldprisen = det gennemgåede bogniveau × (1 ± `extra_slippage`)
