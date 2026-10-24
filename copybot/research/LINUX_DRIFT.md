@@ -627,3 +627,10 @@ holdouten røres ikke; intet genstartes.
   gjaldt kun ændring 17's screening. Den ændrer intet og afgør intet; ingen holdout læses.
   Rettet samme dag kl. 18:40 (før kode): en screenings-PASS, som en låst måling siden har afgjort (4 nøgler), henviser
   nu til målingens afgørelse i stedet for reglen "en LÅS-17-lås, så afgør målingen".
+
+- **2026-10-24 kl. 17:44 (før kode): forskningshukommelsen tager også de committede screeninger med (ændring 21c og 21f).**
+  `python3 -m lab research-memory` læste kun registret, men m21c og m21f er registreret som committede filer
+  (`research/studies/MOVESCREEN_m21c.json`, `DISCOVERY_m21f.json`). Uden dem kunne en ny idé blive afprøvet igen under
+  et nyt navn. Nu læses `research/studies/*_m21*.json`: hver nøgle med dom, n hændelser, n klynger, gennemsnit, p,
+  omkostningskrav, fejlede tjek, sha256 af hændelserne og filen. Gentestreglen er den samme faste regel pr. dom som
+  ændring 17's screening. Kun læsning; den ændrer og afgør intet.
