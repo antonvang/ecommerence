@@ -2380,3 +2380,9 @@ beskrivende: intet handles, ingen kandidat oprettes, ingen tærskel i ændring 2
    - `reason` og `next` som tekst.
 2. **Visning:** feedet viser dommen og forklaringerne ud for "BEVÆGELSE".
 3. **Ændres senere kun ved en ny dateret ændring.** En ny screening, der består, kan ændre en `REJECT_TESTED`-regel.
+
+#### Præcisering af ændring 21e punkt 1 (2026-10-24 kl. 16:06, før kode): `REJECT_TESTED` kun for det, m21c testede
+
+m21c testede kun |z_1t| ≥ 4. En kryptopost uden z_1t-flag (kun z_24t, eller volumen med en prisbevægelse) får derfor
+`NOT_SCREENED` med `next` = "ikke screenet; en screening kræver en dateret ændring", ikke `REJECT_TESTED`.
+Rækkefølgen er: REJECT_NOT_DIRECTIONAL, REJECT_ILLIQUID, REJECT_TESTED, NOT_SCREENED (krypto), FORWARD_ONLY (TradFi).
