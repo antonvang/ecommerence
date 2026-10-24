@@ -427,6 +427,17 @@ noget, ændrer en gate eller rører indsamleren:
   dem. Feltet "Jobs i kø" viser klar og planlagt hver for sig ("0 klar", "3 planlagt · næste 2027-05-07"), fordi
   de tre jobs er fremadtestenes afgørelser i 2027, ikke en fastlåst kø.
 
+### Bane-opdelingen adskiller målt bogafstand fra det modellerede slippage-tillæg (tilføjet 2026-10-24 kl. 13:36, før kode)
+
+Målt 2026-10-24 (rå `sim_fills`): `paper.submit_taker` sætter fyldprisen = det gennemgåede bogniveau × (1 ± `extra_slippage`)
+(bane- og scannerkonti: 0,02 % pr. ben, ændring 11 punkt 4). `lane.decomposition` (12h punkt 3) kalder Σ |px − mid| · qty
+"spread/slippage" og mærker den observeret, men den indeholder tillægget. Ingen dobbelttælling (gebyret står for sig),
+men målt og modelleret er blandet: median pr. ben for de store mønter 3,7 bp (perp) og 5,5 bp (spot), heraf 2 bp model;
+for de tre `scanner_premium`-konti 19,7 og 33,9 bp. Ændring, kun visning: opdelingen får `book` (Σ afstanden fra midten til
+bogniveauet, målt) og `allowance` (Σ tillægget, beregnet af kontoens egen `costs.extra_slippage` fra `lane.started`), som
+summerer til den uændrede `spread_slippage`; dashboardet viser tillægget. Ingen pris, intet gebyr, ingen regel og intet
+resultat ændres.
+
 ### Skrevne klokkeslæt kontrolleres mod commit-tiden; erratum for 2026-10-23 (tilføjet 2026-10-24 kl. 13:24, før kode)
 
 Fejlen: klokkeslæt i daterede noter blev skrevet efter skøn (ud fra planlagte vækninger), ikke aflæst. Fem gange
