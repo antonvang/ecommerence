@@ -14,6 +14,8 @@ import json
 import math
 import statistics
 import time
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 DETECTOR = "abnormal_move"
 BN = "https://fapi.binance.com"
@@ -135,8 +137,9 @@ def book_cost(get, sym):
     buy, sell = walk(asks, SIZE_USD), walk(bids, SIZE_USD)
     if buy is None or sell is None:
         return {"error": "book too thin for 5 000 USD", "spread": (asks[0][0] - bids[0][0]) / mid}
+    fees = TRADFI_FEES if WATCH.get(sym, ("crypto",))[0] != "crypto" else "not included"
     return {"round_trip": (buy - sell) / mid, "spread": (asks[0][0] - bids[0][0]) / mid, "size_usd": SIZE_USD,
-            "fees": "not included (TradFi fee schedule not verified)"}
+            "fees": fees}
 
 
 def news_near(db, sym, t0):
@@ -183,6 +186,25 @@ def macro_near(events, error, hour_open):
     return {"releases": near, **({"error": error} if error else {})}
 
 
+TRADFI_FEES = {"taker": 0.0004, "maker": 0.0, "included_in_round_trip": False,     # amendment 21g point 2
+               "source": "Binance announcement a4c3f1957f2b4e69902985154235c3b1: promotion from 2026-03-31 02:00 UTC "
+                         "until further notice (regular users)"}
+_ET = ZoneInfo("America/New_York")
+
+
+def off_hours(cls, t):
+    """Amendment 21g: the move hour starts in a window where Binance prices the TradFi perp's index from its own order
+    book (Orderbook EWMA): commodities Fri 17:00 - Sun 18:00 ET, FX Fri 17:00 - Sun 17:00 ET, equities Sat-Sun UTC."""
+    if cls == "equity_etf":
+        return time.gmtime(t).tm_wday >= 5
+    reopen = {"commodity": 18, "fx": 17}.get(cls)
+    if reopen is None:
+        return False
+    et = datetime.fromtimestamp(t, _ET)
+    wd, hr = et.weekday(), et.hour + et.minute / 60
+    return (wd == 4 and hr >= 17) or wd == 5 or (wd == 6 and hr < reopen)
+
+
 TAIL_ROUTINE, ILLIQUID_RT = 3, 0.005                      # amendment 21e: fixed before any record was judged
 TESTED = "m21c (ændring 21c): 4σ-timeflag på krypto-perps gav SCREEN_FAIL i explore0 ved 4 og 24 t"
 
@@ -204,6 +226,8 @@ def triage(rec):
     if "macro_release" not in ex and "news" not in ex:
         ex.append("unexplained")
     crypto = rec.get("class") == "crypto"
+    if not crypto and off_hours(rec.get("class"), rec["move_hour_s"]):
+        ex.append("off_hours")
     if "volume_only" in ex:
         v = ("REJECT_NOT_DIRECTIONAL", "kun volumen, ingen prisbevægelse", "ingen")
     elif "illiquid" in ex:
@@ -215,7 +239,9 @@ def triage(rec):
         v = ("NOT_SCREENED", "flaget er ikke screenet (kun z_1h er testet)", "ikke screenet; en screening kræver en "
              "dateret ændring")
     else:
-        v = ("FORWARD_ONLY", "historikken ligger i den reserverede periode (fra 2025)", "udfaldet efter 24 t indsamles; "
+        v = ("FORWARD_ONLY", "historikken ligger i den reserverede periode (fra 2025)" + (
+            "; uden for det underliggende markeds åbningstid (perpens egen ordrebog)" if "off_hours" in ex else ""),
+             "udfaldet efter 24 t indsamles; "
              "en test kræver en dateret lås")
     return {"tails_720h": rec.get("tails_720h"), "explanations": ex, "verdict": v[0], "reason": v[1], "next": v[2],
             "rule": "research/PROTOCOL_V3.md amendment 21e"}

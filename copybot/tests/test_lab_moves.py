@@ -3,6 +3,7 @@ import math
 import os
 import random
 import sys
+import time
 import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -101,6 +102,21 @@ class Triage(unittest.TestCase):
         self.assertEqual(e, ["routine_tail", "macro_release"])                     # news after the hour explains nothing
         self.assertIn("news", self.t(news=[{"published_ts": NOW + 10}])["explanations"])
 
+    def test_tradfi_off_hours_follow_binance_sessions(self):              # amendment 21g
+        import calendar as cal
+        ts = lambda x: cal.timegm(time.strptime(x, "%Y-%m-%d %H:%M"))           # noqa: E731
+        fri_late, sun_1730_et, sat = ts("2026-10-23 21:30"), ts("2026-10-25 21:30"), ts("2026-10-24 12:00")
+        self.assertEqual([moves.off_hours(c, fri_late) for c in ("commodity", "fx", "equity_etf", "crypto")],
+                         [True, True, False, False])
+        self.assertEqual([moves.off_hours(c, sun_1730_et) for c in ("commodity", "fx")], [True, False])
+        self.assertFalse(moves.off_hours("commodity", ts("2026-10-23 20:30")))       # Friday 16:30 ET: open
+        self.assertTrue(moves.off_hours("equity_etf", sat))
+        t = self.t(**{"class": "fx", "move_hour_s": sat})
+        self.assertIn("off_hours", t["explanations"])
+        self.assertEqual(t["verdict"], "FORWARD_ONLY")
+        self.assertIn("åbningstid", t["reason"])
+        self.assertNotIn("off_hours", self.t(move_hour_s=sat)["explanations"])     # crypto trades 24/7
+
     def test_tails_are_counted_in_the_trailing_window(self):
         self.assertEqual(moves.stats(klines(), NOW)["tails_720h"], 0)
 
@@ -132,6 +148,7 @@ class Records(unittest.TestCase):
         self.assertIn("z_1h", p["flags"])
         self.assertIn("BTCUSDT", p["others"])
         self.assertGreater(p["book"]["round_trip"], 0)
+        self.assertEqual(p["book"]["fees"]["taker"], 0.0004)                          # 21g: verified TradFi promo
         self.assertEqual([x["title"] for x in p["news"]], ["Gold slides as the dollar jumps after hot CPI"])
         self.assertEqual(p["triage"]["verdict"], "FORWARD_ONLY")                      # amendment 21e: TradFi
         self.assertIn("news", p["triage"]["explanations"])
