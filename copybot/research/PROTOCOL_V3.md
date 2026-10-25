@@ -3140,3 +3140,72 @@ For råvarer og FX (K2): lukket = `moves.off_hours` (21g, Binances egne vinduer)
 4. **NYSE-kalenderen:** listen kontrolleres i testsuiten mod en uafhængig regelbaseret beregning (NYSE's regler for
    faste helligdage, observerede datoer, påske og tidlige lukninger). Den officielle kalender er stadig ikke hentet,
    så listen forbliver en antagelse, indtil den er kontrolleret.
+
+## Ændring 21z (2026-10-25 kl. 10:26, før kode): weekenddækning for K1/K2, genforsøg i scanneren og kapacitetsstatus
+
+Ændringen beskytter dataindsamlingen til 21y. Den ændrer **ingen** regel i 21y: ikke brugbar-time-reglen, ikke 44 af 48,
+ikke 12 weekender, ikke tests, grænser, omkostninger eller placebo.
+
+### A. Verificeret i dag (primærkilder, ingen markedsdata)
+1. **NYSE-kalenderen** (nyse.com/markets/hours-calendars, hentet 2026-10-25 ca. 09:15 UTC): alle lukkedage i
+   `sessions.NYSE_CLOSED` frem til 2027-06-30 og de tidlige lukninger 2026-11-27 og 2026-12-24 stemmer med NYSE's
+   officielle liste. Antagelsen fra 21y præcisering 3 punkt 4 er dermed kontrolleret.
+2. **Binance-instrumenterne** (`fapi/v1/exchangeInfo`, samme tidspunkt): alle 12 markeder er `TRADING`.
+   BTC/ETH er `PERPETUAL`/`COIN`. De øvrige er `TRADIFI_PERPETUAL` med `underlyingType`:
+   - `COMMODITY`: XAU, XAG, XPT, COPPER, CL, BZ, NATGAS;
+   - `EQUITY`: SPY, QQQ;
+   - `FX`: USDBRL.
+   Det svarer til klasserne i `moves.WATCH`. At aktie-perpens indeks bruger ordrebogs-EWMA i weekenden (21g), er
+   bekræftet af Binance for FX og råvarer; for aktier er det **stadig en antagelse**. Det påvirker ikke K1/K2's
+   definitioner, som bruger NYSE-kalenderen og ikke Binances prisregime.
+
+### B. Hvad kan forhindre 44 af 48 brugbare timer (målt i laboratoriets egne data)
+1. **Netværksudfald:** 2026-10-18..25 er der registreret data_fetch-pauser i 9 episoder. 7 af dem ligger mellem
+   00:00 og 04:31 UTC. Minutserien (`pricing_constraint/2`) viser, at de fleste udfald var under 2,5 minutter
+   (10-24 02:22 og 10-25 03:30 gav intet hul > 150 s). Natten til 10-22 havde huller på 31, 28, 13 og 13 minutter.
+   Scanneren kører kun én gang i timen (HH:02). Fejler hentningen for et marked dér, er timen tabt for det marked;
+   for BTC er den tabt for hele K1.
+2. **Genstart:** en genstart, hvis første scanning først lander efter HH:10, giver en sen time.
+   Driftsreglen (ingen deploy kl. HH:00–HH:12 UTC lørdag–søndag) gælder fortsat.
+3. **Strømsvigt/genstart af værten:** laben starter ikke selv igen (S7-automatik er ikke installeret og røres ikke).
+   Det kan ikke løses i koden; det er en kendt risiko.
+4. **Ingen planlagte job:** ingen crontab og ingen systemd-timere for brugeren. Kun pm-lp-collector kører under systemd
+   (urørt).
+
+### C. Genforsøg inden for vinduet (kun `abnormal_move/1`)
+1. Når den planlagte timescanning har en `error`-observation for et marked i `moves.WATCH` (eller hele detektoren
+   fejlede), scannes **kun de fejlede markeder** igen, mens starttidspunktet er ≤ barens lukning + 480 s:
+   - første genforsøg ca. 120 s efter at timescanningen er færdig, derefter hvert 120. sekund;
+   - højst 3 genforsøg pr. time.
+2. Et genforsøg er en almindelig scanning med egen tid (`ts` = genforsøgets start), og payload får
+   `catch_up: {"after_error_ts": …, "attempt": n}`. 21y C bruger uændret den **tidligste** z_1h-scanning af timen.
+   Fejlscanningen har ingen z_1h-række, så genforsøget bliver timens scanning, hvis det lykkes. 600-sekunders-reglen,
+   look-ahead-værnet og "ingen fejl inden for ±60 s" gælder uændret, og 120 s afstand holder fejlen uden for ±60 s.
+3. Kun hentningsfejl (netværk, HTTP, timeout, for gammel sidste bar) genforsøges, ikke `history_short`.
+   En time, hvor kun ordrebogen fejlede, genforsøges ikke: 21y bruger bogen fra samme scanning, så parret udelukkes
+   som før (`no_book`).
+4. **Forventet bias:** genforsøget udløses af netværket, ikke af markedet. Det ændrer kun, hvilke timer der findes.
+   Antallet af genforsøgte timer rapporteres pr. weekend i datarapporten, så det kan efterprøves.
+5. Genforsøget venter på `STOPPING`, så et stop aldrig blokeres.
+
+### D. Klarhedskontrol før weekenden (kun antal)
+1. `k1k2.preflight` udregner:
+   - om kalenderen dækker næste weekend;
+   - scannerens alder;
+   - brugbare timer i de seneste 72 timer pr. K1-marked (alle timer, ikke kun weekend) og antallet af genforsøg;
+   - om laben er startet inden for den seneste time.
+   Den viser aldrig afkast, middelværdier eller p-værdier.
+2. Fredag fra 12:00 UTC skriver scanneren én hændelse `research.k_preflight` pr. weekend, med status `KLAR` eller
+   `RISIKO` og grundene. Det giver brugeren og vagten ét døgn til at reagere. Grænse for `RISIKO`: under 44/48 af de
+   seneste 72 timers brugbare andel for et K1-marked, eller scanneren er ældre end 2 timer.
+3. `python3 -m lab stop` afviser lørdag–søndag UTC kl. HH:00–HH:12, medmindre `--weekend-ok` gives. Det gælder kun
+   kommandolinjen; brugerens stopknap i web er uændret.
+
+### E. Netværkspauser for papirkonti: ingen ændring
+Pausen fra 03:30 UTC varede 52 minutter, mens selve udfaldet var under 2,5 minutter, fordi ændring 18 kræver 50
+minutters fungerende data. Et kortere krav eller et genforsøg før pausen ville gøre en sikkerhedsregel svagere. Det
+gøres **ikke** uden brugerens ja. Glemte rebalanceringer opfindes ikke bagud.
+
+### F. Kapacitetskurven (21v/21x)
+Et perp-instrument, der **mangler** i `exchangeInfo` (når listen selv er hentet), registreres som `not_trading` med
+status `NOT_LISTED` i stedet for som en hentningsfejl. Tom bog og for tynd bog er uændret (`error` / censureret).
