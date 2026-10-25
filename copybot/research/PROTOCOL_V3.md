@@ -3405,3 +3405,24 @@ aldrig bevis. Ingen gate, alfa, omkostningsregel eller periode ændres. Ingen L�
    udfald er SCREEN_FAIL. Et nulresultat lukker makrosporet på minutniveau.
 9. **Efter en SCREEN_PASS:** intet automatisk. En måling kræver brugerens beslutning og en dateret LÅS (k = 5).
 10. **Aldrig:** ordrer, papirkonti, alfa, holdout 2024, 2025+ og pm_lp.
+
+### Ændring 22 præcisering 2 (2026-10-25 kl. 18:44, brugerens ønske "byg den automatiske K3-audit"): datakvalitet pr. runde
+Kun registrering af antal; ingen afkast. Det ændrer ikke, hvilke runder testen tæller (C–F er uændrede).
+1. **Hvornår:** efter hver rundes rigtige vindue (S + 35 min) og placebo-vindue (S + 2 t + 35 min) skriver den
+   timevise scannerkørsel én række `k3/1` `round_audit` pr. runde og vindue med:
+   - antal målinger, største afstand mellem to målinger og antal markrækker;
+   - dubletter (samme mønt og Binance-tid);
+   - forventede og fundne mønter;
+   - for hver mønt de manglende endepunkter, største endepunktsalder og intervalskift;
+   - kun for det rigtige vindue: ordrebøger ved indgang og udgang (ok, fejl, censur) og udvælgelsestidspunktet i
+     forhold til S;
+   - kun for placebo: om timeafregnede mønter er med.
+2. **Status:** `gyldig`, `ugyldig` (en retning har færre end 3 mønter med begge endepunkter i en gruppe, efter C/E) eller
+   `karantæne`. Karantæne betyder, at koden afviger fra protokollen:
+   - udvælgelsen ligger før S − 35 min eller fra S − 31 min;
+   - en ordrebog er læst uden for sit vindue på 120 s;
+   - en timeafregnet mønt er med i placebo;
+   - et endepunkt er ældre end 90 s.
+   En runde i karantæne udelukkes ikke automatisk. Den skal afgøres i en dateret tekst før testen.
+3. **Visning:** `/api/research` → `k_screens.K3.audit` viser seneste audit og antal pr. status. Runder, der aldrig blev
+   valgt, står allerede som `missed`.
