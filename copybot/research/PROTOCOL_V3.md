@@ -3515,3 +3515,10 @@ position eller sikkerhedskontrol ændres. Kun papirhandel. pm_lp røres ikke.
 4. **Gate-afgørelser** for nye baner står allerede i `lane.skipped`/`lane.started` (`trigger.liquidity`, ændring 25) og
    gentages ikke her.
 5. **Omfang:** ca. én række pr. papirordre (i dag ca. 150–200 pr. døgn).
+
+### Ændring 26 præcisering (2026-10-25 kl. 22:17, før deploy): loggen skrives i sin egen sim-tabel
+Fuld suite fandt, at punkt 1 ville bryde en sikkerhedsinvariant: papirmotoren må kun skrive i `sim_`-tabeller
+(`test_lab_safety`). Testen svækkes ikke. Loggen skrives i stedet i en ny append-only tabel `sim_exec`
+(order_id, exp_id, ts, instrument, payload) med samme hash-kæde og UPDATE/DELETE-forbud som de øvrige tabeller. Det
+gælder også fejlrækken (payload `error`). Indholdet i punkt 1 er uændret. Ingen ændring af pm_lp's database: den
+åbner aldrig `lab.db`.
