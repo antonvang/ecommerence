@@ -716,3 +716,21 @@ holdouten røres ikke; intet genstartes.
     - Kapaciteten deles i likvide og tynde bøger. Tomme og censurerede bøger vises som sådan.
   - **Animation:** kun en kort markering af et nyt flag eller en ny hændelse og glidende talskift. Slås fra ved
     `prefers-reduced-motion`. Data ældre end markedsscannerens grænse vises dæmpet med "forældet".
+
+## 2026-10-25 kl. 10:33 — natten efter 85db130: netværk, afregnet funding og weekenddækning (målt, read-only)
+- **Netværk:** data_fetch-pauser i 9 episoder 2026-10-18..25. 7 af dem ligger kl. 00:00–04:31 UTC (natlige udfald på
+  værten eller linjen; årsag ukendt). Minutserien viser, at de fleste varede under 2,5 min. Natten til 10-22 havde
+  huller på op til 31 min. 03:30-udfaldet i nat: pauser på 3 konti, ophævet automatisk 04:23 UTC efter ændring 18.
+  Selve udfaldet gav intet hul over 150 s i minutserien. Ingen ændring af pausereglen (21z E); det kræver brugerens ja.
+- **Afregnet funding (21y B), audit af alle 31 rækker:**
+  - hver (marked, afregningstid) gemt præcis én gang;
+  - alle tider på 4- eller 8-timersgitteret;
+  - hentet 144–154 s efter afregningen;
+  - `value` = `rate`;
+  - alle ≥ START.
+  Hver afregning, som scannerens egen forudsagte `next_funding_ts` pegede på, findes. Ingen mangler og ingen ekstra.
+  Råvarer afregner hver 4. time; BTC, ETH, SPY, QQQ og USDBRL hver 8. time. Alle 27 TradFi-afregninger var præcis 0.
+  Forudsagt (seneste scan før) og afregnet BTC/ETH ligger inden for ca. 0,002 % af hinanden. Det siger intet om en
+  fordel og bruges ikke som evidens.
+- **Weekenddækning (21z):** ingen crontab og ingen systemd-timere hos brugeren. Laben har ingen autostart (S7, røres
+  ikke). En genstart af værten i en weekend kan derfor koste hele weekenden. Den risiko kan kun brugeren fjerne.
