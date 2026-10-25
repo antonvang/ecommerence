@@ -107,6 +107,43 @@ class CostModel:
     expected_spread: float = 0.0  # fraction; used by the spread-anomaly breaker
 
 
+_EXEC_ERR = {}
+
+
+def _vwap_distance(levels, mid, qty):
+    """(VWAP distance from the mid as a fraction, filled share) for qty walked through `levels` (raw book prices)."""
+    rest, cost, got = qty, 0.0, 0.0
+    for px, size in levels:
+        q = min(rest, size)
+        cost, got, rest = cost + q * px, got + q, rest - q
+        if rest <= 1e-12:
+            break
+    if got <= 0 or mid <= 0:
+        return None, 0.0
+    return abs(cost / got - mid) / mid, got / qty
+
+
+def exec_record(order_id, exp_id, side, qty, book, now, fills, reduce_only):
+    """Amendment 26 point 1: the minimum needed to check one taker order's book and execution later."""
+    mid = book.mid() if book.bids and book.asks else None
+    same, other = (book.asks, book.bids) if side == "buy" else (book.bids, book.asks)
+    d_same, share_same = _vwap_distance(same, mid or 0, qty)
+    d_other, share_other = _vwap_distance(other, mid or 0, qty)
+    got = sum(f["qty"] for f in fills)
+    paid = sum(f["px"] * f["qty"] for f in fills)
+    return {"order_id": order_id, "exp_id": exp_id, "side": side, "qty": qty, "reduce_only": bool(reduce_only),
+            "notional_usd": qty * mid if mid else None, "order_ts": now, "book_ts": book.ts,
+            "book_age_s": None if book.ts is None else now - book.ts,
+            "spread": book.spread() if mid else None, "levels": [len(book.bids), len(book.asks)],
+            "depth_bid_usd": sum(p * q for p, q in book.bids), "depth_ask_usd": sum(p * q for p, q in book.asks),
+            "walk_same_side": d_same, "walk_other_side": d_other,
+            "book_round_trip": d_same + d_other if d_same is not None and d_other is not None and
+            share_same >= 1 - 1e-9 and share_other >= 1 - 1e-9 else None,
+            "filled_share": got / qty if qty else None,
+            "fill_distance": (abs(paid / got - mid) / mid) if got and mid else None,
+            "rule": "research/PROTOCOL_V3.md amendment 26"}
+
+
 @dataclass(frozen=True)
 class Book:
     ts: float
@@ -412,9 +449,26 @@ class PaperEngine:
                                                                       "filled": qty - rest, "simulated": True})
         except sqlite3.IntegrityError:
             return self._existing(order_id)
+        self._exec_log(exp_id, order_id, instrument, side, qty, book, now, fills, reduce_only)       # amendment 26
         self._after(exp_id, book.spread(), costs.expected_spread)
         return {"status": "filled" if rest <= 1e-12 else ("partial" if fills else "unfilled"), "order_id": order_id,
                 "fills": fills, "unfilled": rest, "simulated": True}
+
+    def _exec_log(self, exp_id, order_id, instrument, side, qty, book, now, fills, reduce_only):
+        """Amendment 26: one exec/1 row per taker order, after its transaction; a failure never touches the order."""
+        try:
+            self.db.append("observations", ts=now, detector="exec/1", source="paper", instrument=instrument,
+                           metric="taker_order", value=None, threshold=None, flagged=0,
+                           payload=exec_record(order_id, exp_id, side, qty, book, now, fills, reduce_only))
+        except Exception as e:                                   # noqa: BLE001 - measurement only
+            if now - _EXEC_ERR.get("at", 0) >= 3600:
+                _EXEC_ERR["at"] = now
+                try:
+                    self.db.append("observations", ts=now, detector="exec/1", source="paper", instrument=instrument,
+                                   metric="error", value=None, threshold=None, flagged=0,
+                                   payload={"order_id": order_id, "error": repr(e)[:200]})
+                except Exception:                                # noqa: BLE001
+                    pass
 
     def submit_maker(self, exp_id, order_id, instrument, side, qty, limit_px, book, reduce_only=False, signal_ref=None):
         dup = self._existing(order_id)
