@@ -2,6 +2,7 @@
 reaction rule (s from bar 0, entry bar 1, exit bar 61, nothing before T used), a planted reaction passes, noise fails,
 too few clusters are UNTESTABLE, and the placebo moves 14 days when 7 days earlier was a calendar day."""
 import io
+import json
 import math
 import os
 import random
@@ -71,11 +72,31 @@ class Fetch(unittest.TestCase):
         self.assertTrue(all(("-2020-" in c or "-2021-" in c) and "-2020-01" not in c and "-2020-02" not in c
                             for c in calls))
         self.assertEqual(out["absent"], ["ETHUSDT-1m-2020-03.zip"])               # recorded, never replaced
+        with open(r3.log_path()) as f:
+            log = [json.loads(line) for line in f]
+        self.assertEqual(log[0]["status"], "refused")                             # the early run left a record
+        self.assertEqual(log[1]["counts"], {"fetched": 43, "present": 0, "absent": 1, "failed": 0})
+        self.assertEqual(len(log[1]["files"]["BTCUSDT-1m-2020-03.zip"]["sha256"]), 64)
         self.assertEqual(len(out["fetched"]), 43)
         calls.clear()
         again = r3.fetch(now=r3.FETCH_FROM + 1, get=get)
         self.assertEqual((len(again["present"]), calls), (43, ["https://data.binance.vision/data/futures/um/monthly/"
                                                                "klines/ETHUSDT/1m/ETHUSDT-1m-2020-03.zip"]))
+
+    def test_other_errors_are_recorded_as_failed_and_do_not_stop_the_run(self):
+        def get(u):
+            if "BTCUSDT-1m-2021-07" in u:
+                raise TimeoutError("read timed out")
+            if "ETHUSDT-1m-2020-05" in u:
+                raise urllib.error.HTTPError(u, 503, "busy", None, None)
+            return zipped([(A, 1.0, 1.0)])
+        out = r3.fetch(now=r3.FETCH_FROM, get=get)
+        self.assertEqual(sorted(out["failed"]), ["BTCUSDT-1m-2021-07.zip", "ETHUSDT-1m-2020-05.zip"])
+        self.assertEqual(len(out["fetched"]), 42)
+        self.assertFalse(os.path.exists(r3.path("BTCUSDT", 2021, 7)))                 # nothing put in its place
+        with open(r3.log_path()) as f:
+            last = json.loads(f.readlines()[-1])
+        self.assertEqual(last["files"]["ETHUSDT-1m-2020-05.zip"], {"status": "failed", "error": "HTTP 503"})
 
     def test_bars_read_files_with_and_without_header(self):
         os.makedirs(os.path.join(self.tmp, "klines_1m"))

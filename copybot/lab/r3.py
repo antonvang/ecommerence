@@ -53,31 +53,52 @@ def path(sym, y, m):
     return os.path.join(data.CACHE, "klines_1m", f"{sym}-1m-{y}-{m:02d}.zip")
 
 
+def log_path():
+    return os.path.join(data.CACHE, "klines_1m", "fetch_log.jsonl")
+
+
+def _log(entry):
+    os.makedirs(os.path.dirname(log_path()), exist_ok=True)
+    with open(log_path(), "a", encoding="utf-8") as f:
+        f.write(json.dumps(entry, sort_keys=True) + "\n")
+
+
 def fetch(now=None, get=None):
-    """Point 2: download the missing files; refused before 2026-11-14 00:00 UTC. A 404 is recorded, never replaced."""
+    """Point 2: download the missing files; refused before 2026-11-14 00:00 UTC. A 404 is recorded, never replaced.
+    Every run, a refused one too, appends one entry to fetch_log.jsonl (precision 2026-10-25)."""
     now = time.time() if now is None else now
     if now < FETCH_FROM:
+        _log({"ts": int(now), "status": "refused", "why": "before 2026-11-14 00:00 UTC (amendment 24 point 2)"})
         raise Refused("amendment 24 point 2: no historical request before 2026-11-14 00:00 UTC")
-    out = {"fetched": [], "present": [], "absent": []}
+    out = {"fetched": [], "present": [], "absent": [], "failed": []}
+    files = {}
     for sym in SYMS:
         for y, m in MONTHS:
             p = path(sym, y, m)
+            name = os.path.basename(p)
             if os.path.exists(p):
-                out["present"].append(os.path.basename(p))
+                out["present"].append(name)
+                files[name] = {"status": "present"}
                 continue
-            with families._download_slot():
-                try:
+            try:
+                with families._download_slot():
                     blob = (get or families._urlopen)(url(sym, y, m))
-                except urllib.error.HTTPError as e:
-                    if e.code == 404:
-                        out["absent"].append(os.path.basename(p))
-                        continue
-                    raise
+            except urllib.error.HTTPError as e:
+                key = "absent" if e.code == 404 else "failed"
+                out[key].append(name)
+                files[name] = {"status": key, "error": f"HTTP {e.code}"}
+                continue
+            except Exception as e:                           # noqa: BLE001 - recorded; the next run tries again
+                out["failed"].append(name)
+                files[name] = {"status": "failed", "error": f"{e!r}"[:200]}
+                continue
             os.makedirs(os.path.dirname(p), exist_ok=True)
             with open(p + ".part", "wb") as f:
                 f.write(blob)
             os.replace(p + ".part", p)
-            out["fetched"].append(os.path.basename(p))
+            out["fetched"].append(name)
+            files[name] = {"status": "fetched", "bytes": len(blob), "sha256": hashlib.sha256(blob).hexdigest()}
+    _log({"ts": int(now), "status": "ran", "counts": {k: len(v) for k, v in out.items()}, "files": files})
     return out
 
 
