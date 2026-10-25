@@ -3476,3 +3476,19 @@ pm_lp eller sikkerhedsregel ændres. Kun papirhandel.
    - Tabet kom fra mange handler (17–45 fills) i bøger, der blev dårligere undervejs (første fill ca. 9 bp fra midten,
      gennemsnit ca. 31 bp).
    - Reglen er en forebyggelse fremover, ikke en rettelse af historikken.
+
+### Ændring 25 rettelse (2026-10-25 kl. 22:04): den kontrafaktiske kontrol i punkt 6 var regnet forkert
+- **Fejlen:** punkt 6 brugte afstanden fra midten for **første fill-række** pr. instrument (ca. 9 bp). Men hver række i
+  `sim_fills` er ét bogniveau, og hver ordre gik 3–18 niveauer ned i bogen.
+- **Rigtig opgørelse:** den volumenvægtede afstand pr. ordre ved åbningen er:
+  - EPIC: spot 30,0 bp, perp 21,9 bp;
+  - MITO: spot 29,3 bp, perp 24,0 bp;
+  - HOT: spot 40,9 bp, perp 11,9 bp.
+  Dermed er den anslåede bogrundtur ved åbningen ca. 104–107 bp (2 × summen af de to ben; bogen selv er ikke gemt, så
+  salgssiden ved åbningen er antaget symmetrisk). Det er over grænsen på 46 bp.
+- **Point-in-time** ville reglen derfor have stoppet de tre `scanner_premium`-baner og ingen af de 11 øvrige
+  (11–30 bp). Kontrafaktisk svarer det til −197,7 af −221,2 USD (ca. 89 %). Det er et estimat, ikke en realiseret
+  besparelse. Tilbagetrækningen af "ca. 90 %" i punkt 6 var forkert.
+- **Også rettet:** "mange handler i forringede bøger" var forkert. Hver af de tre baner lavede én runde (åbning og
+  lukning efter 0,4–2,3 t). Tabet er dybden af én ordre på ca. 5 000 USD pr. ben i en tynd bog plus gebyrer.
+- Reglen i punkt 1–5 er uændret.
