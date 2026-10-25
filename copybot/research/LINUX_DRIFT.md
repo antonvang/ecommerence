@@ -734,3 +734,15 @@ holdouten røres ikke; intet genstartes.
   fordel og bruges ikke som evidens.
 - **Weekenddækning (21z):** ingen crontab og ingen systemd-timere hos brugeren. Laben har ingen autostart (S7, røres
   ikke). En genstart af værten i en weekend kan derfor koste hele weekenden. Den risiko kan kun brugeren fjerne.
+
+## 2026-10-25 kl. 13:01 — vagten får komponenten `scanner` (brugerens ja 2026-10-25 ca. kl. 12:50, før kode)
+Brugeren valgte "Vagt: scanner-alarm" (byg, test og genstart vagten én gang). Gennemføres efter
+`research/drafts/OVERVAAGNING_UDKAST_2026-10-25.md` punkt A og testkriterierne der. Kun læsning (mode=ro); vagten
+starter, stopper og genoptager intet. Laben, pm_lp-collectoren, pauseregler og FAIL_CLOSED røres ikke.
+- **Bedømmes kun, når laben kører**, og fleeten har kørt i mindst 5 min. Ellers dømmer komponenten `lab` allerede.
+- **Nede**, når:
+  - seneste `abnormal_move/1`-scanning er over 70 min gammel;
+  - det er lørdag–søndag UTC, klokken er ≥ HH:12, og timens scanning mangler (K1/K2, 21y);
+  - en K3-runde (ændring 22) er nået S − 30 min til S + 35 min uden `selection` eller `missed`.
+- **Fail-closed:** kan databasen ikke læses, er komponenten nede, aldrig ok.
+- **Alarmering:** via vagtens eksisterende kanal (log, statusfil og skrivebordsnotifikation), påmindelse højst hver time.
