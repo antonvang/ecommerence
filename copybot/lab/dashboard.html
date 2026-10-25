@@ -1357,7 +1357,7 @@ function kpis(sel, items){
     requestAnimationFrame(step);
   });
 }
-const usd = (v, d=2) => v == null ? na() : `<span class="${v > 0 ? "pos" : v < 0 ? "neg" : ""}">${v > 0 ? "+" : v < 0 ? "−" : ""}${Math.abs(v).toLocaleString("en-US", {minimumFractionDigits: d, maximumFractionDigits: d})}</span>`;
+const usdW = (v, d=2) => v == null ? na() : `<span class="${v > 0 ? "pos" : v < 0 ? "neg" : ""}">${v > 0 ? "+" : v < 0 ? "−" : ""}${Math.abs(v).toLocaleString("en-US", {minimumFractionDigits: d, maximumFractionDigits: d})}</span>`;
 function eqSpark(rows, cap){
   if (!rows || rows.length < 2) return `<span class="dim">for få marks</span>`;
   const ys = rows.map(r => r.equity), lo = Math.min(cap, ...ys), hi = Math.max(cap, ...ys), w = 110, h = 26, n = ys.length;
@@ -1424,7 +1424,7 @@ function renderMonitor(em){
     {h: "Status", f: r => `<span class="q ${r.status === "stabil" ? "god" : r.status === "utilstrækkelige data" ? "" : r.status === "forringelse mistænkt" ? "begrænset" : "dårlig"}">${esc(r.status)}</span>` + (r.flagged_by.length ? `<div class="dim">udløst af ${esc(r.flagged_by.join(", "))}</div>` : "")},
     {h: "14 døgn as-of", f: r => `<span class="hist">${(r.history || []).map(h => `<i class="${MO_CLS[h.status] || ""}" title="${esc(utc(h.asof))}: ${esc(h.status)} · M1 ${h.measures.M1.n_days ?? 0} døgn · M2 ${h.measures.M2.n_fills ?? 0} fills"></i>`).join("")}</span>`},
     ...M.map(k => ({h: k, num: 1, f: r => { const x = r.measures[k]; return `${mval(x)}<div class="dim">${esc(x.status)} · ${esc(nOf(x))}</div>`; }})),
-    {h: "Funding/døgn", num: 1, f: r => usd(r.descriptive.funding_per_day)},
+    {h: "Funding/døgn", num: 1, f: r => usdW(r.descriptive.funding_per_day)},
     {h: "Signal→ordre (median)", num: 1, f: r => r.descriptive.signal_lag_median_s == null ? na() : dur(r.descriptive.signal_lag_median_s)}],
     L, "Ingen papirkonti.");
   const first = L[0];
@@ -1440,10 +1440,10 @@ function renderEconomy(p){
     Math.abs((s.realized ?? 0) + (s.unrealized ?? 0) - (s.total_pnl ?? 0)) < 0.01 && Math.abs((d.net ?? 0) - (s.total_pnl ?? 0)) < 0.01 && Math.abs(d.price_basis_gap ?? 0) <= 0.01; };
   const ok = S.filter(ident).length, cap = sum(s => s.capital), pnl = sum(s => s.total_pnl);
   kpis("#ec-kpis", [
-    {k: "samlet simuleret P&L", v: pnl, f: x => usd(x), s: `${S.length} konti · sum af P&L, ikke af equity`},
+    {k: "samlet simuleret P&L", v: pnl, f: x => usdW(x), s: `${S.length} konti · sum af P&L, ikke af equity`},
     {k: "gebyrer betalt", v: sum(s => s.fees), f: x => num(x, 2) + " USD", s: "allerede i P&L"},
-    {k: "funding netto", v: sum(s => s.funding), f: x => usd(x), s: "allerede i P&L"},
-    {k: "spread/slippage", v: sum(s => (s.decomposition || {}).spread_slippage), f: x => usd(x), s: "betalt afstand fra midtpris"},
+    {k: "funding netto", v: sum(s => s.funding), f: x => usdW(x), s: "allerede i P&L"},
+    {k: "spread/slippage", v: sum(s => (s.decomposition || {}).spread_slippage), f: x => usdW(x), s: "betalt afstand fra midtpris"},
     {k: "afstemt", v: `${ok} / ${S.length}`, s: "ledger, P&L-identiteter og 21t-kontrol", cls: ok === S.length ? "good" : "bad"}]);
   const rows = S.slice().sort((a, b) => (b.total_pnl ?? 0) - (a.total_pnl ?? 0));
   $("#ec-table").innerHTML = table([
@@ -1453,13 +1453,13 @@ function renderEconomy(p){
     {h: "Equity", num: 1, f: s => { const e = (s.equity || []).slice(-1)[0]; return e ? num(e.equity, 2) : na(); }},
     {h: "Kontanter", num: 1, f: s => num(s.cash, 2)},
     {h: "Positioner", num: 1, f: s => { const e = (s.equity || []).slice(-1)[0]; return e ? num(e.equity - e.cash, 2) : na(); }},
-    {h: "P&L", num: 1, f: s => `${usd(s.total_pnl)}<div class="dim">${s.total_pnl == null ? "" : pct(s.total_pnl / s.capital, 2)}</div>`},
-    {h: "Realiseret", num: 1, f: s => usd(s.realized)},
-    {h: "Urealiseret", num: 1, f: s => usd(s.unrealized)},
+    {h: "P&L", num: 1, f: s => `${usdW(s.total_pnl)}<div class="dim">${s.total_pnl == null ? "" : pct(s.total_pnl / s.capital, 2)}</div>`},
+    {h: "Realiseret", num: 1, f: s => usdW(s.realized)},
+    {h: "Urealiseret", num: 1, f: s => usdW(s.unrealized)},
     {h: "Gebyrer", num: 1, f: s => num(s.fees, 2)},
-    {h: "Funding", num: 1, f: s => usd(s.funding)},
-    {h: "Spread/slip", num: 1, f: s => usd((s.decomposition || {}).spread_slippage)},
-    {h: "Pris/basis", num: 1, f: s => usd((s.decomposition || {}).price_basis)},
+    {h: "Funding", num: 1, f: s => usdW(s.funding)},
+    {h: "Spread/slip", num: 1, f: s => usdW((s.decomposition || {}).spread_slippage)},
+    {h: "Pris/basis", num: 1, f: s => usdW((s.decomposition || {}).price_basis)},
     {h: "Åbne · fills", num: 1, f: s => `${num(s.open_positions, 0)} · ${num(s.fills, 0)}`},
     {h: "Max DD", num: 1, f: s => pct(s.max_drawdown, 2)},
     {h: "Afstemt", f: s => ident(s) ? `<span class="q god">ok</span>` : `<span class="q dårlig" title="${esc(((s.reconciliation || {}).problems || []).join("; "))}">fejl</span>`}],

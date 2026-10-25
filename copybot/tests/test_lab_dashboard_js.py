@@ -111,6 +111,20 @@ class Dashboard(unittest.TestCase):
             with self.assertRaises(ValueError, msg=bad):
                 balance(bad)
 
+    def test_no_top_level_name_is_declared_twice(self):
+        """2026-10-25: two top-level `const usd` made the browser reject the whole script (SyntaxError), so every
+        panel stayed on 'henter ...'. A duplicate let/const/class/function at the top level is always fatal."""
+        seen, dups = {}, []
+        for i, line in enumerate(script().split("\n")):
+            m = re.match(r"(?:const|let|var|class|function|async function)\s+([A-Za-z_$][\w$]*)", line)
+            if m:
+                if m.group(1) in seen:
+                    dups.append((m.group(1), seen[m.group(1)], i))
+                seen[m.group(1)] = i
+        self.assertEqual(dups, [])
+        broken = "const a = 1;\nconst a = 2;"
+        self.assertTrue(re.findall(r"(?m)^const (a)\b", broken).count("a") == 2)        # the pattern sees duplicates
+
     def test_the_whole_script_balances(self):
         self.assertGreater(balance(script()), 500)
 
