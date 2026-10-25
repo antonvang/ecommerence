@@ -3339,3 +3339,13 @@ FAIL_CLOSED, collectoren eller vagten (`lab watch`).
 4. **Omkostningskravet** c_i = max(0,46 %, 2 · (2 · 0,050 % + RT_målt)): 0,46 % er gulvet fra ændring 17/21i.
    Faktoren 2 er 21i's sikkerhedsmargin. 0,050 % er Binances standard-taker for krypto-perps (21i punkt 1).
    RT_målt er indgangsbogens rundtur ved 5 000 USD. Intet heraf ændres efter data.
+
+### 21d præcisering (2026-10-25 kl. 13:10, før FOMC-hændelsen og før rapportkørslen): Fed-data markeres eksplicit
+Kun rapportering; vinduer, kilder og beregninger er uændrede. `newschain` får:
+- `fed_status`: `ok` hvis mindst én Fed-post blev publiceret i [T − 30 min, T + 2 t], ellers `mangler`;
+- `fed_latest_stored`: den nyeste Fed-post, laben har gemt før T + 2 t (publiceringstid og lagringstid). Den mærkes
+  `forældet`, hvis den er publiceret før T − 30 min, og præsenteres aldrig som aktuel;
+- `fed_errors`: antal hentningsfejl for Fed-feedet i [T − 1 t, T + 25 t].
+Målt i dag: Fed-feedet gav HTTP 404 i 3 af ca. 430 kørsler (2026-10-22..25). Samme URL svarede 200 før og efter.
+Feedets nyeste post (2026-10-16 15:00 UTC) er også databasens nyeste. Det er en midlertidig fejl hos kilden. Den kan
+ikke reproduceres, så feedet ændres ikke.
