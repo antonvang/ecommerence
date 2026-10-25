@@ -27,6 +27,7 @@ TABLES = {
     "sim_fills": ("fill_id", "order_id", "exp_id", "ts", "instrument", "side", "px", "qty", "fee", "slippage",
                   "liquidity", "mid", "book_ts"),
     "sim_cancels": ("order_id", "exp_id", "ts", "reason"),
+    "sim_exec": ("order_id", "exp_id", "ts", "instrument", "payload"),                      # amendment 26
     "sim_equity": ("exp_id", "ts", "equity", "cash", "exposure", "peak", "drawdown"),
     "sim_funding": ("exp_id", "ts", "settle_ts", "instrument", "qty", "rate", "price", "amount"),   # amendment 9 s. 2
     "risk_events": ("exp_id", "ts", "rule", "value", "threshold", "action", "detail", "actor"),
@@ -50,6 +51,7 @@ CREATE TABLE IF NOT EXISTS heartbeats(worker TEXT PRIMARY KEY, ts INTEGER, pid I
 CREATE UNIQUE INDEX IF NOT EXISTS sim_orders_oid ON sim_orders(order_id);
 CREATE UNIQUE INDEX IF NOT EXISTS sim_fills_fid ON sim_fills(fill_id);
 CREATE UNIQUE INDEX IF NOT EXISTS sim_cancels_oid ON sim_cancels(order_id);
+CREATE INDEX IF NOT EXISTS sim_exec_exp ON sim_exec(exp_id, id);
 CREATE INDEX IF NOT EXISTS sim_fills_exp ON sim_fills(exp_id, id);
 CREATE INDEX IF NOT EXISTS risk_exp ON risk_events(exp_id, id);
 CREATE INDEX IF NOT EXISTS observations_det ON observations(detector, metric, instrument, ts);

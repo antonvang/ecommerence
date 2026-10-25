@@ -1,4 +1,4 @@
-"""Amendment 26: one exec/1 row per paper taker order - book age, spread, depth, the walk on both sides at the order's
+"""Amendment 26: one sim_exec row per paper taker order - book age, spread, depth, the walk on both sides at the order's
 size, the estimated book round trip, the filled share and the actual fill distance; written after the order and never
 able to change it."""
 import json
@@ -36,8 +36,8 @@ class ExecLog(unittest.TestCase):
         self.db.close()
 
     def rows(self, metric="taker_order"):
-        return [json.loads(r["payload"]) for r in self.db.q("SELECT payload FROM observations WHERE detector='exec/1' "
-                                                            "AND metric=? ORDER BY id", metric)]
+        out = [json.loads(r["payload"]) for r in self.db.q("SELECT payload FROM sim_exec ORDER BY id")]
+        return [r for r in out if ("error" in r) == (metric == "error")]
 
     def test_one_row_with_book_age_spread_depth_and_both_sides(self):
         book = Book(ts=self.clock() - 2, bids=((99.0, 1.0), (98.0, 1.0)), asks=((101.0, 1.0), (102.0, 1.0)))
@@ -68,7 +68,7 @@ class ExecLog(unittest.TestCase):
         real = self.db.append
 
         def broken(table, **row):
-            if table == "observations" and row.get("metric") == "taker_order":
+            if table == "sim_exec" and "error" not in (row.get("payload") or {}):
                 raise RuntimeError("disk full")
             return real(table, **row)
         book = Book(ts=self.clock(), bids=((99.9, 10.0),), asks=((100.1, 10.0),))
@@ -79,6 +79,18 @@ class ExecLog(unittest.TestCase):
         self.assertEqual(self.db.one("SELECT COUNT(*) FROM sim_fills")[0], 2)
         self.assertEqual(len(self.rows("error")), 1)                                 # once an hour
         self.assertIn("disk full", self.rows("error")[0]["error"])
+
+    def test_sim_exec_is_append_only_and_hash_chained(self):
+        import sqlite3
+        book = Book(ts=self.clock(), bids=((99.9, 10.0),), asks=((100.1, 10.0),))
+        self.pe.submit_taker("R", "o7", "X", "buy", 1.0, book)
+        with self.assertRaises(sqlite3.DatabaseError):
+            self.db.con.execute("UPDATE sim_exec SET payload='{}'")
+        with self.assertRaises(sqlite3.DatabaseError):
+            self.db.con.execute("DELETE FROM sim_exec")
+        chains, triggers = self.db.verify()
+        self.assertTrue(triggers)
+        self.assertEqual(chains["sim_exec"], (1, None))
 
     def test_refused_and_duplicate_orders_are_not_logged(self):
         book = Book(ts=self.clock(), bids=((99.9, 10.0),), asks=((100.1, 10.0),))

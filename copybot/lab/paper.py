@@ -455,18 +455,16 @@ class PaperEngine:
                 "fills": fills, "unfilled": rest, "simulated": True}
 
     def _exec_log(self, exp_id, order_id, instrument, side, qty, book, now, fills, reduce_only):
-        """Amendment 26: one exec/1 row per taker order, after its transaction; a failure never touches the order."""
+        """Amendment 26: one sim_exec row per taker order, after its transaction; a failure never touches the order."""
         try:
-            self.db.append("observations", ts=now, detector="exec/1", source="paper", instrument=instrument,
-                           metric="taker_order", value=None, threshold=None, flagged=0,
+            self.db.append("sim_exec", order_id=order_id, exp_id=exp_id, ts=now, instrument=instrument,
                            payload=exec_record(order_id, exp_id, side, qty, book, now, fills, reduce_only))
         except Exception as e:                                   # noqa: BLE001 - measurement only
             if now - _EXEC_ERR.get("at", 0) >= 3600:
                 _EXEC_ERR["at"] = now
                 try:
-                    self.db.append("observations", ts=now, detector="exec/1", source="paper", instrument=instrument,
-                                   metric="error", value=None, threshold=None, flagged=0,
-                                   payload={"order_id": order_id, "error": repr(e)[:200]})
+                    self.db.append("sim_exec", order_id=order_id, exp_id=exp_id, ts=now, instrument=instrument,
+                                   payload={"error": repr(e)[:200]})
                 except Exception:                                # noqa: BLE001
                     pass
 
