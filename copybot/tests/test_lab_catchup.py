@@ -99,6 +99,29 @@ class CatchUp(unittest.TestCase):
         self.assertEqual(scanner.failed_moves(db, NOW), set(moves.WATCH))
 
 
+class Continuity(unittest.TestCase):
+    def test_host_boot_and_scan_gaps_are_recorded_once(self):
+        from lab import events
+        db = DB(":memory:")
+        z = lambda ts: db.append("observations", ts=ts, detector="abnormal_move/1", source="t", instrument="BTCUSDT",
+                                 metric="z_1h", value=0.0, threshold=4, flagged=0, payload={})
+        z(NOW - 3600)
+        self.assertEqual(fleet.continuity(db, NOW, boot=111), {"host_boot": 111})        # first boot time ever seen
+        z(NOW)
+        self.assertEqual(fleet.continuity(db, NOW + 3600, boot=111), {})                 # same boot, no gap
+        z(NOW + 3600)
+        out = fleet.continuity(db, NOW + 4 * 3600 + 30, boot=222)                         # reboot, 2 hours lost
+        self.assertEqual(out["host_boot"], 222)
+        gap = db.one("SELECT payload FROM events WHERE kind='scanner.gap'")[0]
+        self.assertIn('"missed_hours":2', gap)
+        boots = [e for e in events.view(db)["events"] if e["kind"] == "host_boot"]
+        self.assertEqual(len(boots), 1)                                                   # the first sighting is hidden
+        self.assertEqual(boots[0]["evidence"]["hours_without_scan"], 2)
+        self.assertEqual(len([e for e in events.view(db)["events"] if e["kind"] == "scan_gap"]), 1)
+        self.assertIsNone(fleet.host_boot_ts("/nonexistent"))
+        self.assertIsInstance(fleet.host_boot_ts(), (int, type(None)))
+
+
 class Preflight(unittest.TestCase):
     def test_ready_risk_and_one_alert_per_weekend(self):
         db = DB(":memory:")

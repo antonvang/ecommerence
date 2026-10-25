@@ -478,9 +478,44 @@ def catalogue_pass(db):
             pipeline.discover_catalogue(db) + families.discover_all(db)]
 
 
-def scanner_pass(db, clock=time.time, wait=STOPPING.wait):
+def host_boot_ts(path="/proc/stat"):
+    """The host's boot time (btime), or None where it cannot be read."""
+    try:
+        with open(path) as fh:
+            return next((int(line.split()[1]) for line in fh if line.startswith("btime ")), None)
+    except OSError:
+        return None
+
+
+def continuity(db, start, boot=None):
+    """Amendment 23: one system.host_boot event per new boot time and one scanner.gap event per gap of more than
+    3 600 + 600 s between consecutive hourly scans. Records only."""
+    out = {}
+    prev = db.one("SELECT MAX(ts) FROM observations WHERE detector='abnormal_move/1' AND metric='z_1h' AND ts<?",
+                  start)[0]
+    if boot and not db.one("SELECT 1 FROM events WHERE kind='system.host_boot' AND "
+                           "json_extract(payload, '$.boot_ts')=?", boot):
+        known = db.one("SELECT 1 FROM events WHERE kind='system.host_boot'")
+        db.event("system.host_boot", "system:scanner", None,
+                 {"boot_ts": boot, "first_seen": not known, "last_scan_before": prev,
+                  "hours_without_scan": None if prev is None else max(0, (start - prev + 1800) // 3600 - 1),
+                  "rule": "research/PROTOCOL_V3.md amendment 23 point 1"})
+        out["host_boot"] = boot
+    if prev is not None and start - prev > 3600 + 600:
+        db.event("scanner.gap", "system:scanner", None,
+                 {"from_ts": prev, "to_ts": start, "missed_hours": (start - prev + 1800) // 3600 - 1,
+                  "rule": "research/PROTOCOL_V3.md amendment 23 point 2"})
+        out["gap_s"] = start - prev
+    return out
+
+
+def scanner_pass(db, clock=time.time, wait=STOPPING.wait, boot=host_boot_ts):
     from lab import fundsettle, k1k2, scanner
     start = int(clock())
+    try:                                      # amendment 23: records only, never stops the scanner
+        cont = continuity(db, start, boot())
+    except Exception as e:                    # noqa: BLE001
+        cont = {"error": repr(e)[:200]}
     res = scanner.run(db, now=start)
     try:                                      # amendment 21y B: settled funding of the watched markets, forward only
         fs = fundsettle.run(db, scanner.http_get)
@@ -506,6 +541,7 @@ def scanner_pass(db, clock=time.time, wait=STOPPING.wait):
     if isinstance(res, dict):
         res["funding_settled"] = fs
         res["k3_frozen"] = k3_frozen
+        res["continuity"] = cont
         res["catch_up"] = tries
         res["k_preflight"] = alert
     return res

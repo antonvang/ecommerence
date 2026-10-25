@@ -77,6 +77,18 @@ def view(db, now=None):
                     "evidence": {"reasons": p.get("reasons"), "markets": p.get("markets")},
                     "next": "ingen handling" if p.get("status") == "KLAR" else
                     "ret årsagen før lørdag 00:00 UTC; protokollen ændres ikke (21z D)", "explanations": [], "news": []})
+    for r in db.q("SELECT id, ts, kind, payload FROM events WHERE kind IN ('system.host_boot', 'scanner.gap') AND ts>=? "
+                  "ORDER BY id", since):                                 # amendment 23
+        p = _p(r["payload"])
+        boot = r["kind"] == "system.host_boot"
+        if boot and p.get("first_seen"):
+            continue                                                     # the first boot time the lab ever saw
+        out.append({"kind": "host_boot" if boot else "scan_gap", "id": r["id"],
+                    "title": "Værten er genstartet" if boot else f"Hul i timescanningen: {p.get('missed_hours')} t",
+                    "instrument": None, "occurred_ts": p.get("boot_ts") if boot else p.get("from_ts"),
+                    "known_ts": r["ts"], "current": now - r["ts"] <= CURRENT_S, "markets": [], "evidence": p,
+                    "next": "kontrollér K1/K2-dækningen (k1k2.readiness); laben starter ikke selv efter en genstart",
+                    "explanations": [], "news": []})
     out.sort(key=lambda e: (e["known_ts"] or 0, e["id"]), reverse=True)
     counts = {}
     for e in out:
