@@ -190,6 +190,22 @@ class Screening(unittest.TestCase):
         self.assertEqual(st["directions"]["low"]["status"], "SCREEN_FAIL")                # each direction once
         self.assertEqual(db.one("SELECT COUNT(*) FROM events WHERE kind='research.k3_result'")[0], 2)
 
+    def test_after_the_deadline_only_rounds_before_it_count_and_late_minimums_are_untestable(self):
+        db = DB(":memory:")
+        seen = []
+
+        def fake(db, cutoff, window="real"):
+            seen.append(cutoff)
+            return synth(60, -0.006, 0.0, v_high=0.006, days=20) if cutoff > k3.DEADLINE_END - 86400 else []
+        late = k3.DEADLINE_END + 10 * 86400 + 3600
+        with mock.patch.object(k3, "rounds", fake):
+            k3.maybe_freeze(db, late)                                                 # the lab ran late: the cutoff
+        self.assertEqual(max(seen), k3.DEADLINE_END)                                  # is still the deadline
+        db2 = DB(":memory:")
+        with mock.patch.object(k3, "rounds", lambda db, cutoff, window="real": []):
+            self.assertEqual(k3.maybe_freeze(db2, late), {})
+            self.assertEqual(k3.status(db2, late)["directions"]["high"]["status"], "UNTESTABLE")
+
 
 if __name__ == "__main__":
     unittest.main()

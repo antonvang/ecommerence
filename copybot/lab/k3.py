@@ -25,6 +25,7 @@ FRESH_S = 90
 MIN_COINS, MIN_ROUNDS, MIN_DAYS, P_MAX, P_PLACEBO = 3, 60, 20, 0.005, 0.05
 FEE, C_FLOOR, BOOK_SIZES = 0.0005, 0.0046, (1_000, 5_000)
 DEADLINE = dt.date(2027, 3, 31)
+DEADLINE_END = int(dt.datetime(2027, 4, 1, tzinfo=dt.timezone.utc).timestamp())   # F point 3: the end of 2027-03-31
 BTC = "BTCUSDT"
 BN = "https://fapi.binance.com"
 GROUPS = ("high", "low", "control")
@@ -282,7 +283,7 @@ def counts(db, cutoff):
 def maybe_freeze(db, now=None):
     """F point 2: once per direction, at the first UTC day end where both minimums hold; never recomputed."""
     now = int(now or time.time())
-    cutoff = now - now % 86400
+    cutoff = min(now - now % 86400, DEADLINE_END)            # F point 3: nothing after the deadline ever counts
     done = {_p(r["payload"]).get("direction") for r in db.q("SELECT payload FROM events WHERE kind='research.k3_result'")}
     c, real = counts(db, cutoff)
     out = {}
@@ -300,7 +301,7 @@ def maybe_freeze(db, now=None):
 def status(db, now=None):
     """Counts only until a frozen result exists (F point 2)."""
     now = int(now or time.time())
-    c, _ = counts(db, now)
+    c, _ = counts(db, min(now, DEADLINE_END))
     frozen = {_p(r["payload"])["direction"]: _p(r["payload"]) for r in db.q(
         "SELECT payload FROM events WHERE kind='research.k3_result' ORDER BY id")}
     late = dt.datetime.fromtimestamp(now, dt.timezone.utc).date() > DEADLINE
