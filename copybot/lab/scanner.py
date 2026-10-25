@@ -146,13 +146,16 @@ def _perps(get):
             and s.get("underlyingType") == "COIN" and s.get("status") == "TRADING" and s.get("quoteAsset") == "USDT"}
 
 
-def premium_obs(get, perps, funding=None, intervals=None, raw=None):
+def premium_obs(get, perps, funding=None, intervals=None, raw=None, rows_out=None):
     """Measurement (b): |mark/index - 1| >= PREMIUM_MIN per perp, flagged, plus the count compared. funding: if given,
     receives {symbol: predicted funding per 8 hours} of every compared perp (12e; 12i: lastFundingRate x 8 / the
-    symbol's settlement interval from `intervals`, 8 hours when unknown); raw: if given, receives the raw rates."""
+    symbol's settlement interval from `intervals`, 8 hours when unknown); raw: if given, receives the raw rates;
+    rows_out: if given, receives every row of the response (amendment 22: K3 reuses this fetch)."""
     out, n = [], 0
     intervals = intervals or {}
     for x in get(f"{BN}/fapi/v1/premiumIndex"):
+        if rows_out is not None:
+            rows_out.append(x)
         if x.get("symbol") not in perps:
             continue
         m, i = float(x.get("markPrice") or 0), float(x.get("indexPrice") or 0)
@@ -230,7 +233,8 @@ def premium_watch(db, get=http_get, now=None, post=None):
         _PERPS[BN] = hit = (now, _perps(get))
     funding, raw = {}, {}
     iv = intervals(get, now)
-    rows = premium_obs(get, hit[1], funding, iv, raw)
+    allrows = []
+    rows = premium_obs(get, hit[1], funding, iv, raw, allrows)
     rows += [obs("pricing_constraint", f"{BN}/fapi/v1/premiumIndex", sym, "predicted_funding", r, FUNDING_MIN, True,
                  {"raw": raw.get(sym), "interval_h": iv.get(sym, EIGHT_HOURS), "per": "8h"})
              for sym, r in sorted(funding.items()) if r >= FUNDING_MIN]
@@ -253,7 +257,20 @@ def premium_watch(db, get=http_get, now=None, post=None):
     with db.tx():
         for o in rows:
             db.append("observations", ts=now, **o)
-    return {"observations": len(rows), "flagged": sum(o["flagged"] for o in rows), "decisional": False}
+    k3_res = None
+    try:                                            # amendment 22 H: K3 never stops premium-watch
+        from lab import k3, lane
+        k3_res = k3.observe(db, now, allrows, iv, hit[1], get, delisted=lambda t: lane.delistings(db, t))
+    except Exception as e:                          # noqa: BLE001
+        if now - _K3_ERR.get("at", 0) >= 600:       # recorded at most every 10 min
+            _K3_ERR["at"] = now
+            db.append("observations", ts=now, detector="k3/1", source="k3", instrument=None, metric="error",
+                      value=None, threshold=None, flagged=0, payload={"error": repr(e)[:300]})
+        k3_res = {"error": repr(e)[:200]}
+    return {"observations": len(rows), "flagged": sum(o["flagged"] for o in rows), "decisional": False, "k3": k3_res}
+
+
+_K3_ERR = {}
 
 
 def pricing_constraint(get, post, now):
