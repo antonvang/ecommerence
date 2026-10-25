@@ -122,7 +122,16 @@ def newschain(q, t):
     errors = [{"ts": r["ts"], "source": r["source"]} for r in q(
         "SELECT ts, source FROM observations WHERE detector='news/1' AND metric='news_error' AND ts BETWEEN ? AND ?",
         t - HOUR, t + 25 * HOUR)]
-    return {"fed": fed, "other_macro": other, "duplicate_titles": len(norm) - len(set(norm)), "news_errors": errors}
+    latest = q("SELECT ts, payload FROM observations WHERE detector='news/1' AND metric='news_item' AND source=? AND "
+               "ts<=? ORDER BY json_extract(payload, '$.published_ts') DESC LIMIT 1", FED, t + 2 * HOUR)
+    lp = _p(latest[0]) if latest else {}
+    return {"fed": fed, "fed_status": "ok" if fed else "mangler",                         # 21d precision 2026-10-25
+            "fed_latest_stored": {"title": lp.get("title"), "published_ts": lp.get("published_ts"),
+                                  "stored_ts": latest[0]["ts"],
+                                  "label": "forældet" if (lp.get("published_ts") or 0) < t - 1800 else "i vinduet"}
+            if latest else None,
+            "fed_errors": sum(1 for e in errors if e["source"] == FED),
+            "other_macro": other, "duplicate_titles": len(norm) - len(set(norm)), "news_errors": errors}
 
 
 def report(q, get, t, now=None):

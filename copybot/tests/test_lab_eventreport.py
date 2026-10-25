@@ -71,6 +71,21 @@ class Chain(unittest.TestCase):
         self.assertEqual(n["fed"][0]["latency_s"], 390)
         self.assertEqual(n["other_macro"]["cnbc_economy"], {"items": 1, "first_latency_s": 600})
         self.assertEqual(n["duplicate_titles"], 1)
+        self.assertEqual((n["fed_status"], n["fed_latest_stored"]["label"], n["fed_errors"]), ("ok", "i vinduet", 0))
+
+    def test_missing_and_stale_fed_data_are_marked_never_shown_as_current(self):
+        db = self.db
+        db.append("observations", ts=T - 9 * 86400, detector="news/1", source=eventreport.FED, instrument="fed:0",
+                  metric="news_item", value=T - 9 * 86400, threshold=None, flagged=0,
+                  payload={"title": "old release", "published_ts": T - 9 * 86400})
+        db.append("observations", ts=T + 600, detector="news/1", source=eventreport.FED, instrument=None,
+                  metric="news_error", value=None, threshold=None, flagged=0, payload={"error": "HTTPError 404"})
+        n = eventreport.newschain(db.q, T)
+        self.assertEqual((n["fed"], n["fed_status"], n["fed_errors"]), ([], "mangler", 1))
+        self.assertEqual(n["fed_latest_stored"]["label"], "forældet")
+        self.assertEqual(n["fed_latest_stored"]["published_ts"], T - 9 * 86400)
+        empty = DB(":memory:")
+        self.assertIsNone(eventreport.newschain(empty.q, T)["fed_latest_stored"])
 
     def test_no_report_before_the_window_closes(self):
         with self.assertRaises(ValueError):
