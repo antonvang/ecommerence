@@ -535,12 +535,14 @@ def scanner_pass(db, clock=time.time, wait=STOPPING.wait, boot=host_boot_ts):
         alert = {"error": repr(e)[:200]}
     try:                                      # amendment 22 F: K3's one look, at the first UTC day end it is due
         from lab import k3
+        k3_audit = k3.maybe_audit(db, int(clock()))          # amendment 22 precision 2: data quality per round
         k3_frozen = k3.maybe_freeze(db, int(clock()))
     except Exception as e:                    # noqa: BLE001 - never stops the scanner
-        k3_frozen = {"error": repr(e)[:200]}
+        k3_audit, k3_frozen = None, {"error": repr(e)[:200]}
     if isinstance(res, dict):
         res["funding_settled"] = fs
         res["k3_frozen"] = k3_frozen
+        res["k3_audit"] = k3_audit
         res["continuity"] = cont
         res["catch_up"] = tries
         res["k_preflight"] = alert

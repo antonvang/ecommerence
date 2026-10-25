@@ -298,6 +298,100 @@ def maybe_freeze(db, now=None):
     return out
 
 
+# ---------------- per-round data-quality audit (amendment 22 precision 2) ----------------
+
+def audit_round(db, S, window, now):
+    """Counts only for one round and window; status gyldig / ugyldig / karantæne. Never a return or a mean."""
+    sel = selection(db, S)
+    if sel is None:
+        return None
+    centre = S if window == "real" else S + PLACEBO_SHIFT_S
+    rows = db.q("SELECT ts, instrument, payload FROM observations WHERE detector=? AND metric='mark' AND "
+                "json_extract(payload, '$.S')=? AND json_extract(payload, '$.window')=?", DET, S, window)
+    passes = sorted({r["ts"] for r in rows})
+    keys = [(r["instrument"], _p(r["payload"])["time"]) for r in rows]
+    members = [s for k in GROUPS for s in sel["groups"][k]
+               if window == "real" or sel["interval_h"].get(s, 8) != 1] + [BTC]
+    ser = _series(db, S, window)
+    ends = {"m-31": centre - ENTRY_S, "m-1": centre - EXIT_S, "m+1": centre + EXIT_S, "m+31": centre + ENTRY_S}
+    coins, max_age, deviations = {}, 0.0, []
+    for s in members:
+        m = ser.get(s, {})
+        missing = [n for n, t in ends.items() if endpoint(m, t) is None]
+        for t in ends.values():
+            ts = [x for x in m if t - FRESH_S < x <= t]
+            if ts:
+                max_age = max(max_age, t - max(ts))
+        last = [m[t][1] for t in sorted(m) if t <= S - EXIT_S] if window == "real" and s != BTC else []   # C point 4
+        changed = bool(last) and last[-1] != S
+        if missing or changed:
+            coins[s] = {"missing": missing, "interval_change": changed}
+    out = {"S": S, "window": window, "passes": len(passes),
+           "max_gap_s": max((b - a for a, b in zip(passes, passes[1:])), default=None), "rows": len(rows),
+           "duplicates": len(keys) - len(set(keys)), "coins_expected": len(members),
+           "coins_present": len({r["instrument"] for r in rows}), "coins_with_problems": coins,
+           "max_endpoint_age_s": max_age, "rule": RULE + " precision 2"}
+    if window == "real":
+        off = sel["select_ts"] - S
+        out["selection_offset_s"] = off
+        if not -SELECT_S <= off < -ENTRY_S:
+            deviations.append(f"udvælgelse {off} s fra S (skal være i [-2100, -1860))")
+        books = {"entry": {"ok": 0, "error": 0, "censored": 0}, "exit": {"ok": 0, "error": 0, "censored": 0}}
+        for r in db.q("SELECT ts, payload FROM observations WHERE detector=? AND metric='book' AND "
+                      "json_extract(payload, '$.S')=?", DET, S):
+            b = _p(r["payload"])
+            ph = b.get("phase")
+            if ph not in books:
+                continue
+            books[ph]["error" if b.get("error") else "censored" if b.get("rt_5000") is None else "ok"] += 1
+            t0 = S - (ENTRY_S if ph == "entry" else EXIT_S)
+            if not t0 <= r["ts"] <= t0 + LATE_S:
+                deviations.append(f"{ph}-bog læst {r['ts'] - t0} s efter sit tidspunkt")
+        out["books"] = books
+    else:
+        hourly = sorted({r["instrument"] for r in rows if sel["interval_h"].get(r["instrument"], 8) == 1})   # stored
+        if hourly:
+            deviations.append(f"timeafregnede mønter i placebo: {hourly}")
+    if max_age > FRESH_S:
+        deviations.append(f"endepunkt {max_age:.0f} s gammelt")
+    g = round_values(db, S, sel, window)
+    ok = {k: len(g[k]) >= MIN_COINS and len(g["control"]) >= MIN_COINS for k in ("high", "low")}
+    out["directions_valid"] = ok
+    out["deviations"] = sorted(set(deviations))
+    out["status"] = "karantæne" if deviations else "gyldig" if all(ok.values()) else "ugyldig"
+    db.append("observations", ts=int(now), detector=DET, source="k3", instrument="round", metric="round_audit",
+              value=S, threshold=None, flagged=int(bool(deviations)), payload=out)
+    return out
+
+
+def maybe_audit(db, now=None):
+    """Audit every selected round whose window has closed and has no audit yet (called from the hourly scanner)."""
+    now = int(now or time.time())
+    done = {(int(r["value"]), _p(r["payload"]).get("window"))
+            for r in db.q("SELECT value, payload FROM observations WHERE detector=? AND metric='round_audit'", DET)}
+    out = []
+    for r in db.q("SELECT value FROM observations WHERE detector=? AND metric='selection' ORDER BY value", DET):
+        S = int(r["value"])
+        for window, end in (("real", S + WIN_S), ("placebo", S + PLACEBO_SHIFT_S + WIN_S)):
+            if end < now and (S, window) not in done:
+                a = audit_round(db, S, window, now)
+                if a:
+                    out.append((S, window, a["status"]))
+    return out
+
+
+def audit_view(db, last=6):
+    rows = [_p(r["payload"]) for r in db.q("SELECT payload FROM observations WHERE detector=? AND "
+                                           "metric='round_audit' ORDER BY id", DET)]
+    counts = {}
+    for a in rows:
+        counts[a["status"]] = counts.get(a["status"], 0) + 1
+    brief = [{k: a.get(k) for k in ("S", "window", "status", "passes", "max_gap_s", "duplicates", "coins_expected",
+                                     "coins_present", "max_endpoint_age_s", "directions_valid", "deviations",
+                                     "books", "coins_with_problems")} for a in rows[-last:]]
+    return {"counts": counts, "latest": brief, "rule": RULE + " precision 2", "note": "kun datakvalitet; ingen afkast"}
+
+
 def status(db, now=None):
     """Counts only until a frozen result exists (F point 2)."""
     now = int(now or time.time())
@@ -305,7 +399,8 @@ def status(db, now=None):
     frozen = {_p(r["payload"])["direction"]: _p(r["payload"]) for r in db.q(
         "SELECT payload FROM events WHERE kind='research.k3_result' ORDER BY id")}
     late = dt.datetime.fromtimestamp(now, dt.timezone.utc).date() > DEADLINE
-    out = {"rule": RULE, "counts": c, "needed": {"rounds": MIN_ROUNDS, "days": MIN_DAYS}, "directions": {}}
+    out = {"rule": RULE, "counts": c, "needed": {"rounds": MIN_ROUNDS, "days": MIN_DAYS}, "directions": {},
+           "audit": audit_view(db)}
     for k in ("high", "low"):
         if k in frozen:
             out["directions"][k] = {"status": frozen[k]["result"]["verdict"], "frozen": frozen[k]["sha256"]}

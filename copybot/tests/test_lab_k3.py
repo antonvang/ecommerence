@@ -131,6 +131,45 @@ class Collection(unittest.TestCase):
         self.assertIn("HIGH1USDT", syms)
         self.assertIn("BTCUSDT", syms)
 
+    def test_round_audit_counts_quality_and_flags_protocol_deviations(self):     # amendment 22 precision 2
+        db = DB(":memory:")
+        nxt = {"BTCUSDT": lambda t: S + 4 * H}                                        # BTC does not settle at S
+        feed = Feed(next_ts=nxt)
+        run(db, feed)
+        self.assertEqual(k3.maybe_audit(db, S + 2 * H + 30 * 60), [(S, "real", "gyldig")])   # placebo still open
+        out = k3.maybe_audit(db, S + 2 * H + 36 * 60)
+        self.assertEqual(out, [(S, "placebo", "gyldig")])
+        self.assertEqual(k3.maybe_audit(db, S + 3 * H), [])                         # once per round and window
+        a = k3.status(db, S + 3 * H)["audit"]
+        self.assertEqual(a["counts"], {"gyldig": 2})
+        real = a["latest"][0]
+        self.assertEqual((real["duplicates"], real["coins_with_problems"], real["deviations"]), (0, {}, []))
+        self.assertEqual(real["books"]["entry"], {"ok": 0, "error": 0, "censored": 7})   # the fixture book holds
+        self.assertEqual(real["books"]["exit"]["censored"], 7)                             # < 5 000 USD: censored
+        self.assertNotIn("r_pre", json.dumps(a))                                     # counts only, never a return
+        db2 = DB(":memory:")                                                          # a deviation: placebo with an
+        k3._SEEN.clear()                                                              # hourly settler
+        k3._BOOKS.clear()
+        run(db2, Feed(next_ts=nxt))
+        db2.append("observations", ts=S + 2 * H, detector="k3/1", source="t", instrument="HOURLYUSDT", metric="mark",
+                   value=1.0, threshold=None, flagged=0,
+                   payload={"S": S, "window": "placebo", "group": "high", "time": (S + 2 * H) * 1000, "next_ts": S})
+        sel = k3.selection(db2, S)
+        bad = k3.audit_round(db2, S, "placebo", S + 3 * H)
+        self.assertEqual(bad["status"], "karantæne")                                 # a stored hourly settler in
+        self.assertIn("HOURLYUSDT", bad["deviations"][0])                            # placebo is a deviation
+        self.assertEqual(bad["coins_present"], bad["coins_expected"] + 1)
+        sel_hourly = [s for s, h in sel["interval_h"].items() if h == 1]
+        self.assertEqual(sel_hourly, ["HOURLYUSDT"])
+        db3 = DB(":memory:")                                                          # missing marks: ugyldig
+        k3._SEEN.clear()
+        k3._BOOKS.clear()
+        skip = {(s, t) for s in ("LOW1USDT", "LOW2USDT") for t in range(S - 33 * 60, S + 40 * 60)}   # after selection
+        run(db3, Feed(skip=skip, next_ts=nxt), end=S + 36 * 60)
+        r = k3.audit_round(db3, S, "real", S + 36 * 60)
+        self.assertEqual((r["status"], r["directions_valid"]), ("ugyldig", {"high": True, "low": False}))
+        self.assertEqual(r["coins_with_problems"]["LOW1USDT"]["missing"], ["m-31", "m-1", "m+1", "m+31"])
+
     def test_k3_never_stops_premium_watch(self):
         db = DB(":memory:")
 
