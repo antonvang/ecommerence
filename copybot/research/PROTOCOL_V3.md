@@ -3365,3 +3365,43 @@ ikke reproduceres, så feedet ændres ikke.
   - `fed_feed_newest_published`: den nyeste publicering i det svar;
   - `fed_latest_stored` med mærket `forældet` eller `i vinduet` (uændret).
   Mangler en hentning efter T, står det som `ingen hentning efter T`.
+
+## Ændring 24 (2026-10-25 kl. 16:07, før kode og før nogen data): R3 — minutreaktion på planlagte makroudgivelser, screening i explore0 (metode m24)
+
+**Beslutning:** Claude under brugerens mandat ("kom nu", 2026-10-25). Låsningen og koden laves nu, så 2026-11-14 kun
+kræver hentning og én kørsel. Plan: `research/drafts/R3_MINUTMAKRO_PLAN.md` med præcisering i 21o punkt 4. Udforskning,
+aldrig bevis. Ingen gate, alfa, omkostningsregel eller periode ændres. Ingen LÅS.
+
+1. **Forhold til tidligere arbejde:** J1 `macro_release|post_drift_24h|m21j` (timebarer, 24 t) er SCREEN_FAIL. m24 bruger
+   minutbarer, 2 minutters forsinkelse og 60 minutters horisont. Det er en anden opløsning og horisont, ikke en gentest af
+   J1. J1's resultat bruges ikke og ændres ikke.
+2. **Data (først fra 2026-11-14 00:00 UTC, brugerens regel; koden afviser tidligere):**
+   - **Filer:** `data.binance.vision/data/futures/um/monthly/klines/{BTCUSDT,ETHUSDT}/1m/<SYM>-1m-YYYY-MM.zip` for
+     2020-03 … 2021-12 (44 filer), højst 2 samtidige downloads (de delte slots).
+   - **Cache:** `data/lab/market/klines_1m/`, sha256 pr. fil registreres.
+   - **404:** en måned, der svarer 404, registreres. Begivenheder i den måned udelukkes med årsag. Intet erstattes.
+   - **Afgrænsning:** ingen andre symboler, måneder eller kilder; aldrig 2024, 2025+ eller pm_lp.
+3. **Kalender:** de cachede FOMC- og BLS-filer (ændring 14, `m21jscreen.calendar`). Kun planlagte udgivelser med
+   `ts` i explore0. Ingen ikke-planlagt begivenhed.
+4. **Regel pr. mønt (BTC og ETH):** minutbar k åbner ved T + k min.
+   - **Retning:** s = fortegnet af ln(C_0 / O_0). Er s = 0, udelukkes mønten for den begivenhed.
+   - **Udfald:** y = s · ln(C_61 / C_1), dvs. indgang ved lukkekursen for bar 1 (T + 2 min) og udgang ved lukkekursen
+     for bar 61 (T + 62 min).
+   - **Manglende barer:** kræver bar 0, 1 og 61. Mangler en af dem, udelukkes mønten med årsag.
+   - **Begivenhedens y:** gennemsnittet over de tilgængelige mønter (mindst én).
+5. **Placebo:** samme regel ved T − 7 døgn, eller T − 14 døgn, hvis det UTC-døgn har en kalenderbegivenhed. Kun inden for
+   explore0.
+6. **Test (som J1, `m21iscreen.judge`), klynger = UTC-døgn:**
+   - mindst 15 klynger, ellers UNTESTABLE;
+   - tosidet fortegnsskift-test (20 000 træk, seed 7) med p ≤ 0,005;
+   - samme fortegn i 2020 og 2021 (mindst 5 klynger hver);
+   - placebo med p > 0,05 og mindst 15 klynger;
+   - |gennemsnit| ≥ gennemsnittet af klyngernes c, hvor c_i følger 21i (30 døgns quote-volumen fra de cachede 1 t-klines;
+     BTC/ETH giver gulvet 0,46 %).
+   Nøgle: `macro_release|minute_drift_60m|m24`. Kun én nøgle, én horisont og én forsinkelse.
+7. **Én kørsel og registrering:** resultatet committes som `research/studies/R3_m24.json` og `.md` med fillistens og
+   begivenhedslistens sha256 og kodens commit, uanset udfald. Nøglen screenes aldrig igen.
+8. **Skrevet før data:** en effekt på mindst 0,46 % på 60 min efter 2 min forsinkelse er usandsynlig. Det forventede
+   udfald er SCREEN_FAIL. Et nulresultat lukker makrosporet på minutniveau.
+9. **Efter en SCREEN_PASS:** intet automatisk. En måling kræver brugerens beslutning og en dateret LÅS (k = 5).
+10. **Aldrig:** ordrer, papirkonti, alfa, holdout 2024, 2025+ og pm_lp.
