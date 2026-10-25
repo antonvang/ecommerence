@@ -3426,3 +3426,14 @@ Kun registrering af antal; ingen afkast. Det ændrer ikke, hvilke runder testen 
    En runde i karantæne udelukkes ikke automatisk. Den skal afgøres i en dateret tekst før testen.
 3. **Visning:** `/api/research` → `k_screens.K3.audit` viser seneste audit og antal pr. status. Runder, der aldrig blev
    valgt, står allerede som `missed`.
+
+### Ændring 24 præcisering (2026-10-25 kl. 21:29, før 14/11 og før data): hentningen registreres eksplicit
+- Hver `python3 -m lab.r3 fetch`-kørsel tilføjer én post til `data/lab/market/klines_1m/fetch_log.jsonl`:
+  - tidspunkt;
+  - pr. fil enten `present` (allerede i cachen), `fetched` (med sha256 og byte), `absent` (404) eller `failed`
+    (anden fejl, med fejltekst);
+  - antal af hver.
+- En anden fejl end 404 stopper ikke kørslen; filen står som `failed` og hentes igen ved næste kørsel. Intet erstattes.
+- En afvist kørsel før 2026-11-14 skriver også en post (`refused`), så det kan efterprøves, at intet blev hentet.
+- `run` skriver uændret `missing_files`. Resultatet registreres kun én gang (punkt 7). En kørsel med manglende filer
+  er tilladt og rapporterer dem; den erstatter dem ikke.
