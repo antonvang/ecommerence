@@ -3311,3 +3311,15 @@ ikke efter data.
 - Indsamlingen sker i premium-watch' eksisterende minutkørsel. En fejl i K3 stopper aldrig premium-watch.
 - Højst ca. 40 bogkald pr. runde. Rækkerne er append-only (`observations`, detektor `k3/1`).
 - Status i `/api/research` (`k3`): runder valgt, missed, gyldige pr. retning, døgn og bortfald.
+
+## Ændring 23 (2026-10-25 kl. 10:52, før kode): registrering af værtsgenstart og huller i timescanningen
+
+Kun registrering og visning. Ingen automatisk genstart, ingen ændring af pauser, data_fetch-reglen (ændring 18),
+FAIL_CLOSED, collectoren eller vagten (`lab watch`).
+1. **Værtsgenstart:** ved hver timescanning læses værtens boot-tid (`/proc/stat` btime). Første gang en ny boot-tid ses,
+   skrives én hændelse `system.host_boot` med boot-tiden, laboratoriets sidste kendte scanning før boot og antal timer
+   uden scanning.
+2. **Hul i timescanningen:** er der mere end 3 600 + 600 s mellem to på hinanden følgende `abnormal_move/1`-scanninger,
+   skrives én hændelse `scanner.gap` med start, slut og antal tabte timer.
+3. Begge vises i `/api/events`. En alarm, mens laben er nede, kan kun komme fra en proces uden for laben. Den eksisterende
+   vagt ændres ikke uden brugerens ja. Det står i rapporten som kendt begrænsning.
