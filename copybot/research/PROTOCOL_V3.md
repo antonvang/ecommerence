@@ -3349,3 +3349,19 @@ Kun rapportering; vinduer, kilder og beregninger er uændrede. `newschain` får:
 Målt i dag: Fed-feedet gav HTTP 404 i 3 af ca. 430 kørsler (2026-10-22..25). Samme URL svarede 200 før og efter.
 Feedets nyeste post (2026-10-16 15:00 UTC) er også databasens nyeste. Det er en midlertidig fejl hos kilden. Den kan
 ikke reproduceres, så feedet ændres ikke.
+
+### 21d præcisering 2 (2026-10-25 kl. 13:47, før FOMC og før rapportkørslen): seneste hentning skilt fra seneste post
+- **Verificeret i dag:** FOMC 2026-10-27/28 står i Federal Reserves officielle kalender
+  (federalreserve.gov/monetarypolicy/fomccalendars.htm). Feedet `press_all.xml` indeholder FOMC-statements (fx 16/9
+  18:00 GMT, "Federal Reserve issues FOMC statement"). Kilden dækker behovet.
+- **Hul:** news-watch gemmer kun nye poster og fejl. En vellykket hentning uden nye poster efterlader intet spor, så
+  "seneste hentning" kan ikke dokumenteres. Det er ikke det samme som "seneste post", og HTTP 200 alene gør ingen data
+  aktuelle.
+- **Ændring:** for hver makrokilde (`RSS_CATEGORY` = macro: fed_press, bls_latest, ecb_press, cnbc_economy) skrives ved
+  hver vellykket hentning én række `news_fetch` med antal poster i svaret og den nyeste publiceringstid i svaret.
+  Det er ca. 576 rækker pr. døgn. Krypto-mediekilderne er uændrede.
+- **FOMC-rapporten** viser tre tidspunkter hver for sig:
+  - `fed_last_fetch_ok`: seneste vellykkede hentning ≤ T + 2 t;
+  - `fed_feed_newest_published`: den nyeste publicering i det svar;
+  - `fed_latest_stored` med mærket `forældet` eller `i vinduet` (uændret).
+  Mangler en hentning efter T, står det som `ingen hentning efter T`.
