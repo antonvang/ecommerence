@@ -3437,3 +3437,42 @@ Kun registrering af antal; ingen afkast. Det ændrer ikke, hvilke runder testen 
 - En afvist kørsel før 2026-11-14 skriver også en post (`refused`), så det kan efterprøves, at intet blev hentet.
 - `run` skriver uændret `missing_files`. Resultatet registreres kun én gang (punkt 7). En kørsel med manglende filer
   er tilladt og rapporterer dem; den erstatter dem ikke.
+
+## Ændring 25 (2026-10-25 kl. 21:40, før kode): likviditetsgate for nye papirbaner (brugerens godkendelse samme aften)
+
+**Beslutning:** brugeren godkendte 2026-10-25 en dateret, fail-closed regel: en ny papirbane må ikke åbne på et
+instrument, hvor den målte rundtur ved banens størrelse overskrider det gældende omkostningskrav. Reglen vurderer kun
+instrumentets likviditet, aldrig strategiens signal. Ingen omkostningsregel, gate, alfa, K1/K2/K3-protokol, holdout,
+pm_lp eller sikkerhedsregel ændres. Kun papirhandel.
+
+1. **Hvor:** alle tre veje, der åbner en ny bane: familiebaner (`lane._start`, pr. mønt), scanner-funding
+   (`manage_scanner`) og Hyperliquid (`manage_hl`). Altid før `lane.started`. Reglen gælder aldrig eksisterende
+   positioner, rebalanceringer eller lukninger, og den lukker intet automatisk.
+2. **Størrelse pr. ben:**
+   - scanner og HL: `CAPITAL / UNIT_CAPITAL` = 5 000 USD (som 12g);
+   - familiebaner: `CAPITAL / (UNIT_CAPITAL · antal mønter)` (som handelskoden).
+3. **Målt rundtur pr. mønt (spread og dybde, uden gebyrer):** summen over banens ben (spot og perp) af VWAP-afstanden
+   fra midten for køb plus salg af mængden, gået gennem de 20 niveauer, papirmotoren ser. Bøgerne læses i samme
+   kørsel som starten (`paper_runner.fetch_book`).
+   - **Kapacitetskurven** (`capacity/1`, 21v) bruges også, hvis seneste kørsel er højst 24 t gammel. Pr. ben bruges
+     den største af den levende måling og kurvens rundtur ved den mindste kurvestørrelse ≥ benets størrelse.
+   - En kurve ældre end 24 t bruges ikke (behandles som fraværende).
+4. **Grænse:** den målte rundtur må højst være 0,46 %. Det er 21i's gulv: det mindste omkostningskrav, en fordel skal
+   klare. En bog, hvis spread og dybde alene koster mere, kan ikke handles med fordel ved den størrelse.
+5. **Fail-closed, så banen ikke åbner:**
+   - den levende bog mangler, er tom, krydset eller for tynd til mængden;
+   - kurvens seneste kørsel siger `not_trading` (SETTLING, NOT_LISTED m.fl.) eller `error` for instrumentet;
+   - kurvens størrelse er censureret;
+   - den målte rundtur er over grænsen.
+   Familiebaner taber kun den mønt (som `_probe`); er der færre end MIN_COINS tilbage, åbner banen ikke. Grunden
+   registreres i `lane.skipped` med målingerne.
+6. **Kontrafaktisk kontrol, skrevet før koden (kun papirdata, ikke et realiseret resultat):**
+   - Af banekontienes −221,2 USD stammer ca. 197,7 USD fra tre `scanner_premium`-baner (EPIC, MITO, HOT, åbnet
+     19.–20/10 under ændring 12 punkt 2; den funktion findes ikke længere).
+   - Deres første fills viser en anslået bogrundtur ved åbningen på ca. 30–39 bp, under grænsen. Point-in-time ville
+     reglen derfor **ikke** have stoppet dem.
+   - Kun kapacitetskurven fra 24/10, målt efter åbningen, viser 69–245 bp. At bruge den er look-ahead.
+   - Den tidligere udtalelse "ca. 90 % undgået" kan ikke reproduceres og trækkes tilbage.
+   - Tabet kom fra mange handler (17–45 fills) i bøger, der blev dårligere undervejs (første fill ca. 9 bp fra midten,
+     gennemsnit ca. 31 bp).
+   - Reglen er en forebyggelse fremover, ikke en rettelse af historikken.
