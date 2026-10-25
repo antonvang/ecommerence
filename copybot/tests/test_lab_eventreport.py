@@ -86,6 +86,18 @@ class Chain(unittest.TestCase):
         self.assertEqual(n["fed_latest_stored"]["published_ts"], T - 9 * 86400)
         empty = DB(":memory:")
         self.assertIsNone(eventreport.newschain(empty.q, T)["fed_latest_stored"])
+        self.assertIsNone(eventreport.newschain(empty.q, T)["fed_last_fetch_ok"])
+        db.append("observations", ts=T - 300, detector="news/1", source=eventreport.FED, instrument=None,
+                  metric="news_fetch", value=40, threshold=None, flagged=0,
+                  payload={"items": 40, "newest_published_ts": T - 9 * 86400})
+        n = eventreport.newschain(db.q, T)                                   # a fetch before T only: not current
+        self.assertEqual((n["fed_last_fetch_ok"], n["fed_last_fetch_label"]), (T - 300, "ingen hentning efter T"))
+        self.assertEqual(n["fed_feed_newest_published"], T - 9 * 86400)
+        db.append("observations", ts=T + 1200, detector="news/1", source=eventreport.FED, instrument=None,
+                  metric="news_fetch", value=40, threshold=None, flagged=0,
+                  payload={"items": 40, "newest_published_ts": T - 9 * 86400})
+        n = eventreport.newschain(db.q, T)                                   # fetched after T, still nothing new:
+        self.assertEqual((n["fed_last_fetch_label"], n["fed_status"]), ("efter T", "mangler"))   # never "current"
 
     def test_no_report_before_the_window_closes(self):
         with self.assertRaises(ValueError):

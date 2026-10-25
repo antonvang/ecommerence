@@ -186,7 +186,14 @@ def run(db, get=http_get, now=None):
         jobs.append((GDELT, lambda: gdelt(get, now)))
     for src, fn in jobs:
         try:
-            out[src] = store(db, fn(), src.split("#")[0], now)
+            got = fn()
+            out[src] = store(db, got, src.split("#")[0], now)
+            name = next((n for n, u in RSS.items() if u == src), None)
+            if RSS_CATEGORY.get(name) == "macro":               # 21d precision 2: the fetch itself, not only new items
+                pubs = [x["published_ts"] for x in got if x.get("published_ts")]
+                db.append("observations", ts=int(now), detector=DETECTOR, source=src, instrument=None,
+                          metric="news_fetch", value=len(got), threshold=None, flagged=0,
+                          payload={"items": len(got), "newest_published_ts": max(pubs) if pubs else None})
             if src == GDELT:
                 _STATE["gdelt_wait"], _STATE["gdelt_next"] = GDELT_EVERY, now + GDELT_EVERY
         except Exception as e:                                  # noqa: BLE001 - one source never stops the others

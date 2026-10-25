@@ -125,7 +125,13 @@ def newschain(q, t):
     latest = q("SELECT ts, payload FROM observations WHERE detector='news/1' AND metric='news_item' AND source=? AND "
                "ts<=? ORDER BY json_extract(payload, '$.published_ts') DESC LIMIT 1", FED, t + 2 * HOUR)
     lp = _p(latest[0]) if latest else {}
+    fetch = q("SELECT ts, payload FROM observations WHERE detector='news/1' AND metric='news_fetch' AND source=? AND "
+              "ts<=? ORDER BY ts DESC LIMIT 1", FED, t + 2 * HOUR)        # 21d precision 2
+    fp = _p(fetch[0]) if fetch else {}
     return {"fed": fed, "fed_status": "ok" if fed else "mangler",                         # 21d precision 2026-10-25
+            "fed_last_fetch_ok": fetch[0]["ts"] if fetch else None,
+            "fed_last_fetch_label": None if not fetch else ("efter T" if fetch[0]["ts"] > t else "ingen hentning efter T"),
+            "fed_feed_newest_published": fp.get("newest_published_ts"),
             "fed_latest_stored": {"title": lp.get("title"), "published_ts": lp.get("published_ts"),
                                   "stored_ts": latest[0]["ts"],
                                   "label": "forældet" if (lp.get("published_ts") or 0) < t - 1800 else "i vinduet"}

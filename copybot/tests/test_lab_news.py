@@ -96,6 +96,11 @@ class Scanner(Base):
         self.assertEqual({i["published_ts"] for i in rss} - {None}, {1792584756.0})   # an unparsable date is None
         g = [i for i in self.stored() if i["source"] == "gdelt"][0]
         self.assertEqual(g["published_ts"], 1792584000)
+        fetches = self.db.q("SELECT ts, source, value, payload FROM observations WHERE metric='news_fetch'")
+        self.assertEqual({r["source"] for r in fetches},                          # 21d precision 2: macro feeds only,
+                         {news.RSS[n] for n, c in news.RSS_CATEGORY.items() if c == "macro"})   # every fetch,
+        self.assertEqual(len(fetches), 2 * 4)                                     # also without new items
+        self.assertEqual(json.loads(fetches[0]["payload"])["newest_published_ts"], 1792584756.0)
 
     def test_coins_by_fixed_rules(self):
         self.assertEqual(news.coins("Binance Will List Foo (FOO) and BARUSDT, BAZUSDC Perpetual"), ["BAR", "BAZ", "FOO"])
