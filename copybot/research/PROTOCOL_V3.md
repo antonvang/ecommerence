@@ -3209,3 +3209,105 @@ gøres **ikke** uden brugerens ja. Glemte rebalanceringer opfindes ikke bagud.
 ### F. Kapacitetskurven (21v/21x)
 Et perp-instrument, der **mangler** i `exchangeInfo` (når listen selv er hentet), registreres som `not_trading` med
 status `NOT_LISTED` i stedet for som en hentningsfejl. Tom bog og for tynd bog er uændret (`error` / censureret).
+
+## Ændring 22 (2026-10-25 kl. 10:46, før kode og før nogen K3-data): K3 — prispres omkring fundingafregning, fremadrettet indsamling og screening
+
+**Beslutning:** Claude under brugerens mandat (2026-10-24 "jeg siger ja til altid deploy" ca. kl. 22:31 og "Du må alt"
+ca. kl. 23:31; papirforskning, datadrevne regler med dateret tekst før kode). Ændringen indfører kun ny fremadrettet
+indsamling af offentlige data og en screening. Ingen gate, alfa, omkostningsregel, sikkerhedskontrol eller
+tilladelsesliste ændres. Ingen LÅS, intet alfa k5, ingen omkostningsmulighed C. En PASS er kun en screening; validering
+kræver en ny dateret LÅS. Ingen historiske data. Udkastet `research/drafts/K3_INDSAMLING_UDKAST_2026-10-25.md` er
+erstattet af denne tekst, hvor de afviger.
+
+### A. Hypotese og forskel fra afvist arbejde
+- **Mekanisme:** ved høj positiv forudsagt funding lukker lange positioner før afregningen for ikke at betale; prisen
+  falder ind i afregningen. Ved negativ funding er det omvendt.
+- **Forskel fra `E_funding_contrarian_p1` (REJECTED):** den gik ind **efter** afregningen på den **afregnede** rate i
+  halen af de seneste 90 og holdt i 8 timer mod mængden. K3 måler 30 minutter **før** afregningen på den **forudsagte**
+  rate, med fremadrettede minutdata. K3's sekundære forudsigelse (rekyl efter afregningen) har modsat fortegn af
+  contrarians. Ingen data, parametre eller perioder genbruges.
+
+### B. Designfakta målt i dag (kun antal og intervaller, ingen priser eller afkast)
+Premium-watchs `predicted_funding` (12e/12i) for 2026-10-22..25:
+- 71 af 74 mønter med forudsagt funding ≥ 0,05 % pr. 8 t afregner hver 4. time, 2 hver time og 1 hver 8. time;
+- 35 minutter før en 8-timers-afregning var der 2–17 sådanne mønter.
+
+Udkastets krav (top 10, mindst 5 pr. gruppe, kun 8-timers-runder) ville derfor give næsten ingen gyldige runder: en død
+test. Designet nedenfor er rettet **før** nogen K3-data findes.
+
+### C. Runder, univers og udvælgelse (point-in-time)
+1. **Runde:** hver afregningstid S på 4-timersgitteret (00, 04, 08, 12, 16, 20 UTC).
+2. **Univers:** perps fra `scanner._perps` (PERPETUAL, COIN, TRADING, USDT) hvor premiumIndex' `nextFundingTime` = S
+   ved udvælgelsen. Udelukket: mønter med en afnoteringsmeddelelse i de seneste 30 døgn (`lane.delistings`, point-in-time)
+   og BTCUSDT (bruges til markedskorrektion).
+3. **Udvælgelse:** ved den første premium-watch-måling med ts ≥ S − 35 min. Udebliver den før S − 31 min, er runden
+   `missed` (tælles, erstattes aldrig). Signal = forudsagt funding normeret pr. 8 t: `lastFundingRate × 8 / interval_h`.
+   - **HØJ:** de højst 10 højeste med ≥ 0,05 % pr. 8 t;
+   - **LAV:** de højst 10 laveste med ≤ −0,05 % pr. 8 t;
+   - **KONTROL:** 10 mønter trukket med `random.Random(S)` blandt dem med 0 ≤ signal ≤ 0,01 % pr. 8 t (gulvet), sorteret
+     efter symbol før trækningen.
+   Udvælgelsen gemmes, før nogen pris efter den kendes.
+4. **Bortfald i runden:** en mønt, hvis `nextFundingTime` ikke længere er S ved S − 1 min (intervalskift), eller som
+   forsvinder fra premiumIndex (status ændret), udgår af runden og tælles.
+
+### D. Målinger og tidsstempler
+1. **Kilde:** samme premiumIndex-svar, som premium-watch allerede henter hvert minut (ingen ekstra kald for priser).
+   Laboratoriets `ts` er målingens start. Binances `time` (ms) i svaret er markprisens egen tid. **Endepunkter vælges på
+   Binances tid.**
+2. **Gemt:** pr. måling i vinduet [S − 35 min, S + 35 min] (`real`) og [S + 2 t − 35 min, S + 2 t + 35 min] (`placebo`)
+   gemmes én række pr. udvalgt mønt og BTCUSDT: `markPrice`, `indexPrice`, `lastFundingRate`, `nextFundingTime`,
+   Binance-`time`, runde, vindue og gruppe.
+   - Placebo-vinduet bruger kun mønter, der ikke afregner hver time; for 4- og 8-timers-mønter er S + 2 t ikke en
+     afregning.
+3. **Endepunkt m(k)** for minut k: den række med største Binance-tid t, hvor S + 60k − 90 s < t ≤ S + 60k s. Findes den
+   ikke, mangler endepunktet; det interpoleres aldrig. Samme Binance-tid gemt to gange (fx efter en genstart) er en
+   dublet og tæller én gang.
+4. **Bog:** for HØJ og LAV ét `fapi/v1/depth?limit=100` ved første måling ≥ S − 31 min (indgang) og ≥ S − 1 min
+   (udgang). Rundtur for 1 000 og 5 000 USD som `moves.walk`. En bog, der ikke kan fylde 5 000 USD, gør møntens
+   handlebare udfald manglende (censur, intet gæt).
+
+### E. Udfald, test og beslutning (låst nu)
+1. **Pr. mønt:**
+   - `r_pre` = ln(m(−1)/m(−31)) − ln(BTC(−1)/BTC(−31));
+   - `r_post` = ln(m(+31)/m(+1)) − ln(BTC(+31)/BTC(+1)).
+2. **Pr. runde:**
+   - d_HØJ = gennemsnit af `r_pre` i HØJ − gennemsnit i KONTROL (forudsagt < 0);
+   - d_LAV = gennemsnit i LAV − gennemsnit i KONTROL (forudsagt > 0).
+   En runde tæller for en test, hvis begge grupper har ≥ 3 mønter med begge endepunkter.
+3. **Primærtest:** ensidig t-test pr. retning over runder (runden er klyngen), Holm over de 2 retninger, grænse 0,005
+   (hypogen P_SCREEN).
+4. **Placebo:** samme d i placebo-vinduerne. p > 0,05 kræves; der kræves ≥ 60 gyldige placebo-runder, ellers kan
+   retningen ikke bestå.
+5. **Handlebarhed (21i, aldrig lempeligere):** HØJ = short fra m(−31) til m(−1), uden hedge; LAV = long.
+   - Pr. mønt: v = −ln(m(−1)/m(−31)) for HØJ, eller +ln(...) for LAV.
+   - c_i = max(0,46 %, 2 · (2 · 0,050 % + RT_målt,5000)). 0,050 % er standard-taker for krypto-perps (21i punkt 1).
+   - Kravet: gennemsnittet af rundernes v ≥ gennemsnittet af rundernes c.
+6. **Sekundært, kun rapporteret:** r_post (rekyl) og 1 000 USD-rundturen.
+7. **Domme pr. retning:**
+   - `PASS`: Holm-p ≤ 0,005, placebo ok og handlebar;
+   - `SCREEN_FAIL (mekanisme bekræftet, ikke handlebar)`: Holm-p ≤ 0,005 og placebo ok, men ikke handlebar;
+   - `SCREEN_FAIL`: ellers.
+   K3 = PASS, hvis en retning er PASS.
+
+### F. Stikprøve, ét kig og frister
+1. **Minimum pr. retning:** ≥ 60 gyldige runder fordelt på ≥ 20 forskellige UTC-døgn.
+   - **Styrke:** med 60 runder og ensidig grænse 0,0025 (Holm, mindste p) giver 80 % styrke en påviselig effekt på
+     ca. (2,81 + 0,84)/√60 ≈ 0,47 standardafvigelser af d. Med runde-standardafvigelser på ca. 0,5–0,7 % for
+     30-minutters-afkast er det ca. 25–35 bp, samme størrelse som omkostningerne på tynde mønter. Færre runder kan kun
+     se effekter, der er større end omkostningskravet, og er derfor uden informationsværdi.
+   - **20 døgn** giver mindst tre ugers fundingregimer; runder samme døgn er ikke uafhængige.
+   - Ved 6 runder pr. døgn binder 20-døgnskravet før 60-runderskravet.
+2. **Ét kig:** testen køres én gang pr. retning, første gang begge krav er opfyldt ved et UTC-døgns afslutning. Resultatet
+   fryses (artefakt med sha256 og en `research.k3_result`-hændelse) og genberegnes aldrig. Før det: kun antal
+   (`NO_DECISION`).
+3. **Frist:** en retning, der ikke har nået minimum 2027-03-31, er `UNTESTABLE`.
+
+### G. Hvad der sandsynligvis afgør K3 (skrevet før data)
+c_i ≥ 0,46 % pr. handel. Et pres på 46 bp i gennemsnit på 30 minutter ville være usædvanligt stort. Det mest sandsynlige
+udfald er `SCREEN_FAIL (mekanisme bekræftet, ikke handlebar)` eller `SCREEN_FAIL`. Begge er information. Kravet ændres
+ikke efter data.
+
+### H. Drift
+- Indsamlingen sker i premium-watch' eksisterende minutkørsel. En fejl i K3 stopper aldrig premium-watch.
+- Højst ca. 40 bogkald pr. runde. Rækkerne er append-only (`observations`, detektor `k3/1`).
+- Status i `/api/research` (`k3`): runder valgt, missed, gyldige pr. retning, døgn og bortfald.
