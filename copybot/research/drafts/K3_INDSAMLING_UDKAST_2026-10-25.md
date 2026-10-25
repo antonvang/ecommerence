@@ -1,6 +1,8 @@
 # K3 — indsamlingsprotokol (udkast 2026-10-25 kl. 10:33, før kode og før data)
 
-**Status:** `UNTESTABLE`. Udkastet gør en fremtidig test mulig. Det starter ingen indsamling. Indsamlingen begynder
+**Erstattet 2026-10-25 kl. 10:53:** låst og rettet som ændring 22 i `research/PROTOCOL_V3.md` (4-timers-runder, grupper uden fast minimum på 10, placebo ved S + 2 t). Teksten nedenfor er det oprindelige udkast.
+
+**Status (oprindeligt):** `UNTESTABLE`. Udkastet gør en fremtidig test mulig. Det starter ingen indsamling. Indsamlingen begynder
 først, når teksten er låst som en dateret ændring i `research/PROTOCOL_V3.md`, koden er testet, suiten er grøn og der er
 deployet. Ingen historiske data (spærret til 2026-11-14; 2025+ læses aldrig), og intet kan rekonstrueres bagud.
 
