@@ -71,6 +71,18 @@ class Base(unittest.TestCase):
         con.commit()
         con.close()
 
+    def scan(self, ts):
+        db = DB(self.lab)
+        db.append("observations", ts=int(ts), detector="abnormal_move/1", source="t", instrument="BTCUSDT",
+                  metric="z_1h", value=0.0, threshold=4, flagged=0, payload={})
+        db.close()
+
+    def k3(self, S, metric):
+        db = DB(self.lab)
+        db.append("observations", ts=int(S - 2100), detector="k3/1", source="t", instrument="round", metric=metric,
+                  value=S, threshold=None, flagged=0, payload={})
+        db.close()
+
     def lab_event(self, kind, ts):
         db = DB(self.lab)
         db.append("events", ts=int(ts), kind=kind, actor="test", exp_id=None, payload={})
@@ -81,12 +93,15 @@ class Checks(Base):
     def test_everything_up(self):
         self.lab_event("system.running", NOW - 3 * 3600)              # fleet up 3 h and doing research
         self.lab_event("job.done", NOW - 60)
+        self.scan(NOW - 3480)                                            # 11:02 UTC
+        self.k3(NOW, "selection")                                        # NOW is a K3 settlement (12:00 UTC)
         r = self.res()
         self.assertIsNone(r["paper"]["ok"])                              # no paper ledger: not judged
         self.assertTrue(all(v["ok"] for k, v in r.items() if k not in ("paper", "pm_coverage")),   # no panel here
                         {k: v for k, v in r.items() if not v["ok"]})
         self.assertEqual({k for k in r if not k.startswith("agent:")},
-                         {"lab", "lab_state", "progress", "paper", "dashboard", "collector", "pm_coverage", "awake"})
+                         {"lab", "lab_state", "progress", "paper", "scanner", "dashboard", "collector", "pm_coverage",
+                          "awake"})
         self.assertEqual(len([k for k in r if k.startswith("agent:")]), len(ROLES))
 
     def test_whole_fleet_down_or_hung_and_agents_are_not_judged_then(self):
@@ -254,6 +269,43 @@ class Checks(Base):
             self.assertEqual(watch._processes("research.pm_lp collect", os.path.join(self.tmp, "none"), here), [])
         finally:
             self.p[0].start()
+
+
+class Scanner(Base):
+    """research/LINUX_DRIFT.md 2026-10-25: the hourly scan and K3 rounds, judged only while the lab runs; fail-closed."""
+    def test_stale_weekend_hour_and_k3_round(self):
+        self.lab_event("system.running", NOW - 3 * 3600)
+        sun = NOW                                                        # Sunday 2026-10-18 12:00 UTC (a K3 S)
+        self.scan(sun - 3480)
+        self.k3(sun, "missed")                                           # a recorded miss is not a new alarm
+        self.assertTrue(watch.check_scanner(self.lab, sun + 600, True)[0])          # 12:10: before HH:12
+        r = watch.check_scanner(self.lab, sun + 720, True)                          # 12:12: the 12:02 scan is missing
+        self.assertFalse(r[0])
+        self.assertIn("weekend", r[1])
+        self.scan(sun + 122)
+        self.assertTrue(watch.check_scanner(self.lab, sun + 720, True)[0])
+        self.assertFalse(watch.check_scanner(self.lab, sun + 122 + 71 * 60, True)[0])   # 71 min old
+        mon = sun + 86400 - 12 * 3600 + 3 * 3600                         # Monday 03:00 UTC: weekday, no weekend rule
+        self.scan(mon - 3480)
+        self.assertTrue(watch.check_scanner(self.lab, mon + 720, True)[0])
+        self.scan(mon + 122)                                                        # 03:02 UTC
+        r = watch.check_scanner(self.lab, mon + 3600 - 30 * 60 + 1, True)          # 03:30: K3 04:00 is due
+        self.assertFalse(r[0])
+        self.assertIn("K3 round 04:00", r[1])
+        self.k3(mon + 3600, "selection")
+        self.assertTrue(watch.check_scanner(self.lab, mon + 3600 - 30 * 60 + 1, True)[0])
+
+    def test_not_judged_while_down_or_starting_and_fail_closed(self):
+        self.assertIsNone(watch.check_scanner(self.lab, NOW, False)[0])
+        self.lab_event("system.running", NOW - 120)
+        self.assertIsNone(watch.check_scanner(self.lab, NOW, True)[0])            # fleet up 2 min
+        self.assertFalse(watch.check_scanner(os.path.join(self.tmp, "nope.db"), NOW, True)[0])
+        bad = os.path.join(self.tmp, "bad.db")
+        with open(bad, "wb") as f:
+            f.write(b"not a database" * 100)
+        self.assertFalse(watch.check_scanner(bad, NOW, True)[0])                   # unreadable: down, not ok
+        r = self.res()
+        self.assertIn("scanner", r)
 
 
 class Alerts(Base):

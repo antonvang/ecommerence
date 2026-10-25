@@ -424,6 +424,49 @@ def check_pm_coverage(pm_db, now):
     return res
 
 
+SCAN_STALE_S = 70 * 60          # the hourly scan runs at HH:02 UTC (research/LINUX_DRIFT.md 2026-10-25)
+WEEKEND_SCAN_BY_S = 12 * 60     # Sat/Sun UTC: the hour's scan must exist by HH:12 (K1/K2, PROTOCOL_V3 21y)
+K3_ROUND_S, K3_DUE_S, K3_UNTIL_S = 4 * 3600, 30 * 60, 35 * 60      # amendment 22: selection or missed from S - 30 min
+
+
+def check_scanner(db_path, now, lab_ok):
+    """The hourly scan and K3's rounds. Judged only while the lab is up and its fleet has run for 5 min; an unreadable
+    database is down (fail-closed), never ok."""
+    if not lab_ok:
+        return (None, "not judged (lab down)")
+    try:
+        con = _ro(db_path)
+        if con is None:
+            return (False, "lab database missing")
+        try:
+            started = con.execute("SELECT MAX(ts) FROM events WHERE kind='system.running'").fetchone()[0]
+            last = con.execute("SELECT MAX(ts) FROM observations WHERE detector='abnormal_move/1' AND metric='z_1h'"
+                               ).fetchone()[0]
+            base = int(now) - int(now) % K3_ROUND_S
+            due = [S for S in (base, base + K3_ROUND_S) if S - K3_DUE_S <= now <= S + K3_UNTIL_S]
+            k3_missing = [S for S in due if not con.execute(
+                "SELECT 1 FROM observations WHERE detector='k3/1' AND metric IN ('selection', 'missed') AND value=?",
+                (S,)).fetchone()]
+        finally:
+            con.close()
+    except sqlite3.Error as e:
+        return (False, f"lab database unreadable: {e!r}"[:200])
+    if started is None or now - started < 300:
+        return (None, "not judged (fleet up less than 5 min)")
+    why = []
+    if last is None or now - last > SCAN_STALE_S:
+        why.append("no hourly scan yet" if last is None else f"last hourly scan {int((now - last) // 60)} min ago")
+    hour = int(now) - int(now) % 3600
+    if datetime.fromtimestamp(now, timezone.utc).weekday() >= 5 and now - hour >= WEEKEND_SCAN_BY_S \
+            and (last is None or last < hour):
+        why.append("weekend: this hour's HH:02 scan is missing (K1/K2 hour lost)")
+    for S in k3_missing:
+        why.append(f"K3 round {datetime.fromtimestamp(S, timezone.utc).strftime('%H:%M')} UTC has no selection or missed")
+    if why:
+        return (False, "; ".join(why))
+    return (True, f"last hourly scan {int((now - last) // 60)} min ago")
+
+
 def check(db_path=DEFAULT_DB, pm_db=PM_DB, port=8770, now=None):
     """Every probe is isolated: one that raises marks its own component(s) down and the others are still judged."""
     from lab.fleet import ROLES
@@ -435,6 +478,10 @@ def check(db_path=DEFAULT_DB, pm_db=PM_DB, port=8770, now=None):
         out["lab"] = (False, f"check failed: {e!r}"[:300])
         out["lab_state"] = (None, "not judged: lab check failed")
         out.update({f"agent:{n}": (None, "not judged: lab check failed") for n in ROLES})
+    try:
+        out["scanner"] = check_scanner(db_path, now, out.get("lab", (None,))[0])
+    except Exception as e:
+        out["scanner"] = (False, f"check failed: {e!r}"[:300])
     for comp, fn in (("dashboard", lambda: check_dashboard(port)), ("collector", lambda: check_collector(pm_db, now)),
                      ("pm_coverage", lambda: check_pm_coverage(pm_db, now)), ("awake", check_awake)):
         try:
