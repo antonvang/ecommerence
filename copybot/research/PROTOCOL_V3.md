@@ -3492,3 +3492,26 @@ pm_lp eller sikkerhedsregel ændres. Kun papirhandel.
 - **Også rettet:** "mange handler i forringede bøger" var forkert. Hver af de tre baner lavede én runde (åbning og
   lukning efter 0,4–2,3 t). Tabet er dybden af én ordre på ca. 5 000 USD pr. ben i en tynd bog plus gebyrer.
 - Reglen i punkt 1–5 er uændret.
+
+## Ændring 26 (2026-10-25 kl. 22:09, før kode): eksekveringslog pr. papirordre (kun måling)
+
+**Beslutning:** brugerens mission 13 ("gør fremtidige eksekveringsmålinger bedre"). Ingen regel, gate, omkostning,
+position eller sikkerhedskontrol ændres. Kun papirhandel. pm_lp røres ikke.
+
+1. **Hvad gemmes:** én række `observations` (detektor `exec/1`, metric `taker_order`) pr. papir-taker-ordre, der
+   når bogen (også en, der kun delvist fyldes). Rækken indeholder:
+   - ordre-id, konto, instrument, side, mængde, notional og `reduce_only`;
+   - ordretid, bogens tidsstempel og bogens alder i sekunder;
+   - spread og antal niveauer på hver side;
+   - dybde i USD på hver side (de 20 niveauer, papirmotoren ser);
+   - VWAP-afstand fra midten for ordrens mængde på ordrens side og på den modsatte side (rå bogpriser uden modellens
+     0,02 %-tillæg);
+   - den anslåede bogrundtur (summen af de to);
+   - den fyldte andel og den faktiske gennemsnitlige fill-afstand (med tillæg, som i `sim_fills`).
+2. **Ikke gemt:** hele ordrebogen. Rækken er det nødvendige minimum for at efterprøve beslutning og eksekvering.
+   Maker-ordrer logges ikke; de fyldes senere til limitprisen, så der er ingen bog at måle ved ordren.
+3. **Ingen påvirkning:** loggen skrives efter ordrens transaktion. Fejler den, logges fejlen én gang pr. time
+   (`exec/1` metric `error`), og ordren står uændret.
+4. **Gate-afgørelser** for nye baner står allerede i `lane.skipped`/`lane.started` (`trigger.liquidity`, ændring 25) og
+   gentages ikke her.
+5. **Omfang:** ca. én række pr. papirordre (i dag ca. 150–200 pr. døgn).
