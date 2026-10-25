@@ -3323,3 +3323,19 @@ FAIL_CLOSED, collectoren eller vagten (`lab watch`).
    skrives én hændelse `scanner.gap` med start, slut og antal tabte timer.
 3. Begge vises i `/api/events`. En alarm, mens laben er nede, kan kun komme fra en proces uden for laben. Den eksisterende
    vagt ændres ikke uden brugerens ja. Det står i rapporten som kendt begrænsning.
+
+### Ændring 22 præcisering (2026-10-25 kl. 11:18, audit før første K3-runde; ingen K3-data findes)
+1. **Fristen i koden:** engangstesten brugte ikke fristen. Nu tæller kun runder, der er færdige senest 2027-04-01
+   00:00 UTC, også hvis laben kører testen senere. Er minimum ikke nået inden da: `UNTESTABLE`. Det er en
+   implementeringsfejl rettet til protokollens tekst (F punkt 3), ikke en ny regel.
+2. **Bog for sent:** en indgangs- eller udgangsbog læses kun inden for 120 s efter sit tidspunkt (S − 31 min og
+   S − 1 min). Efter en genstart midt i runden læses den ikke, og mønten mangler i handlebarheden (censur). Det er
+   strengere end "første måling ≥ S − 31 min" og gælder fra første runde.
+3. **Styrken efterregnet** (simulation, 4 000 gentagelser, t-test df 59, ensidig 0,0025):
+   - effekt på 0,47 SD giver 76 % styrke, og 80 % kræver ca. 0,49 SD (t-kvantilen 2,92 mod normalens 2,81);
+   - 0,40 SD giver 59 %, og 0,55 SD giver 91 %.
+   Minimum (60 runder, 20 døgn) er uændret. Omregningen til 25–35 bp bygger på en **antaget** runde-standardafvigelse på
+   0,5–0,7 % for 30-minutters-forskelle. Den er ikke målt og må ikke måles fra K3's egne data før testen.
+4. **Omkostningskravet** c_i = max(0,46 %, 2 · (2 · 0,050 % + RT_målt)): 0,46 % er gulvet fra ændring 17/21i.
+   Faktoren 2 er 21i's sikkerhedsmargin. 0,050 % er Binances standard-taker for krypto-perps (21i punkt 1).
+   RT_målt er indgangsbogens rundtur ved 5 000 USD. Intet heraf ændres efter data.
