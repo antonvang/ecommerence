@@ -69,6 +69,14 @@ def view(db, now=None):
                     "evidence": {"error": _p(r["payload"]).get("error")},
                     "next": "ingen kurve for denne bog; kontrollér markedets status (21v)", "explanations": [],
                     "news": []})
+    for r in db.q("SELECT id, ts, payload FROM events WHERE kind='research.k_preflight' AND ts>=? ORDER BY id", since):
+        p = _p(r["payload"])                                                     # amendment 21z D point 2
+        out.append({"kind": "k_preflight", "id": r["id"], "title": f"K1/K2-weekend {p.get('weekend')}: {p.get('status')}",
+                    "instrument": None, "occurred_ts": r["ts"], "known_ts": r["ts"],
+                    "current": now - r["ts"] <= 48 * 3600, "markets": [],
+                    "evidence": {"reasons": p.get("reasons"), "markets": p.get("markets")},
+                    "next": "ingen handling" if p.get("status") == "KLAR" else
+                    "ret årsagen før lørdag 00:00 UTC; protokollen ændres ikke (21z D)", "explanations": [], "news": []})
     out.sort(key=lambda e: (e["known_ts"] or 0, e["id"]), reverse=True)
     counts = {}
     for e in out:

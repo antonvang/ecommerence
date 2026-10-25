@@ -106,11 +106,14 @@ def version():
     return dict(_VERSION)
 
 
-def detect(get, post, now):
-    """Scanner detector (amendment 21): observations only, never a proposal."""
+def detect(get, post, now, syms=None):
+    """Scanner detector (amendment 21): observations only, never a proposal. `syms` limits the scan to those markets
+    (amendment 21z C: the in-window catch-up of markets whose scan failed)."""
     from lab.scanner import obs
     out = []
     for sym, (cls, label, _) in WATCH.items():
+        if syms is not None and sym not in syms:
+            continue
         src = f"{BN}/fapi/v1/klines?symbol={sym}&interval=1h"
         try:
             kl = get(f"{src}&limit={HIST + 2}")

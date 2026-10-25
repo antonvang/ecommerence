@@ -353,6 +353,41 @@ def _after_moves(db, observations, now, get):
     return moves.record(db, observations, now, get)
 
 
+CATCHUP_GAP_S, CATCHUP_LAST_S, CATCHUP_MAX = 120, 480, 3     # amendment 21z C: every 120 s, start <= close + 480 s
+
+
+def failed_moves(db, ts):
+    """Markets of moves.WATCH whose abnormal_move scan at `ts` failed to fetch (21z C point 3): an `error` row per
+    market, or every market when the detector itself failed. history_short is not a fetch failure."""
+    from lab import moves
+    rows = {r["instrument"] for r in db.q("SELECT instrument FROM observations WHERE detector=? AND ts=? AND "
+                                          "metric='error'", vname(moves.DETECTOR), ts)}
+    return set(moves.WATCH) if None in rows else rows & set(moves.WATCH)
+
+
+def catch_up(db, syms, after_ts, attempt, get=http_get, now=None):
+    """21z C: one in-window rescan of only the markets in `syms`, stored as an ordinary scan with its own ts and a
+    `catch_up` tag; the move records run as after a scheduled scan. Returns the markets that failed again."""
+    from lab import moves
+    now = int(now or time.time())
+    try:
+        observations, _ = moves.detect(get, None, now, syms=set(syms))
+    except Exception as e:                            # noqa: BLE001 - recorded like a failing detector
+        observations = [obs("abnormal_move", "detector", None, "error", None,
+                            payload={"error": f"detector failed: {e!r}"[:300]})]
+    tag = {"after_error_ts": after_ts, "attempt": attempt, "rule": "research/PROTOCOL_V3.md amendment 21z C"}
+    observations = [{**o, "payload": {**o["payload"], "catch_up": tag}} for o in observations]
+    with db.tx():
+        for o in observations:
+            db.append("observations", ts=now, **o)
+    try:
+        records = moves.record(db, observations, now, get)
+    except Exception as e:                            # noqa: BLE001 - the analysis never stops the scan
+        records = f"records failed: {e!r}"[:300]
+    return {"ts": now, "attempt": attempt, "markets": sorted(syms),
+            "failed": sorted(failed_moves(db, now) & set(syms)), "records": records}
+
+
 DETECTORS = {"venue_subsidy": venue_subsidy, "pricing_constraint": pricing_constraint,
              "abnormal_move": _abnormal_move}                     # amendment 21: data and analysis records only
 AFTER = {"abnormal_move": _after_moves}                           # runs after the detector's observations are stored

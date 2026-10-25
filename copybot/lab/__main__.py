@@ -52,6 +52,12 @@ from lab.data import AccessRefused
 from lab.db import DB, DEFAULT_DB
 
 
+def weekend_scan_window(t):
+    """Sat/Sun UTC, minutes 00-12 of the hour: a restart here can cost a K1/K2 weekend hour (amendment 21z D)."""
+    u = time.gmtime(t)
+    return u.tm_wday in (5, 6) and u.tm_min < 13
+
+
 def human():
     return "human:" + (getpass.getuser() or "unknown")
 
@@ -240,6 +246,8 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
         sub.add_parser(c).add_argument("--reason", required=True)
     sub.choices["stop"].add_argument("--force", action="store_true",
                                      help="end a fleet that does not respond (SIGTERM, SIGKILL after 20 s)")
+    sub.choices["stop"].add_argument("--weekend-ok", action="store_true",
+                                     help="stop anyway on Sat/Sun UTC HH:00-HH:12 (amendment 21z D point 3)")
     jb = sub.add_parser("jobs"); jb.add_argument("--status")
     at = sub.add_parser("approve-template"); at.add_argument("template"); at.add_argument("--reason", required=True)
     ct = sub.add_parser("confirm-template"); ct.add_argument("code")
@@ -349,6 +357,10 @@ def main(argv=None, db_path=DEFAULT_DB, out=print):
     try:
         if args.cmd == "stop":
             from lab import control
+            if weekend_scan_window(time.time()) and not args.weekend_ok:
+                out("refused: Sat/Sun UTC HH:00-HH:12 protects the K1/K2 hourly scan (amendment 21z D point 3); "
+                    "stop after HH:13 or pass --weekend-ok")
+                return 2
             return control.stop(db, operator(), args.reason, force=args.force, out=out)
         if args.cmd in ("pause", "resume"):
             from lab import control

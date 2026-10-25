@@ -53,7 +53,7 @@ def hours(db, sym):
         out[o] = {"open_s": o, "scan_ts": ts, "ret_1h": p.get("ret_1h"), "close": p.get("price"), "mark": p.get("mark"),
                   "index": p.get("index"), "sigma_1h": p.get("sigma_1h"), "book_rt": book.get(ts),
                   "premium": ((p["mark"] - p["index"]) / p["index"]) if p.get("index") else None,
-                  "usable": bool(usable), "why": why}
+                  "usable": bool(usable), "why": why, "catch_up": bool(p.get("catch_up"))}
     return out
 
 
@@ -83,7 +83,8 @@ def t_greater(xs):
 
 
 def wilcoxon_greater(ds):
-    """One-sided signed-rank p for median d > 0, normal approximation, zeros dropped, average ranks for ties."""
+    """One-sided signed-rank p for median d > 0: exact for n <= 25 (21y precision 2), else normal approximation;
+    zeros dropped, average ranks for ties."""
     ds = [d for d in ds if d != 0]
     n = len(ds)
     if n < 2:
@@ -315,13 +316,69 @@ def readiness(db, now=None, weekends=None):
                     reasons[why] = reasons.get(why, 0) + 1
             usable = sum(1 for o in bars if hm[s].get(o, {}).get("usable"))
             no_book = sum(1 for o in bars if hm[s].get(o, {}).get("usable") and hm[s][o]["book_rt"] is None)
-            mk[s] = {"usable": usable, "reasons": reasons, "no_book": no_book}
+            catch = sum(1 for o in bars if hm[s].get(o, {}).get("usable") and hm[s][o]["catch_up"])  # 21z C point 4
+            mk[s] = {"usable": usable, "reasons": reasons, "no_book": no_book, "catch_up": catch}
         k1_ok = all(mk[s]["usable"] >= MIN_WEEKEND_HOURS for s in ("BTCUSDT",) + K1_SYMS)
         out.append({"weekend": sat.isoformat(), "hours_elapsed": len(bars), "complete_k1": k1_ok and len(bars) == 48,
                     "markets": mk})
         sat += dt.timedelta(days=7)
     return {"weekends": out[-(weekends or len(out)):], "rule": RULE + " C (precision 3)",
             "note": "kun antal og grunde; ingen afkast eller test før 12 komplette weekender"}
+
+
+PREFLIGHT_WINDOW_S, PREFLIGHT_MAX_SCAN_AGE_S = 72 * H, 2 * H      # amendment 21z D
+
+
+def _next_saturday(now):
+    """The Saturday (UTC date) of the coming weekend; during a weekend, that weekend's Saturday."""
+    d = dt.datetime.fromtimestamp(now, dt.timezone.utc).date()
+    return d - dt.timedelta(days=1) if d.weekday() == 6 else d + dt.timedelta(days=(5 - d.weekday()) % 7)
+
+
+def preflight(db, now=None):
+    """21z D: readiness of the coming K1/K2 weekend, counts only (never returns, means or p-values)."""
+    now = int(now or time.time())
+    sat = _next_saturday(now)
+    t0 = int(dt.datetime(sat.year, sat.month, sat.day, tzinfo=dt.timezone.utc).timestamp())
+    reasons = []
+    try:
+        sessions.equity(t0 + 48 * H - 1)
+        calendar_ok = True
+    except ValueError:
+        calendar_ok = False
+        reasons.append("NYSE-kalenderen dækker ikke weekenden")
+    last = db.one("SELECT MAX(ts) FROM observations WHERE detector=? AND metric='z_1h'", DET)[0]
+    age = None if last is None else now - last
+    if age is None or age > PREFLIGHT_MAX_SCAN_AGE_S:
+        reasons.append("scanneren har ingen scanning" if age is None else f"seneste scanning er {age // 60} min gammel")
+    bars = [o for o in range(now - now % H - PREFLIGHT_WINDOW_S, now - now % H, H) if o + H <= now - MAX_SCAN_DELAY_S]
+    mk = {}
+    for s in ("BTCUSDT",) + K1_SYMS:
+        hm = hours(db, s)
+        usable = sum(1 for o in bars if hm.get(o, {}).get("usable"))
+        mk[s] = {"usable": usable, "hours": len(bars),
+                 "catch_up": sum(1 for o in bars if hm.get(o, {}).get("usable") and hm[o]["catch_up"])}
+        if bars and usable * 48 < 44 * len(bars):
+            reasons.append(f"{s}: {usable} af {len(bars)} brugbare timer de seneste 72 t (under 44/48)")
+    restart = db.one("SELECT MAX(ts) FROM events WHERE kind='system.startup'")[0]
+    return {"weekend": sat.isoformat(), "status": "RISIKO" if reasons else "KLAR", "reasons": reasons,
+            "calendar_ok": calendar_ok, "scanner_age_s": age, "markets": mk,
+            "restart_last_hour": bool(restart and now - restart < H),
+            "rule": "research/PROTOCOL_V3.md amendment 21z D", "note": "kun antal; ingen afkast eller test"}
+
+
+def preflight_alert(db, now=None):
+    """21z D point 2: one `research.k_preflight` event per weekend, from Friday 12:00 UTC until the weekend ends."""
+    now = int(now or time.time())
+    u = dt.datetime.fromtimestamp(now, dt.timezone.utc)
+    if not (u.weekday() == 4 and u.hour >= 12 or u.weekday() in (5, 6)):
+        return None
+    sat = _next_saturday(now).isoformat()
+    if db.one("SELECT 1 FROM events WHERE kind='research.k_preflight' AND json_extract(payload, '$.weekend')=?", sat):
+        return None
+    p = preflight(db, now)
+    db.event("research.k_preflight", "system:scanner", None, p)
+    return {"weekend": sat, "status": p["status"]}
 
 
 def status(db, now=None):
@@ -332,4 +389,4 @@ def status(db, now=None):
                                                              "why", "usable_hours", "rule")}
     return {"K1": strip(a), "K2": {**strip(b), "complete_weekends": max(
         (v.get("complete_weekends", 0) for v in b.get("instruments", {}).values()), default=0)},
-            "readiness": readiness(db, now, weekends=2)}
+            "readiness": readiness(db, now, weekends=2), "preflight": preflight(db, now)}

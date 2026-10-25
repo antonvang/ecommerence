@@ -478,15 +478,30 @@ def catalogue_pass(db):
             pipeline.discover_catalogue(db) + families.discover_all(db)]
 
 
-def scanner_pass(db):
-    from lab import fundsettle, scanner
-    res = scanner.run(db)
+def scanner_pass(db, clock=time.time, wait=STOPPING.wait):
+    from lab import fundsettle, k1k2, scanner
+    start = int(clock())
+    res = scanner.run(db, now=start)
     try:                                      # amendment 21y B: settled funding of the watched markets, forward only
         fs = fundsettle.run(db, scanner.http_get)
     except Exception as e:                    # noqa: BLE001 - never stops the scanner
         fs = {"error": repr(e)[:200]}
+    # amendment 21z C: markets whose hourly scan failed are rescanned while the start is <= close + 480 s
+    close, failed, tries = start - start % 3600, scanner.failed_moves(db, start), []
+    while failed and len(tries) < scanner.CATCHUP_MAX:
+        if int(clock()) + scanner.CATCHUP_GAP_S > close + scanner.CATCHUP_LAST_S or wait(scanner.CATCHUP_GAP_S):
+            break                             # past the window, or the fleet is stopping
+        r = scanner.catch_up(db, failed, start, len(tries) + 1, get=scanner.http_get, now=int(clock()))
+        tries.append(r)
+        failed = set(r["failed"])
+    try:                                      # amendment 21z D: one readiness alert per weekend from Fri 12:00 UTC
+        alert = k1k2.preflight_alert(db, int(clock()))
+    except Exception as e:                    # noqa: BLE001 - never stops the scanner
+        alert = {"error": repr(e)[:200]}
     if isinstance(res, dict):
         res["funding_settled"] = fs
+        res["catch_up"] = tries
+        res["k_preflight"] = alert
     return res
 
 

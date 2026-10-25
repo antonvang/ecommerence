@@ -65,11 +65,12 @@ def run(db, get, now=None, sleep=time.sleep):
         status = {}
     for inst in universe(db, now):
         src = url(inst)
-        st = None if inst.endswith(SPOT_SUFFIX) else status.get(inst)
+        st = None if inst.endswith(SPOT_SUFFIX) else status.get(inst, "NOT_LISTED" if status else None)   # 21z F
         if st is not None and st != "TRADING":
             db.append("observations", ts=int(now), detector=DETECTOR, source=f"{PERP}/fapi/v1/exchangeInfo",
                       instrument=inst, metric="not_trading", value=None, threshold=None, flagged=0,
-                      payload={"status": st, "rule": "research/PROTOCOL_V3.md amendment 21x point 2"})
+                      payload={"status": st, "rule": "research/PROTOCOL_V3.md amendment 21x point 2"
+                                                         + (" and 21z F" if st == "NOT_LISTED" else "")})
             skipped += 1
             continue
         try:

@@ -48,8 +48,8 @@ class Curve(unittest.TestCase):
         def get(u):
             urls.append(u)
             if u.endswith("/fapi/v1/exchangeInfo"):                                 # 21x point 2
-                return json.dumps({"symbols": [{"symbol": "ETHUSDT", "status": "SETTLING"},
-                                               {"symbol": "XAUUSDT", "status": "TRADING"}]}).encode()
+                return json.dumps({"symbols": [{"symbol": s, "status": "SETTLING" if s == "ETHUSDT" else "TRADING"}
+                                               for s in moves.WATCH]}).encode()
             if "BTCUSDT" in u:
                 raise OSError("down")
             return json.dumps(book()).encode()
@@ -72,6 +72,37 @@ class Curve(unittest.TestCase):
         self.assertNotIn("BTCUSDT", latest["books"])
         self.assertEqual(latest["missing"]["ETHUSDT"], {"kind": "not_trading", "detail": "SETTLING"})
         self.assertEqual(latest["missing"]["BTCUSDT"]["kind"], "error")
+
+    def test_every_market_state_is_classified_and_nothing_is_guessed(self):
+        """21z F with 21v/21x: active, settling, unlisted (delisted), empty book, too thin, and a spot leg."""
+        db = DB(":memory:")
+        listed = {s: "TRADING" for s in moves.WATCH}
+        listed.update({"EPICUSDT": "SETTLING", "EMPTYUSDT": "TRADING", "THINUSDT": "TRADING"})
+        for i, inst in enumerate(("EPICUSDT", "GONEUSDT", "EMPTYUSDT", "THINUSDT", "HOTUSDT.SPOT")):
+            db.append("sim_fills", fill_id=f"f{i}", order_id=f"o{i}", exp_id="LANE_x", ts=NOW - 3600, instrument=inst,
+                      side="buy", px=1.0, qty=1.0, fee=0.0, slippage=0.0, liquidity="taker", mid=1.0, book_ts=1.0)
+
+        def get(u):
+            if u.endswith("/fapi/v1/exchangeInfo"):
+                return json.dumps({"symbols": [{"symbol": k, "status": v} for k, v in listed.items()]}).encode()
+            self.assertNotIn("EPICUSDT", u)                                          # no book call when not trading
+            self.assertNotIn("GONEUSDT", u)
+            if "EMPTYUSDT" in u:
+                return json.dumps({"bids": [], "asks": []}).encode()
+            if "THINUSDT" in u:
+                return json.dumps(book(levels=3)).encode()                          # 3 000 USD per side
+            return json.dumps(book()).encode()
+        r = capacity.run(db, get, NOW, sleep=lambda s: None)
+        self.assertEqual((r["not_trading"], r["errors"]), (2, 1))
+        miss = capacity.latest(db)["missing"]
+        self.assertEqual(miss["EPICUSDT"], {"kind": "not_trading", "detail": "SETTLING"})
+        self.assertEqual(miss["GONEUSDT"], {"kind": "not_trading", "detail": "NOT_LISTED"})
+        self.assertEqual(miss["EMPTYUSDT"]["kind"], "error")                       # an empty book is not a status
+        thin = {x["size_usd"]: x for x in capacity.latest(db)["books"]["THINUSDT"]}
+        self.assertFalse(thin[2_000]["censored"])
+        self.assertTrue(all(thin[s]["censored"] and thin[s]["round_trip"] is None for s in (5_000, 20_000, 50_000)))
+        self.assertIn("HOTUSDT.SPOT", capacity.latest(db)["books"])                # spot legs need no perp status
+        self.assertNotIn("HOTUSDT.SPOT", miss)
 
     def test_without_exchange_info_the_curve_runs_as_before(self):
         db = DB(":memory:")
