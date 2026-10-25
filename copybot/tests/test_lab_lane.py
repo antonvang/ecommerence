@@ -889,6 +889,113 @@ class CostGate(Base):
         self.assertIn("too thin", self.db.one("SELECT payload FROM events WHERE kind='lane.skipped'")["payload"])
 
 
+class LiquidityGate(Base):
+    """Amendment 25: a new lane opens only where the measured book round trip at its size is within 21i's floor;
+    unknown, empty, thin, not trading or censored blocks; existing positions are never touched."""
+    def book(self, spread=0.02, qty=1000.0, px=100.0):
+        from lab.paper import Book
+        return Book(ts=NOW, bids=((px - spread / 2, qty),), asks=((px + spread / 2, qty),))
+
+    def curve(self, inst, metric="rt_5000", rt=0.0001, size=5000, ts=NOW - 3600, censored=False, payload=None):
+        from lab import capacity
+        p = payload or {"size_usd": size, "round_trip": None if censored else rt, "censored": censored}
+        self.db.append("observations", ts=int(ts), detector=capacity.DETECTOR, source="t", instrument=inst,
+                       metric=metric, value=None if censored else rt, threshold=None, flagged=0, payload=p)
+
+    def legs(self, s=0.1, p=0.1, **kw):
+        return {"AUSDT.SPOT": self.book(s, **kw), "AUSDT": self.book(p, **kw)}
+
+    def test_limit_unknown_empty_crossed_and_thin(self):
+        ok, d = lane.liquidity_gate(self.db, self.legs(), 5000, NOW)                 # 0.1 % a leg: 0.2 % total
+        self.assertTrue(ok)
+        self.assertAlmostEqual(d["round_trip"], 0.002, places=6)
+        ok, d = lane.liquidity_gate(self.db, self.legs(0.3, 0.3), 5000, NOW)         # 0.6 % > 0.46 %
+        self.assertFalse(ok)
+        self.assertIn("bogens rundtur", d["reason"])
+        self.assertFalse(lane.liquidity_gate(self.db, {"AUSDT.SPOT": None, "AUSDT": self.book()}, 5000, NOW)[0])
+        from lab.paper import Book
+        crossed = Book(ts=NOW, bids=((101.0, 10.0),), asks=((100.0, 10.0),))
+        self.assertIn("tom eller krydset",
+                      lane.liquidity_gate(self.db, {"AUSDT.SPOT": crossed, "AUSDT": self.book()}, 5000, NOW)[1]["reason"])
+        empty = Book(ts=NOW, bids=(), asks=((100.0, 10.0),))
+        self.assertFalse(lane.liquidity_gate(self.db, {"AUSDT.SPOT": empty, "AUSDT": self.book()}, 5000, NOW)[0])
+        ok, d = lane.liquidity_gate(self.db, self.legs(qty=1.0), 5000, NOW)           # 100 USD a side
+        self.assertFalse(ok)
+        self.assertIn("for tynd", d["reason"])
+
+    def test_the_capacity_curve_blocks_settling_unlisted_errors_censored_and_wider_books(self):
+        for status in ("SETTLING", "NOT_LISTED"):
+            dbn = DB(os.path.join(self.tmp, f"{status}.db"))
+            old, self.db = self.db, dbn
+            try:
+                self.curve("AUSDT", metric="not_trading", payload={"status": status})
+                ok, d = lane.liquidity_gate(self.db, self.legs(), 5000, NOW)
+                self.assertFalse(ok)
+                self.assertIn(status, d["reason"])                                   # live books alone would pass
+            finally:
+                self.db = old
+                dbn.close()
+        db2 = DB(os.path.join(self.tmp, "b.db"))
+        old, self.db = self.db, db2
+        try:
+            self.curve("AUSDT", metric="error", payload={"error": "ValueError('empty book')"})
+            self.assertIn("error", lane.liquidity_gate(self.db, self.legs(), 5000, NOW)[1]["reason"])
+        finally:
+            self.db = old
+            db2.close()
+        for name, rows in (("censored", [dict(size=5000, censored=True)]),
+                           ("wider", [dict(size=5000, rt=0.004)])):
+            dbx = DB(os.path.join(self.tmp, f"{name}.db"))
+            old, self.db = self.db, dbx
+            try:
+                for kw in rows:
+                    self.curve("AUSDT.SPOT", **kw)
+                ok, d = lane.liquidity_gate(self.db, self.legs(), 5000, NOW)
+                self.assertFalse(ok, name)
+                if name == "wider":                                                   # the larger of live and curve
+                    self.assertAlmostEqual(d["legs"]["AUSDT.SPOT"]["used"], 0.004)
+            finally:
+                self.db = old
+                dbx.close()
+        dbs = DB(os.path.join(self.tmp, "stale.db"))
+        old, self.db = self.db, dbs
+        try:
+            self.curve("AUSDT", metric="not_trading", payload={"status": "SETTLING"}, ts=NOW - 25 * HOUR)
+            ok, d = lane.liquidity_gate(self.db, self.legs(), 5000, NOW)              # older than 24 h: not used
+            self.assertTrue(ok)
+            self.assertEqual(d["legs"]["AUSDT"]["curve_status"], "absent")
+        finally:
+            self.db = old
+            dbs.close()
+
+    def test_new_scanner_and_family_lanes_are_gated_existing_ones_are_not(self):
+        Scanner.scan(self, NOW - 60, {"BBBUSDT": 0.003})
+        out = lane.manage(self.db, NOW, market(rate=0.0008, spread=0.3), fids=[])["scanner"]   # 0.3 %/leg: 0.6 %
+        self.assertEqual((out["started"], out["skipped"]), ([], ["BBBUSDT"]))
+        p = json.loads(self.db.one("SELECT payload FROM events WHERE kind='lane.skipped' ORDER BY id DESC")["payload"])
+        self.assertIn("likviditetsgate (25): bogens rundtur", p["reason"])
+        self.assertEqual(lane.classify("lane.skipped", p), "afvist af omkostninger")
+        self.assertEqual(lane.classify("lane.skipped", {"reason": "likviditetsgate (25): AUSDT: bogen er for tynd"}),
+                         "utilstrækkelige data")
+
+        def thin_doge(path):                                                          # one coin's spot book too thin
+            if "depth" in path and "DOGEUSDT" in path:
+                return {"bids": [["99.99", "1"]], "asks": [["100.01", "1"]]}
+            return base(path)
+        base = market()
+        thin_doge.now = NOW
+        with mock.patch.object(explore, "universe", lambda fam: tuple(COINS + ["SOLUSDT"])):   # 6 coins, 5 kept
+            led = self.started(thin_doge)
+        info = lane.started(self.db)[led]
+        self.assertNotIn("DOGEUSDT", info["coins"])
+        self.assertTrue(any("likviditetsgate (25)" in d["reason"] for d in info["dropped"] if d["coin"] == "DOGEUSDT"))
+        wide = market(spread=2.0)                                                     # books turn untradable later:
+        wide.now = NOW + HOUR                                                         # the running lane is untouched
+        out = lane.manage(self.db, NOW + HOUR, wide, fids=["fcarry"])
+        self.assertIn(led, lane.active(self.db))
+        self.assertNotIn(led, out.get("retired") or [])
+
+
 class Symbols(unittest.TestCase):
     def test_non_ascii_symbols_are_url_encoded(self):
         seen = []
@@ -983,7 +1090,7 @@ class Execution(Base):
         self.assertEqual(lane.classify("lane.skipped", {"reason": "a book is too thin for the account's size (12g)"}),
                          "utilstrækkelige data")
         self.scan(NOW - 60, {"BBBUSDT": 0.003, "CCCUSDT": 0.0006})
-        lane.manage(self.db, NOW, market(rate=0.0008, spread=1.0), fids=[])
+        lane.manage(self.db, NOW, market(rate=0.0008, spread=0.1), fids=[])   # 0.1 %/leg: liquid enough for 25
         v = command.lane_view(self.db, now=NOW + 60)
         classes = {p["coin"]: p["class"] for p in v["probes"]}
         self.assertEqual(classes["BBBUSDT"], "afventer fremadtest")

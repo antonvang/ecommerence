@@ -417,20 +417,79 @@ def retire(db, ledger, rule, detail, st=None, now=None):
 
 
 # ---------- start (point 3) ----------
-def _probe(r, fam, get, now):
-    """Coins whose perp and spot books both load (one read each), in basket order."""
+def _probe(r, fam, get, now, books=None):
+    """Coins whose perp and spot books both load (one read each), in basket order. `books`, if given, receives the
+    books read ({instrument: Book}) for amendment 25's gate."""
     from lab import paper_runner
     ok, dropped = [], []
     for s in r.get("evaluated_coins") or r.get("coins") or explore.universe(fam):   # the coins it was tested on
         try:
+            got = {}
             for inst in (s, s + SPOT):
                 b = paper_runner.fetch_book(inst, now, get)
                 if b.crossed():
                     raise ValueError("crossed or empty book")
+                got[inst] = b
             ok.append(s)
+            if books is not None:
+                books.update(got)
         except Exception as e:
             dropped.append({"coin": s, "reason": repr(e)[:120]})
     return ok, dropped
+
+
+# ---------- amendment 25: liquidity gate for new lanes ----------
+GATE_MAX_RT = 0.0046                            # 21i's floor: the smallest cost an edge must clear
+CURVE_MAX_AGE_S = 24 * HOUR                     # an older capacity curve is not used (treated as absent)
+GATE_RULE = "research/PROTOCOL_V3.md amendment 25"
+
+
+def _curve(db, inst, size_usd, now):
+    """The capacity curve (21v) for `inst` at the smallest size >= size_usd from its latest run if at most 24 h old:
+    ('absent', None), ('blocked', reason) or ('ok', round trip)."""
+    from lab import capacity
+    last = db.one("SELECT MAX(ts) FROM observations WHERE detector=?", capacity.DETECTOR)[0]
+    if last is None or now - last > CURVE_MAX_AGE_S:
+        return "absent", None
+    rows = db.q("SELECT metric, payload FROM observations WHERE detector=? AND instrument=? AND ts>=?",
+                capacity.DETECTOR, inst, last - 3600)
+    best = None
+    for r in rows:
+        p = json.loads(r["payload"]) if isinstance(r["payload"], str) else r["payload"]
+        if r["metric"] in ("error", "not_trading"):
+            return "blocked", f"kapacitetskurven: {r['metric']} {p.get('status') or p.get('error') or ''}".strip()
+        if r["metric"].startswith("rt_") and p.get("size_usd", 0) >= size_usd and (best is None or
+                                                                                p["size_usd"] < best["size_usd"]):
+            best = p
+    if best is None:
+        return "absent", None
+    if best.get("censored") or best.get("round_trip") is None:
+        return "blocked", f"kapacitetskurven: censureret ved {best['size_usd']} USD"
+    return "ok", best["round_trip"]
+
+
+def liquidity_gate(db, books, size_usd, now):
+    """Amendment 25: (ok, detail) for a new lane's legs {instrument: Book} at size_usd per leg. Spread and depth only,
+    fees excluded; per leg the larger of the live 20-level walk and a fresh capacity curve; fail-closed."""
+    detail = {"size_usd_per_leg": size_usd, "limit": GATE_MAX_RT, "legs": {}, "rule": GATE_RULE}
+    total = 0.0
+    for inst, b in books.items():
+        if b is None or b.crossed():
+            return False, {**detail, "reason": f"{inst}: ingen brugbar bog (tom eller krydset)"}
+        qty = size_usd / b.mid()
+        buy, sell = walk(b, "buy", qty), walk(b, "sell", qty)
+        if buy is None or sell is None:
+            return False, {**detail, "reason": f"{inst}: bogen er for tynd til {size_usd:.0f} USD"}
+        st, crt = _curve(db, inst, size_usd, now)
+        if st == "blocked":
+            return False, {**detail, "reason": f"{inst}: {crt}"}
+        used = max(buy + sell, crt) if crt is not None else buy + sell
+        detail["legs"][inst] = {"live": buy + sell, "curve": crt, "curve_status": st, "used": used}
+        total += used
+    detail["round_trip"] = total
+    if total > GATE_MAX_RT:
+        return False, {**detail, "reason": f"bogens rundtur {total:.4%} > grænsen {GATE_MAX_RT:.2%}"}
+    return True, detail
 
 
 def _would_hold(r, coins, get, now, skip_unreadable=False):
@@ -480,7 +539,19 @@ def _start(db, r, get, now):
     if not _would_hold(r, basket, get, now, skip_unreadable=True):  # 11h: before any book is read
         _skip_unheld(db, r, basket, now)
         return None
-    coins, dropped = _probe(r, fam, get, now)
+    books = {}
+    coins, dropped = _probe(r, fam, get, now, books)
+    while coins:                                                    # amendment 25, pr. mønt; a drop raises the size
+        size = CAPITAL / (UNIT_CAPITAL * len(coins))
+        fails = []
+        for c in coins:
+            ok, det = liquidity_gate(db, {c + SPOT: books.get(c + SPOT), c: books.get(c)}, size, now)
+            if not ok:
+                fails.append({"coin": c, "reason": f"likviditetsgate (25): {det['reason']}"[:200], "liquidity": det})
+        if not fails:
+            break
+        dropped += fails
+        coins = [c for c in coins if c not in {f["coin"] for f in fails}]
     base["dropped"] = dropped
     if len(coins) < MIN_COINS:
         db.event("lane.skipped", ACTOR, led, {**base, "coins": coins, "reason": f"{len(coins)} coins with both live "
@@ -773,6 +844,9 @@ def manage_scanner(db, now, get):
             if any(b.crossed() for b in bks.values()):
                 raise ValueError("crossed or empty book")
             _cost_gate(trigger, bks[coin + SPOT], bks[coin], fs[0].get(coin), at, (coin + SPOT, coin))   # 12g/12h
+            ok, trigger["liquidity"] = liquidity_gate(db, bks, CAPITAL / UNIT_CAPITAL, now)            # 25
+            if not ok:
+                raise ValueError(f"likviditetsgate (25): {trigger['liquidity']['reason']}")
         except Exception as e:
             db.event("lane.skipped", ACTOR, led, {**base, "coins": [coin], "reason": f"{e!r}"[:200]})
             out["skipped"].append(coin)
@@ -880,6 +954,9 @@ def manage_hl(db, now, get):
                 if b.crossed():
                     raise ValueError(f"{inst}: crossed or empty book")
             _cost_gate(trigger, bks[s_inst], bks[p_inst], fs.get(coin), at, (s_inst, p_inst))   # 12g/12h (x 8 already)
+            ok, trigger["liquidity"] = liquidity_gate(db, bks, CAPITAL / UNIT_CAPITAL, now)            # 25
+            if not ok:
+                raise ValueError(f"likviditetsgate (25): {trigger['liquidity']['reason']}")
         except Exception as e:
             db.event("lane.skipped", ACTOR, led, {**base, "coins": [coin], "reason": f"{e!r}"[:200]})
             out["skipped"].append(coin)
@@ -1031,7 +1108,7 @@ def classify(kind, payload, ready=False):
     if kind == "lane.started":
         return CLASSES[3] if ready else CLASSES[2]
     reason = str(payload.get("reason") or "")
-    if "do not cover the round-trip cost" in reason:
+    if "do not cover the round-trip cost" in reason or "likviditetsgate (25): bogens rundtur" in reason:
         return CLASSES[0]
     return CLASSES[1]
 
