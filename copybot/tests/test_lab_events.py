@@ -20,7 +20,8 @@ class View(unittest.TestCase):
             "instrument": "XAUUSDT", "label": "Guld", "flags": ["z_1h"], "move_hour_s": NOW - 7200, "scan_ts": NOW - 3480,
             "z_1h": 4.5, "others": {"XAGUSDT": {"z_1h": 2.4}, "BTCUSDT": {"z_1h": 0.3}}, "news": [],
             "triage": {"verdict": "NOT_SCREENED", "explanations": ["unexplained"], "next": "kræver en dateret lås"}})
-        db.event("risk.pause", "system:test", "FWD_x", {"rule": "data_fetch", "detail": "reset"})
+        db.append("events", ts=int(NOW - 120), kind="risk.pause", actor="system:test", exp_id="FWD_x",
+                  payload={"rule": "data_fetch", "detail": "reset"})          # fixed time: NOW is 2026-10-26 07:33 UTC
         db.append("observations", ts=int(NOW - 60), detector="capacity/1", source="x", instrument="EPICUSDT",
                   metric="error", value=None, threshold=None, flagged=0, payload={"error": "empty book"})
         db.append("observations", ts=int(NOW - 100 * 3600), detector="capacity/1", source="x", instrument="OLD",
