@@ -133,6 +133,42 @@ hybrid-sleep.target`. Fortryd med `unmask`. Kræver din godkendelse.
   Målt: laben nede 15:08–15:16, vagten 15:07–16:02 (ventede på ja), pm_lp mistede 2 min snapshots, S7 talte ikke
   udfaldet (`system.alive` 14:58 og 15:15). Vagtens detektion er afprøvet på en kopi af registret med den rigtige kode:
   tavs supervisor (900 s), agent med puls men uden gennemløb (1200 s), fejlet agent og FAIL_CLOSED blev alle meldt.
+- **Strømsvigt 2026-10-26 (Mission 14; skrevet 2026-10-26 kl. 13:46 lokal, før kode). Tidslinje i UTC, målt:**
+  | Tid | Hændelse | Kilde |
+  |---|---|---|
+  | 11:47:34 | sidste lab-hændelse | `events` |
+  | 11:50:02 | sidste pm_lp-snapshot | `pm_lp.db` `snaps` |
+  | 11:50:38 | sidste vagt-tick | `watch.log` |
+  | ca. 11:51 | hård slukning: ingen nedlukning i journalen (den slutter 11:39:47; de sidste minutter nåede ikke disken) | `journalctl -b -2` |
+  | 12:23:25 | opstart 1 | `journalctl --list-boots` |
+  | 12:25:27 | `Power key pressed short` → logind slukker (ingen skrivebordssession endnu, så xfce's "spørg" gjaldt ikke) | `journalctl -b -1` |
+  | 12:25:50 | opstart 2 (den nuværende) | `/proc/stat` btime |
+  | 12:26:04 → 12:27:34 | indsamlerens ExecStartPre (venter på navneopslag) timede ud efter 90 s | `journalctl --user` |
+  | 12:28:35 / 12:29:38 | systemd startede indsamleren igen (NRestarts=1) / første snapshot | journal / `snaps` |
+  | 12:36:28 | laben startet i hånden (ventede K3-vinduet 12:00 ± 35 min ud); `system.host_boot` og `scanner.gap` skrevet selv | `events` |
+  | 12:36:55 | første scanning efter start | `scan.finished` |
+  | 12:37:29 | vagten startet efter brugerens ja; meldte selv sit hul (46 min) | `watch.log` |
+  Huller: pm_lp 39,6 min snapshots; laben 48,9 min; vagten 46,9 min. S7 talte ikke udfaldet (`system.alive` 11:40:45 og
+  12:36:28, under 2 t), og S7-gaten er ÅBEN (7,09 af 7 dage). Starter selv: kun indsamleren (systemd, linger). Starter
+  ikke selv: laboratoriet og vagten (S7-enhederne er forberedt, ikke installeret). Værten har ingen batteri- eller
+  strømforsyningsenhed i `/sys/class/power_supply`: et strømsvigt eller et langt tryk slukker straks.
+  K3-runden S = 12:00 UTC blev auditeret `ugyldig` automatisk ved start (data mangler) og tæller ikke.
+- **Kontrol efter værtstart: `python3 -m lab watch --once` (Mission 14; skrevet 2026-10-26 kl. 13:46 lokal, før
+  kode).** Fundet: linjen `scanner` blev aldrig skrevet af `--once` (exit-koden talte den dog med), og tre kontroller
+  kunne melde OK ud fra data fra før genstarten. Rettelser, alle kun skærpelser (ingen grænse løsnes):
+  1. `--once` skriver `scanner`-linjen.
+  2. Nye linjer kun i `--once`: `host` (opstartstid, kun oplysning) og `watcher`: en vagt-løkke
+     (`python3 -m lab watch`, ikke `--once`) kører fra denne mappe, og `watch.heartbeat` er højst 120 s gammel og
+     nyere end opstarten. Mangler vagten, er `--once` ikke grøn (exit 1).
+  3. Ingen sundhed ud fra gammel status:
+     - `lab`: supervisorens puls skal være nyere end opstarten.
+     - `collector`: seneste snapshot skal være nyere end opstarten.
+     - `scanner`: seneste `scan.finished` skal være nyere end flådens seneste `system.running`. De første 15 min efter
+       start er linjen "ikke vurderet"; derefter er manglende scanning siden start en fejl.
+     - `paper`: før 1,5 t efter start er linjen "ikke vurderet" (før stod der "marked hourly" ud fra gamle mærker), og
+       derefter skal hvert aktivt regnskabs seneste mærke også være nyere end starten.
+  Den kørende vagt bruger samme kontroller (punkt 3) fra sin næste start; `host`/`watcher` findes kun i `--once`.
+  Intet starter, stopper eller genstarter noget; S7-enhederne, pm_lp og alle pause- og FAIL_CLOSED-regler er uændrede.
 
 ## pm_lp: beskyttelse af holdout (godkendt af brugeren 2026-10-19)
 
