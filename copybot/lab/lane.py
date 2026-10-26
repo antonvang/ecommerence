@@ -848,7 +848,8 @@ def manage_scanner(db, now, get):
             if not ok:
                 raise ValueError(f"likviditetsgate (25): {trigger['liquidity']['reason']}")
         except Exception as e:
-            db.event("lane.skipped", ACTOR, led, {**base, "coins": [coin], "reason": f"{e!r}"[:200]})
+            eid = db.event("lane.skipped", ACTOR, led, {**base, "coins": [coin], "reason": f"{e!r}"[:200]})
+            _depth500(db, eid, key, trigger, e, get, now)            # 27: diagnostics after the decision is written
             out["skipped"].append(coin)
             continue
         db.event("lane.started", ACTOR, led, {**base, "coins": [coin], "expectation": None, "capital": CAPITAL,
@@ -857,6 +858,25 @@ def manage_scanner(db, now, get):
         held.add(coin)
         out["started"].append(led)
     return out
+
+
+_DEPTH_ERR = {}
+
+
+def _depth500(db, event_id, key, trigger, err, get, now):
+    """Amendment 27: after a 12g thin-book rejection only, read each leg's 500-level book for diagnostics. It never
+    changes the decision (already written) and never stops the pass: an unexpected error is recorded at most hourly."""
+    from lab import depth500
+    if not depth500.wanted(str(err)):
+        return
+    try:
+        depth500.probe(db, event_id, key, trigger, get)
+    except Exception as e:                                       # noqa: BLE001
+        if now - _DEPTH_ERR.get("at", 0) >= HOUR:
+            _DEPTH_ERR["at"] = now
+            db.append("observations", ts=int(now), detector=depth500.DET, source="lane", instrument=None,
+                      metric="error", value=None, threshold=None, flagged=0,
+                      payload={"error": repr(e)[:300], "event_id": event_id, "event_key": key})
 
 
 # ---------- Hyperliquid funding accounts (amendment 13) ----------
