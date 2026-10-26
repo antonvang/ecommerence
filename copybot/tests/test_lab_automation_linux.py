@@ -28,6 +28,9 @@ class Units(unittest.TestCase):
         self.assertIn("Restart=no", u)
         self.assertNotIn("Restart=on-failure", u)
         self.assertIn("WantedBy=default.target", u)
+        # the DNS wait (at most 120 x 5 s) must fit in the start timeout: with Restart=no a cut wait is never retried
+        self.assertIn("[ $$i -ge 120 ]", u)
+        self.assertIn("\nTimeoutStartSec=15min\n", u)
 
     def test_the_watcher_restarts_itself_and_only_runs_the_read_only_watch(self):
         u = self.read("copybot-watch.service")

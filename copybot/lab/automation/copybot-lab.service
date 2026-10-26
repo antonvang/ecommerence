@@ -15,6 +15,9 @@ ExecStart=%h/ecommerence/copybot/START_LAB.sh
 StandardOutput=append:%h/ecommerence/copybot/data/lab/start.log
 StandardError=append:%h/ecommerence/copybot/data/lab/start.log
 Restart=no
+# ExecStartPre counts against the start timeout (default 90 s): without this the 10-minute DNS wait above is cut at
+# 90 s and, with Restart=no, the lab never starts (measured at the 2026-10-26 boot; research/LINUX_DRIFT.md).
+TimeoutStartSec=15min
 TimeoutStopSec=120
 
 [Install]
