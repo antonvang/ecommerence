@@ -645,6 +645,45 @@ holdouten røres ikke; intet genstartes.
     (`daemon-reload`, ingen genstart).
   - Fortryd: `systemctl --user disable copybot-lab copybot-watch` og slet de to filer.
   - Installation kræver begge dele: S7 åben og brugerens ja (brugeren kører scriptet selv).
+- **Installeret af brugeren 2026-10-26 kl. 14:04:19 lokal; audit (Mission 15; skrevet 2026-10-26 kl. 14:14 lokal,
+  før kode).** Målt: journalen viser `daemon-reload` og `enable` fra brugerens egen `systemctl` 14:04:19–14:04:20 (ikke
+  Claude). `~/.config/systemd/user/copybot-{lab,watch}.service` er byte for byte lig `lab/automation/` i 111c037 (med
+  `TimeoutStartSec=15min`); begge `enabled`, `inactive`. pm-lp-collector uændret (pid 1495, NRestarts=1, filen fra
+  10-19). Prøvekørsel af scriptet mod en tom mappe med en falsk `systemctl`: gaten OPEN, to filer kopieret, kun
+  `daemon-reload` og `enable copybot-lab copybot-watch`; anden kørsel afviser med exit 3 og ændrer intet.
+  `systemd-analyze --user verify` uden fejl.
+  - **Hvad scriptet gør:** opretter de to unit-filer og to symlinks i `default.target.wants/`, kører `daemon-reload`
+    (genindlæser alle brugerenheder; genstarter ingen) og `enable` uden `--now`. Starter intet nu. Rører ikke
+    pm-lp-collector, data, databaser, FAIL_CLOSED eller pauser. `lab gate --require` åbner `lab.db` med den almindelige
+    forbindelse (`CREATE ... IF NOT EXISTS`, ingen rækker skrives).
+  - **Ved opstart:** begge starter parallelt med indsamleren (ingen `After=` mellem dem; de er uafhængige). Laben venter
+    højst 10 min på DNS og kører derefter `START_LAB.sh` uændret: kodevagt, preflight (`PREFLIGHT OK` krævet),
+    `lab.lock`. FAIL_CLOSED og pauser ligger i databasen og gælder som ved start i hånden. Ingen nøgler eller tokens
+    (paper, offentlige API'er).
+  - **Dobbelte processer:** `lab.lock`, `watch.lock` og preflight afviser en ekstra flåde/vagt. Laben (`Restart=no`)
+    forbliver da `failed`. Vagten (`Restart=on-failure`, `StartLimitIntervalSec=0`) prøver igen hvert 60 s, så længe
+    en anden vagt holder låsen (én loglinje i minuttet), og overtager, når den anden dør. Sker kun, hvis nogen starter
+    `copybot-watch` med hånden, mens en håndstartet vagt kører. Installér aldrig også `research/systemd/lab-watch.service`
+    (punkt G): det ville være to tjenester om samme lås; `copybot-watch.service` erstatter den.
+  - **Forskelle fra start i hånden:** (1) Stopper flåden uventet, afslutter `START_LAB.sh` med fejl, og systemd stopper
+    hele enhedens cgroup, også dashboardet (i hånden blev dashboardet stående og viste "offline"). Vagten melder begge.
+    (2) Uden skærm åbner `xdg-open` tekstbrowseren `lynx`, som afslutter straks på /dev/null; målt: exit 0, kun
+    terminalkoder i `start.log`. (3) Ved nedlukning får alle processer i enheden SIGTERM (jobs afbrydes som ved
+    nedlukning i dag, ændring 6).
+  - **Deploy efter installationen:** `lab stop` afslutter `START_LAB.sh` med 0, enheden bliver `inactive`, og en start
+    med `setsid nohup ./START_LAB.sh` kører uden for systemd til næste opstart. Det virker; næste opstart bruger
+    tjenesten igen. Den håndstartede vagt (pid 2845) kører til næste opstart.
+  - **Rollback:** `systemctl --user disable copybot-lab copybot-watch`, `rm ~/.config/systemd/user/copybot-{lab,watch}.service`,
+    `systemctl --user daemon-reload`. Stopper ingen kørende proces.
+  - **Ikke bevist:** at enhederne faktisk starter ved en rigtig opstart. Det kræver en genstart (brugerens beslutning;
+    tidligst efter en `system.alive`-post og uden for K3-vinduer, og senest 2026-10-30, før pm_lp-perioden).
+    Forventet efter opstart: `systemctl --user is-active copybot-lab copybot-watch` = active, `python3 -m lab watch
+    --once` exit 0 med `host` booted få min siden og `watcher` = tjenestens MainPID, `deploy-check` DEPLOY OK.
+- **`deploy-check`: ingen falsk grøn vagt (Mission 15; skrevet 2026-10-26 kl. 14:14 lokal, før kode).** I dag tæller
+  rækken `watcher running` enhver proces med `python3 -m lab watch` i kommandolinjen, også en `--once`-kontrol og en
+  hængt vagt. Rettelse: `--once`-processer tælles ikke, og en ny række `watcher heartbeat fresh` kræver, at
+  `data/lab/watch.heartbeat` er højst 120 s gammel og nyere end opstarten (samme grænse som `watch --once`). Kun
+  skærpelse; intet startes eller stoppes.
 - **Agenternes sundhed bygger på udført arbejde, ikke på puls (tilføjet 2026-10-23 kl. 15:34, før kode; brugeren bad
   om, at en kørende proces eller en frisk puls aldrig fremstår som sund uden nyligt arbejde).** I dag dømmer både
   dashboardet (`status`) og vagten (`agent:<navn>`) kun ud fra pulsen og `ok`-flaget: en periodisk agent, hvis gennemløb
