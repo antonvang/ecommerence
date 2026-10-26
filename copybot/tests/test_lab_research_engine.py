@@ -303,7 +303,7 @@ class Progress(Base):
                           suspends=lambda: None, slept=lambda: None, out=lambda s: None)
         idle = {"progress": {"ok": False, "detail": "no research work"}}
         n = []
-        with mock.patch.object(watch, "check", lambda *a: idle):
+        with mock.patch.object(watch, "check", lambda *a, **k: idle):
             for advance in (0, 3600, 6 * 3600, 16 * 3600, 3600):              # 0 h, 1 h, 7 h, 23 h, 24 h
                 clock["t"] += advance
                 w.tick()

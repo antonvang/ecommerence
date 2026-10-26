@@ -310,11 +310,12 @@ class Edge(Base):
         self.assertAlmostEqual(v["SHADOW_" + EID]["edge"]["z"], e["z"], places=12)
 
     def test_the_watcher_mentions_a_low_edge_but_never_fails_on_it(self):
-        self.db.event("system.running", "system:supervisor", None, {"pid": 1})
+        now = time.time()
+        self.db.append("events", ts=int(now) - 2 * 3600, kind="system.running", actor="system:supervisor",
+                       exp_id=None, payload={"pid": 1})                 # past the watcher's 1.5 h paper warm-up
         self.db.event("forward.approved", "human:test", "E_low", {"reason": "fixture"})
         self.db.event("paper.started", "agent:paper-1", "FWD_E_low", {"capital": 10000.0})
         frozen(self.db, "E_low", "validate", {"daily_net": [0.001 + 0.01 * (-1) ** i for i in range(100)]})
-        now = time.time()
         t0 = int(now) // self.DAY * self.DAY - 16 * self.DAY
         self.marks("FWD_E_low", [10000.0 * 0.99 ** i for i in range(16)], t0)
         self.db.append("sim_equity", exp_id="FWD_E_low", ts=int(now) - 600, equity=8500.0, cash=8500.0,
