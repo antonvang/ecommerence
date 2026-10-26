@@ -866,17 +866,20 @@ _DEPTH_ERR = {}
 def _depth500(db, event_id, key, trigger, err, get, now):
     """Amendment 27: after a 12g thin-book rejection only, read each leg's 500-level book for diagnostics. It never
     changes the decision (already written) and never stops the pass: an unexpected error is recorded at most hourly."""
-    from lab import depth500
-    if not depth500.wanted(str(err)):
-        return
     try:
+        from lab import depth500
+        if not depth500.wanted(str(err)):
+            return
         depth500.probe(db, event_id, key, trigger, get)
     except Exception as e:                                       # noqa: BLE001
         if now - _DEPTH_ERR.get("at", 0) >= HOUR:
             _DEPTH_ERR["at"] = now
-            db.append("observations", ts=int(now), detector=depth500.DET, source="lane", instrument=None,
-                      metric="error", value=None, threshold=None, flagged=0,
-                      payload={"error": repr(e)[:300], "event_id": event_id, "event_key": key})
+            try:
+                db.append("observations", ts=int(now), detector="depth500/1", source="lane", instrument=None,
+                          metric="error", value=None, threshold=None, flagged=0,
+                          payload={"error": repr(e)[:300], "event_id": event_id, "event_key": key})
+            except Exception:                                    # noqa: BLE001 - even a failed record never stops the pass
+                pass
 
 
 # ---------- Hyperliquid funding accounts (amendment 13) ----------

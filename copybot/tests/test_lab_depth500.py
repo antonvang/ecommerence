@@ -160,6 +160,18 @@ class Scanner12g(Base):
         errs = self.db.q("SELECT payload FROM observations WHERE detector='depth500/1' AND metric='error'")
         self.assertEqual(len(errs), 1)                                          # at most once an hour
         self.assertIn("boom", errs[0]["payload"])
+        lane._DEPTH_ERR.clear()                                                 # and a failing error record too
+        self.scan(NOW + 2 * 3600 - 60, {"DDDUSDT": 0.003})
+        real = self.db.append
+
+        def append(table, **row):                                               # only the error record fails
+            if row.get("detector") == "depth500/1":
+                raise OSError("disk full")
+            return real(table, **row)
+        with mock.patch.object(depth500, "probe", side_effect=RuntimeError("boom")), \
+                mock.patch.object(self.db, "append", side_effect=append):
+            out = lane.manage(self.db, NOW + 2 * 3600, self.thin(), fids=[])["scanner"]
+        self.assertIn("DDDUSDT", out["skipped"])
 
     def test_other_rejections_never_trigger_a_probe(self):
         wide = tl.market(rate=0.0008, spread=1.0)
