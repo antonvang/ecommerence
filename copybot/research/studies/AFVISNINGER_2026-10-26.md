@@ -1,6 +1,6 @@
 # Afvisninger af nye papirbaner, likviditetsgatens første afgørelse og forslag til 500-niveaus-måling (2026-10-26)
 
-Kun læsning af produktionens `lab.db` (2026-10-26 ca. 15:55 UTC). Alle tider UTC. Ingen regel, tærskel eller
+Kun læsning af produktionens `lab.db` (2026-10-26 ca. 15:45 UTC). Alle tider UTC. Ingen regel, tærskel eller
 kontostørrelse er ændret; intet er implementeret.
 
 ## 1. Likviditetsgatens første naturlige afgørelse (ændring 25) — og en rettelse
@@ -8,7 +8,7 @@ kontostørrelse er ændret; intet er implementeret.
 **Rettelse:** rapporterne fra 2026-10-26 13:43 UTC og frem (Mission 16, 17 og 18) sagde "0 afgørelser fra gaten" og
 "VELODROME nåede ikke gaten". Det var forkert. Optællingen 13:20 UTC var korrekt (0), men afgørelsen kom 13:39:13 UTC;
 den stod i outputtet 13:43 UTC med en afkortet payload og blev læst som en regel 19-afvisning. Senere rapporter
-genbrugte det gamle tal. Først 15:55 UTC blev den talt og læst korrekt.
+genbrugte det gamle tal. Først ca. 15:40 UTC blev den talt og læst korrekt.
 
 | Felt | Værdi (fra hændelsen `lane.skipped` id 25352) |
 |---|---|
