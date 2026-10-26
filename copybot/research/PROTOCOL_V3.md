@@ -3630,3 +3630,49 @@ kan ikke give dem (kun ~100 mønter, ingen TradFi, kataloget udtømt).
    afgørende læser `census/1`. Fuld suite grøn.
 9. **Deploy:** først efter S7-testgenstarten og R3's hentning og kørsel 2026-10-27 (ændring 24a), i et K3-frit vindue.
    Indtil da er koden kun i dev.
+
+## Ændring 28a (2026-10-26 kl. 22:37, før deploy og før nogen census-data): klassemarkering i censussen og tre låste census-hypoteser (metode m28)
+
+**Beslutning:** Claude under brugerens mandat (Mission 24, "Forbered de låste census-hypoteser nu, men start først
+analyser, når de nødvendige data findes"). Der findes 0 census-rækker; teksten er skrevet før enhver census-data.
+Ingen gate, tærskel, alfa, holdout eller lås ændres. Screening, aldrig bevis; en SCREEN_PASS kræver en ny dateret LÅS
+og brugerens ja, før noget måles videre.
+
+**Ikke genoplivning:** ingen af hypoteserne bruger "stort fald i ét instrument → rebound" (4σ-fald, DROPPED) eller
+"høj volumen → afkast" (`high_volume_return_premium`, afprøvet). De bruger kun tværsnits- og tværaktiv-information, som
+kun censussen kan give.
+
+1. **Census-præcisering (ændring 28 punkt 3):** hver snapshot gemmer også `coin_perps`: de symboler i snapshottet, som
+   premium-watch' exchangeInfo (samme time) markerer som USDT-perp på krypto (`underlyingType` COIN, `TRADING`).
+   "Krypto" i punkt 3-5 = disse symboler; TradFi = SPYUSDT, QQQUSDT, XAUUSDT.
+2. **Fælles definitioner:** snapshot H = census-rækken med ts i [H, H + 10 min). p_s,H = `markPrice`. Timeafkast
+   r_s,H = ln(p_s,H / p_s,H−1), kun når begge snapshots findes. Døgn D = snapshot 00:00 UTC. Klynge = UTC-døgn. Manglende
+   værdier udelukkes med årsag og udfyldes aldrig. Én kørsel pr. nøgle, når kravet er nået; resultatet committes uanset
+   udfald, og nøglen screenes aldrig igen.
+3. **C1 `census_tradfi_lead|btc_1h|m28` (TradFi → BTC, 1 time).**
+   - Mekanisme: information i amerikanske aktier/guld, der handles 24/7 som Binance-perps, når BTC med forsinkelse.
+   - Hændelse: for L i rækkefølgen SPYUSDT, QQQUSDT, XAUUSDT: z = r_L,H / sd(de 168 foregående r_L, mindst 120 til stede).
+     Første L med |z| ≥ 2,5 giver hændelsen; s = fortegnet af r_L,H.
+   - Udfald: y = s · ln(p_BTC,H+1 / p_BTC,H) (indgang ved snapshot H).
+   - Placebo: samme s med BTC-afkastet 168 timer tidligere, s · ln(p_BTC,H−167 / p_BTC,H−168).
+4. **C2 `census_narrow_rally|btc_24h|m28` (BTC mod bredden).**
+   - Mekanisme: en BTC-bevægelse, som resten af markedet ikke følger, er skrøbelig (eller ledende). Tosidet.
+   - Hændelse på døgn D: R = ln(p_BTC,D / p_BTC,D−1) med |R| ≥ 2 %, og blandt krypto-perps uden BTC og ETH med
+     `quoteVolume` ≥ 10 mio. USD har højst 40 % (R > 0) eller mindst 60 % (R < 0) et 24 t-afkast med samme fortegn som R.
+   - Udfald: y = sign(R) · ln(p_BTC,D+1 / p_BTC,D).
+   - Placebo: samme sign(R) med døgnet 7 døgn tidligere, sign(R) · ln(p_BTC,D−6 / p_BTC,D−7).
+5. **C3 `census_tailshare|btc_rv24h|m28` (halebredde → BTC-volatilitet; regime, ikke handel).**
+   - T_D = gennemsnittet over døgn D's timer af andelen af krypto-perps med |r_s,H| ≥ 3 %. RV_D = √Σ r_BTC,H² over døgnets
+     24 timer (mindst 22 timer).
+   - Påstand: T_D forudsiger ændringen ln(RV_D+1 / RV_D) positivt (ud over BTC's egen volatilitet).
+   - Test: Spearman ρ; ensidet permutations-p (20 000 træk, seed 7) ≤ 0,005; mindst 28 døgnpar.
+   - Placebo: samme ρ mod ln(RV_D+8 / RV_D+7), skal have p > 0,05.
+   - Ingen omkostning (ikke en handel). En PASS giver kun en dateret risikoregel-hypotese, aldrig en strategi.
+6. **Test for C1 og C2 (som ændring 24, `m21iscreen.judge`):** mindst 15 klynger, ellers UNTESTABLE; tosidet
+   fortegnsskift-test (20 000 træk, seed 7) med p ≤ 0,005; samme fortegn i første og anden halvdel af klyngerne (mindst
+   5 hver); placebo med p > 0,05; |gennemsnit| ≥ omkostningsgulvet 0,46 % (BTC, 21i).
+7. **Hvornår:** tidligst når census har ≥ 28 døgn, og for C1/C2 når ≥ 15 klynger findes. Indtil da rapporteres kun
+   antal (timer, symboler, huller, hændelser pr. nøgle), aldrig y.
+8. **Skrevet før data (forventning):** C1 SCREEN_FAIL (en 1 t-effekt ≥ 0,46 % er usandsynlig); C2 sandsynligvis
+   UNTESTABLE i måneder (få hændelser); C3 har en reel chance, men giver højst en risikoregel.
+9. **Flere tests:** 3 nøgler, hver p ≤ 0,005 (familieniveau ≤ 1,5 %). Ingen variant af tærskler eller horisonter.
