@@ -3531,3 +3531,38 @@ rapporten er PRELIMINARY, og rækken viser ikke statussen. Rettelse, kun visning
 `report_status` (PRELIMINARY eller FINAL) og `report_final_requires` (teksten for FINAL-kravet). Ingen krav, tærskel,
 anbefaling eller beregning ændres; `costrule` (mulighed C) er uændret og forbliver uvirksom. Når rækken er opfyldt,
 men rapporten er PRELIMINARY, forelægger Claude den ikke som endelig.
+
+## Ændring 27 (2026-10-26 kl. 17:08, før kode): diagnostisk 500-niveaus-måling efter en 12g-afvisning for tynd bog
+
+**Beslutning:** brugeren godkendte 2026-10-26 ("BESLUTNING: JA TIL ÆNDRING 27 — KUN DIAGNOSTIK") forslaget
+`research/drafts/DEPTH500_FORSLAG_2026-10-26.md` (commit dd4663a) med disse rammer, som har forrang for forslaget:
+kun efter en 12g-afvisning for utilstrækkelig bogdybde; ingen måling ved manglende spotpar, funding- eller
+omkostningsafvisning (heller ikke ændring 25's "bogen er for tynd"); 20-niveaus-bogen forbliver autoritativ.
+
+1. **Udløser:** en `lane.skipped` fra scannerkontiene (`manage_scanner`, ændring 12e), hvis `reason` indeholder
+   "a book is too thin for the account's size (12g)". Hyperliquid-kontiene (ændring 13) er ikke omfattet: deres
+   perp-ben findes kun som 20-niveaus-bog hos Hyperliquid. Ingen andre afvisninger udløser en måling.
+2. **Én måling pr. hændelse og ben:** nøgle = `lane.skipped`-hændelsens id og dens `key` (`scan|<mønt>|<time>`).
+   Findes en `depth500/1`-række med samme hændelses-id eller samme (key, instrument), måles der ikke igen.
+3. **Hentning:** efter at `lane.skipped` er skrevet, én gang pr. ben med samme værter som papirmotoren: spot
+   `data-api.binance.vision/api/v3/depth?limit=500` (vægt 25), perp `/fapi/v1/depth?limit=500` (vægt 10). Intet
+   genforsøg; HTTP 429/418 og andre fejl giver en fejlrække (punkt 5).
+4. **Lagring:** én række i `observations` pr. ben, detektor `depth500/1`, metric `thin_probe`, `value` =
+   VWAP-afstandenes sum (køb + salg) for den mængde, afgørelsen brugte, inden for 500 niveauer, eller NULL. Payload:
+   `event_id`, `event_key`, `rule` "12g", `size_usd`, `qty`, `fetched_at` (vægur), `decision_book_fetched_at` og
+   forskellen, `lastUpdateId`, for perp Binance `E` og `T`, antal niveauer pr. side, mid, spread, dybde i USD inden
+   for 20 og 500 niveauer pr. side, VWAP-afstand fra mid pr. side inden for 20 og 500 niveauer, `censored_20` og
+   `censored_500` pr. side (true og værdien `null`, når niveauerne ikke kan fylde mængden; aldrig 0, aldrig et
+   estimat) og `label` "diagnostik: ikke en afgørelse, ikke en fill; papirmotoren og 12g bruger kun 20 niveauer".
+   Ingen fulde bøger, ingen ny tabel, ingen migration (append-only med hash-kæde som alle `observations`).
+5. **Fejl:** en fejlet hentning (netværk, HTTP-fejl inkl. 429/418, tom eller krydset bog) giver én række metric
+   `error` pr. (key, instrument) med fejlteksten og HTTP-koden. En fejl i målingen afbryder aldrig scanner- eller
+   banepasset; den fanges og logges højst én gang i timen.
+6. **Adskillelse:** 12g, ændring 25, papirmotoren, omkostningsrapporten (R1), K3 og pm_lp læser aldrig `depth500/1`.
+   Afgørelsen og `lane.skipped`-hændelsen er uændrede; målingen kan aldrig starte en bane.
+7. **Uændret:** kontostørrelse (5 000 USD pr. ben), alle tærskler (0,46 %), 12g, 12h, regel 19, ændring 25, R1, K3,
+   mulighed C, holdouts, pm_lp. Ingen historiske forespørgsler.
+8. **Tests før deploy:** fuld dybde; utilstrækkelig dybde (NULL + censored); manglende data; HTTP 429 og 418 uden
+   genforsøg; dubletter; en fejl i målingen blokerer ikke scanneren; afgørelsen byte for byte uændret og ingen bane
+   startet; papirmotoren og 12g/gaten læser ikke `depth500/1`; kun observations-rækker skrives. Fuld suite grøn;
+   deploy uden for K1/K2- og K3-vinduerne.
