@@ -35,7 +35,7 @@ Intet hentet. Intet deployet.
 | **Hypotesekataloget** (28 skabeloner) | **BLOCKED** (udtømt) | alle har et eksperiment | Nye skabeloner kræver ny datakilde eller mekanisme. |
 
 ## 3. R3 — ændring 24a forberedt, IKKE aktiveret
-Gren `claude/r3-24a-proposal` (ikke flettet, ikke deployet, intet hentet). Diff kun i `lab/r3.py` og
+Gren `claude/r3-24a-proposal`, commit f1d48a9, fuld suite 1137 OK (ikke flettet, ikke deployet, intet hentet). Diff kun i `lab/r3.py` og
 `tests/test_lab_r3.py`:
 - `allowed(now)`: fra 2026-11-14 00:00 UTC (uændret) **eller** 2026-10-27 14:35 ≤ now < 2026-10-31 00:00 UTC **og** et
   K3-frit vindue (XX:35-(XX+1):25 UTC, XX lige).
