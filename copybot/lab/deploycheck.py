@@ -1,7 +1,8 @@
 """Post-deploy check (`python3 -m lab deploy-check`): one read-only command that says whether a deploy landed.
 
 Rows (name, ok, detail), like the preflight: the dashboard reports the expected commit, the dashboard endpoints answer,
-the fleet, dashboard, watcher and pm_lp collector processes run, the last start printed PREFLIGHT OK, the pm_lp
+the fleet, dashboard, watcher and pm_lp collector processes run (a `watch --once` check is not the watcher, and the
+watcher's heartbeat file must be at most 2 minutes old and newer than the host's boot), the last start printed PREFLIGHT OK, the pm_lp
 collector could restart from the checkout, no tracked file is empty, the checkout has no local changes, FAIL_CLOSED
 is off and every agent is active. It sends no signal, writes nothing and never touches the collector.
 """
@@ -55,8 +56,27 @@ def last_preflight(log_path):
     return lines[-1] if lines else None
 
 
+WATCHER_BEAT_S = 120                                         # the watcher touches its heartbeat every 30 s
+
+
+def watcher_beat(root, now=None, boot=None):
+    """(ok, detail) for data/lab/watch.heartbeat: at most WATCHER_BEAT_S old and newer than the host's boot."""
+    from lab.watch import boot_time
+    now = time.time() if now is None else now
+    boot = boot_time() if boot is None else boot
+    try:
+        beat = os.path.getmtime(os.path.join(root, "data", "lab", "watch.heartbeat"))
+    except OSError:
+        return False, "no data/lab/watch.heartbeat"
+    if now - beat > WATCHER_BEAT_S:
+        return False, f"heartbeat {int(now - beat)} s old"
+    if boot is not None and boot <= now and beat < boot:
+        return False, "no heartbeat since the host booted"
+    return True, f"heartbeat {int(now - beat)} s ago"
+
+
 def checks(root=HERE, port=8770, commit=None, timeout=120, procs=None, get=None, git=_git, restart=None, wait_s=90,
-           sleep=time.sleep):
+           sleep=time.sleep, beat=None):
     from lab import preflight
     out = []
     add = lambda name, ok, detail="": out.append((name, bool(ok), detail))  # noqa: E731
@@ -90,8 +110,9 @@ def checks(root=HERE, port=8770, commit=None, timeout=120, procs=None, get=None,
             f"{kpis.get('agents_active')} of {kpis.get('agents_total')}" + (f" (after {waited} s)" if waited else ""))
     lines = _cmdlines() if procs is None else procs
     for name, pat in PROCS.items():
-        n = sum(1 for c in lines if pat in c)
+        n = sum(1 for c in lines if pat in c and not (name == "watcher" and "--once" in c))
         add(f"{name} running", n >= 1, f"{n} process(es)")
+    add("watcher heartbeat fresh", *(beat or watcher_beat)(root))
     pf = last_preflight(os.path.join(root, "data", "lab", "start.log"))
     add("last start printed PREFLIGHT OK", pf == "PREFLIGHT OK", pf or "no PREFLIGHT line in data/lab/start.log")
     add("pm_lp collector could restart", *(restart or preflight.collector_restart)(root))

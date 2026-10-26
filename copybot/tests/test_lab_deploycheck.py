@@ -24,6 +24,7 @@ class DeployCheck(unittest.TestCase):
             f.write(b"PREFLIGHT OK\n\x00\x00binary\nPREFLIGHT FAILED: x\nlater\nPREFLIGHT OK\n")
         with open(os.path.join(self.root, "a.py"), "w") as f:
             f.write("x = 1\n")
+        open(os.path.join(self.root, "data", "lab", "watch.heartbeat"), "w").close()   # touched now
         self.kpis = [{"deploy": {"commit": "abc1234"}, "fail_closed": False, "agents_active": 18, "agents_total": 18}]
         self.status = ""
 
@@ -59,6 +60,21 @@ class DeployCheck(unittest.TestCase):
                      "checkout has no local changes"):
             self.assertFalse(r[name][0], name)
         self.assertIn("after 90 s", r["all agents active"][1])
+
+    def test_a_watch_once_check_or_a_stale_heartbeat_is_not_a_running_watcher(self):
+        """research/LINUX_DRIFT.md Mission 15 (2026-10-26)."""
+        once = PROCS[:2] + ["python3 -m lab watch --once"] + PROCS[3:]
+        r = self.run_checks(procs=once)
+        self.assertEqual(r["watcher running"], (False, "0 process(es)"))
+        hb = os.path.join(self.root, "data", "lab", "watch.heartbeat")
+        t = os.path.getmtime(hb)
+        self.assertEqual(deploycheck.watcher_beat(self.root, now=t + 300, boot=t - 600), (False, "heartbeat 300 s old"))
+        self.assertEqual(deploycheck.watcher_beat(self.root, now=t + 30, boot=t + 10),
+                         (False, "no heartbeat since the host booted"))
+        self.assertEqual(deploycheck.watcher_beat(self.root, now=t + 30, boot=t - 600), (True, "heartbeat 30 s ago"))
+        os.remove(hb)
+        r = self.run_checks()
+        self.assertEqual(r["watcher heartbeat fresh"], (False, "no data/lab/watch.heartbeat"))
 
     def test_waits_for_a_fresh_fleet(self):
         self.kpis = [{**self.kpis[0], "agents_active": 0}, {**self.kpis[0], "agents_active": 9}, self.kpis[0]]
