@@ -3566,3 +3566,29 @@ omkostningsafvisning (heller ikke ændring 25's "bogen er for tynd"); 20-niveaus
    genforsøg; dubletter; en fejl i målingen blokerer ikke scanneren; afgørelsen byte for byte uændret og ingen bane
    startet; papirmotoren og 12g/gaten læser ikke `depth500/1`; kun observations-rækker skrives. Fuld suite grøn;
    deploy uden for K1/K2- og K3-vinduerne.
+
+## Ændring 24a (2026-10-26 kl. 22:06, før kode-fletning og før data): R3's hentning før pm_lp's D1 (brugerens ja)
+
+**Beslutning:** brugerens udtrykkelige ja 2026-10-26 ca. kl. 22:05 ("JA — jeg godkender ændring 24a præcis inden for det
+beskrevne omfang"), efter forslaget i `research/studies/R3_BLOKERING_2026-10-26.md` afsnit 4 og
+`research/studies/MISSION22_SPOR_2026-10-26.md` afsnit 3. Undtagelsen gælder **kun** ændring 24's 44 filer. Brugerens
+regel "ingen historiske forespørgsler før 2026-11-14" gælder uændret for alt andet.
+
+1. **Vinduer (erstatter datoen i ændring 24 punkt 2):** hentningen må køre fra 2026-11-14 00:00 UTC (uændret) eller
+   2026-10-27 14:35 UTC ≤ t < 2026-10-31 00:00 UTC (efter S7-testgenstarten, før pm_lp's D1), og i det tidlige vindue
+   kun i K3-frie vinduer: XX:35 ≤ t < (XX+1):25 UTC med XX lige (ændring 22's runder ligger hver lige time ± 35 min).
+2. **Stop:** før hver fil kontrolleres vinduet igen. Forlader kørslen vinduet, hentes intet mere; resten registreres
+   som `stopped` i `fetch_log.jsonl` og hentes af en senere kørsel i et tilladt vindue. En afvist kørsel skriver
+   `refused` og laver ingen forespørgsel.
+3. **Rækkefølge 2026-10-27:** S7-preflight og -testgenstart efter `research/LINUX_DRIFT.md` (brugeren genstarter selv)
+   og verifikationen efter opstart først. Hentningen starter tidligst 14:35 UTC og kun, hvis verifikationen er grøn og
+   K3's placebo-vindue for 12:00-runden (13:25-14:35) er afsluttet. Ellers stoppes og rapporteres der.
+4. **Kontrol før kørslen:** alle 44 filer findes (eller er registreret `absent` ved 404); sha256 på disken = sha256 i
+   `fetch_log.jsonl`; hver zip består en CRC-kontrol; minutbarernes tider ligger i 2020-03..2021-12. Ingen
+   sammenligning med Binance' `.CHECKSUM`-filer (det ville være 44 andre forespørgsler, som denne undtagelse ikke
+   omfatter).
+5. **Uændret:** alt andet i ændring 24 og præciseringen 2026-10-25: samme 44 filer, vært, højst 2 samtidige downloads,
+   metode m24, én kørsel, resultatet committes som `research/studies/R3_m24.json/.md` uanset udfald, nøglen screenes
+   aldrig igen. Ingen LÅS, alfa k5, mulighed C, 2024-holdout, 2025+, `train3`, `validation3`, tærskel, ordrer eller pm_lp.
+6. **Kode:** gren `claude/r3-24a-proposal` (f1d48a9, fuld suite 1137 OK) flettes efter denne tekst. `lab/r3.py` er et
+   CLI-modul; produktionen får det ved pull uden genstart af lab'en.
