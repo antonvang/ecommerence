@@ -634,6 +634,15 @@ holdouten røres ikke; intet genstartes.
   - `copybot-watch.service` kører `START_WATCH.sh` og genstartes efter 60 s, hvis den dør (den læser kun og
     genstarter aldrig noget; `watch.lock` forhindrer to vagter).
   - Ventetid på navneopslag før start som i pm-lp-collector.service (højst 10 min).
+  - **Rettelse (Mission 14; skrevet 2026-10-26 kl. 13:55 lokal, før kode).** Målt ved opstarten 2026-10-26: systemd
+    afbryder `ExecStartPre` efter `TimeoutStartSec` (standard 90 s, `TimeoutStartUSec=1min 30s`), så "højst 10 min"
+    var i praksis 90 s. Indsamleren klarede det, fordi `Restart=on-failure` startede den igen 60 s senere
+    (NRestarts=1). `copybot-lab.service` har `Restart=no`: med langsomt netværk ved opstart ville laboratoriet aldrig
+    være startet. Den forberedte (ikke installerede) `copybot-lab.service` får `TimeoutStartSec=15min` (120 × 5 s
+    venten plus navneopslagenes egne timeouts); intet andet ændres, og intet installeres eller startes.
+    `copybot-watch.service` har ingen `ExecStartPre` og ændres ikke. Indsamlerens installerede tjeneste røres ikke
+    (pm_lp-reglen); den samme linje dér er brugerens beslutning og virker først ved næste start
+    (`daemon-reload`, ingen genstart).
   - Fortryd: `systemctl --user disable copybot-lab copybot-watch` og slet de to filer.
   - Installation kræver begge dele: S7 åben og brugerens ja (brugeren kører scriptet selv).
 - **Agenternes sundhed bygger på udført arbejde, ikke på puls (tilføjet 2026-10-23 kl. 15:34, før kode; brugeren bad
