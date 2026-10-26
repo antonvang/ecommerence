@@ -120,7 +120,17 @@ def costs(con, mr, sym):
             funding.append(p["funding_rate"])
     bp = lambda x: None if x is None else round(x * 1e4, 3)                    # noqa: E731
     med = lambda v: statistics.median(v) if v else None                         # noqa: E731
+    days = {}
+    for r in mr:
+        days.setdefault(time.strftime("%Y-%m-%d", time.gmtime(r["ts"])), []).append(r["rt"])
+    by_day = {d: {"hours": len(v), "missing": sum(1 for x in v if x is None),
+                  "median_bp": bp(med([x for x in v if x is not None]))} for d, v in sorted(days.items())}
+    split = {k: [r["rt"] for r in mr if r["rt"] is not None and is_weekend(r["ts"]) == w]
+             for k, w in (("weekend", True), ("weekday", False))}
     return {"observed": {"book_round_trip_bp_median": bp(med(rt)), "spread_bp_median": bp(med(sp)),
+                         "by_utc_day": by_day,
+                         "weekend_vs_weekday_median_bp": {k: {"hours": len(v), "median_bp": bp(med(v))}
+                                                          for k, v in split.items()},
                          "slippage_beyond_spread_bp_median": bp(med(slip)),
                          "slippage_beyond_spread_bp_max": bp(max(slip)) if slip else None,
                          "hours_where_5000_usd_fit_inside_the_spread": sum(1 for s in slip if s <= 1e-12),

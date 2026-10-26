@@ -67,6 +67,11 @@ class Report(unittest.TestCase):
         self.assertTrue(all(t["requirements"].values()))
         self.assertEqual(t["recommendation"], "can be put to the user")
         self.assertIn("transfer of 2026 costs to 2020-21 (explore0)", t["assumed_inputs"])
+        # 21o precision 2026-10-26: the row is met, but no TradFi weekend exists, so the report is still preliminary
+        # and the row says so (display only; the recommendation itself is unchanged)
+        self.assertEqual(t["report_status"], "PRELIMINARY")
+        self.assertIn("7 x 24 h", t["report_final_requires"])
+        self.assertEqual(costreport.report(self.db.q)["status"], t["report_status"])
 
     def test_sufficiency_is_fixed_in_advance(self):
         self.assertFalse(costreport.sufficient({"days": 7, "n": 100}, {"n": 10}, weekends=1))   # 21n: 2 weekends

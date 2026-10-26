@@ -34,6 +34,7 @@ NOTES = ["book_rt = (buy VWAP - sell VWAP) / mid for 5 000 USD each way: spread 
 
 
 FINAL_AFTER_S = 7 * DAY
+FINAL_REQUIRES = "span first-last observation >= 7 x 24 h and >= 2 weekends with TradFi off-hours observations (21k)"
 
 
 def d_class(rs):
@@ -161,6 +162,9 @@ def report(q, now=None):
                         "B_vs_C": b_and_c(mr, moved) if sufficient(d, dm, weekends_of(mr)) else None,
                         "total_round_trip_bp_with_fees": None if d["median"] is None else
                         round((d["median"] + 2 * FEE[d_class(mr)]) * 1e4, 3)}
+    span = (max(r["ts"] for r in rs) - min(r["ts"] for r in rs)) if rs else 0
+    weekends = len({r["ts"] // (7 * DAY) for r in rs if r["off"] and r["class"] == "tradfi"})
+    status = "FINAL" if span >= FINAL_AFTER_S and weekends >= 2 else "PRELIMINARY"
     table = {}
     for sym, m in markets.items():                              # 21o point 2: the per-market decision table
         req = {"days >= 7": m["days"] >= MIN_DAYS, "observations >= 100": m["n"] >= MIN_OBS,
@@ -177,12 +181,12 @@ def report(q, now=None):
                       "observed_inputs": ["book_rt", "spread", "volume_ratio", "quote_volume_1h"],
                       "assumed_inputs": ["taker fee rate", "RT_est volume relation (2026-10-24 snapshot)",
                                          "transfer of 2026 costs to 2020-21 (explore0)"],
-                      "recommendation": "can be put to the user" if all(req.values()) else "NO_DECISION"}
-    span = (max(r["ts"] for r in rs) - min(r["ts"] for r in rs)) if rs else 0
-    weekends = len({r["ts"] // (7 * DAY) for r in rs if r["off"] and r["class"] == "tradfi"})
+                      "recommendation": "can be put to the user" if all(req.values()) else "NO_DECISION",
+                      "report_status": status,                  # 21o precision 2026-10-26: display only
+                      "report_final_requires": FINAL_REQUIRES}
     return {"rule": "research/PROTOCOL_V3.md amendments 21k, 21l, 21n and 21r", "generated": now, "scans": len({r["ts"] for r in rs}),
             "rescans_dropped": len(dropped),
-            "span_hours": span / 3600, "status": "FINAL" if span >= FINAL_AFTER_S and weekends >= 2 else "PRELIMINARY",
+            "span_hours": span / 3600, "status": status,
             "label": "OBSERVED book cost for 5 000 USD (fees excluded); the model column is the 21i ESTIMATE",
             "notes": NOTES,
             "groups": {k: describe(v) for k, v in sorted(groups.items())}, "markets": markets,
