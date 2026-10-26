@@ -64,6 +64,11 @@ class Census(unittest.TestCase):
         self.assertEqual((r["value"], p["premium_time_ms"], p["ticker_close_ms"]), (3, 2000, 6000))
         self.assertEqual((p["premium_fetched_at"], p["ticker_fetched_at"], p["ticker_error"]), (H + 61, H + 62.5, None))
         self.assertEqual(r["flagged"], 0)
+        self.assertEqual(p["coin_perps"], [])                              # no exchangeInfo set given
+
+    def test_28a_coin_perps_are_the_snapshot_members_premium_watch_marks_as_coin(self):
+        census.observe(self.db, H + 61, PREM, self.get, perps={"AAAUSDT", "GONEUSDT"})
+        self.assertEqual(self.snaps()[0]["payload"]["coin_perps"], ["AAAUSDT"])    # XAU is TradFi; GONE not in it
 
     def test_a_ticker_failure_keeps_the_premium_part(self):
         def bad(url):
@@ -88,6 +93,9 @@ class Census(unittest.TestCase):
             out = scanner.premium_watch(self.db, get, H + 61, post=lambda u, b: [{"universe": []}, []])
             scanner.premium_watch(self.db, get, H + 121, post=lambda u, b: [{"universe": []}, []])
         self.assertIn("boom", out["census"]["error"])
+        with mock.patch.object(census, "observe", return_value=None) as obs:
+            scanner.premium_watch(self.db, get, H + 3600 + 61, post=lambda u, b: [{"universe": []}, []])
+        self.assertEqual(obs.call_args[0][4], {"AAAUSDT"})                  # premium-watch's COIN set is passed
         self.assertEqual(out["k3"], {"ok": 1})
         self.assertEqual(k3obs.call_count, 2)
         self.assertGreater(out["observations"], 0)

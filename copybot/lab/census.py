@@ -55,8 +55,9 @@ def _stored(db, hour):
                   DET, hour, hour + HOUR)
 
 
-def observe(db, now, rows, get, clock=time.time):
-    """Amendment 28 for one premium-watch pass: the hour's snapshot if due; returns a short summary or None."""
+def observe(db, now, rows, get, perps=(), clock=time.time):
+    """Amendment 28 for one premium-watch pass: the hour's snapshot if due; returns a short summary or None.
+    28a: `perps` is premium-watch's exchangeInfo set of COIN USDT perps; the snapshot's members are stored."""
     now = int(now)
     hour = now - now % HOUR
     if now - hour > LATEST_S or _DONE.get(hour):
@@ -75,16 +76,16 @@ def observe(db, now, rows, get, clock=time.time):
     snap = snapshot(rows, ticker)
     db.append("observations", ts=now, detector=DET, source=f"{BN}/fapi/v1/premiumIndex + {url}", instrument=None,
               metric="snapshot", value=len(snap["rows"]), threshold=None, flagged=0,
-              payload={**snap, "premium_fetched_at": now, "ticker_fetched_at": t_at, "ticker_error": err,
+              payload={**snap, "coin_perps": sorted(set(perps) & set(snap["rows"])), "premium_fetched_at": now, "ticker_fetched_at": t_at, "ticker_error": err,
                        "rule": RULE, "label": "rådata til senere præregistrerede hypoteser; ingen afgørelse"})
     _DONE[hour] = True
     return {"symbols": len(snap["rows"]), "ticker_error": err}
 
 
-def guarded(db, now, rows, get):
+def guarded(db, now, rows, get, perps=()):
     """premium-watch's hook: a census failure is recorded at most once an hour and never raised."""
     try:
-        return observe(db, now, rows, get)
+        return observe(db, now, rows, get, perps)
     except Exception as e:                                      # noqa: BLE001
         try:
             if now - _ERR.get("at", 0) >= HOUR:
