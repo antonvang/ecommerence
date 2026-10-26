@@ -267,7 +267,13 @@ def premium_watch(db, get=http_get, now=None, post=None):
             db.append("observations", ts=now, detector="k3/1", source="k3", instrument=None, metric="error",
                       value=None, threshold=None, flagged=0, payload={"error": repr(e)[:300]})
         k3_res = {"error": repr(e)[:200]}
-    return {"observations": len(rows), "flagged": sum(o["flagged"] for o in rows), "decisional": False, "k3": k3_res}
+    try:                                            # amendment 28: the census never stops premium-watch
+        from lab import census
+        census_res = census.guarded(db, now, allrows, get)
+    except Exception as e:                          # noqa: BLE001
+        census_res = {"error": repr(e)[:200]}
+    return {"observations": len(rows), "flagged": sum(o["flagged"] for o in rows), "decisional": False, "k3": k3_res,
+            "census": census_res}
 
 
 _K3_ERR = {}
