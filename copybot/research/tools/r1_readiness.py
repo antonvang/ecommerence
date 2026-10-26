@@ -146,6 +146,49 @@ def costs(con, mr, sym):
                         "depth and per-side VWAP at the hourly scans (not stored; only the capacity curve has them)"]}
 
 
+FEE_SCENARIOS_BP = (0, 2, 4, 5, 10)        # per side; 4/5 are the assumed 2026 rates, 10 is the lab's paper fee per leg
+PAPER_ADDON_BP = 2                         # the paper engine's 0.02 % add-on per fill (amendment 26)
+
+
+def gaps(mr, moved, table, now):
+    """What is still missing per requirement (counts, not dates) and whether it blocks R1's conclusion or option C."""
+    ts = sorted(r["ts"] for r in mr)
+    vs = [r["v24"] for r in mr if r["v24"]]
+    v24 = statistics.median(vs) if vs else None
+    return {"observations_missing": max(0, costreport.MIN_OBS - len(ts)),
+            "utc_days_missing": max(0, costreport.MIN_DAYS - len({t // DAY for t in ts})),
+            "weekends_missing": max(0, costreport.MIN_WEEKENDS - len({t // WEEK for t in ts if is_weekend(t)})),
+            "move_hours_missing": max(0, costreport.MIN_MOVE - len(moved)),
+            "move_hours_with_book_for_q95": sum(1 for r in moved if r["rt"] is not None),
+            "strict_7x24h_hours_missing": round(max(0, ts[0] + WEEK - now) / HOUR, 1),
+            "v24_usd_median": round(v24) if v24 else None,
+            "liquid_for_option_c": v24 is not None and v24 >= 1e8,
+            "blocks_r1_conclusion": [k for k, ok in table["requirements"].items() if not ok],
+            "blocks_option_c_beyond_r1": ([] if v24 is not None and v24 >= 1e8 else ["24 h volume < 100 M USD"])
+            + ["the user's decision per market"]}
+
+
+def scenarios(mr, sym):
+    """ILLUSTRATIVE calculations, not trades: book level (median, q75, max observed) + 2 x fee per side, and the paper
+    engine's add-on. A censored hour (book too thin) has no cost and is reported, never filled in."""
+    vals = sorted(r["rt"] for r in mr if r["rt"] is not None)
+    if not vals:
+        return None
+    lv = {"median": statistics.median(vals), "q75": statistics.quantiles(vals, n=4)[2] if len(vals) >= 4 else None,
+          "max": vals[-1]}
+    out = {f"{k}+fee{f}": round(v * 1e4 + 2 * f, 3) for k, v in lv.items() if v is not None for f in FEE_SCENARIOS_BP}
+    out["median+fee_assumed+paper_addon"] = round(
+        lv["median"] * 1e4 + 2 * costreport.FEE["crypto" if moves.WATCH[sym][0] == "crypto" else "tradfi"] * 1e4
+        + 2 * PAPER_ADDON_BP, 3)
+    out["censored_hours"] = sum(1 for r in mr if r["rt"] is None)
+    sess = {}
+    for name, flag in (("off_hours", True), ("regular", False)):
+        v = [r["rt"] for r in mr if r["rt"] is not None and r["off"] == flag]
+        sess[name] = {"hours": len(v), "median_bp": round(statistics.median(v) * 1e4, 3) if v else None}
+    out["session"] = sess
+    return out
+
+
 def capacity(con, sym):
     """Every capacity-curve snapshot at 5 000 USD for the market: depth, levels, per-side VWAP cost, spread."""
     out = []
@@ -206,6 +249,7 @@ def main(argv=None):
                     "earliest_strict_7x24h": utc(max(earliest, est["7 x 24 h after the first observation (21k)"]))
                     if move_ok else "unknown (move hours cannot be forecast)",
                     "first_observation": utc(min(r["ts"] for r in mr)), "last_observation": utc(max(r["ts"] for r in mr)),
+                    "gaps": gaps(mr, moved, table, now), "scenarios_illustrative_bp": scenarios(mr, sym),
                     "costs": costs(con, mr, sym), "capacity_curve_5000": capacity(con, sym)}
     res = {"generated": utc(now), "timezone": "UTC everywhere", "db": os.path.abspath(a.db),
            "costreport_status": rep["status"], "rescans_dropped": rep["rescans_dropped"],
