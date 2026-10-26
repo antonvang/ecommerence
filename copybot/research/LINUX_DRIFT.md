@@ -684,6 +684,49 @@ holdouten røres ikke; intet genstartes.
   hængt vagt. Rettelse: `--once`-processer tælles ikke, og en ny række `watcher heartbeat fresh` kræver, at
   `data/lab/watch.heartbeat` er højst 120 s gammel og nyere end opstarten (samme grænse som `watch --once`). Kun
   skærpelse; intet startes eller stoppes.
+- **Testplan: S7-testgenstart (Mission 16; skrevet 2026-10-26 kl. 14:28 lokal). Udføres KUN efter brugerens ja.**
+  - **Tidspunkt:** tirsdag 2026-10-27 kl. 12:40 UTC (13:40 dansk tid). Reserve: onsdag 10-28 eller torsdag 10-29 samme
+    klokkeslæt; aldrig fredag efter 12:00 UTC, i weekenden eller fra 10-31. Begrundelse: K3-vinduerne ligger om hver lige
+    time ± 35 min (00/04/08/12/16/20 UTC rigtige, 02/06/10/14/18/22 UTC placebo), så 12:35–13:25 UTC er frit. Kl. 12:40
+    er efter K3's 12:00-vindue og 12:02-scanningen, og selv den værste ventetid på netværket (15 min) er overstået før
+    papirmærkerne kl. 13:00, scanningen kl. 13:02 og næste K3-vindue kl. 13:25. Ingen daglige jobs (00:00, 00:30), ingen
+    weekend-timer (K1/K2) og ikke FOMC-aftenen 10-28.
+  - **Forventet hul (målt ved opstarten 2026-10-26):** kerne + userspace 19 s; netværket globalt 108 s efter kernen
+    (kablet forbindelse); indsamlerens DNS-ventetid afbrydes efter 90 s og startes igen efter 60 s (første snapshot
+    ca. 3,5 min efter kernen); BIOS og nedlukning ca. 1 min. Derfor: vagt ca. 2 min, lab ca. 3–4 min, pm_lp ca. 5 min
+    (ca. 5 snapshot-runder af 1.440 den dag, før holdout; D1 måles først fra 10-31). K3, K1/K2, papirmærker, daglige
+    jobs, R3 og sim_exec: intet tab forventet. Et afbrudt job lægges tilbage i køen (ændring 6).
+  - **Før (fra `~/ecommerence/copybot`, T−10 min):** `date -u`; `python3 -m lab watch --once` (exit 0);
+    `python3 -m lab deploy-check` (DEPLOY OK); `systemctl --user is-enabled copybot-lab copybot-watch pm-lp-collector`
+    (enabled ×3); `sha256sum ~/.config/systemd/user/copybot-{lab,watch}.service` (begynder e3efa4906df6432b og
+    0629c087f0e00575 = 111c037/6b02c19); `python3 -m lab jobs --status running` (running 0); `python3 -m lab gate`
+    (OPEN); `python3 -m lab health` (FAIL_CLOSED: no). Noter K3 `valid_rounds` fra `/api/research` og de aktive pauser
+    (2026-10-26: kun den pensionerede `LANE_4c87acd9ce`, spread_anomaly 10-19).
+  - **Genstart (brugeren, i en terminal på skrivebordet):** `python3 -m lab stop --reason "S7-testgenstart"` og derefter
+    `systemctl reboot`. Log ikke ind de første 5 min (så beviser opstarten, at enhederne starter før login), og tryk
+    ikke på tænd/sluk-knappen ved login-skærmen (logind slukker).
+  - **Efter (T+5 min; laben har højst 15 min til DNS + preflight, derefter er det en fejl):**
+    1. `systemctl --user is-active copybot-lab copybot-watch pm-lp-collector` → active ×3;
+       `systemctl --user show copybot-lab copybot-watch -p MainPID -p ActiveEnterTimestamp` → start før login.
+    2. `python3 -m lab watch --once` → exit 0; `host` booted få min siden; `watcher` pid = copybot-watch's MainPID;
+       `lab` puls; `scanner` OK (flåden scanner ved start); `collector` snapshot nyere end opstarten; `paper` "not judged
+       yet" de første 1,5 t (forventet).
+    3. `python3 -m lab deploy-check` → DEPLOY OK (inkl. `watcher heartbeat fresh`).
+    4. Hændelser: `system.host_boot`, `system.startup` med `fail_closed: false`, `scanner.gap` (forventet 0 timer).
+    5. pm_lp: `systemctl --user show pm-lp-collector -p MainPID -p NRestarts`, ny `runs`-række med HEAD, hul i `snaps`.
+    6. K3: `valid_rounds` uændret; lå genstarten i et vindue, skal den runde stå `ugyldig` i auditten (aldrig udfyldt).
+    7. `python3 -m lab health` → FAIL_CLOSED: no; samme aktive pauser som før (ingen ryddet, ingen ny).
+    8. `journalctl -b -1 | grep "System is rebooting"` (ren nedlukning) og `journalctl --user -b -u copybot-lab -u
+       copybot-watch` (ingen fejl).
+  - **Rollback:** laben ikke active efter 17 min → læs `journalctl --user -b -u copybot-lab` og `data/lab/start.log`,
+    start i hånden med `(setsid nohup ./START_LAB.sh >> data/lab/start.log 2>&1 < /dev/null &)`; vil man helt tilbage:
+    `systemctl --user disable copybot-lab copybot-watch`, `rm ~/.config/systemd/user/copybot-{lab,watch}.service`,
+    `systemctl --user daemon-reload`, og start laben og vagten i hånden som før. Vagten genstarter i ring → `systemctl
+    --user disable --now copybot-watch`, start i hånden. Indsamleren ikke active → `systemctl --user start
+    pm-lp-collector` (punkt C; aldrig START_PM_LP.sh i hånden).
+  - **Kan ikke bevises af kommandoer:** at maskinen faktisk genstarter (brugeren), skrivebordsnotifikationen,
+    dashboardet i browseren (F12; værten har ingen JS-motor). Claude-sessionen dør med værten og fortsættes med
+    `claude --continue` efter login.
 - **Agenternes sundhed bygger på udført arbejde, ikke på puls (tilføjet 2026-10-23 kl. 15:34, før kode; brugeren bad
   om, at en kørende proces eller en frisk puls aldrig fremstår som sund uden nyligt arbejde).** I dag dømmer både
   dashboardet (`status`) og vagten (`agent:<navn>`) kun ud fra pulsen og `ok`-flaget: en periodisk agent, hvis gennemløb
