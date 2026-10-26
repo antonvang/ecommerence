@@ -3592,3 +3592,41 @@ regel "ingen historiske forespørgsler før 2026-11-14" gælder uændret for alt
    aldrig igen. Ingen LÅS, alfa k5, mulighed C, 2024-holdout, 2025+, `train3`, `validation3`, tærskel, ordrer eller pm_lp.
 6. **Kode:** gren `claude/r3-24a-proposal` (f1d48a9, fuld suite 1137 OK) flettes efter denne tekst. `lab/r3.py` er et
    CLI-modul; produktionen får det ved pull uden genstart af lab'en.
+
+## Ændring 28 (2026-10-26 kl. 22:25, før kode og før nogen data): fremadrettet timecensus af hele Binance-perp-universet (Mission 24)
+
+**Beslutning:** Claude under brugerens mandat (Mission 24, 2026-10-26: "Byg eller forbedr et system til at opdage
+usædvanlige forhold"). Kun registrering; ingen afgørelse, ingen bane, ingen ordre. Ingen gate, tærskel, alfa,
+holdout, K3, R1, R3 eller pm_lp ændres. Ingen historisk forespørgsel.
+
+**Blind vinkel (audit 2026-10-26, `research/studies/MISSION24_AUDIT_2026-10-26.md`):** scannerens timevise detektorer
+dækker 12 markeder; premium-watch måler hvert minut alle perps, men gemmer kun markerede præmier/funding. Der findes
+ingen fremadrettet serie for hele universet (≈ 600 perps inkl. TradFi-kontrakter), så bredde, spredning, halehændelser,
+volumen uden pris, pris uden volumen og synkrone bevægelser på tværs af alts/meme-coins kan aldrig testes. explore0
+kan ikke give dem (kun ~100 mønter, ingen TradFi, kataloget udtømt).
+
+1. **Hvornår:** i det første premium-watch-pas i hver UTC-time (højst 10 min efter timeskiftet), én gang pr. time,
+   også efter en genstart (dublet-tjek mod registret).
+2. **Data (ingen nye værter):**
+   - premium-watch' eksisterende `premiumIndex`-svar (alle rækker, samme minut): `markPrice`, `indexPrice`,
+     `lastFundingRate`, Binance-tid `time`. Ingen ekstra forespørgsel.
+   - én `GET fapi.binance.com/fapi/v1/ticker/24hr` (alle symboler, vægt 40 af 2 400/min): `lastPrice`, `openPrice`,
+     `highPrice`, `lowPrice`, `quoteVolume`, `count`, `closeTime`.
+   - Symboler uden `_` (ingen leveringskontrakter). Krypto og TradFi gemmes ens; klassen afgøres senere fra
+     exchangeInfo/scannerens liste, ikke ved indsamling.
+3. **Lagring:** én række `observations`, detektor `census/1`, metric `snapshot`, `value` = antal symboler, payload med
+   kolonnenavne, pr. symbol en række tal i fast rækkefølge, `fetched_at` (vægur) for begge kald, `premium_time_ms`
+   (median af Binance-tiderne) og `ticker_close_ms` (median). Manglende felt = `null`, aldrig 0. Ingen beregnede
+   signaler gemmes; analyser laves bagefter fra de rå tal.
+4. **Fejl:** fejler ticker-kaldet, gemmes premiumIndex-delen alligevel med `ticker_error`; fejler hele censussen,
+   skrives højst én `error`-række i timen. En fejl stopper aldrig premium-watch, K3 eller scanneren.
+5. **Adskillelse:** intet, der afgør (12g, ændring 25, papirmotoren, baner, K3, R1, R3, promotion) læser `census/1`.
+6. **Brug:** indtil en dateret hypotese er låst før data, rapporteres kun datakvalitet (antal timer, symboler, huller,
+   fejl). Første mulige brug: en præregistreret hypotese med falsifikation, placebo og omkostninger (fx 21i-gulvet).
+   Ingen dom på data, der er set, før hypotesen blev skrevet.
+7. **Pris:** én forespørgsel i timen; ca. 35 KB pr. række (≈ 0,8 MB pr. døgn i lab.db).
+8. **Tests før deploy:** én snapshot pr. time (også ved to pas i samme time og efter genstart); ingen række efter
+   minut 10; null aldrig 0; ticker-fejl giver delvis række; total fejl stopper ikke premium-watch og K3; intet
+   afgørende læser `census/1`. Fuld suite grøn.
+9. **Deploy:** først efter S7-testgenstarten og R3's hentning og kørsel 2026-10-27 (ændring 24a), i et K3-frit vindue.
+   Indtil da er koden kun i dev.
