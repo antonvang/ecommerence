@@ -9,11 +9,14 @@ It is started by hand like the lab; installing it as an autostart, timer or serv
 until the S7 gate opens (research/ENGINE_PROPOSAL.md section 10, lab/README.md, research/LINUX_DRIFT.md).
 
   python3 -m lab watch            loop (default every 30 s)
-  python3 -m lab watch --once     one check; exit 0 if everything judged is up, 1 otherwise (external health check)
+  python3 -m lab watch --once     one check; exit 0 if everything judged is up, 1 otherwise (external health check;
+                                  also after a host start: it adds the boot time and whether the watcher loop runs)
 
 Components: lab (supervisor alive), lab_state (FAIL_CLOSED, long resource hold), agent:<name> per roster agent (not
 judged while the supervisor is down), dashboard, collector, awake (a logind block on sleep, e.g. the desktop systemd-inhibit
-line; not judged where logind cannot be asked); plus a one-off 'suspended' alert after the host slept.
+line; not judged where logind cannot be asked); plus a one-off 'suspended' alert after the host slept. --once adds host and
+watcher. Evidence older than the host's boot (or, for the scanner and paper marks, than the fleet's start) never counts
+as up (research/LINUX_DRIFT.md, Mission 14, 2026-10-26).
 """
 from __future__ import annotations
 
@@ -55,6 +58,9 @@ def suspend_count(path=SUSPEND_COUNT):
 
 
 DOWNTIME_S = 300                # a watcher restart after a longer silence is reported (reboot, kill, crash)
+WATCHER_STALE_S = 120           # --once: the watcher loop touches its heartbeat file every 30 s
+SCAN_FIRST_S = 15 * 60          # the fleet scans right after it starts; no scan since the start after this is a fault
+PAPER_WARMUP_S = int(1.5 * 3600)   # paper marks are judged only after this long since the fleet started
 
 
 def boot_time(path="/proc/stat"):
@@ -106,8 +112,9 @@ def _processes(needle, proc_root="/proc", here=HERE):
     return out
 
 
-def check_lab(db_path, now):
-    """{component: (ok, detail)}; ok is None for 'not judged' (agents while the supervisor is down)."""
+def check_lab(db_path, now, boot=None):
+    """{component: (ok, detail)}; ok is None for 'not judged' (agents while the supervisor is down). A beat older than
+    the host's boot is never up."""
     from lab.command import STALE_PASSES
     from lab.fleet import ROLES, ROSTER
     every_of = {name: every for name, _r, _k, _fn, every, _h in ROSTER}
@@ -150,6 +157,8 @@ def check_lab(db_path, now):
         out["lab"] = (False, f"supervisor status '{sup.get('status')}' ({int(now - sup['ts'])} s ago)")
     elif now - sup["ts"] > LAB_STALE_S:
         out["lab"] = (False, f"supervisor silent for {int(now - sup['ts'])} s (fleet down, hung or host asleep)")
+    elif boot is not None and sup["ts"] < boot:
+        out["lab"] = (False, "no supervisor beat since the host booted")
     else:
         out["lab"] = (True, f"supervisor beat {int(now - sup['ts'])} s ago")
     for name in sorted(ROLES):
@@ -274,10 +283,11 @@ def _paper(con_path, now, sup):
         if not active:
             return (None, "no active paper ledger")
         stale, long_paused, paused = [], [], []
+        warm = now - started > PAPER_WARMUP_S
         for led in active:
             last = con.execute("SELECT MAX(ts) FROM sim_equity WHERE exp_id=?", (led,)).fetchone()[0]
-            if now - started > 1.5 * 3600 and (last is None or now - last > PAPER_MARK_MAX_S):
-                stale.append(led)
+            if warm and (last is None or last < started or now - last > PAPER_MARK_MAX_S):
+                stale.append(led)                         # a mark from before this start is not this fleet's work
             r = con.execute("SELECT action, ts FROM risk_events WHERE exp_id=? AND action IN ('PAUSE', 'CLEAR') "
                             "ORDER BY id DESC LIMIT 1", (led,)).fetchone()
             if r and r[0] == "PAUSE":
@@ -289,15 +299,19 @@ def _paper(con_path, now, sup):
     finally:
         con.close()
     if stale or long_paused:
-        why = ([f"not marked for over {PAPER_MARK_MAX_S // 3600:.1f} h: {', '.join(stale)}"] if stale else []) + \
-              ([f"paused for over a day: {', '.join(long_paused)}"] if long_paused else [])
+        why = ([f"not marked since the fleet started or for over {PAPER_MARK_MAX_S / 3600:.1f} h: {', '.join(stale)}"]
+               if stale else []) + ([f"paused for over a day: {', '.join(long_paused)}"] if long_paused else [])
         return (False, ("; ".join(why) + note)[:300])
+    if not warm:
+        return (None, f"not judged yet: fleet up {int((now - started) // 60)} min, marks are judged after "
+                      f"{PAPER_WARMUP_S / 3600:.1f} h ({len(active)} active ledgers)")
     return (True, f"{len(active)} active ledgers marked hourly" + (f"; paused: {', '.join(paused)}" if paused else "")
             + note)
 
 
-def check_collector(pm_db, now):
-    """Up = a collector process runs from this checkout and data is fresh for the current study phase."""
+def check_collector(pm_db, now, boot=None):
+    """Up = a collector process runs from this checkout and data is fresh for the current study phase; data older than
+    the host's boot is not fresh."""
     from research import pm_lp
     procs = _processes("research.pm_lp collect")
     try:
@@ -324,10 +338,14 @@ def check_collector(pm_db, now):
         age = now - (last_snap or 0)
         if age > COLLECTOR_STALE_S:
             return (False, f"collector pid {procs[0]} alive but last snapshot {int(age)} s old")
+        if boot is not None and (last_snap or 0) < boot:
+            return (False, f"collector pid {procs[0]} alive but no snapshot since the host booted")
         return (True, f"pid {procs[0]}, last snapshot {int(age)} s ago")
     age = now - (last_status or 0)
     if age > STATUS_STALE_S:
         return (False, f"collector pid {procs[0]} alive but last status poll {int(age)} s old")
+    if boot is not None and (last_status or 0) < boot and now - boot > STATUS_STALE_S:
+        return (False, f"collector pid {procs[0]} alive but no status poll since the host booted")
     return (True, f"pid {procs[0]}, resolution tracking, last status poll {int(age)} s ago")
 
 
@@ -442,6 +460,7 @@ def check_scanner(db_path, now, lab_ok):
             started = con.execute("SELECT MAX(ts) FROM events WHERE kind='system.running'").fetchone()[0]
             last = con.execute("SELECT MAX(ts) FROM observations WHERE detector='abnormal_move/1' AND metric='z_1h'"
                                ).fetchone()[0]
+            finished = con.execute("SELECT MAX(ts) FROM events WHERE kind='scan.finished'").fetchone()[0]
             base = int(now) - int(now) % K3_ROUND_S
             due = [S for S in (base, base + K3_ROUND_S) if S - K3_DUE_S <= now <= S + K3_UNTIL_S]
             k3_missing = [S for S in due if not con.execute(
@@ -453,6 +472,10 @@ def check_scanner(db_path, now, lab_ok):
         return (False, f"lab database unreadable: {e!r}"[:200])
     if started is None or now - started < 300:
         return (None, "not judged (fleet up less than 5 min)")
+    if finished is None or finished < started:                # an old scan says nothing about this fleet
+        if now - started < SCAN_FIRST_S:
+            return (None, f"not judged yet: no scan since the fleet started {int((now - started) // 60)} min ago")
+        return (False, f"no scan since the fleet started {int((now - started) // 60)} min ago")
     why = []
     if last is None or now - last > SCAN_STALE_S:
         why.append("no hourly scan yet" if last is None else f"last hourly scan {int((now - last) // 60)} min ago")
@@ -467,13 +490,51 @@ def check_scanner(db_path, now, lab_ok):
     return (True, f"last hourly scan {int((now - last) // 60)} min ago")
 
 
-def check(db_path=DEFAULT_DB, pm_db=PM_DB, port=8770, now=None):
-    """Every probe is isolated: one that raises marks its own component(s) down and the others are still judged."""
+def check_watcher(now, boot=None, heartbeat=None, procs=None):
+    """--once only: a watcher loop (not a --once check) runs from this checkout and its heartbeat file is fresh and
+    newer than the host's boot."""
+    loops = [p for p in (procs if procs is not None else _processes("python3 -m lab watch"))
+             if "--once" not in _cmdline(p)]
+    try:
+        beat = os.path.getmtime(heartbeat or HEARTBEAT_FILE)
+    except OSError:
+        beat = None
+    if not loops:
+        return (False, "no watcher loop running (start: setsid nohup ./START_WATCH.sh ..., after the user's yes)")
+    if beat is None or now - beat > WATCHER_STALE_S:
+        return (False, f"watcher pid {loops[0]} runs but its heartbeat is "
+                       + ("missing" if beat is None else f"{int(now - beat)} s old"))
+    if boot is not None and beat < boot:
+        return (False, f"watcher pid {loops[0]} has not ticked since the host booted")
+    return (True, f"pid {loops[0]}, heartbeat {int(now - beat)} s ago")
+
+
+def _cmdline(pid, proc_root="/proc"):
+    try:
+        with open(os.path.join(proc_root, str(pid), "cmdline"), "rb") as f:
+            return f.read().replace(b"\0", b" ").decode(errors="replace")
+    except OSError:
+        return ""
+
+
+def check(db_path=DEFAULT_DB, pm_db=PM_DB, port=8770, now=None, boot=None, once=False):
+    """Every probe is isolated: one that raises marks its own component(s) down and the others are still judged.
+    boot defaults to the host's btime; once adds the --once lines host and watcher."""
     from lab.fleet import ROLES
     now = now or time.time()
+    boot = boot_time() if boot is None else boot
+    if boot is not None and boot > now:                      # a clock from a test or a replay: no boot to compare
+        boot = None
     out = {}
+    if once:
+        out["host"] = (True, "booted " + (datetime.fromtimestamp(boot, timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+                                          + f", {(now - boot) / 3600:.1f} h ago" if boot else "at an unknown time"))
+        try:
+            out["watcher"] = check_watcher(now, boot)
+        except Exception as e:
+            out["watcher"] = (False, f"check failed: {e!r}"[:300])
     try:
-        out.update(check_lab(db_path, now))
+        out.update(check_lab(db_path, now, boot))
     except Exception as e:
         out["lab"] = (False, f"check failed: {e!r}"[:300])
         out["lab_state"] = (None, "not judged: lab check failed")
@@ -482,7 +543,7 @@ def check(db_path=DEFAULT_DB, pm_db=PM_DB, port=8770, now=None):
         out["scanner"] = check_scanner(db_path, now, out.get("lab", (None,))[0])
     except Exception as e:
         out["scanner"] = (False, f"check failed: {e!r}"[:300])
-    for comp, fn in (("dashboard", lambda: check_dashboard(port)), ("collector", lambda: check_collector(pm_db, now)),
+    for comp, fn in (("dashboard", lambda: check_dashboard(port)), ("collector", lambda: check_collector(pm_db, now, boot)),
                      ("pm_coverage", lambda: check_pm_coverage(pm_db, now)), ("awake", check_awake)):
         try:
             out[comp] = fn()
@@ -575,7 +636,7 @@ class Watcher:
         if not self.downtime_checked:
             self._downtime(now)
         self._host(now)
-        res = check(self.db_path, self.pm_db, self.port, now)
+        res = check(self.db_path, self.pm_db, self.port, now, boot=self.booted())
         for comp, r in res.items():
             if r["ok"] is None:                       # not judged: keep what we knew (no false 'recovered')
                 continue
@@ -612,7 +673,8 @@ class Watcher:
 def summary(res):
     """Lines for --once: lab-level components, then agents (only the bad or unknown ones are listed)."""
     lines = []
-    for k in ("lab", "lab_state", "progress", "paper", "dashboard", "collector", "pm_coverage", "awake"):
+    for k in ("host", "watcher", "lab", "lab_state", "scanner", "progress", "paper", "dashboard", "collector",
+              "pm_coverage", "awake"):
         if k in res:
             ok = res[k]["ok"]
             lines.append(f"  [{'OK ' if ok else '?? ' if ok is None else 'NO '}] {k}: {res[k]['detail']}")
@@ -630,7 +692,7 @@ def summary(res):
 
 def main(db_path=DEFAULT_DB, port=8770, once=False, interval=30.0, out=print):
     if once:
-        res = check(db_path, PM_DB, port)
+        res = check(db_path, PM_DB, port, once=True)
         for line in summary(res):
             out(line)
         return 0 if all(r["ok"] for k, r in res.items() if r["ok"] is not None and k != "progress") \

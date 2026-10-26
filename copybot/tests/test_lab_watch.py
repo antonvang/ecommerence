@@ -75,6 +75,7 @@ class Base(unittest.TestCase):
         db = DB(self.lab)
         db.append("observations", ts=int(ts), detector="abnormal_move/1", source="t", instrument="BTCUSDT",
                   metric="z_1h", value=0.0, threshold=4, flagged=0, payload={})
+        db.append("events", ts=int(ts) + 25, kind="scan.finished", actor="test", exp_id=None, payload={})
         db.close()
 
     def k3(self, S, metric):
@@ -308,6 +309,84 @@ class Scanner(Base):
         self.assertIn("scanner", r)
 
 
+class AfterBoot(Base):
+    """research/LINUX_DRIFT.md, Mission 14 (2026-10-26): after a host start nothing is up on evidence older than the boot
+    or, for the scanner and paper marks, than the fleet's start; --once also checks the watcher loop."""
+    BOOT = NOW - 1800
+
+    def ledger(self, mark_ts):
+        db = DB(self.lab)
+        db.append("events", ts=NOW - 86400, kind="paper.started", actor="test", exp_id="FWD_X", payload={})
+        db.append("events", ts=NOW - 86400, kind="forward.approved", actor="test", exp_id="X", payload={})
+        if mark_ts is not None:
+            db.append("sim_equity", exp_id="FWD_X", ts=int(mark_ts), equity=1.0, cash=1.0, exposure=0.0, peak=1.0,
+                      drawdown=0.0)
+        db.close()
+
+    def test_scanner_needs_a_scan_since_the_fleet_started(self):
+        self.lab_event("system.running", NOW - 600)
+        self.scan(NOW - 1200)                                            # before the start, only 20 min old
+        r = watch.check_scanner(self.lab, NOW, True)
+        self.assertIsNone(r[0])
+        self.assertIn("no scan since the fleet started 10 min ago", r[1])
+        r = watch.check_scanner(self.lab, NOW - 600 + watch.SCAN_FIRST_S + 1, True)
+        self.assertFalse(r[0])                                           # the old scan never counts as up
+        self.scan(NOW - 590)
+        self.k3(NOW, "selection")                                        # NOW is a K3 settlement
+        self.assertTrue(watch.check_scanner(self.lab, NOW, True)[0])
+
+    def test_paper_is_not_judged_in_warmup_and_old_marks_do_not_count(self):
+        self.lab_event("system.running", NOW - 600)
+        self.ledger(NOW - 1200)                                          # marked 20 min ago, before the start
+        r = self.res()["paper"]
+        self.assertIsNone(r["ok"])                                       # before: "1 active ledgers marked hourly"
+        self.assertIn("not judged yet: fleet up 10 min", r["detail"])
+        later = NOW - 600 + watch.PAPER_WARMUP_S + 60
+        r = self.res(later)["paper"]
+        self.assertFalse(r["ok"])                                        # the mark is < 2.5 h old but before the start
+        self.assertIn("not marked since the fleet started", r["detail"])
+        self.ledger(NOW - 500)
+        self.assertTrue(self.res(later)["paper"]["ok"])
+
+    def test_lab_and_collector_evidence_older_than_the_boot_is_not_up(self):
+        r = watch.check(self.lab, self.pm, 8770, NOW, boot=NOW - 20)     # beat NOW-2, snapshot NOW-50
+        self.assertTrue(r["lab"]["ok"])
+        self.assertFalse(r["collector"]["ok"])
+        self.assertIn("no snapshot since the host booted", r["collector"]["detail"])
+        r = watch.check(self.lab, self.pm, 8770, NOW, boot=NOW - 1)
+        self.assertFalse(r["lab"]["ok"])
+        self.assertIn("no supervisor beat since the host booted", r["lab"]["detail"])
+        r = watch.check(self.lab, self.pm, 8770, NOW, boot=NOW + 10)    # a boot after 'now' (test clock): ignored
+        self.assertTrue(r["lab"]["ok"] and r["collector"]["ok"])
+        self.assertNotIn("host", r)                                      # only --once adds host and watcher
+
+    def test_watcher_loop_and_its_heartbeat(self):
+        beat = os.path.join(self.tmp, "watch.heartbeat")
+        cmd = {4242: "python3 -m lab watch --port 8770", 4343: "python3 -m lab watch --once"}
+        with mock.patch.object(watch, "_cmdline", lambda pid: cmd[pid]):
+            r = watch.check_watcher(NOW, self.BOOT, beat, procs=[4343])
+            self.assertFalse(r[0])                                       # a --once check is not the watcher
+            self.assertIn("no watcher loop running", r[1])
+            self.assertIn("missing", watch.check_watcher(NOW, self.BOOT, beat, procs=[4242])[1])
+            open(beat, "w").close()
+            os.utime(beat, (NOW - 300, NOW - 300))
+            self.assertIn("300 s old", watch.check_watcher(NOW, self.BOOT, beat, procs=[4242])[1])
+            os.utime(beat, (NOW - 30, NOW - 30))
+            r = watch.check_watcher(NOW, NOW - 10, beat, procs=[4242])
+            self.assertFalse(r[0])
+            self.assertIn("has not ticked since the host booted", r[1])
+            self.assertEqual(watch.check_watcher(NOW, self.BOOT, beat, procs=[4343, 4242]),
+                             (True, "pid 4242, heartbeat 30 s ago"))
+        with mock.patch.object(watch, "check_watcher", lambda now, boot: (False, "no watcher loop running")):
+            r = watch.check(self.lab, self.pm, 8770, NOW, boot=self.BOOT, once=True)
+        self.assertFalse(r["watcher"]["ok"])
+        self.assertEqual(r["host"], {"ok": True, "detail": "booted 2026-10-18 11:30 UTC, 0.5 h ago"})
+        lines = watch.summary(r)
+        self.assertEqual([l.split("]")[1].split(":")[0].strip() for l in lines[:4]],
+                         ["host", "watcher", "lab", "lab_state"])
+        self.assertTrue(any(l.startswith("  [") and " scanner: " in l for l in lines))
+
+
 class Alerts(Base):
     def setUp(self):
         super().setUp()
@@ -425,9 +504,20 @@ class Alerts(Base):
 class Cli(Base):
     def test_once_exit_codes_summary_and_single_instance(self):
         lines = []
-        with mock.patch.object(watch, "PM_DB", self.pm), mock.patch.object(watch.time, "time", lambda: NOW):
-            self.assertEqual(watch.main(self.lab, 8770, once=True, out=lines.append), 0)
+        beat = os.path.join(self.tmp, "watch.heartbeat")
+        open(beat, "w").close()
+        os.utime(beat, (NOW - 10, NOW - 10))
+        self.lab_event("system.running", NOW - 3 * 3600)
+        self.scan(NOW - 3480)
+        self.k3(NOW, "selection")
+        with mock.patch.object(watch, "PM_DB", self.pm), mock.patch.object(watch.time, "time", lambda: NOW), \
+                mock.patch.object(watch, "HEARTBEAT_FILE", beat), \
+                mock.patch.object(watch, "_cmdline", lambda pid: "python3 -m lab watch --port 8770"):
+            self.assertEqual(watch.main(self.lab, 8770, once=True, out=lines.append), 0, lines)
             self.assertIn("  [OK ] agents: 18 healthy", lines)
+            self.assertTrue(any(l.startswith("  [OK ] scanner: last hourly scan") for l in lines), lines)
+            self.assertTrue(any(l.startswith("  [OK ] watcher: pid 4242") for l in lines), lines)
+            self.assertTrue(any(l.startswith("  [OK ] host: ") for l in lines), lines)
             self.lab_sql("UPDATE heartbeats SET status='stopped' WHERE worker='supervisor'")
             lines.clear()
             self.assertEqual(watch.main(self.lab, 8770, once=True, out=lines.append), 1)
