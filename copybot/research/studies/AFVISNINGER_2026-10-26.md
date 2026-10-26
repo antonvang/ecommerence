@@ -29,7 +29,7 @@ var 4 240 USD, så 12g ("bogen for tynd") stoppede den før gaten.
 
 ## 2. Alle afvisninger af nye baner
 
-| Regel / grund | Alt (fra 2026-10-19) | Siden gaten (2026-10-25 21:53) | Unikke mønter (alt) | Input |
+| Regel / grund | Alt (fra 2026-10-19) | Siden gaten (2026-10-25 20:52 UTC) | Unikke mønter (alt) | Input |
 |---|---|---|---|---|
 | 19 intet spotpar på Binance | 996 | 190 | 78 | målt (børsens instrumentliste) |
 | HTTP 400 ved spotbog (10-19 21:30 → 10-22 19:26) | 306 | 0 | 33 + 22 | manglende data: samme årsag som 19, før regel 19 kom 10-22 19:36 |
@@ -70,3 +70,28 @@ mønter uden spotpar. Kun 3 kandidater i alt har nået 12g eller gaten, og alle 
 - **Ved ikke:** hvordan gaten afgør kandidater med kapacitetskurve (`curve_status` var `absent`); om tynde bøger i 20
   niveauer også er tynde i hele bogen (kun ét øjebliksbillede, en time senere).
 - **Næste måling:** flere naturlige gate-sager; den foreslåede 500-niveaus-måling, hvis brugeren godkender den.
+
+## 5. Mission 20 (2026-10-26 ca. 16:00 UTC): reproduktion, rapporteringsveje, optælling
+
+**VELODROMEUSDT's fulde række i dag (`lane.skipped`, `scanner_funding`, ca. hver time):** 09:30, 10:36, 11:37 funding
+ikke vedvarende (sidste 3 afregnede −0,0748 %, 0,01 %, 0,01 %); 12:38 12g "3 dages forventet funding 1,8737 % dækker ikke
+rundturen 2,0335 %"; **13:39 ændring 25 "bogens rundtur 1,3601 % > grænsen 0,46 %"**; 14:40 og 15:41 12g "bogen for
+tynd". Reproduceret fra den gemte hændelse (id 25352): benene 0,6218 % + 0,7383 % = 1,3601 % = `round_trip`; grænse
+0,0046; 1,3601 > 0,46 → afvist. Perp-benet er lig 12g's vandring; spot-benet afviger 0,0006 %-point, fordi gaten
+regner mængden fra spot-mid og 12g fra perp-mid. 12g's omkostning 1,8395 % = vandringer 1,3595 % + gebyrer 0,40 % +
+tillæg 0,08 %.
+
+**Rapporteringsveje:** `/api/lanes` viser afgørelsen med hele årsagen og klassen "afvist af omkostninger" (`classify`
+genkender "likviditetsgate (25): bogens rundtur"). Banekoden afkorter `reason` til 200 tegn (`f"{e!r}"[:200]`), men
+gate-præfikset står først, og hele gate-detaljen ligger uafkortet i `trigger.liquidity`; der er ingen produktfejl.
+Fejlen var Claudes egne ad hoc-forespørgsler (`substr` på payload). Forebyggelse: `research/tools/gate_decisions.py`
+(read-only) lister alle gate-afgørelser med fuld årsag og tæller alle afvisningsregler; køres før enhver
+"IKKE OBSERVERET".
+
+**Optælling siden gaten (2026-10-25 20:52:25 UTC, `system.running`; tidligere fejlagtigt skrevet "21:53 UTC"), kl.
+16:00 UTC:** 201 forsøg, 0 starter: 193 intet spotpar (41 forskellige mønter), 4 funding ikke vedvarende, 2 12g tynd
+bog, 1 12g funding dækker ikke, 1 gate. Bekræftet med både værktøjet og ren SQL (`LIKE '%intet spotpar%'` = 193).
+
+**Andre egnede kandidater i eksisterende data?** Nej, uden at ændre univers eller screening. Siden gaten er
+VELODROMEUSDT den eneste kandidat fra scannerens funding-liste med spotpar; de 41 andre mangler spotpar og kan ikke
+handles som spot–perp. Ingen kandidat er genåbnet.
