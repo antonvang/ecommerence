@@ -3522,3 +3522,12 @@ Fuld suite fandt, at punkt 1 ville bryde en sikkerhedsinvariant: papirmotoren m�
 (order_id, exp_id, ts, instrument, payload) med samme hash-kæde og UPDATE/DELETE-forbud som de øvrige tabeller. Det
 gælder også fejlrækken (payload `error`). Indholdet i punkt 1 er uændret. Ingen ændring af pm_lp's database: den
 åbner aldrig `lab.db`.
+
+### Ændring 21o præcisering (2026-10-26 kl. 15:15, før kode): R1-tabellen viser rapportens status (kun visning)
+Fundet ved en read-only gennemgang (`research/studies/R1_KLARHED_2026-10-26.md`): kravet `days >= 7` tæller
+forskellige UTC-døgn, mens rapportens status først bliver FINAL efter et spænd på 7 × 24 t og 2 TradFi-weekender
+(21k). I op til ca. 16 timer kan en række i beslutningstabellen derfor stå som "can be put to the user", mens
+rapporten er PRELIMINARY, og rækken viser ikke statussen. Rettelse, kun visning: hver række i `decision_table` får
+`report_status` (PRELIMINARY eller FINAL) og `report_final_requires` (teksten for FINAL-kravet). Ingen krav, tærskel,
+anbefaling eller beregning ændres; `costrule` (mulighed C) er uændret og forbliver uvirksom. Når rækken er opfyldt,
+men rapporten er PRELIMINARY, forelægger Claude den ikke som endelig.
