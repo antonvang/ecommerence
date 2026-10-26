@@ -5,10 +5,11 @@ Per coin (BTC, ETH) and release T: minute bar k opens at T + k min; s = sign ln(
 bars 0, 1 and 61. Placebo: the same rule 7 days earlier (14 if that UTC day had a calendar event). Clusters are UTC
 days; the verdict is J1's rule (m21iscreen.judge). Exploration, never evidence.
 
-The 44 monthly 1-minute files are fetched only from 2026-11-14 00:00 UTC (the user's rule), at most 2 downloads at a
+The 44 monthly 1-minute files are fetched only from 2026-11-14 00:00 UTC (the user's rule) or, with amendment 24a, in
+K3-free slots 2026-10-27 14:35 .. 10-31 00:00 UTC (after the S7 test reboot, before pm_lp's D1), at most 2 downloads at a
 time (the lab's shared slots), and only from data.binance.vision for BTCUSDT/ETHUSDT 2020-03..2021-12.
 
-  python3 -m lab.r3 fetch             download the missing files (refused before 2026-11-14)
+  python3 -m lab.r3 fetch             download the missing files (refused outside amendment 24a's windows)
   python3 -m lab.r3 run --out PATH    one screening; writes PATH.json
 """
 from __future__ import annotations
@@ -37,12 +38,25 @@ SYMS = ("BTCUSDT", "ETHUSDT")
 MINUTE, DAY, WEEK = 60, 86400, 7 * 86400
 ENTRY_BAR, EXIT_BAR = 1, 61
 FETCH_FROM = int(datetime(2026, 11, 14, tzinfo=timezone.utc).timestamp())
+EARLY = (int(datetime(2026, 10, 27, 14, 35, tzinfo=timezone.utc).timestamp()),     # 24a: after the S7 test reboot,
+         int(datetime(2026, 10, 31, tzinfo=timezone.utc).timestamp()))             # before pm_lp's D1 (10-31..11-13)
 HOST = "https://data.binance.vision/data/futures/um/monthly/klines"
 MONTHS = [(y, m) for y in (2020, 2021) for m in range(1, 13) if (y, m) >= (2020, 3)]      # explore0: 2020-03..2021-12
 
 
 class Refused(RuntimeError):
     pass
+
+
+def k3_free(now):
+    """Amendment 24a: a K3-free slot, XX:35..(XX+1):25 UTC with XX even (amendment 22's rounds are every even hour +- 35 min)."""
+    g = time.gmtime(now)
+    return (g.tm_hour % 2 == 0 and g.tm_min >= 35) or (g.tm_hour % 2 == 1 and g.tm_min < 25)
+
+
+def allowed(now):
+    """Amendment 24 point 2 with 24a: from 2026-11-14 00:00 UTC, or inside the early window and a K3-free slot."""
+    return now >= FETCH_FROM or (EARLY[0] <= now < EARLY[1] and k3_free(now))
 
 
 def url(sym, y, m):
@@ -63,13 +77,16 @@ def _log(entry):
         f.write(json.dumps(entry, sort_keys=True) + "\n")
 
 
-def fetch(now=None, get=None):
-    """Point 2: download the missing files; refused before 2026-11-14 00:00 UTC. A 404 is recorded, never replaced.
-    Every run, a refused one too, appends one entry to fetch_log.jsonl (precision 2026-10-25)."""
-    now = time.time() if now is None else now
-    if now < FETCH_FROM:
-        _log({"ts": int(now), "status": "refused", "why": "before 2026-11-14 00:00 UTC (amendment 24 point 2)"})
-        raise Refused("amendment 24 point 2: no historical request before 2026-11-14 00:00 UTC")
+def fetch(now=None, get=None, clock=None):
+    """Point 2 with 24a: download the missing files; refused outside `allowed`. A 404 is recorded, never replaced.
+    Every run, a refused one too, appends one entry to fetch_log.jsonl (precision 2026-10-25). In the early window each
+    file is checked again: a run that leaves the window stops, and the rest is recorded as `stopped` (24a)."""
+    clock = clock or ((lambda: now) if now is not None else time.time)
+    now = clock()
+    if not allowed(now):
+        why = "outside amendment 24a's window (2026-10-27 14:35 .. 10-31 00:00 UTC, K3-free slots) and before 2026-11-14"
+        _log({"ts": int(now), "status": "refused", "why": why})
+        raise Refused(f"amendment 24 point 2 / 24a: no historical request now: {why}")
     out = {"fetched": [], "present": [], "absent": [], "failed": []}
     files = {}
     for sym in SYMS:
@@ -79,6 +96,10 @@ def fetch(now=None, get=None):
             if os.path.exists(p):
                 out["present"].append(name)
                 files[name] = {"status": "present"}
+                continue
+            if not allowed(clock()):                          # 24a: the window or the K3-free slot ended
+                out.setdefault("stopped", []).append(name)
+                files[name] = {"status": "stopped"}
                 continue
             try:
                 with families._download_slot():

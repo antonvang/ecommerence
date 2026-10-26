@@ -98,6 +98,36 @@ class Fetch(unittest.TestCase):
             last = json.loads(f.readlines()[-1])
         self.assertEqual(last["files"]["ETHUSDT-1m-2020-05.zip"], {"status": "failed", "error": "HTTP 503"})
 
+    def test_24a_early_window_only_in_k3_free_slots_and_never_in_pm_lp_d1(self):
+        U = lambda x: T(x)                                                         # UTC
+        allowed = {"2026-10-27T14:35": True, "2026-10-27T14:34": False,           # S7 test and K3 14:00 +- 35
+                   "2026-10-27T15:24": True, "2026-10-27T15:25": False,           # K3 16:00 opens at 15:25
+                   "2026-10-27T16:34": False, "2026-10-27T16:35": True,
+                   "2026-10-30T23:24": True, "2026-10-30T23:25": False,           # last slot before 10-31
+                   "2026-10-31T00:35": False, "2026-11-05T14:40": False,          # pm_lp's D1: never
+                   "2026-11-13T23:59": False, "2026-11-14T00:00": True,           # amendment 24 unchanged
+                   "2026-11-14T00:10": True, "2026-10-26T20:40": False}
+        for when, want in allowed.items():
+            self.assertEqual(r3.allowed(U(when)), want, when)
+        calls = []
+        with self.assertRaises(r3.Refused):
+            r3.fetch(now=U("2026-10-27T13:00"), get=lambda u: calls.append(u))
+        self.assertEqual(calls, [])
+
+    def test_24a_a_run_that_leaves_the_slot_stops_and_records_the_rest(self):
+        clock = iter([T("2026-10-27T14:35")] + [T("2026-10-27T15:00")] * 10 + [T("2026-10-27T15:25")] * 100)
+        calls = []
+        out = r3.fetch(get=lambda u: calls.append(u) or zipped([(A, 1.0, 1.0)]), clock=lambda: next(clock))
+        self.assertEqual(len(calls), 10)                                           # no request after the slot ended
+        self.assertEqual(len(out["stopped"]), 34)
+        with open(r3.log_path()) as f:
+            last = json.loads(f.readlines()[-1])
+        self.assertEqual(last["counts"]["stopped"], 34)
+        self.assertEqual(last["files"]["ETHUSDT-1m-2021-12.zip"], {"status": "stopped"})
+        again = r3.fetch(get=lambda u: calls.append(u) or zipped([(A, 1.0, 1.0)]),
+                         clock=lambda: T("2026-10-27T16:40"))                      # the next slot fetches the rest
+        self.assertEqual((len(again["present"]), len(again["fetched"])), (10, 34))
+
     def test_bars_read_files_with_and_without_header(self):
         os.makedirs(os.path.join(self.tmp, "klines_1m"))
         with open(r3.path("BTCUSDT", 2020, 3), "wb") as f:
