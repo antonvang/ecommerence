@@ -74,6 +74,19 @@ class Rounds(Base):
         self.assertLess(r["cost_bp"], 31)
         self.assertTrue(r["fee_assumed"])
 
+    def test_slippage_is_measured_against_the_book_each_fill_met(self):
+        mids = iter([100.0, 100.0, 100.0, 110.0])        # the market moves between the sell-time read and the fill
+        ex = self.ex()
+
+        def book(symbol):
+            m = next(mids, 110.0)
+            return {"bids": [[str(m - 0.05), "1000"]], "asks": [[str(m + 0.05), "1000"]], "bid": m - 0.05,
+                    "ask": m + 0.05}
+        ex.book = book
+        r = self.play(ex)
+        self.assertAlmostEqual(r["buy_slip_bp"], 5.0, places=1)
+        self.assertAlmostEqual(r["sell_slip_bp"], 4.5, places=1)            # 0.05 below a mid of 110, never negative
+
     def test_unfilled_maker_is_cancelled_and_costs_nothing(self):
         r = self.play(self.ex(), mode="maker")
         self.assertEqual((r["filled"], r["status"], r["pnl_usdt"]), (False, "CANCELED", 0.0))

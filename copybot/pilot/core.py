@@ -137,12 +137,14 @@ def play(ex, ledger, rng, now=time.time, sleep=time.sleep):
         ledger.stop(f"beholdning {f['base']}: før {before}, købt {buy['qty']}, holdt {held}, solgt {sold}, efter {after}")
     pnl = (sell["quote"] if sell else 0.0) - buy["quote"] - buy["fee_usdt"] - (sell["fee_usdt"] if sell else 0.0)
     dust_usdt = (held - sold) * sell_mid
+    buy_mid = buy.get("mid") or mid                     # slippage against the book the fill met (dry: its own read)
+    s_mid = (sell.get("mid") if sell else None) or sell_mid
     row = ledger.append(
         kind="result", round=rid, dry=dry, symbol=symbol, mode=mode, filled=True, status=buy["status"],
         buy_px=buy["avg_px"], buy_qty=buy["qty"], buy_quote=buy["quote"], buy_fee_usdt=buy["fee_usdt"],
-        buy_slip_bp=bp((buy["avg_px"] - mid) / mid), sell_mid=sell_mid,
+        buy_mid=buy_mid, buy_slip_bp=bp((buy["avg_px"] - buy_mid) / buy_mid), sell_mid=s_mid,
         sell_px=sell["avg_px"] if sell else None, sell_qty=sell["qty"] if sell else 0.0,
-        sell_slip_bp=bp((sell_mid - sell["avg_px"]) / sell_mid) if sell else None,
+        sell_slip_bp=bp((s_mid - sell["avg_px"]) / s_mid) if sell else None,
         sell_fee_usdt=sell["fee_usdt"] if sell else 0.0, dust_qty=held - sold, dust_usdt=dust_usdt,
         pnl_usdt=pnl, cost_bp=bp(-(pnl + dust_usdt) / buy["quote"]) if buy["quote"] else None,
         fee_assumed=bool(buy.get("fee_assumed")))

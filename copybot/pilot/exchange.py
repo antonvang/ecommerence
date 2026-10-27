@@ -74,16 +74,20 @@ class DryExchange(Public):
         self.wallet["USDT"] = self.wallet.get("USDT", 0.0) + dquote
 
     def buy_market_quote(self, symbol, quote):
-        px, q, spent = walk(self.book(symbol)["asks"], "buy", quote=quote)
+        b = self.book(symbol)
+        px, q, spent = walk(b["asks"], "buy", quote=quote)
         fee = spent * DRY_FEE
         self._move(self.filters(symbol)["base"], q, -spent - fee)
-        return {"status": "FILLED", "qty": q, "quote": spent, "avg_px": px, "fee_usdt": fee, "fee_assumed": True}
+        return {"status": "FILLED", "qty": q, "quote": spent, "avg_px": px, "fee_usdt": fee, "fee_assumed": True,
+                "mid": (b["bid"] + b["ask"]) / 2}                       # the book the simulated fill walked
 
     def sell_market(self, symbol, qty):
-        px, q, got = walk(self.book(symbol)["bids"], "sell", qty=qty)
+        b = self.book(symbol)
+        px, q, got = walk(b["bids"], "sell", qty=qty)
         fee = got * DRY_FEE
         self._move(self.filters(symbol)["base"], -q, got - fee)
-        return {"status": "FILLED", "qty": q, "quote": got, "avg_px": px, "fee_usdt": fee, "fee_assumed": True}
+        return {"status": "FILLED", "qty": q, "quote": got, "avg_px": px, "fee_usdt": fee, "fee_assumed": True,
+                "mid": (b["bid"] + b["ask"]) / 2}
 
     def buy_limit_maker(self, symbol, price, qty):
         oid = f"dry{len(self._orders) + 1}"
