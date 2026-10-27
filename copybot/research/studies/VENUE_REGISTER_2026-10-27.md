@@ -39,3 +39,25 @@ i porteføljeforvaltning, j overførsel. "DK" = Danmark står i enhedens liste o
 
 Næste skridt (kun offentlige data, ingen konto): punkt 2–4 for Bitstamp Europe, Kraken (Payward Europe), OKX Europe,
 Bitvavo og Coinbase Luxembourg, derefter V1-målingen efter ændring 29a punkt 3.
+
+## Tilføjet kl. 15:22 lokal: de 7 mønter på offentlige marked-lister (ingen konto)
+
+Hentet 2026-10-27 14:22 UTC fra hver børs' offentlige liste: Kraken `api.kraken.com/0/public/AssetPairs`, Bitstamp
+`www.bitstamp.net/api/v2/trading-pairs-info/`, OKX `www.okx.com/api/v5/public/instruments?instType=SPOT`, Bitvavo
+`api.bitvavo.com/v2/markets`, Coinbase `api.exchange.coinbase.com/products`. Noteret: hvilke citatvalutaer findes.
+
+| Mønt | Kraken | Bitstamp | OKX | Bitvavo | Coinbase |
+|---|---|---|---|---|---|
+| BTC | USDT, USDC, EUR, USD | USDT, USDC, EUR, USD | USDT, USDC, EUR | USDC, EUR | USDT, USDC, EUR, USD |
+| ETH | USDT, USDC, EUR, USD | USDT, USDC, EUR, USD | USDT, USDC, EUR | USDC, EUR | USDT, USDC, EUR, USD |
+| EPIC | – | – | – | EUR | – |
+| XTZ | USDT, USDC, EUR, USD | EUR, USD | USDT, USDC, EUR | EUR | EUR, USD |
+| VET | USDT, USDC, EUR, USD | – | – | EUR | USD |
+| MITO | – | – | – | – | – |
+| HOT | – | – | – | EUR | – |
+
+- **Fund:** BTC og ETH findes overalt. Af banernes fem småmønter findes MITO intet sted, EPIC og HOT kun på Bitvavo
+  (EUR). Banernes univers er altså stort set Binance-specifikt; en lovlig fremtidig platform begrænser universet.
+- **Uafklaret:** om de globale API'er (fx `www.okx.com`, `api.exchange.coinbase.com`) viser samme markeder som de
+  registrerede EU-enheder (OKX Europe, Coinbase Luxembourg). Listerne siger intet om likviditet eller gebyrer.
+- V1 kan derfor kun måles på de fælles mønter (BTC, ETH, XTZ, evt. VET), ikke på banernes småmønter.
