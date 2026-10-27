@@ -3803,3 +3803,23 @@ Ingen tærskel, ingen falsifikationsregel og ingen papirkonto ændres; dette pr�
 5. **Perps** (spot/perp carry for en dansk detailkunde) er kun en note: ESMA (2026-02-24) anser krypto-perps for
    sandsynligvis omfattet af CFD-indgrebet, og Finanstilsynets afgørelse af 1. august 2019 kræver 50 % margin på
    CFD'er med kryptovaluta (højst 2x). Intet i lab'en ændres af det.
+
+## Ændring 29c (2026-10-27 kl. 20:20 lokal, før kode): de tre manglende gebyrer læst i brugerens browser (ændring 29b punkt 1)
+
+Brugeren gav adgang til sin Chrome (2026-10-27 ca. kl. 20:10 lokal). Kun offentlige sider; intet login (Coinbase'
+gebyrside sendte til login, som ikke blev brugt). Læst kl. 20:10–20:20 lokal:
+
+1. **Bitstamp** (bitstamp.net/fee-schedule, "Valid from 21 October 2026"): "< $10,000 | 0.30% | 0.40%" (standard).
+   Kolonnen "USDT and RLUSD" (0,030/0,040 %) gælder de par, siden nævner (USDT/USD, USDT/EUR, RLUSD/…), ikke BTC/USDT;
+   V1's Bitstamp-par (btcusdt, ethusdt, xtzeur) bruger standard 0,40 %. Siden varsler et nyt skema fra 2026-11-24;
+   V1 bruger det gældende og skal opdateres med en ny dateret ændring, hvis det ændrer taker-satsen.
+2. **Coinbase Advanced** (Coinbase' egen blog, 2026-09-16, "We're lowering fees … on Coinbase Advanced"): "spot entry
+   level tiers: … EU and UK: 0.25% maker & 0.50% taker". Hjælpesiden siger, at "certain pairs have separate fee
+   schedules" (stablecoin-fanen kræver login); V1's Coinbase-par er BTC-USDT, ETH-USDT, XTZ-USD og VET-USD, og ingen af
+   dem er et stablecoin-par, så 0,50 % bruges.
+3. **Bitvavo** (bitvavo.com/en/fees): kategori A, "All crypto trading pairs on EUR markets", "€0 + | 0.15% | 0.25%";
+   kategori B, "All crypto trading pairs on USDC markets", "€0 + | 0.05% | 0.05%". V1 måler BTC og ETH på USDC-par
+   (0,05 %) og XTZ og VET på EUR-par (0,25 %); gebyret slås derfor op pr. marked.
+4. Bitstamp har også en MiFID-enhed til derivater: Bitstamp Financial Services Ltd. (Slovenien, ATVP). Om den har pas
+   til Danmark, er uafklaret; kun en note til ændring 29b punkt 5.
+5. Uændret: tærskler, falsifikation og dommens krav (ændring 29a punkt 3, 29b punkt 2).

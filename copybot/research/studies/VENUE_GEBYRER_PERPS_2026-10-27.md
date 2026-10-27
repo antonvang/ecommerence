@@ -10,9 +10,9 @@ omgåelse af bot-spærringer. "uafklaret" = ingen officiel kilde læst. Grundlag
 | Binance (reference) | 0,100 % | 0,100 % | binance.com/en/fee/schedule: "Regular User 0.100% / 0.100%" (ja) | bekræftet |
 | Kraken Pro | 0,40 % | 0,80 % | kraken.com/features/fee-schedule: "Tier 1 $0+ < $5M N/A 0.40 % 0.80 %" (ja; sha256 a0fb928d…3d69c) | bekræftet |
 | OKX EEA, konto kun med spot | 0,100 % | 0,200 % | okx.com/en-us/help/important-notice-upcoming-adjustment-to-vip-trading-volume-tiers-europe, "Published on Sep 25, 2026", gælder fra 2026-10-09 10:00 UTC+2: "\| Regular \| 0 \| 0 \| 0.100% \| 0.200% \|" (ja) | bekræftet; konti med derivater 0,080/0,100 % |
-| Bitvavo (EUR-par, kategori A) | 0,15 % | 0,25 % | kun et svar-eksempel i docs.bitvavo.com (`"taker":"0.0025","maker":"0.0015"`); bitvavo.com/en/fees gav 403 | uafklaret |
-| Bitstamp | – | – | bitstamp.net/fee-schedule bag bot-spærring | uafklaret |
-| Coinbase Advanced (EU) | – | – | coinbase.com gav 403; 0,25/0,50 % kun i sekundære kilder | uafklaret |
+| Bitvavo, EUR-par (A) / USDC-par (B) | 0,15 / 0,05 % | 0,25 / 0,05 % | bitvavo.com/en/fees i brugerens Chrome 2026-10-27 kl. 20:15 lokal: "€0 + \| 0.15% \| 0.25%" (A), "€0 + \| 0.05% \| 0.05%" (B) (ja) | bekræftet (ændring 29c) |
+| Bitstamp | 0,30 % | 0,40 % | bitstamp.net/fee-schedule i brugerens Chrome, "Valid from 21 October 2026": "< $10,000 \| 0.30% \| 0.40%" (ja); nyt skema varslet fra 2026-11-24 | bekræftet (ændring 29c) |
+| Coinbase Advanced (EU) | 0,25 % | 0,50 % | Coinbase' blog 2026-09-16 i brugerens Chrome: "EU and UK: 0.25% maker & 0.50% taker" (spot entry level) (ja); gebyrsiden kræver login (ikke brugt) | bekræftet (ændring 29c) |
 
 Kraken-appen ("instant buy") tager 1 % plus spread; Kraken Pro er tallet ovenfor.
 
@@ -49,6 +49,6 @@ Svar: **lovligt gennem et MiFID-investeringsselskab med pas til Danmark, sandsyn
 
 ## Konsekvens (beskrivende, ingen dom)
 
-Med bekræftede gebyrer koster en rundtur på 15 USDT 160 bp i taker-gebyr hos Kraken og 40 bp hos OKX, mod 20 bp
-hos Binance. Forskellen alene er større end V1's grænse på 10 bp. V1-dommen afgives dog først efter mindst 48 timers
+Med bekræftede gebyrer koster en rundtur i taker-gebyr 160 bp hos Kraken, 100 bp hos Coinbase, 80 bp hos Bitstamp,
+50 bp hos Bitvavo (EUR) eller 10 bp (USDC) og 40 bp hos OKX, mod 20 bp hos Binance. Kun Bitvavos USDC-par er billigere. Forskellen alene er større end V1's grænse på 10 bp. V1-dommen afgives dog først efter mindst 48 timers
 data (ændring 29b punkt 2).

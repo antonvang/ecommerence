@@ -31,7 +31,13 @@ FEES = {   # lowest-tier spot taker fee read on the venue's own page (amendment 
                "quote": "Tier 1 $0+ < $5M N/A 0.40 % 0.80 %"},
     "OKX": {"taker": 0.002, "read": "2026-10-27", "url": "https://www.okx.com/en-us/help/important-notice-upcoming-"
             "adjustment-to-vip-trading-volume-tiers-europe", "quote": "| Regular | 0 | 0 | 0.100% | 0.200% | (spot only)"},
-    "Bitstamp": None, "Bitvavo": None, "Coinbase": None}
+    "Bitstamp": {"taker": 0.004, "read": "2026-10-27", "url": "https://www.bitstamp.net/fee-schedule/",
+                 "quote": "< $10,000 | 0.30% | 0.40% (standard; valid from 21 October 2026)"},
+    "Bitvavo": {"taker": {"EUR": 0.0025, "USDC": 0.0005}, "read": "2026-10-27", "url": "https://bitvavo.com/en/fees",
+                "quote": "A, EUR markets: €0 + | 0.15% | 0.25%; B, USDC markets: €0 + | 0.05% | 0.05%"},
+    "Coinbase": {"taker": 0.005, "read": "2026-10-27", "url": "https://www.coinbase.com/blog/were-lowering-fees-for-"
+                 "many-active-traders-on-coinbase-advanced", "quote": "EU and UK: 0.25% maker & 0.50% taker"}}
+QUOTE = {"Bitvavo": lambda c: "USDC" if c in ("BTC", "ETH") else "EUR"}   # the market V1 reads (see VENUES)
 
 
 BITSTAMP = {"BTC": "btcusdt", "ETH": "ethusdt", "XTZ": "xtzeur"}     # no XTZ/USDT, no VET (1cb4581)
@@ -118,12 +124,21 @@ def run(samples, out=OUT, fetch=get, now=time.time, sleep=time.sleep):
     return done
 
 
-def with_fees(venue):
-    """Extra round-trip fee in bp of `venue` over Binance (2 x taker each), None while either fee is uafklaret."""
-    a, b = FEES.get(venue), FEES.get("Binance")
-    if not a or not b:
+def taker(venue, coin):
+    """The venue's taker fee for the market V1 reads for `coin` (amendment 29c point 3), None if uafklaret."""
+    f = FEES.get(venue)
+    if not f:
         return None
-    return 2 * (a["taker"] - b["taker"]) * 1e4
+    t = f["taker"]
+    return t.get(QUOTE[venue](coin)) if isinstance(t, dict) else t
+
+
+def with_fees(venue, coin="BTC"):
+    """Extra round-trip fee in bp of `venue` over Binance (2 x taker each), None while either fee is uafklaret."""
+    a, b = taker(venue, coin), taker("Binance", coin)
+    if a is None or b is None:
+        return None
+    return 2 * (a - b) * 1e4
 
 
 def report(path=OUT):
@@ -147,7 +162,7 @@ def report(path=OUT):
             if diffs:
                 c[venue] = {"n": len(diffs), "median_diff_bp": round(statistics.median(diffs), 2),
                             "books_only": True}
-                fee_bp = with_fees(venue)
+                fee_bp = with_fees(venue, coin)
                 c[venue]["median_diff_with_fees_bp"] = (None if fee_bp is None else
                                                         round(statistics.median(diffs) + fee_bp, 2))
         out["coins"][coin] = c
