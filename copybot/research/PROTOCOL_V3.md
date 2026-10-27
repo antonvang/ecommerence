@@ -3707,3 +3707,35 @@ foreslåede tal. Ændringen fastlægger rammen; den åbner ikke for nogen rigtig
    skat undersøgt og dokumenteret; og samme dag brugerens bekræftelse via `python3 -m pilot confirm-today`, som kun
    virker i en interaktiv terminal med en indtastet sætning. Claude kører aldrig `confirm-today` eller `resume`.
 10. **Uændret:** pm_lp, holdouts, gates, tærskler, låste protokoller, LÅS, alpha k5, option C og alle papirkonti.
+
+## Ændring 29a (2026-10-27 kl. 15:15 lokal, før kode): beslutning B - piloten er kun research og papir; børsvalget er en afgrænset researchopgave
+
+Brugeren valgte vej B (Mission 24, beslutning B, 2026-10-27 ca. kl. 15:10 lokal): målarkitekturen er en børs med
+verificeret EU-tilladelse, og der må ingen rigtige handler, kontoforbindelser eller pengeflytninger være. Ændring 29's
+tekst står uændret som historik; denne ændring gælder fra nu og går forud for den.
+
+1. **Kun tør kørsel.** Pilotens rigtige del fjernes fra koden: `LiveExchange`, nøgleindlæsning, signerede kald,
+   `run --live`, `confirm-today` og live-tjeklisten. Tilbage er den tørre kørsel mod offentlige ordrebøger med
+   simulerede fills og hårde stop. Ingen konto-login, API-nøgle eller ordreafsendelse må tilføjes uden en ny dateret
+   ændring og brugerens udtrykkelige ja.
+2. **Den tørre kørsel fortsætter** (ændring 29 punkt 3–5 og 8: mønter, runder, stop, K3-vinduer). Den tester
+   stop-logikken og giver en simuleret omkostning ud fra Binances offentlige bog; den er ikke en måling af rigtige fills.
+3. **Hypotese V1 (venue-omkostning, kun offentlige data):** for en ordre på 15 USDT er den simulerede rundtur-
+   omkostning (bog-gennemgang køb + salg, plus børsens offentliggjorte standard-gebyr) på en EU-tilladt børs højst
+   10 bp over Binances for de mønter, begge har. Begrundelse: papirmodellen er Binance-kalibreret; en fremtidig strategi
+   skal køre et lovligt sted, og papirmodellen skal da kalibreres til det sted.
+   - **Data:** kun offentlige ordrebøger (ingen konto), samme minut på begge børser, mindst 50 målinger pr. mønt fordelt
+     over mindst 48 timer, aldrig i et K3-vindue.
+   - **Omkostningsmodel:** bog-gennemgang for 15 USDT på købs- og salgssiden mod mid, plus det offentliggjorte
+     taker-gebyr på laveste niveau; spread og dybde logges.
+   - **Falsifikation:** V1 forkastes for en børs, hvis medianen af (venue − Binance) > 10 bp for mindst halvdelen af de
+     fælles mønter; ingen tærskel ændres efter data.
+   - **Tests:** forbindelsen bygges bag samme interface som `DryExchange` (bog, filtre, servertid) og testes med mocks
+     og offentlige data; ingen konto-kode.
+   - **Risici:** offentlige bøger viser ikke skjult likviditet eller rabatter; gebyrer kan ændres; mønter mangler.
+4. **Børskrav (dokumenteres før nogen børs nævnes som kandidat):** præcis juridisk enhed og CASP-tilladelse i ESMA's
+   register med de relevante tjenester (handel/udførelse for kunder) og passporting til Danmark; tilgængelige markeder
+   for de 7 mønter; offentlig historik; gebyrer; spread og dybde; ordretyper (market, post-only); offentlig dataadgang.
+   Mangler en verifikation i officielle registre, står børsen som "uafklaret". Ingen børs kaldes godkendt.
+5. **Uændret:** pm_lp, holdouts, gates, tærskler, låste protokoller, LÅS, alpha k5, option C, 4σ-fald (DROPPED),
+   historiske forespørgsler (kun R3-undtagelsen 24a) og alle papirkonti.
