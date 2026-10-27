@@ -3,7 +3,7 @@
 Every 15 minutes outside K3 windows it reads each venue's public order book for the common coins (same minute,
 seconds apart; no account) and stores, per venue and coin: mid, spread, and the walk cost of a 15-unit buy and sell
 against mid in bp. `report` gives per coin the median of (venue - Binance) round trip in bp from the books alone;
-published taker fees are added only once verified from the venue's own fee page (FEES, status per venue).
+published taker fees (FEES, amendment 29b) are added only once verified from the venue's own fee page; else None.
 
   python3 research/tools/v1_books.py run [--samples N]     (writes data/v1/books.jsonl)
   python3 research/tools/v1_books.py report
@@ -24,8 +24,14 @@ OUT = os.path.join(HERE, "data", "v1", "books.jsonl")
 NOTIONAL = 15.0                                 # in the book's quote currency (EUR books: 15 EUR)
 EVERY_S = 15 * 60
 COINS = ("BTC", "ETH", "XTZ", "VET")
-FEES = {   # published lowest-tier spot taker fee: None until read from the venue's own page (amendment 29a point 3)
-    "Binance": None, "Kraken": None, "Bitstamp": None, "OKX": None, "Bitvavo": None, "Coinbase": None}
+FEES = {   # lowest-tier spot taker fee read on the venue's own page (amendment 29b point 1); None = uafklaret
+    "Binance": {"taker": 0.001, "read": "2026-10-27", "url": "https://www.binance.com/en/fee/schedule",
+                "quote": "Regular User 0.100% / 0.100%"},
+    "Kraken": {"taker": 0.008, "read": "2026-10-27", "url": "https://www.kraken.com/features/fee-schedule",
+               "quote": "Tier 1 $0+ < $5M N/A 0.40 % 0.80 %"},
+    "OKX": {"taker": 0.002, "read": "2026-10-27", "url": "https://www.okx.com/en-us/help/important-notice-upcoming-"
+            "adjustment-to-vip-trading-volume-tiers-europe", "quote": "| Regular | 0 | 0 | 0.100% | 0.200% | (spot only)"},
+    "Bitstamp": None, "Bitvavo": None, "Coinbase": None}
 
 
 BITSTAMP = {"BTC": "btcusdt", "ETH": "ethusdt", "XTZ": "xtzeur"}     # no XTZ/USDT, no VET (1cb4581)
@@ -42,7 +48,7 @@ VENUES = {   # name -> (url per coin or None, parser -> (bids, asks))
                lambda d: next((_levels(v["bids"]), _levels(v["asks"])) for v in d["result"].values())),
     "Bitstamp": (lambda c: BITSTAMP.get(c) and f"https://www.bitstamp.net/api/v2/order_book/{BITSTAMP[c]}/",
                  lambda d: (_levels(d["bids"]), _levels(d["asks"]))),
-    "OKX": (lambda c: c in ("BTC", "ETH", "XTZ") and f"https://www.okx.com/api/v5/market/books?instId={c}-USDT&sz=100",
+    "OKX": (lambda c: c in ("BTC", "ETH", "XTZ") and f"https://eea.okx.com/api/v5/market/books?instId={c}-USDT&sz=100",
             lambda d: (_levels(d["data"][0]["bids"]), _levels(d["data"][0]["asks"]))),
     "Bitvavo": (lambda c: f"https://api.bitvavo.com/v2/{c}-{'USDC' if c in ('BTC', 'ETH') else 'EUR'}/book?depth=100",
                 lambda d: (_levels(d["bids"]), _levels(d["asks"]))),
@@ -112,6 +118,14 @@ def run(samples, out=OUT, fetch=get, now=time.time, sleep=time.sleep):
     return done
 
 
+def with_fees(venue):
+    """Extra round-trip fee in bp of `venue` over Binance (2 x taker each), None while either fee is uafklaret."""
+    a, b = FEES.get(venue), FEES.get("Binance")
+    if not a or not b:
+        return None
+    return 2 * (a["taker"] - b["taker"]) * 1e4
+
+
 def report(path=OUT):
     rows = []
     if os.path.exists(path):
@@ -133,9 +147,13 @@ def report(path=OUT):
             if diffs:
                 c[venue] = {"n": len(diffs), "median_diff_bp": round(statistics.median(diffs), 2),
                             "books_only": True}
+                fee_bp = with_fees(venue)
+                c[venue]["median_diff_with_fees_bp"] = (None if fee_bp is None else
+                                                        round(statistics.median(diffs) + fee_bp, 2))
         out["coins"][coin] = c
     out["fees"] = FEES
-    out["note"] = "kun ordrebøger; gebyrer lægges til, når de er læst på børsens egen side; V1-dom kræver >= 50 pr. mønt over >= 48 t"
+    out["note"] = ("median_diff_with_fees_bp lægger 2 x taker-forskellen til (29b); uafklaret gebyr = None; "
+                   "V1-dom kun med gebyr og >= 50 pr. mønt over >= 48 t")
     return out
 
 

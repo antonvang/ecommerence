@@ -3778,3 +3778,28 @@ dækkede sine omkostninger (1–2 lukninger pr. mønt; derfor er (a) den bærend
 3. Ændring 30 punkt 2 ("må ikke bruges til at vælge") gælder fortsat for alt andet end punkt 1 her.
 4. **Kildefilen** genopbygges med `research/tools/eu_venue_markets.py` højst en gang om ugen og committes med dato;
    en mønt, der forsvinder fra alle børser, bliver først udelukket ved næste genopbygning.
+
+## Ændring 29b (2026-10-27 kl. 18:53 lokal, før kode): gebyrkilder, OKX' EU-host og dommens grundlag i V1 (ændring 29a punkt 3–4)
+
+Brugeren sagde "JA kør punkt 1 og 2 og 3" (2026-10-27 ca. kl. 18:39 lokal): gebyrer, perps for danske detailkunder og
+hvilken enhed de offentlige API'er tilhører. Kilder, citater og sha256: `research/studies/VENUE_GEBYRER_PERPS_2026-10-27.md`.
+Ingen tærskel, ingen falsifikationsregel og ingen papirkonto ændres; dette præciserer kun, hvordan punkt 3 udregnes.
+
+1. **Gebyrer i V1 (taker, laveste niveau, spot)** står i `FEES` i `research/tools/v1_books.py` med URL, læsedato og
+   citat, og kun når de er læst på børsens eget domæne: Binance 0,100 %, Kraken Pro 0,80 %, OKX EEA (konto kun med
+   spot, gældende fra 2026-10-09) 0,200 %. Bitvavo (kun et eksempel i API-dokumentationen; gebyrsiden gav 403),
+   Bitstamp (bot-spærring) og Coinbase (403) er "uafklaret" (`None`).
+2. **Rapporten** viser både bog-medianen (som hidtil) og medianen med gebyr: rundtur = bog-gennemgang køb + salg +
+   2 × taker-gebyr, for både børsen og Binance i samme prøve. V1-dommen pr. børs bruger kun medianen med gebyr og
+   afgives først, når børsens gebyr er bekræftet og der er mindst 50 målinger pr. mønt over mindst 48 timer.
+3. **OKX måles på `eea.okx.com`** fra deploy, fordi OKX' dokumentation siger, at EU-brugere (my.okx.com) skal bruge
+   den host. Rækker før deploy kom fra `www.okx.com`; de to hosts gav samme handels-ID'er 2026-10-27 kl. 17:41 og
+   17:50 UTC. At det er samme ordrebog, er observeret, ikke officielt bekræftet.
+4. **API-enhed (ændring 30 punkt 3)**, kun oplysning: Coinbase' offentlige bog er Coinbase Exchange (Coinbase, Inc.,
+   USA), som Coinbase Luxembourg S.A. sender EU-kunders Advanced-ordrer til (officiel ordreudførelsespolitik). Kraken:
+   Payward Europe Solutions Ltd sender alle ordrer til Payward Global Solutions Ltd's ordrebog (officiel politik); at
+   `api.kraken.com` er den bog, er uafklaret, og PGSL har i ESMA-registret kun pas til CY og IE. Bitvavo: én enhed, den
+   offentlige bog er dens egen platform. Bitstamp: uafklaret. `eu_venue_markets.json` ændres ikke her.
+5. **Perps** (spot/perp carry for en dansk detailkunde) er kun en note: ESMA (2026-02-24) anser krypto-perps for
+   sandsynligvis omfattet af CFD-indgrebet, og Finanstilsynets afgørelse af 1. august 2019 kræver 50 % margin på
+   CFD'er med kryptovaluta (højst 2x). Intet i lab'en ændres af det.

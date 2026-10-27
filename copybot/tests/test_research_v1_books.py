@@ -63,7 +63,19 @@ class Sample(unittest.TestCase):
         rep = v.report(self.out)
         self.assertAlmostEqual(rep["coins"]["BTC"]["Coinbase"]["median_diff_bp"], 30.0, places=1)   # 40 - 10 bp
         self.assertNotIn("Kraken", rep["coins"]["BTC"])
-        self.assertTrue(all(f is None for f in rep["fees"].values()))
+        self.assertIsNone(rep["coins"]["BTC"]["Coinbase"]["median_diff_with_fees_bp"])   # fee uafklaret: no number
+        self.assertAlmostEqual(rep["coins"]["BTC"]["OKX"]["median_diff_with_fees_bp"], 20.0, places=1)  # 0 + 2x(0.2-0.1)%
+        self.assertTrue(all(rep["fees"][v] is None for v in ("Bitstamp", "Bitvavo", "Coinbase")))
+
+    def test_fees_are_sourced_and_okx_uses_the_eu_host(self):
+        """Amendment 29b: every set fee names the venue's own page; OKX is read on eea.okx.com."""
+        for venue, f in v.FEES.items():
+            if f is not None:
+                self.assertIn(venue.lower(), f["url"])
+                self.assertTrue(f["quote"] and f["read"] == "2026-10-27" and 0 < f["taker"] < 0.01)
+        self.assertAlmostEqual(v.with_fees("Kraken"), 140.0)
+        self.assertIsNone(v.with_fees("Bitstamp"))
+        self.assertTrue(v.VENUES["OKX"][0]("BTC").startswith("https://eea.okx.com/"))
 
 
 if __name__ == "__main__":
