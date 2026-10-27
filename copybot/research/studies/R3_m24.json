@@ -1,0 +1,232 @@
+{
+ "code_commit": "6077d3f6432e05ea9134e13f96631aea70cad365",
+ "files": [
+  {
+   "file": "BTCUSDT-1m-2020-03.zip",
+   "sha256": "15790b4b031cbc5f59cae30e523fb8341588d279fe3839ba1224c7fe8a6bc929"
+  },
+  {
+   "file": "BTCUSDT-1m-2020-04.zip",
+   "sha256": "f45228183c21030fc3a787109eada99187d9ba8c4d5d7ea5c178967150fa7467"
+  },
+  {
+   "file": "BTCUSDT-1m-2020-05.zip",
+   "sha256": "bc5bdae217f9ef6a32ffcc7653e3d45e007a2d9b2e93b752bdc7805254446821"
+  },
+  {
+   "file": "BTCUSDT-1m-2020-06.zip",
+   "sha256": "91f18492445c0a9609d70bd4603c73c8588a88c06105ade34082417f8b2e7e6d"
+  },
+  {
+   "file": "BTCUSDT-1m-2020-07.zip",
+   "sha256": "4cb7dcf6e1adb17e8ab8787c459f3f645b7070633f530485f0f93dd45a9de693"
+  },
+  {
+   "file": "BTCUSDT-1m-2020-08.zip",
+   "sha256": "7596de0f26df44d782713475f97af34f27a287faf084c73bdcc61819215b060a"
+  },
+  {
+   "file": "BTCUSDT-1m-2020-09.zip",
+   "sha256": "9f2d575ffc17a14320bc08a99d51a5580fd7f058f1495cfec598fbbd959792c2"
+  },
+  {
+   "file": "BTCUSDT-1m-2020-10.zip",
+   "sha256": "f35bc01dc1bba142c87033b33055c34a0ba37c2a2abd6c115af6a9c4f238dd03"
+  },
+  {
+   "file": "BTCUSDT-1m-2020-11.zip",
+   "sha256": "8eb55b2a547c35d792f88186168774804346426b82289bc9b1633406c0ff9e40"
+  },
+  {
+   "file": "BTCUSDT-1m-2020-12.zip",
+   "sha256": "72cfa1e9aeb851871af0168eb7ee22d334b5efb3aa4a76d7382754dac5e885d8"
+  },
+  {
+   "file": "BTCUSDT-1m-2021-01.zip",
+   "sha256": "ba7aeda6a99e0828b39da1b0605aaefcb40882fe9d44034598c4404f8a07783f"
+  },
+  {
+   "file": "BTCUSDT-1m-2021-02.zip",
+   "sha256": "0a270f354b15b053824a7bb87c652aa95acb4a255fc968fe0a24bdc9e785223e"
+  },
+  {
+   "file": "BTCUSDT-1m-2021-03.zip",
+   "sha256": "15a2676410d5104fac1ea15f7302addbf4d0de14f6db8ce10a4930c3f5d5e7fa"
+  },
+  {
+   "file": "BTCUSDT-1m-2021-04.zip",
+   "sha256": "d957fcde82f9b5a9a05264a9602e5deae03472aa0d424ddb0f27a04e58723217"
+  },
+  {
+   "file": "BTCUSDT-1m-2021-05.zip",
+   "sha256": "dcf7c567cbde49a5e564b29f01be95e28d32f12cb68c40b2a14da75930187dc8"
+  },
+  {
+   "file": "BTCUSDT-1m-2021-06.zip",
+   "sha256": "a640c7f935a1136d2f65f28f9606f0e063185c500f982aec273bb2ed3f61bfc5"
+  },
+  {
+   "file": "BTCUSDT-1m-2021-07.zip",
+   "sha256": "1367b5cd230474b0ecc6031b9e18cffe66e011c8fdd01c3325985a39c5d5ed48"
+  },
+  {
+   "file": "BTCUSDT-1m-2021-08.zip",
+   "sha256": "a864bdf38c9d06b7a6a1dc07c5593bbe7387cec3b869e9ebee020da053d94f37"
+  },
+  {
+   "file": "BTCUSDT-1m-2021-09.zip",
+   "sha256": "6e7bbfe650e6c56e189e78d521b3714feffd38468d1268b706a6626737326676"
+  },
+  {
+   "file": "BTCUSDT-1m-2021-10.zip",
+   "sha256": "4b78dd0174890c975effca2ed078163d6e9b4f7437f692e2c430c724b7eafc24"
+  },
+  {
+   "file": "BTCUSDT-1m-2021-11.zip",
+   "sha256": "67da3342f014166d2af97321599e0011453c4bd5a9282ef12c1a6131efd12993"
+  },
+  {
+   "file": "BTCUSDT-1m-2021-12.zip",
+   "sha256": "c905c5c8ff36d0dfac3a0581225ab305f72d1e11e634953d8d3a136161d10956"
+  },
+  {
+   "file": "ETHUSDT-1m-2020-03.zip",
+   "sha256": "f4a6a230bf25a1d4f6a7f612d3a365e9bc8ea19a62e43b4eda6804cf923eca3f"
+  },
+  {
+   "file": "ETHUSDT-1m-2020-04.zip",
+   "sha256": "01023b5182512955021849e207592b10e28a750da7f705cbba34a44fa15936dd"
+  },
+  {
+   "file": "ETHUSDT-1m-2020-05.zip",
+   "sha256": "64708f859d8bfb51360835ed6cd97a23801b0a254c087639d5a2f6c7a5d51906"
+  },
+  {
+   "file": "ETHUSDT-1m-2020-06.zip",
+   "sha256": "6a61c20545009bb270c237d2d083f71274486069eb0f9f9e5fad377a40e20d4f"
+  },
+  {
+   "file": "ETHUSDT-1m-2020-07.zip",
+   "sha256": "dd83a3a8fa0f79ff086c7cb6d67af4c7e44f4e118f04f7a9af864200a63ee1f9"
+  },
+  {
+   "file": "ETHUSDT-1m-2020-08.zip",
+   "sha256": "3ecade833e5be335b5eb0a2c3bee4b1f09fe742c0b2c88a2185922c2fb28ad10"
+  },
+  {
+   "file": "ETHUSDT-1m-2020-09.zip",
+   "sha256": "20e851e03a8bf4414931db2974b21d1fe9c4f6f567172ea61296738e4a829a2a"
+  },
+  {
+   "file": "ETHUSDT-1m-2020-10.zip",
+   "sha256": "6d85dac37a0092cf8b9f687701afdd1d7b325e4471767eca5908cb3579842669"
+  },
+  {
+   "file": "ETHUSDT-1m-2020-11.zip",
+   "sha256": "0042b802f1dd09ef5b4cf1c53c54b11c76190ac147cff096da1df7a38c4c8444"
+  },
+  {
+   "file": "ETHUSDT-1m-2020-12.zip",
+   "sha256": "6a331abd5e2cbc53c3730ceb15545294a450209e0da4d4baa2cc241c872b59b1"
+  },
+  {
+   "file": "ETHUSDT-1m-2021-01.zip",
+   "sha256": "eec71d7526f3736012c0961fe9893d7f00947fe722709e45bbcd14d8b47b216f"
+  },
+  {
+   "file": "ETHUSDT-1m-2021-02.zip",
+   "sha256": "f0ad622d0add8de4d62974a79cbc4010216011bc7c2ae2c0ea5ce1a190564a38"
+  },
+  {
+   "file": "ETHUSDT-1m-2021-03.zip",
+   "sha256": "5f452486b3ba9fbc7ee98ede470501b7202d12744048f75088943590a0edc6ff"
+  },
+  {
+   "file": "ETHUSDT-1m-2021-04.zip",
+   "sha256": "b6ff07c1674a645b75578d7bf06c2fc616e0443b1c2fc5efb50f7fead2bee0f6"
+  },
+  {
+   "file": "ETHUSDT-1m-2021-05.zip",
+   "sha256": "3b8c11f3f8a87320b4a948b60257157b2920ef5363929a26f184bfe205f40446"
+  },
+  {
+   "file": "ETHUSDT-1m-2021-06.zip",
+   "sha256": "b06233d329610c0f38b65a8b10255393367172119fbbec9a135923329f396166"
+  },
+  {
+   "file": "ETHUSDT-1m-2021-07.zip",
+   "sha256": "13057ee33037fd9fb0cc063c6f28247e09fcf903023f7eac6ef59a6d6ada55d7"
+  },
+  {
+   "file": "ETHUSDT-1m-2021-08.zip",
+   "sha256": "c13383864ddebabe6f5e19e399a858fbc868b567e67e298b64703697a5419629"
+  },
+  {
+   "file": "ETHUSDT-1m-2021-09.zip",
+   "sha256": "33ea7e86283b55400613a6af94f0dcdf4c309bc7a8550011e931236f5bf1adc2"
+  },
+  {
+   "file": "ETHUSDT-1m-2021-10.zip",
+   "sha256": "244d0e66583023a557b8b5486a476a770d03dad315e2363ea426db62e404cf53"
+  },
+  {
+   "file": "ETHUSDT-1m-2021-11.zip",
+   "sha256": "b083257f558380a01d3eadd84c8d821ea4930c3eaa0a53d3317139e8d89b4b41"
+  },
+  {
+   "file": "ETHUSDT-1m-2021-12.zip",
+   "sha256": "c00acbd9a587da4ef3f8e1aea30b4e0746cbc33539280247fbcec301a030885a"
+  }
+ ],
+ "files_sha256": "2d6b91513fb2ad7f0db075c21b6bf0ef8b2dee47b2fcd85ef619779df9485601",
+ "method": "m24",
+ "missing_files": [],
+ "result": {
+  "calendar_events": 58,
+  "checks": {
+   "p <= 0.005": false,
+   "placebo p > 0.05 (>= 15 clusters)": true,
+   "same sign in 2020 and 2021": false,
+   "|mean| >= 0.0046": false
+  },
+  "cost_hurdle": 0.0046,
+  "cost_rule": "max(0.46 %, 2 x (2 x 0.040 % + RT_est(V_30d))) per event; RT_est from the 2026-10-24 snapshot is an ESTIMATE carried back to 2020-21",
+  "direction": "continuation",
+  "event_mean": 5.949310807585579e-05,
+  "event_median": 0.0003962625791657954,
+  "events_sha256": "3445c303ed98aa84ae89e16e20d9fb58378e6c8fcda188a01863195d0ba147ee",
+  "excluded_coin_events": {},
+  "halves": {
+   "2020": [
+    25,
+    0.0008714813737100063
+   ],
+   "2021": [
+    32,
+    -0.00043193415911590733
+   ]
+  },
+  "key": "macro_release|minute_drift_60m|m24",
+  "label": "EXPLORATORY (never evidence)",
+  "mean": 0.00013973932019370393,
+  "method": "m24",
+  "n_clusters": 57,
+  "n_events": 58,
+  "p": 0.9184540772961352,
+  "placebo": {
+   "mean": -0.0004323952033285639,
+   "n_clusters": 50,
+   "n_events": 57,
+   "p": 0.7446627668616569,
+   "shift_days": "-7 (-14 if that day had a calendar event)"
+  },
+  "placebo_excluded_coin_events": {},
+  "reason": "failed: p <= 0.005; same sign in 2020 and 2021; |mean| >= 0.0046",
+  "rule": "research/PROTOCOL_V3.md amendment 24",
+  "se": 0.0015585536775402007,
+  "share_positive": 0.5172413793103449,
+  "verdict": "SCREEN_FAIL",
+  "window": "explore0 2020-03..2021-12"
+ },
+ "rule": "research/PROTOCOL_V3.md amendment 24"
+}
