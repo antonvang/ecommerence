@@ -5,6 +5,7 @@ names, per coin, the EU-authorised venues with a Danish passport whose public ma
 nothing, and nothing that selects, rejects or ranks reads it."""
 import json
 import os
+import re
 
 PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "research", "data",
                     "eu_venue_markets.json")
@@ -29,6 +30,13 @@ def base(symbol):
         if s.endswith(q) and len(s) > len(q):
             return s[:-len(q)]
     return s
+
+
+def spec_coins(spec):
+    """The coin symbols an experiment spec names (not universe names such as 'binance_perps')."""
+    return [x for k in ("instrument", "instruments", "symbol", "symbols", "coins")
+            for x in ([spec[k]] if isinstance(spec.get(k), str) else spec.get(k) or [])
+            if re.fullmatch(r"[A-Z0-9]+(USDT|USDC)(\.SPOT)?", str(x))]
 
 
 def eu_venues(symbol, path=None):

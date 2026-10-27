@@ -83,6 +83,11 @@ class Label(unittest.TestCase):
         self.assertEqual(lab["coins"], {"VETUSDT": ["Kraken"]})
         self.assertIn("uafklaret", lab["note"])
 
+    def test_candidates_are_labelled_only_by_coin_symbols(self):
+        self.assertEqual(venue.spec_coins({"instrument": "binance_perps"}), [])
+        self.assertEqual(venue.spec_coins({"instruments": ["BTCUSDT", "hyperliquid_binance_perps", "ETHUSDT.SPOT"]}),
+                         ["BTCUSDT", "ETHUSDT.SPOT"])
+
     def test_the_repo_file_exists_and_names_the_register(self):
         with open(venue.PATH, encoding="utf-8") as fh:
             d = json.load(fh)

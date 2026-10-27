@@ -110,8 +110,7 @@ def candidates(db):
         c.update({"detector": spec.get("discovered_by", "manual"), "reason": spec.get("reason"),
                   "hypothesis": spec.get("hypothesis"), "data_requirements": spec.get("data_requirements"),
                   "source": (spec.get("sources") or [None])[0]})
-        coins = [x for k in ("instrument", "instruments", "symbol", "symbols", "coins")
-                 for x in ([spec[k]] if isinstance(spec.get(k), str) else spec.get(k) or [])]
+        coins = venue.spec_coins(spec)
         c["eu_venues"] = venue.label(coins) if coins else None              # amendment 30: information only
     dedupe = [dict(r) | {"payload": _j(r["payload"])} for r in db.q(
         "SELECT ts, kind, exp_id, payload FROM events WHERE kind IN ('candidate.covered','candidate.seen_again',"
