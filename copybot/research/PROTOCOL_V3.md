@@ -3739,3 +3739,25 @@ tekst står uændret som historik; denne ændring gælder fra nu og går forud f
    Mangler en verifikation i officielle registre, står børsen som "uafklaret". Ingen børs kaldes godkendt.
 5. **Uændret:** pm_lp, holdouts, gates, tærskler, låste protokoller, LÅS, alpha k5, option C, 4σ-fald (DROPPED),
    historiske forespørgsler (kun R3-undtagelsen 24a) og alle papirkonti.
+
+## Ændring 30 (2026-10-27 kl. 15:25 lokal, før kode): mærket "EU-handelbar" på kandidater og en omkostningsopgørelse pr. mønt (brugerens ja)
+
+Brugeren sagde "JA kør punkt 2 og 3" (2026-10-27 ca. kl. 15:25 lokal) efter ændring 29a og
+`research/studies/VENUE_REGISTER_2026-10-27.md`. Ændringen tilføjer kun oplysning; ingen regel, gate, tærskel eller
+papirkonto ændres, og intet univers indsnævres.
+
+1. **Mærket (punkt 2):** hver mønt får `eu_venues`: listen over børser, hvor mønten handles på børsens offentlige
+   markedsliste, blandt de børser hvis juridiske enhed står i ESMA's `CASPS.csv` med tjeneste b eller e og Danmark i
+   landelisten. Kilden er en statisk fil i repoet (`research/data/eu_venue_markets.json`) med hentetid, URL og sha256
+   pr. liste og registrets sha256. Den skrives af `research/tools/eu_venue_markets.py` (uden for `lab/`); lab'en læser
+   kun filen og henter intet (ingen nye værter i `tests/test_lab_safety.py`).
+2. **Brug:** mærket vises ved kandidater, baner og i omkostningsopgørelsen. Det må ikke bruges til at vælge, afvise
+   eller rangere kandidater, og ingen afgørelse læser det. En senere pilot med rigtige penge (kun med brugerens ja)
+   må kun omfatte mønter med mindst én børs i `eu_venues`.
+3. **Uafklaret forbliver uafklaret:** en børs, hvis registrerede EU-enheds API ikke er bekræftet at være den samme
+   som den offentlige liste, står med `"api_entity": "uafklaret"` i filen; mærket viser det.
+4. **Omkostningsopgørelse pr. mønt (punkt 3, beskrivende):** fra alle papirfills (`sim_fills`): slippage mod mid,
+   gebyr og antal pr. mønt og kontotype, og for banerne den andel af det realiserede bruttoresultat, som
+   omkostningerne udgør pr. mønt. Kun beskrivelse: ingen mønt fjernes og ingen regel ændres på grundlag af den uden en
+   ny dateret ændring. FWD_E-konti indgår kun med eksekveringstal (slippage, gebyr), aldrig med resultat (ændring 7
+   punkt 4–5).
