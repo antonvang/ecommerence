@@ -1,19 +1,13 @@
-"""Amendment 29: the pilot's two exchanges with one interface. DryExchange reads live public books and simulates fills
-(nothing is sent); LiveExchange signs requests to Binance spot with the user's trade-only key."""
-import hashlib
-import hmac
+"""Amendments 29/29a: the pilot's exchange. DryExchange reads live public books and simulates fills; nothing is ever
+sent. There is no account, key or order code (29a point 1)."""
 import json
 import math
-import os
-import stat
 import time
-import urllib.parse
 import urllib.request
 
-from pilot import DRY_FEE, KEY_PATH
+from pilot import DRY_FEE
 
 PUBLIC = "https://data-api.binance.vision"
-LIVE = "https://api.binance.com"
 
 
 def _get(url, timeout=10):
@@ -111,86 +105,3 @@ class DryExchange(Public):
             self._orders[oid]["status"] = "CANCELED"
         return {"status": self._orders[oid]["status"]}
 
-
-def load_key(path=KEY_PATH):
-    """The user's key file, refused unless only its owner can read it. Its content is never logged or printed."""
-    st = os.stat(path)
-    if stat.S_IMODE(st.st_mode) & 0o077:
-        raise PermissionError(f"{path} must have mode 600")
-    with open(path, encoding="utf-8") as fh:
-        k = json.load(fh)
-    return k["key"], k["secret"]
-
-
-class LiveExchange(Public):
-    """Signed Binance spot requests with the user's trade-only key. Only constructed after every live check passed."""
-    dry = False
-
-    def __init__(self, key_path=KEY_PATH, opener=urllib.request.urlopen):
-        super().__init__(LIVE, _get)
-        self._key, self._secret = load_key(key_path)
-        self._open = opener
-
-    def __repr__(self):
-        return "LiveExchange(<key hidden>)"
-
-    def _signed(self, method, path, params):
-        params = dict(params, timestamp=int(time.time() * 1000), recvWindow=5000)
-        qs = urllib.parse.urlencode(params)
-        sig = hmac.new(self._secret.encode(), qs.encode(), hashlib.sha256).hexdigest()
-        req = urllib.request.Request(f"{LIVE}{path}?{qs}&signature={sig}", method=method,
-                                     headers={"X-MBX-APIKEY": self._key, "User-Agent": "copybot-pilot"})
-        with self._open(req, timeout=10) as r:
-            return json.loads(r.read())
-
-    def balance(self, asset):
-        for b in self._signed("GET", "/api/v3/account", {"omitZeroBalances": "true"})["balances"]:
-            if b["asset"] == asset:
-                return float(b["free"])
-        return 0.0
-
-    def _fee_usdt(self, symbol, fills):
-        base, total = self.filters(symbol)["base"], 0.0
-        for f in fills:
-            c, a = float(f["commission"]), f["commissionAsset"]
-            if a == "USDT":
-                total += c
-            elif a == base:
-                total += c * float(f["price"])
-            else:                                       # e.g. BNB: valued at its bid now
-                total += c * self.book(f"{a}USDT")["bid"]
-        return total
-
-    def _fill(self, symbol, r):
-        q, quote = float(r.get("executedQty", 0)), float(r.get("cummulativeQuoteQty", 0))
-        return {"status": r["status"], "qty": q, "quote": quote, "avg_px": quote / q if q else None,
-                "fee_usdt": self._fee_usdt(symbol, r.get("fills", [])), "order_id": r.get("orderId")}
-
-    def buy_market_quote(self, symbol, quote):
-        return self._fill(symbol, self._signed("POST", "/api/v3/order", {
-            "symbol": symbol, "side": "BUY", "type": "MARKET", "quoteOrderQty": f"{quote:.2f}",
-            "newOrderRespType": "FULL"}))
-
-    def sell_market(self, symbol, qty):
-        return self._fill(symbol, self._signed("POST", "/api/v3/order", {
-            "symbol": symbol, "side": "SELL", "type": "MARKET", "quantity": f"{qty:.8f}".rstrip("0").rstrip("."),
-            "newOrderRespType": "FULL"}))
-
-    def buy_limit_maker(self, symbol, price, qty):
-        r = self._signed("POST", "/api/v3/order", {
-            "symbol": symbol, "side": "BUY", "type": "LIMIT_MAKER", "price": f"{price:.8f}".rstrip("0").rstrip("."),
-            "quantity": f"{qty:.8f}".rstrip("0").rstrip("."), "newOrderRespType": "FULL"})
-        return {"order_id": r["orderId"], "status": r["status"]}
-
-    def order_status(self, symbol, oid):
-        r = self._signed("GET", "/api/v3/order", {"symbol": symbol, "orderId": oid})
-        q, quote = float(r["executedQty"]), float(r["cummulativeQuoteQty"])
-        fee = 0.0
-        if q:
-            trades = self._signed("GET", "/api/v3/myTrades", {"symbol": symbol, "orderId": oid})
-            fee = self._fee_usdt(symbol, [{"commission": t["commission"], "commissionAsset": t["commissionAsset"],
-                                           "price": t["price"]} for t in trades])
-        return {"status": r["status"], "qty": q, "quote": quote, "avg_px": quote / q if q else None, "fee_usdt": fee}
-
-    def cancel(self, symbol, oid):
-        return {"status": self._signed("DELETE", "/api/v3/order", {"symbol": symbol, "orderId": oid})["status"]}

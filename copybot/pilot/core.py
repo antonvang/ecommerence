@@ -1,5 +1,4 @@
-"""Amendment 29: one pilot round, the hard stops, the append-only ledger and the live-mode checks."""
-import datetime
+"""Amendments 29/29a: one simulated pilot round, the hard stops and the append-only ledger."""
 import fcntl
 import json
 import os
@@ -178,32 +177,6 @@ def dry_evidence(ledger):
     return ok, {"dry_rounds": len(res), "hours": round(hours, 1), "stops": len(stops)}
 
 
-def confirm_path(ledger, day=None):
-    return os.path.join(ledger.data, f"confirm-{day or datetime.date.today().isoformat()}")
-
-
-def live_blockers(ledger, key_path=P.KEY_PATH, terms=P.TERMS_DOC):
-    """Every condition of amendment 29 point 9 that does not hold (an empty list allows a live run)."""
-    out = []
-    ok, ev = dry_evidence(ledger)
-    if not ok:
-        out.append(f"tør kørsel ikke grøn: {ev}")
-    if not os.path.exists(key_path):
-        out.append("ingen nøglefil")
-    elif os.stat(key_path).st_mode & 0o077:
-        out.append("nøglefilen skal have rettigheder 600")
-    if not os.path.exists(terms):
-        out.append("vilkår og skat ikke dokumenteret")
-    if not os.path.exists(confirm_path(ledger)):
-        out.append("ingen bekræftelse fra brugeren i dag (python3 -m pilot confirm-today)")
-    first = next((r["ts"] for r in ledger.results(False)), None)
-    if first and time.time() - first > P.MAX_LIVE_DAYS * 86400:
-        out.append("5 døgn fra første rigtige ordre er gået")
-    if ledger.state().get("stopped"):
-        out.append(f"stoppet: {ledger.state()['stopped']}")
-    return out
-
-
 def human_typed(phrase, inp=input, tty=None):
     """True only in an interactive terminal where the exact phrase was typed."""
     if not (tty if tty is not None else os.isatty(0)):
@@ -236,15 +209,15 @@ def report(ledger):
 def run(ex, ledger, rounds, rng=None, now=time.time, sleep=time.sleep):
     """Rounds spaced 30-120 min apart, never inside a K3 window; one process at a time."""
     rng = rng or random.Random()
-    lock = open(os.path.join(ledger.data, "run.lock"), "w")
-    fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-    ledger.append(kind="run", dry=ex.dry, rounds=rounds)
-    done = 0
-    while done < rounds:
-        while k3_window(now()) or k3_window(now() + P.MAKER_TIMEOUT_S + P.HOLD_S + 30):
-            sleep(60)
-        if play(ex, ledger, rng, now, sleep) is not None:
-            done += 1
-        if done < rounds:
-            sleep(rng.uniform(P.MIN_GAP_S, P.MAX_GAP_S))
-    return done
+    with open(os.path.join(ledger.data, "run.lock"), "w") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        ledger.append(kind="run", dry=ex.dry, rounds=rounds)
+        done = 0
+        while done < rounds:
+            while k3_window(now()) or k3_window(now() + P.MAKER_TIMEOUT_S + P.HOLD_S + 30):
+                sleep(60)
+            if play(ex, ledger, rng, now, sleep) is not None:
+                done += 1
+            if done < rounds:
+                sleep(rng.uniform(P.MIN_GAP_S, P.MAX_GAP_S))
+        return done

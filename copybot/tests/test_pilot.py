@@ -1,8 +1,6 @@
-"""PROTOCOL_V3 amendment 29: the execution pilot logs a round before sending, measures slippage and cost, stops hard
-(loss cap, holdings mismatch, clock skew, an error with an open position) and stays stopped until a human resumes in a
-terminal, refuses live mode unless every point 9 check holds, never reads a key readable by others, and lab/ never
-imports it."""
-import json
+"""PROTOCOL_V3 amendments 29/29a: the simulated execution pilot logs a round before it is played, measures slippage and
+cost, stops hard (loss cap, holdings mismatch, clock skew, an error with an open position) and stays stopped until a
+human resumes in a terminal; it holds no account, key or order code (29a), and lab/ never imports it."""
 import os
 import random
 import shutil
@@ -12,10 +10,11 @@ import unittest
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, HERE)
+sys.path.insert(0, os.path.join(HERE, "tests"))
 
 import pilot as P  # noqa: E402
 from pilot import core  # noqa: E402
-from pilot.exchange import DryExchange, LiveExchange, floor_step, load_key, walk  # noqa: E402
+from pilot.exchange import DryExchange, floor_step, walk  # noqa: E402
 
 T0 = 1793106600.0                                       # 2026-10-27 13:10 UTC (outside K3)
 
@@ -136,40 +135,33 @@ class Stops(Base):
         self.assertIsNone(self.ledger.state()["stopped"])
 
 
-class Live(Base):
-    def test_live_is_refused_until_every_point_9_check_holds(self):
-        key = os.path.join(self.tmp, "key.json")
-        terms = os.path.join(self.tmp, "terms.md")
-        b = core.live_blockers(self.ledger, key_path=key, terms=terms)
-        self.assertEqual(len(b), 4)                                         # dry run, key, terms, confirmation
-        for k in range(20):
-            self.ledger.append(kind="result", dry=True, pnl_usdt=-0.05, mode="taker")
-        rows = self.ledger.rows()
-        rows[-1]["ts"] = rows[0]["ts"] + 49 * 3600
-        with open(self.ledger.path, "w", encoding="utf-8") as fh:
-            fh.write("".join(json.dumps(r) + "\n" for r in rows))
-        with open(key, "w") as fh:
-            json.dump({"key": "K", "secret": "S3CR3T"}, fh)
-        os.chmod(key, 0o644)
-        open(terms, "w").close()
-        self.assertEqual(core.live_blockers(self.ledger, key_path=key, terms=terms),
-                         ["nøglefilen skal have rettigheder 600",
-                          "ingen bekræftelse fra brugeren i dag (python3 -m pilot confirm-today)"])
-        with self.assertRaises(PermissionError):
-            load_key(key)
-        os.chmod(key, 0o600)
-        open(core.confirm_path(self.ledger), "w").close()
-        self.assertEqual(core.live_blockers(self.ledger, key_path=key, terms=terms), [])
-        ex = LiveExchange(key_path=key, opener=None)
-        self.assertNotIn("S3CR3T", repr(ex))
+class PaperOnly(Base):
+    def test_resume_needs_a_terminal_and_the_exact_phrase(self):
+        self.assertFalse(core.human_typed(P.RESUME_PHRASE, inp=lambda p: P.RESUME_PHRASE, tty=False))
+        self.assertFalse(core.human_typed(P.RESUME_PHRASE, inp=lambda p: "ja", tty=True))
 
-    def test_confirm_needs_a_terminal_and_the_exact_phrase(self):
-        self.assertFalse(core.human_typed(P.CONFIRM_PHRASE, inp=lambda p: P.CONFIRM_PHRASE, tty=False))
-        self.assertFalse(core.human_typed(P.CONFIRM_PHRASE, inp=lambda p: "ja", tty=True))
+    def test_29a_no_account_key_or_order_code_exists(self):
+        """Amendment 29a point 1: only the dry run; the rules of tests/test_lab_safety.py also hold for pilot/."""
+        import ast
+        import test_lab_safety as safety
+        for f in sorted(os.listdir(os.path.join(HERE, "pilot"))):
+            if not f.endswith(".py"):
+                continue
+            with open(os.path.join(HERE, "pilot", f), encoding="utf-8") as fh:
+                src = fh.read()
+            tree = ast.parse(src)
+            for node in ast.walk(tree):
+                if isinstance(node, (ast.Import, ast.ImportFrom)):
+                    names = [n.name for n in node.names] + ([node.module] if getattr(node, "module", None) else [])
+                    self.assertFalse({n.split(".")[0] for n in names} & safety.FORBIDDEN_IMPORTS, f)
+                if isinstance(node, (ast.FunctionDef, ast.ClassDef)):
+                    self.assertNotRegex(node.name, safety.FORBIDDEN_NAMES, f)
+            low = src.lower()
+            for t in safety.FORBIDDEN_TEXT + ("api.binance.com", "signature", "method=\"post\"", "method=\"delete\""):
+                self.assertNotIn(t, low, f)
 
     def test_limits_match_amendment_29(self):
-        self.assertEqual((P.CAPITAL_USDT, P.LOSS_CAP_USDT, P.MAX_ORDER_USDT, P.MAX_ROUNDS, P.MAX_LIVE_DAYS),
-                         (100.0, 15.0, 20.0, 80, 5))
+        self.assertEqual((P.CAPITAL_USDT, P.LOSS_CAP_USDT, P.MAX_ORDER_USDT, P.MAX_ROUNDS), (100.0, 15.0, 20.0, 80))
         self.assertLessEqual(P.ROUND_USDT, P.MAX_ORDER_USDT)
         self.assertEqual(P.SYMBOLS, ("BTCUSDT", "ETHUSDT", "EPICUSDT", "XTZUSDT", "VETUSDT", "MITOUSDT", "HOTUSDT"))
 
