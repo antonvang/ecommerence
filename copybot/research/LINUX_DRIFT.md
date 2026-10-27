@@ -727,6 +727,12 @@ holdouten røres ikke; intet genstartes.
   - **Kan ikke bevises af kommandoer:** at maskinen faktisk genstarter (brugeren), skrivebordsnotifikationen,
     dashboardet i browseren (F12; værten har ingen JS-motor). Claude-sessionen dør med værten og fortsættes med
     `claude --continue` efter login.
+  - **Udfald 2026-10-27 (skrevet kl. 14:14 lokal): testen blev aflyst, ingen genstart.** Preflight kl. 12:25 UTC var
+    grøn (enheder enabled med de rigtige sha256, pm_lp aktiv, 0 job, FAIL_CLOSED nej, netværk 200 på under 1 s). Laben
+    blev stoppet kl. 12:38 UTC, men værten blev ikke genstartet (`uptime -s` uændret 2026-10-26 12:25:50 UTC). Ved fristen
+    kl. 13:10 UTC blev laben startet i hånden efter rollback-planen (13:11 UTC, DEPLOY OK) før K3-placebovinduet kl.
+    13:25 UTC. Hul for fleet/web: 33 min; vagt og pm_lp kørte hele tiden. S7-enhederne er stadig enabled og ubevist;
+    reserven er onsdag 10-28 eller torsdag 10-29 kl. 12:40 UTC, kun efter brugerens nye ja.
 - **Agenternes sundhed bygger på udført arbejde, ikke på puls (tilføjet 2026-10-23 kl. 15:34, før kode; brugeren bad
   om, at en kørende proces eller en frisk puls aldrig fremstår som sund uden nyligt arbejde).** I dag dømmer både
   dashboardet (`status`) og vagten (`agent:<navn>`) kun ud fra pulsen og `ok`-flaget: en periodisk agent, hvis gennemløb
