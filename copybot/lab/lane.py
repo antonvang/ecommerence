@@ -417,12 +417,16 @@ def retire(db, ledger, rule, detail, st=None, now=None):
 
 
 # ---------- start (point 3) ----------
-def _probe(r, fam, get, now, books=None):
+def _probe(r, fam, get, now, books=None, skip=None):
     """Coins whose perp and spot books both load (one read each), in basket order. `books`, if given, receives the
-    books read ({instrument: Book}) for amendment 25's gate."""
+    books read ({instrument: Book}) for amendment 25's gate; `skip(coin)` -> reason drops a coin unread (30a)."""
     from lab import paper_runner
     ok, dropped = [], []
     for s in r.get("evaluated_coins") or r.get("coins") or explore.universe(fam):   # the coins it was tested on
+        why = skip(s) if skip else None
+        if why:
+            dropped.append({"coin": s, "reason": why})
+            continue
         try:
             got = {}
             for inst in (s, s + SPOT):
@@ -532,6 +536,15 @@ def _skip_unheld(db, r, basket, now, **extra):
         "retry": True, "t": int(now), "simulated": True, **extra})
 
 
+def eu_block(coin):
+    """Amendment 30a: why a new account may not start on this coin, or None. Fetches nothing (lab/venue.py)."""
+    from lab import venue
+    v = venue.eu_venues(coin if coin.endswith("USDT") else f"{coin}USDT")
+    if v is None:
+        return "EU-kilde mangler (30a)"
+    return None if v else "ikke EU-handelbar (30a)"
+
+
 def _start(db, r, get, now):
     led, fam = ledger_id(r["key"]), families.load(r["family"])
     base = _lane_base(r)
@@ -540,7 +553,7 @@ def _start(db, r, get, now):
         _skip_unheld(db, r, basket, now)
         return None
     books = {}
-    coins, dropped = _probe(r, fam, get, now, books)
+    coins, dropped = _probe(r, fam, get, now, books, skip=eu_block)   # 30a: before any book is read
     while coins:                                                    # amendment 25, pr. mønt; a drop raises the size
         size = CAPITAL / (UNIT_CAPITAL * len(coins))
         fails = []
@@ -822,6 +835,10 @@ def manage_scanner(db, now, get):
         base = {"key": key, "source": "scanner", "family": "fcarry", "function": "scanner_funding", "params": {},
                 "coin": coin, "trigger": trigger, "label": SCAN_LABEL, "simulated": True, "decisional": False,
                 "t": int(now)}
+        if eu_block(coin):                                      # 30a: before a probe is spent
+            db.event("lane.skipped", ACTOR, led, {**base, "coins": [coin], "reason": eu_block(coin)})
+            out["skipped"].append(coin)
+            continue
         if _base(coin, "scanner") in gone:                      # 16e point 4: before a probe is spent
             db.event("lane.skipped", ACTOR, led, {**base, "coins": [coin], "reason":
                                                   f"afnotering annonceret (16e): {gone[_base(coin, 'scanner')]}"[:200]})
@@ -953,6 +970,10 @@ def manage_hl(db, now, get):
         base = {"key": key, "source": "hl", "family": "fcarry", "function": "hl_funding", "params": {},
                 "coin": coin, "trigger": trigger, "label": HL_LABEL, "simulated": True, "decisional": False,
                 "t": int(now)}
+        if eu_block(coin):                                      # 30a: before a probe is spent
+            db.event("lane.skipped", ACTOR, led, {**base, "coins": [coin], "reason": eu_block(coin)})
+            out["skipped"].append(coin)
+            continue
         if coin in gone:                                        # 16e points 4 and 6: spot delistings only
             db.event("lane.skipped", ACTOR, led, {**base, "coins": [coin],
                                                   "reason": f"afnotering annonceret (16e): {gone[coin]}"[:200]})

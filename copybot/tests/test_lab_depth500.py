@@ -33,6 +33,14 @@ def trigger(qty=30.0):
                           "perp": {"instrument": PERP, "fetched_at": 1000.5}}}
 
 
+def setUpModule():                                                  # amendment 30a is tested in test_lab_venue.py
+    tl._EU.start()
+
+
+def tearDownModule():
+    tl._EU.stop()
+
+
 class Probe(Base):
     def rows(self, metric=None):
         sql = "SELECT * FROM observations WHERE detector=?" + (" AND metric=?" if metric else "") + " ORDER BY id"

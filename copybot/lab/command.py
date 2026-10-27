@@ -711,7 +711,7 @@ def _lane_trigger(t):
 def lane_view(db, now=None):
     """Amendments 11-12d, display only: every active lane and scanner account and the latest stopped ones, with the
     latest daily report. Simulated, never evidence; nothing here is in the formal balance."""
-    from lab import lane
+    from lab import lane, venue
     from lab.paper import PaperEngine
     now = now or time.time()
     info, gone, rk, pe, rows = lane.started(db), lane.retired(db), Risk(db), PaperEngine(db), []
@@ -735,7 +735,8 @@ def lane_view(db, now=None):
                      "funding": book["funding"], "fees": book["fees"], "funding_minus_fees": book["funding"] - book["fees"],
                      "days": (((g.get("ts") or now) if g else now) - i["ts"]) / 86400 if i.get("ts") else None,
                      "trigger": _lane_trigger(i.get("trigger")), "rules": lane.rules_text(i),
-                     "decomposition": lane.decomposition(db, led)})
+                     "decomposition": lane.decomposition(db, led),
+                     "eu_venues": venue.label(i.get("coins") or [])})       # amendment 30: information only
     act = sorted((r for r in rows if r["active"]), key=lambda r: -(r["started"] or 0))
     old = sorted((r for r in rows if not r["active"]), key=lambda r: -(r["stopped"] or 0))
     rep = db.one("SELECT payload FROM events WHERE kind='research.lane_report' ORDER BY id DESC LIMIT 1")

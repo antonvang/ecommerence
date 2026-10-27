@@ -59,6 +59,17 @@ def result(key="fcarry.carry_filter|a", fn="carry_filter", params=None, coins=No
             "checks": {"a": cand, "b": True, "c": True}, "method": explore.METHOD}
 
 
+_EU = mock.patch.object(lane, "eu_block", lambda coin: None)    # amendment 30a is tested in test_lab_venue.py
+
+
+def setUpModule():
+    _EU.start()
+
+
+def tearDownModule():
+    _EU.stop()
+
+
 class Base(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.mkdtemp(prefix="lablane")
