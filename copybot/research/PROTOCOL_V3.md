@@ -3676,3 +3676,34 @@ kun censussen kan give.
 8. **Skrevet før data (forventning):** C1 SCREEN_FAIL (en 1 t-effekt ≥ 0,46 % er usandsynlig); C2 sandsynligvis
    UNTESTABLE i måneder (få hændelser); C3 har en reel chance, men giver højst en risikoregel.
 9. **Flere tests:** 3 nøgler, hver p ≤ 0,005 (familieniveau ≤ 1,5 %). Ingen variant af tærskler eller horisonter.
+
+## Ændring 29 (2026-10-27 kl. 14:43 lokal, før kode): eksekveringspilot med rigtige penge (brugerens ja, kun tør kørsel indtil dagsbekræftelse)
+
+Brugeren svarede "JA" (2026-10-27 ca. kl. 14:40 lokal) til `research/PILOT_EKSEKVERING_UDKAST.md` (479bfcd) med Claudes
+foreslåede tal. Ændringen fastlægger rammen; den åbner ikke for nogen rigtig ordre i sig selv.
+
+1. **Formål:** at måle omkostningen ved rigtige spot-handler (gebyr, slippage mod mid ved afsendelse, maker-fill-rate)
+   mod papirets model (4 bp) og banernes papirfills (15,36 bp). Ingen profitpåstand; forventet udfald er et lille tab.
+2. **Tal (brugerens ja til forslagene; kan kun ændres af brugeren, før første rigtige ordre):** kapital 100 USDT på en
+   underkonto; hårdt samlet tabsloft 15 USDT (stopper piloten permanent); største ordre 20 USDT (runder bruger 15 USDT);
+   kun spot, ingen perp, ingen gearing, ingen hævning; højst 80 runder over højst 5 døgn fra første rigtige ordre.
+3. **Mønter (låst nu):** BTCUSDT, ETHUSDT og de fem spot-banemønter med flest papirfills pr. 2026-10-27: EPICUSDT,
+   XTZUSDT, VETUSDT, MITOUSDT, HOTUSDT.
+4. **En runde:** mønt og tilstand (taker eller maker, 50/50) trækkes tilfældigt og logges, før noget sendes. Taker:
+   MARKET-køb for 15 USDT (quoteOrderQty). Maker: LIMIT_MAKER-køb på bedste bud, annulleres efter 30 s, hvis ikke fyldt.
+   Efter 60 s sælges den fyldte mængde med MARKET. Bog (bedste bud/udbud), servertid og mid logges ved hver afsendelse.
+   Runder ligger tidligst 30 min fra hinanden og aldrig i et K3-vindue (lige time ± 35 min UTC).
+5. **Hårde stop (i koden, permanent til et menneske genoptager i en terminal):** realiseret tab ≥ 15 USDT − 0,40 USDT
+   (buffer for næste runde); ordrebeløb > 20 USDT afvises før afsendelse; mønt-beholdning efter en runde afviger fra
+   før-beholdningen med mere end ét lot-trin plus gebyr; urforskel til Binance > 1 s; spread > 0,5 % (runden springes
+   over, intet stop); enhver netværks- eller API-fejl under en åben position (stop efter et forsøg på at sælge).
+6. **Adskillelse:** koden ligger i `copybot/pilot/` uden for `lab/`; `lab/` importerer aldrig `pilot` (testet), og
+   `tests/test_lab_safety.py` er uændret. Kun standardbiblioteket. Logbog: `data/pilot/ledger.jsonl` (kun tilføjelser).
+7. **Nøgle:** oprettes af brugeren (kun handel, ingen hævning, IP-låst), ligger i `~/.config/copybot-pilot/key.json`
+   med rettigheder 600; koden nægter at læse den med bredere rettigheder og skriver den aldrig i log eller output.
+8. **Tør kørsel:** samme kode mod live offentlige data (`data-api.binance.vision`), ordrer kun simuleret og logget,
+   i mindst 48 timer og mindst 20 runder, uden fejl i stop-logikken.
+9. **Første rigtige ordre kræver alle:** grøn tør kørsel; nøgle og underkonto oprettet af brugeren; vilkår og dansk
+   skat undersøgt og dokumenteret; og samme dag brugerens bekræftelse via `python3 -m pilot confirm-today`, som kun
+   virker i en interaktiv terminal med en indtastet sætning. Claude kører aldrig `confirm-today` eller `resume`.
+10. **Uændret:** pm_lp, holdouts, gates, tærskler, låste protokoller, LÅS, alpha k5, option C og alle papirkonti.
