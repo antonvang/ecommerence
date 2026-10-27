@@ -3761,3 +3761,20 @@ papirkonto ændres, og intet univers indsnævres.
    omkostningerne udgør pr. mønt. Kun beskrivelse: ingen mønt fjernes og ingen regel ændres på grundlag af den uden en
    ny dateret ændring. FWD_E-konti indgår kun med eksekveringstal (slippage, gebyr), aldrig med resultat (ændring 7
    punkt 4–5).
+
+## Ændring 30a (2026-10-27 kl. 15:32 lokal, før kode): nye bane-, scanner- og HL-konti kun på EU-handelbare mønter (brugerens ja)
+
+Brugeren sagde "JA kør punkt 2" (2026-10-27 ca. kl. 15:32 lokal) til forslaget om, at nye papirkonti kun starter på
+mønter med mindst én børs i `eu_venues` (ændring 30). Begrundelse: (a) en mønt, der ikke kan handles på en EU-tilladt
+børs med dansk pas, kan aldrig indgå i en pilot med rigtige penge; (b) beskrivende tal (`coin_costs.py`, 2026-10-27):
+de lukkede banemønter EPIC, HOT og MITO kostede 67–80 USD pr. lukket mønt mod 0,9–4,4 USD for de øvrige, og ingen
+dækkede sine omkostninger (1–2 lukninger pr. mønt; derfor er (a) den bærende grund, ikke (b)).
+
+1. **Fra deploy:** en ny bane (ændring 11) fjerner mønter uden EU-børs fra kurven, før nogen bog læses; de står i
+   `dropped` med årsagen "ikke EU-handelbar (30a)". En ny scanner- (12e) eller HL-konto (13) springes over med samme
+   årsag, før en probe bruges. Fandtes kildefilen ikke, springes nye starter over ("EU-kilde mangler (30a)").
+2. **Uændret:** konti, der allerede kører, kører færdig efter deres egne regler; ingen lukkes, flyttes eller
+   genstartes på grund af 30a. Gates (12g, 25 m.fl.), tærskler, K3, pm_lp og alle andre regler er uændrede.
+3. Ændring 30 punkt 2 ("må ikke bruges til at vælge") gælder fortsat for alt andet end punkt 1 her.
+4. **Kildefilen** genopbygges med `research/tools/eu_venue_markets.py` højst en gang om ugen og committes med dato;
+   en mønt, der forsvinder fra alle børser, bliver først udelukket ved næste genopbygning.
