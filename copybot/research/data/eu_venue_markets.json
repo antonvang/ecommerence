@@ -1,0 +1,7827 @@
+{
+ "generated_at": 1793111210,
+ "register": {
+  "binance_listed": false,
+  "last_modified": "Thu, 22 Oct 2026 15:14:35 GMT",
+  "rows": 387,
+  "sha256": "b0d68e59b71a9f6135eae96ac7c0c3cff1a2f0f1dc071f3512f476a704bb75fb",
+  "url": "https://www.esma.europa.eu/sites/default/files/2024-12/CASPS.csv"
+ },
+ "rule": "research/PROTOCOL_V3.md amendment 30",
+ "venues": {
+  "Bitstamp": {
+   "api_entity": "uafklaret",
+   "authorised": "15/05/2025",
+   "coins": {
+    "AAVE": [
+     "EUR",
+     "USD"
+    ],
+    "ADA": [
+     "EUR",
+     "USD"
+    ],
+    "AERO": [
+     "EUR",
+     "USD"
+    ],
+    "ALGO": [
+     "EUR",
+     "USD"
+    ],
+    "APE": [
+     "EUR",
+     "USD"
+    ],
+    "APT": [
+     "EUR",
+     "USD"
+    ],
+    "ARB": [
+     "EUR",
+     "USD"
+    ],
+    "ASTER": [
+     "EUR",
+     "USD"
+    ],
+    "ATOM": [
+     "EUR",
+     "USD"
+    ],
+    "AVAX": [
+     "EUR",
+     "USD"
+    ],
+    "AVNT": [
+     "EUR",
+     "USD"
+    ],
+    "AXS": [
+     "EUR",
+     "USD"
+    ],
+    "BAT": [
+     "EUR",
+     "USD"
+    ],
+    "BCH": [
+     "EUR",
+     "USD"
+    ],
+    "BILL": [
+     "EUR",
+     "USD"
+    ],
+    "BIO": [
+     "EUR",
+     "USD"
+    ],
+    "BNB": [
+     "EUR",
+     "USD"
+    ],
+    "BONK": [
+     "EUR",
+     "USD"
+    ],
+    "BTC": [
+     "EUR",
+     "USD",
+     "USDC",
+     "USDT"
+    ],
+    "CASHCAT": [
+     "EUR",
+     "USD"
+    ],
+    "CC": [
+     "EUR",
+     "USD"
+    ],
+    "CHIP": [
+     "EUR",
+     "USD"
+    ],
+    "CHZ": [
+     "EUR",
+     "USD"
+    ],
+    "COMP": [
+     "EUR",
+     "USD"
+    ],
+    "CRV": [
+     "EUR",
+     "USD"
+    ],
+    "DOGE": [
+     "EUR",
+     "USD"
+    ],
+    "DOT": [
+     "EUR",
+     "USD"
+    ],
+    "EIGEN": [
+     "EUR",
+     "USD"
+    ],
+    "ENA": [
+     "EUR",
+     "USD"
+    ],
+    "ETC": [
+     "EUR",
+     "USD"
+    ],
+    "ETH": [
+     "EUR",
+     "USD",
+     "USDC",
+     "USDT"
+    ],
+    "EUR": [
+     "USD"
+    ],
+    "EURC": [
+     "EUR",
+     "USDC"
+    ],
+    "EURCV": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "FARTCOIN": [
+     "EUR",
+     "USD"
+    ],
+    "FET": [
+     "EUR",
+     "USD"
+    ],
+    "FLOKI": [
+     "EUR",
+     "USD"
+    ],
+    "FLR": [
+     "EUR",
+     "USD"
+    ],
+    "GBP": [
+     "USD"
+    ],
+    "GRT": [
+     "EUR",
+     "USD"
+    ],
+    "HBAR": [
+     "EUR",
+     "USD"
+    ],
+    "HYPE": [
+     "EUR",
+     "USD"
+    ],
+    "ICP": [
+     "EUR",
+     "USD"
+    ],
+    "IMX": [
+     "EUR",
+     "USD"
+    ],
+    "INJ": [
+     "EUR",
+     "USD"
+    ],
+    "JTO": [
+     "EUR",
+     "USD"
+    ],
+    "JUP": [
+     "EUR",
+     "USD"
+    ],
+    "LDO": [
+     "EUR",
+     "USD"
+    ],
+    "LINK": [
+     "EUR",
+     "USD"
+    ],
+    "LIT": [
+     "EUR",
+     "USD"
+    ],
+    "LTC": [
+     "EUR",
+     "USD"
+    ],
+    "MANA": [
+     "EUR",
+     "USD"
+    ],
+    "MEGA": [
+     "EUR",
+     "USD"
+    ],
+    "MEW": [
+     "EUR",
+     "USD"
+    ],
+    "MNT": [
+     "EUR",
+     "USD"
+    ],
+    "MON": [
+     "EUR",
+     "USD"
+    ],
+    "MOODENG": [
+     "EUR",
+     "USD"
+    ],
+    "MORPHO": [
+     "EUR",
+     "USD"
+    ],
+    "NEAR": [
+     "EUR",
+     "USD"
+    ],
+    "ONDO": [
+     "EUR",
+     "USD"
+    ],
+    "OP": [
+     "EUR",
+     "USD"
+    ],
+    "ORCA": [
+     "EUR",
+     "USD"
+    ],
+    "PAXG": [
+     "EUR",
+     "USD"
+    ],
+    "PENGU": [
+     "EUR",
+     "USD"
+    ],
+    "PEPE": [
+     "EUR",
+     "USD"
+    ],
+    "PNUT": [
+     "EUR",
+     "USD"
+    ],
+    "POL": [
+     "EUR",
+     "USD"
+    ],
+    "POPCAT": [
+     "EUR",
+     "USD"
+    ],
+    "PYTH": [
+     "EUR",
+     "USD"
+    ],
+    "PYUSD": [
+     "USD"
+    ],
+    "QNT": [
+     "EUR",
+     "USD"
+    ],
+    "RAY": [
+     "EUR",
+     "USD"
+    ],
+    "RE": [
+     "EUR",
+     "USD"
+    ],
+    "RENDER": [
+     "EUR",
+     "USD"
+    ],
+    "RLUSD": [
+     "EUR",
+     "USD",
+     "USDT"
+    ],
+    "S": [
+     "EUR",
+     "USD"
+    ],
+    "SAND": [
+     "EUR",
+     "USD"
+    ],
+    "SEI": [
+     "EUR",
+     "USD"
+    ],
+    "SGD": [
+     "USD"
+    ],
+    "SHIB": [
+     "EUR",
+     "USD"
+    ],
+    "SKR": [
+     "EUR",
+     "USD"
+    ],
+    "SKY": [
+     "EUR",
+     "USD"
+    ],
+    "SNX": [
+     "EUR",
+     "USD"
+    ],
+    "SOL": [
+     "EUR",
+     "USD",
+     "USDC"
+    ],
+    "STRK": [
+     "EUR",
+     "USD"
+    ],
+    "SUI": [
+     "EUR",
+     "USD"
+    ],
+    "SYRUP": [
+     "EUR",
+     "USD"
+    ],
+    "TAO": [
+     "EUR",
+     "USD"
+    ],
+    "TON": [
+     "EUR",
+     "USD"
+    ],
+    "TRAC": [
+     "EUR",
+     "USD"
+    ],
+    "TRUMP": [
+     "EUR",
+     "USD"
+    ],
+    "TRX": [
+     "EUR",
+     "USD"
+    ],
+    "UNI": [
+     "EUR",
+     "USD"
+    ],
+    "USDC": [
+     "EUR",
+     "USD",
+     "USDT"
+    ],
+    "USDG": [
+     "USD"
+    ],
+    "USDT": [
+     "EUR",
+     "USD"
+    ],
+    "VIRTUAL": [
+     "EUR",
+     "USD"
+    ],
+    "VVV": [
+     "EUR",
+     "USD"
+    ],
+    "W": [
+     "EUR",
+     "USD"
+    ],
+    "WECAN": [
+     "EUR",
+     "USD"
+    ],
+    "WIF": [
+     "EUR",
+     "USD"
+    ],
+    "WLD": [
+     "EUR",
+     "USD"
+    ],
+    "WLFI": [
+     "EUR",
+     "USD"
+    ],
+    "XCN": [
+     "EUR",
+     "USD"
+    ],
+    "XDC": [
+     "EUR",
+     "USD"
+    ],
+    "XLM": [
+     "EUR",
+     "USD"
+    ],
+    "XPL": [
+     "EUR",
+     "USD"
+    ],
+    "XRP": [
+     "EUR",
+     "USD",
+     "USDC",
+     "USDT"
+    ],
+    "XSGD": [
+     "USD",
+     "USDT"
+    ],
+    "XTZ": [
+     "EUR",
+     "USD"
+    ],
+    "ZEC": [
+     "EUR",
+     "USD"
+    ],
+    "ZK": [
+     "USD"
+    ],
+    "ZORA": [
+     "EUR",
+     "USD"
+    ],
+    "ZRO": [
+     "EUR",
+     "USD"
+    ],
+    "ZRX": [
+     "EUR",
+     "USD"
+    ]
+   },
+   "entity": "Bitstamp Europe S.A.",
+   "fetched_at": 1793111210,
+   "home": "LU",
+   "in_register": true,
+   "lei": "549300XIBGTJ0PLIEO72",
+   "qualifies": true,
+   "services": [
+    "a",
+    "b",
+    "c",
+    "d",
+    "e",
+    "g",
+    "j"
+   ],
+   "sha256": "e883873ffa4a1350d82a1664a0387333a875e06709c268c60dfaa857cfc1d555",
+   "url": "https://www.bitstamp.net/api/v2/trading-pairs-info/"
+  },
+  "Bitvavo": {
+   "api_entity": "uafklaret",
+   "authorised": "26/06/2025",
+   "coins": {
+    "0G": [
+     "EUR"
+    ],
+    "1INCH": [
+     "EUR"
+    ],
+    "2Z": [
+     "EUR"
+    ],
+    "AAVE": [
+     "EUR"
+    ],
+    "ACE": [
+     "EUR"
+    ],
+    "ACH": [
+     "EUR"
+    ],
+    "ACT": [
+     "EUR"
+    ],
+    "ACU": [
+     "EUR"
+    ],
+    "ADA": [
+     "EUR",
+     "USDC"
+    ],
+    "ADX": [
+     "EUR"
+    ],
+    "AERO": [
+     "EUR"
+    ],
+    "AEVO": [
+     "EUR"
+    ],
+    "AGI": [
+     "EUR"
+    ],
+    "AGLD": [
+     "EUR"
+    ],
+    "AI": [
+     "EUR"
+    ],
+    "AIOZ": [
+     "EUR"
+    ],
+    "AIXBT": [
+     "EUR"
+    ],
+    "AKT": [
+     "EUR"
+    ],
+    "ALGO": [
+     "EUR"
+    ],
+    "ALICE": [
+     "EUR"
+    ],
+    "ALIGN": [
+     "EUR"
+    ],
+    "ALLO": [
+     "EUR"
+    ],
+    "ALT": [
+     "EUR"
+    ],
+    "AMP": [
+     "EUR"
+    ],
+    "ANIME": [
+     "EUR"
+    ],
+    "ANKR": [
+     "EUR"
+    ],
+    "APE": [
+     "EUR"
+    ],
+    "API3": [
+     "EUR"
+    ],
+    "APT": [
+     "EUR"
+    ],
+    "ARB": [
+     "EUR"
+    ],
+    "ARK": [
+     "EUR"
+    ],
+    "ARKM": [
+     "EUR"
+    ],
+    "ARPA": [
+     "EUR"
+    ],
+    "ARX": [
+     "EUR"
+    ],
+    "ASTER": [
+     "EUR"
+    ],
+    "ASTR": [
+     "EUR"
+    ],
+    "ATH": [
+     "EUR"
+    ],
+    "ATOM": [
+     "EUR"
+    ],
+    "AUCTION": [
+     "EUR"
+    ],
+    "AUDIO": [
+     "EUR"
+    ],
+    "AVA": [
+     "EUR"
+    ],
+    "AVAX": [
+     "EUR"
+    ],
+    "AVNT": [
+     "EUR"
+    ],
+    "AXIS": [
+     "EUR"
+    ],
+    "AXL": [
+     "EUR"
+    ],
+    "AXS": [
+     "EUR"
+    ],
+    "AZTEC": [
+     "EUR"
+    ],
+    "BABY": [
+     "EUR"
+    ],
+    "BANANA": [
+     "EUR"
+    ],
+    "BAND": [
+     "EUR"
+    ],
+    "BAT": [
+     "EUR"
+    ],
+    "BCH": [
+     "EUR"
+    ],
+    "BEAM": [
+     "EUR"
+    ],
+    "BEL": [
+     "EUR"
+    ],
+    "BICO": [
+     "EUR"
+    ],
+    "BIGTIME": [
+     "EUR"
+    ],
+    "BILL": [
+     "EUR"
+    ],
+    "BIO": [
+     "EUR"
+    ],
+    "BIRB": [
+     "EUR"
+    ],
+    "BLEND": [
+     "EUR"
+    ],
+    "BLUR": [
+     "EUR"
+    ],
+    "BNB": [
+     "EUR"
+    ],
+    "BNT": [
+     "EUR"
+    ],
+    "BOB": [
+     "EUR"
+    ],
+    "BOME": [
+     "EUR"
+    ],
+    "BONK": [
+     "EUR"
+    ],
+    "BRETT": [
+     "EUR"
+    ],
+    "BREV": [
+     "EUR"
+    ],
+    "BTC": [
+     "EUR",
+     "USDC"
+    ],
+    "BTT": [
+     "EUR"
+    ],
+    "C": [
+     "EUR"
+    ],
+    "C98": [
+     "EUR"
+    ],
+    "CAKE": [
+     "EUR"
+    ],
+    "CAP": [
+     "EUR"
+    ],
+    "CARV": [
+     "EUR"
+    ],
+    "CAT": [
+     "EUR"
+    ],
+    "CATI": [
+     "EUR"
+    ],
+    "CC": [
+     "EUR"
+    ],
+    "CELO": [
+     "EUR"
+    ],
+    "CELR": [
+     "EUR"
+    ],
+    "CETUS": [
+     "EUR"
+    ],
+    "CFG": [
+     "EUR"
+    ],
+    "CHILLGUY": [
+     "EUR"
+    ],
+    "CHIP": [
+     "EUR"
+    ],
+    "CHR": [
+     "EUR"
+    ],
+    "CHZ": [
+     "EUR"
+    ],
+    "CNPY": [
+     "EUR"
+    ],
+    "COMP": [
+     "EUR"
+    ],
+    "COTI": [
+     "EUR"
+    ],
+    "COW": [
+     "EUR"
+    ],
+    "CPOOL": [
+     "EUR"
+    ],
+    "CRO": [
+     "EUR"
+    ],
+    "CROSS": [
+     "EUR"
+    ],
+    "CRV": [
+     "EUR"
+    ],
+    "CSPR": [
+     "EUR"
+    ],
+    "CT": [
+     "EUR"
+    ],
+    "CTC": [
+     "EUR"
+    ],
+    "CTK": [
+     "EUR"
+    ],
+    "CTR": [
+     "EUR"
+    ],
+    "CTSI": [
+     "EUR"
+    ],
+    "CVC": [
+     "EUR"
+    ],
+    "CVX": [
+     "EUR"
+    ],
+    "CYBER": [
+     "EUR"
+    ],
+    "DATAIP": [
+     "EUR"
+    ],
+    "DBR": [
+     "EUR"
+    ],
+    "DEEP": [
+     "EUR"
+    ],
+    "DEGEN": [
+     "EUR"
+    ],
+    "DGB": [
+     "EUR"
+    ],
+    "DIA": [
+     "EUR"
+    ],
+    "DODO": [
+     "EUR"
+    ],
+    "DOGE": [
+     "EUR",
+     "USDC"
+    ],
+    "DOGS": [
+     "EUR"
+    ],
+    "DOS": [
+     "EUR"
+    ],
+    "DOT": [
+     "EUR"
+    ],
+    "DRIFT": [
+     "EUR"
+    ],
+    "DRV": [
+     "EUR"
+    ],
+    "DUSK": [
+     "EUR"
+    ],
+    "DYDX": [
+     "EUR"
+    ],
+    "DYM": [
+     "EUR"
+    ],
+    "EDEN": [
+     "EUR"
+    ],
+    "EDGE": [
+     "EUR"
+    ],
+    "EDU": [
+     "EUR"
+    ],
+    "EGLD": [
+     "EUR"
+    ],
+    "EIGEN": [
+     "EUR"
+    ],
+    "ELSA": [
+     "EUR"
+    ],
+    "ENA": [
+     "EUR"
+    ],
+    "ENJ": [
+     "EUR"
+    ],
+    "ENS": [
+     "EUR"
+    ],
+    "ENSO": [
+     "EUR"
+    ],
+    "EPIC": [
+     "EUR"
+    ],
+    "ESP": [
+     "EUR"
+    ],
+    "ETC": [
+     "EUR"
+    ],
+    "ETH": [
+     "EUR",
+     "USDC"
+    ],
+    "ETHFI": [
+     "EUR"
+    ],
+    "EUL": [
+     "EUR"
+    ],
+    "EURC": [
+     "EUR",
+     "USDC"
+    ],
+    "EURCV": [
+     "EUR"
+    ],
+    "EUROP": [
+     "EUR"
+    ],
+    "F": [
+     "EUR"
+    ],
+    "FARTCOIN": [
+     "EUR"
+    ],
+    "FET": [
+     "EUR"
+    ],
+    "FIDA": [
+     "EUR"
+    ],
+    "FIL": [
+     "EUR"
+    ],
+    "FLOCK": [
+     "EUR"
+    ],
+    "FLOKI": [
+     "EUR"
+    ],
+    "FLR": [
+     "EUR"
+    ],
+    "FLUID": [
+     "EUR"
+    ],
+    "FLUX": [
+     "EUR"
+    ],
+    "FOLD": [
+     "EUR"
+    ],
+    "FORM": [
+     "EUR"
+    ],
+    "FRAX": [
+     "EUR"
+    ],
+    "FTT": [
+     "EUR"
+    ],
+    "FUEL": [
+     "EUR"
+    ],
+    "FUN": [
+     "EUR"
+    ],
+    "G": [
+     "EUR"
+    ],
+    "GALA": [
+     "EUR"
+    ],
+    "GAS": [
+     "EUR"
+    ],
+    "GIGA": [
+     "EUR"
+    ],
+    "GLM": [
+     "EUR"
+    ],
+    "GLMR": [
+     "EUR"
+    ],
+    "GMT": [
+     "EUR"
+    ],
+    "GMX": [
+     "EUR"
+    ],
+    "GNO": [
+     "EUR"
+    ],
+    "GNS": [
+     "EUR"
+    ],
+    "GOAT": [
+     "EUR"
+    ],
+    "GRAM": [
+     "EUR"
+    ],
+    "GRASS": [
+     "EUR"
+    ],
+    "GROVE": [
+     "EUR"
+    ],
+    "GRT": [
+     "EUR"
+    ],
+    "GTC": [
+     "EUR"
+    ],
+    "GWEI": [
+     "EUR"
+    ],
+    "HAEDAL": [
+     "EUR"
+    ],
+    "HBAR": [
+     "EUR"
+    ],
+    "HEI": [
+     "EUR"
+    ],
+    "HFT": [
+     "EUR"
+    ],
+    "HMSTR": [
+     "EUR"
+    ],
+    "HNT": [
+     "EUR"
+    ],
+    "HOME": [
+     "EUR"
+    ],
+    "HOT": [
+     "EUR"
+    ],
+    "HUMA": [
+     "EUR"
+    ],
+    "HYPE": [
+     "EUR"
+    ],
+    "ICNT": [
+     "EUR"
+    ],
+    "ICP": [
+     "EUR"
+    ],
+    "ID": [
+     "EUR"
+    ],
+    "IKA": [
+     "EUR"
+    ],
+    "ILV": [
+     "EUR"
+    ],
+    "IMU": [
+     "EUR"
+    ],
+    "IMX": [
+     "EUR"
+    ],
+    "INIT": [
+     "EUR"
+    ],
+    "INJ": [
+     "EUR"
+    ],
+    "INX": [
+     "EUR"
+    ],
+    "IO": [
+     "EUR"
+    ],
+    "IOST": [
+     "EUR"
+    ],
+    "IQ": [
+     "EUR"
+    ],
+    "IRYS": [
+     "EUR"
+    ],
+    "JASMY": [
+     "EUR"
+    ],
+    "JTO": [
+     "EUR"
+    ],
+    "JUP": [
+     "EUR"
+    ],
+    "KAIA": [
+     "EUR"
+    ],
+    "KAITO": [
+     "EUR"
+    ],
+    "KAS": [
+     "EUR"
+    ],
+    "KAT": [
+     "EUR"
+    ],
+    "KERNEL": [
+     "EUR"
+    ],
+    "KITE": [
+     "EUR"
+    ],
+    "KMNO": [
+     "EUR"
+    ],
+    "KNC": [
+     "EUR"
+    ],
+    "KSM": [
+     "EUR"
+    ],
+    "LAPTOP": [
+     "EUR"
+    ],
+    "LAYER": [
+     "EUR"
+    ],
+    "LDO": [
+     "EUR"
+    ],
+    "LIGHTER": [
+     "EUR"
+    ],
+    "LINEA": [
+     "EUR"
+    ],
+    "LINK": [
+     "EUR"
+    ],
+    "LISTA": [
+     "EUR"
+    ],
+    "LMWR": [
+     "EUR"
+    ],
+    "LPT": [
+     "EUR"
+    ],
+    "LQTY": [
+     "EUR"
+    ],
+    "LRC": [
+     "EUR"
+    ],
+    "LSK": [
+     "EUR"
+    ],
+    "LTC": [
+     "EUR"
+    ],
+    "LUMIA": [
+     "EUR"
+    ],
+    "LUNA": [
+     "EUR"
+    ],
+    "LUNA2": [
+     "EUR"
+    ],
+    "MAGIC": [
+     "EUR"
+    ],
+    "MANA": [
+     "EUR"
+    ],
+    "MANTA": [
+     "EUR"
+    ],
+    "MANTRA": [
+     "EUR"
+    ],
+    "MASK": [
+     "EUR"
+    ],
+    "MAV": [
+     "EUR"
+    ],
+    "MAVIA": [
+     "EUR"
+    ],
+    "ME": [
+     "EUR"
+    ],
+    "MEGA": [
+     "EUR"
+    ],
+    "MEME": [
+     "EUR"
+    ],
+    "MERL": [
+     "EUR"
+    ],
+    "MET": [
+     "EUR"
+    ],
+    "METIS": [
+     "EUR"
+    ],
+    "MEW": [
+     "EUR"
+    ],
+    "MIOTA": [
+     "EUR"
+    ],
+    "MIRA": [
+     "EUR"
+    ],
+    "MLN": [
+     "EUR"
+    ],
+    "MMT": [
+     "EUR"
+    ],
+    "MOCA": [
+     "EUR"
+    ],
+    "MOG": [
+     "EUR"
+    ],
+    "MON": [
+     "EUR"
+    ],
+    "MOODENG": [
+     "EUR"
+    ],
+    "MORPHO": [
+     "EUR"
+    ],
+    "MOVE": [
+     "EUR"
+    ],
+    "MOVR": [
+     "EUR"
+    ],
+    "MTL": [
+     "EUR"
+    ],
+    "NEAR": [
+     "EUR"
+    ],
+    "NEIRO": [
+     "EUR"
+    ],
+    "NEO": [
+     "EUR"
+    ],
+    "NES": [
+     "EUR"
+    ],
+    "NEWT": [
+     "EUR"
+    ],
+    "NEX": [
+     "EUR"
+    ],
+    "NIL": [
+     "EUR"
+    ],
+    "NMR": [
+     "EUR"
+    ],
+    "NOM": [
+     "EUR"
+    ],
+    "NOS": [
+     "EUR"
+    ],
+    "NOT": [
+     "EUR"
+    ],
+    "NPC": [
+     "EUR"
+    ],
+    "O": [
+     "EUR"
+    ],
+    "OGN": [
+     "EUR"
+    ],
+    "ONDO": [
+     "EUR"
+    ],
+    "OP": [
+     "EUR"
+    ],
+    "OPEN": [
+     "EUR"
+    ],
+    "ORCA": [
+     "EUR"
+    ],
+    "OSMO": [
+     "EUR"
+    ],
+    "PARTI": [
+     "EUR"
+    ],
+    "PEAQ": [
+     "EUR"
+    ],
+    "PENDLE": [
+     "EUR"
+    ],
+    "PENGU": [
+     "EUR"
+    ],
+    "PEOPLE": [
+     "EUR"
+    ],
+    "PEPE": [
+     "EUR",
+     "USDC"
+    ],
+    "PHA": [
+     "EUR"
+    ],
+    "PIXEL": [
+     "EUR"
+    ],
+    "PLUME": [
+     "EUR"
+    ],
+    "PNT": [
+     "EUR"
+    ],
+    "PNUT": [
+     "EUR"
+    ],
+    "POL": [
+     "EUR"
+    ],
+    "POND": [
+     "EUR"
+    ],
+    "PONKE": [
+     "EUR"
+    ],
+    "POPCAT": [
+     "EUR"
+    ],
+    "PORTAL": [
+     "EUR"
+    ],
+    "POWR": [
+     "EUR"
+    ],
+    "PROM": [
+     "EUR"
+    ],
+    "PROMPT": [
+     "EUR"
+    ],
+    "PROVE": [
+     "EUR"
+    ],
+    "PTB": [
+     "EUR"
+    ],
+    "PUFFER": [
+     "EUR"
+    ],
+    "PUMP": [
+     "EUR"
+    ],
+    "PUNDIX": [
+     "EUR"
+    ],
+    "PYTH": [
+     "EUR"
+    ],
+    "QKC": [
+     "EUR"
+    ],
+    "QNT": [
+     "EUR"
+    ],
+    "QUID": [
+     "EUR"
+    ],
+    "RAD": [
+     "EUR"
+    ],
+    "RARE": [
+     "EUR"
+    ],
+    "RAY": [
+     "EUR"
+    ],
+    "RE": [
+     "EUR"
+    ],
+    "RECALL": [
+     "EUR"
+    ],
+    "RED": [
+     "EUR"
+    ],
+    "RENDER": [
+     "EUR"
+    ],
+    "REQ": [
+     "EUR"
+    ],
+    "REZ": [
+     "EUR"
+    ],
+    "RLC": [
+     "EUR"
+    ],
+    "ROBO": [
+     "EUR"
+    ],
+    "RON": [
+     "EUR"
+    ],
+    "ROSE": [
+     "EUR"
+    ],
+    "RPL": [
+     "EUR"
+    ],
+    "RSR": [
+     "EUR"
+    ],
+    "RUNE": [
+     "EUR"
+    ],
+    "S": [
+     "EUR"
+    ],
+    "SAFE": [
+     "EUR"
+    ],
+    "SAGA": [
+     "EUR"
+    ],
+    "SAND": [
+     "EUR"
+    ],
+    "SAPIEN": [
+     "EUR"
+    ],
+    "SCR": [
+     "EUR"
+    ],
+    "SEI": [
+     "EUR"
+    ],
+    "SENT": [
+     "EUR"
+    ],
+    "SFP": [
+     "EUR"
+    ],
+    "SHELL": [
+     "EUR"
+    ],
+    "SHIB": [
+     "EUR"
+    ],
+    "SIGN": [
+     "EUR"
+    ],
+    "SKL": [
+     "EUR"
+    ],
+    "SKY": [
+     "EUR"
+    ],
+    "SLP": [
+     "EUR"
+    ],
+    "SLX": [
+     "EUR"
+    ],
+    "SNX": [
+     "EUR"
+    ],
+    "SOL": [
+     "EUR",
+     "USDC"
+    ],
+    "SOLV": [
+     "EUR"
+    ],
+    "SOMI": [
+     "EUR"
+    ],
+    "SOON": [
+     "EUR"
+    ],
+    "SOSO": [
+     "EUR"
+    ],
+    "SPK": [
+     "EUR"
+    ],
+    "SPX": [
+     "EUR"
+    ],
+    "SQD": [
+     "EUR"
+    ],
+    "SSV": [
+     "EUR"
+    ],
+    "STO": [
+     "EUR"
+    ],
+    "STRAX": [
+     "EUR"
+    ],
+    "STRK": [
+     "EUR"
+    ],
+    "STX": [
+     "EUR"
+    ],
+    "SUI": [
+     "EUR",
+     "USDC"
+    ],
+    "SUPER": [
+     "EUR"
+    ],
+    "SUSHI": [
+     "EUR"
+    ],
+    "SWELL": [
+     "EUR"
+    ],
+    "SXT": [
+     "EUR"
+    ],
+    "SYN": [
+     "EUR"
+    ],
+    "SYRUP": [
+     "EUR"
+    ],
+    "T": [
+     "EUR"
+    ],
+    "TAI": [
+     "EUR"
+    ],
+    "TAIKO": [
+     "EUR"
+    ],
+    "TAO": [
+     "EUR"
+    ],
+    "THE": [
+     "EUR"
+    ],
+    "THQ": [
+     "EUR"
+    ],
+    "TIA": [
+     "EUR",
+     "USDC"
+    ],
+    "TLM": [
+     "EUR"
+    ],
+    "TNSR": [
+     "EUR"
+    ],
+    "TOSHI": [
+     "EUR"
+    ],
+    "TOWNS": [
+     "EUR"
+    ],
+    "TRAC": [
+     "EUR"
+    ],
+    "TRB": [
+     "EUR"
+    ],
+    "TREAD": [
+     "EUR"
+    ],
+    "TREE": [
+     "EUR"
+    ],
+    "TRIA": [
+     "EUR"
+    ],
+    "TRUMP": [
+     "EUR"
+    ],
+    "TRUST": [
+     "EUR"
+    ],
+    "TRX": [
+     "EUR"
+    ],
+    "TURBO": [
+     "EUR"
+    ],
+    "TWT": [
+     "EUR"
+    ],
+    "U": [
+     "EUR"
+    ],
+    "UMA": [
+     "EUR"
+    ],
+    "UNI": [
+     "EUR"
+    ],
+    "UP": [
+     "EUR"
+    ],
+    "USDC": [
+     "EUR"
+    ],
+    "USDCV": [
+     "EUR",
+     "USDC"
+    ],
+    "USELESS": [
+     "EUR"
+    ],
+    "VANA": [
+     "EUR"
+    ],
+    "VELO": [
+     "EUR"
+    ],
+    "VERONA": [
+     "EUR"
+    ],
+    "VET": [
+     "EUR"
+    ],
+    "VIRTUAL": [
+     "EUR"
+    ],
+    "VSN": [
+     "EUR"
+    ],
+    "VTHO": [
+     "EUR"
+    ],
+    "VVV": [
+     "EUR"
+    ],
+    "W": [
+     "EUR"
+    ],
+    "WAL": [
+     "EUR"
+    ],
+    "WAXP": [
+     "EUR"
+    ],
+    "WCT": [
+     "EUR"
+    ],
+    "WELL": [
+     "EUR"
+    ],
+    "WHUF": [
+     "EUR"
+    ],
+    "WIF": [
+     "EUR"
+    ],
+    "WIN": [
+     "EUR"
+    ],
+    "WLD": [
+     "EUR"
+    ],
+    "WLFI": [
+     "EUR"
+    ],
+    "WMTX": [
+     "EUR"
+    ],
+    "WOO": [
+     "EUR"
+    ],
+    "XAI": [
+     "EUR"
+    ],
+    "XAN": [
+     "EUR"
+    ],
+    "XDC": [
+     "EUR"
+    ],
+    "XDP": [
+     "EUR"
+    ],
+    "XLM": [
+     "EUR"
+    ],
+    "XMN": [
+     "EUR"
+    ],
+    "XPL": [
+     "EUR"
+    ],
+    "XRP": [
+     "EUR",
+     "USDC"
+    ],
+    "XTZ": [
+     "EUR"
+    ],
+    "XVG": [
+     "EUR"
+    ],
+    "XYO": [
+     "EUR"
+    ],
+    "YB": [
+     "EUR"
+    ],
+    "YFI": [
+     "EUR"
+    ],
+    "YGG": [
+     "EUR"
+    ],
+    "ZAMA": [
+     "EUR"
+    ],
+    "ZBCN": [
+     "EUR"
+    ],
+    "ZBT": [
+     "EUR"
+    ],
+    "ZEN": [
+     "EUR"
+    ],
+    "ZETA": [
+     "EUR"
+    ],
+    "ZEUS": [
+     "EUR"
+    ],
+    "ZIG": [
+     "EUR"
+    ],
+    "ZIL": [
+     "EUR"
+    ],
+    "ZK": [
+     "EUR"
+    ],
+    "ZKC": [
+     "EUR"
+    ],
+    "ZKJ": [
+     "EUR"
+    ],
+    "ZKP": [
+     "EUR"
+    ],
+    "ZORA": [
+     "EUR"
+    ],
+    "ZRC": [
+     "EUR"
+    ],
+    "ZRO": [
+     "EUR"
+    ],
+    "ZRX": [
+     "EUR"
+    ]
+   },
+   "entity": "Bitvavo B.V.",
+   "fetched_at": 1793111212,
+   "home": "NL",
+   "in_register": true,
+   "lei": "724500MX2WBKDJP9HE56",
+   "qualifies": true,
+   "services": [
+    "a",
+    "b",
+    "j"
+   ],
+   "sha256": "2cc048eeed7f8a250288562cbf7fe81883dfc60f165612cc0fa37c33c8381b84",
+   "url": "https://api.bitvavo.com/v2/markets"
+  },
+  "Coinbase": {
+   "api_entity": "uafklaret",
+   "authorised": "20/06/2025",
+   "coins": {
+    "00": [
+     "USD"
+    ],
+    "1INCH": [
+     "EUR",
+     "USD"
+    ],
+    "2Z": [
+     "USD"
+    ],
+    "A8": [
+     "USD"
+    ],
+    "AAVE": [
+     "EUR",
+     "USD"
+    ],
+    "ABT": [
+     "USD"
+    ],
+    "ACH": [
+     "USD"
+    ],
+    "ACS": [
+     "USD"
+    ],
+    "ADA": [
+     "EUR",
+     "USD",
+     "USDT"
+    ],
+    "AERGO": [
+     "USD"
+    ],
+    "AERO": [
+     "USD"
+    ],
+    "AGLD": [
+     "USD"
+    ],
+    "AI": [
+     "USD"
+    ],
+    "AIOZ": [
+     "USD"
+    ],
+    "AKT": [
+     "USD"
+    ],
+    "ALCX": [
+     "USD"
+    ],
+    "ALEO": [
+     "USD"
+    ],
+    "ALEPH": [
+     "USD"
+    ],
+    "ALGO": [
+     "EUR",
+     "USD"
+    ],
+    "ALICE": [
+     "USD"
+    ],
+    "ALIGN": [
+     "USD"
+    ],
+    "ALLO": [
+     "USD"
+    ],
+    "ALT": [
+     "USD"
+    ],
+    "AMP": [
+     "USD"
+    ],
+    "ANKR": [
+     "USD"
+    ],
+    "APE": [
+     "EUR",
+     "USD",
+     "USDT"
+    ],
+    "API3": [
+     "USD"
+    ],
+    "APR": [
+     "USD"
+    ],
+    "APT": [
+     "USD"
+    ],
+    "ARB": [
+     "USD"
+    ],
+    "ARKM": [
+     "USD"
+    ],
+    "ARPA": [
+     "USD"
+    ],
+    "ARX": [
+     "USD"
+    ],
+    "ASM": [
+     "USD"
+    ],
+    "AST": [
+     "USD"
+    ],
+    "ASTER": [
+     "USD"
+    ],
+    "ATH": [
+     "USD"
+    ],
+    "ATOM": [
+     "EUR",
+     "USD",
+     "USDT"
+    ],
+    "AUCTION": [
+     "USD"
+    ],
+    "AUDD": [
+     "USDC"
+    ],
+    "AUDIO": [
+     "USD"
+    ],
+    "AURORA": [
+     "USD"
+    ],
+    "AVAX": [
+     "EUR",
+     "USD",
+     "USDT"
+    ],
+    "AVNT": [
+     "USD"
+    ],
+    "AVT": [
+     "USD"
+    ],
+    "AWE": [
+     "USD"
+    ],
+    "AXIS": [
+     "USD"
+    ],
+    "AXL": [
+     "USD"
+    ],
+    "AXS": [
+     "USD"
+    ],
+    "AZTEC": [
+     "USD"
+    ],
+    "B3": [
+     "USD"
+    ],
+    "BAL": [
+     "USD"
+    ],
+    "BAND": [
+     "USD"
+    ],
+    "BARD": [
+     "USD"
+    ],
+    "BASECAT": [
+     "USD"
+    ],
+    "BASED1": [
+     "USD"
+    ],
+    "BAT": [
+     "EUR",
+     "USD"
+    ],
+    "BCH": [
+     "EUR",
+     "USD"
+    ],
+    "BEAM": [
+     "USD"
+    ],
+    "BERA": [
+     "USD"
+    ],
+    "BICO": [
+     "USD"
+    ],
+    "BIGTIME": [
+     "USD"
+    ],
+    "BILL": [
+     "USD"
+    ],
+    "BIO": [
+     "USD"
+    ],
+    "BIRB": [
+     "USD"
+    ],
+    "BLEND": [
+     "USD"
+    ],
+    "BLUECHIP": [
+     "USD"
+    ],
+    "BLUR": [
+     "USD"
+    ],
+    "BLZ": [
+     "USD"
+    ],
+    "BNB": [
+     "USD"
+    ],
+    "BNKR": [
+     "USD"
+    ],
+    "BNT": [
+     "USD"
+    ],
+    "BOBA": [
+     "USD"
+    ],
+    "BOBBOB": [
+     "USD"
+    ],
+    "BONK": [
+     "USD"
+    ],
+    "BREV": [
+     "USD"
+    ],
+    "BTC": [
+     "EUR",
+     "USD",
+     "USDT"
+    ],
+    "BTRST": [
+     "USD"
+    ],
+    "C98": [
+     "USD"
+    ],
+    "CAKE": [
+     "USD"
+    ],
+    "CAP": [
+     "USD"
+    ],
+    "CBETH": [
+     "USD"
+    ],
+    "CELR": [
+     "USD"
+    ],
+    "CFG": [
+     "USD"
+    ],
+    "CGLD": [
+     "USD"
+    ],
+    "CHECK": [
+     "USD"
+    ],
+    "CHIP": [
+     "USD"
+    ],
+    "CHZ": [
+     "EUR",
+     "USD"
+    ],
+    "CLANKER": [
+     "USD"
+    ],
+    "COMP": [
+     "USD"
+    ],
+    "COOKIE": [
+     "USD"
+    ],
+    "CORECHAIN": [
+     "USD"
+    ],
+    "COSMOSDYDX": [
+     "USD"
+    ],
+    "COTI": [
+     "USD"
+    ],
+    "COW": [
+     "USD"
+    ],
+    "CP": [
+     "USD"
+    ],
+    "CRO": [
+     "EUR",
+     "USD"
+    ],
+    "CRV": [
+     "EUR",
+     "USD"
+    ],
+    "CT": [
+     "USD"
+    ],
+    "CTR": [
+     "USD"
+    ],
+    "CTSI": [
+     "USD"
+    ],
+    "CTX": [
+     "USD"
+    ],
+    "CVC": [
+     "USD"
+    ],
+    "CVX": [
+     "USD"
+    ],
+    "DASH": [
+     "USD"
+    ],
+    "DATA": [
+     "USD"
+    ],
+    "DBR": [
+     "USD"
+    ],
+    "DEEP": [
+     "USD"
+    ],
+    "DEGEN": [
+     "USD"
+    ],
+    "DEXT": [
+     "USD"
+    ],
+    "DIA": [
+     "USD"
+    ],
+    "DIEM": [
+     "USD"
+    ],
+    "DIMO": [
+     "USD"
+    ],
+    "DNT": [
+     "USD"
+    ],
+    "DOGE": [
+     "EUR",
+     "USD",
+     "USDT"
+    ],
+    "DOGINME": [
+     "USD"
+    ],
+    "DOLO": [
+     "USD"
+    ],
+    "DOOD": [
+     "USD"
+    ],
+    "DOT": [
+     "EUR",
+     "USD",
+     "USDT"
+    ],
+    "DRB": [
+     "USD"
+    ],
+    "DRIFT": [
+     "USD"
+    ],
+    "DRV": [
+     "USD"
+    ],
+    "EDGE": [
+     "USD"
+    ],
+    "EDGEX": [
+     "USD"
+    ],
+    "EGLD": [
+     "USD"
+    ],
+    "EIGEN": [
+     "USD"
+    ],
+    "ELA": [
+     "USD"
+    ],
+    "ELSA": [
+     "USD"
+    ],
+    "ENA": [
+     "USD"
+    ],
+    "ENS": [
+     "EUR",
+     "USD"
+    ],
+    "ERA": [
+     "USD"
+    ],
+    "ESP": [
+     "USD"
+    ],
+    "ETC": [
+     "EUR",
+     "USD"
+    ],
+    "ETH": [
+     "EUR",
+     "USD",
+     "USDT"
+    ],
+    "ETHFI": [
+     "USD"
+    ],
+    "EUL": [
+     "USD"
+    ],
+    "EURC": [
+     "USDC"
+    ],
+    "FAI": [
+     "USD"
+    ],
+    "FARM": [
+     "USD"
+    ],
+    "FARTCOIN": [
+     "USD"
+    ],
+    "FET": [
+     "USD",
+     "USDT"
+    ],
+    "FIDA": [
+     "USD"
+    ],
+    "FIGHT": [
+     "USD"
+    ],
+    "FIL": [
+     "EUR",
+     "USD"
+    ],
+    "FLOCK": [
+     "USD"
+    ],
+    "FLOKI": [
+     "USD"
+    ],
+    "FLOW": [
+     "USD"
+    ],
+    "FLR": [
+     "USD"
+    ],
+    "FLUID": [
+     "USD"
+    ],
+    "FORT": [
+     "USD"
+    ],
+    "FORTH": [
+     "USD"
+    ],
+    "FOX": [
+     "USD"
+    ],
+    "FUN1": [
+     "USD"
+    ],
+    "G": [
+     "USD"
+    ],
+    "GEOD": [
+     "USD"
+    ],
+    "GFI": [
+     "USD"
+    ],
+    "GHST": [
+     "USD"
+    ],
+    "GIGA": [
+     "USD"
+    ],
+    "GLM": [
+     "USD"
+    ],
+    "GMT": [
+     "USD"
+    ],
+    "GNO": [
+     "USD"
+    ],
+    "GODS": [
+     "USD"
+    ],
+    "GRASS": [
+     "USD"
+    ],
+    "GROVE": [
+     "USD"
+    ],
+    "GRT": [
+     "EUR",
+     "USD"
+    ],
+    "GRVT": [
+     "USD"
+    ],
+    "GST": [
+     "USD"
+    ],
+    "GTC": [
+     "USD"
+    ],
+    "GWEI": [
+     "USD"
+    ],
+    "HBAR": [
+     "USD",
+     "USDT"
+    ],
+    "HFT": [
+     "USD"
+    ],
+    "HIGH": [
+     "USD"
+    ],
+    "HNT": [
+     "USD"
+    ],
+    "HOME": [
+     "USD"
+    ],
+    "HONEY": [
+     "USD"
+    ],
+    "HOPR": [
+     "USD"
+    ],
+    "HYPE": [
+     "USD"
+    ],
+    "HYPER": [
+     "USD"
+    ],
+    "ICNT": [
+     "USD"
+    ],
+    "ICP": [
+     "EUR",
+     "USD"
+    ],
+    "ILV": [
+     "USD"
+    ],
+    "IMU": [
+     "USD"
+    ],
+    "IMX": [
+     "USD",
+     "USDT"
+    ],
+    "INDEX": [
+     "USD"
+    ],
+    "INJ": [
+     "USD"
+    ],
+    "INV": [
+     "USD"
+    ],
+    "INX": [
+     "USD"
+    ],
+    "IO": [
+     "USD"
+    ],
+    "IRYS": [
+     "USD"
+    ],
+    "JASMY": [
+     "USD"
+    ],
+    "JITOSOL": [
+     "USD"
+    ],
+    "JTO": [
+     "USD"
+    ],
+    "JUPITER": [
+     "USD"
+    ],
+    "KAIO": [
+     "USD"
+    ],
+    "KAITO": [
+     "USD"
+    ],
+    "KARRAT": [
+     "USD"
+    ],
+    "KAT": [
+     "USD"
+    ],
+    "KAVA": [
+     "USD"
+    ],
+    "KERNEL": [
+     "USD"
+    ],
+    "KEYCAT": [
+     "USD"
+    ],
+    "KITE": [
+     "USD"
+    ],
+    "KMNO": [
+     "USD"
+    ],
+    "KNC": [
+     "USD"
+    ],
+    "KRL": [
+     "USD"
+    ],
+    "KSM": [
+     "USD"
+    ],
+    "KTA": [
+     "USD"
+    ],
+    "L3": [
+     "USD"
+    ],
+    "LA": [
+     "USD"
+    ],
+    "LAYER": [
+     "USD"
+    ],
+    "LCX": [
+     "USD"
+    ],
+    "LDO": [
+     "USD"
+    ],
+    "LIGHTER": [
+     "USD"
+    ],
+    "LINEA": [
+     "USD"
+    ],
+    "LINK": [
+     "EUR",
+     "USD",
+     "USDT"
+    ],
+    "LMTS": [
+     "USD"
+    ],
+    "LPT": [
+     "USD"
+    ],
+    "LQTY": [
+     "USD"
+    ],
+    "LRDS": [
+     "USD"
+    ],
+    "LSETH": [
+     "USD"
+    ],
+    "LTC": [
+     "EUR",
+     "USD"
+    ],
+    "MAGIC": [
+     "USD"
+    ],
+    "MAMO": [
+     "USD"
+    ],
+    "MANA": [
+     "EUR",
+     "USD"
+    ],
+    "MANTLE": [
+     "USD"
+    ],
+    "MASK": [
+     "USD"
+    ],
+    "MATH": [
+     "USD"
+    ],
+    "MDT": [
+     "USD"
+    ],
+    "ME": [
+     "USD"
+    ],
+    "MEGA": [
+     "USD"
+    ],
+    "MET": [
+     "USD"
+    ],
+    "META": [
+     "USD"
+    ],
+    "METIS": [
+     "USD"
+    ],
+    "MEZO": [
+     "USD"
+    ],
+    "MINA": [
+     "USD"
+    ],
+    "MLN": [
+     "USD"
+    ],
+    "MNDE": [
+     "USD"
+    ],
+    "MOG": [
+     "USD"
+    ],
+    "MON": [
+     "USD"
+    ],
+    "MOODENG": [
+     "USD"
+    ],
+    "MORPHO": [
+     "USD"
+    ],
+    "MPLX": [
+     "USD"
+    ],
+    "MSOL": [
+     "USD"
+    ],
+    "NCT": [
+     "USD"
+    ],
+    "NEAR": [
+     "USD",
+     "USDT"
+    ],
+    "NEON": [
+     "USD"
+    ],
+    "NEWT": [
+     "USD"
+    ],
+    "NEX": [
+     "USD"
+    ],
+    "NKN": [
+     "USD"
+    ],
+    "NMR": [
+     "USD"
+    ],
+    "NOICE": [
+     "USD"
+    ],
+    "NOM": [
+     "USD"
+    ],
+    "O": [
+     "USD"
+    ],
+    "OCEAN": [
+     "USD"
+    ],
+    "OGN": [
+     "USD"
+    ],
+    "ONDO": [
+     "USD"
+    ],
+    "OP": [
+     "USD",
+     "USDT"
+    ],
+    "OPG": [
+     "USD"
+    ],
+    "OPN": [
+     "USD"
+    ],
+    "ORCA": [
+     "USD"
+    ],
+    "OSMO": [
+     "USD"
+    ],
+    "OXT": [
+     "USD"
+    ],
+    "PAX": [
+     "USD"
+    ],
+    "PAXG": [
+     "USD"
+    ],
+    "PENDLE": [
+     "USD"
+    ],
+    "PENGU": [
+     "USD"
+    ],
+    "PEPE": [
+     "USD"
+    ],
+    "PERP": [
+     "USD"
+    ],
+    "PLU": [
+     "USD"
+    ],
+    "PLUME": [
+     "USD"
+    ],
+    "PNG": [
+     "USD"
+    ],
+    "PNUT": [
+     "USD"
+    ],
+    "POL": [
+     "USD"
+    ],
+    "POLS": [
+     "USD"
+    ],
+    "POND": [
+     "USD"
+    ],
+    "PONS": [
+     "USD"
+    ],
+    "POPCAT": [
+     "USD"
+    ],
+    "POWR": [
+     "USD"
+    ],
+    "PRCL": [
+     "USD"
+    ],
+    "PRIME": [
+     "USD"
+    ],
+    "PRL": [
+     "USD"
+    ],
+    "PRO": [
+     "USD"
+    ],
+    "PROMPT": [
+     "USD"
+    ],
+    "PROS": [
+     "USD"
+    ],
+    "PROVE": [
+     "USD"
+    ],
+    "PUMP": [
+     "USD"
+    ],
+    "PUNDIX": [
+     "USD"
+    ],
+    "PYR": [
+     "USD"
+    ],
+    "PYTH": [
+     "USD"
+    ],
+    "QI": [
+     "USD"
+    ],
+    "QNT": [
+     "USD",
+     "USDT"
+    ],
+    "RAD": [
+     "USD"
+    ],
+    "RARE": [
+     "USD"
+    ],
+    "RARI": [
+     "USD"
+    ],
+    "RAVE": [
+     "USD"
+    ],
+    "RAY": [
+     "USD"
+    ],
+    "RE": [
+     "USD"
+    ],
+    "RECALL": [
+     "USD"
+    ],
+    "RED": [
+     "USD"
+    ],
+    "RENDER": [
+     "USD"
+    ],
+    "REQ": [
+     "USD"
+    ],
+    "REZ": [
+     "USD"
+    ],
+    "RITUAL": [
+     "USD"
+    ],
+    "RLC": [
+     "USD"
+    ],
+    "RLS": [
+     "USD"
+    ],
+    "RNBW": [
+     "USD"
+    ],
+    "ROBO": [
+     "USD"
+    ],
+    "ROSE": [
+     "USD"
+    ],
+    "RPL": [
+     "USD"
+    ],
+    "RSC": [
+     "USD"
+    ],
+    "RSR": [
+     "USD"
+    ],
+    "S": [
+     "USD"
+    ],
+    "SAFE": [
+     "USD"
+    ],
+    "SAND": [
+     "USD"
+    ],
+    "SAPIEN": [
+     "USD"
+    ],
+    "SD": [
+     "USD"
+    ],
+    "SEI": [
+     "USD"
+    ],
+    "SENT": [
+     "USD"
+    ],
+    "SHDW": [
+     "USD"
+    ],
+    "SHIB": [
+     "EUR",
+     "USD",
+     "USDT"
+    ],
+    "SHPING": [
+     "USD"
+    ],
+    "SIGN": [
+     "USD"
+    ],
+    "SKL": [
+     "USD"
+    ],
+    "SKR": [
+     "USD"
+    ],
+    "SKY": [
+     "USD"
+    ],
+    "SNX": [
+     "EUR",
+     "USD"
+    ],
+    "SOL": [
+     "EUR",
+     "USD",
+     "USDT"
+    ],
+    "SPA": [
+     "USD"
+    ],
+    "SPELL": [
+     "USD"
+    ],
+    "SPK": [
+     "USD"
+    ],
+    "SPX": [
+     "USD"
+    ],
+    "SQD": [
+     "USD"
+    ],
+    "STG": [
+     "USD"
+    ],
+    "STRK": [
+     "USD"
+    ],
+    "STX": [
+     "USD",
+     "USDT"
+    ],
+    "SUI": [
+     "USD"
+    ],
+    "SUKU": [
+     "USD"
+    ],
+    "SUP": [
+     "USD"
+    ],
+    "SUPER": [
+     "USD"
+    ],
+    "SUSHI": [
+     "USD"
+    ],
+    "SWELL": [
+     "USD"
+    ],
+    "SWFTC": [
+     "USD"
+    ],
+    "SXT": [
+     "USD"
+    ],
+    "SYND": [
+     "USD"
+    ],
+    "SYRUP": [
+     "USD"
+    ],
+    "T": [
+     "USD"
+    ],
+    "TAO": [
+     "USD"
+    ],
+    "TGBP": [
+     "USDC"
+    ],
+    "THQ": [
+     "USD"
+    ],
+    "TIA": [
+     "USD"
+    ],
+    "TNSR": [
+     "USD"
+    ],
+    "TON": [
+     "USD"
+    ],
+    "TOSHI": [
+     "USD"
+    ],
+    "TOWNS": [
+     "USD"
+    ],
+    "TRAC": [
+     "USD"
+    ],
+    "TRB": [
+     "USD"
+    ],
+    "TREE": [
+     "USD"
+    ],
+    "TRIA": [
+     "USD"
+    ],
+    "TROLL": [
+     "USD"
+    ],
+    "TRUMP": [
+     "USD"
+    ],
+    "TRUST": [
+     "USD"
+    ],
+    "TURBO": [
+     "USD"
+    ],
+    "UMA": [
+     "USD"
+    ],
+    "UNI": [
+     "EUR",
+     "USD"
+    ],
+    "UP": [
+     "USD"
+    ],
+    "USD1": [
+     "USD"
+    ],
+    "USDC": [
+     "EUR"
+    ],
+    "USDS": [
+     "USD"
+    ],
+    "USDT": [
+     "EUR",
+     "USD",
+     "USDC"
+    ],
+    "USELESS": [
+     "USD"
+    ],
+    "VARA": [
+     "USD"
+    ],
+    "VELO": [
+     "USD"
+    ],
+    "VET": [
+     "USD"
+    ],
+    "VIRTUAL": [
+     "USD"
+    ],
+    "VOXEL": [
+     "USD"
+    ],
+    "VTHO": [
+     "USD"
+    ],
+    "VVV": [
+     "USD"
+    ],
+    "W": [
+     "USD"
+    ],
+    "WAL": [
+     "USD"
+    ],
+    "WAXL": [
+     "USD"
+    ],
+    "WCT": [
+     "USD"
+    ],
+    "WELL": [
+     "USD"
+    ],
+    "WET": [
+     "USD"
+    ],
+    "WHUF": [
+     "USD"
+    ],
+    "WIF": [
+     "USD"
+    ],
+    "WLD": [
+     "USD"
+    ],
+    "WLFI": [
+     "USD"
+    ],
+    "WMTX": [
+     "USD"
+    ],
+    "WRON": [
+     "USD"
+    ],
+    "XAN": [
+     "USD"
+    ],
+    "XCN": [
+     "USD"
+    ],
+    "XLM": [
+     "EUR",
+     "USD",
+     "USDT"
+    ],
+    "XPL": [
+     "USD"
+    ],
+    "XRP": [
+     "EUR",
+     "USD",
+     "USDT"
+    ],
+    "XSGD": [
+     "USDC"
+    ],
+    "XTZ": [
+     "EUR",
+     "USD"
+    ],
+    "XYO": [
+     "USD"
+    ],
+    "YB": [
+     "USD"
+    ],
+    "YFI": [
+     "USD"
+    ],
+    "ZAMA": [
+     "USD"
+    ],
+    "ZEC": [
+     "USD"
+    ],
+    "ZEN": [
+     "USD"
+    ],
+    "ZETA": [
+     "USD"
+    ],
+    "ZETACHAIN": [
+     "USD"
+    ],
+    "ZK": [
+     "USD"
+    ],
+    "ZKC": [
+     "USD"
+    ],
+    "ZKP": [
+     "USD"
+    ],
+    "ZORA": [
+     "USD"
+    ],
+    "ZRO": [
+     "USD"
+    ],
+    "ZRX": [
+     "USD"
+    ]
+   },
+   "entity": "Coinbase Luxembourg S.A.",
+   "fetched_at": 1793111212,
+   "home": "LU",
+   "in_register": true,
+   "lei": "984500F14CA4571AAC11",
+   "qualifies": true,
+   "services": [
+    "a",
+    "c",
+    "d",
+    "e",
+    "f",
+    "g",
+    "j"
+   ],
+   "sha256": "c1b0c4b7fe1e3f927b46c88ab2dee65dbc957f10783644a1b1b15e5388c16069",
+   "url": "https://api.exchange.coinbase.com/products"
+  },
+  "Kraken": {
+   "api_entity": "uafklaret",
+   "authorised": "25/06/2025",
+   "coins": {
+    "0G": [
+     "EUR",
+     "USD"
+    ],
+    "1INCH": [
+     "EUR",
+     "USD"
+    ],
+    "2Z": [
+     "EUR",
+     "USD"
+    ],
+    "A": [
+     "EUR",
+     "USD"
+    ],
+    "AAVE": [
+     "EUR",
+     "USD"
+    ],
+    "AB": [
+     "EUR",
+     "USD"
+    ],
+    "ACA": [
+     "EUR",
+     "USD"
+    ],
+    "ACH": [
+     "EUR",
+     "USD"
+    ],
+    "ACT": [
+     "EUR",
+     "USD"
+    ],
+    "ACU": [
+     "EUR",
+     "USD"
+    ],
+    "ACX": [
+     "EUR",
+     "USD"
+    ],
+    "ADA": [
+     "EUR",
+     "USD",
+     "USDC",
+     "USDT"
+    ],
+    "ADI": [
+     "EUR",
+     "USD"
+    ],
+    "ADX": [
+     "EUR",
+     "USD"
+    ],
+    "AERO": [
+     "EUR",
+     "USD"
+    ],
+    "AEVO": [
+     "EUR",
+     "USD"
+    ],
+    "AI": [
+     "EUR",
+     "USD"
+    ],
+    "AI3": [
+     "EUR",
+     "USD"
+    ],
+    "AIN": [
+     "USD"
+    ],
+    "AIO": [
+     "EUR",
+     "USD"
+    ],
+    "AIOZ": [
+     "EUR",
+     "USD"
+    ],
+    "AIXBT": [
+     "EUR",
+     "USD"
+    ],
+    "AKE": [
+     "EUR",
+     "USD"
+    ],
+    "AKT": [
+     "EUR",
+     "USD"
+    ],
+    "ALCH": [
+     "EUR",
+     "USD"
+    ],
+    "ALCX": [
+     "EUR",
+     "USD"
+    ],
+    "ALEO": [
+     "USD",
+     "USDT"
+    ],
+    "ALGO": [
+     "EUR",
+     "USD",
+     "USDC",
+     "USDT"
+    ],
+    "ALICE": [
+     "EUR",
+     "USD"
+    ],
+    "ALIGN": [
+     "USD"
+    ],
+    "ALKIMI": [
+     "EUR",
+     "USD"
+    ],
+    "ALLO": [
+     "USD"
+    ],
+    "ALPHA": [
+     "EUR",
+     "USD"
+    ],
+    "ALT": [
+     "EUR",
+     "USD"
+    ],
+    "ALTHEA": [
+     "EUR",
+     "USD"
+    ],
+    "AMI": [
+     "USD"
+    ],
+    "ANIME": [
+     "EUR",
+     "USD"
+    ],
+    "ANKR": [
+     "EUR",
+     "USD"
+    ],
+    "ANON": [
+     "EUR",
+     "USD"
+    ],
+    "APE": [
+     "EUR",
+     "USD",
+     "USDC",
+     "USDT"
+    ],
+    "APENFT": [
+     "EUR",
+     "USD"
+    ],
+    "API3": [
+     "EUR",
+     "USD"
+    ],
+    "APR": [
+     "EUR",
+     "USD"
+    ],
+    "APT": [
+     "EUR",
+     "USD"
+    ],
+    "APU": [
+     "EUR",
+     "USD"
+    ],
+    "APXUSD": [
+     "USD",
+     "USDC"
+    ],
+    "AR": [
+     "EUR",
+     "USD"
+    ],
+    "ARB": [
+     "EUR",
+     "USD"
+    ],
+    "ARC": [
+     "EUR",
+     "USD"
+    ],
+    "ARKM": [
+     "EUR",
+     "USD"
+    ],
+    "ARPA": [
+     "EUR",
+     "USD"
+    ],
+    "ARX": [
+     "USD"
+    ],
+    "ASSET": [
+     "USD"
+    ],
+    "ASTER": [
+     "EUR",
+     "USD"
+    ],
+    "ASTR": [
+     "EUR",
+     "USD"
+    ],
+    "ATH": [
+     "EUR",
+     "USD"
+    ],
+    "ATLAS": [
+     "USD"
+    ],
+    "ATOM": [
+     "EUR",
+     "USD",
+     "USDC",
+     "USDT"
+    ],
+    "AUCTION": [
+     "EUR",
+     "USD"
+    ],
+    "AUD": [
+     "USD"
+    ],
+    "AUDIO": [
+     "EUR",
+     "USD"
+    ],
+    "AUDX": [
+     "USD"
+    ],
+    "AUGUR": [
+     "USD"
+    ],
+    "AUSD": [
+     "EUR",
+     "USD"
+    ],
+    "AVA": [
+     "EUR",
+     "USD"
+    ],
+    "AVAAI": [
+     "USD"
+    ],
+    "AVAX": [
+     "EUR",
+     "USD",
+     "USDC",
+     "USDT"
+    ],
+    "AVL": [
+     "USD"
+    ],
+    "AVNT": [
+     "EUR",
+     "USD"
+    ],
+    "AXS": [
+     "EUR",
+     "USD"
+    ],
+    "AZTEC": [
+     "EUR",
+     "USD"
+    ],
+    "B2": [
+     "EUR",
+     "USD"
+    ],
+    "B3": [
+     "EUR",
+     "USD"
+    ],
+    "BABY": [
+     "EUR",
+     "USD"
+    ],
+    "BABYSHARK": [
+     "USD"
+    ],
+    "BADGER": [
+     "EUR",
+     "USD"
+    ],
+    "BAL": [
+     "EUR",
+     "USD"
+    ],
+    "BANANAS31": [
+     "EUR",
+     "USD"
+    ],
+    "BAND": [
+     "EUR",
+     "USD"
+    ],
+    "BASED": [
+     "EUR",
+     "USD"
+    ],
+    "BAT": [
+     "EUR",
+     "USD"
+    ],
+    "BCH": [
+     "EUR",
+     "USD",
+     "USDC",
+     "USDT"
+    ],
+    "BDXN": [
+     "EUR",
+     "USD"
+    ],
+    "BEAM": [
+     "EUR",
+     "USD"
+    ],
+    "BERA": [
+     "EUR",
+     "USD",
+     "USDC",
+     "USDT"
+    ],
+    "BERT": [
+     "EUR",
+     "USD"
+    ],
+    "BGB": [
+     "EUR",
+     "USD"
+    ],
+    "BICO": [
+     "EUR",
+     "USD"
+    ],
+    "BIGTIME": [
+     "EUR",
+     "USD"
+    ],
+    "BILL": [
+     "EUR",
+     "USD"
+    ],
+    "BILLY": [
+     "EUR",
+     "USD"
+    ],
+    "BIO": [
+     "EUR",
+     "USD"
+    ],
+    "BKS": [
+     "EUR",
+     "USD"
+    ],
+    "BLEND": [
+     "EUR",
+     "USD"
+    ],
+    "BLESS": [
+     "USD"
+    ],
+    "BLUAI": [
+     "EUR",
+     "USD"
+    ],
+    "BLUE": [
+     "EUR",
+     "USD"
+    ],
+    "BLUR": [
+     "EUR",
+     "USD"
+    ],
+    "BLZ": [
+     "USD"
+    ],
+    "BMB": [
+     "USD"
+    ],
+    "BMT": [
+     "EUR",
+     "USD"
+    ],
+    "BNB": [
+     "EUR",
+     "USD",
+     "USDC",
+     "USDT"
+    ],
+    "BNC": [
+     "EUR",
+     "USD"
+    ],
+    "BNKR": [
+     "USD"
+    ],
+    "BNT": [
+     "EUR",
+     "USD"
+    ],
+    "BOB": [
+     "EUR",
+     "USD"
+    ],
+    "BOBA": [
+     "EUR",
+     "USD"
+    ],
+    "BODEN": [
+     "EUR",
+     "USD"
+    ],
+    "BONK": [
+     "EUR",
+     "USD"
+    ],
+    "BONZO": [
+     "USD"
+    ],
+    "BOS": [
+     "EUR",
+     "USD"
+    ],
+    "BREV": [
+     "EUR",
+     "USD"
+    ],
+    "BRL1": [
+     "USD"
+    ],
+    "BTC": [
+     "EUR",
+     "USD",
+     "USDC",
+     "USDT"
+    ],
+    "BTR": [
+     "EUR",
+     "USD"
+    ],
+    "BTT": [
+     "EUR",
+     "USD"
+    ],
+    "C98": [
+     "USD"
+    ],
+    "CAKE": [
+     "EUR",
+     "USD"
+    ],
+    "CAMP": [
+     "EUR",
+     "USD"
+    ],
+    "CAP": [
+     "USD"
+    ],
+    "CARV": [
+     "EUR",
+     "USD"
+    ],
+    "CASH": [
+     "USD",
+     "USDC"
+    ],
+    "CAT": [
+     "EUR",
+     "USD"
+    ],
+    "CC": [
+     "EUR",
+     "USD",
+     "USDC",
+     "USDT"
+    ],
+    "CCD": [
+     "EUR",
+     "USD"
+    ],
+    "CELO": [
+     "EUR",
+     "USD"
+    ],
+    "CELR": [
+     "EUR",
+     "USD"
+    ],
+    "CFG": [
+     "EUR",
+     "USD"
+    ],
+    "CFX": [
+     "EUR",
+     "USD"
+    ],
+    "CHECK": [
+     "USD"
+    ],
+    "CHEEMS": [
+     "EUR",
+     "USD"
+    ],
+    "CHEX": [
+     "EUR",
+     "USD"
+    ],
+    "CHILLHOUSE": [
+     "EUR",
+     "USD"
+    ],
+    "CHIP": [
+     "EUR",
+     "USD"
+    ],
+    "CHR": [
+     "EUR",
+     "USD"
+    ],
+    "CHZ": [
+     "EUR",
+     "USD"
+    ],
+    "CLANKER": [
+     "EUR",
+     "USD"
+    ],
+    "CLOUD": [
+     "USD"
+    ],
+    "CLV": [
+     "USD"
+    ],
+    "CMETH": [
+     "USD"
+    ],
+    "COMP": [
+     "EUR",
+     "USD"
+    ],
+    "COOKIE": [
+     "EUR",
+     "USD"
+    ],
+    "COPM": [
+     "USD"
+    ],
+    "COQ": [
+     "EUR",
+     "USD"
+    ],
+    "CORN": [
+     "USD"
+    ],
+    "COTI": [
+     "EUR",
+     "USD"
+    ],
+    "COW": [
+     "EUR",
+     "USD"
+    ],
+    "CPOOL": [
+     "EUR",
+     "USD"
+    ],
+    "CQT": [
+     "EUR",
+     "USD"
+    ],
+    "CRO": [
+     "EUR",
+     "USD",
+     "USDC",
+     "USDT"
+    ],
+    "CRV": [
+     "EUR",
+     "USD"
+    ],
+    "CSPR": [
+     "USD"
+    ],
+    "CT": [
+     "USD"
+    ],
+    "CTC": [
+     "EUR",
+     "USD"
+    ],
+    "CTR": [
+     "USD"
+    ],
+    "CTSI": [
+     "EUR",
+     "USD"
+    ],
+    "CVC": [
+     "EUR",
+     "USD"
+    ],
+    "CVX": [
+     "EUR",
+     "USD"
+    ],
+    "CXT": [
+     "EUR",
+     "USD"
+    ],
+    "CYBER": [
+     "EUR",
+     "USD"
+    ],
+    "DAG": [
+     "EUR",
+     "USD"
+    ],
+    "DAI": [
+     "EUR",
+     "USD",
+     "USDT"
+    ],
+    "DASH": [
+     "EUR",
+     "USD"
+    ],
+    "DBR": [
+     "EUR",
+     "USD"
+    ],
+    "DCR": [
+     "USD"
+    ],
+    "DEBIT": [
+     "USD"
+    ],
+    "DEEP": [
+     "EUR",
+     "USD"
+    ],
+    "DEGEN": [
+     "EUR",
+     "USD"
+    ],
+    "DENT": [
+     "EUR",
+     "USD"
+    ],
+    "DGAI": [
+     "USD"
+    ],
+    "DMC": [
+     "EUR",
+     "USD"
+    ],
+    "DNA": [
+     "USD"
+    ],
+    "DOG": [
+     "EUR",
+     "USD"
+    ],
+    "DOGE": [
+     "EUR",
+     "USD",
+     "USDC",
+     "USDT"
+    ],
+    "DOGS": [
+     "EUR",
+     "USD"
+    ],
+    "DOLO": [
+     "EUR",
+     "USD"
+    ],
+    "DOS": [
+     "USD"
+    ],
+    "DOT": [
+     "EUR",
+     "USD",
+     "USDC",
+     "USDT"
+    ],
+    "DOVU": [
+     "USD"
+    ],
+    "DRIFT": [
+     "EUR",
+     "USD"
+    ],
+    "DRV": [
+     "EUR",
+     "USD"
+    ],
+    "DUAL": [
+     "EUR",
+     "USD"
+    ],
+    "DUCK": [
+     "EUR",
+     "USD"
+    ],
+    "DYDX": [
+     "EUR",
+     "USD"
+    ],
+    "DYM": [
+     "EUR",
+     "USD"
+    ],
+    "EAT": [
+     "EUR",
+     "USD"
+    ],
+    "EDGE": [
+     "EUR",
+     "USD"
+    ],
+    "EDGEX": [
+     "EUR",
+     "USD"
+    ],
+    "EDU": [
+     "EUR",
+     "USD"
+    ],
+    "EGLD": [
+     "EUR",
+     "USD"
+    ],
+    "EIGEN": [
+     "EUR",
+     "USD"
+    ],
+    "ELIZAOS": [
+     "EUR",
+     "USD"
+    ],
+    "ELX": [
+     "EUR",
+     "USD"
+    ],
+    "ENA": [
+     "EUR",
+     "USD"
+    ],
+    "ENJ": [
+     "EUR",
+     "USD"
+    ],
+    "ENS": [
+     "EUR",
+     "USD"
+    ],
+    "ENSO": [
+     "EUR",
+     "USD"
+    ],
+    "EPT": [
+     "EUR",
+     "USD"
+    ],
+    "ES": [
+     "EUR",
+     "USD"
+    ],
+    "ESP": [
+     "EUR",
+     "USD"
+    ],
+    "ESPORTS": [
+     "USD"
+    ],
+    "ESX": [
+     "USD"
+    ],
+    "ETC": [
+     "EUR",
+     "USD"
+    ],
+    "ETH": [
+     "EUR",
+     "USD",
+     "USDC",
+     "USDT"
+    ],
+    "ETHFI": [
+     "EUR",
+     "USD"
+    ],
+    "EUL": [
+     "EUR",
+     "USD"
+    ],
+    "EUR": [
+     "USD"
+    ],
+    "EURC": [
+     "EUR",
+     "USD",
+     "USDC"
+    ],
+    "EUROP": [
+     "EUR",
+     "USD",
+     "USDC"
+    ],
+    "EURQ": [
+     "EUR",
+     "USD"
+    ],
+    "EURR": [
+     "EUR",
+     "USD",
+     "USDC",
+     "USDT"
+    ],
+    "EV": [
+     "EUR",
+     "USD"
+    ],
+    "EVAA": [
+     "USD"
+    ],
+    "EWT": [
+     "EUR",
+     "USD"
+    ],
+    "FARTCOIN": [
+     "EUR",
+     "USD",
+     "USDC",
+     "USDT"
+    ],
+    "FET": [
+     "EUR",
+     "USD"
+    ],
+    "FF": [
+     "USD"
+    ],
+    "FHE": [
+     "EUR",
+     "USD"
+    ],
+    "FIDA": [
+     "EUR",
+     "USD"
+    ],
+    "FIDD": [
+     "USD",
+     "USDC",
+     "USDT"
+    ],
+    "FIGHT": [
+     "EUR",
+     "USD"
+    ],
+    "FIL": [
+     "EUR",
+     "USD"
+    ],
+    "FIS": [
+     "EUR",
+     "USD"
+    ],
+    "FLOCK": [
+     "EUR",
+     "USD"
+    ],
+    "FLOKI": [
+     "EUR",
+     "USD"
+    ],
+    "FLOW": [
+     "EUR",
+     "USD"
+    ],
+    "FLR": [
+     "EUR",
+     "USD"
+    ],
+    "FLUX": [
+     "EUR",
+     "USD"
+    ],
+    "FOLD": [
+     "USD"
+    ],
+    "FOLKS": [
+     "USD"
+    ],
+    "FOREST": [
+     "USD"
+    ],
+    "FORTH": [
+     "EUR",
+     "USD"
+    ],
+    "FRNT": [
+     "USD",
+     "USDC"
+    ],
+    "FUN": [
+     "EUR",
+     "USD"
+    ],
+    "FWOG": [
+     "EUR",
+     "USD"
+    ],
+    "FXS": [
+     "EUR",
+     "USD"
+    ],
+    "G": [
+     "USD"
+    ],
+    "GAIA": [
+     "EUR",
+     "USD"
+    ],
+    "GAIB": [
+     "EUR",
+     "USD"
+    ],
+    "GALA": [
+     "EUR",
+     "USD"
+    ],
+    "GAME2": [
+     "EUR",
+     "USD"
+    ],
+    "GAS": [
+     "EUR",
+     "USD"
+    ],
+    "GBP": [
+     "USD"
+    ],
+    "GENIUS": [
+     "EUR",
+     "USD"
+    ],
+    "GFI": [
+     "EUR",
+     "USD"
+    ],
+    "GHIBLI": [
+     "EUR",
+     "USD"
+    ],
+    "GHST": [
+     "EUR",
+     "USD"
+    ],
+    "GIB": [
+     "USD"
+    ],
+    "GIGA": [
+     "EUR",
+     "USD"
+    ],
+    "GLMR": [
+     "EUR",
+     "USD"
+    ],
+    "GMT": [
+     "EUR",
+     "USD"
+    ],
+    "GMX": [
+     "EUR",
+     "USD"
+    ],
+    "GNO": [
+     "EUR",
+     "USD"
+    ],
+    "GNOT": [
+     "USD"
+    ],
+    "GOAT": [
+     "EUR",
+     "USD"
+    ],
+    "GOMINING": [
+     "EUR",
+     "USD"
+    ],
+    "GRASS": [
+     "EUR",
+     "USD"
+    ],
+    "GRIFFAIN": [
+     "EUR",
+     "USD"
+    ],
+    "GRT": [
+     "EUR",
+     "USD"
+    ],
+    "GST": [
+     "EUR",
+     "USD"
+    ],
+    "GTC": [
+     "EUR",
+     "USD"
+    ],
+    "GUN": [
+     "EUR",
+     "USD"
+    ],
+    "GWEI": [
+     "USD"
+    ],
+    "HBAR": [
+     "EUR",
+     "USD"
+    ],
+    "HDX": [
+     "EUR",
+     "USD"
+    ],
+    "HFT": [
+     "EUR",
+     "USD"
+    ],
+    "HIPPO": [
+     "EUR",
+     "USD"
+    ],
+    "HMSTR": [
+     "EUR",
+     "USD"
+    ],
+    "HNT": [
+     "EUR",
+     "USD"
+    ],
+    "HOLO": [
+     "USD"
+    ],
+    "HONEY": [
+     "EUR",
+     "USD"
+    ],
+    "HOUSE": [
+     "EUR",
+     "USD"
+    ],
+    "HPOS10I": [
+     "EUR",
+     "USD"
+    ],
+    "HSK": [
+     "EUR",
+     "USD"
+    ],
+    "HYPE": [
+     "EUR",
+     "USD"
+    ],
+    "IAG": [
+     "EUR",
+     "USD"
+    ],
+    "ICNT": [
+     "EUR",
+     "USD"
+    ],
+    "ICP": [
+     "EUR",
+     "USD"
+    ],
+    "IDEX": [
+     "EUR",
+     "USD"
+    ],
+    "IDOS": [
+     "EUR",
+     "USD"
+    ],
+    "IMX": [
+     "EUR",
+     "USD"
+    ],
+    "IN": [
+     "EUR",
+     "USD"
+    ],
+    "INIT": [
+     "EUR",
+     "USD"
+    ],
+    "INJ": [
+     "EUR",
+     "USD"
+    ],
+    "INX": [
+     "EUR",
+     "USD"
+    ],
+    "IP": [
+     "EUR",
+     "USD"
+    ],
+    "IR": [
+     "EUR",
+     "USD"
+    ],
+    "JAILSTOOL": [
+     "USD"
+    ],
+    "JASMY": [
+     "EUR",
+     "USD"
+    ],
+    "JITOSOL": [
+     "EUR",
+     "USD"
+    ],
+    "JOE": [
+     "EUR",
+     "USD"
+    ],
+    "JST": [
+     "EUR",
+     "USD"
+    ],
+    "JTO": [
+     "EUR",
+     "USD"
+    ],
+    "JUNO": [
+     "EUR",
+     "USD"
+    ],
+    "JUP": [
+     "EUR",
+     "USD"
+    ],
+    "KAITO": [
+     "EUR",
+     "USD"
+    ],
+    "KAS": [
+     "EUR",
+     "USD",
+     "USDT"
+    ],
+    "KAT": [
+     "EUR",
+     "USD"
+    ],
+    "KAVA": [
+     "EUR",
+     "USD"
+    ],
+    "KEEP": [
+     "USD"
+    ],
+    "KERNEL": [
+     "EUR",
+     "USD"
+    ],
+    "KEY": [
+     "EUR",
+     "USD"
+    ],
+    "KGEN": [
+     "USD"
+    ],
+    "KII": [
+     "USD"
+    ],
+    "KIN": [
+     "EUR",
+     "USD"
+    ],
+    "KMNO": [
+     "EUR",
+     "USD"
+    ],
+    "KNC": [
+     "EUR",
+     "USD"
+    ],
+    "KNTQ": [
+     "EUR",
+     "USD"
+    ],
+    "KOBAN": [
+     "EUR",
+     "USD"
+    ],
+    "KP3R": [
+     "EUR",
+     "USD"
+    ],
+    "KSM": [
+     "EUR",
+     "USD"
+    ],
+    "KTA": [
+     "EUR",
+     "USD"
+    ],
+    "KULA": [
+     "EUR",
+     "USD"
+    ],
+    "L3": [
+     "USD"
+    ],
+    "LAPTOP": [
+     "USD"
+    ],
+    "LAVA": [
+     "EUR",
+     "USD"
+    ],
+    "LAYER": [
+     "EUR",
+     "USD"
+    ],
+    "LCAP": [
+     "EUR",
+     "USD"
+    ],
+    "LCX": [
+     "EUR",
+     "USD"
+    ],
+    "LDO": [
+     "EUR",
+     "USD"
+    ],
+    "LIGHTER": [
+     "USD"
+    ],
+    "LINEA": [
+     "EUR",
+     "USD"
+    ],
+    "LINK": [
+     "EUR",
+     "USD",
+     "USDC",
+     "USDT"
+    ],
+    "LION": [
+     "EUR",
+     "USD"
+    ],
+    "LIT": [
+     "EUR",
+     "USD"
+    ],
+    "LMWR": [
+     "EUR",
+     "USD"
+    ],
+    "LOCKIN": [
+     "EUR",
+     "USD"
+    ],
+    "LOFI": [
+     "EUR",
+     "USD"
+    ],
+    "LPT": [
+     "EUR",
+     "USD"
+    ],
+    "LQTY": [
+     "EUR",
+     "USD"
+    ],
+    "LRC": [
+     "EUR",
+     "USD"
+    ],
+    "LSETH": [
+     "USD"
+    ],
+    "LSK": [
+     "EUR",
+     "USD"
+    ],
+    "LSSOL": [
+     "EUR",
+     "USD"
+    ],
+    "LTC": [
+     "EUR",
+     "USD",
+     "USDC",
+     "USDT"
+    ],
+    "LUNA": [
+     "EUR",
+     "USD"
+    ],
+    "M": [
+     "EUR",
+     "USD"
+    ],
+    "MANA": [
+     "EUR",
+     "USD",
+     "USDC",
+     "USDT"
+    ],
+    "MANTRA": [
+     "EUR",
+     "USD"
+    ],
+    "MASK": [
+     "EUR",
+     "USD"
+    ],
+    "MAT": [
+     "EUR",
+     "USD"
+    ],
+    "ME": [
+     "EUR",
+     "USD"
+    ],
+    "MEGA": [
+     "EUR",
+     "USD"
+    ],
+    "MELANIA": [
+     "EUR",
+     "USD",
+     "USDC",
+     "USDT"
+    ],
+    "MEME": [
+     "EUR",
+     "USD"
+    ],
+    "MERL": [
+     "EUR",
+     "USD"
+    ],
+    "MET": [
+     "EUR",
+     "USD"
+    ],
+    "METH": [
+     "USD"
+    ],
+    "METIS": [
+     "EUR",
+     "USD"
+    ],
+    "MEW": [
+     "EUR",
+     "USD"
+    ],
+    "MEZO": [
+     "USD"
+    ],
+    "MF": [
+     "EUR",
+     "USD"
+    ],
+    "MIM": [
+     "EUR",
+     "USD"
+    ],
+    "MINA": [
+     "EUR",
+     "USD"
+    ],
+    "MIR": [
+     "EUR",
+     "USD"
+    ],
+    "MIRA": [
+     "EUR",
+     "USD"
+    ],
+    "MLN": [
+     "EUR",
+     "USD"
+    ],
+    "MNGO": [
+     "EUR",
+     "USD"
+    ],
+    "MNT": [
+     "EUR",
+     "USD"
+    ],
+    "MOCA": [
+     "EUR",
+     "USD"
+    ],
+    "MOG": [
+     "EUR",
+     "USD"
+    ],
+    "MON": [
+     "EUR",
+     "USD"
+    ],
+    "MOODENG": [
+     "EUR",
+     "USD"
+    ],
+    "MORPHO": [
+     "EUR",
+     "USD"
+    ],
+    "MOVR": [
+     "EUR",
+     "USD"
+    ],
+    "MSOL": [
+     "EUR",
+     "USD"
+    ],
+    "MUBARAK": [
+     "USD"
+    ],
+    "MULTI": [
+     "EUR",
+     "USD"
+    ],
+    "MXNB": [
+     "USD"
+    ],
+    "MYX": [
+     "EUR",
+     "USD"
+    ],
+    "NANO": [
+     "EUR",
+     "USD"
+    ],
+    "NEAR": [
+     "EUR",
+     "USD"
+    ],
+    "NEIRO": [
+     "EUR",
+     "USD"
+    ],
+    "NEO": [
+     "EUR",
+     "USD"
+    ],
+    "NES": [
+     "USD"
+    ],
+    "NEX": [
+     "EUR",
+     "USD"
+    ],
+    "NEXO": [
+     "USD"
+    ],
+    "NIGHT": [
+     "EUR",
+     "USD"
+    ],
+    "NIL": [
+     "EUR",
+     "USD"
+    ],
+    "NMR": [
+     "EUR",
+     "USD"
+    ],
+    "NOBODY": [
+     "EUR",
+     "USD"
+    ],
+    "NOCK": [
+     "USD"
+    ],
+    "NODE": [
+     "EUR",
+     "USD"
+    ],
+    "NOS": [
+     "EUR",
+     "USD"
+    ],
+    "NOT": [
+     "EUR",
+     "USD"
+    ],
+    "NPC": [
+     "EUR",
+     "USD"
+    ],
+    "NTRN": [
+     "EUR",
+     "USD"
+    ],
+    "OBOL": [
+     "EUR",
+     "USD",
+     "USDT"
+    ],
+    "OCEAN": [
+     "EUR",
+     "USD"
+    ],
+    "ODOS": [
+     "USD"
+    ],
+    "OGN": [
+     "EUR",
+     "USD"
+    ],
+    "OKB": [
+     "USD"
+    ],
+    "OMG": [
+     "EUR",
+     "USD"
+    ],
+    "OMI": [
+     "EUR",
+     "USD"
+    ],
+    "OMNI": [
+     "USD"
+    ],
+    "ONDO": [
+     "EUR",
+     "USD"
+    ],
+    "ONE": [
+     "USD"
+    ],
+    "OOB": [
+     "EUR",
+     "USD"
+    ],
+    "OP": [
+     "EUR",
+     "USD"
+    ],
+    "OPEN": [
+     "EUR",
+     "USD"
+    ],
+    "OPN": [
+     "USD"
+    ],
+    "ORCA": [
+     "EUR",
+     "USD"
+    ],
+    "ORDER": [
+     "USD"
+    ],
+    "OSMO": [
+     "EUR",
+     "USD"
+    ],
+    "OUSD": [
+     "USD"
+    ],
+    "OXT": [
+     "EUR",
+     "USD"
+    ],
+    "PACK": [
+     "USD"
+    ],
+    "PACT": [
+     "USD"
+    ],
+    "PARTI": [
+     "EUR",
+     "USD"
+    ],
+    "PAXG": [
+     "EUR",
+     "USD"
+    ],
+    "PEAQ": [
+     "EUR",
+     "USD",
+     "USDC"
+    ],
+    "PENDLE": [
+     "EUR",
+     "USD"
+    ],
+    "PENGU": [
+     "EUR",
+     "USD",
+     "USDC",
+     "USDT"
+    ],
+    "PEP": [
+     "EUR",
+     "USD"
+    ],
+    "PEPE": [
+     "EUR",
+     "USD"
+    ],
+    "PEPECOIN": [
+     "USD"
+    ],
+    "PERP": [
+     "EUR",
+     "USD"
+    ],
+    "PHA": [
+     "EUR",
+     "USD"
+    ],
+    "PI": [
+     "EUR",
+     "USD"
+    ],
+    "PIEVERSE": [
+     "USD"
+    ],
+    "PIPE": [
+     "EUR",
+     "USD"
+    ],
+    "PLAY": [
+     "EUR",
+     "USD"
+    ],
+    "PLUME": [
+     "EUR",
+     "USD"
+    ],
+    "PNT": [
+     "USD"
+    ],
+    "PNUT": [
+     "EUR",
+     "USD"
+    ],
+    "POL": [
+     "EUR",
+     "USD"
+    ],
+    "POLIS": [
+     "EUR",
+     "USD"
+    ],
+    "POLS": [
+     "EUR",
+     "USD"
+    ],
+    "POND": [
+     "EUR",
+     "USD"
+    ],
+    "PONKE": [
+     "EUR",
+     "USD"
+    ],
+    "PONS": [
+     "USD"
+    ],
+    "POPCAT": [
+     "EUR",
+     "USD"
+    ],
+    "PORTAL": [
+     "EUR",
+     "USD"
+    ],
+    "POWR": [
+     "EUR",
+     "USD"
+    ],
+    "PRCL": [
+     "EUR",
+     "USD"
+    ],
+    "PRIME": [
+     "EUR",
+     "USD"
+    ],
+    "PRO": [
+     "EUR",
+     "USD"
+    ],
+    "PROMPT": [
+     "EUR",
+     "USD"
+    ],
+    "PROS": [
+     "EUR",
+     "USD"
+    ],
+    "PROVE": [
+     "EUR",
+     "USD"
+    ],
+    "PTB": [
+     "EUR",
+     "USD"
+    ],
+    "PUFFER": [
+     "EUR",
+     "USD"
+    ],
+    "PUMP": [
+     "EUR",
+     "USD"
+    ],
+    "PUPS": [
+     "EUR",
+     "USD"
+    ],
+    "PWT": [
+     "USD"
+    ],
+    "PYTH": [
+     "EUR",
+     "USD"
+    ],
+    "PYUSD": [
+     "USD"
+    ],
+    "Q": [
+     "EUR",
+     "USD"
+    ],
+    "QCAD": [
+     "USD"
+    ],
+    "QI": [
+     "USD"
+    ],
+    "QNT": [
+     "EUR",
+     "USD"
+    ],
+    "QTUM": [
+     "EUR",
+     "USD"
+    ],
+    "QUAI": [
+     "EUR",
+     "USD"
+    ],
+    "QUID": [
+     "USD"
+    ],
+    "RAD": [
+     "EUR",
+     "USD"
+    ],
+    "RAILS": [
+     "EUR",
+     "USD"
+    ],
+    "RARE": [
+     "EUR",
+     "USD"
+    ],
+    "RARI": [
+     "EUR",
+     "USD"
+    ],
+    "RAY": [
+     "EUR",
+     "USD"
+    ],
+    "RBC": [
+     "USD"
+    ],
+    "RE": [
+     "USD"
+    ],
+    "RED": [
+     "EUR",
+     "USD"
+    ],
+    "REKT": [
+     "EUR",
+     "USD"
+    ],
+    "REN": [
+     "EUR",
+     "USD"
+    ],
+    "RENDER": [
+     "EUR",
+     "USD"
+    ],
+    "REPPO": [
+     "EUR",
+     "USD"
+    ],
+    "REQ": [
+     "EUR",
+     "USD"
+    ],
+    "REZ": [
+     "EUR",
+     "USD"
+    ],
+    "RIVER": [
+     "EUR",
+     "USD"
+    ],
+    "RIZE": [
+     "EUR",
+     "USD"
+    ],
+    "RLC": [
+     "EUR",
+     "USD"
+    ],
+    "RLS": [
+     "EUR",
+     "USD"
+    ],
+    "RLUSD": [
+     "EUR",
+     "USD",
+     "USDC",
+     "USDT"
+    ],
+    "RNBW": [
+     "USD"
+    ],
+    "ROBO": [
+     "USD"
+    ],
+    "ROLL": [
+     "EUR",
+     "USD"
+    ],
+    "RPL": [
+     "EUR",
+     "USD"
+    ],
+    "RSC": [
+     "EUR",
+     "USD"
+    ],
+    "RSR": [
+     "EUR",
+     "USD"
+    ],
+    "RUJI": [
+     "EUR",
+     "USD"
+    ],
+    "RUNE": [
+     "EUR",
+     "USD"
+    ],
+    "RVV": [
+     "USD"
+    ],
+    "S": [
+     "EUR",
+     "USD",
+     "USDC",
+     "USDT"
+    ],
+    "SAFE": [
+     "EUR",
+     "USD"
+    ],
+    "SAGA": [
+     "EUR",
+     "USD"
+    ],
+    "SAHARA": [
+     "EUR",
+     "USD"
+    ],
+    "SAMO": [
+     "EUR",
+     "USD"
+    ],
+    "SAND": [
+     "EUR",
+     "USD"
+    ],
+    "SAPIEN": [
+     "EUR",
+     "USD"
+    ],
+    "SAUCE": [
+     "EUR",
+     "USD"
+    ],
+    "SBR": [
+     "EUR",
+     "USD"
+    ],
+    "SC": [
+     "EUR",
+     "USD"
+    ],
+    "SCA": [
+     "USD"
+    ],
+    "SCOR": [
+     "EUR",
+     "USD"
+    ],
+    "SCRT": [
+     "EUR",
+     "USD"
+    ],
+    "SEI": [
+     "EUR",
+     "USD"
+    ],
+    "SENT": [
+     "EUR",
+     "USD"
+    ],
+    "SFI": [
+     "USD"
+    ],
+    "SGB": [
+     "EUR",
+     "USD"
+    ],
+    "SHAPE": [
+     "USD"
+    ],
+    "SHIB": [
+     "EUR",
+     "USD",
+     "USDC",
+     "USDT"
+    ],
+    "SHX": [
+     "EUR",
+     "USD"
+    ],
+    "SIDEKICK": [
+     "EUR",
+     "USD",
+     "USDT"
+    ],
+    "SIGMA": [
+     "EUR",
+     "USD"
+    ],
+    "SIGN": [
+     "EUR",
+     "USD"
+    ],
+    "SKR": [
+     "EUR",
+     "USD"
+    ],
+    "SKY": [
+     "EUR",
+     "USD"
+    ],
+    "SLAY": [
+     "EUR",
+     "USD"
+    ],
+    "SLX": [
+     "EUR",
+     "USD"
+    ],
+    "SN44": [
+     "USD"
+    ],
+    "SN51": [
+     "USD"
+    ],
+    "SN62": [
+     "USD"
+    ],
+    "SN64": [
+     "USD"
+    ],
+    "SN75": [
+     "USD"
+    ],
+    "SN8": [
+     "USD"
+    ],
+    "SNEK": [
+     "EUR",
+     "USD"
+    ],
+    "SNX": [
+     "EUR",
+     "USD"
+    ],
+    "SODA": [
+     "USD"
+    ],
+    "SOFID": [
+     "USD",
+     "USDC",
+     "USDT"
+    ],
+    "SOL": [
+     "EUR",
+     "USD",
+     "USDC",
+     "USDT"
+    ],
+    "SOLV": [
+     "EUR",
+     "USD"
+    ],
+    "SOMI": [
+     "EUR",
+     "USD"
+    ],
+    "SONIC": [
+     "USD"
+    ],
+    "SOON": [
+     "EUR",
+     "USD"
+    ],
+    "SOSO": [
+     "EUR",
+     "USD"
+    ],
+    "SPACE": [
+     "EUR",
+     "USD"
+    ],
+    "SPELL": [
+     "EUR",
+     "USD"
+    ],
+    "SPK": [
+     "EUR",
+     "USD"
+    ],
+    "SPX": [
+     "EUR",
+     "USD"
+    ],
+    "SRM": [
+     "EUR",
+     "USD"
+    ],
+    "SSV": [
+     "EUR",
+     "USD"
+    ],
+    "ST": [
+     "EUR",
+     "USD"
+    ],
+    "STABLE": [
+     "USD"
+    ],
+    "STBL": [
+     "EUR",
+     "USD"
+    ],
+    "STG": [
+     "EUR",
+     "USD"
+    ],
+    "STORJ": [
+     "EUR",
+     "USD"
+    ],
+    "STRK": [
+     "EUR",
+     "USD"
+    ],
+    "STX": [
+     "EUR",
+     "USD"
+    ],
+    "SUI": [
+     "EUR",
+     "USD"
+    ],
+    "SUKU": [
+     "EUR",
+     "USD"
+    ],
+    "SUN": [
+     "EUR",
+     "USD"
+    ],
+    "SUNDOG": [
+     "EUR",
+     "USD"
+    ],
+    "SUP": [
+     "EUR",
+     "USD"
+    ],
+    "SUPER": [
+     "EUR",
+     "USD"
+    ],
+    "SUSHI": [
+     "EUR",
+     "USD"
+    ],
+    "SWARMS": [
+     "EUR",
+     "USD"
+    ],
+    "SWEAT": [
+     "EUR",
+     "USD"
+    ],
+    "SWELL": [
+     "EUR",
+     "USD"
+    ],
+    "SXT": [
+     "EUR",
+     "USD"
+    ],
+    "SYN": [
+     "EUR",
+     "USD"
+    ],
+    "SYND": [
+     "EUR",
+     "USD"
+    ],
+    "SYRUP": [
+     "EUR",
+     "USD"
+    ],
+    "T": [
+     "EUR",
+     "USD"
+    ],
+    "TAC": [
+     "USD"
+    ],
+    "TAKE": [
+     "EUR",
+     "USD"
+    ],
+    "TAO": [
+     "EUR",
+     "USD"
+    ],
+    "TBTC": [
+     "EUR",
+     "USD"
+    ],
+    "TCS": [
+     "USD"
+    ],
+    "TEA": [
+     "EUR"
+    ],
+    "TEL": [
+     "EUR",
+     "USD"
+    ],
+    "TGBP": [
+     "USD"
+    ],
+    "THQ": [
+     "EUR",
+     "USD"
+    ],
+    "TIA": [
+     "EUR",
+     "USD"
+    ],
+    "TLM": [
+     "EUR",
+     "USD"
+    ],
+    "TMX": [
+     "USD"
+    ],
+    "TNSR": [
+     "EUR",
+     "USD"
+    ],
+    "TOKEN": [
+     "EUR",
+     "USD"
+    ],
+    "TON": [
+     "EUR",
+     "USD",
+     "USDC",
+     "USDT"
+    ],
+    "TOSHI": [
+     "EUR",
+     "USD"
+    ],
+    "TRAC": [
+     "EUR",
+     "USD"
+    ],
+    "TREAD": [
+     "USD"
+    ],
+    "TREE": [
+     "EUR",
+     "USD"
+    ],
+    "TREMP": [
+     "USD"
+    ],
+    "TRIA": [
+     "EUR",
+     "USD"
+    ],
+    "TRU": [
+     "EUR",
+     "USD"
+    ],
+    "TRUMP": [
+     "EUR",
+     "USD",
+     "USDC",
+     "USDT"
+    ],
+    "TRUST": [
+     "EUR",
+     "USD"
+    ],
+    "TRX": [
+     "EUR",
+     "USD"
+    ],
+    "TURBO": [
+     "EUR",
+     "USD"
+    ],
+    "TX": [
+     "EUR",
+     "USD"
+    ],
+    "U": [
+     "EUR",
+     "USD"
+    ],
+    "U2U": [
+     "USD"
+    ],
+    "UAI": [
+     "EUR",
+     "USD"
+    ],
+    "UFD": [
+     "EUR",
+     "USD"
+    ],
+    "UMA": [
+     "EUR",
+     "USD"
+    ],
+    "UMXM": [
+     "USD"
+    ],
+    "UNFI": [
+     "EUR",
+     "USD"
+    ],
+    "UNI": [
+     "EUR",
+     "USD"
+    ],
+    "UNITAS": [
+     "USD",
+     "USDT"
+    ],
+    "UP": [
+     "EUR",
+     "USD"
+    ],
+    "US": [
+     "EUR",
+     "USD"
+    ],
+    "USAT": [
+     "USD",
+     "USDT"
+    ],
+    "USD1": [
+     "USD",
+     "USDC"
+    ],
+    "USDC": [
+     "EUR",
+     "USD",
+     "USDT"
+    ],
+    "USDD": [
+     "EUR",
+     "USD"
+    ],
+    "USDE": [
+     "EUR",
+     "USD",
+     "USDC",
+     "USDT"
+    ],
+    "USDG": [
+     "USD",
+     "USDC",
+     "USDT"
+    ],
+    "USDGO": [
+     "USD"
+    ],
+    "USDPT": [
+     "USD",
+     "USDC",
+     "USDT"
+    ],
+    "USDQ": [
+     "USD",
+     "USDC",
+     "USDT"
+    ],
+    "USDR": [
+     "EUR",
+     "USD",
+     "USDC",
+     "USDT"
+    ],
+    "USDS": [
+     "EUR",
+     "USD"
+    ],
+    "USDSM": [
+     "USD"
+    ],
+    "USDSUI": [
+     "USD"
+    ],
+    "USDT": [
+     "EUR",
+     "USD"
+    ],
+    "USDUC": [
+     "EUR",
+     "USD"
+    ],
+    "USELESS": [
+     "EUR",
+     "USD"
+    ],
+    "USTABLES": [
+     "USD"
+    ],
+    "USUAL": [
+     "EUR",
+     "USD"
+    ],
+    "UXLINK": [
+     "USD"
+    ],
+    "VANRY": [
+     "EUR",
+     "USD"
+    ],
+    "VELO": [
+     "EUR",
+     "USD"
+    ],
+    "VELODROME": [
+     "EUR",
+     "USD"
+    ],
+    "VELVET": [
+     "EUR",
+     "USD"
+    ],
+    "VET": [
+     "EUR",
+     "USD",
+     "USDC",
+     "USDT"
+    ],
+    "VFY": [
+     "EUR",
+     "USD"
+    ],
+    "VINE": [
+     "EUR",
+     "USD"
+    ],
+    "VIRTUAL": [
+     "EUR",
+     "USD",
+     "USDC",
+     "USDT"
+    ],
+    "VOOI": [
+     "USD"
+    ],
+    "VSN": [
+     "EUR",
+     "USD"
+    ],
+    "VTHO": [
+     "EUR",
+     "USD"
+    ],
+    "VULT": [
+     "EUR",
+     "USD"
+    ],
+    "VVV": [
+     "EUR",
+     "USD"
+    ],
+    "W": [
+     "EUR",
+     "USD"
+    ],
+    "WAL": [
+     "EUR",
+     "USD"
+    ],
+    "WAR": [
+     "USD"
+    ],
+    "WARD": [
+     "EUR",
+     "USD"
+    ],
+    "WAXL": [
+     "EUR",
+     "USD"
+    ],
+    "WBT": [
+     "EUR",
+     "USD"
+    ],
+    "WBTC": [
+     "EUR",
+     "USD"
+    ],
+    "WCT": [
+     "EUR",
+     "USD"
+    ],
+    "WELL": [
+     "EUR",
+     "USD"
+    ],
+    "WEMIX": [
+     "USD"
+    ],
+    "WEN": [
+     "USD"
+    ],
+    "WFB": [
+     "EUR",
+     "USD"
+    ],
+    "WIF": [
+     "EUR",
+     "USD"
+    ],
+    "WIN": [
+     "EUR",
+     "USD"
+    ],
+    "WINGS": [
+     "USD"
+    ],
+    "WLD": [
+     "EUR",
+     "USD"
+    ],
+    "WLFI": [
+     "EUR",
+     "USD"
+    ],
+    "WMTX": [
+     "EUR",
+     "USD"
+    ],
+    "WOJAK": [
+     "USD"
+    ],
+    "WOO": [
+     "EUR",
+     "USD"
+    ],
+    "XAN": [
+     "EUR",
+     "USD"
+    ],
+    "XAUT": [
+     "USD",
+     "USDT"
+    ],
+    "XCN": [
+     "EUR",
+     "USD"
+    ],
+    "XDC": [
+     "EUR",
+     "USD",
+     "USDC"
+    ],
+    "XDP": [
+     "USD"
+    ],
+    "XION": [
+     "EUR",
+     "USD"
+    ],
+    "XL1": [
+     "EUR",
+     "USD"
+    ],
+    "XLM": [
+     "EUR",
+     "USD"
+    ],
+    "XMN": [
+     "EUR",
+     "USD"
+    ],
+    "XMR": [
+     "EUR",
+     "USD",
+     "USDC",
+     "USDT"
+    ],
+    "XNY": [
+     "EUR",
+     "USD"
+    ],
+    "XPL": [
+     "EUR",
+     "USD"
+    ],
+    "XRP": [
+     "EUR",
+     "USD",
+     "USDC",
+     "USDT"
+    ],
+    "XTER": [
+     "EUR",
+     "USD"
+    ],
+    "XTZ": [
+     "EUR",
+     "USD",
+     "USDC",
+     "USDT"
+    ],
+    "XU3O8": [
+     "EUR",
+     "USD"
+    ],
+    "XYO": [
+     "EUR",
+     "USD"
+    ],
+    "YALA": [
+     "EUR",
+     "USD"
+    ],
+    "YB": [
+     "EUR",
+     "USD"
+    ],
+    "YFI": [
+     "EUR",
+     "USD"
+    ],
+    "YGG": [
+     "EUR",
+     "USD"
+    ],
+    "YOM": [
+     "USD"
+    ],
+    "ZAMA": [
+     "EUR",
+     "USD"
+    ],
+    "ZBCN": [
+     "EUR",
+     "USD"
+    ],
+    "ZBT": [
+     "EUR",
+     "USD"
+    ],
+    "ZCHF": [
+     "USD"
+    ],
+    "ZEC": [
+     "EUR",
+     "USD"
+    ],
+    "ZEREBRO": [
+     "EUR",
+     "USD"
+    ],
+    "ZETA": [
+     "EUR",
+     "USD"
+    ],
+    "ZEUS": [
+     "EUR",
+     "USD"
+    ],
+    "ZEX": [
+     "EUR",
+     "USD"
+    ],
+    "ZIG": [
+     "EUR",
+     "USD"
+    ],
+    "ZK": [
+     "EUR",
+     "USD"
+    ],
+    "ZKP": [
+     "EUR",
+     "USD"
+    ],
+    "ZORA": [
+     "EUR",
+     "USD"
+    ],
+    "ZRC": [
+     "EUR",
+     "USD"
+    ],
+    "ZRO": [
+     "EUR",
+     "USD"
+    ],
+    "ZRX": [
+     "EUR",
+     "USD"
+    ]
+   },
+   "entity": "Payward Europe Solutions Limited",
+   "fetched_at": 1793111210,
+   "home": "IE",
+   "in_register": true,
+   "lei": "254900641D8KNHUZYX24",
+   "qualifies": true,
+   "services": [
+    "a",
+    "c",
+    "d",
+    "e",
+    "f",
+    "g",
+    "i",
+    "j"
+   ],
+   "sha256": "b07ce254b1f1e567501dae752b1dd66f91848a4e7618a499f23350d74fa04a28",
+   "url": "https://api.kraken.com/0/public/AssetPairs"
+  },
+  "OKX": {
+   "api_entity": "uafklaret",
+   "authorised": "27/01/2025",
+   "coins": {
+    "1INCH": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "2Z": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "A": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "AAVE": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "ACE": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "ACH": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "ACT": [
+     "USDT"
+    ],
+    "ADA": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "AEON": [
+     "USDT"
+    ],
+    "AEVO": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "AGLD": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "AI": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "AIXBT": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "ALGO": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "ALLO": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "ANIME": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "APE": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "API3": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "APT": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "AR": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "ARB": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "ARG": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "ARKM": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "ASP": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "ASTER": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "ASTR": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "ATH": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "ATOM": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "AUCTION": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "AUDF": [
+     "USDT"
+    ],
+    "AUDM": [
+     "USDT"
+    ],
+    "AVAX": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "AVNT": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "AXS": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "BABY": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "BABYDOGE": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "BANANA": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "BAND": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "BARD": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "BASED": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "BAT": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "BCH": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "BERA": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "BETH": [
+     "USDT"
+    ],
+    "BICO": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "BIGTIME": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "BIO": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "BLUR": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "BNB": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "BNT": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "BOME": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "BONK": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "BREV": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "BRL1": [
+     "USDT"
+    ],
+    "BTC": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "CARDS": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "CAT": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "CATI": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "CC": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "CELO": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "CELR": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "CETUS": [
+     "USDC",
+     "USDT"
+    ],
+    "CFG": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "CFX": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "CHIP": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "CHZ": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "CITY": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "COMP": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "CORE": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "CP": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "CRO": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "CRV": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "CSPR": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "CT": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "CTC": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "CVC": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "CVX": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "DASH": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "DATA": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "DEGEN": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "DGB": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "DOGE": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "DOGS": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "DOOD": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "DOS": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "DOT": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "DYDX": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "EDGE": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "EGLD": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "EIGEN": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "ENA": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "ENJ": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "ENS": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "ETC": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "ETH": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "ETHFI": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "ETHW": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "EURC": [
+     "USDC"
+    ],
+    "FET": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "FIL": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "FLOKI": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "FLOW": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "FLR": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "FLUID": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "FOGO": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "G": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "GALA": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "GALFT": [
+     "USDT"
+    ],
+    "GAS": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "GLM": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "GMT": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "GMX": [
+     "USDT"
+    ],
+    "GOAT": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "GRAM": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "GRASS": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "GRT": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "GRVT": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "HBAR": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "HMSTR": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "HUMA": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "HYPE": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "ICP": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "ID": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "ILV": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "IMX": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "INJ": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "IOST": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "IOTA": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "IRYS": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "JITOSOL": [
+     "USDT"
+    ],
+    "JOE": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "JTO": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "JUP": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "KAIA": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "KAITO": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "KAT": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "KITE": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "KMNO": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "KNC": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "KSM": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "LAT": [
+     "USDC",
+     "USDT"
+    ],
+    "LAYER": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "LDO": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "LEO": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "LINEA": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "LINK": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "LIT": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "LPT": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "LQTY": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "LRC": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "LSK": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "LTC": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "LUNA": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "MAGIC": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "MANA": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "MASK": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "ME": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "MEGA": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "MEME": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "MENGO": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "MERL": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "MET": [
+     "USDT"
+    ],
+    "METIS": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "MEW": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "MINA": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "MMT": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "MON": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "MOODENG": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "MORPHO": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "MOVE": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "NAVX": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "NEAR": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "NEIRO": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "NEO": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "NES": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "NFT": [
+     "USDT"
+    ],
+    "NIGHT": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "NMR": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "NOT": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "OFC": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "OKB": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "OKSOL": [
+     "USDT"
+    ],
+    "OL": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "OMI": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "ONDO": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "ONE": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "ONT": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "OP": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "ORBS": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "ORDI": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "PARTI": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "PAXG": [
+     "USDT"
+    ],
+    "PENDLE": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "PENGU": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "PEOPLE": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "PEPE": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "PHA": [
+     "USDT"
+    ],
+    "PI": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "PIXEL": [
+     "USDT"
+    ],
+    "PNUT": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "POL": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "PONS": [
+     "USDT"
+    ],
+    "POR": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "PROMPT": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "PROS": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "PROVE": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "PUMP": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "PYTH": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "PYUSD": [
+     "USDT"
+    ],
+    "QTUM": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "RAY": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "RE": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "RENDER": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "RESOLV": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "RLUSD": [
+     "USDT"
+    ],
+    "ROBO": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "RON": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "RPL": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "RSR": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "RVN": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "S": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "SAFE": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "SAHARA": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "SAND": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "SATS": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "SCR": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "SD": [
+     "USDT"
+    ],
+    "SEI": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "SENT": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "SHIB": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "SKL": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "SKY": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "SLP": [
+     "USDT"
+    ],
+    "SLX": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "SNT": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "SNX": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "SOL": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "SONIC": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "SOPH": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "SPACE": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "SPK": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "SPURS": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "SSV": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "STETH": [
+     "USDT"
+    ],
+    "STRK": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "STX": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "SUI": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "SUSHI": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "SWFTC": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "T": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "TAO": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "THETA": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "TIA": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "TNSR": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "TOSHI": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "TRA": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "TRB": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "TRUMP": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "TRX": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "TURBO": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "UMA": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "UNI": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "USAT": [
+     "USDT"
+    ],
+    "USD1": [
+     "USDT"
+    ],
+    "USDC": [
+     "EUR",
+     "USDT"
+    ],
+    "USDG": [
+     "EUR",
+     "USDT"
+    ],
+    "USDS": [
+     "USDT"
+    ],
+    "USDT": [
+     "EUR",
+     "USD"
+    ],
+    "VELO": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "VELODROME": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "VINE": [
+     "USDT"
+    ],
+    "VIRTUAL": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "VVV": [
+     "USDT"
+    ],
+    "W": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "WAXP": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "WCT": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "WET": [
+     "USDT"
+    ],
+    "WIF": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "WIN": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "WLD": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "WLFI": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "WOO": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "XAAOI": [
+     "USDT"
+    ],
+    "XAAPL": [
+     "USDC",
+     "USDT"
+    ],
+    "XACN": [
+     "USDT"
+    ],
+    "XADBE": [
+     "USDT"
+    ],
+    "XAEHR": [
+     "USDT"
+    ],
+    "XALAB": [
+     "USDT"
+    ],
+    "XAMAT": [
+     "USDT"
+    ],
+    "XAMC": [
+     "USDT"
+    ],
+    "XAMD": [
+     "USDC",
+     "USDT"
+    ],
+    "XAMZN": [
+     "USDC",
+     "USDT"
+    ],
+    "XAPLD": [
+     "USDT"
+    ],
+    "XAPP": [
+     "USDT"
+    ],
+    "XARM": [
+     "USDT"
+    ],
+    "XASML": [
+     "USDT"
+    ],
+    "XASTS": [
+     "USDT"
+    ],
+    "XAUT": [
+     "USDT"
+    ],
+    "XAVGO": [
+     "USDT"
+    ],
+    "XAXTI": [
+     "USDT"
+    ],
+    "XBB": [
+     "USDT"
+    ],
+    "XBE": [
+     "USDT"
+    ],
+    "XBMNR": [
+     "USDT"
+    ],
+    "XBOT": [
+     "USDT"
+    ],
+    "XBRKB": [
+     "USDT"
+    ],
+    "XBSP": [
+     "USDT"
+    ],
+    "XBX": [
+     "USDT"
+    ],
+    "XCBRS": [
+     "USDC",
+     "USDT"
+    ],
+    "XCGNX": [
+     "USDT"
+    ],
+    "XCH": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "XCIEN": [
+     "USDT"
+    ],
+    "XCOHR": [
+     "USDT"
+    ],
+    "XCOIN": [
+     "USDC",
+     "USDT"
+    ],
+    "XCOST": [
+     "USDT"
+    ],
+    "XCRCL": [
+     "USDC",
+     "USDT"
+    ],
+    "XCRDO": [
+     "USDT"
+    ],
+    "XCRM": [
+     "USDT"
+    ],
+    "XCRWD": [
+     "USDT"
+    ],
+    "XCRWV": [
+     "USDC",
+     "USDT"
+    ],
+    "XCSCO": [
+     "USDT"
+    ],
+    "XDDOG": [
+     "USDT"
+    ],
+    "XDELL": [
+     "USDT"
+    ],
+    "XDKNG": [
+     "USDT"
+    ],
+    "XDP": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "XDRAM": [
+     "USDT"
+    ],
+    "XEWJ": [
+     "USDT"
+    ],
+    "XEWT": [
+     "USDT"
+    ],
+    "XEWY": [
+     "USDC",
+     "USDT"
+    ],
+    "XEWZ": [
+     "USDT"
+    ],
+    "XFLNC": [
+     "USDT"
+    ],
+    "XFLY": [
+     "USDT"
+    ],
+    "XFWDI": [
+     "USDT"
+    ],
+    "XGEV": [
+     "USDT"
+    ],
+    "XGLW": [
+     "USDT"
+    ],
+    "XGME": [
+     "USDT"
+    ],
+    "XGOOGL": [
+     "USDC",
+     "USDT"
+    ],
+    "XGPRO": [
+     "USDT"
+    ],
+    "XGS": [
+     "USDT"
+    ],
+    "XGTLB": [
+     "USDT"
+    ],
+    "XHIMS": [
+     "USDT"
+    ],
+    "XHOOD": [
+     "USDC",
+     "USDT"
+    ],
+    "XHPE": [
+     "USDT"
+    ],
+    "XHUT": [
+     "USDT"
+    ],
+    "XIBM": [
+     "USDT"
+    ],
+    "XINFQ": [
+     "USDT"
+    ],
+    "XINTC": [
+     "USDC",
+     "USDT"
+    ],
+    "XINTW": [
+     "USDT"
+    ],
+    "XIONQ": [
+     "USDT"
+    ],
+    "XIREN": [
+     "USDT"
+    ],
+    "XISRG": [
+     "USDT"
+    ],
+    "XIWM": [
+     "USDT"
+    ],
+    "XJNJ": [
+     "USDT"
+    ],
+    "XJPM": [
+     "USDT"
+    ],
+    "XKLAC": [
+     "USDT"
+    ],
+    "XKO": [
+     "USDT"
+    ],
+    "XKORU": [
+     "USDT"
+    ],
+    "XLITE": [
+     "USDC",
+     "USDT"
+    ],
+    "XLLY": [
+     "USDT"
+    ],
+    "XLM": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "XLRCX": [
+     "USDT"
+    ],
+    "XLUNR": [
+     "USDT"
+    ],
+    "XLYTE": [
+     "USDT"
+    ],
+    "XMARA": [
+     "USDT"
+    ],
+    "XMCD": [
+     "USDT"
+    ],
+    "XMETA": [
+     "USDC",
+     "USDT"
+    ],
+    "XMRK": [
+     "USDT"
+    ],
+    "XMRNA": [
+     "USDT"
+    ],
+    "XMRVL": [
+     "USDC",
+     "USDT"
+    ],
+    "XMSFT": [
+     "USDT"
+    ],
+    "XMSTR": [
+     "USDC",
+     "USDT"
+    ],
+    "XMU": [
+     "USDC",
+     "USDT"
+    ],
+    "XMUU": [
+     "USDT"
+    ],
+    "XMVLL": [
+     "USDT"
+    ],
+    "XNBIS": [
+     "USDC",
+     "USDT"
+    ],
+    "XNET": [
+     "USDT"
+    ],
+    "XNFLX": [
+     "USDC",
+     "USDT"
+    ],
+    "XNKE": [
+     "USDT"
+    ],
+    "XNOW": [
+     "USDT"
+    ],
+    "XNVDA": [
+     "USDC",
+     "USDT"
+    ],
+    "XOKLO": [
+     "USDT"
+    ],
+    "XOKTA": [
+     "USDT"
+    ],
+    "XON": [
+     "USDT"
+    ],
+    "XONDS": [
+     "USDT"
+    ],
+    "XORCL": [
+     "USDT"
+    ],
+    "XOSCR": [
+     "USDT"
+    ],
+    "XOUST": [
+     "USDT"
+    ],
+    "XPENG": [
+     "USDT"
+    ],
+    "XPL": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "XPLTR": [
+     "USDT"
+    ],
+    "XPOET": [
+     "USDT"
+    ],
+    "XPOPMART": [
+     "USDT"
+    ],
+    "XPURR": [
+     "USDT"
+    ],
+    "XPYPL": [
+     "USDT"
+    ],
+    "XQCOM": [
+     "USDT"
+    ],
+    "XQNT": [
+     "USDT"
+    ],
+    "XQQQ": [
+     "USDC",
+     "USDT"
+    ],
+    "XRAM": [
+     "USDT"
+    ],
+    "XRDDT": [
+     "USDT"
+    ],
+    "XRDW": [
+     "USDT"
+    ],
+    "XRIOT": [
+     "USDT"
+    ],
+    "XRIVN": [
+     "USDT"
+    ],
+    "XRKLB": [
+     "USDT"
+    ],
+    "XROK": [
+     "USDT"
+    ],
+    "XRP": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "XSHAZ": [
+     "USDT"
+    ],
+    "XSHEIN": [
+     "USDT"
+    ],
+    "XSHLD": [
+     "USDT"
+    ],
+    "XSHOP": [
+     "USDT"
+    ],
+    "XSIMO": [
+     "USDT"
+    ],
+    "XSKHY": [
+     "USDC",
+     "USDT"
+    ],
+    "XSMCI": [
+     "USDT"
+    ],
+    "XSMH": [
+     "USDT"
+    ],
+    "XSNDK": [
+     "USDC",
+     "USDT"
+    ],
+    "XSNOW": [
+     "USDT"
+    ],
+    "XSNXX": [
+     "USDT"
+    ],
+    "XSOFI": [
+     "USDT"
+    ],
+    "XSONY": [
+     "USDT"
+    ],
+    "XSOXL": [
+     "USDC",
+     "USDT"
+    ],
+    "XSOXS": [
+     "USDT"
+    ],
+    "XSPCH": [
+     "USDT"
+    ],
+    "XSPCX": [
+     "USDC",
+     "USDT"
+    ],
+    "XSPY": [
+     "USDC",
+     "USDT"
+    ],
+    "XSQQQ": [
+     "USDT"
+    ],
+    "XSTRC": [
+     "USDT"
+    ],
+    "XTEAM": [
+     "USDT"
+    ],
+    "XTEM": [
+     "USDT"
+    ],
+    "XTER": [
+     "USDT"
+    ],
+    "XTESTA": [
+     "USDC",
+     "USDT"
+    ],
+    "XTMF": [
+     "USDT"
+    ],
+    "XTQQQ": [
+     "USDT"
+    ],
+    "XTSEM": [
+     "USDT"
+    ],
+    "XTSLA": [
+     "USDC",
+     "USDT"
+    ],
+    "XTSLL": [
+     "USDT"
+    ],
+    "XTSM": [
+     "USDT"
+    ],
+    "XTTMI": [
+     "USDT"
+    ],
+    "XTTWO": [
+     "USDT"
+    ],
+    "XTWLO": [
+     "USDT"
+    ],
+    "XTXN": [
+     "USDT"
+    ],
+    "XTZ": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "XUNH": [
+     "USDT"
+    ],
+    "XURNM": [
+     "USDT"
+    ],
+    "XUSAR": [
+     "USDT"
+    ],
+    "XUSO": [
+     "USDT"
+    ],
+    "XUVXY": [
+     "USDT"
+    ],
+    "XV": [
+     "USDT"
+    ],
+    "XVICR": [
+     "USDT"
+    ],
+    "XVRT": [
+     "USDT"
+    ],
+    "XWDC": [
+     "USDC",
+     "USDT"
+    ],
+    "XWEN": [
+     "USDT"
+    ],
+    "XWMT": [
+     "USDT"
+    ],
+    "XXBI": [
+     "USDT"
+    ],
+    "XXIAOMI": [
+     "USDT"
+    ],
+    "XXLE": [
+     "USDT"
+    ],
+    "XXOM": [
+     "USDT"
+    ],
+    "XZM": [
+     "USDT"
+    ],
+    "YB": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "YFI": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "YGG": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "ZAMA": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "ZBCN": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "ZEC": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "ZEN": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "ZENT": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "ZETA": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "ZIL": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "ZK": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "ZKJ": [
+     "USDT"
+    ],
+    "ZORA": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "ZRO": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ],
+    "ZRX": [
+     "EUR",
+     "USDC",
+     "USDT"
+    ]
+   },
+   "entity": "OKX Europe Limited",
+   "fetched_at": 1793111212,
+   "home": "MT",
+   "in_register": true,
+   "lei": "54930069NLWEIGLHXU42",
+   "qualifies": true,
+   "services": [
+    "a",
+    "b",
+    "c",
+    "d",
+    "e",
+    "f",
+    "g",
+    "i",
+    "j"
+   ],
+   "sha256": "b2cf8c68b853fcaf02735bbc5f8e402622a696fc8a07aa02ff0800c22b1c4cf4",
+   "url": "https://www.okx.com/api/v5/public/instruments?instType=SPOT"
+  }
+ }
+}

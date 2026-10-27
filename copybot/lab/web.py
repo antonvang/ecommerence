@@ -20,7 +20,7 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
-from lab import command, control, coverage, events, lifecycle, markets, mission, registry, researchview
+from lab import command, control, coverage, events, lifecycle, markets, mission, registry, researchview, venue
 from lab.data import AccessRefused
 from lab.db import DB, DEFAULT_DB
 from lab.paper import PaperEngine
@@ -110,6 +110,9 @@ def candidates(db):
         c.update({"detector": spec.get("discovered_by", "manual"), "reason": spec.get("reason"),
                   "hypothesis": spec.get("hypothesis"), "data_requirements": spec.get("data_requirements"),
                   "source": (spec.get("sources") or [None])[0]})
+        coins = [x for k in ("instrument", "instruments", "symbol", "symbols", "coins")
+                 for x in ([spec[k]] if isinstance(spec.get(k), str) else spec.get(k) or [])]
+        c["eu_venues"] = venue.label(coins) if coins else None              # amendment 30: information only
     dedupe = [dict(r) | {"payload": _j(r["payload"])} for r in db.q(
         "SELECT ts, kind, exp_id, payload FROM events WHERE kind IN ('candidate.covered','candidate.seen_again',"
         "'candidate.suppressed','candidate.pending_persistence') ORDER BY id DESC LIMIT 30")]
