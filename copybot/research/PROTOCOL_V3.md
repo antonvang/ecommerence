@@ -3823,3 +3823,19 @@ gebyrside sendte til login, som ikke blev brugt). Læst kl. 20:10–20:20 lokal:
 4. Bitstamp har også en MiFID-enhed til derivater: Bitstamp Financial Services Ltd. (Slovenien, ATVP). Om den har pas
    til Danmark, er uafklaret; kun en note til ændring 29b punkt 5.
 5. Uændret: tærskler, falsifikation og dommens krav (ændring 29a punkt 3, 29b punkt 2).
+
+## Ændring 29d (2026-10-28 kl. 14:06 lokal, før kode): en tom ordrebog springer pilotens runde over i stedet for at stoppe processen
+
+Fundet 2026-10-28: den tørre kørsel (ændring 29a punkt 2) stoppede kl. 00:35 UTC efter runde D6 (EPICUSDT, sprunget
+over for spread). Næste runde trak EPICUSDT igen; Binance spot har sat EPICUSDT til status `BREAK` (handel
+stoppet), og `api/v3/depth` svarer med tomme `bids` og `asks`. `pilot/exchange.py` læste `bids[0]` og gav
+`IndexError`, så processen døde uden en linje i hovedbogen. Det samme skete ved en genstart kl. 13:04 UTC (hovedbogen
+fik en `run`-linje med `rounds: 74`; den er en fejlstart, og kørslen tæller ikke de runder).
+
+1. **Tom bog = sprunget runde:** mangler bogen bud eller udbud, logges runden som `plan` med `skipped: "empty_book"`
+   (mønt, tilstand, beløb, urforskel; ingen bid/ask/mid) og springes over som en for bred spread. Intet sendes,
+   ingen stop, ingen ny trækning i samme runde.
+2. **Uændret:** mønterne (de 7 låste, også EPICUSDT), tilfældig trækning, stop, grænser, K3-vinduer og 80-runders
+   loftet. En sprunget runde tæller ikke som udført (som i dag for spread).
+3. **Genstart:** efter koden genstartes den tørre kørsel med de resterende runder af den oprindelige ordre på 40
+   (5 resultater er logget, altså `--rounds 35`).
