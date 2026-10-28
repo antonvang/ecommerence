@@ -1064,6 +1064,18 @@ def _data_probe(info, now, get, cache):
         raise ValueError(f"{bad}: stale bars")
 
 
+def _log_skip(db, ledger, coin, hour, det, now):
+    """Amendment 31 point 4: one paper.skipped per account, coin and hour (events are append-only: no repeat rows)."""
+    for r in db.q("SELECT payload FROM events WHERE kind='paper.skipped' AND exp_id=? ORDER BY id DESC LIMIT 200",
+                  ledger):
+        p = json.loads(r["payload"]) if isinstance(r["payload"], str) else r["payload"]
+        if p.get("coin") == coin and p.get("hour") == hour:
+            return
+    db.event("paper.skipped", ACTOR, ledger, {"coin": coin, "hour": hour, "t": int(now), "liquidity": det,
+                                              "reason": f"likviditetsregel (31): {det.get('reason')}"[:200],
+                                              "simulated": True, "rule": "research/PROTOCOL_V3.md amendment 31"})
+
+
 def run_one(db, ledger, get, now, cache=None, books=None):
     from lab import paper_runner as pr
     info = started(db)[ledger]
@@ -1121,11 +1133,24 @@ def run_one(db, ledger, get, now, cache=None, books=None):
                 books[inst] = b
         if fresh:
             q = size / bk[p_inst].mid()
+        legs_ = []
         for inst, target, cur in ((s_inst, q, sq), (p_inst, -q, pq)):
             delta = target - cur
             if abs(delta) * bk[inst].mid() < MIN_NOTIONAL:
                 continue
             reduce_only = abs(target) < abs(cur) and (target == 0 or (target > 0) == (cur > 0))
+            legs_.append((inst, delta, reduce_only))
+        grow = [abs(d) * bk[i].mid() for i, d, ro in legs_ if not ro]
+        blocked = False
+        if grow:                                        # amendment 31: opening/increasing legs pass amendment 25's gate
+            ok, det = liquidity_gate(db, bk, max(grow), now)
+            if not ok:
+                blocked = True
+                _log_skip(db, ledger, s, hour, det, now)
+        for inst, delta, reduce_only in legs_:
+            if blocked and not reduce_only:
+                orders.append({"instrument": inst, "status": "not sent: likviditetsregel (31)", "qty": abs(delta)})
+                continue
             r = eng.submit_taker(ledger, f"{ledger}|{hour}|{inst}", inst, "buy" if delta > 0 else "sell", abs(delta),
                                  bk[inst], reduce_only=reduce_only,
                                  signal_ref=f"{info['family']}.{info['function']}@{hour}")

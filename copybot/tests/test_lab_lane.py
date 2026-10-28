@@ -235,6 +235,30 @@ class Trade(Base):
         lane.run_one(self.db, led, g, NOW + 2 * DAY)
         self.assertEqual(PaperEngine(self.db).ledger(led)["positions"], {})
 
+    def test_31_running_lane_opens_only_within_the_floor_and_always_closes(self):
+        led = self.started()
+        wide = market(spread=0.4)                       # 0.4 % a leg, 0.8 % a coin: over 0.46 %
+        r = lane.run_one(self.db, led, wide, NOW)
+        self.assertEqual(PaperEngine(self.db).ledger(led)["positions"], {})
+        self.assertEqual({o["status"] for o in r["orders"]}, {"not sent: likviditetsregel (31)"})
+        self.assertEqual(len(r["orders"]), 2 * len(COINS))
+        lane.run_one(self.db, led, wide, NOW + 60)      # the same hour again: no repeat rows
+        rows = [json.loads(x["payload"]) for x in
+                self.db.q("SELECT payload FROM events WHERE kind='paper.skipped' AND exp_id=?", led)]
+        self.assertEqual(sorted(p["coin"] for p in rows), sorted(COINS))
+        self.assertTrue(all("likviditetsregel (31): bogens rundtur" in p["reason"] for p in rows))
+        self.assertAlmostEqual(rows[0]["liquidity"]["round_trip"], 0.008, places=6)
+        good = market()
+        good.now = NOW + HOUR                           # the book is fine again: the lane opens
+        lane.run_one(self.db, led, good, NOW + HOUR)
+        self.assertEqual(len(PaperEngine(self.db).ledger(led)["positions"]), 2 * len(COINS))
+        off = market(rate=0.0, spread=2.0)             # a 4 % book never blocks a close
+        off.now = NOW + 2 * DAY
+        lane.run_one(self.db, led, off, NOW + 2 * DAY)
+        self.assertEqual(PaperEngine(self.db).ledger(led)["positions"], {})
+        self.assertEqual(len(self.db.q("SELECT 1 FROM events WHERE kind='paper.skipped' AND exp_id=?", led)),
+                         len(COINS))
+
     def test_only_public_depth_on_the_spot_host(self):
         log = []
         led = self.started(market(log=log))
@@ -1068,8 +1092,8 @@ class Execution(Base):
     def test_decomposition_sums_to_net_without_double_counting(self):
         self.scan(NOW - 60, {"BBBUSDT": 0.003})
         led = lane.manage(self.db, NOW, hi(), fids=[])["scanner"]["started"][0]
-        lane.run_one(self.db, led, market(rate=0.0008, spread=0.4), NOW)
-        g = market(rate=0.0008, spread=0.4, px=101.0, spot_px=100.8)          # price and basis move
+        lane.run_one(self.db, led, market(rate=0.0008, spread=0.2), NOW)     # 0.4 % round trip: within amendment 31
+        g = market(rate=0.0008, spread=0.2, px=101.0, spot_px=100.8)          # price and basis move
         g.now = NOW + 8 * HOUR
         lane.run_one(self.db, led, g, g.now)
         d = lane.decomposition(self.db, led)
