@@ -3896,3 +3896,40 @@ opdagelige effekt 18,9x gulvet). En SCREEN_FAIL uden styrke er uafgjort, men ble
      til at bekræfte eller afvise dem, aldrig en lille fordel.
    - K3 har allerede en styrkeberegning (ændring 22 F punkt 1: ca. 25–35 bp ved 60 runder) og opfylder punkt 1.
 5. **Uændret:** alle tærskler, alfaer, gates, gulvet (21i), option C, K3, pm_lp, holdouts og papirkonti.
+
+## Ændring 33 (2026-10-28 kl. 16:53 lokal, før kode og før nogen C4-udfald): C4 — volumen uden pris → unormal volatilitet (census, metode m33)
+
+**Beslutning:** Claude under brugerens mandat (Mission 25; "JA kør og fortsæt med alt selv tag styringen",
+2026-10-28 ca. kl. 16:50 lokal). Census har 25 timer (`census_check.py`: kun antal); intet udfald er beregnet eller
+set. Ingen gate, tærskel, alfa, lås eller konto ændres. En PASS giver kun en dateret risikoregel-hypotese (som C3),
+aldrig en strategi; intet afgørende læser `census/1` (ændring 28 punkt 5).
+
+**Nyhed (ikke genoplivning):** `high_volume_return_premium` testede afkast efter høj volumen; m21c testede retning
+efter store prisbevægelser. C4 kræver høj volumen **uden** prisbevægelse og har et volatilitets-udfald uden retning.
+Ingen af de 48 mekanismetags eller ændring 17-nøgler bruger det.
+
+**Mekanisme:** usædvanlig omsætning uden kursændring tyder på informeret handel, akkumulering eller en kommende
+begivenhed (notering, afnotering, nyhed). Det forudsiger en større kursbevægelse, ikke retningen. Hvis det holder, er
+det en risikoregel for carry-baner: EPIC/MITO/HOT tabte netop på pludselige bevægelser og afnoteringer.
+
+1. **Data:** census-snapshots ved 00:00 UTC (række med ts i [D, D + 10 min)), krypto-perps i `coin_perps` (28a punkt 1).
+   V_s,D = `quoteVolume` (24 t, ticker); P_s,D = |ln(`lastPrice`/`openPrice`)| (ticker, samme række); p_s,D = `markPrice`.
+2. **Hændelse på døgn D:** V_s,D ≥ 1 mio. USD; mindst 5 af V_s,D−1..D−7 findes; V_s,D ≥ 3 × medianen af dem; og
+   P_s,D < 3 %. Højst én hændelse pr. mønt pr. 7 døgn (den første).
+3. **Udfald:** a_s,D = |ln(p_s,D+1/p_s,D)| − medianen af |ln(p_s,D−k+1/p_s,D−k)| for k = 1..7 (mindst 5 til stede).
+   y = a_s,D − medianen af a over alle krypto-perps samme døgn med V ≥ 1 mio. USD, der ikke er hændelser (mindst 50).
+   Positiv y = mere bevægelse end møntens egen normal, ud over markedets.
+4. **Test:** klynge = UTC-døgn D (gennemsnit af y); **ensidig** fortegnsskift-test (forudsagt y > 0), 20 000 træk,
+   seed 7, p ≤ 0,005; samme fortegn i første og anden halvdel af klyngerne (mindst 10 hver).
+5. **Placebo:** samme hændelser, udfaldet målt 7 døgn tidligere (a_s,D−7 med samme definition og samme dags
+   tværsnitsmedian D−7). p > 0,05 kræves.
+6. **Styrke (ændring 32, før data):** sd fra explore0, ubetinget, samme udfaldsdefinition (24 217 mønt-døgn, 665 døgn):
+   5,23 %. Ensidig 0,005, 80 %: MDE 3,38 % ved 28 klynger, **2,31 % ved 60**, 1,88 % ved 90. Ikke-afkast-udfald,
+   intet gulv. Hændelsesdøgn er gennemsnit af flere hændelser, så den reelle sd pr. klynge er lavere (konservativt).
+7. **Hvornår:** første kørsel ved det første UTC-døgns afslutning, hvor der er ≥ 60 klynger og census har ≥ 60 døgn.
+   Én kørsel; resultatet committes uanset udfald. Er der < 60 klynger 2027-03-31, er C4 UNTESTABLE. Indtil da
+   rapporteres kun antal hændelser og klynger, aldrig y.
+8. **Domme:** PASS (p ≤ 0,005, halvdele, placebo ok); ellers SCREEN_FAIL. Familien census har nu 4 nøgler, hver
+   p ≤ 0,005 (familieniveau ≤ 2 %).
+9. **Skrevet før data (forventning):** moderat chance for PASS; vigtigste risiko er, at volumen-spring ofte følger en
+   kursbevægelse uden for 24 t-vinduet (P-filteret fanger det ikke helt), og at nye/afnoterede mønter dominerer.
