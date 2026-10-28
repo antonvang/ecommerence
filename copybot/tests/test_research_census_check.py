@@ -76,7 +76,25 @@ class Check(unittest.TestCase):
         self.assertEqual(r["c2_candidate_days"], 1)
         self.assertGreaterEqual(r["c3_day_pairs"], 6)
         self.assertEqual(set(r), {"c1_events", "c1_clusters_need", "c2_candidate_days", "c2_clusters_need",
-                                  "c3_day_pairs", "c3_need", "note"})                 # counts only, no outcome
+                                  "c3_day_pairs", "c3_need", "c4_events", "c4_event_days", "c4_clusters_need",
+                                  "census_days", "census_days_need_c4", "note"})     # counts only, no outcome
+
+    def test_c4_counts_volume_without_price_once_per_coin_per_week(self):
+        """Amendment 33 point 2: V >= 3x the median of the prior 7 daily snapshots, V >= 1 mio, |24 h change| < 3 %."""
+        def tick(vol, chg):
+            return [{"symbol": "ALTUSDT", "lastPrice": str(1 + chg), "openPrice": "1", "highPrice": "1", "lowPrice": "1",
+                     "quoteVolume": str(vol), "count": 1, "closeTime": 0},
+                    {"symbol": "BIGUSDT", "lastPrice": "1.1", "openPrice": "1", "highPrice": "1", "lowPrice": "1",
+                     "quoteVolume": str(vol), "count": 1, "closeTime": 0}]
+        plan = {8: (9e6, 0.01), 9: (9e6, 0.01), 12: (9e6, 0.01)}      # day 9 repeats inside 7 days; day 12 too
+        for d in range(13):
+            vol, chg = plan.get(d, (2e6, 0.0))
+            rows = prem(100, 500, ("ALTUSDT", "BIGUSDT"))
+            census.observe(self.db, H0 + d * 86400 + 61, rows, lambda u, v=vol, c=chg: tick(v, c),
+                           perps={"BTCUSDT", "ALTUSDT", "BIGUSDT"})
+        r = cc.check(self.con(), H0 + 13 * 86400)["readiness"]
+        self.assertEqual((r["c4_events"], r["c4_event_days"]), (1, 1))  # BIG moved 10 %: never an event
+        self.assertEqual(r["census_days"], 13)
 
 
 if __name__ == "__main__":

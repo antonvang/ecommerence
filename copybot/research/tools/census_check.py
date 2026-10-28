@@ -67,8 +67,43 @@ def readiness(snaps):
             c2 += 1
     full = {d for d in days if sum(1 for k in range(24) if ret(snaps, "BTCUSDT", d + k * HOUR) is not None) >= 22}
     c3 = sum(1 for d in full if d + DAY in full)
+    c4_events, c4_days = c4(snaps, days)
     return {"c1_events": c1, "c1_clusters_need": 15, "c2_candidate_days": c2, "c2_clusters_need": 15,
-            "c3_day_pairs": c3, "c3_need": 28, "note": "antal kun; intet udfald beregnet (28a punkt 7)"}
+            "c3_day_pairs": c3, "c3_need": 28, "c4_events": c4_events, "c4_event_days": c4_days,
+            "c4_clusters_need": 60, "census_days": len(days), "census_days_need_c4": 60,
+            "note": "antal kun; intet udfald beregnet (28a punkt 7, 33 punkt 7)"}
+
+
+def field(p, sym, col):
+    row = p["rows"].get(sym)
+    return None if not row else row[p["columns"].index(col)]
+
+
+def c4(snaps, days):
+    """Amendment 33 point 2: volume-without-price events at the 00:00 UTC snapshot. Uses only V and P at D (known at D);
+    never a price after D (no outcome)."""
+    last, events, ev_days = {}, 0, 0
+    for d in days:
+        snap = snaps.get(d)
+        if not snap or snap[0] - d >= 600:
+            continue
+        p, n = snap[1], 0
+        for sym in p.get("coin_perps") or []:
+            v, lp, op = field(p, sym, "quoteVolume"), field(p, sym, "lastPrice"), field(p, sym, "openPrice")
+            if v is None or v < 1e6 or not lp or not op or lp <= 0 or op <= 0:
+                continue
+            prev = [field(snaps[d - k * DAY][1], sym, "quoteVolume") for k in range(1, 8)
+                    if d - k * DAY in snaps and snaps[d - k * DAY][0] - (d - k * DAY) < 600]
+            prev = [x for x in prev if x is not None]
+            if len(prev) < 5 or v < 3 * statistics.median(prev) or abs(math.log(lp / op)) >= 0.03:
+                continue
+            if sym in last and d - last[sym] < 7 * DAY:
+                continue
+            last[sym] = d
+            n += 1
+        events += n
+        ev_days += n > 0
+    return events, ev_days
 
 
 def check(con, now):
