@@ -879,3 +879,15 @@ starter, stopper og genoptager intet. Laben, pm_lp-collectoren, pauseregler og F
   - en K3-runde (ændring 22) er nået S − 30 min til S + 35 min uden `selection` eller `missed`.
 - **Fail-closed:** kan databasen ikke læses, er komponenten nede, aldrig ok.
 - **Alarmering:** via vagtens eksisterende kanal (log, statusfil og skrivebordsnotifikation), påmindelse højst hver time.
+
+- **2026-10-28 kl. 17:05 lokal (Mission 25, kun læsning): værten er gået ned uden nedlukning 5 gange på 9 døgn.**
+  `journalctl --list-boots`: opstarterne, der sluttede 2026-10-20 23:24, 10-21 12:47, 10-23 15:07, 10-26 12:39 og
+  10-28 03:26 (lokal), har ingen `systemd-shutdown`-linje (10-19's to stop var rene). Ingen MCE-, I/O-, ATA-, EXT4- eller
+  OOM-linjer før nogen af dem. De tre sidste sluttede med smartd-linjen "Airflow_Temperature_Cel changed from 71 to 72",
+  "76 to 74" (10-23 14:02, sidste aflæsning) og "69 to 70". Disken er en Samsung SSD 830 (`/sys/block/sda/device/model`,
+  ikke-roterende); attribut 190 er dens egen temperatur, i dette døgn op til 76 °C. CPU'en er 49–54 °C (coretemp; høj
+  80 °C). 10-28-stoppet kom tilbage efter 4 min uden et menneske (03:26 → 03:30). **Ikke bevist:** at varmen er
+  årsagen; mønstret (stop uden spor ved 69–76 °C) passer på en SSD, der hænger ved overophedning. K3-runden
+  2026-10-26 12:00 UTC er ugyldig af netop det stop (udgangsmålinger mangler; tælles, erstattes ikke).
+  **Ejerhandling:** bedre køling/luftgennemstrømning til SSD'en (støv, blæser, plads omkring kabinettet) før
+  pm_lp-fristen 10-31 → 11-27, hvor der ikke må genstartes; et stop i den periode koster pm_lp-dækning.
