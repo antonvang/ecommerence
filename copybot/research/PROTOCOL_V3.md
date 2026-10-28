@@ -3863,3 +3863,36 @@ omkostningsregel, gate, alfa, K1/K2/K3-protokol, holdout, pm_lp eller sikkerheds
    `orders`-status (`not sent: likviditetsregel (31)`).
 5. **Forventet effekt:** 0 ordrer på historikken (udkastets tørkørsel). Reglen er forebyggelse fremover, ikke en
    rettelse af resultater.
+
+## Ændring 32 (2026-10-28 kl. 16:52 lokal, før kode): styrkekrav før data for nye hypoteser (Mission 25, brugerens ja)
+
+**Beslutning:** brugeren sagde "JA kør og fortsæt med alt selv tag styringen" (2026-10-28 ca. kl. 16:50 lokal) til
+forslaget i `research/studies/STYRKE_AUDIT_2026-10-28.md` punkt 4. Reglen er strammere: den gør ingen test lettere at
+bestå, ændrer ingen afgørelse og ingen låst nøgle (C1–C3, K1–K3, H5F, H5X, U1F, M1F, R3, fcarry, MVRV, pm_lp, F2).
+
+**Grund:** 38 af 40 unikke afgjorte afkast-screeninger kunne ikke se en fordel på omkostningsgulvet (median mindste
+opdagelige effekt 18,9x gulvet). En SCREEN_FAIL uden styrke er uafgjort, men blev læst som et nej.
+
+1. **Før data:** hver ny dateret hypotese (fra denne ændring) angiver i sin tekst:
+   - horisont, udfald (BTC, alt mod BTC, kurv, ikke-afkast) og den test, alfa og det klyngeantal n, den forventer at
+     have ved sin første mulige kørsel;
+   - en sd for udfaldet, der **ikke** er hypotesens egne udfaldsdata: explore0's ubetingede sd for samme horisont og
+     udfaldstype fra `research/tools/power_plan.py` (cache, ingen netværk), eller en anden kilde med begrundelse;
+   - MDE = (z₁₋α/₂ + 0,842) · sd / √n (80 % styrke; ensidig test bruger z₁₋α) og forholdet MDE/gulv, hvor gulvet er
+     hypotesens eget omkostningskrav (mindst 21i's 0,46 %). For ikke-afkast-udfald angives den påviselige effekt i
+     testens egen skala (fx ρ).
+2. **Mærke:** er MDE > 2 × gulvet, står hypotesen som "kan kun finde store effekter (32)". Den må stadig låses og
+   køres; en SCREEN_FAIL rapporteres da som "SCREEN_FAIL (lav styrke, 32)", og en PASS gælder kun effekter af den
+   størrelse. Afgørelsesreglerne er uændrede.
+3. **Ingen tilpasning bagefter:** sd, n og MDE står fast fra teksten; de rettes aldrig efter data. Forkert sd er en
+   noteret afvigelse, ikke en grund til at gentage testen.
+4. **Eksisterende låste spor (kun oplysning, beregnet med `power_plan.py` 2026-10-28; explore0 ubetinget sd,
+   1 t / 4 t / 24 t / 7 d: BTC 0,89 / 1,72 / 4,58 / 11,24 %, alt mod BTC (median) 1,62 / 3,19 / 7,22 / 16,85 %):**
+   - C1 (BTC 1 t, p ≤ 0,005): MDE 0,84 % ved 15 klynger, 0,61 % ved 28; gulvet nås ved ca. 50.
+   - C2 (BTC 24 t, p ≤ 0,005): MDE 4,3 % ved 15 klynger (9x gulvet) → kan kun finde store effekter.
+   - C3 (Spearman, ensidig 0,005, 28 par): påviselig ρ ≈ (2,576 + 0,842)/√25 ≈ 0,68 → kun en meget stærk sammenhæng.
+   - H5F/H5X/U1F/M1F (α 0,05, 20 hændelser): alt mod BTC MDE 4,5 % (1 d) og 10,6 % (7 d) med ubetinget sd; nye
+     listninger svinger mere, så den reelle MDE er højere. De gentager store effekter (−5 til −19 %) og er kun i stand
+     til at bekræfte eller afvise dem, aldrig en lille fordel.
+   - K3 har allerede en styrkeberegning (ændring 22 F punkt 1: ca. 25–35 bp ved 60 runder) og opfylder punkt 1.
+5. **Uændret:** alle tærskler, alfaer, gates, gulvet (21i), option C, K3, pm_lp, holdouts og papirkonti.
