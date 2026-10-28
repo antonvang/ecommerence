@@ -89,9 +89,13 @@ def play(ex, ledger, rng, now=time.time, sleep=time.sleep):
     if abs(skew) > P.MAX_SKEW_MS:
         ledger.stop(f"urforskel {skew:.0f} ms")
     book = ex.book(symbol)
+    rid = f"{'D' if dry else 'L'}{len([r for r in ledger.rows() if r.get('kind') == 'plan']) + 1}"
+    if book["bid"] is None or book["ask"] is None:              # amendment 29d: a halted market skips the round
+        ledger.append(kind="plan", round=rid, dry=dry, symbol=symbol, mode=mode, quote=P.ROUND_USDT,
+                      skew_ms=round(skew), skipped="empty_book")
+        return None
     mid = (book["bid"] + book["ask"]) / 2
     spread = (book["ask"] - book["bid"]) / mid
-    rid = f"{'D' if dry else 'L'}{len([r for r in ledger.rows() if r.get('kind') == 'plan']) + 1}"
     plan = dict(kind="plan", round=rid, dry=dry, symbol=symbol, mode=mode, quote=P.ROUND_USDT, bid=book["bid"],
                 ask=book["ask"], mid=mid, spread_bp=bp(spread), skew_ms=round(skew))
     if spread > P.MAX_SPREAD:

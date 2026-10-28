@@ -96,6 +96,17 @@ class Rounds(Base):
         self.assertIsNone(self.ledger.state()["stopped"])
         self.assertEqual(self.ledger.rows()[-1]["skipped"], "spread")
 
+    def test_29d_an_empty_book_skips_without_stopping_or_sending(self):
+        ex = self.ex()
+        ex.get = lambda url: ({"bids": [], "asks": []} if "depth" in url else book_get(clock=self.clock)(url))
+        for name in ("buy_market_quote", "sell_market", "buy_limit_maker"):
+            setattr(ex, name, lambda *a: self.fail("nothing may be sent"))
+        self.assertIsNone(self.play(ex))
+        self.assertIsNone(self.ledger.state()["stopped"])
+        row = self.ledger.rows()[-1]
+        self.assertEqual((row["kind"], row["skipped"], row["round"]), ("plan", "empty_book", "D1"))
+        self.assertNotIn("mid", row)
+
     def test_walk_and_step(self):
         self.assertEqual(walk([["10", "1"], ["20", "1"]], "buy", quote=20)[1], 1.5)
         self.assertAlmostEqual(floor_step(1.23456, 0.001), 1.234)

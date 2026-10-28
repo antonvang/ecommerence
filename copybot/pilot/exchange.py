@@ -45,7 +45,9 @@ class Public:
 
     def book(self, symbol):
         d = self.get(f"{self.base}/api/v3/depth?symbol={symbol}&limit=20")
-        return {"bids": d["bids"], "asks": d["asks"], "bid": float(d["bids"][0][0]), "ask": float(d["asks"][0][0])}
+        bids, asks = d.get("bids") or [], d.get("asks") or []    # empty on a halted market, e.g. status BREAK (29d)
+        return {"bids": bids, "asks": asks, "bid": float(bids[0][0]) if bids else None,
+                "ask": float(asks[0][0]) if asks else None}
 
     def filters(self, symbol):
         if symbol not in self._filters:
