@@ -69,3 +69,13 @@ Census `census/1` 2026-10-28 15:5x UTC: 25 af 25 timer siden 2026-10-27 15:00 UT
 0 dubletter, 0 fejl, 935 symboler, 519–520 krypto-perps. Ticker-felterne er `null` for 140 symboler (15 %), alle
 uden for krypto-perp-listen (afnoterede/ikke-handlende); 0 krypto-perps mangler ticker. Klarhed: C1 0/15, C2 0/15,
 C3 0/28. Intet udfald beregnet.
+
+## Tillæg 2026-10-28 kl. 17:02 lokal: survivorship i explore0-universet
+
+Universet for m21-screeningerne (ændring 21c punkt 1: alle cachede `<mønt>USDT` med en explore0-måned) er 132 mønter.
+44 af dem (33 %) er ikke krypto-perps i census' seneste snapshot (afnoteret eller omdøbt), fx BZRX, KEEP, LUNA, SRM,
+BTCST, LEND, FTM, MATIC, EOS, MKR. Af de 101 mønter, der kun kom med via hændelsesstudier, er 43 væk; af de 31 fra
+lab'ens faste lister (UNIVERSE_30 m.fl., valgt efter nutidige kriterier) kun 1. Konklusion: m21-screeningerne er ikke
+groft overlevelses-skævvredne; katalogets 30-mønt-universer er (kendt, `research/FUNDING_AUDIT.md` punkt 1).
+Ukendt: om cachen dækker *alle* perps, der fandtes i 2020-21 (kræver en mappeliste fra data.binance.vision; ikke
+hentet, historisk spærring til 2026-11-14).
