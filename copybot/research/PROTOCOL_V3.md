@@ -3839,3 +3839,27 @@ fik en `run`-linje med `rounds: 74`; den er en fejlstart, og kørslen tæller ik
    loftet. En sprunget runde tæller ikke som udført (som i dag for spread).
 3. **Genstart:** efter koden genstartes den tørre kørsel med de resterende runder af den oprindelige ordre på 40
    (5 resultater er logget, altså `--rounds 35`).
+
+## Ændring 31 (2026-10-28 kl. 14:39 lokal, før kode): likviditetsregel for nye handler i en kørende bane (brugerens ja)
+
+**Beslutning:** brugeren sagde "JA" (2026-10-28 ca. kl. 14:37 lokal) til udkastet
+`research/drafts/LEVETIDSREGEL_UDKAST_2026-10-25.md`. Claude anbefalede at vente, fordi tørkørslen på alle tidligere
+baneordrer fandt 0 ekstra blokerede ordrer (0 USD) ud over ændring 25. Reglen gør kun papirhandlen strammere. Ingen
+omkostningsregel, gate, alfa, K1/K2/K3-protokol, holdout, pm_lp eller sikkerhedsregel lempes.
+
+1. **Hvor:** `lane.run_one`, dvs. alle kørende papirkonti, der handler gennem den (familiebaner, scanner-konti og
+   HL-konti). Kun ben, hvis ordre åbner eller øger en position (ikke `reduce_only`). Lukninger, reduktioner og
+   rebalanceringer nedad sendes altid; intet lukkes automatisk.
+2. **Måling:** ændring 25's `liquidity_gate` uændret: bøgerne læst i samme gennemløb som ordren, VWAP-afstand køb +
+   salg gennem 20 niveauer pr. ben, summeret over møntens ben (spot og perp), og pr. ben den største af den levende
+   måling og en kapacitetskurve, der højst er 24 t gammel. Størrelsen pr. ben er den største notionelle værdi blandt
+   møntens åbnende/øgende ben (ordrens faktiske mængde × midten).
+3. **Grænse:** 0,46 % (uændret gulv). Over grænsen, eller hvis bogen er tom, krydset eller for tynd, eller kurven siger
+   `not_trading`/`error`/censureret, sendes møntens åbnende/øgende ben ikke. Ordre-id'erne er de samme
+   (`<konto>|<time>|<instrument>`), så næste gennemløb i samme time måler igen og sender, hvis bogen er blevet god nok.
+4. **Logning:** én `paper.skipped`-hændelse pr. konto, mønt og time med målingerne (første afvisning). Udkastet bad om
+   at tælle gentagne afvisninger i samme række, men `events` er append-only og hash-kædet, så en række kan ikke
+   opdateres. Senere afvisninger samme time logges derfor ikke som nye rækker; de står kun i gennemløbets
+   `orders`-status (`not sent: likviditetsregel (31)`).
+5. **Forventet effekt:** 0 ordrer på historikken (udkastets tørkørsel). Reglen er forebyggelse fremover, ikke en
+   rettelse af resultater.
