@@ -1,0 +1,250 @@
+{
+ "report": {
+  "rows": 1672,
+  "errors": 21,
+  "coins": {
+   "BTC": {
+    "Kraken": {
+     "n": 74,
+     "median_diff_bp": 0.01,
+     "books_only": true,
+     "median_diff_with_fees_bp": 140.01
+    },
+    "Bitstamp": {
+     "n": 74,
+     "median_diff_bp": 2.51,
+     "books_only": true,
+     "median_diff_with_fees_bp": 62.51
+    },
+    "OKX": {
+     "n": 74,
+     "median_diff_bp": 0.01,
+     "books_only": true,
+     "median_diff_with_fees_bp": 20.01
+    },
+    "Bitvavo": {
+     "n": 74,
+     "median_diff_bp": 1.61,
+     "books_only": true,
+     "median_diff_with_fees_bp": -8.39
+    },
+    "Coinbase": {
+     "n": 74,
+     "median_diff_bp": 1.6,
+     "books_only": true,
+     "median_diff_with_fees_bp": 81.6
+    }
+   },
+   "ETH": {
+    "Kraken": {
+     "n": 75,
+     "median_diff_bp": 0.26,
+     "books_only": true,
+     "median_diff_with_fees_bp": 140.25
+    },
+    "Bitstamp": {
+     "n": 75,
+     "median_diff_bp": 4.46,
+     "books_only": true,
+     "median_diff_with_fees_bp": 64.46
+    },
+    "OKX": {
+     "n": 74,
+     "median_diff_bp": 0.0,
+     "books_only": true,
+     "median_diff_with_fees_bp": 20.0
+    },
+    "Bitvavo": {
+     "n": 74,
+     "median_diff_bp": 3.88,
+     "books_only": true,
+     "median_diff_with_fees_bp": -6.12
+    },
+    "Coinbase": {
+     "n": 74,
+     "median_diff_bp": 3.67,
+     "books_only": true,
+     "median_diff_with_fees_bp": 83.67
+    }
+   },
+   "XTZ": {
+    "Kraken": {
+     "n": 75,
+     "median_diff_bp": 2.54,
+     "books_only": true,
+     "median_diff_with_fees_bp": 142.53
+    },
+    "Bitstamp": {
+     "n": 75,
+     "median_diff_bp": 47.68,
+     "books_only": true,
+     "median_diff_with_fees_bp": 107.68
+    },
+    "OKX": {
+     "n": 74,
+     "median_diff_bp": 3.53,
+     "books_only": true,
+     "median_diff_with_fees_bp": 23.53
+    },
+    "Bitvavo": {
+     "n": 75,
+     "median_diff_bp": 10.51,
+     "books_only": true,
+     "median_diff_with_fees_bp": 40.51
+    },
+    "Coinbase": {
+     "n": 75,
+     "median_diff_bp": 3.59,
+     "books_only": true,
+     "median_diff_with_fees_bp": 83.59
+    }
+   },
+   "VET": {
+    "Kraken": {
+     "n": 75,
+     "median_diff_bp": 36.85,
+     "books_only": true,
+     "median_diff_with_fees_bp": 176.85
+    },
+    "Bitvavo": {
+     "n": 75,
+     "median_diff_bp": 3.54,
+     "books_only": true,
+     "median_diff_with_fees_bp": 33.54
+    },
+    "Coinbase": {
+     "n": 75,
+     "median_diff_bp": 9.35,
+     "books_only": true,
+     "median_diff_with_fees_bp": 89.35
+    }
+   }
+  },
+  "hours": 48.6,
+  "fees": {
+   "Binance": {
+    "taker": 0.001,
+    "read": "2026-10-27",
+    "url": "https://www.binance.com/en/fee/schedule",
+    "quote": "Regular User 0.100% / 0.100%"
+   },
+   "Kraken": {
+    "taker": 0.008,
+    "read": "2026-10-27",
+    "url": "https://www.kraken.com/features/fee-schedule",
+    "quote": "Tier 1 $0+ < $5M N/A 0.40 % 0.80 %"
+   },
+   "OKX": {
+    "taker": 0.002,
+    "read": "2026-10-27",
+    "url": "https://www.okx.com/en-us/help/important-notice-upcoming-adjustment-to-vip-trading-volume-tiers-europe",
+    "quote": "| Regular | 0 | 0 | 0.100% | 0.200% | (spot only)"
+   },
+   "Bitstamp": {
+    "taker": 0.004,
+    "read": "2026-10-27",
+    "url": "https://www.bitstamp.net/fee-schedule/",
+    "quote": "< $10,000 | 0.30% | 0.40% (standard; valid from 21 October 2026)"
+   },
+   "Bitvavo": {
+    "taker": {
+     "EUR": 0.0025,
+     "USDC": 0.0005
+    },
+    "read": "2026-10-27",
+    "url": "https://bitvavo.com/en/fees",
+    "quote": "A, EUR markets: €0 + | 0.15% | 0.25%; B, USDC markets: €0 + | 0.05% | 0.05%"
+   },
+   "Coinbase": {
+    "taker": 0.005,
+    "read": "2026-10-27",
+    "url": "https://www.coinbase.com/blog/were-lowering-fees-for-many-active-traders-on-coinbase-advanced",
+    "quote": "EU and UK: 0.25% maker & 0.50% taker"
+   }
+  },
+  "note": "median_diff_with_fees_bp lægger 2 x taker-forskellen til (29b); uafklaret gebyr = None; V1-dom kun med gebyr og >= 50 pr. mønt over >= 48 t"
+ },
+ "verdict": {
+  "rule": "research/PROTOCOL_V3.md amendment 29a point 3, 29b point 2",
+  "limit_bp": 10.0,
+  "hours": 48.6,
+  "venues": {
+   "Bitstamp": {
+    "coins": 3,
+    "over_limit": [
+     "BTC",
+     "ETH",
+     "XTZ"
+    ],
+    "median_with_fees_bp": {
+     "BTC": 62.51,
+     "ETH": 64.46,
+     "XTZ": 107.68
+    },
+    "verdict": "V1 forkastet"
+   },
+   "Bitvavo": {
+    "coins": 4,
+    "over_limit": [
+     "VET",
+     "XTZ"
+    ],
+    "median_with_fees_bp": {
+     "BTC": -8.39,
+     "ETH": -6.12,
+     "XTZ": 40.51,
+     "VET": 33.54
+    },
+    "verdict": "V1 forkastet"
+   },
+   "Coinbase": {
+    "coins": 4,
+    "over_limit": [
+     "BTC",
+     "ETH",
+     "VET",
+     "XTZ"
+    ],
+    "median_with_fees_bp": {
+     "BTC": 81.6,
+     "ETH": 83.67,
+     "XTZ": 83.59,
+     "VET": 89.35
+    },
+    "verdict": "V1 forkastet"
+   },
+   "Kraken": {
+    "coins": 4,
+    "over_limit": [
+     "BTC",
+     "ETH",
+     "VET",
+     "XTZ"
+    ],
+    "median_with_fees_bp": {
+     "BTC": 140.01,
+     "ETH": 140.25,
+     "XTZ": 142.53,
+     "VET": 176.85
+    },
+    "verdict": "V1 forkastet"
+   },
+   "OKX": {
+    "coins": 3,
+    "over_limit": [
+     "BTC",
+     "ETH",
+     "XTZ"
+    ],
+    "median_with_fees_bp": {
+     "BTC": 20.01,
+     "ETH": 20.0,
+     "XTZ": 23.53
+    },
+    "verdict": "V1 forkastet"
+   }
+  }
+ },
+ "source": "/home/anton/ecommerence/copybot/data/v1/books.jsonl (1672 rows at verdict time)",
+ "tool": "research/tools/v1_books.py verdict (2eabf30)"
+}
