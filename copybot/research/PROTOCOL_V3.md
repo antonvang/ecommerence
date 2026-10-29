@@ -3840,6 +3840,26 @@ fik en `run`-linje med `rounds: 74`; den er en fejlstart, og kørslen tæller ik
 3. **Genstart:** efter koden genstartes den tørre kørsel med de resterende runder af den oprindelige ordre på 40
    (5 resultater er logget, altså `--rounds 35`).
 
+## Ændring 29e (2026-10-29 kl. 07:59 lokal, før kode): en netværksfejl før planen springer pilotens runde over i stedet for at stoppe processen
+
+Fundet 2026-10-29: den tørre kørsel (ændring 29a punkt 2) døde 2026-10-28 kl. 20:35 UTC, efter runde D11 (19:53 lokal).
+Næste runde fik `URLError: The handshake operation timed out` fra `api/v3/exchangeInfo` (offentlige data,
+`pilot/exchange.py`). Kaldet ligger før planlinjen og uden for rundens fejlhåndtering, så processen døde uden en linje
+i hovedbogen. Intet var sendt (dry run sender aldrig noget). Stand: 9 tørre runder, 27,8 t, 0 stop.
+
+1. **Netværksfejl før planen = sprunget runde:** giver en af de tre læsninger før planlinjen (møntfiltre, servertid,
+   ordrebog) en netværksfejl (`OSError`, herunder `URLError`, timeout og afbrudt forbindelse), logges runden som `plan`
+   med `skipped: "network"` (mønt, tilstand, beløb, fejltekst; ingen bid/ask/mid) og springes over som en for bred
+   spread. Intet er sendt på det tidspunkt, så ingen position kan være åben; ingen stop, ingen ny trækning i samme runde.
+   Næste forsøg kommer efter den sædvanlige pause (30-120 min).
+2. **Uændret:** fejl efter planlinjen går stadig gennem `_flatten` (sælg, og stop ved mulig åben position); andre
+   fejl end netværksfejl før planen stopper stadig processen; mønterne, trækning, stop, grænser, K3-vinduer, 80-runders
+   loftet og bevis-kravet (≥ 20 tørre runder over ≥ 48 t, ingen stop). En sprunget runde tæller ikke som udført.
+3. **Ikke en lempelse:** reglen gælder kun før noget sendes. Den rigtige-penge-kode skal bygges om (ændring 29a) og
+   får sin egen regel for netværksfejl under en ordre.
+4. **Genstart:** kørslen genstartes efter deploy med `--rounds 30` (9 + 30 = 39 < 80). Pausen 10-28 20:35 UTC til
+   genstarten er ikke et stop og ændrer ikke beviskravet; timerne tæller som i dag fra første til sidste tørre runde.
+
 ## Ændring 31 (2026-10-28 kl. 14:39 lokal, før kode): likviditetsregel for nye handler i en kørende bane (brugerens ja)
 
 **Beslutning:** brugeren sagde "JA" (2026-10-28 ca. kl. 14:37 lokal) til udkastet
