@@ -891,3 +891,16 @@ starter, stopper og genoptager intet. Laben, pm_lp-collectoren, pauseregler og F
   2026-10-26 12:00 UTC er ugyldig af netop det stop (udgangsmålinger mangler; tælles, erstattes ikke).
   **Ejerhandling:** bedre køling/luftgennemstrømning til SSD'en (støv, blæser, plads omkring kabinettet) før
   pm_lp-fristen 10-31 → 11-27, hvor der ikke må genstartes; et stop i den periode koster pm_lp-dækning.
+
+## 2026-10-29 kl. 09:48 lokal: internetudfald 07:29-08:05 UTC (ikke deployet)
+
+- pm_lp: 36 minutter uden snapshot (07:29-08:05 UTC, plus enkeltminutter 06:26, 07:10, 08:07, 08:08, 08:31); dagens
+  løbende dækning faldt til 89,4 % (< 90 %, D1-advarsel i watch kl. 08:47 UTC). Collectoren (pid 1039) kørte hele
+  tiden; kun læst, intet ændret. Resten af dagen hel giver ca. 95 %.
+- Samme vindue: systemd-timesyncd fik ingen svar fra NTP-serverne (08:31-09:06 lokal), så forbindelsen var nede uden
+  for maskinen (router/udbyder), ikke lab'en. Deployet e2ec913 var færdigt kl. 07:12 UTC, 17 min før.
+- Følger: data_fetch-pauser i 16 papirkonti (løftes selv efter ~1 t, ændring 18); V1 har 21 fejlrækker (DNS/TLS,
+  10-28 og 10-29); pilotens dry run døde 10-28 20:35 UTC af samme slags fejl (rettet i ændring 29e).
+- K3-runden 08:00 UTC lå i udfaldet; dens audit kommer ~11 UTC og tælles, som den falder.
+- Ejer-handling (anbefaling): tjek router/udbyder, hvis udfald gentager sig; i pm_lp-perioden 10-31..11-27 koster
+  hvert udfald dækning.
