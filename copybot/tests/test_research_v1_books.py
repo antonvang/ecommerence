@@ -83,5 +83,23 @@ class Sample(unittest.TestCase):
         self.assertTrue(v.VENUES["OKX"][0]("BTC").startswith("https://eea.okx.com/"))
 
 
+class Verdict(unittest.TestCase):
+    def rep(self, hours=50.0, n=55, cells=None):
+        cells = cells or {"BTC": 20.0, "ETH": 5.0, "XTZ": 12.0, "VET": -3.0}
+        return {"hours": hours, "coins": {c: {"X": {"n": n, "median_diff_with_fees_bp": v}} for c, v in cells.items()}}
+
+    def test_rejected_at_half_the_common_coins(self):
+        res = v.verdict(self.rep())["venues"]["X"]
+        self.assertEqual((res["verdict"], res["over_limit"]), ("V1 forkastet", ["BTC", "XTZ"]))
+
+    def test_not_rejected_below_half_and_exactly_10_bp_is_not_over(self):
+        res = v.verdict(self.rep(cells={"BTC": 10.0, "ETH": 5.0, "XTZ": 12.0, "VET": -3.0}))["venues"]["X"]
+        self.assertEqual(res["verdict"], "V1 ikke forkastet")
+
+    def test_no_verdict_before_48_h_50_samples_or_with_an_unknown_fee(self):
+        for rep in (self.rep(hours=47.9), self.rep(n=49), self.rep(cells={"BTC": None, "ETH": 1.0})):
+            self.assertEqual(v.verdict(rep)["venues"]["X"]["verdict"], "ingen dom endnu")
+
+
 if __name__ == "__main__":
     unittest.main()
