@@ -1,0 +1,746 @@
+{
+ "T": 1793210400,
+ "T_utc": "2026-10-28T18:00:00+00:00",
+ "event": "FOMC statement",
+ "generated": 1793306586.0058959,
+ "label": "DESCRIPTIVE integration test - one event, never evidence for a strategy",
+ "markets": {
+  "BTCUSDT": {
+   "bars": 746,
+   "label": "Bitcoin (Binance perp)",
+   "missing": [],
+   "ret_1h": 0.0018614958893565844,
+   "ret_24h": 0.0003166741325967284,
+   "ret_4h": 0.006123929338406941,
+   "sha256": "c26f51e4ff9f4ab4a7ce7563f07a5a6235d5ed04b720d1ab47034617e1d26d6a",
+   "url": "https://fapi.binance.com/fapi/v1/klines?symbol=BTCUSDT&interval=1h&startTime=1790611200000&endTime=1793296799999&limit=1500",
+   "volume_ratio_event_hour": 4.391596140369223,
+   "z_event_hour": 0.5604441821902489
+  },
+  "BZUSDT": {
+   "bars": 746,
+   "label": "Brent-olie (Binance TradFi-perp)",
+   "missing": [],
+   "ret_1h": 0.0008948546458437055,
+   "ret_24h": -0.009173551156429862,
+   "ret_4h": -0.00926390579846106,
+   "sha256": "e54dbc5aeaadf52d7dbbf8b834a5c37cc9242e82d5902c8a1a8e6017e61e1575",
+   "url": "https://fapi.binance.com/fapi/v1/klines?symbol=BZUSDT&interval=1h&startTime=1790611200000&endTime=1793296799999&limit=1500",
+   "volume_ratio_event_hour": 5.42991002192641,
+   "z_event_hour": 0.2247097463436153
+  },
+  "CLUSDT": {
+   "bars": 746,
+   "label": "WTI-olie (Binance TradFi-perp)",
+   "missing": [],
+   "ret_1h": 0.00204210699643603,
+   "ret_24h": -0.007523607720257746,
+   "ret_4h": -0.006347367631692617,
+   "sha256": "f22986349add149348907a492bdcd17e10240f244a7bc68da585233bbd2bb6f1",
+   "url": "https://fapi.binance.com/fapi/v1/klines?symbol=CLUSDT&interval=1h&startTime=1790611200000&endTime=1793296799999&limit=1500",
+   "volume_ratio_event_hour": 2.3613083572826588,
+   "z_event_hour": 0.47960121761986385
+  },
+  "COPPERUSDT": {
+   "bars": 746,
+   "label": "Kobber (Binance TradFi-perp)",
+   "missing": [],
+   "ret_1h": -0.0005984440633419678,
+   "ret_24h": -0.012340261940025254,
+   "ret_4h": 0.0010464161205981804,
+   "sha256": "039a5bd7ba08fa030dfd5385e37a355e9718217269604c0e52d204bca648dbdb",
+   "url": "https://fapi.binance.com/fapi/v1/klines?symbol=COPPERUSDT&interval=1h&startTime=1790611200000&endTime=1793296799999&limit=1500",
+   "volume_ratio_event_hour": 4.764105448954767,
+   "z_event_hour": -0.2782660683096668
+  },
+  "ETHUSDT": {
+   "bars": 746,
+   "label": "Ether (Binance perp)",
+   "missing": [],
+   "ret_1h": 0.004329425739172036,
+   "ret_24h": -0.001425955183153535,
+   "ret_4h": 0.008318688438510961,
+   "sha256": "be86d000eeca78c6b0515c89b2dc75b5dd5e4af63c1d0b1214987564ab058b11",
+   "url": "https://fapi.binance.com/fapi/v1/klines?symbol=ETHUSDT&interval=1h&startTime=1790611200000&endTime=1793296799999&limit=1500",
+   "volume_ratio_event_hour": 3.94892634423559,
+   "z_event_hour": 0.9399652107541482
+  },
+  "NATGASUSDT": {
+   "bars": 746,
+   "label": "Naturgas (Binance TradFi-perp)",
+   "missing": [],
+   "ret_1h": -0.009534841264692385,
+   "ret_24h": -0.033269868218318795,
+   "ret_4h": -0.004591677467172986,
+   "sha256": "c2868ccbbd67250d44f19e0f050a2425d3fc40a746af25642f835f80d3c62511",
+   "url": "https://fapi.binance.com/fapi/v1/klines?symbol=NATGASUSDT&interval=1h&startTime=1790611200000&endTime=1793296799999&limit=1500",
+   "volume_ratio_event_hour": 3.0623744256153254,
+   "z_event_hour": -2.2392731328957978
+  },
+  "QQQUSDT": {
+   "bars": 746,
+   "label": "Nasdaq-100-fond QQQ (Binance TradFi-perp)",
+   "missing": [],
+   "ret_1h": 0.001173765782092317,
+   "ret_24h": -0.013241173737351805,
+   "ret_4h": -0.0030166770265388516,
+   "sha256": "53f222c67f7ae8d36cda56f33cfcd863c206fc5c6b61112a4c416c647d186ba3",
+   "url": "https://fapi.binance.com/fapi/v1/klines?symbol=QQQUSDT&interval=1h&startTime=1790611200000&endTime=1793296799999&limit=1500",
+   "volume_ratio_event_hour": 6.9520082263395055,
+   "z_event_hour": 0.6339988815789401
+  },
+  "SPYUSDT": {
+   "bars": 746,
+   "label": "S&P 500-fond SPY (Binance TradFi-perp)",
+   "missing": [],
+   "ret_1h": -0.0004142555757197653,
+   "ret_24h": -0.005385741486733459,
+   "ret_4h": -0.0014117618928451983,
+   "sha256": "3edd6fda1b81a67c0edd838c3c86ee135246adccc3719100b077f07c1cd57d4b",
+   "url": "https://fapi.binance.com/fapi/v1/klines?symbol=SPYUSDT&interval=1h&startTime=1790611200000&endTime=1793296799999&limit=1500",
+   "volume_ratio_event_hour": 15.169710491414817,
+   "z_event_hour": -0.35967701383724276
+  },
+  "USDBRLUSDT": {
+   "bars": 746,
+   "label": "USD/BRL (Binance TradFi-perp)",
+   "missing": [],
+   "ret_1h": -0.00246204473977515,
+   "ret_24h": 0.00796003794814696,
+   "ret_4h": -0.0017153302486870997,
+   "sha256": "444abfd7a4c5f9a1e9e55017b9a9b9ee6407037da397e3d4b72c440ad44f0383",
+   "url": "https://fapi.binance.com/fapi/v1/klines?symbol=USDBRLUSDT&interval=1h&startTime=1790611200000&endTime=1793296799999&limit=1500",
+   "volume_ratio_event_hour": 25.764811517294877,
+   "z_event_hour": -0.6805224748960149
+  },
+  "XAGUSDT": {
+   "bars": 746,
+   "label": "S\u00f8lv (Binance TradFi-perp)",
+   "missing": [],
+   "ret_1h": -0.002421083220060173,
+   "ret_24h": -0.030597287709538352,
+   "ret_4h": 0.0057498071790194,
+   "sha256": "57002ed17a6f78e2667f6806fb4073107550851a175b79f46bcd68e1b6e3c9a2",
+   "url": "https://fapi.binance.com/fapi/v1/klines?symbol=XAGUSDT&interval=1h&startTime=1790611200000&endTime=1793296799999&limit=1500",
+   "volume_ratio_event_hour": 15.298200333992984,
+   "z_event_hour": -0.6902620198897433
+  },
+  "XAUUSDT": {
+   "bars": 746,
+   "label": "Guld (Binance TradFi-perp)",
+   "missing": [],
+   "ret_1h": -0.002022255379540367,
+   "ret_24h": -0.00859930716056575,
+   "ret_4h": 0.006228893058229277,
+   "sha256": "e50149029c0fc1a468430d607d0f2c65f6d3f5eb54c0be98f49b73cbcb25086a",
+   "url": "https://fapi.binance.com/fapi/v1/klines?symbol=XAUUSDT&interval=1h&startTime=1790611200000&endTime=1793296799999&limit=1500",
+   "volume_ratio_event_hour": 11.119613687634262,
+   "z_event_hour": -1.0453387343986176
+  },
+  "XPTUSDT": {
+   "bars": 746,
+   "label": "Platin (Binance TradFi-perp)",
+   "missing": [],
+   "ret_1h": -0.0016253294869507235,
+   "ret_24h": -0.03514328946100639,
+   "ret_4h": 0.004161783773238031,
+   "sha256": "46372d56d865aefd1eae77ac9a6dc560acb0d817eaf84eb47d58e9c996227ce6",
+   "url": "https://fapi.binance.com/fapi/v1/klines?symbol=XPTUSDT&interval=1h&startTime=1790611200000&endTime=1793296799999&limit=1500",
+   "volume_ratio_event_hour": 5.90122916052537,
+   "z_event_hour": -0.49767081444163314
+  }
+ },
+ "news": {
+  "duplicate_titles": 0,
+  "fed": [
+   {
+    "latency_s": 552.0,
+    "published_ts": 1793210400.0,
+    "stored_ts": 1793210952,
+    "title": "Federal Reserve issues FOMC statement"
+   }
+  ],
+  "fed_errors": 9,
+  "fed_feed_newest_published": 1793210400.0,
+  "fed_last_fetch_label": "efter T",
+  "fed_last_fetch_ok": 1793217577,
+  "fed_latest_stored": {
+   "label": "i vinduet",
+   "published_ts": 1793210400.0,
+   "stored_ts": 1793210952,
+   "title": "Federal Reserve issues FOMC statement"
+  },
+  "fed_status": "ok",
+  "news_errors": [
+   {
+    "source": "https://api.gdeltproject.org/api/v2/doc/doc",
+    "ts": 1793210340
+   },
+   {
+    "source": "https://api.gdeltproject.org/api/v2/doc/doc",
+    "ts": 1793217577
+   },
+   {
+    "source": "https://cointelegraph.com/rss",
+    "ts": 1793219995
+   },
+   {
+    "source": "https://cointelegraph.com/rss",
+    "ts": 1793220635
+   },
+   {
+    "source": "https://www.federalreserve.gov/feeds/press_all.xml",
+    "ts": 1793220635
+   },
+   {
+    "source": "https://www.cnbc.com/id/20910258/device/rss/rss.html",
+    "ts": 1793220635
+   },
+   {
+    "source": "https://api.gdeltproject.org/api/v2/doc/doc",
+    "ts": 1793237714
+   },
+   {
+    "source": "https://www.federalreserve.gov/feeds/press_all.xml",
+    "ts": 1793238928
+   },
+   {
+    "source": "https://api.gdeltproject.org/api/v2/doc/doc",
+    "ts": 1793241335
+   },
+   {
+    "source": "https://api.gdeltproject.org/api/v2/doc/doc",
+    "ts": 1793248572
+   },
+   {
+    "source": "https://www.binance.com/bapi/composite/v1/public/cms/article/list/query",
+    "ts": 1793259108
+   },
+   {
+    "source": "https://www.binance.com/bapi/composite/v1/public/cms/article/list/query",
+    "ts": 1793259108
+   },
+   {
+    "source": "https://www.binance.com/bapi/composite/v1/public/cms/article/list/query",
+    "ts": 1793259108
+   },
+   {
+    "source": "https://cointelegraph.com/rss",
+    "ts": 1793259108
+   },
+   {
+    "source": "https://www.coindesk.com/arc/outboundfeeds/rss",
+    "ts": 1793259108
+   },
+   {
+    "source": "https://www.federalreserve.gov/feeds/press_all.xml",
+    "ts": 1793259108
+   },
+   {
+    "source": "https://www.bls.gov/feed/bls_latest.rss",
+    "ts": 1793259108
+   },
+   {
+    "source": "https://www.ecb.europa.eu/rss/press.html",
+    "ts": 1793259108
+   },
+   {
+    "source": "https://www.cnbc.com/id/20910258/device/rss/rss.html",
+    "ts": 1793259108
+   },
+   {
+    "source": "https://www.binance.com/bapi/composite/v1/public/cms/article/list/query",
+    "ts": 1793259723
+   },
+   {
+    "source": "https://www.binance.com/bapi/composite/v1/public/cms/article/list/query",
+    "ts": 1793259723
+   },
+   {
+    "source": "https://www.binance.com/bapi/composite/v1/public/cms/article/list/query",
+    "ts": 1793259723
+   },
+   {
+    "source": "https://cointelegraph.com/rss",
+    "ts": 1793259723
+   },
+   {
+    "source": "https://www.coindesk.com/arc/outboundfeeds/rss",
+    "ts": 1793259723
+   },
+   {
+    "source": "https://www.federalreserve.gov/feeds/press_all.xml",
+    "ts": 1793259723
+   },
+   {
+    "source": "https://www.bls.gov/feed/bls_latest.rss",
+    "ts": 1793259723
+   },
+   {
+    "source": "https://www.ecb.europa.eu/rss/press.html",
+    "ts": 1793259723
+   },
+   {
+    "source": "https://www.cnbc.com/id/20910258/device/rss/rss.html",
+    "ts": 1793259723
+   },
+   {
+    "source": "https://www.binance.com/bapi/composite/v1/public/cms/article/list/query",
+    "ts": 1793260354
+   },
+   {
+    "source": "https://www.binance.com/bapi/composite/v1/public/cms/article/list/query",
+    "ts": 1793260354
+   },
+   {
+    "source": "https://www.binance.com/bapi/composite/v1/public/cms/article/list/query",
+    "ts": 1793260354
+   },
+   {
+    "source": "https://cointelegraph.com/rss",
+    "ts": 1793260354
+   },
+   {
+    "source": "https://www.coindesk.com/arc/outboundfeeds/rss",
+    "ts": 1793260354
+   },
+   {
+    "source": "https://www.federalreserve.gov/feeds/press_all.xml",
+    "ts": 1793260354
+   },
+   {
+    "source": "https://www.bls.gov/feed/bls_latest.rss",
+    "ts": 1793260354
+   },
+   {
+    "source": "https://www.ecb.europa.eu/rss/press.html",
+    "ts": 1793260354
+   },
+   {
+    "source": "https://www.cnbc.com/id/20910258/device/rss/rss.html",
+    "ts": 1793260354
+   },
+   {
+    "source": "https://www.binance.com/bapi/composite/v1/public/cms/article/list/query",
+    "ts": 1793260985
+   },
+   {
+    "source": "https://www.binance.com/bapi/composite/v1/public/cms/article/list/query",
+    "ts": 1793260985
+   },
+   {
+    "source": "https://www.binance.com/bapi/composite/v1/public/cms/article/list/query",
+    "ts": 1793260985
+   },
+   {
+    "source": "https://cointelegraph.com/rss",
+    "ts": 1793260985
+   },
+   {
+    "source": "https://www.coindesk.com/arc/outboundfeeds/rss",
+    "ts": 1793260985
+   },
+   {
+    "source": "https://www.federalreserve.gov/feeds/press_all.xml",
+    "ts": 1793260985
+   },
+   {
+    "source": "https://www.bls.gov/feed/bls_latest.rss",
+    "ts": 1793260985
+   },
+   {
+    "source": "https://www.ecb.europa.eu/rss/press.html",
+    "ts": 1793260985
+   },
+   {
+    "source": "https://www.cnbc.com/id/20910258/device/rss/rss.html",
+    "ts": 1793260985
+   },
+   {
+    "source": "https://www.federalreserve.gov/feeds/press_all.xml",
+    "ts": 1793264029
+   },
+   {
+    "source": "https://www.binance.com/bapi/composite/v1/public/cms/article/list/query",
+    "ts": 1793265845
+   },
+   {
+    "source": "https://www.binance.com/bapi/composite/v1/public/cms/article/list/query",
+    "ts": 1793265845
+   },
+   {
+    "source": "https://www.binance.com/bapi/composite/v1/public/cms/article/list/query",
+    "ts": 1793265845
+   },
+   {
+    "source": "https://cointelegraph.com/rss",
+    "ts": 1793265845
+   },
+   {
+    "source": "https://www.coindesk.com/arc/outboundfeeds/rss",
+    "ts": 1793265845
+   },
+   {
+    "source": "https://www.federalreserve.gov/feeds/press_all.xml",
+    "ts": 1793265845
+   },
+   {
+    "source": "https://www.bls.gov/feed/bls_latest.rss",
+    "ts": 1793265845
+   },
+   {
+    "source": "https://www.ecb.europa.eu/rss/press.html",
+    "ts": 1793265845
+   },
+   {
+    "source": "https://www.cnbc.com/id/20910258/device/rss/rss.html",
+    "ts": 1793265845
+   },
+   {
+    "source": "https://www.binance.com/bapi/composite/v1/public/cms/article/list/query",
+    "ts": 1793267086
+   },
+   {
+    "source": "https://www.binance.com/bapi/composite/v1/public/cms/article/list/query",
+    "ts": 1793267086
+   },
+   {
+    "source": "https://www.binance.com/bapi/composite/v1/public/cms/article/list/query",
+    "ts": 1793267086
+   },
+   {
+    "source": "https://cointelegraph.com/rss",
+    "ts": 1793267086
+   },
+   {
+    "source": "https://www.coindesk.com/arc/outboundfeeds/rss",
+    "ts": 1793267086
+   },
+   {
+    "source": "https://www.federalreserve.gov/feeds/press_all.xml",
+    "ts": 1793267086
+   },
+   {
+    "source": "https://www.bls.gov/feed/bls_latest.rss",
+    "ts": 1793267086
+   },
+   {
+    "source": "https://www.ecb.europa.eu/rss/press.html",
+    "ts": 1793267086
+   },
+   {
+    "source": "https://www.cnbc.com/id/20910258/device/rss/rss.html",
+    "ts": 1793267086
+   }
+  ],
+  "other_macro": {
+   "cnbc_economy": {
+    "first_latency_s": null,
+    "items": 0
+   },
+   "ecb_press": {
+    "first_latency_s": null,
+    "items": 0
+   }
+  }
+ },
+ "rule": "research/PROTOCOL_V3.md amendment 21d",
+ "scanner": {
+  "flags": [
+   {
+    "delay_s": 120,
+    "instrument": "USDBRLUSDT",
+    "metric": "volume_ratio",
+    "ts": 1793210520,
+    "value": 156.45254846298835
+   },
+   {
+    "delay_s": 121,
+    "instrument": "BZUSDT",
+    "metric": "volume_ratio",
+    "ts": 1793214121,
+    "value": 5.42991002192641
+   },
+   {
+    "delay_s": 121,
+    "instrument": "QQQUSDT",
+    "metric": "volume_ratio",
+    "ts": 1793214121,
+    "value": 6.9520082263395055
+   },
+   {
+    "delay_s": 121,
+    "instrument": "SPYUSDT",
+    "metric": "volume_ratio",
+    "ts": 1793214121,
+    "value": 15.169710491414817
+   },
+   {
+    "delay_s": 121,
+    "instrument": "USDBRLUSDT",
+    "metric": "volume_ratio",
+    "ts": 1793214121,
+    "value": 25.764811517294877
+   },
+   {
+    "delay_s": 121,
+    "instrument": "XAGUSDT",
+    "metric": "volume_ratio",
+    "ts": 1793214121,
+    "value": 15.298200333992984
+   },
+   {
+    "delay_s": 121,
+    "instrument": "XAUUSDT",
+    "metric": "volume_ratio",
+    "ts": 1793214121,
+    "value": 11.119613687634262
+   },
+   {
+    "delay_s": 121,
+    "instrument": "XPTUSDT",
+    "metric": "volume_ratio",
+    "ts": 1793214121,
+    "value": 5.90122916052537
+   },
+   {
+    "delay_s": 120,
+    "instrument": "COPPERUSDT",
+    "metric": "volume_ratio",
+    "ts": 1793217720,
+    "value": 6.255631039888557
+   },
+   {
+    "delay_s": 120,
+    "instrument": "SPYUSDT",
+    "metric": "volume_ratio",
+    "ts": 1793217720,
+    "value": 11.841308525460736
+   },
+   {
+    "delay_s": 120,
+    "instrument": "USDBRLUSDT",
+    "metric": "volume_ratio",
+    "ts": 1793217720,
+    "value": 56.052846582778976
+   },
+   {
+    "delay_s": 120,
+    "instrument": "XAGUSDT",
+    "metric": "volume_ratio",
+    "ts": 1793217720,
+    "value": 8.1759184590861
+   },
+   {
+    "delay_s": 120,
+    "instrument": "XAUUSDT",
+    "metric": "volume_ratio",
+    "ts": 1793217720,
+    "value": 5.674404166459032
+   },
+   {
+    "delay_s": 120,
+    "instrument": "XAGUSDT",
+    "metric": "z_1h",
+    "ts": 1793217720,
+    "value": 4.120498992141315
+   },
+   {
+    "delay_s": 120,
+    "instrument": "XAUUSDT",
+    "metric": "z_1h",
+    "ts": 1793217720,
+    "value": 5.110032140431991
+   }
+  ],
+  "problems": [
+   {
+    "detail": "BTCUSDT: URLError(gaierror(-3, 'Temporary failure in name resolution'))",
+    "instrument": "BTCUSDT",
+    "metric": "error",
+    "ts": 1793260921
+   },
+   {
+    "detail": "COPPERUSDT: URLError(gaierror(-3, 'Temporary failure in name resolution'))",
+    "instrument": "COPPERUSDT",
+    "metric": "error",
+    "ts": 1793260921
+   },
+   {
+    "detail": "ETHUSDT: URLError(gaierror(-3, 'Temporary failure in name resolution'))",
+    "instrument": "ETHUSDT",
+    "metric": "error",
+    "ts": 1793260921
+   },
+   {
+    "detail": "XAGUSDT: URLError(gaierror(-3, 'Temporary failure in name resolution'))",
+    "instrument": "XAGUSDT",
+    "metric": "error",
+    "ts": 1793260921
+   },
+   {
+    "detail": "XAUUSDT: URLError(gaierror(-3, 'Temporary failure in name resolution'))",
+    "instrument": "XAUUSDT",
+    "metric": "error",
+    "ts": 1793260921
+   },
+   {
+    "detail": "XPTUSDT: URLError(gaierror(-3, 'Temporary failure in name resolution'))",
+    "instrument": "XPTUSDT",
+    "metric": "error",
+    "ts": 1793260921
+   }
+  ],
+  "records": [
+   {
+    "book": {
+     "fees": {
+      "included_in_round_trip": false,
+      "maker": 0.0,
+      "source": "Binance announcement a4c3f1957f2b4e69902985154235c3b1: promotion from 2026-03-31 02:00 UTC until further notice (regular users)",
+      "taker": 0.0004
+     },
+     "round_trip": 2.4749994122416636e-06,
+     "size_usd": 5000.0,
+     "spread": 2.4749994121291137e-06
+    },
+    "flags": [
+     "volume_ratio"
+    ],
+    "fomc_in_macro": true,
+    "id": 27899,
+    "instrument": "XAUUSDT",
+    "macro_error": null,
+    "move_hour_s": 1793210400,
+    "news": 4,
+    "news_public_before_hour_end": 4,
+    "outcome_24h": -0.0052726052762634285
+   },
+   {
+    "book": {
+     "fees": {
+      "included_in_round_trip": false,
+      "maker": 0.0,
+      "source": "Binance announcement a4c3f1957f2b4e69902985154235c3b1: promotion from 2026-03-31 02:00 UTC until further notice (regular users)",
+      "taker": 0.0004
+     },
+     "round_trip": 0.0001866542230517594,
+     "size_usd": 5000.0,
+     "spread": 0.0001866542230517594
+    },
+    "flags": [
+     "volume_ratio"
+    ],
+    "fomc_in_macro": true,
+    "id": 27900,
+    "instrument": "XAGUSDT",
+    "macro_error": null,
+    "move_hour_s": 1793210400,
+    "news": 1,
+    "news_public_before_hour_end": 1,
+    "outcome_24h": -0.02683456557237286
+   },
+   {
+    "book": {
+     "fees": {
+      "included_in_round_trip": false,
+      "maker": 0.0,
+      "source": "Binance announcement a4c3f1957f2b4e69902985154235c3b1: promotion from 2026-03-31 02:00 UTC until further notice (regular users)",
+      "taker": 0.0004
+     },
+     "round_trip": 0.00047015594589536723,
+     "size_usd": 5000.0,
+     "spread": 0.00019530232800372022
+    },
+    "flags": [
+     "volume_ratio"
+    ],
+    "fomc_in_macro": true,
+    "id": 27901,
+    "instrument": "XPTUSDT",
+    "macro_error": null,
+    "move_hour_s": 1793210400,
+    "news": 0,
+    "news_public_before_hour_end": 0,
+    "outcome_24h": -0.03277811100400868
+   },
+   {
+    "book": {
+     "fees": {
+      "included_in_round_trip": false,
+      "maker": 0.0,
+      "source": "Binance announcement a4c3f1957f2b4e69902985154235c3b1: promotion from 2026-03-31 02:00 UTC until further notice (regular users)",
+      "taker": 0.0004
+     },
+     "round_trip": 1.2941884467932718e-05,
+     "size_usd": 5000.0,
+     "spread": 1.2941884467932718e-05
+    },
+    "flags": [
+     "volume_ratio"
+    ],
+    "fomc_in_macro": true,
+    "id": 27902,
+    "instrument": "SPYUSDT",
+    "macro_error": null,
+    "move_hour_s": 1793210400,
+    "news": 5,
+    "news_public_before_hour_end": 5,
+    "outcome_24h": -0.004659229858515516
+   },
+   {
+    "book": {
+     "fees": {
+      "included_in_round_trip": false,
+      "maker": 0.0,
+      "source": "Binance announcement a4c3f1957f2b4e69902985154235c3b1: promotion from 2026-03-31 02:00 UTC until further notice (regular users)",
+      "taker": 0.0004
+     },
+     "round_trip": 0.00010470750891311153,
+     "size_usd": 5000.0,
+     "spread": 1.3800622408058053e-05
+    },
+    "flags": [
+     "volume_ratio"
+    ],
+    "fomc_in_macro": true,
+    "id": 27903,
+    "instrument": "QQQUSDT",
+    "macro_error": null,
+    "move_hour_s": 1793210400,
+    "news": 4,
+    "news_public_before_hour_end": 4,
+    "outcome_24h": -0.014274936439147708
+   },
+   {
+    "book": {
+     "fees": {
+      "included_in_round_trip": false,
+      "maker": 0.0,
+      "source": "Binance announcement a4c3f1957f2b4e69902985154235c3b1: promotion from 2026-03-31 02:00 UTC until further notice (regular users)",
+      "taker": 0.0004
+     },
+     "round_trip": 0.00016463504932713604,
+     "size_usd": 5000.0,
+     "spread": 0.00014862153526050886
+    },
+    "flags": [
+     "volume_ratio"
+    ],
+    "fomc_in_macro": true,
+    "id": 27980,
+    "instrument": "COPPERUSDT",
+    "macro_error": null,
+    "move_hour_s": 1793214000,
+    "news": 0,
+    "news_public_before_hour_end": 0,
+    "outcome_24h": -0.014548438078508738
+   }
+  ],
+  "scan_delay_s": {
+   "max": 703,
+   "median": 121.0
+  },
+  "scans": 28
+ }
+}
