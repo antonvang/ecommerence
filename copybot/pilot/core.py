@@ -84,12 +84,17 @@ def play(ex, ledger, rng, now=time.time, sleep=time.sleep):
     if P.ROUND_USDT > P.MAX_ORDER_USDT:
         ledger.stop("rundebeløb over største ordre")
     symbol, mode = rng.choice(P.SYMBOLS), rng.choice(("taker", "maker"))
-    f = ex.filters(symbol)
-    skew = ex.server_ms() - now() * 1000
-    if abs(skew) > P.MAX_SKEW_MS:
-        ledger.stop(f"urforskel {skew:.0f} ms")
-    book = ex.book(symbol)
     rid = f"{'D' if dry else 'L'}{len([r for r in ledger.rows() if r.get('kind') == 'plan']) + 1}"
+    try:
+        f = ex.filters(symbol)
+        skew = ex.server_ms() - now() * 1000
+        if abs(skew) > P.MAX_SKEW_MS:
+            ledger.stop(f"urforskel {skew:.0f} ms")
+        book = ex.book(symbol)
+    except OSError as e:                                        # amendment 29e: nothing is sent before the plan
+        ledger.append(kind="plan", round=rid, dry=dry, symbol=symbol, mode=mode, quote=P.ROUND_USDT,
+                      skipped="network", error=repr(e)[:200])
+        return None
     if book["bid"] is None or book["ask"] is None:              # amendment 29d: a halted market skips the round
         ledger.append(kind="plan", round=rid, dry=dry, symbol=symbol, mode=mode, quote=P.ROUND_USDT,
                       skew_ms=round(skew), skipped="empty_book")

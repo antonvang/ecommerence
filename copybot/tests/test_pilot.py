@@ -107,6 +107,33 @@ class Rounds(Base):
         self.assertEqual((row["kind"], row["skipped"], row["round"]), ("plan", "empty_book", "D1"))
         self.assertNotIn("mid", row)
 
+    def test_29e_a_network_error_before_the_plan_skips_without_stopping_or_sending(self):
+        import urllib.error
+        for part in ("exchangeInfo", "time", "depth"):
+            ex = self.ex()
+            real = ex.get
+
+            def get(url, real=real, part=part):
+                if part in url:
+                    raise urllib.error.URLError("The handshake operation timed out")
+                return real(url)
+            ex.get = get
+            for name in ("buy_market_quote", "sell_market", "buy_limit_maker"):
+                setattr(ex, name, lambda *a: self.fail("nothing may be sent"))
+            self.assertIsNone(self.play(ex))
+            self.assertIsNone(self.ledger.state()["stopped"])
+            row = self.ledger.rows()[-1]
+            self.assertEqual((row["kind"], row["skipped"]), ("plan", "network"), part)
+            self.assertIn("handshake", row["error"])
+            self.assertNotIn("mid", row)
+
+    def test_29e_other_errors_before_the_plan_still_raise(self):
+        ex = self.ex()
+        ex.get = lambda url: (_ for _ in ()).throw(ValueError("bad json")) if "depth" in url else \
+            book_get(clock=self.clock)(url)
+        with self.assertRaises(ValueError):
+            self.play(ex)
+
     def test_walk_and_step(self):
         self.assertEqual(walk([["10", "1"], ["20", "1"]], "buy", quote=20)[1], 1.5)
         self.assertAlmostEqual(floor_step(1.23456, 0.001), 1.234)
