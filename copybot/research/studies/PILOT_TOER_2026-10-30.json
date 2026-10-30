@@ -1,0 +1,70 @@
+{
+ "rule": "research/PROTOCOL_V3.md amendment 29 point 8 (with 29a, 29d, 29e)",
+ "written_local": "2026-10-30 09:48",
+ "source": "/home/anton/ecommerence/copybot/data/pilot/ledger.jsonl (54 rows, read-only)",
+ "status": {
+  "state": {
+   "stopped": null
+  },
+  "dry_evidence": {
+   "dry_rounds": 22,
+   "hours": 65.5,
+   "stops": 0
+  }
+ },
+ "report": {
+  "dry": {
+   "rounds": 22,
+   "realized_usdt": -0.8698,
+   "taker": {
+    "n": 13,
+    "filled": 13,
+    "buy_slip_bp": {
+     "mean": 5.5,
+     "median": 5.45,
+     "p95": 14.06
+    },
+    "sell_slip_bp": {
+     "mean": 5.58,
+     "median": 3.54,
+     "p95": 21.14
+    },
+    "cost_bp": {
+     "mean": 28.61,
+     "median": 27.24,
+     "p95": 76.12
+    }
+   },
+   "maker": {
+    "n": 9,
+    "filled": 1,
+    "buy_slip_bp": {
+     "mean": 0.0,
+     "median": -0.0,
+     "p95": -0.0
+    },
+    "sell_slip_bp": {
+     "mean": 0.0,
+     "median": 0.0,
+     "p95": 0.0
+    },
+    "cost_bp": {
+     "mean": 16.18,
+     "median": 16.18,
+     "p95": 16.18
+    }
+   }
+  },
+  "state": {
+   "stopped": null
+  }
+ },
+ "skipped_plans": {
+  "empty_book": 4,
+  "spread": 1,
+  "network": 0
+ },
+ "process_deaths": 2,
+ "rounds_since_29e_restart": 10,
+ "verdict": "tør kørsel grøn (>= 20 runder, >= 48 t, 0 stop)"
+}
