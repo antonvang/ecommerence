@@ -479,7 +479,8 @@ class ForwardEvaluation(unittest.TestCase):
                        fingerprint="f", spec_json={**pipeline.template_spec("real_rate_filter")})
         self.db.append("transitions", exp_id=eid, ts=0, from_state=None, to_state="OBSERVATION", actor="fixture",
                        reason="fixture: entered observation")
-        self.db.event("observation.started", "system:t", eid, {"window": self.split, "start": a, "end": b})
+        self.db.append("events", ts=a - DAY, kind="observation.started", actor="system:t", exp_id=eid,   # started
+                       payload={"window": self.split, "start": a, "end": b})        # before the window, as in production
         frozen(self.db, eid, "cost", {"selected": 0})
         frozen(self.db, eid, "backtest", {"variants": [{"variant": 0, "params": {"n": 20}, "fit": None,
                                                                "positions": {}}]})
