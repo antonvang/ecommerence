@@ -1,4 +1,4 @@
-# Kan de 8 "positive men ikke signifikante" familier nogensinde bestå? (2026-11-02 kl. 00:33 lokal)
+# Kan de 8 "positive men ikke signifikante" familier nogensinde bestå? (2026-11-02 kl. 00:31 lokal)
 
 Mission 27.2 spørgsmål #9. Kun læsning af produktionens `results` (`?mode=ro`); ingen ny CPU-screening, ingen nye data.
 
@@ -36,4 +36,4 @@ Ikke bygget.
 ## D9 Saxo-satser
 
 Saxos kommissionsside (home.saxo/da-dk/rates-and-conditions/stocks/commissions) viser ikke tallene uden JavaScript
-("An error occurred"), og browseren var ikke forbundet kl. 00:32. Uafklaret.
+("An error occurred"), og browseren var ikke forbundet kl. 00:30. Uafklaret.
