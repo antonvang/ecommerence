@@ -4008,3 +4008,58 @@ ved åbning via en EU-mægler; perpen bruges kun som signal.
     - Data kun fra november–december 2026, så det er ét regime.
 16. **Skrevet før data (forventning):** sandsynligvis SCREEN_FAIL. Kontantmarkedet prissætter oftest informationen fra
     natten ved åbningen. En vending er mulig for små og meme-agtige aktier (fx GME, AMC) med tynde perps.
+
+## Ændring 35 (2026-11-01 kl. 23:23 lokal, før kode og før nogen basisdata): H27-B — tokeniseret guld mod guld-perpen (census, metode m35)
+
+**Beslutning:** Claude under brugerens Mission 27.1 (2026-11-01: "Fortsæt med at udvikle en selvstændig hypotese om
+PAXG/XAUT og guldprisrelationer … Dater og lås hypotesen før udfaldsdata undersøges"). Kun en ny census-nøgle. Ingen
+gate, tærskel, alfa i andre familier, holdout, K-nøgle, R1, R3, pm_lp, bane eller ændring 34 ændres. Ingen historisk
+forespørgsel. Ingen basisværdi (PAXG, XAUT eller XAU) er set; kun at symbolerne findes i censussen og opdateres hver
+time (ændring 28 punkt 6).
+
+**Mekanisme:** PAXG og XAUT er tokens med én troy ounce guld pr. token. Oprettelse og indløsning går gennem udstederen
+(Paxos, Tether), tager tid og har gebyrer og minimumsbeløb. Tokenernes markeder er tyndere end guldmarkedet, og de
+handles af kryptokunder. Når tokenernes perps afviger fra XAU-perpen (guld), skulle afvigelsen lukke sig, fordi
+arbitrage, oprettelse og indløsning trækker prisen tilbage. Lukker den sig ikke inden for 4 timer ud over placebo, eller
+er bevægelsen mindre end omkostningen, er hypotesen falsk.
+
+1. **Nøgle:** `census_gold_token_basis|basis_4h|m35` i census-familien (nu 6 nøgler, hver p ≤ 0,005; familien ≤ 3 %).
+2. **Par (fast):** A = PAXGUSDT mod XAUUSDT; B = XAUTUSDT mod XAUUSDT. Alle tre er Binance USD-M-perps i censussen.
+   Mangler et symbol, udgår parret den time.
+3. **Basis:** b_t = ln(markPrice token) − ln(markPrice XAU) ved census-snapshot t. Snapshots, der er hentet senere end 10
+   min efter timeskiftet, udgår.
+4. **Kun åben guldhandel:** t og t + 4 t skal begge ligge i timer, hvor `lab/sessions.py` giver `commodity` OPEN. Når
+   guldmarkedet er lukket, er XAU-indekset perpens egen bog (21g), og tidsforskellen mellem markederne ville skabe falsk
+   basis.
+5. **Afvigelse (kun data til og med t):** d_t = b_t − medianen af b i de 24 forudgående gyldige snapshots for parret.
+   Mindst 20 af dem skal findes.
+6. **Hændelse:** |d_t| ligger over 90 %-fraktilen af |d| i parrets egne gyldige snapshots de foregående 7 døgn (mindst
+   100 værdier, punkt-i-tid). Første data er fra **2026-11-02 00:00 UTC**; intet før låsen bruges.
+7. **Udfald:** konvergens c = −sign(d_t) · (b_{t+4t} − b_t). Positiv c betyder, at afvigelsen lukker sig.
+8. **Klynger:** pr. UTC-dag og par højst én hændelse (den første). Dagens værdi er gennemsnittet af c over parrene den
+   dag.
+9. **Test:** t-test af gennemsnittet af dagsværdierne, tosidet, p ≤ 0,005, mindst **28** dage med hændelse. Ellers
+   UNTESTABLE (sidste frist 2027-03-31).
+10. **Omkostningsgulv:** mindst 21i's **0,46 %** pr. hændelse. Det svarer til to ben, der åbnes og lukkes. Den lovlige
+    EU-rute (spot-token hos en EU-børs plus guld som ETC eller CFD) er dyrere og uafklaret. PASS kræver gennemsnit c −
+    0,46 % > 0.
+11. **Styrke (ændring 32):** sd for c = **0,30 %**. Den er ikke fra udfaldsdata, men fra en antagelse: tokens handles
+    normalt inden for ±0,5 % af guld; 4 timers ændring i basis sat konservativt. MDE = (2,807 + 0,842) · 0,30 % / √28
+    = **0,21 %**; MDE/gulv = 0,45. Testen kan se en fordel på gulvets størrelse. sd rettes aldrig efter data.
+12. **Falsifikation og placebo:** PASS kræver alle fire:
+    - p ≤ 0,005 og nettogulvet i punkt 10.
+    - Samme fortegn i første og anden halvdel af dagene.
+    - Samme fortegn uden de 2 dage med størst |værdi|.
+    - Placebo: samme test med t erstattet af t − 24 t (afvigelsen fra et døgn før mod udfaldet nu) skal have |t| < 2.
+    Ellers SCREEN_FAIL.
+13. **Benchmark:** 0 (ingen konvergens). Gennemsnitlig |b_{t+4t} − b_t| i tilfældige gyldige timer rapporteres ved
+    siden af.
+14. **Hvornår:** én kørsel, når 28 dage med hændelser findes, tidligst ~2026-12-07 (7 døgns opvarmning). Indtil da
+    rapporteres kun antal gyldige snapshots og hændelser, aldrig b, d eller c.
+15. **Adskillelse:** intet, der afgør (12g, ændring 25, papirmotoren, baner, K3, R1, R3, promotion), læser m35.
+16. **Kendte begrænsninger (skrevet før data):**
+    - Timeopløsning: arbitrage på minutter ses ikke.
+    - Perps' mark-pris indeholder funding-basis, så forskellig funding på token-perp og XAU-perp flytter b.
+    - Det er Binance-perps; den lovlige EU-rute er uafklaret.
+17. **Skrevet før data (forventning):** konvergens er sandsynlig (mekanismen er stærk), men den er sandsynligvis mindre
+    end 0,46 % → SCREEN_FAIL på omkostninger. Et PASS kræver store dislokationer, fx ved kryptostress eller udstederrisiko.
