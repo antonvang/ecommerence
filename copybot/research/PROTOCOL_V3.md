@@ -3953,3 +3953,58 @@ det en risikoregel for carry-baner: EPIC/MITO/HOT tabte netop på pludselige bev
    p ≤ 0,005 (familieniveau ≤ 2 %).
 9. **Skrevet før data (forventning):** moderat chance for PASS; vigtigste risiko er, at volumen-spring ofte følger en
    kursbevægelse uden for 24 t-vinduet (P-filteret fanger det ikke helt), og at nye/afnoterede mønter dominerer.
+
+## Ændring 34 (2026-11-01 kl. 23:14 lokal, før kode og før nogen udfald): H27-A — aktieperps uden for børstid → kontantsessionen (census, metode m34)
+
+**Beslutning:** Claude under brugerens Mission 27 (2026-11-01 ca. kl. 23:00 lokal: "find markedsfordele, som endnu ikke
+er opdaget"). Kun en ny låst census-nøgle. Ingen gate, tærskel, alfa i andre familier, holdout, K-nøgle, R1, R3, pm_lp
+eller nogen bane ændres. Ingen historisk forespørgsel. Grundlag: `research/studies/MISSION27_2026-11-01.md` punkt 5–6.
+Ingen census-udfald er set; kun symbolliste og at `indexPrice` opdateres hver time (datakvalitet, ændring 28 punkt 6).
+
+**Mekanisme:** Binance' aktie- og ETF-perps handler døgnet rundt, men den underliggende aktie kun i NYSE/Nasdaq-tiden.
+Uden for børstid følger indekset perpens egen bog (21g). Prisdannelsen sker da i en tynd bog uden arbitrage mod
+kontantmarkedet, så bevægelsen kan overskyde (vending i kontantsessionen) eller komme for tidligt og blive bekræftet
+(fortsættelse). Retningen er ikke givet på forhånd; testen er tosidet. En fordel kunne handles lovligt på selve aktien
+ved åbning via en EU-mægler; perpen bruges kun som signal.
+
+1. **Nøgle:** `census_eq_overnight|cash_session|m34` i census-familien (nu 5 nøgler, hver p ≤ 0,005; familien ≤ 2,5 %).
+2. **Univers (fast):** de 197 symboler i `research/data/H27A_UNIVERSE_2026-11-01.json` (exchangeInfo 2026-11-01 kl.
+   22:13 UTC: `TRADIFI_PERPETUAL`, `TRADING`, `underlyingType` EQUITY; sha256 for svaret står i filen). Ingen symboler
+   tilføjes senere; et symbol uden data en dag udgår den dag.
+3. **Dage:** NYSE-handelsdage efter `lab/sessions.py` (RTH, tidlig lukning, helligdage) fra og med **2026-11-02**. Dage
+   før låsen bruges aldrig. En dag udgår, hvis et af de tre snapshots nedenfor mangler eller er hentet senere end 10
+   min efter timeskiftet.
+4. **Snapshots pr. dag d (census, timeopløsning):** P = sidste snapshot før åbningen; E = første snapshot ≥ 30 min efter
+   åbningen; X = sidste snapshot ≥ 60 min før lukningen. E < X kræves.
+5. **Signal (kun data til og med P):** s = ln(markPrice ved P) − ln(indexPrice ved forrige handelsdags X).
+6. **Udfald:** y = ln(indexPrice ved X) − ln(indexPrice ved E) (kontantsessionen; indgang ~30 min efter åbningen,
+   udgang ≥ 1 t før lukningen).
+7. **Porteføljeafkast pr. dag:** blandt symboler med s og y (ikke null) sorteres efter s; r_d = gennemsnit af y i
+   nederste femtedel − gennemsnit af y i øverste femtedel (lige vægt; positivt r_d = vending). Kræver mindst 50
+   symboler den dag, ellers udgår dagen.
+8. **Test:** t-test af gennemsnittet af r_d over dage, tosidet, p ≤ 0,005. Mindst **28** gyldige dage, ellers
+   UNTESTABLE (sidste frist 2027-03-12, før sommertid i USA).
+9. **Omkostningsgulv:** 0,60 % pr. dag for det lange og korte ben tilsammen (to rundture à 0,30 %: kurtage og spread hos
+   en EU-mægler; uafklaret indtil verificeret, derfor sat konservativt over 21i's 0,46 %). PASS kræver |gennemsnit
+   r_d| − 0,60 % > 0.
+10. **Styrke (ændring 32):** sd for r_d = **0,9 %**. Den er ikke fra udfaldsdata, men fra en antagelse: idiosynkratisk
+    dagsvol 1,75 %, ~40 aktier pr. ben og intern korrelation 0,1 giver √2 · 1,75 % · √(0,1 + 0,9/40) ≈ 0,87 %, rundet
+    op. MDE = (2,807 + 0,842) · 0,9 % / √28 = **0,62 %**; MDE/gulv = 1,03. Mærket "kan kun finde store effekter (32)"
+    er der ikke. sd rettes aldrig efter data (32 punkt 3).
+11. **Falsifikation og placebo:** PASS kræver alle fire:
+    - p ≤ 0,005 og nettogulvet i punkt 9.
+    - Samme fortegn i første og anden halvdel af dagene.
+    - Samme fortegn uden de 2 dage med størst |r_d|.
+    - Placebo: samme test med forrige dags signal (s fra d − 1 mod y fra d) skal have |t| < 2.
+    Ellers SCREEN_FAIL.
+12. **Benchmark:** 0 (porteføljen er markedsneutral). Kurvens eget kontantafkast (alle symboler, lige vægt) rapporteres
+    ved siden af.
+13. **Hvornår:** én kørsel, når 28 gyldige dage findes (tidligst ~2026-12-11). Indtil da rapporteres kun antal gyldige
+    dage og symboler, aldrig s, y eller r_d.
+14. **Adskillelse:** intet, der afgør (12g, ændring 25, papirmotoren, baner, K3, R1, R3, promotion), læser m34.
+15. **Kendte begrænsninger (skrevet før data):**
+    - Timeopløsning: indgangen er ~30–90 min efter åbningen, så åbningsreaktionen er ikke med.
+    - Indekset uden for børstid er perpens egen bog. Det påvirker kun signalet, ikke udfaldet.
+    - Data kun fra november–december 2026, så det er ét regime.
+16. **Skrevet før data (forventning):** sandsynligvis SCREEN_FAIL. Kontantmarkedet prissætter oftest informationen fra
+    natten ved åbningen. En vending er mulig for små og meme-agtige aktier (fx GME, AMC) med tynde perps.
