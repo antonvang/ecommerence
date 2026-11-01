@@ -4063,3 +4063,62 @@ er bevægelsen mindre end omkostningen, er hypotesen falsk.
     - Det er Binance-perps; den lovlige EU-rute er uafklaret.
 17. **Skrevet før data (forventning):** konvergens er sandsynlig (mekanismen er stærk), men den er sandsynligvis mindre
     end 0,46 % → SCREEN_FAIL på omkostninger. Et PASS kræver store dislokationer, fx ved kryptostress eller udstederrisiko.
+
+## Ændring 36 (2026-11-01 kl. 23:39 lokal, før kode og før nogen census-time fra 2026-11-02): H27-A2 — rent aktieunivers, faktorneutralt (census, metode m36)
+
+**Beslutning:** Claude under brugerens Mission 27.2 (2026-11-01: "H27-A2 er en selvstændig hypotese … lås den før nye
+udfald ses"). Ny census-nøgle. **Ændring 34 (H27-A) ændres ikke og genfortolkes ikke**; begge køres. Ingen gate, tærskel,
+alfa i andre familier, holdout, K-nøgle, R1, R3, pm_lp eller bane ændres. Ingen historisk forespørgsel. Grundlag:
+`research/studies/MISSION27_1_2026-11-01.md` punkt 1. Kun census-timer **før** 2026-11-02 00:00 UTC er brugt til
+klassifikation, beta og styrke.
+
+**Hvorfor en søsternøgle:** i H27-A's univers er der:
+- 13 gearede eller inverse ETF'er, 1 volatilitetsprodukt, 16 almindelige ETF'er og 1 dublet (SPCXUSD1);
+- 30 symboler, der ikke kunne identificeres;
+- en fælles spekulativ faktor (median-beta 1,33).
+
+Sorteringen på s kan derfor blive et væddemål på faktorens retning. H27-A2 spørger om det samme, men på almindelige
+aktier og ADR'er og med faktoren trukket ud.
+
+1. **Nøgle:** `census_eq_overnight_neutral|cash_session|m36` i census-familien (nu 7 nøgler, hver p ≤ 0,005; familien
+   ≤ 3,5 %).
+2. **Univers (fast):** de 137 symboler med klassen `common_stock_or_adr` i `research/data/H27A2_UNIVERSE_2026-11-01.json`.
+   Gearede, inverse, volatilitets-, ETF-, dublet- og uidentificerede symboler er udelukket. Klassifikationen og dens
+   kilder står i filen.
+3. **Beta (fast):** β_i fra samme fil = 0,5 · OLS-beta (timevise mark-afkast mod universets eget tværsnitsmedian,
+   census-timer 10-27 kl. 15 til 11-01) + 0,5. β rettes aldrig.
+4. **Dage og snapshots:** som ændring 34 punkt 3–4 (NYSE-handelsdage fra og med 2026-11-02; P, E, X; samme
+   udelukkelser).
+5. **Signal og udfald:** s og y præcis som ændring 34 punkt 5–6. Pr. dag: F_s = median af s og F_y = median af y over
+   universet. Neutraliseret: s* = s − β · F_s og y* = y − β · F_y.
+6. **Porteføljeafkast:** r_d = gennemsnit af y* i nederste femtedel af s* − gennemsnit af y* i øverste femtedel (lige
+   vægt; positiv = vending). Mindst 50 symboler, ellers udgår dagen.
+7. **Test:** t-test af gennemsnittet af r_d, tosidet, p ≤ 0,005, mindst **28** gyldige dage, ellers UNTESTABLE (frist
+   2027-03-12).
+8. **Omkostningsgulv:** 0,60 % pr. dag for begge ben (som ændring 34 punkt 9). Nordnets prisliste (0,15 % kurtage pr.
+   handel, ingen short) gør ruten dyrere; Saxos CFD-satser er uafklarede (datahul D9). PASS kræver |gennemsnit r_d| −
+   0,60 % > 0.
+9. **Styrke (ændring 32):** sd for r_d = **1,3 %** (skrevet før testdata).
+   - Kilde: kontanttid-timer før låsen (21 t) for dette univers, faktorneutraliseret. Opdeling efter beta i de yderste
+     40 mod 40 gav 0,58 % pr. time, ≈ 1,31 % pr. dag med √5-skalering. Tilfældig opdeling gav 0,37 % pr. dag.
+   - Den højeste værdi er valgt. Neutraliseringen er målt på de samme timer som β og er derfor optimistisk.
+   - MDE = (2,807 + 0,842) · 1,3 % / √28 = **0,90 %**; MDE/gulv = 1,5. Mærket "kun store effekter" (> 2x) er der ikke,
+     men testen kan kun se effekter på ~1,5x gulvet. sd rettes aldrig efter data.
+10. **Falsifikation og placebo:** PASS kræver alle fire, som ændring 34 punkt 11:
+    - p og nettogulv;
+    - samme fortegn i begge halvdele;
+    - samme fortegn uden de 2 største dage;
+    - placebo med forrige dags s* skal have |t| < 2.
+11. **Rapport ved siden af (afgør intet):**
+    - r_d uden neutralisering for samme univers, så faktorens rolle ses.
+    - Andelen af dagens s-varians, som F_s forklarer.
+12. **Benchmark:** 0. Faktorens eget kontantafkast F_y rapporteres.
+13. **Hvornår:** én kørsel, når 28 gyldige dage findes (tidligst ~2026-12-11, samme dag som ændring 34). Indtil da
+    rapporteres kun antal gyldige dage og symboler, aldrig s, y eller r_d.
+14. **Adskillelse:** intet, der afgør (12g, ændring 25, papirmotoren, baner, K3, R1, R3, promotion), læser m36.
+15. **Kendte begrænsninger (skrevet før data):**
+    - β er fra 103 timer i ét regime og er derfor støjfuld; krympningen mod 1 dæmper det.
+    - Klassifikationen kan have fejl i almindelige aktier (de er identificeret efter ticker).
+    - Timeopløsning som i ændring 34.
+16. **Skrevet før data (forventning):** SCREEN_FAIL mest sandsynlig. Uden den spekulative faktor er en vending tilbage i
+    kontanttiden mindre sandsynlig, medmindre perps for små aktier (GME, AMC, DJT, ONDS, RDW) overreagerer systematisk.

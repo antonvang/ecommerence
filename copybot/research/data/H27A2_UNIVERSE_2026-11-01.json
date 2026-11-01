@@ -1,0 +1,1074 @@
+{
+ "rule": "research/PROTOCOL_V3.md amendment 36 points 2-3",
+ "written": "2026-11-01 before any census hour from 2026-11-02",
+ "classification": {
+  "AAOIUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "AAPLUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "ABBVUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "ACNUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "ADBEUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "AGPUUSDT": {
+   "class": "unverified",
+   "note": "not identified from an official or reliable source on 2026-11-01; excluded"
+  },
+  "AKAMUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "ALABUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "AMATUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "AMCUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "AMDUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "AMGNUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "AMZNUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "ANETUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "APLDUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "APPUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "ARMUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "ASMLUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "ASTSUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "AVGOUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "AXTIUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "BABAUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "BACUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "BBXUSDT": {
+   "class": "unverified",
+   "note": "not identified from an official or reliable source on 2026-11-01; excluded"
+  },
+  "BEUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "BITOUSDT": {
+   "class": "etf",
+   "note": "bitcoin futures"
+  },
+  "BMNRUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "BNCUSDT": {
+   "class": "unverified",
+   "note": "not identified from an official or reliable source on 2026-11-01; excluded"
+  },
+  "BOTUSDT": {
+   "class": "unverified",
+   "note": "not identified from an official or reliable source on 2026-11-01; excluded"
+  },
+  "BRKBUSDT": {
+   "class": "common_stock_or_adr",
+   "note": "Berkshire Hathaway class B"
+  },
+  "BSPUSDT": {
+   "class": "unverified",
+   "note": "not identified from an official or reliable source on 2026-11-01; excluded"
+  },
+  "BWETUSDT": {
+   "class": "etf",
+   "note": "tanker freight futures"
+  },
+  "BXUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "CATUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "CBRSUSDT": {
+   "class": "unverified",
+   "note": "not identified from an official or reliable source on 2026-11-01; excluded"
+  },
+  "CEGUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "CIENUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "COHRUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "COINUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "COSTUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "CRCLUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "CRDOUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "CRMLUSDT": {
+   "class": "unverified",
+   "note": "not identified from an official or reliable source on 2026-11-01; excluded"
+  },
+  "CRMUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "CRWDUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "CRWVUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "CSCOUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "CVNAUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "CYPHUSDT": {
+   "class": "unverified",
+   "note": "not identified from an official or reliable source on 2026-11-01; excluded"
+  },
+  "DDOGUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "DELLUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "DISUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "DJTUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "DKNGUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "DRAMUSDT": {
+   "class": "unverified",
+   "note": "not identified from an official or reliable source on 2026-11-01; excluded"
+  },
+  "EBAYUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "EIDOUSDT": {
+   "class": "etf",
+   "note": "Indonesia"
+  },
+  "EQTUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "EWJUSDT": {
+   "class": "etf",
+   "note": "Japan"
+  },
+  "EWTUSDT": {
+   "class": "etf",
+   "note": "Taiwan"
+  },
+  "EWYUSDT": {
+   "class": "etf",
+   "note": "Korea"
+  },
+  "EWZSUSDT": {
+   "class": "etf",
+   "note": "Brazil small cap"
+  },
+  "EWZUSDT": {
+   "class": "etf",
+   "note": "Brazil"
+  },
+  "FLEXUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "FLNCUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "FWDIUSDT": {
+   "class": "unverified",
+   "note": "not identified from an official or reliable source on 2026-11-01; excluded"
+  },
+  "GDXUSDT": {
+   "class": "etf",
+   "note": "gold miners"
+  },
+  "GEVUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "GLWUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "GMEUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "GOOGLUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "GPROUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "GSUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "GTLBUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "HDUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "HIMSUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "HOODUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "HPEUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "HUTUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "IBKRUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "IBMUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "INTCUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "INTWUSDT": {
+   "class": "unverified",
+   "note": "not identified from an official or reliable source on 2026-11-01; excluded"
+  },
+  "IONQUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "IRENUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "IWMUSDT": {
+   "class": "etf",
+   "note": "Russell 2000"
+  },
+  "JPMUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "KLACUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "KORUUSDT": {
+   "class": "leveraged_or_inverse",
+   "note": "3x long Korea"
+  },
+  "KOUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "KSTRUSDT": {
+   "class": "unverified",
+   "note": "not identified from an official or reliable source on 2026-11-01; excluded"
+  },
+  "LITEUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "LLYUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "LRCXUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "LYTEUSDT": {
+   "class": "unverified",
+   "note": "not identified from an official or reliable source on 2026-11-01; excluded"
+  },
+  "MARAUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "MCDUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "MDBUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "MDTUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "MELIUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "METAUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "MPUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "MRKUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "MRNAUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "MRVLUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "MSFTUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "MSTRUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "MSTUUSDT": {
+   "class": "leveraged_or_inverse",
+   "note": "2x long MSTR"
+  },
+  "MUUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "MUUUSDT": {
+   "class": "leveraged_or_inverse",
+   "note": "2x long MU (Binance 2026-07-16)"
+  },
+  "MVLLUSDT": {
+   "class": "unverified",
+   "note": "not identified from an official or reliable source on 2026-11-01; excluded"
+  },
+  "NBISUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "NETUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "NFLXUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "NKEUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "NOKUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "NOWUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "NVDAUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "NVDLUSDT": {
+   "class": "leveraged_or_inverse",
+   "note": "2x long NVDA"
+  },
+  "NVOUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "OKLOUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "ONDSUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "ORCLUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "OXYUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "PANWUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "PATHUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "PAYPUSDT": {
+   "class": "unverified",
+   "note": "not identified from an official or reliable source on 2026-11-01; excluded"
+  },
+  "PDDUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "PENGUSDT": {
+   "class": "unverified",
+   "note": "not identified from an official or reliable source on 2026-11-01; excluded"
+  },
+  "PFEUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "PLTRUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "PYPLUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "QCOMUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "QNTXUSDT": {
+   "class": "unverified",
+   "note": "not identified from an official or reliable source on 2026-11-01; excluded"
+  },
+  "QQQUSDT": {
+   "class": "etf",
+   "note": "Nasdaq-100"
+  },
+  "RAMUSDT": {
+   "class": "unverified",
+   "note": "not identified from an official or reliable source on 2026-11-01; excluded"
+  },
+  "RDDTUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "RDWUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "RIVNUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "RKLBUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "RUMUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "SECZUSDT": {
+   "class": "unverified",
+   "note": "not identified from an official or reliable source on 2026-11-01; excluded"
+  },
+  "SHAZUSDT": {
+   "class": "unverified",
+   "note": "not identified from an official or reliable source on 2026-11-01; excluded"
+  },
+  "SHOPUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "SKDDUSDT": {
+   "class": "unverified",
+   "note": "not identified from an official or reliable source on 2026-11-01; excluded"
+  },
+  "SKHYUSDT": {
+   "class": "unverified",
+   "note": "not identified from an official or reliable source on 2026-11-01; excluded"
+  },
+  "SKUUUSDT": {
+   "class": "leveraged_or_inverse",
+   "note": "2x long SK Hynix (Binance 2026-08-25)"
+  },
+  "SMCIUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "SMHUSDT": {
+   "class": "etf",
+   "note": "semis"
+  },
+  "SMRUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "SNDKUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "SNOWUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "SNPSUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "SNXXUSDT": {
+   "class": "unverified",
+   "note": "not identified from an official or reliable source on 2026-11-01; excluded"
+  },
+  "SOFIUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "SONYUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "SOXLUSDT": {
+   "class": "leveraged_or_inverse",
+   "note": "3x long (Direxion semis)"
+  },
+  "SOXSUSDT": {
+   "class": "leveraged_or_inverse",
+   "note": "3x inverse (Direxion semis; Binance 2026-07-16)"
+  },
+  "SPCXUSD1": {
+   "class": "duplicate_quote",
+   "note": "USD1-quoted duplicate of SPCX"
+  },
+  "SPCXUSDT": {
+   "class": "unverified",
+   "note": "not identified from an official or reliable source on 2026-11-01; excluded"
+  },
+  "SPYUSDT": {
+   "class": "etf",
+   "note": "S&P 500"
+  },
+  "SQQQUSDT": {
+   "class": "leveraged_or_inverse",
+   "note": "3x inverse Nasdaq-100"
+  },
+  "STMUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "STRCUSDT": {
+   "class": "unverified",
+   "note": "not identified from an official or reliable source on 2026-11-01; excluded"
+  },
+  "STXXUSDT": {
+   "class": "unverified",
+   "note": "not identified from an official or reliable source on 2026-11-01; excluded"
+  },
+  "TBTUSDT": {
+   "class": "leveraged_or_inverse",
+   "note": "2x inverse 20+y Treasury"
+  },
+  "TEAMUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "TEMUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "TERUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "TMFUSDT": {
+   "class": "leveraged_or_inverse",
+   "note": "3x long 20+y Treasury"
+  },
+  "TQQQUSDT": {
+   "class": "leveraged_or_inverse",
+   "note": "3x long Nasdaq-100"
+  },
+  "TSLAUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "TSLLUSDT": {
+   "class": "leveraged_or_inverse",
+   "note": "2x long TSLA"
+  },
+  "TSMUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "TTWOUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "TWSTUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "TXNUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "TZAUSDT": {
+   "class": "leveraged_or_inverse",
+   "note": "3x inverse Russell 2000 (Binance 2026-07-16)"
+  },
+  "UBERUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "UNHUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "URNMUSDT": {
+   "class": "etf",
+   "note": "uranium miners"
+  },
+  "USARUSDT": {
+   "class": "unverified",
+   "note": "not identified from an official or reliable source on 2026-11-01; excluded"
+  },
+  "USDEXUSDT": {
+   "class": "unverified",
+   "note": "not identified from an official or reliable source on 2026-11-01; excluded"
+  },
+  "UVXYUSDT": {
+   "class": "volatility",
+   "note": "1.5x VIX futures"
+  },
+  "VKTXUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "VRTUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "VSTUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "VUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "WDCUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "WENUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "WMTUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "XBIUSDT": {
+   "class": "etf",
+   "note": "biotech"
+  },
+  "XLEUSDT": {
+   "class": "etf",
+   "note": "energy"
+  },
+  "XOMUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "ZCSHUSDT": {
+   "class": "unverified",
+   "note": "not identified from an official or reliable source on 2026-11-01; excluded"
+  },
+  "ZMUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  },
+  "ZSUSDT": {
+   "class": "common_stock_or_adr",
+   "note": ""
+  }
+ },
+ "classification_sources": "common stocks/ADRs and well-known ETFs by ticker (issuer listings); SOXS, TZA, MUU (Binance listing 2026-07-16) and SKUU (2026-08-25) confirmed by search; anything not identified is 'unverified' and excluded",
+ "universe": [
+  "AAOIUSDT",
+  "AAPLUSDT",
+  "ABBVUSDT",
+  "ACNUSDT",
+  "ADBEUSDT",
+  "AKAMUSDT",
+  "ALABUSDT",
+  "AMATUSDT",
+  "AMCUSDT",
+  "AMDUSDT",
+  "AMGNUSDT",
+  "AMZNUSDT",
+  "ANETUSDT",
+  "APLDUSDT",
+  "APPUSDT",
+  "ARMUSDT",
+  "ASMLUSDT",
+  "ASTSUSDT",
+  "AVGOUSDT",
+  "AXTIUSDT",
+  "BABAUSDT",
+  "BACUSDT",
+  "BEUSDT",
+  "BMNRUSDT",
+  "BRKBUSDT",
+  "BXUSDT",
+  "CATUSDT",
+  "CEGUSDT",
+  "CIENUSDT",
+  "COHRUSDT",
+  "COINUSDT",
+  "COSTUSDT",
+  "CRCLUSDT",
+  "CRDOUSDT",
+  "CRMUSDT",
+  "CRWDUSDT",
+  "CRWVUSDT",
+  "CSCOUSDT",
+  "CVNAUSDT",
+  "DDOGUSDT",
+  "DELLUSDT",
+  "DISUSDT",
+  "DJTUSDT",
+  "DKNGUSDT",
+  "EBAYUSDT",
+  "EQTUSDT",
+  "FLEXUSDT",
+  "FLNCUSDT",
+  "GEVUSDT",
+  "GLWUSDT",
+  "GMEUSDT",
+  "GOOGLUSDT",
+  "GPROUSDT",
+  "GSUSDT",
+  "GTLBUSDT",
+  "HDUSDT",
+  "HIMSUSDT",
+  "HOODUSDT",
+  "HPEUSDT",
+  "HUTUSDT",
+  "IBKRUSDT",
+  "IBMUSDT",
+  "INTCUSDT",
+  "IONQUSDT",
+  "IRENUSDT",
+  "JPMUSDT",
+  "KLACUSDT",
+  "KOUSDT",
+  "LITEUSDT",
+  "LLYUSDT",
+  "LRCXUSDT",
+  "MARAUSDT",
+  "MCDUSDT",
+  "MDBUSDT",
+  "MDTUSDT",
+  "MELIUSDT",
+  "METAUSDT",
+  "MPUSDT",
+  "MRKUSDT",
+  "MRNAUSDT",
+  "MRVLUSDT",
+  "MSFTUSDT",
+  "MSTRUSDT",
+  "MUUSDT",
+  "NBISUSDT",
+  "NETUSDT",
+  "NFLXUSDT",
+  "NKEUSDT",
+  "NOKUSDT",
+  "NOWUSDT",
+  "NVDAUSDT",
+  "NVOUSDT",
+  "OKLOUSDT",
+  "ONDSUSDT",
+  "ORCLUSDT",
+  "OXYUSDT",
+  "PANWUSDT",
+  "PATHUSDT",
+  "PDDUSDT",
+  "PFEUSDT",
+  "PLTRUSDT",
+  "PYPLUSDT",
+  "QCOMUSDT",
+  "RDDTUSDT",
+  "RDWUSDT",
+  "RIVNUSDT",
+  "RKLBUSDT",
+  "RUMUSDT",
+  "SHOPUSDT",
+  "SMCIUSDT",
+  "SMRUSDT",
+  "SNDKUSDT",
+  "SNOWUSDT",
+  "SNPSUSDT",
+  "SOFIUSDT",
+  "SONYUSDT",
+  "STMUSDT",
+  "TEAMUSDT",
+  "TEMUSDT",
+  "TERUSDT",
+  "TSLAUSDT",
+  "TSMUSDT",
+  "TTWOUSDT",
+  "TWSTUSDT",
+  "TXNUSDT",
+  "UBERUSDT",
+  "UNHUSDT",
+  "VKTXUSDT",
+  "VRTUSDT",
+  "VSTUSDT",
+  "VUSDT",
+  "WDCUSDT",
+  "WENUSDT",
+  "WMTUSDT",
+  "XOMUSDT",
+  "ZMUSDT",
+  "ZSUSDT"
+ ],
+ "beta_rule": "0.5 * OLS beta of hourly markPrice log returns on the universe's own cross-sectional median, census hours 2026-10-27 15:00 .. 2026-11-01 (before the lock), + 0.5",
+ "beta": {
+  "AAOIUSDT": 2.4944,
+  "AAPLUSDT": 0.4533,
+  "ABBVUSDT": 0.3838,
+  "ACNUSDT": 0.6148,
+  "ADBEUSDT": 0.8234,
+  "AKAMUSDT": 0.9866,
+  "ALABUSDT": 1.833,
+  "AMATUSDT": 1.2992,
+  "AMCUSDT": 0.6948,
+  "AMDUSDT": 1.6926,
+  "AMGNUSDT": 0.246,
+  "AMZNUSDT": 1.2866,
+  "ANETUSDT": 1.1775,
+  "APLDUSDT": 1.8638,
+  "APPUSDT": 0.8926,
+  "ARMUSDT": 1.7927,
+  "ASMLUSDT": 1.1424,
+  "ASTSUSDT": 1.6189,
+  "AVGOUSDT": 1.283,
+  "AXTIUSDT": 2.3137,
+  "BABAUSDT": 0.8204,
+  "BACUSDT": 0.5873,
+  "BEUSDT": 2.0081,
+  "BMNRUSDT": 1.7459,
+  "BRKBUSDT": 0.3621,
+  "BXUSDT": 0.7008,
+  "CATUSDT": 0.7336,
+  "CEGUSDT": 0.8871,
+  "CIENUSDT": 1.3338,
+  "COHRUSDT": 1.984,
+  "COINUSDT": 1.441,
+  "COSTUSDT": 0.2219,
+  "CRCLUSDT": 1.4343,
+  "CRDOUSDT": 2.0307,
+  "CRMUSDT": 1.0776,
+  "CRWDUSDT": 1.6366,
+  "CRWVUSDT": 2.3302,
+  "CSCOUSDT": 0.4613,
+  "CVNAUSDT": 0.0013,
+  "DDOGUSDT": 1.1599,
+  "DELLUSDT": 1.807,
+  "DISUSDT": 0.4618,
+  "DJTUSDT": 0.698,
+  "DKNGUSDT": 0.6127,
+  "EBAYUSDT": 0.2086,
+  "EQTUSDT": 0.3788,
+  "FLEXUSDT": 1.3248,
+  "FLNCUSDT": 1.3999,
+  "GEVUSDT": 1.2923,
+  "GLWUSDT": 1.4778,
+  "GMEUSDT": 0.5679,
+  "GOOGLUSDT": 1.4013,
+  "GPROUSDT": 0.9137,
+  "GSUSDT": 0.682,
+  "GTLBUSDT": 1.414,
+  "HDUSDT": 0.4622,
+  "HIMSUSDT": 1.1314,
+  "HOODUSDT": 1.4258,
+  "HPEUSDT": 1.4939,
+  "HUTUSDT": 1.778,
+  "IBKRUSDT": 0.8196,
+  "IBMUSDT": 0.8303,
+  "INTCUSDT": 3.0208,
+  "IONQUSDT": 1.4382,
+  "IRENUSDT": 2.0298,
+  "JPMUSDT": 0.4937,
+  "KLACUSDT": 1.0517,
+  "KOUSDT": 0.1953,
+  "LITEUSDT": 1.6814,
+  "LLYUSDT": 0.4898,
+  "LRCXUSDT": 1.467,
+  "MARAUSDT": 1.3429,
+  "MCDUSDT": 0.4332,
+  "MDBUSDT": 1.6347,
+  "MDTUSDT": 0.4935,
+  "MELIUSDT": 0.6611,
+  "METAUSDT": 0.7724,
+  "MPUSDT": 1.297,
+  "MRKUSDT": 0.4369,
+  "MRNAUSDT": 0.9343,
+  "MRVLUSDT": 1.5583,
+  "MSFTUSDT": 0.4338,
+  "MSTRUSDT": 1.268,
+  "MUUSDT": 1.4468,
+  "NBISUSDT": 2.4414,
+  "NETUSDT": 1.4836,
+  "NFLXUSDT": 0.5209,
+  "NKEUSDT": 0.5305,
+  "NOKUSDT": 1.2845,
+  "NOWUSDT": 1.8502,
+  "NVDAUSDT": 0.9563,
+  "NVOUSDT": 0.5938,
+  "OKLOUSDT": 1.4386,
+  "ONDSUSDT": 1.4267,
+  "ORCLUSDT": 1.67,
+  "OXYUSDT": 0.3275,
+  "PANWUSDT": 1.5718,
+  "PATHUSDT": 1.0053,
+  "PDDUSDT": 0.7264,
+  "PFEUSDT": 0.3446,
+  "PLTRUSDT": 0.9867,
+  "PYPLUSDT": 0.5041,
+  "QCOMUSDT": 1.3455,
+  "RDDTUSDT": 2.717,
+  "RDWUSDT": 1.5637,
+  "RIVNUSDT": 0.5446,
+  "RKLBUSDT": 1.6907,
+  "RUMUSDT": 0.8797,
+  "SHOPUSDT": 0.8359,
+  "SMCIUSDT": 1.5908,
+  "SMRUSDT": 1.6431,
+  "SNDKUSDT": 1.6701,
+  "SNOWUSDT": 1.4037,
+  "SNPSUSDT": 0.9846,
+  "SOFIUSDT": 1.3629,
+  "SONYUSDT": 0.6327,
+  "STMUSDT": 1.3268,
+  "TEAMUSDT": 1.3174,
+  "TEMUSDT": 1.4195,
+  "TERUSDT": 1.5628,
+  "TSLAUSDT": 0.8554,
+  "TSMUSDT": 1.1739,
+  "TTWOUSDT": 0.4457,
+  "TWSTUSDT": 1.4018,
+  "TXNUSDT": 0.9069,
+  "UBERUSDT": 0.6471,
+  "UNHUSDT": 0.3954,
+  "VKTXUSDT": 1.3002,
+  "VRTUSDT": 1.9178,
+  "VSTUSDT": 0.9633,
+  "VUSDT": 0.4033,
+  "WDCUSDT": 1.5793,
+  "WENUSDT": 0.4079,
+  "WMTUSDT": 0.1808,
+  "XOMUSDT": 0.342,
+  "ZMUSDT": 0.8018,
+  "ZSUSDT": 1.4585
+ }
+}
