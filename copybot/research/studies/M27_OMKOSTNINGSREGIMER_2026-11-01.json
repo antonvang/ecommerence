@@ -1,0 +1,1068 @@
+{
+ "rule": "Mission 27.1 point 4; abnormal_move book_rt = $5k book round trip without fees; median bp; two halves split at the median timestamp; same_direction = the ratio is on the same side of 1 in both",
+ "n": 2407,
+ "from": "10-24 16:21",
+ "to": "11-01 22:02",
+ "off_hours_vs_open": {
+  "comparison": "off_hours / open",
+  "by_market": {
+   "BTCUSDT": {
+    "halves": [
+     [
+      null,
+      0,
+      0.01,
+      100
+     ],
+     [
+      null,
+      0,
+      0.01,
+      99
+     ]
+    ],
+    "ratio": [
+     null,
+     null
+    ],
+    "same_direction": null
+   },
+   "BZUSDT": {
+    "halves": [
+     [
+      0.9,
+      47,
+      0.91,
+      53
+     ],
+     [
+      0.89,
+      30,
+      0.9,
+      71
+     ]
+    ],
+    "ratio": [
+     0.99,
+     0.99
+    ],
+    "same_direction": true
+   },
+   "CLUSDT": {
+    "halves": [
+     [
+      0.97,
+      47,
+      0.99,
+      53
+     ],
+     [
+      0.97,
+      30,
+      0.98,
+      71
+     ]
+    ],
+    "ratio": [
+     0.98,
+     0.99
+    ],
+    "same_direction": true
+   },
+   "COPPERUSDT": {
+    "halves": [
+     [
+      2.1,
+      47,
+      1.53,
+      53
+     ],
+     [
+      2.5,
+      29,
+      1.55,
+      71
+     ]
+    ],
+    "ratio": [
+     1.37,
+     1.62
+    ],
+    "same_direction": true
+   },
+   "ETHUSDT": {
+    "halves": [
+     [
+      null,
+      0,
+      0.04,
+      100
+     ],
+     [
+      null,
+      0,
+      0.04,
+      99
+     ]
+    ],
+    "ratio": [
+     null,
+     null
+    ],
+    "same_direction": null
+   },
+   "NATGASUSDT": {
+    "halves": [
+     [
+      3.26,
+      47,
+      3.34,
+      53
+     ],
+     [
+      4.62,
+      31,
+      3.44,
+      71
+     ]
+    ],
+    "ratio": [
+     0.98,
+     1.34
+    ],
+    "same_direction": false
+   },
+   "QQQUSDT": {
+    "halves": [
+     [
+      0.14,
+      49,
+      0.14,
+      51
+     ],
+     [
+      0.14,
+      32,
+      0.14,
+      70
+     ]
+    ],
+    "ratio": [
+     1.01,
+     1.03
+    ],
+    "same_direction": true
+   },
+   "SPYUSDT": {
+    "halves": [
+     [
+      0.13,
+      49,
+      0.13,
+      51
+     ],
+     [
+      0.13,
+      31,
+      0.13,
+      71
+     ]
+    ],
+    "ratio": [
+     1.01,
+     1.02
+    ],
+    "same_direction": true
+   },
+   "USDBRLUSDT": {
+    "halves": [
+     [
+      17.52,
+      43,
+      11.71,
+      55
+     ],
+     [
+      15.24,
+      33,
+      10.73,
+      70
+     ]
+    ],
+    "ratio": [
+     1.5,
+     1.42
+    ],
+    "same_direction": true
+   },
+   "XAGUSDT": {
+    "halves": [
+     [
+      1.86,
+      47,
+      1.85,
+      53
+     ],
+     [
+      2.02,
+      30,
+      1.89,
+      70
+     ]
+    ],
+    "ratio": [
+     1.01,
+     1.07
+    ],
+    "same_direction": true
+   },
+   "XAUUSDT": {
+    "halves": [
+     [
+      0.03,
+      47,
+      0.02,
+      53
+     ],
+     [
+      0.03,
+      30,
+      0.02,
+      70
+     ]
+    ],
+    "ratio": [
+     1.01,
+     1.04
+    ],
+    "same_direction": true
+   },
+   "XPTUSDT": {
+    "halves": [
+     [
+      2.98,
+      47,
+      3.23,
+      53
+     ],
+     [
+      4.2,
+      29,
+      4.38,
+      71
+     ]
+    ],
+    "ratio": [
+     0.93,
+     0.96
+    ],
+    "same_direction": true
+   }
+  }
+ },
+ "weekend_vs_weekday": {
+  "comparison": "weekend / weekday",
+  "by_market": {
+   "BTCUSDT": {
+    "halves": [
+     [
+      0.01,
+      49,
+      0.01,
+      51
+     ],
+     [
+      0.01,
+      29,
+      0.01,
+      70
+     ]
+    ],
+    "ratio": [
+     1.0,
+     1.03
+    ],
+    "same_direction": false
+   },
+   "BZUSDT": {
+    "halves": [
+     [
+      0.9,
+      49,
+      0.91,
+      51
+     ],
+     [
+      0.89,
+      30,
+      0.9,
+      71
+     ]
+    ],
+    "ratio": [
+     0.99,
+     0.99
+    ],
+    "same_direction": true
+   },
+   "CLUSDT": {
+    "halves": [
+     [
+      0.97,
+      49,
+      0.99,
+      51
+     ],
+     [
+      0.97,
+      30,
+      0.98,
+      71
+     ]
+    ],
+    "ratio": [
+     0.98,
+     0.99
+    ],
+    "same_direction": true
+   },
+   "COPPERUSDT": {
+    "halves": [
+     [
+      2.02,
+      49,
+      1.53,
+      51
+     ],
+     [
+      2.5,
+      29,
+      1.55,
+      71
+     ]
+    ],
+    "ratio": [
+     1.32,
+     1.62
+    ],
+    "same_direction": true
+   },
+   "ETHUSDT": {
+    "halves": [
+     [
+      0.04,
+      49,
+      0.04,
+      51
+     ],
+     [
+      0.04,
+      29,
+      0.04,
+      70
+     ]
+    ],
+    "ratio": [
+     0.99,
+     1.03
+    ],
+    "same_direction": false
+   },
+   "NATGASUSDT": {
+    "halves": [
+     [
+      3.27,
+      49,
+      3.34,
+      51
+     ],
+     [
+      4.62,
+      31,
+      3.44,
+      71
+     ]
+    ],
+    "ratio": [
+     0.98,
+     1.34
+    ],
+    "same_direction": false
+   },
+   "QQQUSDT": {
+    "halves": [
+     [
+      0.14,
+      49,
+      0.14,
+      51
+     ],
+     [
+      0.14,
+      32,
+      0.14,
+      70
+     ]
+    ],
+    "ratio": [
+     1.01,
+     1.03
+    ],
+    "same_direction": true
+   },
+   "SPYUSDT": {
+    "halves": [
+     [
+      0.13,
+      49,
+      0.13,
+      51
+     ],
+     [
+      0.13,
+      31,
+      0.13,
+      71
+     ]
+    ],
+    "ratio": [
+     1.01,
+     1.02
+    ],
+    "same_direction": true
+   },
+   "USDBRLUSDT": {
+    "halves": [
+     [
+      17.07,
+      47,
+      11.6,
+      51
+     ],
+     [
+      15.24,
+      33,
+      10.73,
+      70
+     ]
+    ],
+    "ratio": [
+     1.47,
+     1.42
+    ],
+    "same_direction": true
+   },
+   "XAGUSDT": {
+    "halves": [
+     [
+      1.86,
+      49,
+      1.85,
+      51
+     ],
+     [
+      2.02,
+      30,
+      1.89,
+      70
+     ]
+    ],
+    "ratio": [
+     1.01,
+     1.07
+    ],
+    "same_direction": true
+   },
+   "XAUUSDT": {
+    "halves": [
+     [
+      0.03,
+      49,
+      0.02,
+      51
+     ],
+     [
+      0.03,
+      30,
+      0.02,
+      70
+     ]
+    ],
+    "ratio": [
+     1.01,
+     1.04
+    ],
+    "same_direction": true
+   },
+   "XPTUSDT": {
+    "halves": [
+     [
+      2.98,
+      49,
+      3.23,
+      51
+     ],
+     [
+      4.2,
+      29,
+      4.38,
+      71
+     ]
+    ],
+    "ratio": [
+     0.93,
+     0.96
+    ],
+    "same_direction": true
+   }
+  }
+ },
+ "asia_night_vs_rest": {
+  "comparison": "UTC 00-07 / rest",
+  "by_market": {
+   "BTCUSDT": {
+    "halves": [
+     [
+      0.01,
+      24,
+      0.01,
+      76
+     ],
+     [
+      0.01,
+      35,
+      0.01,
+      64
+     ]
+    ],
+    "ratio": [
+     1.0,
+     0.99
+    ],
+    "same_direction": true
+   },
+   "BZUSDT": {
+    "halves": [
+     [
+      0.91,
+      24,
+      0.9,
+      76
+     ],
+     [
+      0.9,
+      36,
+      0.9,
+      65
+     ]
+    ],
+    "ratio": [
+     1.0,
+     1.0
+    ],
+    "same_direction": true
+   },
+   "CLUSDT": {
+    "halves": [
+     [
+      0.99,
+      24,
+      0.98,
+      76
+     ],
+     [
+      0.98,
+      36,
+      0.97,
+      65
+     ]
+    ],
+    "ratio": [
+     1.01,
+     1.0
+    ],
+    "same_direction": false
+   },
+   "COPPERUSDT": {
+    "halves": [
+     [
+      1.54,
+      24,
+      1.69,
+      76
+     ],
+     [
+      1.83,
+      35,
+      2.02,
+      65
+     ]
+    ],
+    "ratio": [
+     0.91,
+     0.91
+    ],
+    "same_direction": true
+   },
+   "ETHUSDT": {
+    "halves": [
+     [
+      0.04,
+      24,
+      0.04,
+      76
+     ],
+     [
+      0.04,
+      35,
+      0.04,
+      64
+     ]
+    ],
+    "ratio": [
+     1.01,
+     1.0
+    ],
+    "same_direction": false
+   },
+   "NATGASUSDT": {
+    "halves": [
+     [
+      3.38,
+      24,
+      3.32,
+      76
+     ],
+     [
+      3.44,
+      36,
+      3.87,
+      66
+     ]
+    ],
+    "ratio": [
+     1.02,
+     0.89
+    ],
+    "same_direction": false
+   },
+   "QQQUSDT": {
+    "halves": [
+     [
+      0.14,
+      24,
+      0.14,
+      76
+     ],
+     [
+      0.14,
+      36,
+      0.14,
+      66
+     ]
+    ],
+    "ratio": [
+     1.0,
+     0.99
+    ],
+    "same_direction": true
+   },
+   "SPYUSDT": {
+    "halves": [
+     [
+      0.13,
+      24,
+      0.13,
+      76
+     ],
+     [
+      0.13,
+      36,
+      0.13,
+      66
+     ]
+    ],
+    "ratio": [
+     1.0,
+     1.0
+    ],
+    "same_direction": true
+   },
+   "USDBRLUSDT": {
+    "halves": [
+     [
+      13.42,
+      24,
+      12.88,
+      74
+     ],
+     [
+      11.56,
+      37,
+      11.16,
+      66
+     ]
+    ],
+    "ratio": [
+     1.04,
+     1.04
+    ],
+    "same_direction": true
+   },
+   "XAGUSDT": {
+    "halves": [
+     [
+      1.86,
+      24,
+      1.85,
+      76
+     ],
+     [
+      1.89,
+      35,
+      1.92,
+      65
+     ]
+    ],
+    "ratio": [
+     1.0,
+     0.98
+    ],
+    "same_direction": true
+   },
+   "XAUUSDT": {
+    "halves": [
+     [
+      0.02,
+      24,
+      0.02,
+      76
+     ],
+     [
+      0.02,
+      35,
+      0.02,
+      65
+     ]
+    ],
+    "ratio": [
+     1.0,
+     1.0
+    ],
+    "same_direction": true
+   },
+   "XPTUSDT": {
+    "halves": [
+     [
+      3.16,
+      24,
+      3.1,
+      76
+     ],
+     [
+      4.03,
+      35,
+      4.42,
+      65
+     ]
+    ],
+    "ratio": [
+     1.02,
+     0.91
+    ],
+    "same_direction": false
+   }
+  }
+ },
+ "high_vol_vs_calm": {
+  "comparison": "|z_1h|>=2 / |z_1h|<1",
+  "by_market": {
+   "BTCUSDT": {
+    "halves": [
+     [
+      null,
+      3,
+      0.01,
+      79
+     ],
+     [
+      0.01,
+      10,
+      0.01,
+      75
+     ]
+    ],
+    "ratio": [
+     null,
+     1.0
+    ],
+    "same_direction": null
+   },
+   "BZUSDT": {
+    "halves": [
+     [
+      null,
+      4,
+      0.9,
+      82
+     ],
+     [
+      0.89,
+      6,
+      0.9,
+      79
+     ]
+    ],
+    "ratio": [
+     null,
+     1.0
+    ],
+    "same_direction": null
+   },
+   "CLUSDT": {
+    "halves": [
+     [
+      null,
+      3,
+      0.98,
+      85
+     ],
+     [
+      0.97,
+      6,
+      0.97,
+      80
+     ]
+    ],
+    "ratio": [
+     null,
+     0.99
+    ],
+    "same_direction": null
+   },
+   "COPPERUSDT": {
+    "halves": [
+     [
+      1.53,
+      5,
+      1.75,
+      90
+     ],
+     [
+      null,
+      4,
+      2.08,
+      83
+     ]
+    ],
+    "ratio": [
+     0.87,
+     null
+    ],
+    "same_direction": null
+   },
+   "ETHUSDT": {
+    "halves": [
+     [
+      null,
+      2,
+      0.04,
+      69
+     ],
+     [
+      0.04,
+      7,
+      0.04,
+      78
+     ]
+    ],
+    "ratio": [
+     null,
+     1.01
+    ],
+    "same_direction": null
+   },
+   "NATGASUSDT": {
+    "halves": [
+     [
+      3.32,
+      13,
+      3.34,
+      76
+     ],
+     [
+      5.04,
+      5,
+      3.47,
+      83
+     ]
+    ],
+    "ratio": [
+     1.0,
+     1.45
+    ],
+    "same_direction": false
+   },
+   "QQQUSDT": {
+    "halves": [
+     [
+      0.14,
+      8,
+      0.14,
+      77
+     ],
+     [
+      0.14,
+      9,
+      0.14,
+      78
+     ]
+    ],
+    "ratio": [
+     0.99,
+     0.99
+    ],
+    "same_direction": true
+   },
+   "SPYUSDT": {
+    "halves": [
+     [
+      0.13,
+      9,
+      0.13,
+      75
+     ],
+     [
+      0.13,
+      7,
+      0.13,
+      76
+     ]
+    ],
+    "ratio": [
+     0.99,
+     1.0
+    ],
+    "same_direction": true
+   },
+   "USDBRLUSDT": {
+    "halves": [
+     [
+      8.6,
+      17,
+      13.04,
+      70
+     ],
+     [
+      null,
+      2,
+      11.22,
+      96
+     ]
+    ],
+    "ratio": [
+     0.66,
+     null
+    ],
+    "same_direction": null
+   },
+   "XAGUSDT": {
+    "halves": [
+     [
+      1.87,
+      5,
+      1.86,
+      87
+     ],
+     [
+      1.88,
+      10,
+      1.94,
+      70
+     ]
+    ],
+    "ratio": [
+     1.01,
+     0.97
+    ],
+    "same_direction": false
+   },
+   "XAUUSDT": {
+    "halves": [
+     [
+      null,
+      3,
+      0.02,
+      89
+     ],
+     [
+      0.02,
+      7,
+      0.02,
+      68
+     ]
+    ],
+    "ratio": [
+     null,
+     0.99
+    ],
+    "same_direction": null
+   },
+   "XPTUSDT": {
+    "halves": [
+     [
+      3.18,
+      6,
+      3.15,
+      85
+     ],
+     [
+      5.19,
+      8,
+      4.37,
+      77
+     ]
+    ],
+    "ratio": [
+     1.01,
+     1.19
+    ],
+    "same_direction": true
+   }
+  }
+ },
+ "k3_rt5000_by_S_hour": {
+  "0": {
+   "n": 232,
+   "median_bp": 22.1
+  },
+  "4": {
+   "n": 222,
+   "median_bp": 25.6
+  },
+  "8": {
+   "n": 194,
+   "median_bp": 26.5
+  },
+  "12": {
+   "n": 242,
+   "median_bp": 22.6
+  },
+  "16": {
+   "n": 260,
+   "median_bp": 22.5
+  },
+  "20": {
+   "n": 230,
+   "median_bp": 21.4
+  }
+ },
+ "capacity_50k_rt_bp_quantiles": {
+  "instruments": 56,
+  "p10": 0.1,
+  "p25": 1.3,
+  "p50": 3.7,
+  "p75": 16.5,
+  "p90": 34.0
+ }
+}

@@ -1,0 +1,14 @@
+{
+ "rule": "Mission 27.1 H27-K; flags = z_1h/z_24h/volume_ratio rows with flagged=1",
+ "recoveries": 12,
+ "after_gap": {
+  "rows": 339,
+  "flagged": 19,
+  "rate": 0.056
+ },
+ "other": {
+  "rows": 7212,
+  "flagged": 285,
+  "rate": 0.0395
+ }
+}

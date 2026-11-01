@@ -1,0 +1,61 @@
+{
+ "rule": "Mission 27.1 point 1; census hours before 2026-11-02 00:00 UTC only (never amendment 34 data)",
+ "snapshots": 110,
+ "universe": 197,
+ "off_hours_mark": {
+  "hours": 82,
+  "symbols": 197,
+  "mean_pair_corr": 0.156,
+  "mean_r2_on_market": 0.331,
+  "market_var_share": 0.156
+ },
+ "rth_mark": {
+  "hours": 21,
+  "symbols": 197,
+  "mean_pair_corr": 0.215,
+  "mean_r2_on_market": 0.366,
+  "market_var_share": 0.194
+ },
+ "rth_index": {
+  "hours": 21,
+  "symbols": 197,
+  "mean_pair_corr": 0.21,
+  "mean_r2_on_market": 0.363,
+  "market_var_share": 0.19
+ },
+ "ls_sd_rth_index": {
+  "hours": 21,
+  "random_hourly_sd": 0.00203,
+  "beta_sorted_hourly_sd": 0.01391
+ },
+ "ls_sd_day_est_sqrt5h": {
+  "random_hourly_sd": 0.0045,
+  "beta_sorted_hourly_sd": 0.0311
+ },
+ "signal_days": [
+  {
+   "day": "2026-10-28",
+   "n": 191,
+   "mean_s": 0.00962,
+   "sd_s": 0.03051,
+   "common_share": 0.09,
+   "spy_s": 0.00309
+  },
+  {
+   "day": "2026-10-29",
+   "n": 191,
+   "mean_s": -0.00676,
+   "sd_s": 0.03591,
+   "common_share": 0.034,
+   "spy_s": -0.00032
+  },
+  {
+   "day": "2026-10-30",
+   "n": 197,
+   "mean_s": -0.04118,
+   "sd_s": 0.07232,
+   "common_share": 0.245,
+   "spy_s": -0.00657
+  }
+ ]
+}
