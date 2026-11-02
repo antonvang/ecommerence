@@ -77,7 +77,8 @@ class Check(unittest.TestCase):
         self.assertGreaterEqual(r["c3_day_pairs"], 6)
         self.assertEqual(set(r), {"c1_events", "c1_clusters_need", "c2_candidate_days", "c2_clusters_need",
                                   "c3_day_pairs", "c3_need", "c4_events", "c4_event_days", "c4_clusters_need",
-                                  "census_days", "census_days_need_c4", "note"})     # counts only, no outcome
+                                  "census_days", "census_days_need_c4", "m35_valid_snapshots", "m35_events",
+                                  "m35_event_days", "m35_days_need", "note"})     # counts only, no outcome
 
     def test_c4_counts_volume_without_price_once_per_coin_per_week(self):
         """Amendment 33 point 2: V >= 3x the median of the prior 7 daily snapshots, V >= 1 mio, |24 h change| < 3 %."""

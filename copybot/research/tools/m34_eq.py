@@ -17,6 +17,7 @@ import sys
 HERE = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, HERE)
 from lab import sessions  # noqa: E402
+from lab.edgemonitor import t_cdf  # noqa: E402
 
 FIRST_DAY = dt.date(2026, 11, 2)
 LAST_DAY = dt.date(2027, 3, 12)
@@ -112,7 +113,7 @@ def tstat(xs):
     if len(xs) < 3 or st.stdev(xs) == 0:
         return None, None
     t = st.fmean(xs) / (st.stdev(xs) / math.sqrt(len(xs)))
-    return t, math.erfc(abs(t) / math.sqrt(2))       # normal approximation of the two-sided p (n >= 28)
+    return t, 2 * (1 - t_cdf(abs(t), len(xs) - 1))     # Student's t, two-sided (amendment 35a point 6)
 
 
 def judge(rs, placebo):

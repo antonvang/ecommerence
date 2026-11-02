@@ -84,6 +84,17 @@ class Judge(unittest.TestCase):
         self.assertEqual(m.judge(self.days(strong), self.days(strong))["verdict"], "SCREEN_FAIL")
 
 
+class TTest(unittest.TestCase):
+    def test_p_is_students_t_not_the_normal_approximation(self):
+        xs = [1.0 + (-1) ** i * 0.5 * (1 + i % 3) for i in range(28)]
+        t, p = m.tstat(xs)
+        self.assertGreater(p, math.erfc(abs(t) / math.sqrt(2)))          # heavier tails than the normal
+
+    def test_known_value(self):
+        from lab.edgemonitor import t_cdf
+        self.assertAlmostEqual(2 * (1 - t_cdf(3.0, 27)), 0.00575, places=4)
+
+
 class Refusal(unittest.TestCase):
     def test_run_refuses_before_28_valid_days(self):
         with mock.patch.object(m, "count", return_value={"valid_days_m34": 3, "valid_days_m36": 3, "days": []}), \

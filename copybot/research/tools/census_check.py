@@ -68,10 +68,15 @@ def readiness(snaps):
     full = {d for d in days if sum(1 for k in range(24) if ret(snaps, "BTCUSDT", d + k * HOUR) is not None) >= 22}
     c3 = sum(1 for d in full if d + DAY in full)
     c4_events, c4_days = c4(snaps, days)
-    return {"c1_events": c1, "c1_clusters_need": 15, "c2_candidate_days": c2, "c2_clusters_need": 15,
+    import m35_gold                                                     # 35a point 7: counts only
+    m35 = m35_gold.count_snaps(snaps, max(hours) + HOUR)
+    return {"m35_valid_snapshots": {k: v["valid_snapshots"] for k, v in m35["pairs"].items()},
+            "m35_events": sum(v["events_with_outcome"] for v in m35["pairs"].values()),
+            "m35_event_days": m35["event_days"], "m35_days_need": m35["days_need"],
+            "c1_events": c1, "c1_clusters_need": 15, "c2_candidate_days": c2, "c2_clusters_need": 15,
             "c3_day_pairs": c3, "c3_need": 28, "c4_events": c4_events, "c4_event_days": c4_days,
             "c4_clusters_need": 60, "census_days": len(days), "census_days_need_c4": 60,
-            "note": "antal kun; intet udfald beregnet (28a punkt 7, 33 punkt 7)"}
+            "note": "antal kun; intet udfald beregnet (28a punkt 7, 33 punkt 7, 35a punkt 7)"}
 
 
 def field(p, sym, col):
