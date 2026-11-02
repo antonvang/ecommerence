@@ -4122,3 +4122,25 @@ aktier og ADR'er og med faktoren trukket ud.
     - Timeopløsning som i ændring 34.
 16. **Skrevet før data (forventning):** SCREEN_FAIL mest sandsynlig. Uden den spekulative faktor er en vending tilbage i
     kontanttiden mindre sandsynlig, medmindre perps for små aktier (GME, AMC, DJT, ONDS, RDW) overreagerer systematisk.
+
+## Ændring 35a (2026-11-02 kl. 01:32 lokal, før kode og før nogen værdi af b, d eller c er beregnet): fortolkning af m35 og t-testen i m34/m35/m36
+
+**Beslutning:** Claude under brugerens Mission 27.2. Ingen regel i ændring 34, 35 eller 36 ændres; teksten fastlægger
+kun, hvordan koden læser punkter, der kunne læses på to måder. Intet udfald er set.
+
+1. **Gyldigt snapshot (35 punkt 3–4):** det første census-snapshot i UTC-timen h, hentet højst 600 s efter h, hvor
+   både token og XAUUSDT har markPrice > 0, og `sessions.opened('commodity', h)` er sand.
+2. **Median (35 punkt 5):** de 24 seneste gyldige snapshots før h for parret, uanset afstand i tid. Findes færre end
+   20, er der ingen d_h.
+3. **Fraktil (35 punkt 6):** |d| fra parrets gyldige snapshots i [h − 7 døgn, h). Under 100 værdier: ingen hændelse.
+   Fraktilen er den empiriske 90 %-værdi (sorteret, indeks ⌊0,9·n⌋).
+4. **Hændelse med udfald (35 punkt 7–8):** en hændelse tæller kun, hvis timen h + 4 t også har et gyldigt snapshot.
+   Det afhænger af kalender og datadækning, ikke af c. Dagens hændelse for parret er den første sådanne.
+5. **Placebo (35 punkt 12):** for samme hændelser bruges d fra timen h − 24 t (skal findes efter punkt 2). Dagens
+   placeboværdi er gennemsnittet over parrene med en placeboværdi.
+6. **t-test (34 punkt 8, 35 punkt 9, 36 punkt 7):** Students t med n − 1 frihedsgrader, tosidet. Koden til m34/m36
+   brugte en normaltilnærmelse, der ved n = 28 giver for små p-værdier (t = 3,0: 0,0027 mod 0,0057). Den rettes til
+   Students t, før nogen kørsel er sket. Det samme gælder placeboens |t| < 2.
+7. **Tælling før kørslen (35 punkt 14):** antal gyldige snapshots pr. par, antal hændelser med udfald og antal
+   hændelsesdage vises i `census_check` og i `research/tools/m35_gold.py count`. b, d, c og fraktilen vises aldrig før
+   kørslen. Kørslen nægter under 28 hændelsesdage.
