@@ -1,0 +1,954 @@
+{
+ "rule": "N4 kimchi draft (MISSION27_3 punkt 6): current lists only, no historical data",
+ "written": "2026-11-02 kl. 10:14 lokal",
+ "sources": {
+  "upbit": "api.upbit.com/v1/market/all fetched 2026-11-02 08:08 UTC (file time; current list)",
+  "binance": "fapi exchangeInfo snapshot 2026-11-01"
+ },
+ "excluded": [
+  "BTC",
+  "BUSD",
+  "DAI",
+  "FDUSD",
+  "PYUSD",
+  "RLUSD",
+  "TUSD",
+  "USD1",
+  "USDC",
+  "USDE",
+  "USDS",
+  "USDT"
+ ],
+ "upbit_krw_markets": 299,
+ "overlap": 232,
+ "pairs": {
+  "0G": {
+   "perp": "0GUSDT",
+   "multiplier": 1
+  },
+  "1INCH": {
+   "perp": "1INCHUSDT",
+   "multiplier": 1
+  },
+  "2Z": {
+   "perp": "2ZUSDT",
+   "multiplier": 1
+  },
+  "A": {
+   "perp": "AUSDT",
+   "multiplier": 1
+  },
+  "AAVE": {
+   "perp": "AAVEUSDT",
+   "multiplier": 1
+  },
+  "ADA": {
+   "perp": "ADAUSDT",
+   "multiplier": 1
+  },
+  "AERO": {
+   "perp": "AEROUSDT",
+   "multiplier": 1
+  },
+  "AGLD": {
+   "perp": "AGLDUSDT",
+   "multiplier": 1
+  },
+  "AKT": {
+   "perp": "AKTUSDT",
+   "multiplier": 1
+  },
+  "ALGO": {
+   "perp": "ALGOUSDT",
+   "multiplier": 1
+  },
+  "ALT": {
+   "perp": "ALTUSDT",
+   "multiplier": 1
+  },
+  "ANIME": {
+   "perp": "ANIMEUSDT",
+   "multiplier": 1
+  },
+  "ANKR": {
+   "perp": "ANKRUSDT",
+   "multiplier": 1
+  },
+  "API3": {
+   "perp": "API3USDT",
+   "multiplier": 1
+  },
+  "APT": {
+   "perp": "APTUSDT",
+   "multiplier": 1
+  },
+  "ARB": {
+   "perp": "ARBUSDT",
+   "multiplier": 1
+  },
+  "ARK": {
+   "perp": "ARKUSDT",
+   "multiplier": 1
+  },
+  "ARKM": {
+   "perp": "ARKMUSDT",
+   "multiplier": 1
+  },
+  "ARX": {
+   "perp": "ARXUSDT",
+   "multiplier": 1
+  },
+  "ASTR": {
+   "perp": "ASTRUSDT",
+   "multiplier": 1
+  },
+  "ATH": {
+   "perp": "ATHUSDT",
+   "multiplier": 1
+  },
+  "ATOM": {
+   "perp": "ATOMUSDT",
+   "multiplier": 1
+  },
+  "AUCTION": {
+   "perp": "AUCTIONUSDT",
+   "multiplier": 1
+  },
+  "AVAX": {
+   "perp": "AVAXUSDT",
+   "multiplier": 1
+  },
+  "AVNT": {
+   "perp": "AVNTUSDT",
+   "multiplier": 1
+  },
+  "AWE": {
+   "perp": "AWEUSDT",
+   "multiplier": 1
+  },
+  "AXL": {
+   "perp": "AXLUSDT",
+   "multiplier": 1
+  },
+  "AXS": {
+   "perp": "AXSUSDT",
+   "multiplier": 1
+  },
+  "AZTEC": {
+   "perp": "AZTECUSDT",
+   "multiplier": 1
+  },
+  "BABY": {
+   "perp": "BABYUSDT",
+   "multiplier": 1
+  },
+  "BARD": {
+   "perp": "BARDUSDT",
+   "multiplier": 1
+  },
+  "BAT": {
+   "perp": "BATUSDT",
+   "multiplier": 1
+  },
+  "BCH": {
+   "perp": "BCHUSDT",
+   "multiplier": 1
+  },
+  "BERA": {
+   "perp": "BERAUSDT",
+   "multiplier": 1
+  },
+  "BIGTIME": {
+   "perp": "BIGTIMEUSDT",
+   "multiplier": 1
+  },
+  "BIO": {
+   "perp": "BIOUSDT",
+   "multiplier": 1
+  },
+  "BIRB": {
+   "perp": "BIRBUSDT",
+   "multiplier": 1
+  },
+  "BLUR": {
+   "perp": "BLURUSDT",
+   "multiplier": 1
+  },
+  "BMT": {
+   "perp": "BMTUSDT",
+   "multiplier": 1
+  },
+  "BREV": {
+   "perp": "BREVUSDT",
+   "multiplier": 1
+  },
+  "BSB": {
+   "perp": "BSBUSDT",
+   "multiplier": 1
+  },
+  "BSV": {
+   "perp": "BSVUSDT",
+   "multiplier": 1
+  },
+  "CAP": {
+   "perp": "CAPUSDT",
+   "multiplier": 1
+  },
+  "CARV": {
+   "perp": "CARVUSDT",
+   "multiplier": 1
+  },
+  "CC": {
+   "perp": "CCUSDT",
+   "multiplier": 1
+  },
+  "CELO": {
+   "perp": "CELOUSDT",
+   "multiplier": 1
+  },
+  "CFG": {
+   "perp": "CFGUSDT",
+   "multiplier": 1
+  },
+  "CFX": {
+   "perp": "CFXUSDT",
+   "multiplier": 1
+  },
+  "CHIP": {
+   "perp": "CHIPUSDT",
+   "multiplier": 1
+  },
+  "CHZ": {
+   "perp": "CHZUSDT",
+   "multiplier": 1
+  },
+  "CKB": {
+   "perp": "CKBUSDT",
+   "multiplier": 1
+  },
+  "COMP": {
+   "perp": "COMPUSDT",
+   "multiplier": 1
+  },
+  "COW": {
+   "perp": "COWUSDT",
+   "multiplier": 1
+  },
+  "CRV": {
+   "perp": "CRVUSDT",
+   "multiplier": 1
+  },
+  "CT": {
+   "perp": "CTUSDT",
+   "multiplier": 1
+  },
+  "CVC": {
+   "perp": "CVCUSDT",
+   "multiplier": 1
+  },
+  "CYBER": {
+   "perp": "CYBERUSDT",
+   "multiplier": 1
+  },
+  "DEEP": {
+   "perp": "DEEPUSDT",
+   "multiplier": 1
+  },
+  "DOGE": {
+   "perp": "DOGEUSDT",
+   "multiplier": 1
+  },
+  "DOOD": {
+   "perp": "DOODUSDT",
+   "multiplier": 1
+  },
+  "DOS": {
+   "perp": "DOSUSDT",
+   "multiplier": 1
+  },
+  "DOT": {
+   "perp": "DOTUSDT",
+   "multiplier": 1
+  },
+  "EDGE": {
+   "perp": "EDGEUSDT",
+   "multiplier": 1
+  },
+  "EGLD": {
+   "perp": "EGLDUSDT",
+   "multiplier": 1
+  },
+  "ELSA": {
+   "perp": "ELSAUSDT",
+   "multiplier": 1
+  },
+  "ENA": {
+   "perp": "ENAUSDT",
+   "multiplier": 1
+  },
+  "ENS": {
+   "perp": "ENSUSDT",
+   "multiplier": 1
+  },
+  "ENSO": {
+   "perp": "ENSOUSDT",
+   "multiplier": 1
+  },
+  "ERA": {
+   "perp": "ERAUSDT",
+   "multiplier": 1
+  },
+  "ESP": {
+   "perp": "ESPUSDT",
+   "multiplier": 1
+  },
+  "ETC": {
+   "perp": "ETCUSDT",
+   "multiplier": 1
+  },
+  "ETH": {
+   "perp": "ETHUSDT",
+   "multiplier": 1
+  },
+  "ETHFI": {
+   "perp": "ETHFIUSDT",
+   "multiplier": 1
+  },
+  "EUL": {
+   "perp": "EULUSDT",
+   "multiplier": 1
+  },
+  "F": {
+   "perp": "FUSDT",
+   "multiplier": 1
+  },
+  "FF": {
+   "perp": "FFUSDT",
+   "multiplier": 1
+  },
+  "FIL": {
+   "perp": "FILUSDT",
+   "multiplier": 1
+  },
+  "FLOCK": {
+   "perp": "FLOCKUSDT",
+   "multiplier": 1
+  },
+  "FLUID": {
+   "perp": "FLUIDUSDT",
+   "multiplier": 1
+  },
+  "G": {
+   "perp": "GUSDT",
+   "multiplier": 1
+  },
+  "GAS": {
+   "perp": "GASUSDT",
+   "multiplier": 1
+  },
+  "GLM": {
+   "perp": "GLMUSDT",
+   "multiplier": 1
+  },
+  "GMT": {
+   "perp": "GMTUSDT",
+   "multiplier": 1
+  },
+  "GRT": {
+   "perp": "GRTUSDT",
+   "multiplier": 1
+  },
+  "GRVT": {
+   "perp": "GRVTUSDT",
+   "multiplier": 1
+  },
+  "GTC": {
+   "perp": "GTCUSDT",
+   "multiplier": 1
+  },
+  "HBAR": {
+   "perp": "HBARUSDT",
+   "multiplier": 1
+  },
+  "HIVE": {
+   "perp": "HIVEUSDT",
+   "multiplier": 1
+  },
+  "HOLO": {
+   "perp": "HOLOUSDT",
+   "multiplier": 1
+  },
+  "HOME": {
+   "perp": "HOMEUSDT",
+   "multiplier": 1
+  },
+  "HYPER": {
+   "perp": "HYPERUSDT",
+   "multiplier": 1
+  },
+  "ICP": {
+   "perp": "ICPUSDT",
+   "multiplier": 1
+  },
+  "ID": {
+   "perp": "IDUSDT",
+   "multiplier": 1
+  },
+  "IMX": {
+   "perp": "IMXUSDT",
+   "multiplier": 1
+  },
+  "IN": {
+   "perp": "INUSDT",
+   "multiplier": 1
+  },
+  "INJ": {
+   "perp": "INJUSDT",
+   "multiplier": 1
+  },
+  "IO": {
+   "perp": "IOUSDT",
+   "multiplier": 1
+  },
+  "IOST": {
+   "perp": "IOSTUSDT",
+   "multiplier": 1
+  },
+  "IOTA": {
+   "perp": "IOTAUSDT",
+   "multiplier": 1
+  },
+  "IRYS": {
+   "perp": "IRYSUSDT",
+   "multiplier": 1
+  },
+  "JST": {
+   "perp": "JSTUSDT",
+   "multiplier": 1
+  },
+  "JTO": {
+   "perp": "JTOUSDT",
+   "multiplier": 1
+  },
+  "JUP": {
+   "perp": "JUPUSDT",
+   "multiplier": 1
+  },
+  "KAIA": {
+   "perp": "KAIAUSDT",
+   "multiplier": 1
+  },
+  "KAITO": {
+   "perp": "KAITOUSDT",
+   "multiplier": 1
+  },
+  "KAT": {
+   "perp": "KATUSDT",
+   "multiplier": 1
+  },
+  "KAVA": {
+   "perp": "KAVAUSDT",
+   "multiplier": 1
+  },
+  "KERNEL": {
+   "perp": "KERNELUSDT",
+   "multiplier": 1
+  },
+  "KITE": {
+   "perp": "KITEUSDT",
+   "multiplier": 1
+  },
+  "KMNO": {
+   "perp": "KMNOUSDT",
+   "multiplier": 1
+  },
+  "KNC": {
+   "perp": "KNCUSDT",
+   "multiplier": 1
+  },
+  "LA": {
+   "perp": "LAUSDT",
+   "multiplier": 1
+  },
+  "LAYER": {
+   "perp": "LAYERUSDT",
+   "multiplier": 1
+  },
+  "LINEA": {
+   "perp": "LINEAUSDT",
+   "multiplier": 1
+  },
+  "LINK": {
+   "perp": "LINKUSDT",
+   "multiplier": 1
+  },
+  "LIT": {
+   "perp": "LITUSDT",
+   "multiplier": 1
+  },
+  "LPT": {
+   "perp": "LPTUSDT",
+   "multiplier": 1
+  },
+  "LSK": {
+   "perp": "LSKUSDT",
+   "multiplier": 1
+  },
+  "MANA": {
+   "perp": "MANAUSDT",
+   "multiplier": 1
+  },
+  "MANTRA": {
+   "perp": "MANTRAUSDT",
+   "multiplier": 1
+  },
+  "MASK": {
+   "perp": "MASKUSDT",
+   "multiplier": 1
+  },
+  "ME": {
+   "perp": "MEUSDT",
+   "multiplier": 1
+  },
+  "MEGA": {
+   "perp": "MEGAUSDT",
+   "multiplier": 1
+  },
+  "MEW": {
+   "perp": "MEWUSDT",
+   "multiplier": 1
+  },
+  "MINA": {
+   "perp": "MINAUSDT",
+   "multiplier": 1
+  },
+  "MIRA": {
+   "perp": "MIRAUSDT",
+   "multiplier": 1
+  },
+  "MMT": {
+   "perp": "MMTUSDT",
+   "multiplier": 1
+  },
+  "MOCA": {
+   "perp": "MOCAUSDT",
+   "multiplier": 1
+  },
+  "MON": {
+   "perp": "MONUSDT",
+   "multiplier": 1
+  },
+  "MOODENG": {
+   "perp": "MOODENGUSDT",
+   "multiplier": 1
+  },
+  "MORPHO": {
+   "perp": "MORPHOUSDT",
+   "multiplier": 1
+  },
+  "MOVE": {
+   "perp": "MOVEUSDT",
+   "multiplier": 1
+  },
+  "MTL": {
+   "perp": "MTLUSDT",
+   "multiplier": 1
+  },
+  "NEAR": {
+   "perp": "NEARUSDT",
+   "multiplier": 1
+  },
+  "NEO": {
+   "perp": "NEOUSDT",
+   "multiplier": 1
+  },
+  "NEWT": {
+   "perp": "NEWTUSDT",
+   "multiplier": 1
+  },
+  "NIL": {
+   "perp": "NILUSDT",
+   "multiplier": 1
+  },
+  "NMR": {
+   "perp": "NMRUSDT",
+   "multiplier": 1
+  },
+  "NXPC": {
+   "perp": "NXPCUSDT",
+   "multiplier": 1
+  },
+  "O": {
+   "perp": "OUSDT",
+   "multiplier": 1
+  },
+  "ONDO": {
+   "perp": "ONDOUSDT",
+   "multiplier": 1
+  },
+  "ONG": {
+   "perp": "ONGUSDT",
+   "multiplier": 1
+  },
+  "ONT": {
+   "perp": "ONTUSDT",
+   "multiplier": 1
+  },
+  "OP": {
+   "perp": "OPUSDT",
+   "multiplier": 1
+  },
+  "OPEN": {
+   "perp": "OPENUSDT",
+   "multiplier": 1
+  },
+  "OPG": {
+   "perp": "OPGUSDT",
+   "multiplier": 1
+  },
+  "ORCA": {
+   "perp": "ORCAUSDT",
+   "multiplier": 1
+  },
+  "ORDER": {
+   "perp": "ORDERUSDT",
+   "multiplier": 1
+  },
+  "PENDLE": {
+   "perp": "PENDLEUSDT",
+   "multiplier": 1
+  },
+  "PENGU": {
+   "perp": "PENGUUSDT",
+   "multiplier": 1
+  },
+  "PEPE": {
+   "perp": "1000PEPEUSDT",
+   "multiplier": 1000
+  },
+  "PIEVERSE": {
+   "perp": "PIEVERSEUSDT",
+   "multiplier": 1
+  },
+  "PLUME": {
+   "perp": "PLUMEUSDT",
+   "multiplier": 1
+  },
+  "POL": {
+   "perp": "POLUSDT",
+   "multiplier": 1
+  },
+  "POLYX": {
+   "perp": "POLYXUSDT",
+   "multiplier": 1
+  },
+  "PONS": {
+   "perp": "PONSUSDT",
+   "multiplier": 1
+  },
+  "POWR": {
+   "perp": "POWRUSDT",
+   "multiplier": 1
+  },
+  "PRL": {
+   "perp": "PRLUSDT",
+   "multiplier": 1
+  },
+  "PROM": {
+   "perp": "PROMUSDT",
+   "multiplier": 1
+  },
+  "PROVE": {
+   "perp": "PROVEUSDT",
+   "multiplier": 1
+  },
+  "PUMP": {
+   "perp": "PUMPUSDT",
+   "multiplier": 1
+  },
+  "PUNDIX": {
+   "perp": "PUNDIXUSDT",
+   "multiplier": 1
+  },
+  "PYTH": {
+   "perp": "PYTHUSDT",
+   "multiplier": 1
+  },
+  "QTUM": {
+   "perp": "QTUMUSDT",
+   "multiplier": 1
+  },
+  "RE": {
+   "perp": "REUSDT",
+   "multiplier": 1
+  },
+  "RED": {
+   "perp": "REDUSDT",
+   "multiplier": 1
+  },
+  "RENDER": {
+   "perp": "RENDERUSDT",
+   "multiplier": 1
+  },
+  "RSR": {
+   "perp": "RSRUSDT",
+   "multiplier": 1
+  },
+  "SAFE": {
+   "perp": "SAFEUSDT",
+   "multiplier": 1
+  },
+  "SAHARA": {
+   "perp": "SAHARAUSDT",
+   "multiplier": 1
+  },
+  "SAND": {
+   "perp": "SANDUSDT",
+   "multiplier": 1
+  },
+  "SEI": {
+   "perp": "SEIUSDT",
+   "multiplier": 1
+  },
+  "SENT": {
+   "perp": "SENTUSDT",
+   "multiplier": 1
+  },
+  "SHIB": {
+   "perp": "1000SHIBUSDT",
+   "multiplier": 1000
+  },
+  "SIGN": {
+   "perp": "SIGNUSDT",
+   "multiplier": 1
+  },
+  "SKR": {
+   "perp": "SKRUSDT",
+   "multiplier": 1
+  },
+  "SKY": {
+   "perp": "SKYUSDT",
+   "multiplier": 1
+  },
+  "SLX": {
+   "perp": "SLXUSDT",
+   "multiplier": 1
+  },
+  "SOL": {
+   "perp": "SOLUSDT",
+   "multiplier": 1
+  },
+  "SOMI": {
+   "perp": "SOMIUSDT",
+   "multiplier": 1
+  },
+  "SONIC": {
+   "perp": "SONICUSDT",
+   "multiplier": 1
+  },
+  "SOON": {
+   "perp": "SOONUSDT",
+   "multiplier": 1
+  },
+  "SOPH": {
+   "perp": "SOPHUSDT",
+   "multiplier": 1
+  },
+  "SPK": {
+   "perp": "SPKUSDT",
+   "multiplier": 1
+  },
+  "SPX": {
+   "perp": "SPXUSDT",
+   "multiplier": 1
+  },
+  "STEEM": {
+   "perp": "STEEMUSDT",
+   "multiplier": 1
+  },
+  "STX": {
+   "perp": "STXUSDT",
+   "multiplier": 1
+  },
+  "SUI": {
+   "perp": "SUIUSDT",
+   "multiplier": 1
+  },
+  "SUN": {
+   "perp": "SUNUSDT",
+   "multiplier": 1
+  },
+  "SUPER": {
+   "perp": "SUPERUSDT",
+   "multiplier": 1
+  },
+  "SYRUP": {
+   "perp": "SYRUPUSDT",
+   "multiplier": 1
+  },
+  "T": {
+   "perp": "TUSDT",
+   "multiplier": 1
+  },
+  "TAIKO": {
+   "perp": "TAIKOUSDT",
+   "multiplier": 1
+  },
+  "TAO": {
+   "perp": "TAOUSDT",
+   "multiplier": 1
+  },
+  "THETA": {
+   "perp": "THETAUSDT",
+   "multiplier": 1
+  },
+  "TIA": {
+   "perp": "TIAUSDT",
+   "multiplier": 1
+  },
+  "TOSHI": {
+   "perp": "TOSHIUSDT",
+   "multiplier": 1
+  },
+  "TREE": {
+   "perp": "TREEUSDT",
+   "multiplier": 1
+  },
+  "TRUMP": {
+   "perp": "TRUMPUSDT",
+   "multiplier": 1
+  },
+  "TRUST": {
+   "perp": "TRUSTUSDT",
+   "multiplier": 1
+  },
+  "TRX": {
+   "perp": "TRXUSDT",
+   "multiplier": 1
+  },
+  "UNI": {
+   "perp": "UNIUSDT",
+   "multiplier": 1
+  },
+  "VANA": {
+   "perp": "VANAUSDT",
+   "multiplier": 1
+  },
+  "VET": {
+   "perp": "VETUSDT",
+   "multiplier": 1
+  },
+  "VIRTUAL": {
+   "perp": "VIRTUALUSDT",
+   "multiplier": 1
+  },
+  "VTHO": {
+   "perp": "VTHOUSDT",
+   "multiplier": 1
+  },
+  "VVV": {
+   "perp": "VVVUSDT",
+   "multiplier": 1
+  },
+  "W": {
+   "perp": "WUSDT",
+   "multiplier": 1
+  },
+  "WAL": {
+   "perp": "WALUSDT",
+   "multiplier": 1
+  },
+  "WAXP": {
+   "perp": "WAXPUSDT",
+   "multiplier": 1
+  },
+  "WCT": {
+   "perp": "WCTUSDT",
+   "multiplier": 1
+  },
+  "WET": {
+   "perp": "WETUSDT",
+   "multiplier": 1
+  },
+  "WIF": {
+   "perp": "WIFUSDT",
+   "multiplier": 1
+  },
+  "WLD": {
+   "perp": "WLDUSDT",
+   "multiplier": 1
+  },
+  "WLFI": {
+   "perp": "WLFIUSDT",
+   "multiplier": 1
+  },
+  "XAUT": {
+   "perp": "XAUTUSDT",
+   "multiplier": 1
+  },
+  "XEC": {
+   "perp": "1000XECUSDT",
+   "multiplier": 1000
+  },
+  "XLM": {
+   "perp": "XLMUSDT",
+   "multiplier": 1
+  },
+  "XPL": {
+   "perp": "XPLUSDT",
+   "multiplier": 1
+  },
+  "XRP": {
+   "perp": "XRPUSDT",
+   "multiplier": 1
+  },
+  "XTZ": {
+   "perp": "XTZUSDT",
+   "multiplier": 1
+  },
+  "YGG": {
+   "perp": "YGGUSDT",
+   "multiplier": 1
+  },
+  "ZAMA": {
+   "perp": "ZAMAUSDT",
+   "multiplier": 1
+  },
+  "ZBT": {
+   "perp": "ZBTUSDT",
+   "multiplier": 1
+  },
+  "ZETA": {
+   "perp": "ZETAUSDT",
+   "multiplier": 1
+  },
+  "ZIL": {
+   "perp": "ZILUSDT",
+   "multiplier": 1
+  },
+  "ZK": {
+   "perp": "ZKUSDT",
+   "multiplier": 1
+  },
+  "ZKC": {
+   "perp": "ZKCUSDT",
+   "multiplier": 1
+  },
+  "ZKP": {
+   "perp": "ZKPUSDT",
+   "multiplier": 1
+  },
+  "ZORA": {
+   "perp": "ZORAUSDT",
+   "multiplier": 1
+  },
+  "ZRO": {
+   "perp": "ZROUSDT",
+   "multiplier": 1
+  },
+  "ZRX": {
+   "perp": "ZRXUSDT",
+   "multiplier": 1
+  }
+ }
+}
