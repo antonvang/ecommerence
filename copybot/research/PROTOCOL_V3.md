@@ -4286,3 +4286,22 @@ bruger nu minutter ekstra pr. time, og tiden vokser til fristen. Fejlen fandtes 
    en enhedstest af dubletter (samme tid: sidste række vinder, som før). Giver de ikke det samme, deployes intet.
 3. **Ingen K3-afgørelse er truffet** (`research.k3_result` findes ikke endnu). Ændringen kan derfor ikke flytte et
    resultat, kun hvor hurtigt det beregnes.
+
+## Ændring 40 (2026-11-02 kl. 23:30 lokal, før kode): karantæne og forebyggende gate-tests efter 11-02's afvigelser
+
+Baggrund: MISSION27_3 punkt 7b (én GET til `api.upbit.com/v1/market/all`) og punkt 13b/14 (udskrevne tilbagefyldte
+news/1-titler fra 2022-2026, bekræftet som holdout-brud). Kun skærpelser; ingen gate, tærskel eller låst nøgle ændres.
+
+1. **Karantæneregister** `research/data/QUARANTINE.json`: én post pr. fil eller datasæt, der stammer fra en afvigelse
+   (sti, sha256, årsag, afvigelsens punkt, forbud). Filerne bevares uændret som dokumentation; de må ikke slettes,
+   overskrives eller bruges af noget værktøj til lås, univers eller analyse.
+2. **Test:** hver post findes, har samme sha256, og ingen fil i `lab/`, `pilot/` eller `research/tools/` nævner en
+   karantænesti (kun registret og testene må).
+3. **Test:** strengen `api.upbit.com` må kun stå i `research/tools/n4_kimchi.py` (ændring 38 B), som fortsat nægter før
+   11-14 og uden lås.
+4. **Hjælper og test:** `research/tools/gates.py` får `news_rows(con, metric)`, som kun returnerer tilbagefyldte
+   news/1-rækker med `published_ts` < 2024-01-01 og løbende rækker (`backfill` falsk). Et research-værktøj, der
+   nævner `news/1`, skal importere hjælperen; en test håndhæver det. `lab/` er uændret (dens news-læsere er låste
+   detektorer).
+5. Udkast B's (n4) punkt 1 og MISSION27_3 punkt 5's tal "299 / 231" mærkes som afledt af afvigelsen; B's univers bygges
+   kun fra kaldet under 38 B efter låsen.
