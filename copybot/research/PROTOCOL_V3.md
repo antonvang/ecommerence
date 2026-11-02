@@ -4144,3 +4144,55 @@ kun, hvordan koden læser punkter, der kunne læses på to måder. Intet udfald 
 7. **Tælling før kørslen (35 punkt 14):** antal gyldige snapshots pr. par, antal hændelser med udfald og antal
    hændelsesdage vises i `census_check` og i `research/tools/m35_gold.py count`. b, d, c og fraktilen vises aldrig før
    kørslen. Kørslen nægter under 28 hændelsesdage.
+
+## Ændring 37 (2026-11-02 kl. 01:37 lokal, før kode og før nogen census-time fra 2026-11-02 er læst): H27-M — kryptoaktier mod BTC uden for børstid (census, metode m37)
+
+**Beslutning:** Claude under brugerens Mission 27.2 (spørgsmål #2 i `research/studies/MISSION27_2_2026-11-01.md`,
+"styrkedesign og evt. lås"). Ny census-nøgle. Ændring 34, 35, 35a og 36 ændres ikke. Ingen gate, tærskel, alfa i andre
+familier, holdout, K-nøgle, R1, R3, pm_lp eller bane ændres. Ingen historisk forespørgsel. Kun census-timer før
+2026-11-02 00:00 UTC er brugt til styrkeskønnet (21 RTH-timer); intet udfald fra og med 2026-11-02 er set.
+
+**Mekanisme:** perps på kryptoaktier handles døgnet rundt af kryptokunder, mens BTC har sit eget dybe døgnmarked. Om
+natten følger aktieperpen BTC med sin beta plus en rest. Er resten overskud fra en tynd bog, vender den i
+kontantsessionen; er den tidlig information, fortsætter den. Retningen er ikke givet; testen er tosidet. En fordel kunne
+handles lovligt på selve aktierne via en EU-mægler; perpen bruges kun som signal.
+
+1. **Nøgle:** `census_crypto_eq_btc|cash_session|m37` i census-familien (nu 8 nøgler, hver p ≤ 0,005; familien ≤ 4 %).
+2. **Univers (fast):** COINUSDT, MSTRUSDT, MARAUSDT, IRENUSDT, HUTUSDT, BMNRUSDT, CRCLUSDT, HOODUSDT (alle i H27-A's
+   fil og klassificeret som almindelige aktier i ændring 36). BTC = BTCUSDT's markPrice. Ingen symboler tilføjes.
+3. **Dage og snapshots:** som ændring 34 punkt 3–4 (NYSE-handelsdage fra og med 2026-11-02; P, E, X; snapshots hentet
+   højst 10 min efter timeskiftet; forrige handelsdags X må ligge før låsen).
+4. **Beta (punkt-i-tid):** β_i,d = 0,5 · OLS + 0,5. OLS er hældningen af aktiens timevise ln-afkast i indexPrice mod
+   BTC's timevise ln-afkast i markPrice. Kun par af snapshots 30–90 min fra hinanden, hvor begge timer er RTH, og kun
+   timer i de 15 NYSE-handelsdage før d (census-timer før låsen må bruges). Under 20 timer: aktien udgår den dag.
+5. **Signal (kun data til og med P):** s*_i = ln(mark_i,P / index_i,X−) − β_i,d · ln(BTC_P / BTC_X−), hvor X− er
+   forrige handelsdags X.
+6. **Udfald:** y*_i = ln(index_i,X / index_i,E) − β_i,d · ln(BTC_X / BTC_E).
+7. **Dagens værdi:** blandt aktier med s* og y* sorteres efter s*; k = ⌊n/2⌋; r_d = gennemsnit af y* i de k laveste −
+   gennemsnit af y* i de k højeste (positiv = vending). Kræver n ≥ 6, ellers udgår dagen.
+8. **Test:** Students t (n − 1 frihedsgrader) af gennemsnittet af r_d, tosidet, p ≤ 0,005. Én kørsel ved **40** gyldige
+   dage (tidligst ~2027-01-04). Er der færre end 40 gyldige dage ved fristen **2027-03-12**, er resultatet UNTESTABLE.
+9. **Omkostningsgulv:** **0,75 %** pr. dag: to rundture à 0,30 % som ændring 34 plus 0,15 % til at afdække forskellen i
+   beta mellem benene med BTC. PASS kræver |gennemsnit r_d| − 0,75 % > 0.
+10. **Styrke (ændring 32):** sd for r_d = **1,5 %**. Den er en antagelse: rest-sd pr. aktie i vinduet E–X ≈ 2,5 %,
+    korrelation mellem resterne ≈ 0,4, 4 mod 4 → 2,5 % · √(2/4 · 0,6) ≈ 1,37 %, rundet op. De 21 RTH-timer før låsen
+    (rest-sd pr. time 0,92 %, rest-korrelation 0,48) giver ca. 1,0 % og bruges kun som kontrol. MDE = (2,807 + 0,842) ·
+    1,5 % / √40 = **0,87 %**; MDE/gulv = 1,15. Mærket "kan kun finde store effekter (32)" er der ikke. sd rettes aldrig
+    efter data.
+11. **Falsifikation og placebo:** PASS kræver alle fire:
+    - p ≤ 0,005 og nettogulvet i punkt 9.
+    - Samme fortegn i første og anden halvdel af dagene.
+    - Samme fortegn uden de 2 dage med størst |r_d|.
+    - Placebo: forrige dags s* mod dagens y* (samme β_i,d) skal have |t| < 2.
+    Ellers SCREEN_FAIL.
+12. **Benchmark:** 0. Gennemsnittet af |r_d| for en tilfældig opdeling i 4 og 4 rapporteres ved siden af.
+13. **Hvornår:** indtil kørslen rapporteres kun antal gyldige dage og aktier pr. dag, aldrig s*, y*, β eller r_d.
+14. **Adskillelse:** intet, der afgør (12g, ændring 25, papirmotoren, baner, K3, R1, R3, promotion), læser m37.
+15. **Kendte begrænsninger (skrevet før data):**
+    - De 8 aktier deler en kryptofaktor ud over BTC (rest-korrelation 0,48 før låsen). Sorteringen kan derfor ramme
+      faktorens retning i stedet for den enkelte aktie.
+    - m37 og m36 deler aktier og vinduer, så resultaterne er ikke uafhængige.
+    - Timeopløsning; β fra få timer er støjfuld (krympet mod 1).
+    - Shortsalg af aktierne og BTC-afdækning via en EU-mægler er ikke verificeret.
+16. **Skrevet før data (forventning):** SCREEN_FAIL mest sandsynlig. Gulvet på 0,75 % er højt i forhold til en rest,
+    der i stille perioder er under 1 %. Et PASS kræver store natlige overreaktioner, fx omkring BTC-fald i weekenden.
