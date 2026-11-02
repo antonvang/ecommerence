@@ -4196,3 +4196,40 @@ handles lovligt på selve aktierne via en EU-mægler; perpen bruges kun som sign
     - Shortsalg af aktierne og BTC-afdækning via en EU-mægler er ikke verificeret.
 16. **Skrevet før data (forventning):** SCREEN_FAIL mest sandsynlig. Gulvet på 0,75 % er højt i forhold til en rest,
     der i stille perioder er under 1 %. Et PASS kræver store natlige overreaktioner, fx omkring BTC-fald i weekenden.
+
+## Ændring 36b (2026-11-02 kl. 09:04 lokal, før kode og før nogen m36-værdi af s, y eller r_d er beregnet): sektorrapport ved siden af H27-A2
+
+**Beslutning:** Claude under Mission 27.3 ("Undersøg sektor- og betaafhængighed … ændr aldrig den oprindelige låste
+hypotese"). **Rapporten afgør intet.** I ændring 36 ændres hverken punkt, univers, β, sd, MDE, test, gulv eller
+placebo, og m36's dom står alene. Census-familien får ingen ny nøgle og ingen ny alfa.
+
+**Hvorfor:** grundlaget er `research/studies/MISSION27_3_2026-11-02.md` punkt 2, der kun bygger på census-timer før
+2026-11-02 00:00 UTC.
+- Efter neutralisering mod egen faktor har residualerne stadig 6 egenværdier over Marchenko–Pastur-grænsen.
+- PC1 alene forklarer 16 % af variansen. Den er en AI/halvleder-mod-defensiv-akse: APLD, DELL, AMD, SMCI, CRWV, CRDO,
+  NBIS og IREN mod MCD, HD, BRKB, V, NKE, UNH, KO og MDT.
+- Et femtedels-long-short langs PC1 har sd 0,58 % pr. time mod 0,19 % ved tilfældig opdeling.
+- Et PASS i m36 kan derfor være en sektorvending og ikke en vending i enkeltaktier. Rapporten viser, hvilken af de to det
+  er.
+
+1. **Ladninger (faste):** L_i i `research/data/H27A2_SECTOR_PC1_2026-11-02.json`.
+   - L_i er PC1 af korrelationsmatricen for de egen-faktor-neutraliserede timeafkast (mark, β fra ændring 36).
+   - Datagrundlag: 104 timepar før låsen og de symboler i H27-A2's univers, der har mindst 90 % dækning.
+   - Fortegnet vendes, så de AI- og halvlederaktier, der ladede højest i PC1-analysen, får positiv L. Ladningerne
+     rettes aldrig.
+2. **Pr. gyldig m36-dag:** udgangspunktet er s* og y* fra ændring 36 punkt 5, begrænset til symboler med L.
+   - s** = residual fra tværsnits-OLS af s* på (1, L); y** tilsvarende.
+   - r_d** beregnes som ændring 36 punkt 6 (femtedele, mindst 50 symboler).
+   - ρ_d = Pearson-korrelationen mellem s* og L.
+3. **Rapport:** antal dage, gennemsnit, t og p for r_d**, gennemsnit og median af ρ_d, og andelen af dage med |ρ_d| > 0,3.
+4. **Fortolkning (skrevet før data, afgør intet):**
+   - **Sektordrevet:** m36 PASS, men |gennemsnit r_d**| under det halve af m36's gennemsnit, eller r_d** med modsat
+     fortegn. Resultatet beskrives da som sektordrevet.
+   - **Enkeltaktier:** r_d** med samme fortegn og mindst det halve af m36's gennemsnit. Resultatet beskrives da som drevet
+     af enkeltaktier.
+   - **m36 SCREEN_FAIL:** rapporten er kun beskrivende.
+5. **Hvornår:** kun sammen med m36's ene kørsel, dvs. ved mindst 28 gyldige m36-dage. Værktøjet nægter at køre før og
+   viser aldrig s, y eller r_d før.
+6. **Kendte begrænsninger:**
+   - PC1 er estimeret på 104 timer i ét regime med N/T ≈ 1,3, så ladningerne er støjfulde.
+   - Kun én sektorakse fjernes; de øvrige 5 egenværdier over grænsen bliver stående.
