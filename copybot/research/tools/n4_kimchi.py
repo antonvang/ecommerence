@@ -6,6 +6,9 @@ return against BTC over the next 24 hours?
 
 Written before any Upbit candle or explore0 kline was read. Statistics only (signal, quintile L/S, the decision);
 the data loader is written after the lock.
+BLOCKED (MISSION27_3 point 7): api.upbit.com is a trading host and is not used (amendment 17i point 1); a loader
+needs an allowed source for Upbit KRW history or the user's explicit yes to a new data host. The pair file came
+from one GET to that host on 2026-11-02 (a documented deviation) and is not used for a lock.
 """
 import datetime as dt
 import json
