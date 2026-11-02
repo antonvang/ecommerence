@@ -4268,3 +4268,21 @@ ordrer) og 2) D10, Hyperliquid-funding pr. mønt deployet til produktionen (papi
    kun N4.
 4. **Afvigelsen kl. 09:08 lokal** (MISSION27_3 punkt 7b) er ikke godkendt med tilbagevirkende kraft. Parlisten fra den
    bruges ikke. N4's univers bygges igen ved låsen med et nyt `market/all`-kald under denne ændring.
+
+## Ændring 39 (2026-11-02 kl. 15:54 lokal, før kode): K3's analyse læser mark-rækkerne én gang pr. kald (kun ydelse; samme tal)
+
+**Fund (2026-11-02, efter deploy af ca1af66/3990ec8):** `/api/research` svarede ikke på 180 s. Profilering i
+produktionen: `researchview.view` tog 259 s, heraf 234 s i `k3.rounds` → 42 kald af `k3._series`. Hvert kald
+gennemløber alle 157.416 K3-mark-rækker (21 MB JSON) med `json_extract` for én runde. Det er kvadratisk i antallet af
+runder. Samme vej kører i flåden hver time (`fleet` → `k3.maybe_freeze` → `counts` → `rounds`), så scannerjobbet
+bruger nu minutter ekstra pr. time, og tiden vokser til fristen. Fejlen fandtes før deployet og skyldes ikke D10.
+
+1. **Ændring:** `rounds` henter K3-mark-rækkerne for sit vindue én gang (samme WHERE-betingelser, samme indeks og
+   rækkefølge) og grupperer dem pr. runde S. `round_values` får rundens serie derfra i stedet for at spørge selv.
+   - Kald uden den nye parameter opfører sig som før.
+   - Bogrækkerne, `evaluate`, `counts`' tal, `maybe_freeze`, alle tærskler og K3's afgørelsesregler er uændrede.
+2. **Krav før deploy:** ækvivalens på produktionsdata. `rounds` gammel og ny, for både "real" og "placebo", på en
+   skrivebeskyttet forbindelse til `lab.db`, skal give præcis samme liste (samme S, samme tal bit for bit). Desuden
+   en enhedstest af dubletter (samme tid: sidste række vinder, som før). Giver de ikke det samme, deployes intet.
+3. **Ingen K3-afgørelse er truffet** (`research.k3_result` findes ikke endnu). Ændringen kan derfor ikke flytte et
+   resultat, kun hvor hurtigt det beregnes.
