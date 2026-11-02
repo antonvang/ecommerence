@@ -168,6 +168,17 @@ def _series(db, S, window):
     return out
 
 
+def _series_all(db, window):
+    """Amendment 39: _series for every round in one pass, {S: series}; same WHERE, index and row order, so for each
+    S the result equals _series(db, S, window) (also which duplicate wins)."""
+    out = {}
+    for r in db.q("SELECT instrument, value, payload, json_extract(payload, '$.S') AS s FROM observations "
+                  "WHERE detector=? AND metric='mark' AND json_extract(payload, '$.window')=?", DET, window):
+        p = _p(r["payload"])
+        out.setdefault(r["s"], {}).setdefault(r["instrument"], {})[p["time"] / 1000] = (r["value"], p.get("next_ts"))
+    return out
+
+
 def endpoint(series, target):
     """D point 3: the mark with the latest Binance time t, target - 90 s < t <= target; None if there is none."""
     ts = [t for t in series if target - FRESH_S < t <= target]
@@ -179,10 +190,11 @@ def _ret(series, a, b):
     return None if x is None or y is None or x <= 0 or y <= 0 else math.log(y / x)
 
 
-def round_values(db, S, sel, window="real"):
-    """Per group: {symbol: {"r_pre", "r_post", "v", "c"}} with BTC correction; coins without both endpoints are dropped."""
+def round_values(db, S, sel, window="real", every=None):
+    """Per group: {symbol: {"r_pre", "r_post", "v", "c"}} with BTC correction; coins without both endpoints are dropped.
+    `every` (amendment 39): a _series_all result for this window, so the marks are not read again."""
     centre = S if window == "real" else S + PLACEBO_SHIFT_S
-    ser = _series(db, S, window)
+    ser = _series(db, S, window) if every is None else every.get(S, {})
     btc = ser.get(BTC, {})
     b_pre, b_post = _ret(btc, centre - ENTRY_S, centre - EXIT_S), _ret(btc, centre + EXIT_S, centre + ENTRY_S)
     books = {}
@@ -219,7 +231,7 @@ def _mean(xs):
 
 def rounds(db, cutoff, window="real"):
     """Per selected round complete by `cutoff`: {"S", "d_high", "d_low", "v_high", "c_high", "v_low", "c_low"}."""
-    out = []
+    out, every = [], None
     for r in db.q("SELECT value, ts, payload FROM observations WHERE detector=? AND metric='selection' ORDER BY value",
                   DET):
         S = int(r["value"])
@@ -227,7 +239,9 @@ def rounds(db, cutoff, window="real"):
         if end > cutoff:
             continue
         sel = {**_p(r["payload"]), "select_ts": r["ts"]}
-        g = round_values(db, S, sel, window)
+        if every is None:                                   # amendment 39: one read of the marks per call
+            every = _series_all(db, window)
+        g = round_values(db, S, sel, window, every)
         row = {"S": S, "day": dt.datetime.fromtimestamp(S, dt.timezone.utc).date().isoformat()}
         ctrl = [x["r_pre"] for x in g["control"].values()]
         for k in ("high", "low"):

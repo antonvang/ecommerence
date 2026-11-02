@@ -195,6 +195,37 @@ def synth(n, d_high, d_low, v_high=0.0, c=0.0046, noise=0.002, seed=1, days=None
              "v_high": v_high + rng.gauss(0, noise), "c_high": c, "v_low": None, "c_low": None} for i in range(n)]
 
 
+class OnePass(unittest.TestCase):
+    """Amendment 39: rounds() reads the marks once per call and gives exactly what the per-round reads gave."""
+    def setUp(self):
+        k3._SEEN.clear()
+        k3._BOOKS.clear()
+
+    def test_one_pass_equals_per_round_reads_also_for_duplicates(self):
+        db = DB(":memory:")
+        rnd = random.Random(39)
+        run(db, Feed(path=lambda sym, t: 1.0 + 0.01 * math.sin(t / 997 + len(sym)) + rnd.gauss(0, 0.001)))
+        t0 = db.one("SELECT payload FROM observations WHERE metric='mark' AND instrument='HIGH1USDT' "
+                    "AND json_extract(payload, '$.window')='real' ORDER BY id LIMIT 1")[0]
+        for v in (0.5, 0.7):                                    # two late duplicates of the same Binance time
+            db.append("observations", ts=S + 3 * H, detector="k3/1", source="t", instrument="HIGH1USDT",
+                      metric="mark", value=v, threshold=None, flagged=0, payload=json.loads(t0))
+        for w in ("real", "placebo"):
+            every = k3._series_all(db, w)
+            self.assertEqual(every.get(S, {}), k3._series(db, S, w))
+            self.assertEqual(every.get(S + 1, {}), {})
+        self.assertIn(0.7, [v for v, _ in k3._series_all(db, "real")[S]["HIGH1USDT"].values()])   # last wins
+        cutoff = S + 3 * H
+        for w in ("real", "placebo"):
+            new = k3.rounds(db, cutoff, w)
+            with mock.patch.object(k3, "_series_all", lambda db_, w_: None):    # every=None: the old path
+                old = k3.rounds(db, cutoff, w)
+            self.assertEqual(new, old)
+            self.assertTrue(new)
+        with mock.patch.object(k3, "_series", side_effect=AssertionError("per-round read")):
+            k3.rounds(db, cutoff, "real")                       # the new path never reads per round
+
+
 class Screening(unittest.TestCase):
     def test_planted_effect_passes_noise_fails_and_cost_rule_holds(self):
         placebo = synth(60, 0.0, 0.0, seed=5)
