@@ -99,10 +99,18 @@ class HlCensus(unittest.TestCase):
 
 class Isolation(unittest.TestCase):
     def test_nothing_that_decides_reads_hlcensus(self):
+        # the one exception is the descriptive, read-only first look (MISSION27_3 point 12b); 38 A point 2 forbids
+        # accounts, rules, thresholds, alarms and HL lanes from reading the rows, and lab/ and pilot/ stay fully banned
+        look = os.path.join(HERE, "research", "tools", "hlcensus_look.py")
+        with open(look, encoding="utf-8") as fh:
+            src = fh.read()
+        self.assertIn("mode=ro", src)
+        self.assertNotRegex(src, r"db\.append\(|append\(\"|INSERT|UPDATE|DELETE|\.commit\(")
         for root in ("lab", "research", "pilot"):
             for dirpath, _, files in os.walk(os.path.join(HERE, root)):
                 for f in files:
-                    if not f.endswith(".py") or f in ("hlcensus.py", "scanner.py"):
+                    if not f.endswith(".py") or f in ("hlcensus.py", "scanner.py") or \
+                            os.path.join(dirpath, f) == look:
                         continue
                     with open(os.path.join(dirpath, f), encoding="utf-8") as fh:
                         self.assertNotIn("hlcensus", fh.read(), f)
