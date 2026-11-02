@@ -247,8 +247,10 @@ def premium_watch(db, get=http_get, now=None, post=None):
                  obs("pricing_constraint", src, "binance_perps", "funding_top", funding[top], payload={"symbol": top})]
     LIVE[BN] = (now, funding)
     body = {"type": "metaAndAssetCtxs"}             # amendment 13: Hyperliquid's predicted funding, same minute
+    hl_res = None
     try:
-        hl_rows, live = hl_obs(post(HL_INFO, body) if post else http_post(HL_INFO, body), now)
+        hl_res = post(HL_INFO, body) if post else http_post(HL_INFO, body)
+        hl_rows, live = hl_obs(hl_res, now)
         rows += hl_rows
         HL_LIVE[HL_INFO] = (now, live)
     except Exception as e:                          # Binance's measurement stands; the next minute tries again
@@ -272,8 +274,15 @@ def premium_watch(db, get=http_get, now=None, post=None):
         census_res = census.guarded(db, now, allrows, get, hit[1])
     except Exception as e:                          # noqa: BLE001
         census_res = {"error": repr(e)[:200]}
+    hl_census_res = None
+    if hl_res is not None:                          # amendment 38 A: never stops premium-watch, no new call
+        try:
+            from lab import hlcensus
+            hl_census_res = hlcensus.guarded(db, now, hl_res)
+        except Exception as e:                      # noqa: BLE001
+            hl_census_res = {"error": repr(e)[:200]}
     return {"observations": len(rows), "flagged": sum(o["flagged"] for o in rows), "decisional": False, "k3": k3_res,
-            "census": census_res}
+            "census": census_res, "hlcensus": hl_census_res}
 
 
 _K3_ERR = {}
