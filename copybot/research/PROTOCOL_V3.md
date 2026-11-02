@@ -4233,3 +4233,38 @@ placebo, og m36's dom står alene. Census-familien får ingen ny nøgle og ingen
 6. **Kendte begrænsninger:**
    - PC1 er estimeret på 104 timer i ét regime med N/T ≈ 1,3, så ladningerne er støjfulde.
    - Kun én sektorakse fjernes; de øvrige 5 egenværdier over grænsen bliver stående.
+
+## Ændring 38 (2026-11-02 kl. 15:02 lokal, før kode): D10 — Hyperliquid-census pr. mønt og Upbit som datavært til N4 (brugerens ja)
+
+**Beslutning:** brugeren svarede "Begge" (2026-11-02, før kl. 15:00 lokal) på spørgsmålet, om "Ja" gjaldt
+1) offentlige Upbit-candles fra `api.upbit.com` som datakilde til kimchi-testen N4 (kun research; ingen konto og ingen
+ordrer) og 2) D10, Hyperliquid-funding pr. mønt deployet til produktionen (papirhandel).
+
+**A. D10: Hyperliquid-census (`hlcensus/1`)**
+1. **Hvad:** i den første premium-watch-runde i hver UTC-time (højst 10 minutter efter timeslag) gemmes én række
+   (`observations`, detektor `hlcensus/1`, metrik `snapshot`).
+   - Indhold: hver Hyperliquid-perps rå tal fra det `metaAndAssetCtxs`-svar, som premium-watch allerede henter samme
+     minut (ændring 13 punkt 2–3; **intet nyt kald**).
+   - Kolonner: `funding`, `premium`, `markPx`, `oraclePx`, `midPx`, `openInterest`, `dayNtlVlm`, `prevDayPx` og
+     `isDelisted` (1/0).
+   - Alle navne i `universe` gemmes, også `k`-præfiks og afnoterede, så udvælgelsen kan ske senere. Et manglende felt
+     er null, aldrig 0.
+2. **Afgør intet:** ingen konto, regel, tærskel, alarm eller HL-bane læser rækken. Den er rådata til senere
+   præregistrerede hypoteser, som census (ændring 28). Hypoteser må kun bruge timer efter deres egen lås.
+3. **Fejl stopper aldrig premium-watch:** en fejl gemmes højst én gang i timen som metrik `error`. Fejler
+   HL-kaldet, gemmes ingen snapshot den time.
+4. **Uændret:** pm_lp, dens collector og watcher, ændring 13's HL-konti og deres regler, census/1, K3, alle tærskler og
+   alle låste nøgler. Deploy sker kun uden for K1/K2/K3 og med `deploy-check` bagefter.
+
+**B. Upbit som datavært til N4**
+1. **Tilladt:** `GET https://api.upbit.com/v1/market/all` og `GET https://api.upbit.com/v1/candles/days` (offentlige,
+   uden nøgle). Kun til N4's research-værktøj, aldrig i flåden, scanneren eller en bane. Højst 1 samtidig forespørgsel
+   og mindst 0,2 s mellem kald.
+2. **Hvornår:**
+   - Historiske candles først fra 2026-11-14 og først efter, at N4 er låst som en dateret ændring (Mission 27.2/27.3:
+     ingen historiske forespørgsler før 11-14).
+   - Kun rækker inden for explore0 (2020-03-01..2021-12-31) gemmes; resten kasseres ved indlæsning.
+3. **Ændring 17i punkt 1 er uændret for U1F:** detektoren `upbit/1` bruger fortsat CoinMetrics. Denne tilladelse gælder
+   kun N4.
+4. **Afvigelsen kl. 09:08 lokal** (MISSION27_3 punkt 7b) er ikke godkendt med tilbagevirkende kraft. Parlisten fra den
+   bruges ikke. N4's univers bygges igen ved låsen med et nyt `market/all`-kald under denne ændring.
