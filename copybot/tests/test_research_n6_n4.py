@@ -154,7 +154,8 @@ class Refusal(unittest.TestCase):
         self.assertFalse(n4.locked(text))
 
     def test_pair_file(self):
-        with open(n4.PAIRS, encoding="utf-8") as f:
+        with open(os.path.join(os.path.dirname(n4.PROTOCOL), "data", "N4_KIMCHI_PAIRS_2026-11-02.json"),
+                  encoding="utf-8") as f:
             d = json.load(f)
         self.assertEqual(d["overlap"], len(d["pairs"]))
         self.assertNotIn("BTC", d["pairs"])

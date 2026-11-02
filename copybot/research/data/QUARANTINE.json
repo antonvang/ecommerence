@@ -1,0 +1,30 @@
+{
+ "rule": "PROTOCOL_V3 amendment 40: files and data that come from a documented deviation; kept unchanged as documentation, never used for a lock, universe or analysis",
+ "entries": [
+  {
+   "id": "upbit-pairs-2026-11-02",
+   "path": "research/data/N4_KIMCHI_PAIRS_2026-11-02.json",
+   "sha256": "36a8e82be90a548316b3e768ef9c353399811df557f9c63a72f1c7557cfe9040",
+   "source": "one GET https://api.upbit.com/v1/market/all?isDetails=false at 2026-11-02 08:08:29-31 UTC, before amendment 38 B; banned then by amendment 17h point 1",
+   "deviation": "MISSION27_3 point 7b; MISSION27_4 point 1a",
+   "forbidden": "N4's universe, any lock text, any analysis; N4 builds its universe from a new market/all call under 38 B after its lock"
+  },
+  {
+   "id": "upbit-raw-2026-11-02",
+   "path": null,
+   "location": "session scratchpad m273/upbit/markets.json (outside the repo, not copied in)",
+   "sha256": "bbdc54fd06e299308b27c5ef43c1d4fd4a3a31c3696e0cefd19be7df51677e8c",
+   "source": "the raw response of the same GET (875 markets: market, korean_name, english_name; no prices)",
+   "deviation": "MISSION27_3 point 7b; MISSION27_4 point 1a",
+   "forbidden": "same as upbit-pairs-2026-11-02"
+  },
+  {
+   "id": "news-backfill-2024plus-exposure",
+   "path": null,
+   "dataset": "observations detector news/1, metric news_item, backfill true, published_ts >= 2024-01-01 (1704067200)",
+   "source": "2026-11-02 ca. 16:20 UTC: a week histogram of all 446 Binance delisting notices (2022-W07..2026-W44) and 40 titles (7 dated 2024, 9 dated 2025, 11 without a year) were printed",
+   "deviation": "MISSION27_3 points 13b and 14 (the user: holdout breach); MISSION27_4 point 1b",
+   "forbidden": "any screening, base rate or design for N9 or another hypothesis; research tools read news/1 only through research/tools/gates.py news_rows"
+  }
+ ]
+}

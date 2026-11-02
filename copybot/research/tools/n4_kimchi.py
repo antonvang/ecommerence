@@ -10,6 +10,7 @@ Data host (PROTOCOL_V3 amendment 38 B, the user's yes 2026-11-02): api.upbit.com
 for N4 only, from 2026-11-14 after N4's lock, explore0 rows only, one request at a time with >= 0.2 s between calls;
 amendment 17i is unchanged for U1F. The pair file came from one GET to that host on 2026-11-02 before that yes (a
 documented deviation, MISSION27_3 point 7) and is not used for a lock; a new market/all call is made after the lock.
+The pair file is in research/data/QUARANTINE.json (amendment 40); no code here refers to it.
 """
 import datetime as dt
 import json
@@ -24,7 +25,6 @@ sys.path.insert(0, HERE)
 from lab.edgemonitor import t_cdf  # noqa: E402
 
 PROTOCOL = os.path.join(HERE, "research", "PROTOCOL_V3.md")
-PAIRS = os.path.join(HERE, "research", "data", "N4_KIMCHI_PAIRS_2026-11-02.json")
 EARLIEST = dt.date(2026, 11, 14)
 MIN_COINS = 40             # point 2
 FLOOR = 0.0046             # point 6 (21i)
