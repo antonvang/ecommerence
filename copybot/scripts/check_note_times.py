@@ -18,6 +18,9 @@ import time
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 STAMP = re.compile(r"(\d{4}-\d{2}-\d{2})(?: (kl\.|ca\.|kl|ca))? (\d{2}):(\d{2})(?!\d|:\d)")
 ROUND_MIN = 5
+# A Markdown heading with a time but no date ("## 8. ... (kl. 11:01 lokal)") is dated by its own commit day; a heading
+# that seems more than 12 h late is taken to be from the evening before a commit after midnight (MISSION27_3 point 8).
+HEADING = re.compile(r"^#+ .*?\bkl\. (\d{2}):(\d{2})(?!\d|:\d)")
 
 
 def blame(path):
@@ -46,6 +49,12 @@ def check(paths, since=""):
                 late = (int(h) * 60 + int(m)) - (int(hhmm[:2]) * 60 + int(hhmm[3:]))
                 if d == day and late > (ROUND_MIN if word.startswith("ca") else 0):
                     bad.append((os.path.relpath(p, HERE), d, f"{h}:{m}", hhmm, text.strip()[:100]))
+            hm = HEADING.match(text)
+            if hm and not STAMP.search(text):
+                h, m = hm.groups()
+                late = (int(h) * 60 + int(m)) - (int(hhmm[:2]) * 60 + int(hhmm[3:]))
+                if 0 < late <= 12 * 60:
+                    bad.append((os.path.relpath(p, HERE), day, f"{h}:{m}", hhmm, text.strip()[:100]))
     return bad
 
 

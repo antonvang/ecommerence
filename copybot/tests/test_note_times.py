@@ -24,6 +24,14 @@ class NoteTimes(unittest.TestCase):
         self.assertEqual([b[2] for b in self.run_on(rows)], ["10:45", "12:54", "16:20"])
         self.assertEqual([b[2] for b in self.run_on(rows, since="2026-10-24")], ["10:45", "12:54"])
 
+    def test_a_dateless_heading_time_is_dated_by_its_commit(self):
+        rows = [("2026-11-02", "11:00", "## 8. Browseren (kl. 11:01 lokal)"),               # 1 min late
+                ("2026-11-02", "11:00", "## 7. Datagates (kl. 10:47 lokal)"),               # before: ok
+                ("2026-11-03", "00:02", "## 9. Aften (kl. 23:58 lokal)"),                   # evening before: ok
+                ("2026-11-02", "11:00", "- stoppet kl. 23:09 UTC"),                         # not a heading: ignored
+                ("2026-11-02", "11:00", "## Ændring 1 (2026-11-02 kl. 10:00 lokal)")]       # dated: old rule
+        self.assertEqual([b[2] for b in self.run_on(rows)], ["11:01"])
+
     def test_research_notes_from_2026_10_24_on_have_no_time_after_their_commit(self):
         bad = cnt.check(sorted(cnt.glob.glob(os.path.join(cnt.HERE, "research", "**", "*.md"), recursive=True)),
                         since="2026-10-24")
