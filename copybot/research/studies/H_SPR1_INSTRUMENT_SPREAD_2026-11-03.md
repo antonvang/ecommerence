@@ -23,3 +23,11 @@ spread = (ask − bid)/mid); det afgøres før deres tal ses.
 **Hvis ikke opfyldt:** den faste reference bevares; alarmerne på i rapporteres fortsat som "kendt tynd bog".
 **Alternative estimater der kun sammenlignes deskriptivt:** fast 4 bp; rå instrumentmedian; krympet estimat
 w × median_i + (1 − w) × puljemedian med w = n/(n + 20) (n0 = 20 sat nu).
+
+## Tilføjelse før tallene ses (kl. 14:40 lokal)
+
+- `capacity/1` (`lab/capacity.py`) gemmer for ETCUSDT.SPOT (11) og XTZUSDT.SPOT (10) spread = (asks[0] − bids[0]) / mid
+  fra Binance' spot-depth; samme definition som `Book.spread()` i `lab/paper.py`. Antal rækker og nøgler er set,
+  ingen værdier.
+- Den bruges kun som **separat, deskriptiv** kilde ved siden af sim_exec. Den tæller ikke med i kriterium 1 (som
+  kræver banekonti); kriterierne er uændrede.
