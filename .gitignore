@@ -2,3 +2,7 @@ __pycache__/
 *.pyc
 copybot/data/
 copybot/config.local.json
+
+# Obsidian vault settings (owner reads copybot/research/ in Obsidian)
+.obsidian/
+.trash/

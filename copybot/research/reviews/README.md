@@ -41,3 +41,14 @@ Nyeste øverst. Ét afsnit pr. besked:
 
 Claude sletter ikke i filen. Når et afsnit er behandlet, skriver Claude en linje under det:
 `> behandlet <dato> – <hvad der blev gjort / afventer ja>`.
+
+## Obsidian + git
+
+- Vault = roden af en egen klon af `git@github.com:antonvang/ecommerence.git`, gren
+  `claude/why-cant-we-do-this-wh3ohb` (aldrig produktionsmappen `~/ecommerence/copybot` eller Claudes
+  arbejdsmappe `~/copybot-dev`). Noterne ligger under `copybot/research/`.
+- Community-plugin "Git" (Vinzent03): auto pull ved åbning og hvert 10. min; auto commit+push ca. 5 min efter
+  sidste redigering. `.obsidian/` og `.trash/` står i `.gitignore`.
+- Ejeren skriver kun i `copybot/research/reviews/INBOX.md`; Claude skriver i `copybot/research/studies/`.
+  Så rammer I aldrig samme fil.
+- Claude henter grenen ved hver vækning (`git fetch`) og merger før eget commit.
