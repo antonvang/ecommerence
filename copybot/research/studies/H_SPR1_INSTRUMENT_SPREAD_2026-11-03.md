@@ -31,3 +31,15 @@ w × median_i + (1 − w) × puljemedian med w = n/(n + 20) (n0 = 20 sat nu).
   ingen værdier.
 - Den bruges kun som **separat, deskriptiv** kilde ved siden af sim_exec. Den tæller ikke med i kriterium 1 (som
   kræver banekonti); kriterierne er uændrede.
+
+## Tilføjelse 2 før optællingen (kl. 14:05 lokal 11-04; opgave 2 fra ChatGPT via ejeren)
+
+Kriterierne 1-6 er uændrede. Detaljer der manglede, fastsat før nye rækker ses:
+- **Observation:** én `sim_exec`-række (én ordre) for en banekonto (`exp_id` LANE_*) på ETCUSDT.SPOT eller
+  XTZUSDT.SPOT med ikke-tom `spread`. Rækker uden spread tælles op og rapporteres, men indgår ikke.
+- **Dag:** UTC-dato for rækkens ts. **Konto:** `exp_id`.
+- **Datakvalitet (kriterium 2):** |book_age_s| ≤ 5 og depth_ask_usd > 0 og depth_bid_usd > 0. Rækker der fejler
+  tælles og rapporteres; kun rækker der består tæller mod n ≥ 30.
+- **Rapport nu (deskriptiv):** n mod målet 30, dage mod 5, konti mod 3, median og min-max for de gyldige rækker, samt
+  hvor mange der er kommet til siden 27.4 B (data til 11-03 13:41 UTC). CI og halvdele beregnes først, når kriterium 1
+  er nået (kriterium 6). Når målet ikke er nået, står resultatet som **utilstrækkeligt datagrundlag**.
