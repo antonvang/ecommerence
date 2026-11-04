@@ -43,3 +43,18 @@ Kriterierne 1-6 er uændrede. Detaljer der manglede, fastsat før nye rækker se
 - **Rapport nu (deskriptiv):** n mod målet 30, dage mod 5, konti mod 3, median og min-max for de gyldige rækker, samt
   hvor mange der er kommet til siden 27.4 B (data til 11-03 13:41 UTC). CI og halvdele beregnes først, når kriterium 1
   er nået (kriterium 6). Når målet ikke er nået, står resultatet som **utilstrækkeligt datagrundlag**.
+
+## Optælling 11-04 (kl. 14:06 lokal; read-only sim_exec, data til 11-04 12:54 UTC)
+
+| | ETC spot | XTZ spot | Mål |
+|---|---|---|---|
+| gyldige observationer n | 3 | 4 | 30 |
+| UTC-dage | 2 | 4 | 5 |
+| banekonti | 3 | 3 | 3 |
+| nye siden 11-03 13:41 UTC | 0 | 0 | |
+| uden spread / fejlet datakvalitet | 0 / 0 | 0 / 0 | |
+| median (min-max), deskriptiv | 14,3 bp (14,1-14,5) | 10,1 bp (7,1-16,3) | |
+
+- **Utilstrækkeligt datagrundlag** for begge (kriterium 1 ikke nået); CI og halvdele beregnes ikke (kriterium 6).
+- Takten er 3-4 observationer på 9 dage; med den takt nås n = 30 tidligst om flere måneder. Observationer opstår kun,
+  når en bane handler ETC/XTZ spot (indgang, ugentlig rebalancering, afvikling). Intet er ændret for at skaffe flere.
