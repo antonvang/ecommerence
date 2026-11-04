@@ -17,7 +17,7 @@ Status (2026-11-04):
 - 6 aktive simulerede "baner" (carry: lang spot + kort perp, høst funding). 15 carry-starter siden oktober har netto
   −114 USDT i alt; ingen var positive. Årsag fundet: genopfyldningen starter varianter med forventet funding
   2,5-5,5 % p.a., men gebyr-break-even for 14 dage er 10,4 %. Tre alternative startregler (M1-M3) er sammenlignet;
-  M2 (forventet 14-d netto ≥ omkostning) havde undgået alle tabende starter i stikprøven (n lille).
+  M2 (forventet 14-d netto ≥ omkostning) havde undgået alle 4 starter, den kunne vurderes på (−41,51; n lille).
 - Stopreglens mål (funding − gebyrer) dækker kun 16-34 % af tabet; resten er udførelses- og afviklingsomkostninger.
   En ny prognoseform (løbende + afvikling) er skrevet før udfaldet; to baner (ca38, 1669) afgøres 11-05 ~20:25 UTC.
 - Spread-alarmer: ETC og XTZ spot handles altid til én tick (13-14 bp), over modellens 4 bp; hypotese H-SPR-1
