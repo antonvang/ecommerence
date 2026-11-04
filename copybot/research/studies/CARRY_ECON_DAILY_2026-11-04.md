@@ -19,3 +19,27 @@ LANE_*, ikke HL), fastlagt ved første kørsel og noteret.
 4. Carry-starter samme dag: antal, vurderbare, og hvor mange over 12,5 % / 18,8 % (fra M2-regnskabet).
 
 Kører første gang nu for 10-28..11-03 og derefter dagligt i 00:35 UTC-vinduet. Resultaterne tilføjes nedenfor.
+
+## Første kørsel (kl. 14:27 lokal 11-04; 173 snapshots 10-27 15:00 .. 11-04 12:21 UTC)
+
+U2 (17 mønter med carry-perp-ben): ADA, APE, AXS, BCH, BNB, BTC, CRV, ETC, ETH, ICP, LINK, LTC, SNX, TRX, VET, XRP, XTZ.
+
+| Dag | Snapshots | U1 n | U1 ≥ 12,5 % | U1 ≥ 18,8 % | U1 median-APR | U2 ≥ 12,5 % | U2 højeste | Persistens 3 d (U1) |
+|---|---|---|---|---|---|---|---|---|
+| 10-28 | 24 | 890 | 8,0 % | 4,9 % | 4,5 % | 0/17 | 10,9 % (XRP) | 38 af 70 (54 %) |
+| 10-29 | 24 | 896 | 7,4 % | 4,8 % | 3,4 % | 0/17 | 9,9 % (APE) | 41 af 69 (59 %) |
+| 10-30 | 19 | | | | | | | manglende data |
+| 10-31 | 11 | | | | | | | manglende data |
+| 11-01 | 24 | 896 | 6,9 % | 4,8 % | 2,7 % | 0/17 | 10,9 % (6 mønter) | endnu ikke 3 d efter (huller) |
+| 11-02 | 24 | 896 | 10,7 % | 7,7 % | 5,5 % | 0/17 | 10,9 % (4) | endnu ikke |
+| 11-03 | 24 | 896 | 14,2 % | 10,8 % | 5,5 % | 0/17 | 10,9 % (8) | endnu ikke |
+
+- **Ingen af carry-banernes 17 mønter** havde på nogen hel dag et dagsmiddel ≥ 12,5 %; de højeste ligger på 10,9 %
+  (0,0001 pr. 8 t, Binances standardrente). Den nuværende carry-udvælgelse opererer altså i et univers, hvor
+  break-even ikke nås med standardfunding.
+- **I hele perp-universet** lå 7-14 % af mønterne over break-even og 5-11 % over M2's 18,8 %; stigende de seneste dage.
+  Af dem, der lå over break-even på 72 t, var 54-59 % stadig over i de næste 3 døgn. De er ikke banekandidater i dag
+  (andre mønter end explore0-kurvene); om de har spot-ben og likviditet, er ikke undersøgt.
+- **Carry-starter:** ingen nye siden M2-regnskabet blev oprettet.
+- **Manglende data:** 10-30 (19) og 10-31 (11) snapshots; årsagen er ikke undersøgt her.
+- Beskrivende; afgør intet; ingen regel ændret.
