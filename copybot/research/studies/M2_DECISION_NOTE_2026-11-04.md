@@ -58,3 +58,8 @@ Forskellen fra M1 er, at M1 bruger variantens egen parameter (enter_apr), M2 den
   netto > 0, **og** (iii) mindst 2 vurderbare starter med f̂ ≥ 18,8 %, så det ses, hvad M2 tager; deres sum rapporteres.
   Er (iii) ikke opfyldt, foreslås B ikke; resultatet står som "M2 = carry-pause, ikke testet som udvælgelse".
 - Ingen p-værdier; deskriptivt; kriterierne ændres ikke efter at udfaldene ses.
+
+## 7. Ejerens beslutning (kl. 14:18 lokal 11-04)
+
+Ejeren valgte i chatten **A**: kun fremadrettet validering efter afsnit 6, uden kodeændring. B og C er ikke valgt.
+Startreglen i `lab/lane.py` er uændret; regnskabet føres read-only i `M2_FORWARD_LEDGER.md`.
