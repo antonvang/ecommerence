@@ -41,3 +41,7 @@ intet låst, intet hentet, ingen kode ændret.
    (punkt 7c-d); konsekvensen er færre uger, ikke en ændret test.
 4. B: om Upbit har dagscandles langt nok tilbage for explore0-mønterne er en antagelse, ikke kontrolleret.
 5. Deploy er ikke nødvendig; alt kører som research-værktøjer.
+
+## 5. Ejerens svar (11-04)
+
+"I behøver ikke spørge mig gør alt" (chat, efter spørgsmålet om låsene): låsene A og B 14/11 er godkendt.
