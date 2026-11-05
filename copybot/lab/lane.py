@@ -107,6 +107,11 @@ def is_carry90(info):
     return (info or {}).get("source") == "carry90"
 
 
+def is_pairs(info):
+    """Amendment 43: the pairs book (a market against its nearest proxy)."""
+    return (info or {}).get("source") == "pairs"
+
+
 def is_lane(info):
     """An account of the lane itself (amendment 11), not a scanner (12) or Hyperliquid (13) account."""
     return not (info or {}).get("source")
@@ -119,6 +124,9 @@ def label(info):
     if is_carry90(info):
         from lab import carry90
         return carry90.LABEL
+    if is_pairs(info):
+        from lab import pairs
+        return pairs.LABEL
     return HL_LABEL if is_hl(info) else SCAN_LABEL if is_scanner(info) else LABEL
 
 
@@ -130,6 +138,9 @@ def rules_text(info):
     if is_carry90(info):
         from lab import carry90
         return carry90.rules_text()
+    if is_pairs(info):
+        from lab import pairs
+        return pairs.rules_text()
     if is_hl(info):
         return (f"ind ved Hyperliquid-funding ×8 ≥ {HL_FUND_MIN:.2%} og snit af {HL_PERSIST_HOURS} timer ×8 ≥ "
                 f"{HL_FUND_PERSIST:.3%}; ud når to afregnede timer ×8 er < {SCAN_FUND_EXIT:.2%} og efter mindst "
@@ -395,7 +406,7 @@ def _tested_coins(info):
 
 
 def _retire_reason(db, ledger, info, now, fids):
-    if is_straks(info):                                          # amendment 41 point 5
+    if is_straks(info) or is_pairs(info):                        # amendments 41 point 5 and 43 point 6
         from lab import straks
         return straks.retire_reason(db, ledger, info, now)
     if is_carry90(info):                                         # amendment 42 point 3
@@ -639,6 +650,8 @@ def manage(db, now=None, get=None, fids=None):
     out["straks"] = straks.ensure(db, now)
     from lab import carry90                                      # amendment 42 point 2
     out["carry90"] = carry90.ensure(db, now)
+    from lab import pairs                                        # amendment 43 point 2
+    out["pairs"] = pairs.ensure(db, now)
     info = started(db)
     act = [a for a in active(db) if is_lane(info[a])]
     last = max((i["ts"] for i in info.values() if is_lane(i)), default=None)
@@ -1060,7 +1073,7 @@ def legs(info, coin):
     """(perp instrument, spot instrument) of one coin: USD-M and Binance spot, or (13) Hyperliquid and Binance spot."""
     if is_hl(info):
         return HL_PERP + coin, f"{coin}USDT{SPOT}"
-    if is_straks(info):                                          # amendment 41: the perp only
+    if is_straks(info) or is_pairs(info):                        # amendments 41 and 43: the perp only
         return (coin,)
     if is_carry90(info):                                         # amendment 42a: a spot proxy for the gold perp
         from lab import carry90
@@ -1119,6 +1132,9 @@ def run_one(db, ledger, get, now, cache=None, books=None):
     if is_straks(info):                                          # amendment 41
         from lab import straks
         return straks.run_one(db, ledger, info, get, now, cache, books)
+    if is_pairs(info):                                           # amendment 43
+        from lab import pairs
+        return pairs.run_one(db, ledger, info, get, now, cache, books)
     eng, risk = PaperEngine(db, lambda: now), Risk(db, lambda: now)
     eng.start(ledger, CAPITAL, COSTS, actor=ACTOR)
     if risk.fail_closed():
