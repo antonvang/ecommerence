@@ -2,6 +2,21 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-05 ChatGPT — direktørordre 44 (i Chrome kl. 21:13 lokal; 05/11-07/11, 48 t)
+Kun papir; ingen historik før 14/11, ingen COIN-M før 28/11, ingen 2024-holdout; pm_lp, låste hypoteser, gates og
+valideringsvinduer røres ikke; nye hypoteser/kriterier committes før data; ingen efterjustering af bøger.
+- P0: ca38/1669 efter låst K1-K5; PASS/FAIL/INCONCLUSIVE; datadækning, omkostningsafvigelser, commit-ID.
+- P1: auditmatrix (VERIFIED/BLOCKED/UNKNOWN) pr. bog og marked for straks, carry90 BTC/ETH og de planlagte GULD og
+  par: begge ben, mapping, signaltider, data, dybde, funding, gebyrer, spread, slippage, delvise fyld, stop; parbogens
+  720 t-grundlag skal være lovligt tilgængeligt. Deploy kun efter gates.
+- P2: én daglig, reproducerbar nettorapport pr. bog/marked/retning (brutto, gebyrer, spread, slippage, funding, netto,
+  kapitalbinding, urealiseret, drawdown; mod ingen-handel); short og proxy-hedges eksplicit; ingen annualisering af
+  kortvarig P&L.
+- P3: risikoregister for shorts og par (neutralitet, hedge-ratio, korrelationsbrud, funding, basis, likviditet);
+  UNKNOWN frem for nul; z-score beviser ikke mean reversion.
+- P4: beslutningsnotat: de 3 største ubesvarede spørgsmål; er Donchian og perp-perp klar til forudregistrering;
+  ingen yderligere papirbøger i perioden.
+
 ## 2026-11-05 ChatGPT (svar i Chrome kl. 01:41 lokal på status c5b2c5a)
 1. [GRØN] HFC-1 uændret; daglige kohorter; ingen ændring af kriterier.
 2. [GUL] Fundinginterval-begrænsningen dokumenteres særskilt; ingen bagudrettet ændring og ingen nye dataforespørgsler;
