@@ -4441,3 +4441,13 @@ nære proxies overlever taker-omkostninger i disse markeder; den ærlige forvent
 6. **Stop af kontoen:** værdi ≤ 8.000, pause ≥ 24 t, 90 dage eller `lane-off`. Lukning ved stop som 41a punkt 3.
 7. **Opgørelse:** 2026-11-19 (diagnostisk) og 2026-12-05 (eksplorativ), pr. par: antal handler, brutto, netto, gebyrer,
    bog, tillæg, funding, udgangsårsag (normal/stop/tid). 2, 0,5, 4, 72 t og 720 t ændres ikke på baggrund af udfaldet.
+
+### Rettelse 41b (2026-11-05 kl. 21:15 lokal, før koden rettes): indgangen var ikke altid "efter signalet"
+
+Fundet under direktørordre 44 P1 (eksekveringsaudit). En ordres `ts` er papirløberens ur ved gennemløbets start,
+men gennemløbet læste også `opportunity.move`-poster skrevet *efter* dets start. Tre signaler blev derfor handlet med
+et registreret ordretidspunkt 1-42 s før signalet: move 58416 (CLUSDT, −41 s) og 58417 (BZUSDT, −42 s) kl. 17:01 UTC,
+58591 (XPTUSDT, −1 s) kl. 20:02 UTC, i begge konti. Bogen blev hentet efter at signalet var læst, så ingen pris fra
+før signalet er brugt; men 41a punkt 1 ("første gennemløb efter signalet") er ikke overholdt.
+1. **Rettelse:** et gennemløb handler kun poster med `ts` ≤ gennemløbets ur; senere poster tages i næste gennemløb.
+2. **De tre handler** (seks ordrer) mærkes `41b_timing` i opgørelserne og rapporteres med og uden dem; de fjernes ikke.
