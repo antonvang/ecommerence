@@ -43,3 +43,14 @@ U2 (17 mønter med carry-perp-ben): ADA, APE, AXS, BCH, BNB, BTC, CRV, ETC, ETH,
 - **Carry-starter:** ingen nye siden M2-regnskabet blev oprettet.
 - **Manglende data:** 10-30 (19) og 10-31 (11) snapshots; årsagen er ikke undersøgt her.
 - Beskrivende; afgør intet; ingen regel ændret.
+
+## Kørsel 11-05 (kl. 01:40 lokal; dag 11-04, 24 snapshots)
+
+| Dag | Snapshots | U1 n | U1 ≥ 12,5 % | U1 ≥ 18,8 % | U1 median-APR | U2 ≥ 12,5 % | U2 højeste | Persistens 3 d (U1) |
+|---|---|---|---|---|---|---|---|---|
+| 11-04 | 24 | 896 | 13,5 % | 8,0 % | 5,5 % | 1/17 | 12,7 % (BNB) | endnu ikke |
+
+- **Første gang** én af de 17 carry-mønter (BNB) har et dagsmiddel over break-even; 12,7 % ligger under M2's 18,8 %.
+  Én dag er ikke en carry-start; ingen ny start (M2-regnskabet uændret).
+- Persistens for 11-01..11-03 kan endnu ikke beregnes (vinduet rører hullerne 10-30/10-31 eller er ikke udløbet).
+- Beskrivende; afgør intet.

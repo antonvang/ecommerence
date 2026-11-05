@@ -41,3 +41,32 @@ Dagligt i 00:35 UTC-vinduet: kohortens størrelse og frafald pr. filter, gemt i 
 (rå bogtal + sha256). Opsummering efter sidste 3 d-udfald (11-28) og efter sidste 14 d-udfald (12-09), og et
 beslutningsnotat (ChatGPT opgave 3) der sammenligner explore0-universet med høj-funding-universet på dækning,
 kapacitet, omkostning og datakvalitet. Ingen ny udvælgelsesregel før da.
+
+## Kohorte 11-04 (kl. 01:40 lokal 11-05; `hfc1_daily.py cohort --day 2026-11-04`, fil-sha256 `a5f831c40c19…`)
+
+72 snapshots i vinduet. Frafald pr. trin:
+
+| Trin | Tilbage | Faldet fra |
+|---|---|---|
+| C0 (72 t APR ≥ 12,5 %) | 120 (C0+ ≥ 18,8 %: 72) | |
+| F1 symbol | 2 | 117 intet spotpar, 1 multiplikator (1000PEPE) |
+| F2 perp aktiv | 2 | 0 |
+| F3 bog | 2 | 0 |
+| F4 kapacitet 1.000 / 5.000 | 2 / 2 | 0 |
+| F5 median round-trip (spot + perp) | 91,8 bp ved 1.000; 155,5 bp ved 5.000 | |
+| F6 dækket ex ante 3 d / 14 d ved 1.000 | 0 / 1 (XVG, 34,0 %) | |
+| F6 dækket ex ante 3 d / 14 d ved 5.000 | 0 / 0 | |
+
+- **Flaskehalsen er F1.** 117 af 120 høj-funding-perps har intet Binance-spotpar. Navnene er i høj grad tokeniserede
+  aktier/ETF'er (fx AMD, GOOGL, INTC, COIN, CRCL, EWY, KODEX200) og nye små tokens. Spot-perp-carry på Binance kan
+  ikke bygges for dem.
+- De to der bestod (TST 12,6 %, XVG 34,0 %) har tynde spotbøger (spotspread 23 og 18 bp); round-trip ved 5.000 er
+  75-81 USDT pr. par, så selv 14 d dækker ikke ved den størrelse.
+- Udfald 3 d / 14 d: endnu ikke (første 3 d-udfald 11-08).
+- Beskrivende; afgør intet; protokollen er uændret.
+
+## Kendte begrænsninger (skrevet efter første kohorte; ændrer ikke HFC-1)
+
+- APR og udfald regner `lastFundingRate × 1095` (8 t-intervaller). Har en perp kortere fundingsinterval (fx 4 t),
+  er APR og realiseret funding **undervurderet** for den; C0 er da en nedre grænse. Intervallerne er ikke undersøgt.
+  Protokollen ændres ikke; det tages med i beslutningsnotatet.
