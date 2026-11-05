@@ -4403,3 +4403,19 @@ straks-kontiene (41) røres ikke.
 #### Rettelse til ændring 42 punkt 6 (2026-11-05 kl. 19:28 lokal, før kode): årstallet
 
 "efter 90 dage (2026-02-03)" skal være **2027-02-03** (90 dage efter 2026-11-05). Intet andet ændres.
+
+### Ændring 42a (2026-11-05 kl. 21:07 lokal, før kode): guld-varianten tages med — lang PAXG-spot, kort XAUUSDT-perp
+
+**Beslutning:** Claude under ejerens mandat ("Men hvorfor skal vi vente?"; "sælge mod proxy … vi skal ikke side og lægge
+rue", 2026-11-05). Punkt 6's parkering af guld-varianten ophæves; intet andet i 42 ændres, og BTC/ETH-kontiene
+(startet 18:39 UTC) røres ikke.
+
+1. **Konto:** én banekonto mere (kilde `carry90`), nøgle `carry90|XAUUSDT` (CARRY90-GULD), 10.000 USDT: lang
+   `PAXGUSDT`-spot (Binance spot, `data-api.binance.vision`) og kort `XAUUSDT`-perp (Binance TradFi-perp) i samme
+   mængde (1 PAXG og 1 XAUUSDT-kontrakt er hver én troy ounce). 5.000 USDT pr. ben; samme omkostninger, stop,
+   registrering, målestok og opgørelser som 42 punkt 2-6.
+2. **Ekstra risiko (erklæret):** PAXG er et tokeniseret krav på fysisk guld udstedt af Paxos, ikke guld selv; benene
+   kan afvige (præmie/rabat på PAXG, depeg, perpens egen funding og bog). Prisbasis (PAXG − XAUUSDT) registreres ved
+   hver mark som 42 punkt 4 og rapporteres særskilt.
+3. **Eksponering:** PAXG-bogens top (ca. 3.897,65 bud) er set i en scratch-fil fra 11-02; ingen funding- eller
+   basisværdi for XAUUSDT er læst før denne tekst.
