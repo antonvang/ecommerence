@@ -102,6 +102,11 @@ def is_straks(info):
     return (info or {}).get("source") == "straks"
 
 
+def is_carry90(info):
+    """Amendment 42: a long carry account (fixed +1, held up to 180 days)."""
+    return (info or {}).get("source") == "carry90"
+
+
 def is_lane(info):
     """An account of the lane itself (amendment 11), not a scanner (12) or Hyperliquid (13) account."""
     return not (info or {}).get("source")
@@ -111,6 +116,9 @@ def label(info):
     if is_straks(info):
         from lab import straks
         return straks.LABEL
+    if is_carry90(info):
+        from lab import carry90
+        return carry90.LABEL
     return HL_LABEL if is_hl(info) else SCAN_LABEL if is_scanner(info) else LABEL
 
 
@@ -119,6 +127,9 @@ def rules_text(info):
     if is_straks(info):
         from lab import straks
         return straks.rules_text()
+    if is_carry90(info):
+        from lab import carry90
+        return carry90.rules_text()
     if is_hl(info):
         return (f"ind ved Hyperliquid-funding ×8 ≥ {HL_FUND_MIN:.2%} og snit af {HL_PERSIST_HOURS} timer ×8 ≥ "
                 f"{HL_FUND_PERSIST:.3%}; ud når to afregnede timer ×8 er < {SCAN_FUND_EXIT:.2%} og efter mindst "
@@ -387,6 +398,9 @@ def _retire_reason(db, ledger, info, now, fids):
     if is_straks(info):                                          # amendment 41 point 5
         from lab import straks
         return straks.retire_reason(db, ledger, info, now)
+    if is_carry90(info):                                         # amendment 42 point 3
+        from lab import carry90
+        return carry90.retire_reason(db, ledger, info, now)
     if is_scanner(info) or is_hl(info):
         return _scan_retire_reason(db, ledger, info, now)
     st, risk = stats(db, ledger, now, info), Risk(db, lambda: now)
@@ -623,6 +637,8 @@ def manage(db, now=None, get=None, fids=None):
     out["hl"] = manage_hl(db, now, get)
     from lab import straks                                       # amendment 41 point 1
     out["straks"] = straks.ensure(db, now)
+    from lab import carry90                                      # amendment 42 point 2
+    out["carry90"] = carry90.ensure(db, now)
     info = started(db)
     act = [a for a in active(db) if is_lane(info[a])]
     last = max((i["ts"] for i in info.values() if is_lane(i)), default=None)
@@ -1128,6 +1144,8 @@ def run_one(db, ledger, get, now, cache=None, books=None):
         p_inst, s_inst = legs(info, c)
         holding = pos.get(s_inst, 0.0) > 0 or pos.get(p_inst, 0.0) < 0
         want = {c: (hl_signal if is_hl(info) else scan_signal)(db, c, holding, now, ledger, market[c][1])}
+    elif is_carry90(info):                               # amendment 42: always hold the pair
+        want = {c: 1.0 for c in info["coins"]}
     else:
         want = _signal(info, market)
     last = db.one("SELECT equity FROM sim_equity WHERE exp_id=? ORDER BY id DESC LIMIT 1", ledger)

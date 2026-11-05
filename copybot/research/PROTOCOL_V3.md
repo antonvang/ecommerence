@@ -4399,3 +4399,7 @@ straks-kontiene (41) røres ikke.
    aktuelle fundingniveauer (census/1: BTC 9,7-10,9 % og ETH 8,3-10,6 % p.a. dagsmiddel 11-03..11-04) og til
    scanningens kilder; de ændres ikke på baggrund af udfaldet. Guld-varianten (PAXG-spot mod XAUUSDT-perp),
    Polymarket negRisk og Donchian-trend (scanningens effekt 2 og 4) er parkeret.
+
+#### Rettelse til ændring 42 punkt 6 (2026-11-05 kl. 19:28 lokal, før kode): årstallet
+
+"efter 90 dage (2026-02-03)" skal være **2027-02-03** (90 dage efter 2026-11-05). Intet andet ændres.
