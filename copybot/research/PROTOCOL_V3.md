@@ -4360,3 +4360,42 @@ Ingen regel i 41 ændres; dette gør dem entydige.
    tillæg, funding, største eksponering. Markedets bevægelse efter signalet adskilles fra det simulerede resultat.
    FØLG og MOD er ikke økonomiske spejlbilleder: begge betaler omkostninger, og funding og fyldpriser er asymmetriske.
    24 t, 1.000 USDT og retningsreglen ændres ikke på baggrund af resultaterne.
+
+## Ændring 42 (2026-11-05 kl. 19:28 lokal, før kode): lang carry-bog — BTC og ETH, lang spot / kort perp, holdt op til 180 dage (metode c42)
+
+**Beslutning:** Claude under ejerens mandat 2026-11-05 ("få også viden online så vi kan udføre det"; "Kør videre
+uafbrudt brug chat pt og codex"), efter litteraturscanningen `research/studies/ONLINE_EDGES_2026-11-05.md` (`60c3fe9`,
+effekt 1) og ChatGPT's gennemgang samme aften ("godkendt til protokolskrivning, ikke ubetinget deploy"; rettelserne
+er punkt 4-6). Kun papir. De eksisterende carry-baner, deres 14-dages stopregel (11 punkt 5), pm_lp, holdouts og
+straks-kontiene (41) røres ikke.
+
+1. **Hypotese:** en strukturel basis-præmie: lang spot og kort perp i samme mængde, holdt længe, tjener funding med
+   engangsomkostningen fordelt over hele holdet. Ved 0,48 % samlet rundtur (4 × 0,12 % pr. side og ben) er den
+   annualiserede omkostning 12,5 % ved 14 d, 1,95 % ved 90 d og 0,97 % ved 180 d. Det er ikke en forventning om
+   overskud: funding kan falde eller blive negativ (kilderne i scanningen: Binance-snit ca. 6 % p.a. i 3. kvartal 2025,
+   negativt 7-dages BTC-snit i april 2026).
+2. **Konti:** to banekonti (kilde `carry90`, uden for alle pladser), nøgler `carry90|BTCUSDT` (CARRY90-BTC) og
+   `carry90|ETHUSDT` (CARRY90-ETH), 10.000 USDT simuleret kapital hver; ét par pr. konto, så hvert ben er 5.000 USDT
+   (kapital / (2 × 1)). Indgang ved første gennemløb efter deploy, gennem de offentlige bøger (spot fra
+   `data-api.binance.vision`, perp fra `fapi.binance.com`), med banekontienes omkostningsmodel (taker 0,001, slippage
+   0,0002, spread-reference 0,0004) og ændring 31's likviditetsregel ved indgang. Ingen rebalancering; et ben der kun
+   delvist fyldes, bringes op til det andet bens mængde ved senere gennemløb (som 11 punkt 3).
+3. **Stop (pr. konto, entydigt):** (a) værdi ≤ 9.500 (5 % under startkapitalen), hvor værdien er kontantbeholdning inkl.
+   bogført funding plus begge ben markeret til bogens midtpris ved seneste timemærkning; (b) afnotering af spot eller
+   perp annonceret (16e); (c) pause ≥ 24 t; (d) 180 dage efter start; (e) ejerens `lane-off`. Ingen source-, flat- eller
+   edge-regel. Ved stop lukkes begge ben reduce-only af den eksisterende lukkerutine (`closing_ledgers`); et ben, der
+   ikke kan lukkes, forbliver åbent, markeres og forsøges igen hvert gennemløb (ændring 4: lukkes, glemmes aldrig). En
+   stopgrænse garanterer ikke et maksimalt tab (bogens pris ved lukningen afgør).
+4. **Det der registreres (alt, også tidlige lukninger):** settled funding pr. afregning (også negativ), gebyrer,
+   bogafstand og tillæg pr. fyld, mark-to-market på begge ben, prisbasis (spot − perp) ved hver mark, pauser og deres
+   regel, manglende data (`paper.error`, data_fetch-pauser) og stopårsag. Ingen konto udelades af opgørelsen.
+5. **Målestok:** FRED-serien DTB3 (3-måneders T-bill, sekundærmarked, `fred.stlouisfed.org`, allerede tilladt vært),
+   læst én gang ved hver opgørelse for præcis samme periode som kontoens hold; gennemsnit af de offentliggjorte
+   dagsværdier, dage uden værdi (helligdage) udelades; renten annualiseres som FRED angiver (diskonto-basis, ikke
+   omregnet). Rapport pr. konto: netto i USDT og på kapitalen, annualiseret netto, største fald, funding pr. 8 t-snit, og
+   forskellen til T-bill over samme periode.
+6. **Opgørelser:** efter 90 dage (2026-02-03) og efter 180 dage eller ved stop. Kun beskrivende; ingen kandidat, alfa
+   eller LÅS følger af dem. **Eksponering erklæret:** BTC/ETH, 5.000 pr. ben og horisonterne er valgt med kendskab til de
+   aktuelle fundingniveauer (census/1: BTC 9,7-10,9 % og ETH 8,3-10,6 % p.a. dagsmiddel 11-03..11-04) og til
+   scanningens kilder; de ændres ikke på baggrund af udfaldet. Guld-varianten (PAXG-spot mod XAUUSDT-perp),
+   Polymarket negRisk og Donchian-trend (scanningens effekt 2 og 4) er parkeret.
