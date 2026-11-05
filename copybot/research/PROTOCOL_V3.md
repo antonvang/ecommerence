@@ -4419,3 +4419,25 @@ rue", 2026-11-05). Punkt 6's parkering af guld-varianten ophæves; intet andet i
    hver mark som 42 punkt 4 og rapporteres særskilt.
 3. **Eksponering:** PAXG-bogens top (ca. 3.897,65 bud) er set i en scratch-fil fra 11-02; ingen funding- eller
    basisværdi for XAUUSDT er læst før denne tekst.
+
+## Ændring 43 (2026-11-05 kl. 21:08 lokal, før kode): parbogen — et marked handles mod sin nærmeste proxy (kun papir, udforskning)
+
+**Beslutning:** Claude under ejerens mandat 2026-11-05 ("beregne salg … sælge mod proxy og alt … vi skal ikke side og
+lægge rue"). Udforskning som straks-bogen (41): aldrig bevis, ingen kandidat, alfa eller LÅS. Litteraturscanningen
+(`ONLINE_EDGES_2026-11-05.md`) fandt **ingen** troværdig evidens for, at en simpel spread-tilbagevenden mellem
+nære proxies overlever taker-omkostninger i disse markeder; den ærlige forventning er netto ≈ −omkostninger.
+
+1. **Par (faste):** Brent/WTI (`BZUSDT`/`CLUSDT`), ETH/BTC (`ETHUSDT`/`BTCUSDT`), Nasdaq/S&P (`QQQUSDT`/`SPYUSDT`),
+   sølv/guld (`XAGUSDT`/`XAUUSDT`). Alle Binance USD-M-perps; begge ben er perps.
+2. **Konto:** én banekonto (kilde `pairs`, nøgle `pairs|v1`, PAR-BOG), 10.000 USDT, uden for alle pladser.
+3. **Signal (fast, før data), hver time:** s = ln(A) − ln(B) af de seneste lukkede timebarer; z = (s − middel) / sd
+   over de 720 foregående timer (samme skala som ændring 21's detektor; mindst 600 parrede timer, ellers intet).
+   Data er papirløberens eksisterende timebarer (`/fapi/v1/klines`, 1 t, de seneste 1.000), samme hentning som alle
+   banekonti bruger i drift; ingen ny historisk forespørgsel, ingen ny vært.
+4. **Ind:** z ≥ 2 → sælg A og køb B; z ≤ −2 → køb A og sælg B; 1.000 USDT pr. ben, taker gennem begge bøger med
+   banekontienes omkostningsmodel (spread-reference 0,002 som 41). Højst én åben position pr. par.
+5. **Ud (det første der sker):** |z| ≤ 0,5 (tilbage til normalt), |z| ≥ 4 (stop), eller 72 timer efter indgangen.
+   Reduce-only, begge ben. Funding bogføres for begge ben.
+6. **Stop af kontoen:** værdi ≤ 8.000, pause ≥ 24 t, 90 dage eller `lane-off`. Lukning ved stop som 41a punkt 3.
+7. **Opgørelse:** 2026-11-19 (diagnostisk) og 2026-12-05 (eksplorativ), pr. par: antal handler, brutto, netto, gebyrer,
+   bog, tillæg, funding, udgangsårsag (normal/stop/tid). 2, 0,5, 4, 72 t og 720 t ændres ikke på baggrund af udfaldet.
