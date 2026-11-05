@@ -4305,3 +4305,35 @@ news/1-titler fra 2022-2026, bekræftet som holdout-brud). Kun skærpelser; inge
    detektorer).
 5. Udkast B's (n4) punkt 1 og MISSION27_3 punkt 5's tal "299 / 231" mærkes som afledt af afvigelsen; B's univers bygges
    kun fra kaldet under 38 B efter låsen.
+
+## Ændring 41 (2026-11-05 kl. 17:45 lokal, før kode): straks-bogen — to papirkonti handler hver usædvanlig bevægelse med det samme (følg og mod)
+
+**Beslutning:** ejeren 2026-11-05 i chatten: "start straks-bog - du må omgå alt", efter forslaget om papirkonti, der
+handler hvert flag fra bevægelses-scanneren straks med fulde omkostninger. Kun papir: ingen børs, ingen nøgler, ingen
+rigtige penge (`lab/paper.py`, uændret). "Omgå alt" gælder **handelsfiltrene** for netop disse to konti: spotpar (19),
+EU-handelbarhed (30a), omkostnings- og persistensgaten, likviditetsreglen (31) og de 6 bane-pladser (12b). Det gælder
+**ikke** datagrænserne (holdout 2024, historik før 14/11, COIN-M før 28/11, Upbit), `pm_lp`, sikkerhedstesten, låste
+hypoteser eller rigtige penge: den strengeste regel gælder dér, og intet af det er nødvendigt her.
+
+1. **Konti:** to banekonti (`LANE_<10 hex>`, kilde `straks`), nøgler `straks|cont` (STRAKS-FØLG) og `straks|rev`
+   (STRAKS-MOD), 10.000 USDT simuleret kapital hver, startet af `system:lane` ved første gennemløb efter deploy. De
+   optager ingen bane-, scanner- eller HL-plads og påvirker ingen anden konto.
+2. **Signal (fast, før data):** hver `opportunity.move` (ændring 21, alle 12 markeder på listen: BTC, ETH, guld, sølv,
+   platin, kobber, WTI, Brent, naturgas, SPY, QQQ, USD/BRL), skrevet efter kontoens start og højst 2 timer gammel, når
+   kontoen ser den. Retning s: fortegnet af `ret_1h`, hvis `z_1h` er blandt flagene; ellers af `ret_24h`, hvis `z_24h`
+   er blandt flagene; ellers af `ret_1h`. FØLG går lang perp ved s > 0 og kort ved s < 0; MOD omvendt. s = 0: intet.
+3. **Udførelse:** taker gennem perpens offentlige bog (20 niveauer, `fapi.binance.com`, som de andre konti), 1.000 USDT
+   notional pr. position, omkostninger som banekontiene (taker 0,001, ekstra slippage 0,0002 pr. side). Alarmreferencen
+   for spread er 0,002 (TradFi-bøgerne er tyndere end krypto; alarm ved 3 × = 60 bp); den påvirker ingen anden konto.
+   Højst én åben position pr. marked pr. konto; et signal på et marked med åben position springes over og registreres.
+4. **Ud:** ved første gennemløb mindst 24 timer efter indgangen, reduce-only taker gennem bogen. Settled funding bookes
+   som for de andre konti (ændring 9 afsnit 2). Positionerne markeres hver time.
+5. **Stop:** tab ≥ 20 % af kapitalen, pause ≥ 24 t, 90 dage, eller ejerens `lane-off`. Ingen source-, flat- eller
+   edge-regel (kontiene står ofte flade mellem bevægelser).
+6. **Forventning og eksponering (erklæret):** m21c (MOVESCREEN_m21c) faldt på krypto-perps 2020-21: følg ved 4 t −0,03 %,
+   ved 24 t +0,44 % brutto, begge SCREEN_FAIL. Den ærlige forventning er derfor netto ≈ −omkostninger (ca. 0,24 % pr.
+   rundtur + bogens spread). Claude har ikke læst nogen `opportunity.outcome`-værdi; signalreglen er fastsat uden dem.
+7. **Rapport:** kontiene står i banetabellen (`/api/lanes`) og døgnrapporten. Første beskrivende opgørelse 2026-11-12
+   (7 dage) og 2026-12-05 (30 dage): antal handler, netto, opdelingen (funding, gebyrer, bog, tillæg, prisbevægelse),
+   FØLG mod MOD, pr. markedsklasse. Aldrig bevis; ingen kandidat, alfa eller LÅS følger af den; en test kræver en ny
+   dateret ændring.
