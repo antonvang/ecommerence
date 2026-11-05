@@ -109,6 +109,29 @@ class Pairs(unittest.TestCase):
         lane.run_one(self.db, led, get, t)
         self.assertEqual(PaperEngine(self.db).ledger(led)["positions"], {})
 
+    def test_43a_no_leg_is_sent_when_one_book_is_too_thin_and_quantities_are_on_the_lot_grid(self):
+        led, _ = self.account()
+        s = {"v": 0.002}
+        get = market(lambda: s["v"])
+
+        def thin(path):
+            d = get(path)
+            if "/fapi/v1/depth" in path and "CLUSDT" in path:
+                d = {"bids": [[d["bids"][0][0], "1"]], "asks": [[d["asks"][0][0], "1"]]}   # 100 USD only
+            return d
+        thin.now = NOW
+        lane.run_one(self.db, led, thin, NOW)
+        self.assertEqual(self.db.one("SELECT COUNT(*) FROM sim_orders WHERE exp_id=?", led)[0], 0)
+        lane.run_one(self.db, led, get, NOW + 60)
+        for r in self.db.q("SELECT instrument, qty FROM sim_orders WHERE exp_id=?", led):
+            self.assertAlmostEqual(r["qty"] / 0.01, round(r["qty"] / 0.01), places=6)
+
+    def test_43a_unknown_lot_size_blocks(self):
+        from lab import lots
+        self.assertIsNone(lots.step(("NOPEUSDT",)))
+        self.assertEqual(lots.step(("XAUUSDT", "PAXGUSDT.SPOT")), 0.001)
+        self.assertAlmostEqual(lots.round_down(1.23456, 0.001), 1.234)
+
     def test_short_history_gives_no_z(self):
         bars = [(i * HOUR, 1.0, 1.0 + 0.01 * (i % 3)) for i in range(100)]
         z, why = pairs.zscore(bars, bars, 100 * HOUR + 60)

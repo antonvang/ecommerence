@@ -110,6 +110,8 @@ class Carry90(unittest.TestCase):
         self.assertEqual(set(pos), {"PAXGUSDT.SPOT", "XAUUSDT"})
         self.assertAlmostEqual(pos["PAXGUSDT.SPOT"], -pos["XAUUSDT"], places=9)
         self.assertTrue(any("symbol=PAXGUSDT" in p for p in seen))
+        q = pos["PAXGUSDT.SPOT"]                                    # 43a: on the 0.001 grid of the coarser leg
+        self.assertAlmostEqual(q / 0.001, round(q / 0.001), places=6)
         self.assertFalse(any("symbol=XAUUSDT" in p and "data-api" in p for p in seen))
 
     def test_rules_text_on_the_dashboard(self):

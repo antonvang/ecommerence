@@ -134,9 +134,27 @@ def run_one(db, ledger, info, get, now, cache=None, books=None):
             risk.observe_book(ledger, x)
             if books is not None:
                 books[s] = x
+        if not reduce:                                           # 43a: both legs fill fully after lot rounding
+            from lab import lane, lots
+            qty, why_not = {}, None
+            for s, q in legs:
+                st = lots.step((s,))
+                if st is None:
+                    why_not = f"BLOCKED: ukendt lot-størrelse for {s}"
+                    break
+                qty[s] = lots.round_down(LEG_USD / bk[s].mid(), st)
+                if not lots.min_ok(s, qty[s], bk[s].mid()):
+                    why_not = f"ikke sendt: {s} under minimumsnotional"
+                elif lane.walk(bk[s], side(q), qty[s]) is None:
+                    why_not = f"ikke sendt: bog for tynd ({s})"
+                if why_not:
+                    break
+            if why_not:
+                out.append({"pair": tag, "status": why_not, "z": z})
+                continue
         for s, q in legs:
-            qty = abs(q) if reduce else LEG_USD / bk[s].mid()
-            r = eng.submit_taker(ledger, f"{ledger}|{'out' if reduce else 'in'}|{tag}|{hour}|{s}", s, side(q), qty,
+            qty_s = abs(q) if reduce else qty[s]
+            r = eng.submit_taker(ledger, f"{ledger}|{'out' if reduce else 'in'}|{tag}|{hour}|{s}", s, side(q), qty_s,
                                  bk[s], reduce_only=reduce, signal_ref=f"pairs.{why}@{hour}:z={z}")
             out.append({"pair": tag, "instrument": s, "status": r["status"], "why": why, "z": z})
     try:

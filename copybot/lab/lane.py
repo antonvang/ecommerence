@@ -1191,6 +1191,13 @@ def run_one(db, ledger, get, now, cache=None, books=None):
                 books[inst] = b
         if fresh:
             q = size / bk[p_inst].mid()
+            if is_carry90(info) and s == "XAUUSDT":              # amendment 43a: lot rounding for the gold pair
+                from lab import lots
+                st = lots.step((p_inst, s_inst))
+                if st is None:
+                    orders.append({"symbol": s, "status": "BLOCKED: ukendt lot-størrelse (43a)"})
+                    continue
+                q = lots.round_down(q, st)
         legs_ = []
         for inst, target, cur in ((s_inst, q, sq), (p_inst, -q, pq)):
             delta = target - cur
