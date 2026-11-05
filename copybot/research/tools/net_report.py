@@ -95,7 +95,8 @@ def build(con, now):
         r["active"] = led not in gone
         rows.append(r)
     return {"generated": int(now), "rule": "director order 44 P2 (research/reviews/INBOX.md)", "no_trade_benchmark": 0.0,
-            "note": "descriptive; no annualisation; net = latest hourly mark minus capital; price_move = residual",
+            "note": "descriptive; no annualisation; net = latest hourly mark minus capital; price_move = residual; "
+                    "unleveraged theoretical P&L: no margin model, unlimited collateral for short perp legs",
             "accounts": rows}
 
 
@@ -104,6 +105,9 @@ def md(rep):
     lines = [f"# Nettorapport for papirbøgerne ({when})", "",
              "Beskrivende; ingen annualisering; mod ingen-handel = 0. Netto = seneste timemærkning − kapital; "
              "prisbevægelse = resten efter funding, gebyrer, bog og tillæg.", "",
+             "**Teoretisk P&L uden gearing:** papirmotoren har ingen marginmodel og forudsætter ubegrænset "
+             "sikkerhedsstillelse for korte perp-ben; tallene er ikke verificeret eksekverbar strategi. Parbogens 1:1-"
+             "positioner bærer markedsbeta (RISK_REGISTER_P3: ETH/BTC 1,25, QQQ/SPY 1,54, XAG/XAU 1,67).", "",
              "| Konto | Kilde | Aktiv | Netto | Funding | Gebyrer | Bog | Tillæg | Prisbevægelse | Fyld | Maks. eksponering | "
              "Maks. fald |", "|---|---|---|---|---|---|---|---|---|---|---|---|"]
     for r in rep["accounts"]:

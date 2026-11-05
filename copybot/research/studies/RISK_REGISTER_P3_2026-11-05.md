@@ -45,3 +45,12 @@ med kendt usikkerhed. **UNKNOWN betyder ukendt, ikke nul.**
 1. β-vægtede par (hedge-forhold fastsat fra en forhåndsdefineret, forudgående periode) mod den nuværende 1:1-bog.
 2. Delvis udgang: modellér og registrér resteksponering, eller send udgang kun ved fuldt fyld på begge ben.
 3. Marginmodel for korte perp-ben (likvidationspris pr. position) i papirmotoren, så margin-risiko kan måles.
+
+## 5. Tilføjelse efter ChatGPT's svar (kl. 21:46 lokal)
+
+- **Margin:** alle nuværende konti forudsætter **ubegrænset sikkerhedsstillelse** (`lab/paper.py` har ingen
+  marginmodel; korte perp-ben kan aldrig likvideres). Resultaterne mærkes derfor som **teoretisk P&L uden gearing**, ikke
+  som verificeret eksekverbar strategi; mærkningen står nu i nettorapporten. En marginmodel kræver sin egen
+  forudregistrerede ændring, før den bruges til validering.
+- Parbogens 1:1-eksperiment fortsætter uændret efter 43/43a; ingen justering af hedge-forholdet. Den åbne QQQ/SPY
+  rapporteres med sin nettoeksponering (≈ 540 USDT aktie-beta), så et resultat ikke tilskrives ren mean reversion.

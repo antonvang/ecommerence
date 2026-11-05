@@ -801,8 +801,8 @@
    "value": 9997.59469841794
   }
  ],
- "generated": 1793911432,
+ "generated": 1793911603,
  "no_trade_benchmark": 0.0,
- "note": "descriptive; no annualisation; net = latest hourly mark minus capital; price_move = residual",
+ "note": "descriptive; no annualisation; net = latest hourly mark minus capital; price_move = residual; unleveraged theoretical P&L: no margin model, unlimited collateral for short perp legs",
  "rule": "director order 44 P2 (research/reviews/INBOX.md)"
 }

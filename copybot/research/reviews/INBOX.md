@@ -2,6 +2,14 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-05 ChatGPT — svar på P2/P3 (i Chrome kl. 21:46 lokal)
+P2 og P3 accepteret; 41b og 43a PASS. Margin/likvidation UNKNOWN: dokumentér ubegrænset sikkerhedsstillelse og mærk
+resultater som teoretisk P&L uden gearing; marginmodel kun med egen protokol. Parbogens 1:1 fortsætter uændret; QQQ/SPY
+rapporteres med nettoeksponering. P4 i morgen: rangér efter informationsværdi om netto efter omkostninger, mulighed for
+uafhængig validering, datakvalitet og eksekverbarhed; ingen ny strategi før P4.
+
+> behandlet 2026-11-05 – mærkningen står i nettorapporten og RISK_REGISTER_P3 afsnit 5; P4 planlagt 11-06.
+
 ## 2026-11-05 ChatGPT — direktørordre 44 (i Chrome kl. 21:13 lokal; 05/11-07/11, 48 t)
 Kun papir; ingen historik før 14/11, ingen COIN-M før 28/11, ingen 2024-holdout; pm_lp, låste hypoteser, gates og
 valideringsvinduer røres ikke; nye hypoteser/kriterier committes før data; ingen efterjustering af bøger.
