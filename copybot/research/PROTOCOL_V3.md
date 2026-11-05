@@ -4451,3 +4451,16 @@ et registreret ordretidspunkt 1-42 s før signalet: move 58416 (CLUSDT, −41 s)
 før signalet er brugt; men 41a punkt 1 ("første gennemløb efter signalet") er ikke overholdt.
 1. **Rettelse:** et gennemløb handler kun poster med `ts` ≤ gennemløbets ur; senere poster tages i næste gennemløb.
 2. **De tre handler** (seks ordrer) mærkes `41b_timing` i opgørelserne og rapporteres med og uden dem; de fjernes ikke.
+
+### Ændring 43a (2026-11-05 kl. 21:28 lokal, før kode og før GULD og parbogen deployes): fulde fyld og lot-størrelser
+
+**Beslutning:** ChatGPT's betingelse for deploy (direktørordre 44, svar på P1): en papirposition med to ben må kun
+åbnes, når begge ben kan fyldes helt efter dokumenterede instrumentregler. Gælder nye indgange i CARRY90-GULD (42a) og
+parbogen (43); BTC/ETH-kontiene (åbnet 18:39) og straks-bogen ændres ikke.
+1. **Lot-størrelser** (fra `exchangeInfo` 2026-11-05 kl. 20:14 UTC, sha256 `8ebcae1de486…` og `7fc78d65830c…`):
+   mængden rundes **ned** til det groveste step af parrets ben: XAUUSDT 0,001 / PAXGUSDT 0,0001 → 0,001; BZ, CL, QQQ, SPY
+   0,01; ETH, BTC, XAG 0,001. Minimumsnotional (5 USDT TradFi, 20 ETH, 50 BTC) skal være opfyldt efter afrunding.
+2. **Fuldt fyld før ordre:** før en indgang går begge ordrer gennem bogen på papir (`lane.walk`); kan et ben ikke fyldes
+   helt inden for de 20 niveauer, sendes ingen ordre på noget ben (registreres som "ikke sendt: bog for tynd"). For
+   GULD gælder ændring 31's likviditetsregel desuden som før.
+3. Et symbol uden kendt step: indgang BLOCKED (ingen ordre).
