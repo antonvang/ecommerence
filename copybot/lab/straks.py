@@ -126,7 +126,7 @@ def run_one(db, ledger, info, get, now, cache=None, books=None):
     skipped = {r[0] for r in db.q("SELECT json_extract(payload, '$.move_id') FROM events WHERE kind='straks.skipped' "
                                   "AND exp_id=?", ledger)}
     for r in db.q("SELECT id, ts, payload FROM events WHERE kind='opportunity.move' AND exp_id IS NULL AND ts>=? "
-                  "ORDER BY id", int(info["ts"])):
+                  "AND ts<=? ORDER BY id", int(info["ts"]), int(now)):      # 41b: only records from before this pass
         if r["id"] in seen or r["id"] in skipped:
             continue
         m = json.loads(r["payload"])

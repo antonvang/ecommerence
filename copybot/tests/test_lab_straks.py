@@ -152,6 +152,16 @@ class Straks(unittest.TestCase):
         self.assertTrue(seen)
         self.assertTrue(all(p.startswith("/fapi/v1/") for p in seen), seen)
 
+    def test_a_record_written_after_the_pass_started_waits_for_the_next_pass(self):
+        acc = self.accounts()
+        cont = acc["straks|cont"][0]
+        self.move(at=NOW + 30)                                    # 41b: written after this pass's clock
+        self.step(cont, NOW)
+        self.assertEqual(self.db.one("SELECT COUNT(*) FROM sim_orders WHERE exp_id=?", cont)[0], 0)
+        self.step(cont, NOW + 60)
+        o = self.db.one("SELECT ts FROM sim_orders WHERE exp_id=?", cont)
+        self.assertGreaterEqual(o["ts"], NOW + 30)
+
     def test_dashboard_and_daily_report_show_the_accounts(self):
         from lab import command
         acc = self.accounts()
