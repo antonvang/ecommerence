@@ -4337,3 +4337,26 @@ hypoteser eller rigtige penge: den strengeste regel gælder dér, og intet af de
    (7 dage) og 2026-12-05 (30 dage): antal handler, netto, opdelingen (funding, gebyrer, bog, tillæg, prisbevægelse),
    FØLG mod MOD, pr. markedsklasse. Aldrig bevis; ingen kandidat, alfa eller LÅS følger af den; en test kræver en ny
    dateret ændring.
+
+### Ændring 41a (2026-11-05 kl. 17:51 lokal, før deploy og før nogen straks-handel): præciseringer efter ChatGPT's gennemgang
+
+Ingen regel i 41 ændres; dette gør dem entydige.
+1. **Handlen:** signaltidspunktet er `opportunity.move`-eventets ts (skrevet efter at bevægelsestimen er lukket).
+   Indgangen sker ved første gennemløb af papirløberen efter signalet, til bogen hentet i det gennemløb (`ts` = nu),
+   aldrig til en pris fra før signalet. Højeste forsinkelse 2 t (punkt 2); derefter "for gammel". Manglende, krydset
+   eller for gammel bog (risikoreglens `data_max_age_s`): ingen ordre; gennemløbet prøver igen med samme ordre-id
+   indtil 2 t-grænsen. Et signal på et marked med åben position springes over og registreres (`straks.skipped`).
+2. **Omkostninger:** fyldprisen er bogens niveau × (1 ± 0,0002); slippage-tillægget kommer oven i bogens gennemgang og
+   regnes ikke dobbelt (opdelingen viser `book` og `allowance` hver for sig). Taker 0,001 er højere end Binance'
+   kampagnegebyr for TradFi-perps (0,0004, ikke verificeret, ændring 21); det er et bevidst forsigtigt valg. Alle
+   ikke-krypto-markeder er **Binance TradFi-perps** (syntetiske kontrakter med egen bog og funding, 24/7), ikke
+   guld, olie, SPY eller USD/BRL selv; uden for det underliggende markeds åbningstid står det i analyseposten.
+3. **Stop:** tab ≥ 20 % = kontoens seneste timemærkede værdi ≤ 8.000 (startkapital 10.000), pr. konto. Pauser er pr.
+   konto (risikomodulets pauser gælder én ledger). Ved stop (tab, pause ≥ 24 t, 90 dage, lane-off) lukkes åbne
+   positioner reduce-only af den eksisterende lukkerutine (`closing_ledgers`, ændring 4/11). Eksisterende
+   sikkerhedskontroller (FAIL_CLOSED, data-gates, spread- og drawdown-breakere) gælder uændret.
+4. **Opgørelse (12/11 diagnostisk, 05/12 eksplorativ, aldrig holdout):** FØLG og MOD på de samme signaler, inkl.
+   sprungne og afviste; pr. konto og pr. markedsklasse: antal handler, brutto (prisbevægelse), netto, gebyrer, bog,
+   tillæg, funding, største eksponering. Markedets bevægelse efter signalet adskilles fra det simulerede resultat.
+   FØLG og MOD er ikke økonomiske spejlbilleder: begge betaler omkostninger, og funding og fyldpriser er asymmetriske.
+   24 t, 1.000 USDT og retningsreglen ændres ikke på baggrund af resultaterne.
