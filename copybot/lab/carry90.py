@@ -7,7 +7,9 @@ two-leg code with a fixed +1 signal. Never evidence; nothing here is a candidate
 from __future__ import annotations
 
 SOURCE = "carry90"
-COINS = ("BTCUSDT", "ETHUSDT")
+COINS = ("BTCUSDT", "ETHUSDT", "XAUUSDT")                  # 42a: gold against PAXG spot
+SPOT_PROXY = {"XAUUSDT": "PAXGUSDT"}           # 42a: the spot leg of a perp without its own spot pair
+RULE_GOLD = "research/PROTOCOL_V3.md amendment 42a"
 LABEL = "CARRY90-KONTO (lang carry, simuleret, aldrig bevis)"
 RULE = "research/PROTOCOL_V3.md amendment 42"
 LOSS = 0.05                                     # point 3a: value <= 9 500
@@ -38,7 +40,7 @@ def ensure(db, now):
             continue
         led = lane.ledger_id(key)
         db.event("lane.started", ACTOR, led, {
-            "key": key, "source": SOURCE, "name": f"CARRY90-{coin[:-4]}", "function": "hold", "family": SOURCE,
+            "key": key, "source": SOURCE, "name": "CARRY90-GULD" if coin == "XAUUSDT" else f"CARRY90-{coin[:-4]}", "function": "hold", "family": SOURCE,
             "params": {"hold_days_max": MAX_AGE_S // 86400, "leg_usd": lane.CAPITAL / lane.UNIT_CAPITAL},
             "coins": [coin], "expectation": None, "capital": lane.CAPITAL, "t": int(now),
             "costs": lane.COSTS.__dict__, "label": LABEL, "simulated": True, "decisional": False, "rule": RULE})

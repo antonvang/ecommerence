@@ -65,7 +65,7 @@ class Carry90(unittest.TestCase):
 
     def test_two_accounts_once_outside_every_slot(self):
         acc = self.accounts()
-        self.assertEqual(set(acc), {"carry90|BTCUSDT", "carry90|ETHUSDT"})
+        self.assertEqual(set(acc), {"carry90|BTCUSDT", "carry90|ETHUSDT", "carry90|XAUUSDT"})
         self.assertEqual(carry90.ensure(self.db, NOW), [])
         for led, i in acc.values():
             self.assertTrue(lane.is_carry90(i))
@@ -94,6 +94,23 @@ class Carry90(unittest.TestCase):
             self.db.append("sim_equity", exp_id=led, ts=int(NOW + 3600), equity=9499.0, cash=9499.0, exposure=0.0,
                            peak=10000.0, drawdown=0.05)
         self.assertEqual(lane._retire_reason(self.db, led, info, NOW + 2 * HOUR, set())[0], "loss")
+
+    def test_gold_trades_paxg_spot_against_the_xau_perp(self):
+        led, info = self.accounts()["carry90|XAUUSDT"]
+        self.assertEqual(lane.legs(info, "XAUUSDT"), ("XAUUSDT", "PAXGUSDT.SPOT"))
+        seen = []
+        g = self.get
+
+        def log(path):
+            seen.append(path)
+            return g(path)
+        log.now = NOW
+        lane.run_one(self.db, led, log, NOW)
+        pos = PaperEngine(self.db).ledger(led)["positions"]
+        self.assertEqual(set(pos), {"PAXGUSDT.SPOT", "XAUUSDT"})
+        self.assertAlmostEqual(pos["PAXGUSDT.SPOT"], -pos["XAUUSDT"], places=9)
+        self.assertTrue(any("symbol=PAXGUSDT" in p for p in seen))
+        self.assertFalse(any("symbol=XAUUSDT" in p and "data-api" in p for p in seen))
 
     def test_rules_text_on_the_dashboard(self):
         _, info = self.accounts()["carry90|ETHUSDT"]

@@ -1062,6 +1062,9 @@ def legs(info, coin):
         return HL_PERP + coin, f"{coin}USDT{SPOT}"
     if is_straks(info):                                          # amendment 41: the perp only
         return (coin,)
+    if is_carry90(info):                                         # amendment 42a: a spot proxy for the gold perp
+        from lab import carry90
+        return coin, carry90.SPOT_PROXY.get(coin, coin) + SPOT
     return coin, coin + SPOT
 
 
