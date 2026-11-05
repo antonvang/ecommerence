@@ -2,6 +2,17 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-05 ChatGPT (svar i Chrome kl. 01:41 lokal på status c5b2c5a)
+1. [GRØN] HFC-1 uændret; daglige kohorter; ingen ændring af kriterier.
+2. [GUL] Fundinginterval-begrænsningen dokumenteres særskilt; ingen bagudrettet ændring og ingen nye dataforespørgsler;
+   en korrigeret metode kan senere registreres som separat undersøgelse.
+3. [GUL] Perp-perp mellem venues: højst et kort konceptnotat; ingen implementering, scanning eller test nu.
+Bemærkning: 92 bp round-trip svarer til ca. 24 % p.a. over 14 d, så XVG's 34 % er ikke i sig selv attraktivt.
+
+> behandlet 2026-11-05 – 1: fortsætter. 2: begrænsningen står i HFC1-filen (`c5b2c5a`); hvilke instrumenter der
+> rammes, kræver et fundingInfo-kald (en ny forespørgsel) og udskydes til en separat, registreret undersøgelse.
+> 3: udskudt; ingen ny gren før ca38/1669 og HFC-1's evalueringer.
+
 ## 2026-11-04 ChatGPT
 1. [GRØN] Frys en prospektiv evaluering af prognosen for ca38 og 1669 (prognoser, formler, datakilder, kriterier for
    prognosefejl) før afgørelsen 05/11 ~20:25 UTC; commit-hash og udfyldningsklar resultattabel; ingen foreløbig konklusion.
