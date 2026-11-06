@@ -10,8 +10,8 @@
   "REJECTED": 47
  },
  "exploration": {
-  "candidates": 19129,
-  "runs": 417
+  "candidates": 19182,
+  "runs": 418
  },
  "family_alpha_rows": {
   "family:fcarry": {
@@ -3580,7 +3580,7 @@
    },
    {
     "alpha": 0.0,
-    "hash": "9db4c0edc1b86881bf3ec56034a54b42f4c1a41cac7b231540b98221ee547f18",
+    "hash": "476c751ae00787558ea0d4aa0104565b389a5500879fa4a619b0e56b55142fea",
     "hid": "explore0",
     "lineage": "explore0",
     "note": "explore0 window only; never evidence; counted so breadth stays visible",
@@ -3588,15 +3588,15 @@
     "seq": 196,
     "source": "exploration lane",
     "ts": 0,
-    "variants": 19129
+    "variants": 19182
    },
    {
     "alpha": 0.0,
-    "hash": "e98f13638a18d074bd466cd088fa4ee294ffe55389c9059df15f75e404227ce5",
+    "hash": "f7fd8ca38b055a92acfceab8e772f2b90f0108cfe314c038ba38d41e162e02fc",
     "hid": "MOVESCREEN_m21c",
     "lineage": "liquidation_cascade_reversal",
     "note": "inventory 2026-11-06 (subagent read of the study files, spot-checked); attempts = tests not already counted elsewhere",
-    "prev": "9db4c0edc1b86881bf3ec56034a54b42f4c1a41cac7b231540b98221ee547f18",
+    "prev": "476c751ae00787558ea0d4aa0104565b389a5500879fa4a619b0e56b55142fea",
     "seq": 197,
     "source": "off-database study",
     "ts": 0,
@@ -3604,11 +3604,11 @@
    },
    {
     "alpha": 0.0,
-    "hash": "adaa660af8d5ea77079b2869bead57c7346ff2aa3678f3ec805099dc0dd21376",
+    "hash": "29ebb7546da2b25ee3f8f3d0ddb14c19a58c65b5bb77e0b23e752f448dca72c8",
     "hid": "DISCOVERY_m21f",
     "lineage": "lead_lag_diffusion",
     "note": "inventory 2026-11-06 (subagent read of the study files, spot-checked); attempts = tests not already counted elsewhere",
-    "prev": "e98f13638a18d074bd466cd088fa4ee294ffe55389c9059df15f75e404227ce5",
+    "prev": "f7fd8ca38b055a92acfceab8e772f2b90f0108cfe314c038ba38d41e162e02fc",
     "seq": 198,
     "source": "off-database study",
     "ts": 0,
@@ -3616,11 +3616,11 @@
    },
    {
     "alpha": 0.0,
-    "hash": "f2af49edc88a50f8221548548dc37e3beb264ff9105f60728fa0c15a28c56d10",
+    "hash": "fb306d309d99575326c83aaa4671eeb91cd27eda4415b51f1a01c37989db4cff",
     "hid": "FUNDING_m21h",
     "lineage": "cross_venue_perp_gap",
     "note": "inventory 2026-11-06 (subagent read of the study files, spot-checked); attempts = tests not already counted elsewhere",
-    "prev": "adaa660af8d5ea77079b2869bead57c7346ff2aa3678f3ec805099dc0dd21376",
+    "prev": "29ebb7546da2b25ee3f8f3d0ddb14c19a58c65b5bb77e0b23e752f448dca72c8",
     "seq": 199,
     "source": "off-database study",
     "ts": 0,
@@ -3628,11 +3628,11 @@
    },
    {
     "alpha": 0.0,
-    "hash": "d40ca3b5a04821865519c01960752fea0471cfd0bc7d61da86b6422de487a230",
+    "hash": "0872cbbbc74cce67db87c00f40dfa9b21b3f506cb0246a79dbc7716d1174e7b6",
     "hid": "SPOTPERP_m21i",
     "lineage": "cross_venue_perp_gap",
     "note": "inventory 2026-11-06 (subagent read of the study files, spot-checked); attempts = tests not already counted elsewhere",
-    "prev": "f2af49edc88a50f8221548548dc37e3beb264ff9105f60728fa0c15a28c56d10",
+    "prev": "fb306d309d99575326c83aaa4671eeb91cd27eda4415b51f1a01c37989db4cff",
     "seq": 200,
     "source": "off-database study",
     "ts": 0,
@@ -3640,11 +3640,11 @@
    },
    {
     "alpha": 0.0,
-    "hash": "c3ea0c2041b9272584ad73be8a3ada8fc0bae626b113f57443554125775138f2",
+    "hash": "ea22af0e40590047cc2f2defb297cd2f925e0d051685736bfcde0e885b61c754",
     "hid": "NEWINFO_m21j",
     "lineage": "unclassified",
     "note": "inventory 2026-11-06 (subagent read of the study files, spot-checked); attempts = tests not already counted elsewhere",
-    "prev": "d40ca3b5a04821865519c01960752fea0471cfd0bc7d61da86b6422de487a230",
+    "prev": "0872cbbbc74cce67db87c00f40dfa9b21b3f506cb0246a79dbc7716d1174e7b6",
     "seq": 201,
     "source": "off-database study",
     "ts": 0,
@@ -3652,11 +3652,11 @@
    },
    {
     "alpha": 0.0,
-    "hash": "9683393f125f68c0750b09c12d7ab0013627427171ecf608e35dc3c48ad44375",
+    "hash": "ec27133e43d513c158fb421f7db99e12dd1d5d159a9c8a21b835582e13f1af42",
     "hid": "R3_m24",
     "lineage": "unclassified",
     "note": "inventory 2026-11-06 (subagent read of the study files, spot-checked); attempts = tests not already counted elsewhere",
-    "prev": "c3ea0c2041b9272584ad73be8a3ada8fc0bae626b113f57443554125775138f2",
+    "prev": "ea22af0e40590047cc2f2defb297cd2f925e0d051685736bfcde0e885b61c754",
     "seq": 202,
     "source": "off-database study",
     "ts": 0,
@@ -3664,11 +3664,11 @@
    },
    {
     "alpha": 0.0,
-    "hash": "f9c6393c5f7c6fed11ff8e31612ef4d4579801f7e098f82a2df43c8b84021989",
+    "hash": "b68fd05931d91c51d96dd2a16e6f334f98798fbf934f743eb15aa67072f955ed",
     "hid": "V1_DOM_2026-10-29",
     "lineage": "unclassified",
     "note": "inventory 2026-11-06 (subagent read of the study files, spot-checked); attempts = tests not already counted elsewhere",
-    "prev": "9683393f125f68c0750b09c12d7ab0013627427171ecf608e35dc3c48ad44375",
+    "prev": "ec27133e43d513c158fb421f7db99e12dd1d5d159a9c8a21b835582e13f1af42",
     "seq": 203,
     "source": "off-database study",
     "ts": 0,
@@ -3676,11 +3676,11 @@
    },
    {
     "alpha": 0.0,
-    "hash": "17c198a9a5eeccef1023aa309a6b1fc1c4fbf61361c674170ba36d9664ab5a5f",
+    "hash": "064a0e2bf6b3369f16a883611137279285e7823817a358cff2632b9b765c4b0d",
     "hid": "PREREG_CA38_1669_2026-11-04",
     "lineage": "cross_venue_perp_gap",
     "note": "inventory 2026-11-06 (subagent read of the study files, spot-checked); attempts = tests not already counted elsewhere",
-    "prev": "f9c6393c5f7c6fed11ff8e31612ef4d4579801f7e098f82a2df43c8b84021989",
+    "prev": "b68fd05931d91c51d96dd2a16e6f334f98798fbf934f743eb15aa67072f955ed",
     "seq": 204,
     "source": "off-database study",
     "ts": 0,
@@ -3688,11 +3688,11 @@
    },
    {
     "alpha": 0.05,
-    "hash": "a769e54e2939aa9b49f2acf30bebc2054fa7a826b5cd2997ed340e04e3460a9b",
+    "hash": "3fa9b4da2fbcf87342f317d24c480226a294f961ba3d0ad9d3ae1bb7bd8d2e3f",
     "hid": "CARRY_BASIS_2026-10-21",
     "lineage": "cross_venue_perp_gap",
     "note": "inventory 2026-11-06 (subagent read of the study files, spot-checked); attempts = tests not already counted elsewhere",
-    "prev": "17c198a9a5eeccef1023aa309a6b1fc1c4fbf61361c674170ba36d9664ab5a5f",
+    "prev": "064a0e2bf6b3369f16a883611137279285e7823817a358cff2632b9b765c4b0d",
     "seq": 205,
     "source": "off-database study",
     "ts": 0,
@@ -3752,7 +3752,7 @@
     "alpha": 0.0,
     "attempts": 1,
     "hypotheses": 1,
-    "variants": 19129
+    "variants": 19182
    },
    "high_volume_return_premium": {
     "alpha": 0.01,
@@ -3959,7 +3959,7 @@
     "variants": 2
    }
   },
-  "variants": 19385
+  "variants": 19438
  },
  "lineage_members": {
   "betting_against_beta": [

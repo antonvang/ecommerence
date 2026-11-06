@@ -134,6 +134,12 @@ def signal(fam, L, w, pre, i, t):
         return r[i][t]
     if fam == "char":
         return z[i][t - L] if t - L >= 0 else None
+    if fam == "momk":                       # P3: momentum with a skip; skip < 0 hides a look-ahead in the grid
+        lb, skip = L
+        hi = t - skip
+        if hi - lb < 0 or hi > len(r[0]):
+            return None
+        return P[i][hi] - P[i][hi - lb]
     if t - L < 0 or M[i][t] - M[i][t - L] > 0.2 * L:
         return None
     s = P[i][t] - P[i][t - L]

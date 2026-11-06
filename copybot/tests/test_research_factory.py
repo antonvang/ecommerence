@@ -19,7 +19,7 @@ def rec(**kw):
     r = {"family": "F1", "mechanism": "m", "mechanism_tag": "a_mom", "direction": 1, "universe": ["BTC", "ETH"],
          "windows": {"train": "2020"}, "sources": ["binance"], "datasets": SAFE, "parameter_family": {"k": [1, 2]},
          "estimand": "net mean daily", "benchmark": "bh", "cost_model": "catalogue", "rejection": "lb <= 0",
-         "spec_commit": "c" * 40}
+         "spec_commit": "c" * 40, "universe_asof": 1_590_000_000}
     r.update(kw)
     return r
 

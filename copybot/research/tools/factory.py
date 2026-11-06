@@ -49,6 +49,10 @@ LAB_MAP = {"DISCOVERED": "PROPOSED", "SUPPRESSED": "PROPOSED", "REGISTERED": "AP
 PREREG = ("family", "mechanism", "direction", "universe", "windows", "sources", "datasets", "parameter_family",
           "estimand", "benchmark", "cost_model", "rejection", "spec_commit")
 
+BLOCKING_ASSESSMENTS = {"INSUFFICIENT_POWER", "CONDITIONAL", "DEFERRED", "PARKED", "REDESIGN"}
+DELEGATION_MARKERS = ("claude", "chatgpt", "ai assistant", "on behalf", "på vegne", "codex",
+                      "user instruction", "brugerens instruks")      # an assistant executing a general instruction
+
 HOLDOUT = (int(datetime(2024, 1, 1, tzinfo=timezone.utc).timestamp()),
            int(datetime(2025, 1, 1, tzinfo=timezone.utc).timestamp()))
 COINM_FROM = int(datetime(2026, 11, 28, tzinfo=timezone.utc).timestamp())
@@ -104,13 +108,21 @@ class Ledger:
     def __init__(self):
         self.entries = []
 
-    def charge(self, hid, lineage, ts, variants, alpha, source, note=""):
+    def charge(self, hid, lineage, ts, variants, alpha, source, note="", key=None):
+        """`key` identifies an attempt (hypothesis, frozen pre-registration, data, code). An identical re-run with the
+        same key returns the existing entry and charges nothing; a new attempt needs a new key."""
+        if key is not None:
+            for e in self.entries:
+                if e.get("key") == key:
+                    return e
         if not isinstance(variants, int) or variants < 1:
             raise FactoryError("every attempt tests at least one variant")
         if alpha < 0:
             raise FactoryError("alpha is never refunded")
         e = {"seq": len(self.entries), "hid": hid, "lineage": lineage, "ts": ts, "variants": variants,
              "alpha": alpha, "source": source, "note": note}
+        if key is not None:
+            e["key"] = key
         e["prev"] = self.entries[-1]["hash"] if self.entries else "0" * 64
         e["hash"] = sha({k: v for k, v in e.items() if k != "hash"})
         self.entries.append(e)
@@ -159,6 +171,14 @@ def protected(datasets, now):
     return bad
 
 
+def delegated(ev):
+    """An approval whose reason says an AI approved it on the owner's behalf is not the owner's approval, whatever
+    the actor label says (P3 finding: 30 lab template approvals carry actor human:anton and reason 'Approved by Claude
+    (AI assistant) on behalf of the user')."""
+    text = f"{ev.get('reason', '')} {ev.get('provenance', '')}".lower()
+    return any(m in text for m in DELEGATION_MARKERS)
+
+
 class Register:
     def __init__(self, ledger, lmap):
         self.ledger, self.lmap, self.recs, self.log = ledger, lmap, {}, []
@@ -186,6 +206,12 @@ class Register:
             raise FactoryError(f"transition {cur} -> {to} is not allowed")
         if to == "APPROVED" and not str(ev.get("actor", "")).startswith("human:"):
             raise FactoryError("approval needs a human actor (approve-template stays the owner's)")
+        if to == "APPROVED" and delegated(ev):
+            raise FactoryError("delegated approval: an AI approving on the owner's behalf is not the owner's approval")
+        if to in ("APPROVED", "FROZEN", "TESTED") and r.get("assessment") in BLOCKING_ASSESSMENTS:
+            raise FactoryError(f"assessment {r['assessment']}: not ready for {to}")
+        if to in ("FROZEN", "TESTED") and r.get("earliest_data_ts") and ts < r["earliest_data_ts"]:
+            raise FactoryError("date gate: data not allowed yet")
         if to == "FROZEN":
             missing = [k for k in PREREG if not r.get(k)]
             if missing:
@@ -195,6 +221,9 @@ class Register:
             bad = protected(r["datasets"], ts)
             if bad:
                 raise FactoryError(f"protected data: {bad}")
+            starts = [d.get("window_start") for d in r["datasets"] if d.get("window_start") is not None]
+            if r.get("universe_asof") is None or (starts and r["universe_asof"] > min(starts)):
+                raise FactoryError("survivorship: the universe must be fixed as of the window start")
             r["frozen"] = {"ts": ts, "datasets": sha(r["datasets"]), "prereg": sha({k: r[k] for k in PREREG})}
         if to == "TESTED":
             last = max(t for s, t, _ in r["history"] if s in ("FROZEN", "TESTED", "INCONCLUSIVE"))
@@ -212,6 +241,29 @@ class Register:
         r["history"].append((to, ts, ev.get("actor")))
         self.log.append((hid, cur, to, ts))
         return r
+
+
+    def gate(self, hid, to, ts, evidence=None):
+        """Dry run of `move`: ("ALLOW", []) or ("BLOCK", [reason]). Fail-closed: any error, a broken ledger or an
+        unknown record is a BLOCK. Nothing changes."""
+        import copy
+        try:
+            self.ledger.verify()
+        except Exception as e:                      # noqa: BLE001 - fail closed on anything
+            return "BLOCK", [f"ledger: {e}"]
+        before = copy.deepcopy(self.recs.get(hid))
+        n_log = len(self.log)
+        try:
+            self.move(hid, to, ts, evidence)
+            return "ALLOW", []
+        except Exception as e:                      # noqa: BLE001
+            return "BLOCK", [str(e)]
+        finally:
+            if before is None:
+                self.recs.pop(hid, None)
+            else:
+                self.recs[hid] = before
+            del self.log[n_log:]
 
 
 # ---------------------------------------------------------------- snapshot of the existing lab

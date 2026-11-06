@@ -1,0 +1,2437 @@
+{
+ "pipeline": {
+  "classes": {
+   "approval-link-missing": "registration without a template, family or human approval link",
+   "delegated-approval": "template approval recorded as human:anton but reason says Claude approved on the owner's behalf; the factory requires the owner's own approval",
+   "hash-at-access": "lab hashes datasets when it reads them (after SCREENING starts); the factory requires hashes at the freeze, before any data access",
+   "human-verdict": "a human verdict after a screen pass",
+   "instruction-cited-approval": "template approval recorded as human:anton whose reason cites a general owner instruction ('User instruction ...'); executed by the assistant, not the owner's own approval",
+   "legacy": "legacy import: record only, counted as 1 attempt (lower bound), never re-tested",
+   "no-charge": "verdict without trials or alpha rows (no ledger charge)",
+   "no-op": "SUPPRESSED <-> DISCOVERED are both PROPOSED in the factory",
+   "prereg-field-missing": "a factory pre-registration field has no lab equivalent in the spec",
+   "propose": "factory equivalent: PROPOSED",
+   "universe-asof-unrecorded": "lab specs do not record a point-in-time universe date; survivorship cannot be ruled out by the record"
+  },
+  "rows": [
+   {
+    "classes": [
+     "legacy"
+    ],
+    "exp_id": "L01_copy_kol",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 1,
+    "lab": "ALLOW",
+    "to": "REJECTED"
+   },
+   {
+    "classes": [
+     "legacy"
+    ],
+    "exp_id": "L02_self_found_traders",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 2,
+    "lab": "ALLOW",
+    "to": "REJECTED"
+   },
+   {
+    "classes": [
+     "legacy"
+    ],
+    "exp_id": "L03_sol_trend_hourly",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 3,
+    "lab": "ALLOW",
+    "to": "REJECTED"
+   },
+   {
+    "classes": [
+     "legacy"
+    ],
+    "exp_id": "L04_buy_graduations",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 4,
+    "lab": "ALLOW",
+    "to": "REJECTED"
+   },
+   {
+    "classes": [
+     "legacy"
+    ],
+    "exp_id": "L05_graduation_sniper",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 5,
+    "lab": "ALLOW",
+    "to": "REJECTED"
+   },
+   {
+    "classes": [
+     "legacy"
+    ],
+    "exp_id": "L06_short_new_hl_listings",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 6,
+    "lab": "ALLOW",
+    "to": "RETIRED"
+   },
+   {
+    "classes": [
+     "legacy"
+    ],
+    "exp_id": "L07_funding_carry_v0",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 7,
+    "lab": "ALLOW",
+    "to": "RETIRED"
+   },
+   {
+    "classes": [
+     "legacy"
+    ],
+    "exp_id": "L08_funding_carry_leverage",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 8,
+    "lab": "ALLOW",
+    "to": "REJECTED"
+   },
+   {
+    "classes": [
+     "legacy"
+    ],
+    "exp_id": "L09_stop_when_ahead",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 9,
+    "lab": "ALLOW",
+    "to": "REJECTED"
+   },
+   {
+    "classes": [
+     "legacy"
+    ],
+    "exp_id": "L10_launch_v1",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 10,
+    "lab": "ALLOW",
+    "to": "REJECTED"
+   },
+   {
+    "classes": [
+     "legacy"
+    ],
+    "exp_id": "L11_smart_v2",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 11,
+    "lab": "ALLOW",
+    "to": "REJECTED"
+   },
+   {
+    "classes": [
+     "legacy"
+    ],
+    "exp_id": "L12_arb_v1",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 12,
+    "lab": "ALLOW",
+    "to": "REJECTED"
+   },
+   {
+    "classes": [
+     "legacy"
+    ],
+    "exp_id": "L13_carry_v1",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 13,
+    "lab": "ALLOW",
+    "to": "REJECTED"
+   },
+   {
+    "classes": [
+     "legacy"
+    ],
+    "exp_id": "L14_tsmom_v1",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 14,
+    "lab": "ALLOW",
+    "to": "REJECTED"
+   },
+   {
+    "classes": [
+     "legacy"
+    ],
+    "exp_id": "L15_tsmom_v2",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 15,
+    "lab": "ALLOW",
+    "to": "WITHDRAWN"
+   },
+   {
+    "classes": [
+     "legacy"
+    ],
+    "exp_id": "L16_pmcal_v1",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 16,
+    "lab": "ALLOW",
+    "to": "REJECTED"
+   },
+   {
+    "classes": [
+     "legacy"
+    ],
+    "exp_id": "L17_p1_btc15m_model",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 17,
+    "lab": "ALLOW",
+    "to": "REJECTED"
+   },
+   {
+    "classes": [
+     "legacy"
+    ],
+    "exp_id": "L18_p2_negrisk_arb",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 18,
+    "lab": "ALLOW",
+    "to": "REJECTED"
+   },
+   {
+    "classes": [
+     "legacy"
+    ],
+    "exp_id": "L19_p3_maker_fills",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 19,
+    "lab": "ALLOW",
+    "to": "RETIRED"
+   },
+   {
+    "classes": [
+     "legacy"
+    ],
+    "exp_id": "L20_m1_orderflow",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 20,
+    "lab": "ALLOW",
+    "to": "REJECTED"
+   },
+   {
+    "classes": [
+     "legacy"
+    ],
+    "exp_id": "L21_m2_liquidation_reversal",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 21,
+    "lab": "ALLOW",
+    "to": "REJECTED"
+   },
+   {
+    "classes": [
+     "legacy"
+    ],
+    "exp_id": "L22_m3_premium_convergence",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 22,
+    "lab": "ALLOW",
+    "to": "REJECTED"
+   },
+   {
+    "classes": [
+     "legacy"
+    ],
+    "exp_id": "X01_pm_lp_v1",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 23,
+    "lab": "ALLOW",
+    "to": "EXTERNAL"
+   },
+   {
+    "classes": [
+     "legacy"
+    ],
+    "exp_id": "X02_copybot_paper",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 24,
+    "lab": "ALLOW",
+    "to": "EXTERNAL"
+   },
+   {
+    "classes": [
+     "legacy"
+    ],
+    "exp_id": "X03_funding_live_v0",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 25,
+    "lab": "ALLOW",
+    "to": "EXTERNAL"
+   },
+   {
+    "classes": [
+     "propose"
+    ],
+    "exp_id": "C_ce89a47faa",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 26,
+    "lab": "ALLOW",
+    "to": "DISCOVERED"
+   },
+   {
+    "classes": [
+     "propose"
+    ],
+    "exp_id": "C_0755f34d6d",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 27,
+    "lab": "ALLOW",
+    "to": "DISCOVERED"
+   },
+   {
+    "classes": [
+     "no-op"
+    ],
+    "exp_id": "C_0755f34d6d",
+    "factory": "ALLOW",
+    "from": "DISCOVERED",
+    "id": 28,
+    "lab": "ALLOW",
+    "to": "SUPPRESSED"
+   },
+   {
+    "classes": [
+     "propose"
+    ],
+    "exp_id": "E_vol_managed_long_p1",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 29,
+    "lab": "ALLOW",
+    "to": "DISCOVERED"
+   },
+   {
+    "classes": [
+     "propose"
+    ],
+    "exp_id": "E_day_of_week_p1",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 30,
+    "lab": "ALLOW",
+    "to": "DISCOVERED"
+   },
+   {
+    "classes": [
+     "propose"
+    ],
+    "exp_id": "E_hour_of_day_p1",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 31,
+    "lab": "ALLOW",
+    "to": "DISCOVERED"
+   },
+   {
+    "classes": [
+     "propose"
+    ],
+    "exp_id": "E_funding_contrarian_p1",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 32,
+    "lab": "ALLOW",
+    "to": "DISCOVERED"
+   },
+   {
+    "classes": [
+     "propose"
+    ],
+    "exp_id": "E_daily_reversal_p1",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 33,
+    "lab": "ALLOW",
+    "to": "DISCOVERED"
+   },
+   {
+    "classes": [
+     "propose"
+    ],
+    "exp_id": "E_donchian_trend_p1",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 34,
+    "lab": "ALLOW",
+    "to": "DISCOVERED"
+   },
+   {
+    "classes": [
+     "no-op"
+    ],
+    "exp_id": "E_donchian_trend_p1",
+    "factory": "ALLOW",
+    "from": "DISCOVERED",
+    "id": 35,
+    "lab": "ALLOW",
+    "to": "SUPPRESSED"
+   },
+   {
+    "classes": [
+     "delegated-approval"
+    ],
+    "exp_id": "E_daily_reversal_p1",
+    "factory": "BLOCK",
+    "from": "DISCOVERED",
+    "id": 36,
+    "lab": "ALLOW",
+    "to": "REGISTERED"
+   },
+   {
+    "classes": [
+     "delegated-approval"
+    ],
+    "exp_id": "E_day_of_week_p1",
+    "factory": "BLOCK",
+    "from": "DISCOVERED",
+    "id": 37,
+    "lab": "ALLOW",
+    "to": "REGISTERED"
+   },
+   {
+    "classes": [
+     "hash-at-access",
+     "universe-asof-unrecorded"
+    ],
+    "exp_id": "E_day_of_week_p1",
+    "factory": "BLOCK",
+    "from": "REGISTERED",
+    "id": 38,
+    "lab": "ALLOW",
+    "to": "SCREENING"
+   },
+   {
+    "classes": [
+     "delegated-approval"
+    ],
+    "exp_id": "E_funding_contrarian_p1",
+    "factory": "BLOCK",
+    "from": "DISCOVERED",
+    "id": 39,
+    "lab": "ALLOW",
+    "to": "REGISTERED"
+   },
+   {
+    "classes": [
+     "delegated-approval"
+    ],
+    "exp_id": "E_hour_of_day_p1",
+    "factory": "BLOCK",
+    "from": "DISCOVERED",
+    "id": 40,
+    "lab": "ALLOW",
+    "to": "REGISTERED"
+   },
+   {
+    "classes": [
+     "delegated-approval"
+    ],
+    "exp_id": "E_vol_managed_long_p1",
+    "factory": "BLOCK",
+    "from": "DISCOVERED",
+    "id": 41,
+    "lab": "ALLOW",
+    "to": "REGISTERED"
+   },
+   {
+    "classes": [
+     "hash-at-access",
+     "universe-asof-unrecorded"
+    ],
+    "exp_id": "E_vol_managed_long_p1",
+    "factory": "BLOCK",
+    "from": "REGISTERED",
+    "id": 42,
+    "lab": "ALLOW",
+    "to": "SCREENING"
+   },
+   {
+    "classes": [
+     "hash-at-access",
+     "universe-asof-unrecorded"
+    ],
+    "exp_id": "E_hour_of_day_p1",
+    "factory": "BLOCK",
+    "from": "REGISTERED",
+    "id": 43,
+    "lab": "ALLOW",
+    "to": "SCREENING"
+   },
+   {
+    "classes": [
+     "hash-at-access",
+     "universe-asof-unrecorded"
+    ],
+    "exp_id": "E_funding_contrarian_p1",
+    "factory": "BLOCK",
+    "from": "REGISTERED",
+    "id": 44,
+    "lab": "ALLOW",
+    "to": "SCREENING"
+   },
+   {
+    "classes": [
+     "hash-at-access",
+     "universe-asof-unrecorded"
+    ],
+    "exp_id": "E_daily_reversal_p1",
+    "factory": "BLOCK",
+    "from": "REGISTERED",
+    "id": 45,
+    "lab": "ALLOW",
+    "to": "SCREENING"
+   },
+   {
+    "classes": [],
+    "exp_id": "E_vol_managed_long_p1",
+    "factory": "ALLOW",
+    "from": "SCREENING",
+    "id": 46,
+    "lab": "ALLOW",
+    "to": "SCREEN_PASSED"
+   },
+   {
+    "classes": [],
+    "exp_id": "E_day_of_week_p1",
+    "factory": "ALLOW",
+    "from": "SCREENING",
+    "id": 47,
+    "lab": "ALLOW",
+    "to": "REJECTED"
+   },
+   {
+    "classes": [],
+    "exp_id": "E_hour_of_day_p1",
+    "factory": "ALLOW",
+    "from": "SCREENING",
+    "id": 48,
+    "lab": "ALLOW",
+    "to": "REJECTED"
+   },
+   {
+    "classes": [],
+    "exp_id": "E_funding_contrarian_p1",
+    "factory": "ALLOW",
+    "from": "SCREENING",
+    "id": 49,
+    "lab": "ALLOW",
+    "to": "REJECTED"
+   },
+   {
+    "classes": [],
+    "exp_id": "E_daily_reversal_p1",
+    "factory": "ALLOW",
+    "from": "SCREENING",
+    "id": 50,
+    "lab": "ALLOW",
+    "to": "REJECTED"
+   },
+   {
+    "classes": [
+     "propose"
+    ],
+    "exp_id": "E_vol_managed_long_p2",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 51,
+    "lab": "ALLOW",
+    "to": "DISCOVERED"
+   },
+   {
+    "classes": [
+     "propose"
+    ],
+    "exp_id": "E_day_of_week_p2",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 52,
+    "lab": "ALLOW",
+    "to": "DISCOVERED"
+   },
+   {
+    "classes": [
+     "no-op"
+    ],
+    "exp_id": "E_day_of_week_p2",
+    "factory": "ALLOW",
+    "from": "DISCOVERED",
+    "id": 53,
+    "lab": "ALLOW",
+    "to": "SUPPRESSED"
+   },
+   {
+    "classes": [
+     "propose"
+    ],
+    "exp_id": "E_hour_of_day_p2",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 54,
+    "lab": "ALLOW",
+    "to": "DISCOVERED"
+   },
+   {
+    "classes": [
+     "no-op"
+    ],
+    "exp_id": "E_hour_of_day_p2",
+    "factory": "ALLOW",
+    "from": "DISCOVERED",
+    "id": 55,
+    "lab": "ALLOW",
+    "to": "SUPPRESSED"
+   },
+   {
+    "classes": [
+     "propose"
+    ],
+    "exp_id": "E_funding_contrarian_p2",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 56,
+    "lab": "ALLOW",
+    "to": "DISCOVERED"
+   },
+   {
+    "classes": [
+     "no-op"
+    ],
+    "exp_id": "E_funding_contrarian_p2",
+    "factory": "ALLOW",
+    "from": "DISCOVERED",
+    "id": 57,
+    "lab": "ALLOW",
+    "to": "SUPPRESSED"
+   },
+   {
+    "classes": [
+     "propose"
+    ],
+    "exp_id": "E_daily_reversal_p2",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 58,
+    "lab": "ALLOW",
+    "to": "DISCOVERED"
+   },
+   {
+    "classes": [
+     "no-op"
+    ],
+    "exp_id": "E_daily_reversal_p2",
+    "factory": "ALLOW",
+    "from": "DISCOVERED",
+    "id": 59,
+    "lab": "ALLOW",
+    "to": "SUPPRESSED"
+   },
+   {
+    "classes": [
+     "propose"
+    ],
+    "exp_id": "E_donchian_trend_p2",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 60,
+    "lab": "ALLOW",
+    "to": "DISCOVERED"
+   },
+   {
+    "classes": [
+     "no-op"
+    ],
+    "exp_id": "E_donchian_trend_p2",
+    "factory": "ALLOW",
+    "from": "DISCOVERED",
+    "id": 61,
+    "lab": "ALLOW",
+    "to": "SUPPRESSED"
+   },
+   {
+    "classes": [
+     "instruction-cited-approval"
+    ],
+    "exp_id": "E_vol_managed_long_p2",
+    "factory": "BLOCK",
+    "from": "DISCOVERED",
+    "id": 62,
+    "lab": "ALLOW",
+    "to": "REGISTERED"
+   },
+   {
+    "classes": [
+     "hash-at-access",
+     "universe-asof-unrecorded"
+    ],
+    "exp_id": "E_vol_managed_long_p2",
+    "factory": "BLOCK",
+    "from": "REGISTERED",
+    "id": 63,
+    "lab": "ALLOW",
+    "to": "SCREENING"
+   },
+   {
+    "classes": [],
+    "exp_id": "E_vol_managed_long_p2",
+    "factory": "ALLOW",
+    "from": "SCREENING",
+    "id": 64,
+    "lab": "ALLOW",
+    "to": "REJECTED"
+   },
+   {
+    "classes": [
+     "human-verdict"
+    ],
+    "exp_id": "E_vol_managed_long_p1",
+    "factory": "ALLOW",
+    "from": "SCREEN_PASSED",
+    "id": 65,
+    "lab": "ALLOW",
+    "to": "REJECTED"
+   },
+   {
+    "classes": [
+     "propose"
+    ],
+    "exp_id": "E_xs_momentum_p2",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 66,
+    "lab": "ALLOW",
+    "to": "DISCOVERED"
+   },
+   {
+    "classes": [
+     "propose"
+    ],
+    "exp_id": "E_xs_max_lottery_p2",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 67,
+    "lab": "ALLOW",
+    "to": "DISCOVERED"
+   },
+   {
+    "classes": [
+     "propose"
+    ],
+    "exp_id": "E_xs_low_volatility_p2",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 68,
+    "lab": "ALLOW",
+    "to": "DISCOVERED"
+   },
+   {
+    "classes": [
+     "propose"
+    ],
+    "exp_id": "E_xs_betting_against_beta_p2",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 69,
+    "lab": "ALLOW",
+    "to": "DISCOVERED"
+   },
+   {
+    "classes": [
+     "delegated-approval"
+    ],
+    "exp_id": "E_xs_betting_against_beta_p2",
+    "factory": "BLOCK",
+    "from": "DISCOVERED",
+    "id": 70,
+    "lab": "ALLOW",
+    "to": "REGISTERED"
+   },
+   {
+    "classes": [
+     "delegated-approval"
+    ],
+    "exp_id": "E_xs_low_volatility_p2",
+    "factory": "BLOCK",
+    "from": "DISCOVERED",
+    "id": 71,
+    "lab": "ALLOW",
+    "to": "REGISTERED"
+   },
+   {
+    "classes": [
+     "delegated-approval"
+    ],
+    "exp_id": "E_xs_max_lottery_p2",
+    "factory": "BLOCK",
+    "from": "DISCOVERED",
+    "id": 72,
+    "lab": "ALLOW",
+    "to": "REGISTERED"
+   },
+   {
+    "classes": [
+     "delegated-approval"
+    ],
+    "exp_id": "E_xs_momentum_p2",
+    "factory": "BLOCK",
+    "from": "DISCOVERED",
+    "id": 73,
+    "lab": "ALLOW",
+    "to": "REGISTERED"
+   },
+   {
+    "classes": [
+     "hash-at-access",
+     "universe-asof-unrecorded"
+    ],
+    "exp_id": "E_xs_momentum_p2",
+    "factory": "BLOCK",
+    "from": "REGISTERED",
+    "id": 74,
+    "lab": "ALLOW",
+    "to": "SCREENING"
+   },
+   {
+    "classes": [
+     "hash-at-access",
+     "universe-asof-unrecorded"
+    ],
+    "exp_id": "E_xs_max_lottery_p2",
+    "factory": "BLOCK",
+    "from": "REGISTERED",
+    "id": 75,
+    "lab": "ALLOW",
+    "to": "SCREENING"
+   },
+   {
+    "classes": [
+     "hash-at-access",
+     "universe-asof-unrecorded"
+    ],
+    "exp_id": "E_xs_low_volatility_p2",
+    "factory": "BLOCK",
+    "from": "REGISTERED",
+    "id": 76,
+    "lab": "ALLOW",
+    "to": "SCREENING"
+   },
+   {
+    "classes": [
+     "hash-at-access",
+     "universe-asof-unrecorded"
+    ],
+    "exp_id": "E_xs_betting_against_beta_p2",
+    "factory": "BLOCK",
+    "from": "REGISTERED",
+    "id": 77,
+    "lab": "ALLOW",
+    "to": "SCREENING"
+   },
+   {
+    "classes": [],
+    "exp_id": "E_xs_momentum_p2",
+    "factory": "ALLOW",
+    "from": "SCREENING",
+    "id": 78,
+    "lab": "ALLOW",
+    "to": "REJECTED"
+   },
+   {
+    "classes": [],
+    "exp_id": "E_xs_max_lottery_p2",
+    "factory": "ALLOW",
+    "from": "SCREENING",
+    "id": 79,
+    "lab": "ALLOW",
+    "to": "REJECTED"
+   },
+   {
+    "classes": [],
+    "exp_id": "E_xs_low_volatility_p2",
+    "factory": "ALLOW",
+    "from": "SCREENING",
+    "id": 80,
+    "lab": "ALLOW",
+    "to": "REJECTED"
+   },
+   {
+    "classes": [],
+    "exp_id": "E_xs_betting_against_beta_p2",
+    "factory": "ALLOW",
+    "from": "SCREENING",
+    "id": 81,
+    "lab": "ALLOW",
+    "to": "REJECTED"
+   },
+   {
+    "classes": [
+     "propose"
+    ],
+    "exp_id": "E_xs_illiquidity_p2",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 82,
+    "lab": "ALLOW",
+    "to": "DISCOVERED"
+   },
+   {
+    "classes": [
+     "propose"
+    ],
+    "exp_id": "E_xs_high_volume_p2",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 83,
+    "lab": "ALLOW",
+    "to": "DISCOVERED"
+   },
+   {
+    "classes": [
+     "propose"
+    ],
+    "exp_id": "E_xs_downside_beta_p2",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 84,
+    "lab": "ALLOW",
+    "to": "DISCOVERED"
+   },
+   {
+    "classes": [
+     "propose"
+    ],
+    "exp_id": "E_xs_coskewness_p2",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 85,
+    "lab": "ALLOW",
+    "to": "DISCOVERED"
+   },
+   {
+    "classes": [
+     "propose"
+    ],
+    "exp_id": "E_xs_near_high_p2",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 86,
+    "lab": "ALLOW",
+    "to": "DISCOVERED"
+   },
+   {
+    "classes": [
+     "propose"
+    ],
+    "exp_id": "E_turn_of_month_p2",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 87,
+    "lab": "ALLOW",
+    "to": "DISCOVERED"
+   },
+   {
+    "classes": [
+     "propose"
+    ],
+    "exp_id": "E_btc_lead_lag_p2",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 88,
+    "lab": "ALLOW",
+    "to": "DISCOVERED"
+   },
+   {
+    "classes": [
+     "instruction-cited-approval"
+    ],
+    "exp_id": "E_btc_lead_lag_p2",
+    "factory": "BLOCK",
+    "from": "DISCOVERED",
+    "id": 89,
+    "lab": "ALLOW",
+    "to": "REGISTERED"
+   },
+   {
+    "classes": [
+     "instruction-cited-approval"
+    ],
+    "exp_id": "E_turn_of_month_p2",
+    "factory": "BLOCK",
+    "from": "DISCOVERED",
+    "id": 90,
+    "lab": "ALLOW",
+    "to": "REGISTERED"
+   },
+   {
+    "classes": [
+     "instruction-cited-approval"
+    ],
+    "exp_id": "E_xs_coskewness_p2",
+    "factory": "BLOCK",
+    "from": "DISCOVERED",
+    "id": 91,
+    "lab": "ALLOW",
+    "to": "REGISTERED"
+   },
+   {
+    "classes": [
+     "instruction-cited-approval"
+    ],
+    "exp_id": "E_xs_downside_beta_p2",
+    "factory": "BLOCK",
+    "from": "DISCOVERED",
+    "id": 92,
+    "lab": "ALLOW",
+    "to": "REGISTERED"
+   },
+   {
+    "classes": [
+     "instruction-cited-approval"
+    ],
+    "exp_id": "E_xs_high_volume_p2",
+    "factory": "BLOCK",
+    "from": "DISCOVERED",
+    "id": 93,
+    "lab": "ALLOW",
+    "to": "REGISTERED"
+   },
+   {
+    "classes": [
+     "instruction-cited-approval"
+    ],
+    "exp_id": "E_xs_illiquidity_p2",
+    "factory": "BLOCK",
+    "from": "DISCOVERED",
+    "id": 94,
+    "lab": "ALLOW",
+    "to": "REGISTERED"
+   },
+   {
+    "classes": [
+     "instruction-cited-approval"
+    ],
+    "exp_id": "E_xs_near_high_p2",
+    "factory": "BLOCK",
+    "from": "DISCOVERED",
+    "id": 95,
+    "lab": "ALLOW",
+    "to": "REGISTERED"
+   },
+   {
+    "classes": [
+     "hash-at-access",
+     "universe-asof-unrecorded"
+    ],
+    "exp_id": "E_xs_illiquidity_p2",
+    "factory": "BLOCK",
+    "from": "REGISTERED",
+    "id": 96,
+    "lab": "ALLOW",
+    "to": "SCREENING"
+   },
+   {
+    "classes": [
+     "hash-at-access",
+     "universe-asof-unrecorded"
+    ],
+    "exp_id": "E_xs_high_volume_p2",
+    "factory": "BLOCK",
+    "from": "REGISTERED",
+    "id": 97,
+    "lab": "ALLOW",
+    "to": "SCREENING"
+   },
+   {
+    "classes": [
+     "hash-at-access",
+     "universe-asof-unrecorded"
+    ],
+    "exp_id": "E_xs_downside_beta_p2",
+    "factory": "BLOCK",
+    "from": "REGISTERED",
+    "id": 98,
+    "lab": "ALLOW",
+    "to": "SCREENING"
+   },
+   {
+    "classes": [
+     "hash-at-access",
+     "universe-asof-unrecorded"
+    ],
+    "exp_id": "E_xs_coskewness_p2",
+    "factory": "BLOCK",
+    "from": "REGISTERED",
+    "id": 99,
+    "lab": "ALLOW",
+    "to": "SCREENING"
+   },
+   {
+    "classes": [
+     "hash-at-access",
+     "universe-asof-unrecorded"
+    ],
+    "exp_id": "E_xs_near_high_p2",
+    "factory": "BLOCK",
+    "from": "REGISTERED",
+    "id": 100,
+    "lab": "ALLOW",
+    "to": "SCREENING"
+   },
+   {
+    "classes": [
+     "hash-at-access",
+     "universe-asof-unrecorded"
+    ],
+    "exp_id": "E_turn_of_month_p2",
+    "factory": "BLOCK",
+    "from": "REGISTERED",
+    "id": 101,
+    "lab": "ALLOW",
+    "to": "SCREENING"
+   },
+   {
+    "classes": [
+     "hash-at-access",
+     "universe-asof-unrecorded"
+    ],
+    "exp_id": "E_btc_lead_lag_p2",
+    "factory": "BLOCK",
+    "from": "REGISTERED",
+    "id": 102,
+    "lab": "ALLOW",
+    "to": "SCREENING"
+   },
+   {
+    "classes": [],
+    "exp_id": "E_xs_illiquidity_p2",
+    "factory": "ALLOW",
+    "from": "SCREENING",
+    "id": 103,
+    "lab": "ALLOW",
+    "to": "REJECTED"
+   },
+   {
+    "classes": [],
+    "exp_id": "E_xs_high_volume_p2",
+    "factory": "ALLOW",
+    "from": "SCREENING",
+    "id": 104,
+    "lab": "ALLOW",
+    "to": "REJECTED"
+   },
+   {
+    "classes": [],
+    "exp_id": "E_xs_downside_beta_p2",
+    "factory": "ALLOW",
+    "from": "SCREENING",
+    "id": 105,
+    "lab": "ALLOW",
+    "to": "REJECTED"
+   },
+   {
+    "classes": [],
+    "exp_id": "E_xs_coskewness_p2",
+    "factory": "ALLOW",
+    "from": "SCREENING",
+    "id": 106,
+    "lab": "ALLOW",
+    "to": "REJECTED"
+   },
+   {
+    "classes": [],
+    "exp_id": "E_btc_lead_lag_p2",
+    "factory": "ALLOW",
+    "from": "SCREENING",
+    "id": 107,
+    "lab": "ALLOW",
+    "to": "REJECTED"
+   },
+   {
+    "classes": [],
+    "exp_id": "E_xs_near_high_p2",
+    "factory": "ALLOW",
+    "from": "SCREENING",
+    "id": 108,
+    "lab": "ALLOW",
+    "to": "REJECTED"
+   },
+   {
+    "classes": [],
+    "exp_id": "E_turn_of_month_p2",
+    "factory": "ALLOW",
+    "from": "SCREENING",
+    "id": 109,
+    "lab": "ALLOW",
+    "to": "REJECTED"
+   },
+   {
+    "classes": [
+     "propose"
+    ],
+    "exp_id": "E_oi_growth_p3",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 110,
+    "lab": "ALLOW",
+    "to": "DISCOVERED"
+   },
+   {
+    "classes": [
+     "propose"
+    ],
+    "exp_id": "E_oi_confirmed_return_p3",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 111,
+    "lab": "ALLOW",
+    "to": "DISCOVERED"
+   },
+   {
+    "classes": [
+     "propose"
+    ],
+    "exp_id": "E_smart_vs_crowd_p3",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 112,
+    "lab": "ALLOW",
+    "to": "DISCOVERED"
+   },
+   {
+    "classes": [
+     "propose"
+    ],
+    "exp_id": "E_leverage_cycle_p3",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 113,
+    "lab": "ALLOW",
+    "to": "DISCOVERED"
+   },
+   {
+    "classes": [
+     "propose"
+    ],
+    "exp_id": "E_vrp_timing_p3",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 114,
+    "lab": "ALLOW",
+    "to": "DISCOVERED"
+   },
+   {
+    "classes": [
+     "propose"
+    ],
+    "exp_id": "E_stablecoin_flow_p3",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 115,
+    "lab": "ALLOW",
+    "to": "DISCOVERED"
+   },
+   {
+    "classes": [
+     "propose"
+    ],
+    "exp_id": "E_btc_volume_share_p3",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 116,
+    "lab": "ALLOW",
+    "to": "DISCOVERED"
+   },
+   {
+    "classes": [
+     "propose"
+    ],
+    "exp_id": "E_taker_pressure_p3",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 117,
+    "lab": "ALLOW",
+    "to": "DISCOVERED"
+   },
+   {
+    "classes": [
+     "no-op"
+    ],
+    "exp_id": "E_taker_pressure_p3",
+    "factory": "ALLOW",
+    "from": "DISCOVERED",
+    "id": 118,
+    "lab": "ALLOW",
+    "to": "SUPPRESSED"
+   },
+   {
+    "classes": [
+     "no-op"
+    ],
+    "exp_id": "E_taker_pressure_p3",
+    "factory": "ALLOW",
+    "from": "SUPPRESSED",
+    "id": 119,
+    "lab": "ALLOW",
+    "to": "DISCOVERED"
+   },
+   {
+    "classes": [
+     "instruction-cited-approval"
+    ],
+    "exp_id": "E_btc_volume_share_p3",
+    "factory": "BLOCK",
+    "from": "DISCOVERED",
+    "id": 120,
+    "lab": "ALLOW",
+    "to": "REGISTERED"
+   },
+   {
+    "classes": [
+     "instruction-cited-approval"
+    ],
+    "exp_id": "E_leverage_cycle_p3",
+    "factory": "BLOCK",
+    "from": "DISCOVERED",
+    "id": 121,
+    "lab": "ALLOW",
+    "to": "REGISTERED"
+   },
+   {
+    "classes": [
+     "instruction-cited-approval"
+    ],
+    "exp_id": "E_oi_confirmed_return_p3",
+    "factory": "BLOCK",
+    "from": "DISCOVERED",
+    "id": 122,
+    "lab": "ALLOW",
+    "to": "REGISTERED"
+   },
+   {
+    "classes": [
+     "instruction-cited-approval"
+    ],
+    "exp_id": "E_oi_growth_p3",
+    "factory": "BLOCK",
+    "from": "DISCOVERED",
+    "id": 123,
+    "lab": "ALLOW",
+    "to": "REGISTERED"
+   },
+   {
+    "classes": [
+     "instruction-cited-approval"
+    ],
+    "exp_id": "E_smart_vs_crowd_p3",
+    "factory": "BLOCK",
+    "from": "DISCOVERED",
+    "id": 124,
+    "lab": "ALLOW",
+    "to": "REGISTERED"
+   },
+   {
+    "classes": [
+     "instruction-cited-approval"
+    ],
+    "exp_id": "E_stablecoin_flow_p3",
+    "factory": "BLOCK",
+    "from": "DISCOVERED",
+    "id": 125,
+    "lab": "ALLOW",
+    "to": "REGISTERED"
+   },
+   {
+    "classes": [
+     "instruction-cited-approval"
+    ],
+    "exp_id": "E_taker_pressure_p3",
+    "factory": "BLOCK",
+    "from": "DISCOVERED",
+    "id": 126,
+    "lab": "ALLOW",
+    "to": "REGISTERED"
+   },
+   {
+    "classes": [
+     "instruction-cited-approval"
+    ],
+    "exp_id": "E_vrp_timing_p3",
+    "factory": "BLOCK",
+    "from": "DISCOVERED",
+    "id": 127,
+    "lab": "ALLOW",
+    "to": "REGISTERED"
+   },
+   {
+    "classes": [
+     "hash-at-access",
+     "universe-asof-unrecorded"
+    ],
+    "exp_id": "E_oi_growth_p3",
+    "factory": "BLOCK",
+    "from": "REGISTERED",
+    "id": 128,
+    "lab": "ALLOW",
+    "to": "SCREENING"
+   },
+   {
+    "classes": [
+     "hash-at-access",
+     "universe-asof-unrecorded"
+    ],
+    "exp_id": "E_oi_confirmed_return_p3",
+    "factory": "BLOCK",
+    "from": "REGISTERED",
+    "id": 129,
+    "lab": "ALLOW",
+    "to": "SCREENING"
+   },
+   {
+    "classes": [
+     "hash-at-access",
+     "universe-asof-unrecorded"
+    ],
+    "exp_id": "E_smart_vs_crowd_p3",
+    "factory": "BLOCK",
+    "from": "REGISTERED",
+    "id": 130,
+    "lab": "ALLOW",
+    "to": "SCREENING"
+   },
+   {
+    "classes": [
+     "hash-at-access",
+     "universe-asof-unrecorded"
+    ],
+    "exp_id": "E_leverage_cycle_p3",
+    "factory": "BLOCK",
+    "from": "REGISTERED",
+    "id": 131,
+    "lab": "ALLOW",
+    "to": "SCREENING"
+   },
+   {
+    "classes": [
+     "hash-at-access",
+     "universe-asof-unrecorded"
+    ],
+    "exp_id": "E_vrp_timing_p3",
+    "factory": "BLOCK",
+    "from": "REGISTERED",
+    "id": 132,
+    "lab": "ALLOW",
+    "to": "SCREENING"
+   },
+   {
+    "classes": [
+     "hash-at-access",
+     "universe-asof-unrecorded"
+    ],
+    "exp_id": "E_stablecoin_flow_p3",
+    "factory": "BLOCK",
+    "from": "REGISTERED",
+    "id": 133,
+    "lab": "ALLOW",
+    "to": "SCREENING"
+   },
+   {
+    "classes": [
+     "hash-at-access",
+     "universe-asof-unrecorded"
+    ],
+    "exp_id": "E_btc_volume_share_p3",
+    "factory": "BLOCK",
+    "from": "REGISTERED",
+    "id": 134,
+    "lab": "ALLOW",
+    "to": "SCREENING"
+   },
+   {
+    "classes": [
+     "hash-at-access",
+     "universe-asof-unrecorded"
+    ],
+    "exp_id": "E_taker_pressure_p3",
+    "factory": "BLOCK",
+    "from": "REGISTERED",
+    "id": 135,
+    "lab": "ALLOW",
+    "to": "SCREENING"
+   },
+   {
+    "classes": [],
+    "exp_id": "E_oi_growth_p3",
+    "factory": "ALLOW",
+    "from": "SCREENING",
+    "id": 136,
+    "lab": "ALLOW",
+    "to": "REJECTED"
+   },
+   {
+    "classes": [],
+    "exp_id": "E_oi_confirmed_return_p3",
+    "factory": "ALLOW",
+    "from": "SCREENING",
+    "id": 137,
+    "lab": "ALLOW",
+    "to": "REJECTED"
+   },
+   {
+    "classes": [],
+    "exp_id": "E_leverage_cycle_p3",
+    "factory": "ALLOW",
+    "from": "SCREENING",
+    "id": 138,
+    "lab": "ALLOW",
+    "to": "REJECTED"
+   },
+   {
+    "classes": [],
+    "exp_id": "E_stablecoin_flow_p3",
+    "factory": "ALLOW",
+    "from": "SCREENING",
+    "id": 139,
+    "lab": "ALLOW",
+    "to": "REJECTED"
+   },
+   {
+    "classes": [],
+    "exp_id": "E_vrp_timing_p3",
+    "factory": "ALLOW",
+    "from": "SCREENING",
+    "id": 140,
+    "lab": "ALLOW",
+    "to": "REJECTED"
+   },
+   {
+    "classes": [],
+    "exp_id": "E_taker_pressure_p3",
+    "factory": "ALLOW",
+    "from": "SCREENING",
+    "id": 141,
+    "lab": "ALLOW",
+    "to": "REJECTED"
+   },
+   {
+    "classes": [],
+    "exp_id": "E_smart_vs_crowd_p3",
+    "factory": "ALLOW",
+    "from": "SCREENING",
+    "id": 142,
+    "lab": "ALLOW",
+    "to": "REJECTED"
+   },
+   {
+    "classes": [],
+    "exp_id": "E_btc_volume_share_p3",
+    "factory": "ALLOW",
+    "from": "SCREENING",
+    "id": 143,
+    "lab": "ALLOW",
+    "to": "REJECTED"
+   },
+   {
+    "classes": [
+     "propose"
+    ],
+    "exp_id": "E_real_rate_filter_p3",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 144,
+    "lab": "ALLOW",
+    "to": "DISCOVERED"
+   },
+   {
+    "classes": [
+     "propose"
+    ],
+    "exp_id": "E_supply_dilution_p3",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 145,
+    "lab": "ALLOW",
+    "to": "DISCOVERED"
+   },
+   {
+    "classes": [
+     "propose"
+    ],
+    "exp_id": "E_mvrv_value_p3",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 146,
+    "lab": "ALLOW",
+    "to": "DISCOVERED"
+   },
+   {
+    "classes": [
+     "instruction-cited-approval"
+    ],
+    "exp_id": "E_mvrv_value_p3",
+    "factory": "BLOCK",
+    "from": "DISCOVERED",
+    "id": 147,
+    "lab": "ALLOW",
+    "to": "REGISTERED"
+   },
+   {
+    "classes": [
+     "instruction-cited-approval"
+    ],
+    "exp_id": "E_real_rate_filter_p3",
+    "factory": "BLOCK",
+    "from": "DISCOVERED",
+    "id": 148,
+    "lab": "ALLOW",
+    "to": "REGISTERED"
+   },
+   {
+    "classes": [
+     "instruction-cited-approval"
+    ],
+    "exp_id": "E_supply_dilution_p3",
+    "factory": "BLOCK",
+    "from": "DISCOVERED",
+    "id": 149,
+    "lab": "ALLOW",
+    "to": "REGISTERED"
+   },
+   {
+    "classes": [
+     "hash-at-access",
+     "universe-asof-unrecorded"
+    ],
+    "exp_id": "E_real_rate_filter_p3",
+    "factory": "BLOCK",
+    "from": "REGISTERED",
+    "id": 150,
+    "lab": "ALLOW",
+    "to": "SCREENING"
+   },
+   {
+    "classes": [
+     "hash-at-access",
+     "universe-asof-unrecorded"
+    ],
+    "exp_id": "E_supply_dilution_p3",
+    "factory": "BLOCK",
+    "from": "REGISTERED",
+    "id": 151,
+    "lab": "ALLOW",
+    "to": "SCREENING"
+   },
+   {
+    "classes": [
+     "hash-at-access",
+     "universe-asof-unrecorded"
+    ],
+    "exp_id": "E_mvrv_value_p3",
+    "factory": "BLOCK",
+    "from": "REGISTERED",
+    "id": 152,
+    "lab": "ALLOW",
+    "to": "SCREENING"
+   },
+   {
+    "classes": [],
+    "exp_id": "E_supply_dilution_p3",
+    "factory": "ALLOW",
+    "from": "SCREENING",
+    "id": 153,
+    "lab": "ALLOW",
+    "to": "REJECTED"
+   },
+   {
+    "classes": [],
+    "exp_id": "E_mvrv_value_p3",
+    "factory": "ALLOW",
+    "from": "SCREENING",
+    "id": 154,
+    "lab": "ALLOW",
+    "to": "OBSERVATION"
+   },
+   {
+    "classes": [],
+    "exp_id": "E_real_rate_filter_p3",
+    "factory": "ALLOW",
+    "from": "SCREENING",
+    "id": 155,
+    "lab": "ALLOW",
+    "to": "REJECTED"
+   },
+   {
+    "classes": [
+     "propose"
+    ],
+    "exp_id": "E_fcarry__filt_a8",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 156,
+    "lab": "ALLOW",
+    "to": "DISCOVERED"
+   },
+   {
+    "classes": [
+     "no-op"
+    ],
+    "exp_id": "E_fcarry__filt_a8",
+    "factory": "ALLOW",
+    "from": "DISCOVERED",
+    "id": 157,
+    "lab": "ALLOW",
+    "to": "SUPPRESSED"
+   },
+   {
+    "classes": [
+     "propose"
+    ],
+    "exp_id": "E_fcarry__filt_w_a8",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 158,
+    "lab": "ALLOW",
+    "to": "DISCOVERED"
+   },
+   {
+    "classes": [
+     "no-op"
+    ],
+    "exp_id": "E_fcarry__filt_w_a8",
+    "factory": "ALLOW",
+    "from": "DISCOVERED",
+    "id": 159,
+    "lab": "ALLOW",
+    "to": "SUPPRESSED"
+   },
+   {
+    "classes": [
+     "propose"
+    ],
+    "exp_id": "E_fcarry__hyst_a8",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 160,
+    "lab": "ALLOW",
+    "to": "DISCOVERED"
+   },
+   {
+    "classes": [
+     "no-op"
+    ],
+    "exp_id": "E_fcarry__hyst_a8",
+    "factory": "ALLOW",
+    "from": "DISCOVERED",
+    "id": 161,
+    "lab": "ALLOW",
+    "to": "SUPPRESSED"
+   },
+   {
+    "classes": [
+     "propose"
+    ],
+    "exp_id": "E_fcarry__floor_a8",
+    "factory": "ALLOW",
+    "from": null,
+    "id": 162,
+    "lab": "ALLOW",
+    "to": "DISCOVERED"
+   },
+   {
+    "classes": [
+     "no-op"
+    ],
+    "exp_id": "E_fcarry__floor_a8",
+    "factory": "ALLOW",
+    "from": "DISCOVERED",
+    "id": 163,
+    "lab": "ALLOW",
+    "to": "SUPPRESSED"
+   },
+   {
+    "classes": [
+     "no-op"
+    ],
+    "exp_id": "E_fcarry__filt_a8",
+    "factory": "ALLOW",
+    "from": "SUPPRESSED",
+    "id": 164,
+    "lab": "ALLOW",
+    "to": "DISCOVERED"
+   },
+   {
+    "classes": [
+     "no-op"
+    ],
+    "exp_id": "E_fcarry__filt_w_a8",
+    "factory": "ALLOW",
+    "from": "SUPPRESSED",
+    "id": 165,
+    "lab": "ALLOW",
+    "to": "DISCOVERED"
+   },
+   {
+    "classes": [
+     "no-op"
+    ],
+    "exp_id": "E_fcarry__hyst_a8",
+    "factory": "ALLOW",
+    "from": "SUPPRESSED",
+    "id": 166,
+    "lab": "ALLOW",
+    "to": "DISCOVERED"
+   },
+   {
+    "classes": [
+     "no-op"
+    ],
+    "exp_id": "E_fcarry__floor_a8",
+    "factory": "ALLOW",
+    "from": "SUPPRESSED",
+    "id": 167,
+    "lab": "ALLOW",
+    "to": "DISCOVERED"
+   },
+   {
+    "classes": [],
+    "exp_id": "E_fcarry__filt_a8",
+    "factory": "ALLOW",
+    "from": "DISCOVERED",
+    "id": 168,
+    "lab": "ALLOW",
+    "to": "REGISTERED"
+   },
+   {
+    "classes": [],
+    "exp_id": "E_fcarry__floor_a8",
+    "factory": "ALLOW",
+    "from": "DISCOVERED",
+    "id": 169,
+    "lab": "ALLOW",
+    "to": "REGISTERED"
+   },
+   {
+    "classes": [],
+    "exp_id": "E_fcarry__hyst_a8",
+    "factory": "ALLOW",
+    "from": "DISCOVERED",
+    "id": 170,
+    "lab": "ALLOW",
+    "to": "REGISTERED"
+   },
+   {
+    "classes": [
+     "hash-at-access",
+     "universe-asof-unrecorded"
+    ],
+    "exp_id": "E_fcarry__filt_a8",
+    "factory": "BLOCK",
+    "from": "REGISTERED",
+    "id": 171,
+    "lab": "ALLOW",
+    "to": "SCREENING"
+   },
+   {
+    "classes": [
+     "hash-at-access",
+     "universe-asof-unrecorded"
+    ],
+    "exp_id": "E_fcarry__floor_a8",
+    "factory": "BLOCK",
+    "from": "REGISTERED",
+    "id": 172,
+    "lab": "ALLOW",
+    "to": "SCREENING"
+   },
+   {
+    "classes": [
+     "hash-at-access",
+     "universe-asof-unrecorded"
+    ],
+    "exp_id": "E_fcarry__hyst_a8",
+    "factory": "BLOCK",
+    "from": "REGISTERED",
+    "id": 173,
+    "lab": "ALLOW",
+    "to": "SCREENING"
+   },
+   {
+    "classes": [],
+    "exp_id": "E_fcarry__filt_w_a8",
+    "factory": "ALLOW",
+    "from": "DISCOVERED",
+    "id": 174,
+    "lab": "ALLOW",
+    "to": "REGISTERED"
+   },
+   {
+    "classes": [
+     "hash-at-access",
+     "universe-asof-unrecorded"
+    ],
+    "exp_id": "E_fcarry__filt_w_a8",
+    "factory": "BLOCK",
+    "from": "REGISTERED",
+    "id": 175,
+    "lab": "ALLOW",
+    "to": "SCREENING"
+   },
+   {
+    "classes": [],
+    "exp_id": "E_fcarry__filt_a8",
+    "factory": "ALLOW",
+    "from": "SCREENING",
+    "id": 176,
+    "lab": "ALLOW",
+    "to": "REJECTED"
+   },
+   {
+    "classes": [],
+    "exp_id": "E_fcarry__floor_a8",
+    "factory": "ALLOW",
+    "from": "SCREENING",
+    "id": 177,
+    "lab": "ALLOW",
+    "to": "OBSERVATION"
+   },
+   {
+    "classes": [],
+    "exp_id": "E_fcarry__hyst_a8",
+    "factory": "ALLOW",
+    "from": "SCREENING",
+    "id": 178,
+    "lab": "ALLOW",
+    "to": "OBSERVATION"
+   },
+   {
+    "classes": [],
+    "exp_id": "E_fcarry__filt_w_a8",
+    "factory": "ALLOW",
+    "from": "SCREENING",
+    "id": 179,
+    "lab": "ALLOW",
+    "to": "REJECTED"
+   }
+  ],
+  "summary": {
+   "ALLOW:-": 36,
+   "ALLOW:human-verdict": 1,
+   "ALLOW:legacy": 25,
+   "ALLOW:no-op": 17,
+   "ALLOW:propose": 40,
+   "BLOCK:delegated-approval": 9,
+   "BLOCK:hash-at-access": 32,
+   "BLOCK:instruction-cited-approval": 19,
+   "BLOCK:universe-asof-unrecorded": 32
+  },
+  "transitions": 179,
+  "unexplained": []
+ },
+ "rule": "research/reviews/INBOX.md director order 47 P3",
+ "scale": [
+  {
+   "alpha_charged": 0.05,
+   "blocked_without_approval": 1002,
+   "candidates": 1002,
+   "holm_selected_null": 0,
+   "holm_selected_true": 0,
+   "ic": 0.0,
+   "leak_caught": true,
+   "leak_false_alarms": 0,
+   "ledger_entries": 1002,
+   "max_entries_per_candidate": 1,
+   "n_eff": 20.24305516094769,
+   "raw_selected_null": 42,
+   "survivorship_ew_all": -0.005696893097732436,
+   "survivorship_ew_survivors": -0.004726399614808323,
+   "tested": 1002,
+   "world": 0
+  },
+  {
+   "alpha_charged": 0.05,
+   "blocked_without_approval": 1002,
+   "candidates": 1002,
+   "holm_selected_null": 0,
+   "holm_selected_true": 0,
+   "ic": 0.0,
+   "leak_caught": true,
+   "leak_false_alarms": 0,
+   "ledger_entries": 1002,
+   "max_entries_per_candidate": 1,
+   "n_eff": 19.486936988060886,
+   "raw_selected_null": 73,
+   "survivorship_ew_all": 0.0005161273502639706,
+   "survivorship_ew_survivors": 0.001628108786565841,
+   "tested": 1002,
+   "world": 1
+  },
+  {
+   "alpha_charged": 0.05,
+   "blocked_without_approval": 1002,
+   "candidates": 1002,
+   "holm_selected_null": 0,
+   "holm_selected_true": 0,
+   "ic": 0.0,
+   "leak_caught": true,
+   "leak_false_alarms": 0,
+   "ledger_entries": 1002,
+   "max_entries_per_candidate": 1,
+   "n_eff": 18.23003068797217,
+   "raw_selected_null": 143,
+   "survivorship_ew_all": -0.0036949037882491238,
+   "survivorship_ew_survivors": -0.0026557214048528424,
+   "tested": 1002,
+   "world": 2
+  },
+  {
+   "alpha_charged": 0.05,
+   "blocked_without_approval": 1002,
+   "candidates": 1002,
+   "holm_selected_null": 0,
+   "holm_selected_true": 0,
+   "ic": 0.0,
+   "leak_caught": true,
+   "leak_false_alarms": 0,
+   "ledger_entries": 1002,
+   "max_entries_per_candidate": 1,
+   "n_eff": 19.10363998971852,
+   "raw_selected_null": 0,
+   "survivorship_ew_all": 0.00043006776807711473,
+   "survivorship_ew_survivors": 0.0013088009508023693,
+   "tested": 1002,
+   "world": 3
+  },
+  {
+   "alpha_charged": 0.05,
+   "blocked_without_approval": 1002,
+   "candidates": 1002,
+   "holm_selected_null": 0,
+   "holm_selected_true": 0,
+   "ic": 0.0,
+   "leak_caught": true,
+   "leak_false_alarms": 0,
+   "ledger_entries": 1002,
+   "max_entries_per_candidate": 1,
+   "n_eff": 17.994896412568217,
+   "raw_selected_null": 0,
+   "survivorship_ew_all": -0.0021310639292541613,
+   "survivorship_ew_survivors": -0.0010931753442632755,
+   "tested": 1002,
+   "world": 4
+  },
+  {
+   "alpha_charged": 0.05,
+   "blocked_without_approval": 1002,
+   "candidates": 1002,
+   "holm_selected_null": 0,
+   "holm_selected_true": 0,
+   "ic": 0.03,
+   "leak_caught": true,
+   "leak_false_alarms": 0,
+   "ledger_entries": 1002,
+   "max_entries_per_candidate": 1,
+   "n_eff": 17.241463513044597,
+   "raw_selected_null": 3,
+   "survivorship_ew_all": -0.0026490031875692154,
+   "survivorship_ew_survivors": -0.0020620678434817457,
+   "tested": 1002,
+   "world": 0
+  },
+  {
+   "alpha_charged": 0.05,
+   "blocked_without_approval": 1002,
+   "candidates": 1002,
+   "holm_selected_null": 0,
+   "holm_selected_true": 0,
+   "ic": 0.03,
+   "leak_caught": true,
+   "leak_false_alarms": 0,
+   "ledger_entries": 1002,
+   "max_entries_per_candidate": 1,
+   "n_eff": 18.422630043358975,
+   "raw_selected_null": 154,
+   "survivorship_ew_all": 0.002517257338325312,
+   "survivorship_ew_survivors": 0.0037344291745989057,
+   "tested": 1002,
+   "world": 1
+  },
+  {
+   "alpha_charged": 0.05,
+   "blocked_without_approval": 1002,
+   "candidates": 1002,
+   "holm_selected_null": 0,
+   "holm_selected_true": 0,
+   "ic": 0.03,
+   "leak_caught": true,
+   "leak_false_alarms": 0,
+   "ledger_entries": 1002,
+   "max_entries_per_candidate": 1,
+   "n_eff": 21.576730034772208,
+   "raw_selected_null": 0,
+   "survivorship_ew_all": -0.0005860883713224391,
+   "survivorship_ew_survivors": 0.00015584493393165356,
+   "tested": 1002,
+   "world": 2
+  },
+  {
+   "alpha_charged": 0.05,
+   "blocked_without_approval": 1002,
+   "candidates": 1002,
+   "holm_selected_null": 0,
+   "holm_selected_true": 0,
+   "ic": 0.03,
+   "leak_caught": true,
+   "leak_false_alarms": 0,
+   "ledger_entries": 1002,
+   "max_entries_per_candidate": 1,
+   "n_eff": 22.07969912602062,
+   "raw_selected_null": 0,
+   "survivorship_ew_all": 0.00501429299131032,
+   "survivorship_ew_survivors": 0.005883905331953692,
+   "tested": 1002,
+   "world": 3
+  },
+  {
+   "alpha_charged": 0.05,
+   "blocked_without_approval": 1002,
+   "candidates": 1002,
+   "holm_selected_null": 0,
+   "holm_selected_true": 0,
+   "ic": 0.03,
+   "leak_caught": true,
+   "leak_false_alarms": 0,
+   "ledger_entries": 1002,
+   "max_entries_per_candidate": 1,
+   "n_eff": 19.15031850101276,
+   "raw_selected_null": 0,
+   "survivorship_ew_all": -0.0017839638622481207,
+   "survivorship_ew_survivors": -0.0010638808955101752,
+   "tested": 1002,
+   "world": 4
+  }
+ ],
+ "schema": "copybot.factory_shadow/1",
+ "suite": {
+  "cases": [
+   {
+    "case": "approve: system actor",
+    "expect": "BLOCK",
+    "false_block": false,
+    "got": "BLOCK",
+    "unauthorized_allow": false,
+    "why": [
+     "approval needs a human actor (approve-template stays the owner's)"
+    ]
+   },
+   {
+    "case": "approve: claude actor",
+    "expect": "BLOCK",
+    "false_block": false,
+    "got": "BLOCK",
+    "unauthorized_allow": false,
+    "why": [
+     "approval needs a human actor (approve-template stays the owner's)"
+    ]
+   },
+   {
+    "case": "approve: chatgpt actor",
+    "expect": "BLOCK",
+    "false_block": false,
+    "got": "BLOCK",
+    "unauthorized_allow": false,
+    "why": [
+     "approval needs a human actor (approve-template stays the owner's)"
+    ]
+   },
+   {
+    "case": "approve: human label, reason says Claude on behalf",
+    "expect": "BLOCK",
+    "false_block": false,
+    "got": "BLOCK",
+    "unauthorized_allow": false,
+    "why": [
+     "delegated approval: an AI approving on the owner's behalf is not the owner's approval"
+    ]
+   },
+   {
+    "case": "approve: owner in person",
+    "expect": "ALLOW",
+    "false_block": false,
+    "got": "ALLOW",
+    "unauthorized_allow": false,
+    "why": []
+   },
+   {
+    "case": "freeze: estimand missing",
+    "expect": "BLOCK",
+    "false_block": false,
+    "got": "BLOCK",
+    "unauthorized_allow": false,
+    "why": [
+     "pre-registration incomplete: ['estimand']"
+    ]
+   },
+   {
+    "case": "freeze: dataset without sha256",
+    "expect": "BLOCK",
+    "false_block": false,
+    "got": "BLOCK",
+    "unauthorized_allow": false,
+    "why": [
+     "every dataset needs a sha256 before freezing"
+    ]
+   },
+   {
+    "case": "freeze: 2024 holdout",
+    "expect": "BLOCK",
+    "false_block": false,
+    "got": "BLOCK",
+    "unauthorized_allow": false,
+    "why": [
+     "protected data: ['syn.zip: overlaps the 2024 holdout']"
+    ]
+   },
+   {
+    "case": "freeze: COIN-M before 2026-11-28",
+    "expect": "BLOCK",
+    "false_block": false,
+    "got": "BLOCK",
+    "unauthorized_allow": false,
+    "why": [
+     "protected data: ['syn.zip: COIN-M before 2026-11-28']"
+    ]
+   },
+   {
+    "case": "freeze: COIN-M after 2026-11-28",
+    "expect": "ALLOW",
+    "false_block": false,
+    "got": "ALLOW",
+    "unauthorized_allow": false,
+    "why": []
+   },
+   {
+    "case": "freeze: survivor universe (fixed at window end)",
+    "expect": "BLOCK",
+    "false_block": false,
+    "got": "BLOCK",
+    "unauthorized_allow": false,
+    "why": [
+     "survivorship: the universe must be fixed as of the window start"
+    ]
+   },
+   {
+    "case": "freeze: universe date not recorded",
+    "expect": "BLOCK",
+    "false_block": false,
+    "got": "BLOCK",
+    "unauthorized_allow": false,
+    "why": [
+     "survivorship: the universe must be fixed as of the window start"
+    ]
+   },
+   {
+    "case": "freeze: point-in-time universe",
+    "expect": "ALLOW",
+    "false_block": false,
+    "got": "ALLOW",
+    "unauthorized_allow": false,
+    "why": []
+   },
+   {
+    "case": "test: no ledger charge",
+    "expect": "BLOCK",
+    "false_block": false,
+    "got": "BLOCK",
+    "unauthorized_allow": false,
+    "why": [
+     "no ledger charge for this attempt (every attempt counts)"
+    ]
+   },
+   {
+    "case": "test: charge made before the freeze",
+    "expect": "BLOCK",
+    "false_block": false,
+    "got": "BLOCK",
+    "unauthorized_allow": false,
+    "why": [
+     "no ledger charge for this attempt (every attempt counts)"
+    ]
+   },
+   {
+    "case": "test: data changed after lock",
+    "expect": "BLOCK",
+    "false_block": false,
+    "got": "BLOCK",
+    "unauthorized_allow": false,
+    "why": [
+     "data changed after the lock"
+    ]
+   },
+   {
+    "case": "test: pre-registration changed after lock",
+    "expect": "BLOCK",
+    "false_block": false,
+    "got": "BLOCK",
+    "unauthorized_allow": false,
+    "why": [
+     "pre-registration changed after the lock"
+    ]
+   },
+   {
+    "case": "test: legitimate",
+    "expect": "ALLOW",
+    "false_block": false,
+    "got": "ALLOW",
+    "unauthorized_allow": false,
+    "why": []
+   },
+   {
+    "case": "identical re-run charges once",
+    "expect": "ALLOW",
+    "false_block": false,
+    "got": "ALLOW",
+    "unauthorized_allow": false,
+    "why": []
+   },
+   {
+    "case": "refund alpha",
+    "expect": "BLOCK",
+    "false_block": false,
+    "got": "BLOCK",
+    "unauthorized_allow": false,
+    "why": [
+     "exception: alpha is never refunded"
+    ]
+   },
+   {
+    "case": "retest a REJECTED hypothesis",
+    "expect": "BLOCK",
+    "false_block": false,
+    "got": "BLOCK",
+    "unauthorized_allow": false,
+    "why": [
+     "H is REJECTED (final); a revived idea is a new hypothesis in the same lineage"
+    ]
+   },
+   {
+    "case": "promote to paper trading",
+    "expect": "BLOCK",
+    "false_block": false,
+    "got": "BLOCK",
+    "unauthorized_allow": false,
+    "why": [
+     "the factory never promotes to paper trading"
+    ]
+   },
+   {
+    "case": "broken ledger (fail-closed)",
+    "expect": "BLOCK",
+    "false_block": false,
+    "got": "BLOCK",
+    "unauthorized_allow": false,
+    "why": [
+     "ledger: ledger broken at entry 0"
+    ]
+   },
+   {
+    "case": "unknown hypothesis id (fail-closed)",
+    "expect": "BLOCK",
+    "false_block": false,
+    "got": "BLOCK",
+    "unauthorized_allow": false,
+    "why": [
+     "nope does not exist"
+    ]
+   },
+   {
+    "case": "refused move leaves the record unchanged (rollback)",
+    "expect": "ALLOW",
+    "false_block": false,
+    "got": "ALLOW",
+    "unauthorized_allow": false,
+    "why": []
+   },
+   {
+    "case": "F1 control: INSUFFICIENT_POWER despite synthetic profit",
+    "expect": "BLOCK",
+    "false_block": false,
+    "got": "BLOCK",
+    "unauthorized_allow": false,
+    "why": [
+     "assessment INSUFFICIENT_POWER: not ready for APPROVED"
+    ]
+   },
+   {
+    "case": "F2 control: CONDITIONAL",
+    "expect": "BLOCK",
+    "false_block": false,
+    "got": "BLOCK",
+    "unauthorized_allow": false,
+    "why": [
+     "assessment CONDITIONAL: not ready for APPROVED"
+    ]
+   },
+   {
+    "case": "F3 control: DEFERRED",
+    "expect": "BLOCK",
+    "false_block": false,
+    "got": "BLOCK",
+    "unauthorized_allow": false,
+    "why": [
+     "assessment DEFERRED: not ready for APPROVED"
+    ]
+   },
+   {
+    "case": "F3 date gate alone, before 2026-11-28",
+    "expect": "BLOCK",
+    "false_block": false,
+    "got": "BLOCK",
+    "unauthorized_allow": false,
+    "why": [
+     "date gate: data not allowed yet"
+    ]
+   },
+   {
+    "case": "F3 date gate alone, after 2026-11-28",
+    "expect": "ALLOW",
+    "false_block": false,
+    "got": "ALLOW",
+    "unauthorized_allow": false,
+    "why": []
+   }
+  ],
+  "false_block": 0,
+  "unauthorized_allow": 0
+ }
+}
