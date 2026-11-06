@@ -1,0 +1,2264 @@
+{
+ "F1": {
+  "K": [
+   1,
+   3
+  ],
+  "ac1": 0.1,
+  "kurt": 8.0,
+  "name": "F1 cross-sectional relative value (pre-defined crypto pairs, beta-neutral spread)",
+  "rows": [
+   {
+    "K": 1,
+    "days": 546,
+    "power": 0.1378,
+    "sr_true": 0.5,
+    "window": "train3"
+   },
+   {
+    "K": 1,
+    "days": 546,
+    "power": 0.2955,
+    "sr_true": 1.0,
+    "window": "train3"
+   },
+   {
+    "K": 1,
+    "days": 546,
+    "power": 0.5045,
+    "sr_true": 1.5,
+    "window": "train3"
+   },
+   {
+    "K": 1,
+    "days": 546,
+    "power": 0.7103,
+    "sr_true": 2.0,
+    "window": "train3"
+   },
+   {
+    "K": 1,
+    "days": 546,
+    "power": 0.9469,
+    "sr_true": 3.0,
+    "window": "train3"
+   },
+   {
+    "K": 1,
+    "days": 546,
+    "power": 2.267,
+    "sr_true": "MDE@0.8",
+    "window": "train3"
+   },
+   {
+    "K": 3,
+    "days": 546,
+    "power": 0.0578,
+    "sr_true": 0.5,
+    "window": "train3"
+   },
+   {
+    "K": 3,
+    "days": 546,
+    "power": 0.1537,
+    "sr_true": 1.0,
+    "window": "train3"
+   },
+   {
+    "K": 3,
+    "days": 546,
+    "power": 0.3185,
+    "sr_true": 1.5,
+    "window": "train3"
+   },
+   {
+    "K": 3,
+    "days": 546,
+    "power": 0.5283,
+    "sr_true": 2.0,
+    "window": "train3"
+   },
+   {
+    "K": 3,
+    "days": 546,
+    "power": 0.8713,
+    "sr_true": 3.0,
+    "window": "train3"
+   },
+   {
+    "K": 3,
+    "days": 546,
+    "power": 2.722,
+    "sr_true": "MDE@0.8",
+    "window": "train3"
+   },
+   {
+    "K": 1,
+    "days": 184,
+    "power": 0.0929,
+    "sr_true": 0.5,
+    "window": "validation3"
+   },
+   {
+    "K": 1,
+    "days": 184,
+    "power": 0.1582,
+    "sr_true": 1.0,
+    "window": "validation3"
+   },
+   {
+    "K": 1,
+    "days": 184,
+    "power": 0.2472,
+    "sr_true": 1.5,
+    "window": "validation3"
+   },
+   {
+    "K": 1,
+    "days": 184,
+    "power": 0.3563,
+    "sr_true": 2.0,
+    "window": "validation3"
+   },
+   {
+    "K": 1,
+    "days": 184,
+    "power": 0.5979,
+    "sr_true": 3.0,
+    "window": "validation3"
+   },
+   {
+    "K": 1,
+    "days": 184,
+    "power": 4.004,
+    "sr_true": "MDE@0.8",
+    "window": "validation3"
+   },
+   {
+    "K": 3,
+    "days": 184,
+    "power": 0.0355,
+    "sr_true": 0.5,
+    "window": "validation3"
+   },
+   {
+    "K": 3,
+    "days": 184,
+    "power": 0.0687,
+    "sr_true": 1.0,
+    "window": "validation3"
+   },
+   {
+    "K": 3,
+    "days": 184,
+    "power": 0.1217,
+    "sr_true": 1.5,
+    "window": "validation3"
+   },
+   {
+    "K": 3,
+    "days": 184,
+    "power": 0.1973,
+    "sr_true": 2.0,
+    "window": "validation3"
+   },
+   {
+    "K": 3,
+    "days": 184,
+    "power": 0.407,
+    "sr_true": 3.0,
+    "window": "validation3"
+   },
+   {
+    "K": 3,
+    "days": 184,
+    "power": 4.863,
+    "sr_true": "MDE@0.8",
+    "window": "validation3"
+   },
+   {
+    "K": 1,
+    "days": 730,
+    "power": 0.1578,
+    "sr_true": 0.5,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 1,
+    "days": 730,
+    "power": 0.3578,
+    "sr_true": 1.0,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 1,
+    "days": 730,
+    "power": 0.6065,
+    "sr_true": 1.5,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 1,
+    "days": 730,
+    "power": 0.8154,
+    "sr_true": 2.0,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 1,
+    "days": 730,
+    "power": 0.9832,
+    "sr_true": 3.0,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 1,
+    "days": 730,
+    "power": 1.955,
+    "sr_true": "MDE@0.8",
+    "window": "train3+validation3"
+   },
+   {
+    "K": 3,
+    "days": 730,
+    "power": 0.0686,
+    "sr_true": 0.5,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 3,
+    "days": 730,
+    "power": 0.1983,
+    "sr_true": 1.0,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 3,
+    "days": 730,
+    "power": 0.4156,
+    "sr_true": 1.5,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 3,
+    "days": 730,
+    "power": 0.6608,
+    "sr_true": 2.0,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 3,
+    "days": 730,
+    "power": 0.9497,
+    "sr_true": 3.0,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 3,
+    "days": 730,
+    "power": 2.344,
+    "sr_true": "MDE@0.8",
+    "window": "train3+validation3"
+   }
+  ],
+  "sr": [
+   0.5,
+   1.0,
+   1.5,
+   2.0,
+   3.0
+  ],
+  "windows": {
+   "train3": 546,
+   "train3+validation3": 730,
+   "validation3": 184
+  }
+ },
+ "F2": {
+  "K": [
+   1,
+   3
+  ],
+  "coins": [
+   10,
+   20
+  ],
+  "effects": [
+   0.01,
+   0.02,
+   0.05,
+   0.1
+  ],
+  "hac": 1.5,
+  "name": "F2 volatility forecast (HAR-RV vs EWMA 0.94, QLIKE)",
+  "rho_c": [
+   0.5,
+   0.8
+  ],
+  "rows": [
+   {
+    "K": 1,
+    "coins": 10,
+    "days": 546,
+    "effect": 0.01,
+    "n_eff": 661.8,
+    "power": 0.0826,
+    "rho_c": 0.5,
+    "window": "train3"
+   },
+   {
+    "K": 1,
+    "coins": 10,
+    "days": 546,
+    "effect": 0.01,
+    "n_eff": 443.9,
+    "power": 0.0758,
+    "rho_c": 0.8,
+    "window": "train3"
+   },
+   {
+    "K": 1,
+    "coins": 20,
+    "days": 546,
+    "effect": 0.01,
+    "n_eff": 693.3,
+    "power": 0.0836,
+    "rho_c": 0.5,
+    "window": "train3"
+   },
+   {
+    "K": 1,
+    "coins": 20,
+    "days": 546,
+    "effect": 0.01,
+    "n_eff": 449.4,
+    "power": 0.0759,
+    "rho_c": 0.8,
+    "window": "train3"
+   },
+   {
+    "K": 1,
+    "coins": 10,
+    "days": 546,
+    "effect": 0.02,
+    "n_eff": 661.8,
+    "power": 0.1292,
+    "rho_c": 0.5,
+    "window": "train3"
+   },
+   {
+    "K": 1,
+    "coins": 10,
+    "days": 546,
+    "effect": 0.02,
+    "n_eff": 443.9,
+    "power": 0.1106,
+    "rho_c": 0.8,
+    "window": "train3"
+   },
+   {
+    "K": 1,
+    "coins": 20,
+    "days": 546,
+    "effect": 0.02,
+    "n_eff": 693.3,
+    "power": 0.1317,
+    "rho_c": 0.5,
+    "window": "train3"
+   },
+   {
+    "K": 1,
+    "coins": 20,
+    "days": 546,
+    "effect": 0.02,
+    "n_eff": 449.4,
+    "power": 0.1111,
+    "rho_c": 0.8,
+    "window": "train3"
+   },
+   {
+    "K": 1,
+    "coins": 10,
+    "days": 546,
+    "effect": 0.05,
+    "n_eff": 661.8,
+    "power": 0.36,
+    "rho_c": 0.5,
+    "window": "train3"
+   },
+   {
+    "K": 1,
+    "coins": 10,
+    "days": 546,
+    "effect": 0.05,
+    "n_eff": 443.9,
+    "power": 0.2771,
+    "rho_c": 0.8,
+    "window": "train3"
+   },
+   {
+    "K": 1,
+    "coins": 20,
+    "days": 546,
+    "effect": 0.05,
+    "n_eff": 693.3,
+    "power": 0.3713,
+    "rho_c": 0.5,
+    "window": "train3"
+   },
+   {
+    "K": 1,
+    "coins": 20,
+    "days": 546,
+    "effect": 0.05,
+    "n_eff": 449.4,
+    "power": 0.2793,
+    "rho_c": 0.8,
+    "window": "train3"
+   },
+   {
+    "K": 1,
+    "coins": 10,
+    "days": 546,
+    "effect": 0.1,
+    "n_eff": 661.8,
+    "power": 0.8232,
+    "rho_c": 0.5,
+    "window": "train3"
+   },
+   {
+    "K": 1,
+    "coins": 10,
+    "days": 546,
+    "effect": 0.1,
+    "n_eff": 443.9,
+    "power": 0.678,
+    "rho_c": 0.8,
+    "window": "train3"
+   },
+   {
+    "K": 1,
+    "coins": 20,
+    "days": 546,
+    "effect": 0.1,
+    "n_eff": 693.3,
+    "power": 0.8385,
+    "rho_c": 0.5,
+    "window": "train3"
+   },
+   {
+    "K": 1,
+    "coins": 20,
+    "days": 546,
+    "effect": 0.1,
+    "n_eff": 449.4,
+    "power": 0.6826,
+    "rho_c": 0.8,
+    "window": "train3"
+   },
+   {
+    "K": 3,
+    "coins": 10,
+    "days": 546,
+    "effect": 0.01,
+    "n_eff": 661.8,
+    "power": 0.0307,
+    "rho_c": 0.5,
+    "window": "train3"
+   },
+   {
+    "K": 3,
+    "coins": 10,
+    "days": 546,
+    "effect": 0.01,
+    "n_eff": 443.9,
+    "power": 0.0276,
+    "rho_c": 0.8,
+    "window": "train3"
+   },
+   {
+    "K": 3,
+    "coins": 20,
+    "days": 546,
+    "effect": 0.01,
+    "n_eff": 693.3,
+    "power": 0.0311,
+    "rho_c": 0.5,
+    "window": "train3"
+   },
+   {
+    "K": 3,
+    "coins": 20,
+    "days": 546,
+    "effect": 0.01,
+    "n_eff": 449.4,
+    "power": 0.0277,
+    "rho_c": 0.8,
+    "window": "train3"
+   },
+   {
+    "K": 3,
+    "coins": 10,
+    "days": 546,
+    "effect": 0.02,
+    "n_eff": 661.8,
+    "power": 0.0533,
+    "rho_c": 0.5,
+    "window": "train3"
+   },
+   {
+    "K": 3,
+    "coins": 10,
+    "days": 546,
+    "effect": 0.02,
+    "n_eff": 443.9,
+    "power": 0.0439,
+    "rho_c": 0.8,
+    "window": "train3"
+   },
+   {
+    "K": 3,
+    "coins": 20,
+    "days": 546,
+    "effect": 0.02,
+    "n_eff": 693.3,
+    "power": 0.0546,
+    "rho_c": 0.5,
+    "window": "train3"
+   },
+   {
+    "K": 3,
+    "coins": 20,
+    "days": 546,
+    "effect": 0.02,
+    "n_eff": 449.4,
+    "power": 0.0442,
+    "rho_c": 0.8,
+    "window": "train3"
+   },
+   {
+    "K": 3,
+    "coins": 10,
+    "days": 546,
+    "effect": 0.05,
+    "n_eff": 661.8,
+    "power": 0.2,
+    "rho_c": 0.5,
+    "window": "train3"
+   },
+   {
+    "K": 3,
+    "coins": 10,
+    "days": 546,
+    "effect": 0.05,
+    "n_eff": 443.9,
+    "power": 0.1413,
+    "rho_c": 0.8,
+    "window": "train3"
+   },
+   {
+    "K": 3,
+    "coins": 20,
+    "days": 546,
+    "effect": 0.05,
+    "n_eff": 693.3,
+    "power": 0.2085,
+    "rho_c": 0.5,
+    "window": "train3"
+   },
+   {
+    "K": 3,
+    "coins": 20,
+    "days": 546,
+    "effect": 0.05,
+    "n_eff": 449.4,
+    "power": 0.1427,
+    "rho_c": 0.8,
+    "window": "train3"
+   },
+   {
+    "K": 3,
+    "coins": 10,
+    "days": 546,
+    "effect": 0.1,
+    "n_eff": 661.8,
+    "power": 0.6717,
+    "rho_c": 0.5,
+    "window": "train3"
+   },
+   {
+    "K": 3,
+    "coins": 10,
+    "days": 546,
+    "effect": 0.1,
+    "n_eff": 443.9,
+    "power": 0.4916,
+    "rho_c": 0.8,
+    "window": "train3"
+   },
+   {
+    "K": 3,
+    "coins": 20,
+    "days": 546,
+    "effect": 0.1,
+    "n_eff": 693.3,
+    "power": 0.6932,
+    "rho_c": 0.5,
+    "window": "train3"
+   },
+   {
+    "K": 3,
+    "coins": 20,
+    "days": 546,
+    "effect": 0.1,
+    "n_eff": 449.4,
+    "power": 0.4967,
+    "rho_c": 0.8,
+    "window": "train3"
+   },
+   {
+    "K": 1,
+    "coins": 10,
+    "days": 184,
+    "effect": 0.01,
+    "n_eff": 223.0,
+    "power": 0.0674,
+    "rho_c": 0.5,
+    "window": "validation3"
+   },
+   {
+    "K": 1,
+    "coins": 10,
+    "days": 184,
+    "effect": 0.01,
+    "n_eff": 149.6,
+    "power": 0.0639,
+    "rho_c": 0.8,
+    "window": "validation3"
+   },
+   {
+    "K": 1,
+    "coins": 20,
+    "days": 184,
+    "effect": 0.01,
+    "n_eff": 233.7,
+    "power": 0.0678,
+    "rho_c": 0.5,
+    "window": "validation3"
+   },
+   {
+    "K": 1,
+    "coins": 20,
+    "days": 184,
+    "effect": 0.01,
+    "n_eff": 151.4,
+    "power": 0.064,
+    "rho_c": 0.8,
+    "window": "validation3"
+   },
+   {
+    "K": 1,
+    "coins": 10,
+    "days": 184,
+    "effect": 0.02,
+    "n_eff": 223.0,
+    "power": 0.0891,
+    "rho_c": 0.5,
+    "window": "validation3"
+   },
+   {
+    "K": 1,
+    "coins": 10,
+    "days": 184,
+    "effect": 0.02,
+    "n_eff": 149.6,
+    "power": 0.0807,
+    "rho_c": 0.8,
+    "window": "validation3"
+   },
+   {
+    "K": 1,
+    "coins": 20,
+    "days": 184,
+    "effect": 0.02,
+    "n_eff": 233.7,
+    "power": 0.0903,
+    "rho_c": 0.5,
+    "window": "validation3"
+   },
+   {
+    "K": 1,
+    "coins": 20,
+    "days": 184,
+    "effect": 0.02,
+    "n_eff": 151.4,
+    "power": 0.0809,
+    "rho_c": 0.8,
+    "window": "validation3"
+   },
+   {
+    "K": 1,
+    "coins": 10,
+    "days": 184,
+    "effect": 0.05,
+    "n_eff": 223.0,
+    "power": 0.1846,
+    "rho_c": 0.5,
+    "window": "validation3"
+   },
+   {
+    "K": 1,
+    "coins": 10,
+    "days": 184,
+    "effect": 0.05,
+    "n_eff": 149.6,
+    "power": 0.1507,
+    "rho_c": 0.8,
+    "window": "validation3"
+   },
+   {
+    "K": 1,
+    "coins": 20,
+    "days": 184,
+    "effect": 0.05,
+    "n_eff": 233.7,
+    "power": 0.1893,
+    "rho_c": 0.5,
+    "window": "validation3"
+   },
+   {
+    "K": 1,
+    "coins": 20,
+    "days": 184,
+    "effect": 0.05,
+    "n_eff": 151.4,
+    "power": 0.1516,
+    "rho_c": 0.8,
+    "window": "validation3"
+   },
+   {
+    "K": 1,
+    "coins": 10,
+    "days": 184,
+    "effect": 0.1,
+    "n_eff": 223.0,
+    "power": 0.4398,
+    "rho_c": 0.5,
+    "window": "validation3"
+   },
+   {
+    "K": 1,
+    "coins": 10,
+    "days": 184,
+    "effect": 0.1,
+    "n_eff": 149.6,
+    "power": 0.3366,
+    "rho_c": 0.8,
+    "window": "validation3"
+   },
+   {
+    "K": 1,
+    "coins": 20,
+    "days": 184,
+    "effect": 0.1,
+    "n_eff": 233.7,
+    "power": 0.4537,
+    "rho_c": 0.5,
+    "window": "validation3"
+   },
+   {
+    "K": 1,
+    "coins": 20,
+    "days": 184,
+    "effect": 0.1,
+    "n_eff": 151.4,
+    "power": 0.3393,
+    "rho_c": 0.8,
+    "window": "validation3"
+   },
+   {
+    "K": 3,
+    "coins": 10,
+    "days": 184,
+    "effect": 0.01,
+    "n_eff": 223.0,
+    "power": 0.0239,
+    "rho_c": 0.5,
+    "window": "validation3"
+   },
+   {
+    "K": 3,
+    "coins": 10,
+    "days": 184,
+    "effect": 0.01,
+    "n_eff": 149.6,
+    "power": 0.0224,
+    "rho_c": 0.8,
+    "window": "validation3"
+   },
+   {
+    "K": 3,
+    "coins": 20,
+    "days": 184,
+    "effect": 0.01,
+    "n_eff": 233.7,
+    "power": 0.0241,
+    "rho_c": 0.5,
+    "window": "validation3"
+   },
+   {
+    "K": 3,
+    "coins": 20,
+    "days": 184,
+    "effect": 0.01,
+    "n_eff": 151.4,
+    "power": 0.0225,
+    "rho_c": 0.8,
+    "window": "validation3"
+   },
+   {
+    "K": 3,
+    "coins": 10,
+    "days": 184,
+    "effect": 0.02,
+    "n_eff": 223.0,
+    "power": 0.0337,
+    "rho_c": 0.5,
+    "window": "validation3"
+   },
+   {
+    "K": 3,
+    "coins": 10,
+    "days": 184,
+    "effect": 0.02,
+    "n_eff": 149.6,
+    "power": 0.0298,
+    "rho_c": 0.8,
+    "window": "validation3"
+   },
+   {
+    "K": 3,
+    "coins": 20,
+    "days": 184,
+    "effect": 0.02,
+    "n_eff": 233.7,
+    "power": 0.0342,
+    "rho_c": 0.5,
+    "window": "validation3"
+   },
+   {
+    "K": 3,
+    "coins": 20,
+    "days": 184,
+    "effect": 0.02,
+    "n_eff": 151.4,
+    "power": 0.0299,
+    "rho_c": 0.8,
+    "window": "validation3"
+   },
+   {
+    "K": 3,
+    "coins": 10,
+    "days": 184,
+    "effect": 0.05,
+    "n_eff": 223.0,
+    "power": 0.0836,
+    "rho_c": 0.5,
+    "window": "validation3"
+   },
+   {
+    "K": 3,
+    "coins": 10,
+    "days": 184,
+    "effect": 0.05,
+    "n_eff": 149.6,
+    "power": 0.0647,
+    "rho_c": 0.8,
+    "window": "validation3"
+   },
+   {
+    "K": 3,
+    "coins": 20,
+    "days": 184,
+    "effect": 0.05,
+    "n_eff": 233.7,
+    "power": 0.0863,
+    "rho_c": 0.5,
+    "window": "validation3"
+   },
+   {
+    "K": 3,
+    "coins": 20,
+    "days": 184,
+    "effect": 0.05,
+    "n_eff": 151.4,
+    "power": 0.0652,
+    "rho_c": 0.8,
+    "window": "validation3"
+   },
+   {
+    "K": 3,
+    "coins": 10,
+    "days": 184,
+    "effect": 0.1,
+    "n_eff": 223.0,
+    "power": 0.2628,
+    "rho_c": 0.5,
+    "window": "validation3"
+   },
+   {
+    "K": 3,
+    "coins": 10,
+    "days": 184,
+    "effect": 0.1,
+    "n_eff": 149.6,
+    "power": 0.1827,
+    "rho_c": 0.8,
+    "window": "validation3"
+   },
+   {
+    "K": 3,
+    "coins": 20,
+    "days": 184,
+    "effect": 0.1,
+    "n_eff": 233.7,
+    "power": 0.2744,
+    "rho_c": 0.5,
+    "window": "validation3"
+   },
+   {
+    "K": 3,
+    "coins": 20,
+    "days": 184,
+    "effect": 0.1,
+    "n_eff": 151.4,
+    "power": 0.1847,
+    "rho_c": 0.8,
+    "window": "validation3"
+   },
+   {
+    "K": 1,
+    "coins": 10,
+    "days": 730,
+    "effect": 0.01,
+    "n_eff": 884.8,
+    "power": 0.0889,
+    "rho_c": 0.5,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 1,
+    "coins": 10,
+    "days": 730,
+    "effect": 0.01,
+    "n_eff": 593.5,
+    "power": 0.0806,
+    "rho_c": 0.8,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 1,
+    "coins": 20,
+    "days": 730,
+    "effect": 0.01,
+    "n_eff": 927.0,
+    "power": 0.0901,
+    "rho_c": 0.5,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 1,
+    "coins": 20,
+    "days": 730,
+    "effect": 0.01,
+    "n_eff": 600.8,
+    "power": 0.0808,
+    "rho_c": 0.8,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 1,
+    "coins": 10,
+    "days": 730,
+    "effect": 0.02,
+    "n_eff": 884.8,
+    "power": 0.1469,
+    "rho_c": 0.5,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 1,
+    "coins": 10,
+    "days": 730,
+    "effect": 0.02,
+    "n_eff": 593.5,
+    "power": 0.1235,
+    "rho_c": 0.8,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 1,
+    "coins": 20,
+    "days": 730,
+    "effect": 0.02,
+    "n_eff": 927.0,
+    "power": 0.1501,
+    "rho_c": 0.5,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 1,
+    "coins": 20,
+    "days": 730,
+    "effect": 0.02,
+    "n_eff": 600.8,
+    "power": 0.1241,
+    "rho_c": 0.8,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 1,
+    "coins": 10,
+    "days": 730,
+    "effect": 0.05,
+    "n_eff": 884.8,
+    "power": 0.4374,
+    "rho_c": 0.5,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 1,
+    "coins": 10,
+    "days": 730,
+    "effect": 0.05,
+    "n_eff": 593.5,
+    "power": 0.3348,
+    "rho_c": 0.8,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 1,
+    "coins": 20,
+    "days": 730,
+    "effect": 0.05,
+    "n_eff": 927.0,
+    "power": 0.4512,
+    "rho_c": 0.5,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 1,
+    "coins": 20,
+    "days": 730,
+    "effect": 0.05,
+    "n_eff": 600.8,
+    "power": 0.3375,
+    "rho_c": 0.8,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 1,
+    "coins": 10,
+    "days": 730,
+    "effect": 0.1,
+    "n_eff": 884.8,
+    "power": 0.9082,
+    "rho_c": 0.5,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 1,
+    "coins": 10,
+    "days": 730,
+    "effect": 0.1,
+    "n_eff": 593.5,
+    "power": 0.7856,
+    "rho_c": 0.8,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 1,
+    "coins": 20,
+    "days": 730,
+    "effect": 0.1,
+    "n_eff": 927.0,
+    "power": 0.9192,
+    "rho_c": 0.5,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 1,
+    "coins": 20,
+    "days": 730,
+    "effect": 0.1,
+    "n_eff": 600.8,
+    "power": 0.79,
+    "rho_c": 0.8,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 3,
+    "coins": 10,
+    "days": 730,
+    "effect": 0.01,
+    "n_eff": 884.8,
+    "power": 0.0336,
+    "rho_c": 0.5,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 3,
+    "coins": 10,
+    "days": 730,
+    "effect": 0.01,
+    "n_eff": 593.5,
+    "power": 0.0298,
+    "rho_c": 0.8,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 3,
+    "coins": 20,
+    "days": 730,
+    "effect": 0.01,
+    "n_eff": 927.0,
+    "power": 0.0341,
+    "rho_c": 0.5,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 3,
+    "coins": 20,
+    "days": 730,
+    "effect": 0.01,
+    "n_eff": 600.8,
+    "power": 0.0299,
+    "rho_c": 0.8,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 3,
+    "coins": 10,
+    "days": 730,
+    "effect": 0.02,
+    "n_eff": 884.8,
+    "power": 0.0626,
+    "rho_c": 0.5,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 3,
+    "coins": 10,
+    "days": 730,
+    "effect": 0.02,
+    "n_eff": 593.5,
+    "power": 0.0504,
+    "rho_c": 0.8,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 3,
+    "coins": 20,
+    "days": 730,
+    "effect": 0.02,
+    "n_eff": 927.0,
+    "power": 0.0644,
+    "rho_c": 0.5,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 3,
+    "coins": 20,
+    "days": 730,
+    "effect": 0.02,
+    "n_eff": 600.8,
+    "power": 0.0507,
+    "rho_c": 0.8,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 3,
+    "coins": 10,
+    "days": 730,
+    "effect": 0.05,
+    "n_eff": 884.8,
+    "power": 0.2609,
+    "rho_c": 0.5,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 3,
+    "coins": 10,
+    "days": 730,
+    "effect": 0.05,
+    "n_eff": 593.5,
+    "power": 0.1814,
+    "rho_c": 0.8,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 3,
+    "coins": 20,
+    "days": 730,
+    "effect": 0.05,
+    "n_eff": 927.0,
+    "power": 0.2723,
+    "rho_c": 0.5,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 3,
+    "coins": 20,
+    "days": 730,
+    "effect": 0.05,
+    "n_eff": 600.8,
+    "power": 0.1834,
+    "rho_c": 0.8,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 3,
+    "coins": 10,
+    "days": 730,
+    "effect": 0.1,
+    "n_eff": 884.8,
+    "power": 0.8014,
+    "rho_c": 0.5,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 3,
+    "coins": 10,
+    "days": 730,
+    "effect": 0.1,
+    "n_eff": 593.5,
+    "power": 0.621,
+    "rho_c": 0.8,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 3,
+    "coins": 20,
+    "days": 730,
+    "effect": 0.1,
+    "n_eff": 927.0,
+    "power": 0.8203,
+    "rho_c": 0.5,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 3,
+    "coins": 20,
+    "days": 730,
+    "effect": 0.1,
+    "n_eff": 600.8,
+    "power": 0.6267,
+    "rho_c": 0.8,
+    "window": "train3+validation3"
+   }
+  ],
+  "windows": {
+   "train3": 546,
+   "train3+validation3": 730,
+   "validation3": 184
+  }
+ },
+ "F3": {
+  "K": [
+   1,
+   3
+  ],
+  "coins": [
+   6,
+   12
+  ],
+  "entries_per_expiry": 1,
+  "expiries": {
+   "train3": 6,
+   "train3+validation3": 8,
+   "validation3": 2
+  },
+  "name": "F3 dated futures basis persistence (COIN-M quarterly, held to expiry; data from 2026-11-28)",
+  "rho": [
+   0.6,
+   0.8
+  ],
+  "rows": [
+   {
+    "K": 1,
+    "coins": 6,
+    "expiries": 6,
+    "n_eff": 9.0,
+    "power": 0.1854,
+    "rho": 0.6,
+    "sr_per_entry": 0.25,
+    "window": "train3"
+   },
+   {
+    "K": 1,
+    "coins": 6,
+    "expiries": 6,
+    "n_eff": 9.0,
+    "power": 0.4424,
+    "rho": 0.6,
+    "sr_per_entry": 0.5,
+    "window": "train3"
+   },
+   {
+    "K": 1,
+    "coins": 6,
+    "expiries": 6,
+    "n_eff": 9.0,
+    "power": 0.9123,
+    "rho": 0.6,
+    "sr_per_entry": 1.0,
+    "window": "train3"
+   },
+   {
+    "K": 1,
+    "coins": 6,
+    "expiries": 6,
+    "n_eff": 9.0,
+    "power": 1.0,
+    "rho": 0.6,
+    "sr_per_entry": 2.0,
+    "window": "train3"
+   },
+   {
+    "K": 3,
+    "coins": 6,
+    "expiries": 6,
+    "n_eff": 9.0,
+    "power": 0.0841,
+    "rho": 0.6,
+    "sr_per_entry": 0.25,
+    "window": "train3"
+   },
+   {
+    "K": 3,
+    "coins": 6,
+    "expiries": 6,
+    "n_eff": 9.0,
+    "power": 0.265,
+    "rho": 0.6,
+    "sr_per_entry": 0.5,
+    "window": "train3"
+   },
+   {
+    "K": 3,
+    "coins": 6,
+    "expiries": 6,
+    "n_eff": 9.0,
+    "power": 0.8084,
+    "rho": 0.6,
+    "sr_per_entry": 1.0,
+    "window": "train3"
+   },
+   {
+    "K": 3,
+    "coins": 6,
+    "expiries": 6,
+    "n_eff": 9.0,
+    "power": 0.9999,
+    "rho": 0.6,
+    "sr_per_entry": 2.0,
+    "window": "train3"
+   },
+   {
+    "K": 1,
+    "coins": 6,
+    "expiries": 6,
+    "n_eff": 7.2,
+    "power": 0.165,
+    "rho": 0.8,
+    "sr_per_entry": 0.25,
+    "window": "train3"
+   },
+   {
+    "K": 1,
+    "coins": 6,
+    "expiries": 6,
+    "n_eff": 7.2,
+    "power": 0.3809,
+    "rho": 0.8,
+    "sr_per_entry": 0.5,
+    "window": "train3"
+   },
+   {
+    "K": 1,
+    "coins": 6,
+    "expiries": 6,
+    "n_eff": 7.2,
+    "power": 0.8505,
+    "rho": 0.8,
+    "sr_per_entry": 1.0,
+    "window": "train3"
+   },
+   {
+    "K": 1,
+    "coins": 6,
+    "expiries": 6,
+    "n_eff": 7.2,
+    "power": 0.9999,
+    "rho": 0.8,
+    "sr_per_entry": 2.0,
+    "window": "train3"
+   },
+   {
+    "K": 3,
+    "coins": 6,
+    "expiries": 6,
+    "n_eff": 7.2,
+    "power": 0.0725,
+    "rho": 0.8,
+    "sr_per_entry": 0.25,
+    "window": "train3"
+   },
+   {
+    "K": 3,
+    "coins": 6,
+    "expiries": 6,
+    "n_eff": 7.2,
+    "power": 0.2158,
+    "rho": 0.8,
+    "sr_per_entry": 0.5,
+    "window": "train3"
+   },
+   {
+    "K": 3,
+    "coins": 6,
+    "expiries": 6,
+    "n_eff": 7.2,
+    "power": 0.7106,
+    "rho": 0.8,
+    "sr_per_entry": 1.0,
+    "window": "train3"
+   },
+   {
+    "K": 3,
+    "coins": 6,
+    "expiries": 6,
+    "n_eff": 7.2,
+    "power": 0.9994,
+    "rho": 0.8,
+    "sr_per_entry": 2.0,
+    "window": "train3"
+   },
+   {
+    "K": 1,
+    "coins": 12,
+    "expiries": 6,
+    "n_eff": 9.47,
+    "power": 0.1907,
+    "rho": 0.6,
+    "sr_per_entry": 0.25,
+    "window": "train3"
+   },
+   {
+    "K": 1,
+    "coins": 12,
+    "expiries": 6,
+    "n_eff": 9.47,
+    "power": 0.4578,
+    "rho": 0.6,
+    "sr_per_entry": 0.5,
+    "window": "train3"
+   },
+   {
+    "K": 1,
+    "coins": 12,
+    "expiries": 6,
+    "n_eff": 9.47,
+    "power": 0.9241,
+    "rho": 0.6,
+    "sr_per_entry": 1.0,
+    "window": "train3"
+   },
+   {
+    "K": 1,
+    "coins": 12,
+    "expiries": 6,
+    "n_eff": 9.47,
+    "power": 1.0,
+    "rho": 0.6,
+    "sr_per_entry": 2.0,
+    "window": "train3"
+   },
+   {
+    "K": 3,
+    "coins": 12,
+    "expiries": 6,
+    "n_eff": 9.47,
+    "power": 0.0871,
+    "rho": 0.6,
+    "sr_per_entry": 0.25,
+    "window": "train3"
+   },
+   {
+    "K": 3,
+    "coins": 12,
+    "expiries": 6,
+    "n_eff": 9.47,
+    "power": 0.2779,
+    "rho": 0.6,
+    "sr_per_entry": 0.5,
+    "window": "train3"
+   },
+   {
+    "K": 3,
+    "coins": 12,
+    "expiries": 6,
+    "n_eff": 9.47,
+    "power": 0.8289,
+    "rho": 0.6,
+    "sr_per_entry": 1.0,
+    "window": "train3"
+   },
+   {
+    "K": 3,
+    "coins": 12,
+    "expiries": 6,
+    "n_eff": 9.47,
+    "power": 1.0,
+    "rho": 0.6,
+    "sr_per_entry": 2.0,
+    "window": "train3"
+   },
+   {
+    "K": 1,
+    "coins": 12,
+    "expiries": 6,
+    "n_eff": 7.35,
+    "power": 0.1667,
+    "rho": 0.8,
+    "sr_per_entry": 0.25,
+    "window": "train3"
+   },
+   {
+    "K": 1,
+    "coins": 12,
+    "expiries": 6,
+    "n_eff": 7.35,
+    "power": 0.3861,
+    "rho": 0.8,
+    "sr_per_entry": 0.5,
+    "window": "train3"
+   },
+   {
+    "K": 1,
+    "coins": 12,
+    "expiries": 6,
+    "n_eff": 7.35,
+    "power": 0.8567,
+    "rho": 0.8,
+    "sr_per_entry": 1.0,
+    "window": "train3"
+   },
+   {
+    "K": 1,
+    "coins": 12,
+    "expiries": 6,
+    "n_eff": 7.35,
+    "power": 0.9999,
+    "rho": 0.8,
+    "sr_per_entry": 2.0,
+    "window": "train3"
+   },
+   {
+    "K": 3,
+    "coins": 12,
+    "expiries": 6,
+    "n_eff": 7.35,
+    "power": 0.0735,
+    "rho": 0.8,
+    "sr_per_entry": 0.25,
+    "window": "train3"
+   },
+   {
+    "K": 3,
+    "coins": 12,
+    "expiries": 6,
+    "n_eff": 7.35,
+    "power": 0.2198,
+    "rho": 0.8,
+    "sr_per_entry": 0.5,
+    "window": "train3"
+   },
+   {
+    "K": 3,
+    "coins": 12,
+    "expiries": 6,
+    "n_eff": 7.35,
+    "power": 0.7199,
+    "rho": 0.8,
+    "sr_per_entry": 1.0,
+    "window": "train3"
+   },
+   {
+    "K": 3,
+    "coins": 12,
+    "expiries": 6,
+    "n_eff": 7.35,
+    "power": 0.9995,
+    "rho": 0.8,
+    "sr_per_entry": 2.0,
+    "window": "train3"
+   },
+   {
+    "K": 1,
+    "coins": 6,
+    "expiries": 2,
+    "n_eff": 3.0,
+    "power": 0.1128,
+    "rho": 0.6,
+    "sr_per_entry": 0.25,
+    "window": "validation3"
+   },
+   {
+    "K": 1,
+    "coins": 6,
+    "expiries": 2,
+    "n_eff": 3.0,
+    "power": 0.218,
+    "rho": 0.6,
+    "sr_per_entry": 0.5,
+    "window": "validation3"
+   },
+   {
+    "K": 1,
+    "coins": 6,
+    "expiries": 2,
+    "n_eff": 3.0,
+    "power": 0.5347,
+    "rho": 0.6,
+    "sr_per_entry": 1.0,
+    "window": "validation3"
+   },
+   {
+    "K": 1,
+    "coins": 6,
+    "expiries": 2,
+    "n_eff": 3.0,
+    "power": 0.9656,
+    "rho": 0.6,
+    "sr_per_entry": 2.0,
+    "window": "validation3"
+   },
+   {
+    "K": 3,
+    "coins": 6,
+    "expiries": 2,
+    "n_eff": 3.0,
+    "power": 0.045,
+    "rho": 0.6,
+    "sr_per_entry": 0.25,
+    "window": "validation3"
+   },
+   {
+    "K": 3,
+    "coins": 6,
+    "expiries": 2,
+    "n_eff": 3.0,
+    "power": 0.1035,
+    "rho": 0.6,
+    "sr_per_entry": 0.5,
+    "window": "validation3"
+   },
+   {
+    "K": 3,
+    "coins": 6,
+    "expiries": 2,
+    "n_eff": 3.0,
+    "power": 0.3461,
+    "rho": 0.6,
+    "sr_per_entry": 1.0,
+    "window": "validation3"
+   },
+   {
+    "K": 3,
+    "coins": 6,
+    "expiries": 2,
+    "n_eff": 3.0,
+    "power": 0.9092,
+    "rho": 0.6,
+    "sr_per_entry": 2.0,
+    "window": "validation3"
+   },
+   {
+    "K": 1,
+    "coins": 6,
+    "expiries": 2,
+    "n_eff": 2.4,
+    "power": 0.1043,
+    "rho": 0.8,
+    "sr_per_entry": 0.25,
+    "window": "validation3"
+   },
+   {
+    "K": 1,
+    "coins": 6,
+    "expiries": 2,
+    "n_eff": 2.4,
+    "power": 0.1921,
+    "rho": 0.8,
+    "sr_per_entry": 0.5,
+    "window": "validation3"
+   },
+   {
+    "K": 1,
+    "coins": 6,
+    "expiries": 2,
+    "n_eff": 2.4,
+    "power": 0.4619,
+    "rho": 0.8,
+    "sr_per_entry": 1.0,
+    "window": "validation3"
+   },
+   {
+    "K": 1,
+    "coins": 6,
+    "expiries": 2,
+    "n_eff": 2.4,
+    "power": 0.927,
+    "rho": 0.8,
+    "sr_per_entry": 2.0,
+    "window": "validation3"
+   },
+   {
+    "K": 3,
+    "coins": 6,
+    "expiries": 2,
+    "n_eff": 2.4,
+    "power": 0.0409,
+    "rho": 0.8,
+    "sr_per_entry": 0.25,
+    "window": "validation3"
+   },
+   {
+    "K": 3,
+    "coins": 6,
+    "expiries": 2,
+    "n_eff": 2.4,
+    "power": 0.088,
+    "rho": 0.8,
+    "sr_per_entry": 0.5,
+    "window": "validation3"
+   },
+   {
+    "K": 3,
+    "coins": 6,
+    "expiries": 2,
+    "n_eff": 2.4,
+    "power": 0.2813,
+    "rho": 0.8,
+    "sr_per_entry": 1.0,
+    "window": "validation3"
+   },
+   {
+    "K": 3,
+    "coins": 6,
+    "expiries": 2,
+    "n_eff": 2.4,
+    "power": 0.8341,
+    "rho": 0.8,
+    "sr_per_entry": 2.0,
+    "window": "validation3"
+   },
+   {
+    "K": 1,
+    "coins": 12,
+    "expiries": 2,
+    "n_eff": 3.16,
+    "power": 0.115,
+    "rho": 0.6,
+    "sr_per_entry": 0.25,
+    "window": "validation3"
+   },
+   {
+    "K": 1,
+    "coins": 12,
+    "expiries": 2,
+    "n_eff": 3.16,
+    "power": 0.2247,
+    "rho": 0.6,
+    "sr_per_entry": 0.5,
+    "window": "validation3"
+   },
+   {
+    "K": 1,
+    "coins": 12,
+    "expiries": 2,
+    "n_eff": 3.16,
+    "power": 0.5526,
+    "rho": 0.6,
+    "sr_per_entry": 1.0,
+    "window": "validation3"
+   },
+   {
+    "K": 1,
+    "coins": 12,
+    "expiries": 2,
+    "n_eff": 3.16,
+    "power": 0.9719,
+    "rho": 0.6,
+    "sr_per_entry": 2.0,
+    "window": "validation3"
+   },
+   {
+    "K": 3,
+    "coins": 12,
+    "expiries": 2,
+    "n_eff": 3.16,
+    "power": 0.0461,
+    "rho": 0.6,
+    "sr_per_entry": 0.25,
+    "window": "validation3"
+   },
+   {
+    "K": 3,
+    "coins": 12,
+    "expiries": 2,
+    "n_eff": 3.16,
+    "power": 0.1076,
+    "rho": 0.6,
+    "sr_per_entry": 0.5,
+    "window": "validation3"
+   },
+   {
+    "K": 3,
+    "coins": 12,
+    "expiries": 2,
+    "n_eff": 3.16,
+    "power": 0.3628,
+    "rho": 0.6,
+    "sr_per_entry": 1.0,
+    "window": "validation3"
+   },
+   {
+    "K": 3,
+    "coins": 12,
+    "expiries": 2,
+    "n_eff": 3.16,
+    "power": 0.9231,
+    "rho": 0.6,
+    "sr_per_entry": 2.0,
+    "window": "validation3"
+   },
+   {
+    "K": 1,
+    "coins": 12,
+    "expiries": 2,
+    "n_eff": 2.45,
+    "power": 0.105,
+    "rho": 0.8,
+    "sr_per_entry": 0.25,
+    "window": "validation3"
+   },
+   {
+    "K": 1,
+    "coins": 12,
+    "expiries": 2,
+    "n_eff": 2.45,
+    "power": 0.1942,
+    "rho": 0.8,
+    "sr_per_entry": 0.5,
+    "window": "validation3"
+   },
+   {
+    "K": 1,
+    "coins": 12,
+    "expiries": 2,
+    "n_eff": 2.45,
+    "power": 0.4681,
+    "rho": 0.8,
+    "sr_per_entry": 1.0,
+    "window": "validation3"
+   },
+   {
+    "K": 1,
+    "coins": 12,
+    "expiries": 2,
+    "n_eff": 2.45,
+    "power": 0.9312,
+    "rho": 0.8,
+    "sr_per_entry": 2.0,
+    "window": "validation3"
+   },
+   {
+    "K": 3,
+    "coins": 12,
+    "expiries": 2,
+    "n_eff": 2.45,
+    "power": 0.0412,
+    "rho": 0.8,
+    "sr_per_entry": 0.25,
+    "window": "validation3"
+   },
+   {
+    "K": 3,
+    "coins": 12,
+    "expiries": 2,
+    "n_eff": 2.45,
+    "power": 0.0892,
+    "rho": 0.8,
+    "sr_per_entry": 0.5,
+    "window": "validation3"
+   },
+   {
+    "K": 3,
+    "coins": 12,
+    "expiries": 2,
+    "n_eff": 2.45,
+    "power": 0.2867,
+    "rho": 0.8,
+    "sr_per_entry": 1.0,
+    "window": "validation3"
+   },
+   {
+    "K": 3,
+    "coins": 12,
+    "expiries": 2,
+    "n_eff": 2.45,
+    "power": 0.8418,
+    "rho": 0.8,
+    "sr_per_entry": 2.0,
+    "window": "validation3"
+   },
+   {
+    "K": 1,
+    "coins": 6,
+    "expiries": 8,
+    "n_eff": 12.0,
+    "power": 0.218,
+    "rho": 0.6,
+    "sr_per_entry": 0.25,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 1,
+    "coins": 6,
+    "expiries": 8,
+    "n_eff": 12.0,
+    "power": 0.5347,
+    "rho": 0.6,
+    "sr_per_entry": 0.5,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 1,
+    "coins": 6,
+    "expiries": 8,
+    "n_eff": 12.0,
+    "power": 0.9656,
+    "rho": 0.6,
+    "sr_per_entry": 1.0,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 1,
+    "coins": 6,
+    "expiries": 8,
+    "n_eff": 12.0,
+    "power": 1.0,
+    "rho": 0.6,
+    "sr_per_entry": 2.0,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 3,
+    "coins": 6,
+    "expiries": 8,
+    "n_eff": 12.0,
+    "power": 0.1035,
+    "rho": 0.6,
+    "sr_per_entry": 0.25,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 3,
+    "coins": 6,
+    "expiries": 8,
+    "n_eff": 12.0,
+    "power": 0.3461,
+    "rho": 0.6,
+    "sr_per_entry": 0.5,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 3,
+    "coins": 6,
+    "expiries": 8,
+    "n_eff": 12.0,
+    "power": 0.9092,
+    "rho": 0.6,
+    "sr_per_entry": 1.0,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 3,
+    "coins": 6,
+    "expiries": 8,
+    "n_eff": 12.0,
+    "power": 1.0,
+    "rho": 0.6,
+    "sr_per_entry": 2.0,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 1,
+    "coins": 6,
+    "expiries": 8,
+    "n_eff": 9.6,
+    "power": 0.1921,
+    "rho": 0.8,
+    "sr_per_entry": 0.25,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 1,
+    "coins": 6,
+    "expiries": 8,
+    "n_eff": 9.6,
+    "power": 0.4619,
+    "rho": 0.8,
+    "sr_per_entry": 0.5,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 1,
+    "coins": 6,
+    "expiries": 8,
+    "n_eff": 9.6,
+    "power": 0.927,
+    "rho": 0.8,
+    "sr_per_entry": 1.0,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 1,
+    "coins": 6,
+    "expiries": 8,
+    "n_eff": 9.6,
+    "power": 1.0,
+    "rho": 0.8,
+    "sr_per_entry": 2.0,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 3,
+    "coins": 6,
+    "expiries": 8,
+    "n_eff": 9.6,
+    "power": 0.088,
+    "rho": 0.8,
+    "sr_per_entry": 0.25,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 3,
+    "coins": 6,
+    "expiries": 8,
+    "n_eff": 9.6,
+    "power": 0.2813,
+    "rho": 0.8,
+    "sr_per_entry": 0.5,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 3,
+    "coins": 6,
+    "expiries": 8,
+    "n_eff": 9.6,
+    "power": 0.8341,
+    "rho": 0.8,
+    "sr_per_entry": 1.0,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 3,
+    "coins": 6,
+    "expiries": 8,
+    "n_eff": 9.6,
+    "power": 1.0,
+    "rho": 0.8,
+    "sr_per_entry": 2.0,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 1,
+    "coins": 12,
+    "expiries": 8,
+    "n_eff": 12.63,
+    "power": 0.2247,
+    "rho": 0.6,
+    "sr_per_entry": 0.25,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 1,
+    "coins": 12,
+    "expiries": 8,
+    "n_eff": 12.63,
+    "power": 0.5526,
+    "rho": 0.6,
+    "sr_per_entry": 0.5,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 1,
+    "coins": 12,
+    "expiries": 8,
+    "n_eff": 12.63,
+    "power": 0.9719,
+    "rho": 0.6,
+    "sr_per_entry": 1.0,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 1,
+    "coins": 12,
+    "expiries": 8,
+    "n_eff": 12.63,
+    "power": 1.0,
+    "rho": 0.6,
+    "sr_per_entry": 2.0,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 3,
+    "coins": 12,
+    "expiries": 8,
+    "n_eff": 12.63,
+    "power": 0.1076,
+    "rho": 0.6,
+    "sr_per_entry": 0.25,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 3,
+    "coins": 12,
+    "expiries": 8,
+    "n_eff": 12.63,
+    "power": 0.3628,
+    "rho": 0.6,
+    "sr_per_entry": 0.5,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 3,
+    "coins": 12,
+    "expiries": 8,
+    "n_eff": 12.63,
+    "power": 0.9231,
+    "rho": 0.6,
+    "sr_per_entry": 1.0,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 3,
+    "coins": 12,
+    "expiries": 8,
+    "n_eff": 12.63,
+    "power": 1.0,
+    "rho": 0.6,
+    "sr_per_entry": 2.0,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 1,
+    "coins": 12,
+    "expiries": 8,
+    "n_eff": 9.8,
+    "power": 0.1942,
+    "rho": 0.8,
+    "sr_per_entry": 0.25,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 1,
+    "coins": 12,
+    "expiries": 8,
+    "n_eff": 9.8,
+    "power": 0.4681,
+    "rho": 0.8,
+    "sr_per_entry": 0.5,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 1,
+    "coins": 12,
+    "expiries": 8,
+    "n_eff": 9.8,
+    "power": 0.9312,
+    "rho": 0.8,
+    "sr_per_entry": 1.0,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 1,
+    "coins": 12,
+    "expiries": 8,
+    "n_eff": 9.8,
+    "power": 1.0,
+    "rho": 0.8,
+    "sr_per_entry": 2.0,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 3,
+    "coins": 12,
+    "expiries": 8,
+    "n_eff": 9.8,
+    "power": 0.0892,
+    "rho": 0.8,
+    "sr_per_entry": 0.25,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 3,
+    "coins": 12,
+    "expiries": 8,
+    "n_eff": 9.8,
+    "power": 0.2867,
+    "rho": 0.8,
+    "sr_per_entry": 0.5,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 3,
+    "coins": 12,
+    "expiries": 8,
+    "n_eff": 9.8,
+    "power": 0.8418,
+    "rho": 0.8,
+    "sr_per_entry": 1.0,
+    "window": "train3+validation3"
+   },
+   {
+    "K": 3,
+    "coins": 12,
+    "expiries": 8,
+    "n_eff": 9.8,
+    "power": 1.0,
+    "rho": 0.8,
+    "sr_per_entry": 2.0,
+    "window": "train3+validation3"
+   }
+  ],
+  "sr_per_entry": [
+   0.25,
+   0.5,
+   1.0,
+   2.0
+  ]
+ },
+ "a8_forward_check": {
+  "12m": 0.633,
+  "6m": 0.297
+ },
+ "alpha_F": 0.0125,
+ "alpha_family": 0.05,
+ "note": "scenarios only; no market data read",
+ "rule": "director order 47 P2 (INBOX 2026-11-06)",
+ "schema": "copybot.p2_power/1"
+}
