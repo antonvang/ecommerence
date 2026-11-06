@@ -1,0 +1,1 @@
+{"errors":[{"code":"OUT_OF_RANGE","path":"observations[0].ret"}],"fixture_id":"R3_06_range_ret","spec_version":"1.1.1","status":"INVALID_INPUT"}

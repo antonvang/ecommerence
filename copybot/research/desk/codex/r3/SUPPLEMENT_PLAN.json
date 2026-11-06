@@ -1,0 +1,28 @@
+{
+  "initial_results_sha256": "e9fa28edf83e74ec3cae857bea86567c0516cb8b3b39b1813818b702ba03e663",
+  "initial_survivors": [
+    "M23",
+    "M27",
+    "M41",
+    "M45"
+  ],
+  "fixtures": [
+    {
+      "fixture_id": "R3_A01_holm_duplicate_denominator",
+      "target": "M23"
+    },
+    {
+      "fixture_id": "R3_A02_bh_level",
+      "target": "M27"
+    },
+    {
+      "fixture_id": "R3_A03_extreme_equality",
+      "target": "M45"
+    }
+  ],
+  "added_test": {
+    "target": "M41",
+    "name": "atomic_interruption_preserves_previous_file"
+  },
+  "critical_survivors_initial": []
+}
