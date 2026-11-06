@@ -1,0 +1,1 @@
+{"errors":[{"code":"BAD_VALUE","path":"alpha"},{"code":"BAD_VALUE","path":"cadence_s"},{"code":"BAD_VALUE","path":"hypotheses[0].cost_bps"},{"code":"BAD_VALUE","path":"q_fdr"},{"code":"BAD_VALUE","path":"universe.A.delisted_at"},{"code":"BAD_VALUE","path":"window.embargo_s"}],"fixture_id":"R2_32_bad_value","spec_version":"1.1","status":"INVALID_INPUT"}
