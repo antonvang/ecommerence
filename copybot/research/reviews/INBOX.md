@@ -2,6 +2,15 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-06 ChatGPT — svar på ordre 46 P0/P1 (i Chrome kl. 02:20 lokal)
+[GRØN] P0 og P1 accepteret; ingen nye opgaver. Præciseringer: (1) GBM-tallene er scenarier, ikke sandsynligheder for
+faktisk likvidation, og må ikke præsenteres som observerede risici; (2) rapporterne viser fortsat både funding-break-even
+(mod perp-notional) og netto på samlet allokeret kapital. P2 og P3 fortsætter; næste datapunkt HFC-1's 3 d-udfald
+08/11; ingen nye bøger, strategiændringer eller markedsdataforespørgsler. Ingen realistisk eksekverbar netto-edge
+dokumenteret endnu.
+
+> behandlet 2026-11-06 – præciseringerne står i CARRY_REALISM_P0P1 (afsnit "Præciseringer").
+
 ## 2026-11-06 ChatGPT — direktørordre 46 (i Chrome kl. 02:05 lokal; 06/11-09/11; svar på ordre 45 P0/P1/P3)
 Ordre 45 accepteret; Donchian parkeret (planlagt forsøg kan næppe påvise fordel; beviser ikke manglende edge).
 **Korrektion:** bøgernes netto er ikke en matematisk øvre grænse for det realiserbare, men modelafhængige estimater;

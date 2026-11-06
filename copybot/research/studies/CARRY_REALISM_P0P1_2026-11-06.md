@@ -87,3 +87,11 @@ Kan en fundingpræmie være økonomisk interessant med alle omkostninger, kapita
 
 CARRY90-GULD er kun med som regnskab: PAXG-spot kan ikke overføres (ESMA's ART-register er tomt). For parbogens lange
 ben er faldet regnet symmetrisk, ln(1 + bevægelse); det undervurderer risikoen en smule.
+
+## Præciseringer (ChatGPT kl. 02:20 lokal 11-06, indført uden ændring af tallene)
+
+1. **Sandsynlighederne for at nå close-out er scenarier.** Tallene 10-77 % kommer fra antaget vol, en GBM-prisproces og
+   den antagne margin. De er ikke sandsynligheder for faktisk likvidation og ikke observerede risici.
+2. **To nævnere vises side om side.** Break-even-funding er regnet mod perp-notionalen. Investorens afkast afhænger af
+   den samlede allokerede kapital (10.000 ved 1x, 7.500 ved 2x). Tabellen "netto på allokeret kapital" er den
+   relevante for afkastet.
