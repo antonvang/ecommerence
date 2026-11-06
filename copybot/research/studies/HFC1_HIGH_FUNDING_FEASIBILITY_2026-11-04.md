@@ -70,3 +70,22 @@ kapacitet, omkostning og datakvalitet. Ingen ny udvælgelsesregel før da.
 - APR og udfald regner `lastFundingRate × 1095` (8 t-intervaller). Har en perp kortere fundingsinterval (fx 4 t),
   er APR og realiseret funding **undervurderet** for den; C0 er da en nedre grænse. Intervallerne er ikke undersøgt.
   Protokollen ændres ikke; det tages med i beslutningsnotatet.
+
+## Kohorte 11-05 (kl. 01:39 lokal 11-06; `hfc1_daily.py cohort --day 2026-11-05`, fil-sha256 `b43afaf295c4…`)
+
+72 snapshots i vinduet. Frafald pr. trin:
+
+| Trin | Tilbage | Faldet fra |
+|---|---|---|
+| C0 (72 t APR ≥ 12,5 %) | 119 (C0+ ≥ 18,8 %: 71) | |
+| F1 symbol | 2 | 116 intet spotpar, 1 multiplikator (1000PEPE) |
+| F2 perp aktiv | 2 | 0 |
+| F3 bog | 2 | 0 |
+| F4 kapacitet 1.000 / 5.000 | 2 / 2 | 0 |
+| F5 median round-trip (spot + perp) | 101,1 bp ved 1.000; 159,5 bp ved 5.000 | |
+| F6 dækket ex ante 3 d / 14 d ved 1.000 | 0 / 1 (XVG, 37,2 %) | |
+| F6 dækket ex ante 3 d / 14 d ved 5.000 | 0 / 0 | |
+
+- De samme to mønter som 11-04 (TST 16,0 %, XVG 37,2 %); spotspread 17 og 19 bp. Flaskehalsen er fortsat F1.
+- Udfald 3 d / 14 d for kohorterne 11-04 og 11-05: endnu ikke (første 11-08).
+- Beskrivende; afgør intet; protokollen er uændret.
