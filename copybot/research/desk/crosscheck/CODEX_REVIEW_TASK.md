@@ -1,6 +1,6 @@
 # CODEX_REVIEW_TASK — uafhængig reference-evaluator (direktørordre 50 P3)
 
-Status: AWAITING_CODEX indtil Codex' resultat er hentet og sammenlignet i CROSSCHECK_REPORT.md.
+Status: DONE 2026-11-06 — Codex leverede (miljø ecommerence, branch codex-crosscheck); resultat i CROSSCHECK_REPORT.md.
 
 ## Opgave til Codex
 

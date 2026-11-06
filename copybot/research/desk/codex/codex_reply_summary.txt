@@ -1,0 +1,25 @@
+F1_clean H_good_sign status=TESTED T=400 n=(0,0,0,0,0,0,0,0,0,0) mean_net=0.0014000380300097609 t=5.749622337489451 p_one=4.472150716080159e-09 holm_reject=true bh_reject=true
+F1_clean H_good_clip status=TESTED T=400 n=(0,0,0,0,0,0,0,0,0,0) mean_net=0.0011855910115457999 t=7.459219986706703 p_one=4.351809315084274e-14 holm_reject=true bh_reject=true
+F1_clean H_noise status=TESTED T=400 n=(0,0,0,0,0,0,0,0,0,0) mean_net=-0.0005435191676228954 t=-2.0611003237611096 p_one=0.9803532650253701 holm_reject=false bh_reject=false
+F2_lookahead H_good_sign status=TESTED T=400 n=(0,0,0,0,0,142,0,0,0,0) mean_net=-0.0005270298916733878 t=-2.2928320721536526 p_one=0.9890711626068763 holm_reject=false bh_reject=false
+F2_lookahead H_good_clip status=TESTED T=400 n=(0,0,0,0,0,142,0,0,0,0) mean_net=-0.00029973601248202604 t=-1.9221067700185492 p_one=0.972703837804254 holm_reject=false bh_reject=false
+F2_lookahead H_noise status=TESTED T=400 n=(0,0,0,0,0,0,0,0,0,0) mean_net=-0.0005297786227930713 t=-2.040879812118681 p_one=0.9793686125528023 holm_reject=false bh_reject=false
+F3_gaps_nan H_good_sign status=TESTED T=294 n=(0,0,0,33,12,0,0,0,5,1) mean_net=-2.217885061353895e-05 t=-0.07246651116524272 p_one=0.5288846722023614 holm_reject=false bh_reject=false
+F3_gaps_nan H_good_clip status=TESTED T=294 n=(0,0,0,33,12,0,53,0,5,1) mean_net=-1.595136329024893e-05 t=-0.06514844463827685 p_one=0.5259720954570785 holm_reject=false bh_reject=false
+F3_gaps_nan H_noise status=TESTED T=294 n=(0,0,0,33,2,0,0,0,5,1) mean_net=-3.573576584006751e-05 t=-0.09578687326456119 p_one=0.5381550784822366 holm_reject=false bh_reject=false
+F4_survivorship H_good_sign status=TESTED T=360 n=(0,0,172,0,0,0,0,1,0,0) mean_net=-0.00036526605122957033 t=-0.6900143960982951 p_one=0.75490743289225 holm_reject=false bh_reject=false
+F4_survivorship H_good_clip status=TESTED T=360 n=(0,0,172,0,0,0,0,1,0,0) mean_net=-0.000371009018118133 t=-0.731920018012015 p_one=0.7678913064228295 holm_reject=false bh_reject=false
+F4_survivorship H_noise status=TESTED T=360 n=(0,0,172,0,0,0,0,1,0,0) mean_net=0.0005792983411223021 t=0.9688739298187582 p_one=0.16630404716193092 holm_reject=false bh_reject=false
+F5_extreme_dupes_offgrid H_good_sign status=TESTED T=320 n=(8,26,0,0,0,0,0,3,0,0) mean_net=0.0006558810668230266 t=0.47617061456775117 p_one=0.3169764162999251 holm_reject=false bh_reject=false
+F5_extreme_dupes_offgrid H_good_clip status=TESTED T=320 n=(8,26,0,0,0,0,0,3,0,0) mean_net=-0.0003462993415808621 t=-0.37355285212217226 p_one=0.6456314915081294 holm_reject=false bh_reject=false
+F5_extreme_dupes_offgrid H_noise status=TESTED T=320 n=(8,26,0,0,0,0,0,3,0,0) mean_net=0.0006911178929905233 t=0.49533507074452005 p_one=0.31018180946468743 holm_reject=false bh_reject=false
+F5_extreme_dupes_offgrid H_good_sign_copy status=DUPLICATE T=320 n=(8,26,0,0,0,0,0,3,0,0) mean_net=0.00026046440015636016 t=0.18917351588606574 p_one=0.4249784120657509 holm_reject=null bh_reject=null
+F6_short H_good_sign status=INSUFFICIENT T=25 n=(0,0,0,0,0,0,0,0,0,0) mean_net=0.0005861450332951343 t=null p_one=null holm_reject=null bh_reject=null
+F6_short H_good_clip status=INSUFFICIENT T=25 n=(0,0,0,0,0,0,0,0,0,0) mean_net=-0.00013832014115126295 t=null p_one=null holm_reject=null bh_reject=null
+F6_short H_noise status=INSUFFICIENT T=25 n=(0,0,0,0,0,0,0,0,0,0) mean_net=0.000324956355158365 t=null p_one=null holm_reject=null bh_reject=null
+LEDGER F1_clean entries=3 head=28555a89c03627d493ee11677902fd36d5ddac22e19f41cc936f41178e03731a idempotent_hits=0
+LEDGER F2_lookahead entries=3 head=28555a89c03627d493ee11677902fd36d5ddac22e19f41cc936f41178e03731a idempotent_hits=0
+LEDGER F3_gaps_nan entries=3 head=28555a89c03627d493ee11677902fd36d5ddac22e19f41cc936f41178e03731a idempotent_hits=0
+LEDGER F4_survivorship entries=3 head=28555a89c03627d493ee11677902fd36d5ddac22e19f41cc936f41178e03731a idempotent_hits=0
+LEDGER F5_extreme_dupes_offgrid entries=4 head=a5c5d14b7028bb7435ab0a1532b472e40c7c7f949d256322417cc2ff74daa928 idempotent_hits=1
+LEDGER F6_short entries=3 head=28555a89c03627d493ee11677902fd36d5ddac22e19f41cc936f41178e03731a idempotent_hits=0
