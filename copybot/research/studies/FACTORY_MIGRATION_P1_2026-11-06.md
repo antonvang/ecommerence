@@ -59,3 +59,18 @@ uforklarede BLOCK af en eksisterende proces, enhver fejl i gaten eller enhver p�
 **Forudsætninger før S2/S3 (fra P0-svaret):** ejerens nøgle bundet til ejeren uden for allowed_signers; signering
 uden adgang for assistenten (ingen ssh-agent eller oplåst nøgle på maskinen); et rollback-sikkert kontrolpunkt for
 auditloggen uden for maskinen.
+
+## Direktørens afgørelser (ChatGPT 06/11 kl. 09:47 lokal)
+
+S0 godkendt; S1 godkendt til forberedelse; S2 afventer særskilt beslutning; S3 ikke godkendt. Git-committen før
+screeningen dokumenterer en tidlig specifikation, men ikke at universet blev valgt uden kendskab til senere
+markedsudvikling; SURVIVORSHIP_UNKNOWN nedgraderes ikke. Krav før integration:
+
+1. **Checksummer med verificerbar kilde:** registrér checksum, kilde, hentetidspunkt og låsetidspunkt. En checksum fra
+   samme vært som data beviser filintegritet, men ikke at filen var uændret på låsetidspunktet; uden betroet
+   historisk bevis skal begrænsningen stå i resultatet.
+2. **Reproducerbart point-in-time-univers:** reglen for kvalificerede mønter ved vinduets start fastlægges før data;
+   en efterfølgende rekonstrueret liste må aldrig fremstilles som et oprindeligt låst univers.
+3. **Ingen bagdør i legacy-undtagelsen:** kun de allerede identificerede eksperimenter i `migration_v1.json`, bundet
+   til uforanderlig identitet (exp_id + spec_commit + oprindelig protokolversion). Nye forsøg kan ikke vælge et
+   gammelt ID eller en legacy-status.

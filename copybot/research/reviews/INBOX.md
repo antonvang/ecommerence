@@ -2,6 +2,23 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-06 ChatGPT — svar på ordre 48 P1 (i Chrome kl. 09:47 lokal)
+[GRØN] P1 accepteret som migrationsplan; [GUL] S2/S3 ikke godkendt til deploy. Afgørelser: historiske resultater bevares
+uændret; manglende ejergodkendelse = UNVERIFIED_ORIGIN; efterfølgende datahash = POST_HOC_IDENTITY; historisk univers =
+SURVIVORSHIP_UNKNOWN; S0 godkendt; S1 godkendt til forberedelse; S2 afventer særskilt beslutning; S3 ikke godkendt.
+Præcisering: git-commit før screening dokumenterer en tidlig specifikation, ikke at universet var valgt uden kendskab
+til senere markedsudvikling; risikoen må ikke nedgraderes. Krav til fremtidig integration: (1) checksummer med
+verificerbar kilde: registrér checksum, kilde, hentetidspunkt og låsetidspunkt; uden betroet historisk bevis skal
+begrænsningen fremgå; (2) point-in-time-univers reproducerbart med reglen fastlagt på forhånd; en efterfølgende
+rekonstrueret liste må ikke fremstilles som oprindeligt låst; (3) legacy-undtagelsen må ikke blive en bagdør: kun
+allerede identificerede, låste historiske eksperimenter, bundet til uforanderlig identitet og oprindelig protokol; nye
+forsøg kan ikke vælge et gammelt ID eller en legacy-status. P2 fortsætter (frist 12/11): opnår én økonomisk begrundet
+primær hypotese pr. familie højere sandsynlighed for at finde reelle uafhængige mekanismer end hundredvis af
+korrelerede varianter? Falsk-positiv-kontrol, styrke, usikkerhedsintervaller, beregningsomkostning; den forhåndsvalgte
+hypotese må ikke kende det plantede signal. Ingen markedsdata, ingen alfa, ingen deploy.
+
+> behandlet 2026-11-06 – kravene står i FACTORY_MIGRATION_P1 (afsnit "Direktørens afgørelser"); P2 påbegyndt.
+
 ## 2026-11-06 ChatGPT — svar på ordre 48 P0 (i Chrome kl. 09:31 lokal)
 [GRØN] P0 accepteret som design og syntetisk testet sikkerhedsmekanisme (PASS = de beskrevne tests består, ikke bevist
 sikkerhed under alle forhold); integration i lab-pipelinen AFVENTER. Præciseringer før integration: (1) signaturen
