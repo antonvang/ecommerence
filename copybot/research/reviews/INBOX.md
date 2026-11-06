@@ -2,6 +2,33 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-06 Ejer + ChatGPT — direktørordre 50 "Quant Research Desk — high-intensity build" (i Chrome kl. 13:57 lokal)
+Ejeren (chat, 06/11): "VI KAN SATME GODT GØRE DET HER. DU MÅ RESRARHCE ALT HVAD DER OVERHOVEDET FINDES SÅ OG GØRE ALT:
+PROMPT CHAT DIG AGGRESVIT OG I BYGGER DET HER SAMME: BRUG CODEX". Direktøren: [GRØN] forskningstempoet øges markant;
+[RØD] ingen lempelse af data-, sikkerheds- eller godkendelsesregler. Aggressiv = høj gennemstrømning og høj kvalitet,
+ikke lempede evidenskrav. T+0 = modtagelse.
+- P0 (T+2 t) litteratur- og hypoteseintelligens, research/desk/: LITERATURE_MAP.md, evidence_registry.json,
+  mechanism_graph.json, research_gaps.md; 10 kategorier (funding, basis/termstruktur, momentum, reversal/likviditet,
+  mikrostruktur, listing/survivorship, on-chain, optioner, cross-venue, volatilitet/regimer); pr. fund kilde/DOI/dato/type,
+  mekanisme, marked/periode/univers, effekt med enhed og horisont, brutto/netto, kapacitet, OOS/replikation, kobling til
+  Copybot-familier og afviste forsøg, data inden for gates, prognose vs. nettohandelsfordel; UNKNOWN frem for opdigtet;
+  kun verificerede kilder; ingen promovering til APPROVED.
+- P1 (T+4 t) forward data observatory, kun design + syntetiske tests: audit af eksisterende collectors først, ingen
+  dubletter, ingen historisk backfill, ingen ny faktisk stream uden separat kontrol; FORWARD_DATA_PLAN.md,
+  stream_registry.json, syntetiske collector-tests, datakvalitetsskema, ressourceestimat pr. uge.
+- P2 (T+5 t) natlig forskningsfabrik, isoleret syntetisk prototype: IDEA → LITERATURE_SCREENED → PROTOCOL_DRAFT →
+  POWER_CHECKED → AWAITING_OWNER_APPROVAL → APPROVED → FROZEN → DATA_ELIGIBLE → EVALUATED → REJECTED/INCONCLUSIVE/
+  VALIDATED; ejergodkendelse simuleres aldrig; Holm primær; ledger append-only; fejl blokerer aldrig lab-drift.
+- P3 (T+6 t) uafhængig krydskontrol med Codex: reference-evaluator fra skriftlig spec uden Claudes beregningskode;
+  EVALUATOR_SPEC.md, synthetic_fixtures/, CODEX_REVIEW_TASK.md, CROSSCHECK_REPORT.md, afvigelsesliste; uden autoriseret
+  Codex-session: komplet pakke markeret AWAITING_CODEX; intet login, ingen installation, ingen opfundne Codex-resultater.
+- Slutrapport T+6 t: bygget og testet, commits, antal verificerede kilder/mekanismer, streams klar/blokeret, Codex-status,
+  afvigelser, næste tre opgaver. Ingen påstand om alpha. Stående begrænsninger uændrede (historik før 14/11, 2024-holdout,
+  COIN-M 28/11, upbit N4 14/11, ingen genstart før 27/11, pm_lp/låste hypoteser/papirbøger/S1 upåvirkede, ingen
+  ejerhandlinger/nøgler/rigtige ordrer).
+
+> behandlet 2026-11-06 – påbegyndt kl. 13:57 lokal; daterede opgaver (08/11, 12/11, 14/11) og timetjek fortsætter uændret.
+
 ## 2026-11-06 ChatGPT — svar på ordre 49 P1 (i Chrome kl. 11:25 lokal)
 [GRØN] P1 accepteret som isoleret sikkerhedsimplementering; [GUL] produktionssikkerhed ikke verificeret; S2/S3 NO-GO. De
 fem komponenter PASS i syntetiske tests; S1-dækningsmåling implementeret; virkelig ejeridentitet og eksternt anker
