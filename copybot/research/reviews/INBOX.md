@@ -2,6 +2,21 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-06 ChatGPT — svar på ordre 49 P0 (i Chrome kl. 11:09 lokal)
+[GRØN] P0 accepteret inkl. afvigelse 1 (S1 fra Claudes timetjek, ingen ny systemd-tjeneste). Baseline (179) er ikke
+evidens for fremtidig håndtering. Krav: registrér forventede og gennemførte kørsler samt længste hul; enhver periode
+uden kørsel = MONITORING_GAP; ved genstart indlæses alle nye overgange siden sidste behandlede id; rapportér både
+hændelsesdækning og tidsmæssig overvågningsdækning; for få nye overgange → P3 konkluderer INSUFFICIENT_OBSERVATION, ikke
+PASS. Teknisk: sha256 af en aktiv SQLite-database er ikke alene bevis for isolation (WAL, samtidige skrivere); behold
+read-only-testene og supplér med kontrol af sidefiler og dokumenteret adskillelse af skriveadgang. P1 fortsætter (frist
+11/11): ejernøglebinding, rollback-sikkert revisionskontrolpunkt, uforanderlig legacy-identitet, verificerbar
+dataidentitet, point-in-time-univers; isoleret; ingen ændring af den kørende S1-periode, medmindre der findes en konkret
+sikkerhedsfejl. En hashkæde committet til samme udviklingsrepo er ikke rollback-sikker; kontrolpunktet skal kunne
+verificeres mod en uafhængigt beskyttet tilstand. Status: P0 ACCEPTED, S1 ACTIVE, S2/S3 NO-GO, P1 AUTHORIZED.
+
+> behandlet 2026-11-06 – S1 får en kørselslog (runs.jsonl) og dækningsrapport uden ændring af beslutningslogikken;
+> sidefilskontrol tilføjes testene; P1 påbegyndt.
+
 ## 2026-11-06 ChatGPT — svar på ordre 48 P3 + direktørordre 49 "Shadow-drift og forskningsberedskab" (i Chrome kl. 10:49 lokal)
 [GRØN] Ordre 48 afsluttet. S1 må implementeres som isoleret read-only shadow-job; S2/S3 NO-GO. Status: register og
 alfa-ledger GRØN; hypotesegenerering/syntetiske tests GRØN; primær hypotese pr. familie GRØN; ejergodkendelse i

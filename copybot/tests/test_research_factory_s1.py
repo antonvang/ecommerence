@@ -86,6 +86,32 @@ class S1(unittest.TestCase):
         self.assertEqual(sha(self.db), before_sha)
         self.assertFalse(os.path.exists(os.path.join(self.root, "missing.db")))   # mode=ro never creates a db
 
+    def test_coverage_and_gaps(self):
+        runs = [{"ts": 1000, "exit": 0, "new": 1}, {"ts": 4600, "exit": 0, "new": 0}, {"ts": 20000, "exit": 2, "new": 0},
+                {"ts": 30000, "exit": 0, "new": 0}]
+        c = s1.coverage(runs, 1000, 31000)
+        self.assertEqual(c["successful_runs"], 3)
+        self.assertEqual(c["failed_runs"], 1)
+        self.assertEqual(len(c["monitoring_gaps"]), 1)               # 4600 -> 30000 (the failed run does not count)
+        self.assertEqual(c["longest_gap_s"], 25400)
+        self.assertEqual(c["expected_runs"], 9)
+
+    def test_side_files_and_runs_log(self):
+        con = sqlite3.connect(self.db)
+        con.execute("PRAGMA journal_mode=WAL")
+        con.close()
+        before = {f for f in os.listdir(self.root)}
+        s1.run(self.db, self.out, now=1000)
+        side = {f for f in os.listdir(self.root)} - before - {"s1"}
+        # a WAL reader may create or touch the -shm/-wal side files (read locks); it never writes data pages
+        self.assertTrue(side <= {"lab.db-shm", "lab.db-wal"}, side)
+        ro = s1.open_ro(self.db)
+        with self.assertRaises(sqlite3.OperationalError):
+            ro.execute("CREATE TABLE x(a)")
+        ro.close()
+        runs = s1._read_jsonl(os.path.join(self.out, "runs.jsonl"))
+        self.assertEqual([r["exit"] for r in runs], [0])
+
     def test_tampered_report_is_refused(self):
         s1.run(self.db, self.out, now=1000)
         p = os.path.join(self.out, "decisions.jsonl")

@@ -128,16 +128,38 @@ def run(db, d=DIR, now=None):
         with open(tmp, "w", encoding="utf-8") as f:
             json.dump(state, f, sort_keys=True, indent=1)
         os.replace(tmp, state_path)
-        write_summary(d, state, _read_jsonl(dec_path))
+        _log_run(d, now, 0, len(new))
+        write_summary(d, state, _read_jsonl(dec_path), now)
         return 0, {"new": len(new), "phase": phase, "state": state}
     except Exception as e:                  # noqa: BLE001 - stop only this run, record it, never touch the lab
         os.makedirs(d, exist_ok=True)
         with open(os.path.join(d, "errors.jsonl"), "a", encoding="utf-8") as f:
             f.write(canonical({"ts": now, "error": f"{type(e).__name__}: {e}"}) + "\n")
+        _log_run(d, now, 2, 0)
         return 2, {"error": str(e)}
 
 
-def write_summary(d, state, entries):
+GAP_S = 2 * 3600        # the check runs hourly; more than 2 h without a successful run is a MONITORING_GAP
+
+
+def _log_run(d, now, code, new):
+    with open(os.path.join(d, "runs.jsonl"), "a", encoding="utf-8") as f:
+        f.write(canonical({"ts": now, "exit": code, "new": new}) + "\n")
+
+
+def coverage(runs, started, now):
+    """Monitoring coverage: expected hourly runs since the start, successful runs, longest gap and every gap longer
+    than GAP_S (MONITORING_GAP), including the open gap up to `now`."""
+    ok = sorted(r["ts"] for r in runs if r["exit"] == 0)
+    points = [started] + [t for t in ok if t >= started] + [now]
+    gaps = [(a, b) for a, b in zip(points, points[1:]) if b - a > GAP_S]
+    longest = max((b - a for a, b in zip(points, points[1:])), default=0)
+    return {"expected_runs": int((now - started) // 3600) + 1, "successful_runs": len(ok),
+            "failed_runs": sum(r["exit"] != 0 for r in runs), "longest_gap_s": longest,
+            "monitoring_gaps": [{"from": a, "to": b, "hours": round((b - a) / 3600, 2)} for a, b in gaps]}
+
+
+def write_summary(d, state, entries, now=None):
     obs = [e for e in entries if e["phase"] == "OBSERVATION"]
     base = [e for e in entries if e["phase"] == "BASELINE"]
 
@@ -154,7 +176,16 @@ def write_summary(d, state, entries):
          f"{time.strftime('%Y-%m-%d %H:%M UTC', time.gmtime(state['last_run_ts']))}; chain head `{state['chain_head']}`.",
          "", f"Baseline: {len(base)} transitions (all that existed at S1 start; not observations).",
          f"Observation period (order 49 P3 counts 14 full days from the start): {len(obs)} new transitions, "
-         f"{sum(e['unexplained'] for e in obs)} unexplained, {sum(e['factory'] == 'BLOCK' for e in obs)} BLOCK.", "",
+         f"{sum(e['unexplained'] for e in obs)} unexplained, {sum(e['factory'] == 'BLOCK' for e in obs)} BLOCK.", ""]
+    cov = coverage(_read_jsonl(os.path.join(d, "runs.jsonl")), state["started_ts"], now or state["last_run_ts"])
+    L += [f"Monitoring coverage: {cov['successful_runs']} successful runs over {cov['expected_runs']} elapsed hourly "
+          f"slots, "
+          f"{cov['failed_runs']} failed; longest gap {cov['longest_gap_s'] / 3600:.2f} h; MONITORING_GAP periods "
+          f"(> {GAP_S // 3600} h): {len(cov['monitoring_gaps'])}."]
+    L += [f"- MONITORING_GAP {time.strftime('%Y-%m-%d %H:%M', time.gmtime(g['from']))} -> "
+          f"{time.strftime('%Y-%m-%d %H:%M UTC', time.gmtime(g['to']))} ({g['hours']} h)" for g in cov["monitoring_gaps"]]
+    L += ["", "Event coverage: few new transitions mean INSUFFICIENT_OBSERVATION at the evaluation, never an automatic "
+          "PASS.", "",
          "| Phase | Factory decision : reason | Count |", "|---|---|---|"]
     L += [f"| BASELINE | {k} | {v} |" for k, v in tally(base).items()]
     L += [f"| OBSERVATION | {k} | {v} |" for k, v in tally(obs).items()]
