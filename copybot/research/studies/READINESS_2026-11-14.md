@@ -45,3 +45,25 @@ intet låst, intet hentet, ingen kode ændret.
 ## 5. Ejerens svar (11-04)
 
 "I behøver ikke spørge mig gør alt" (chat, efter spørgsmålet om låsene): låsene A og B 14/11 er godkendt.
+
+## 6. Kontrol 11-06 (direktørordre 45 P3; kl. 02:00 lokal; ingen data åbnet, intet låst)
+
+| Punkt | Status |
+|---|---|
+| `n6_funding.py run` / `n4_kimchi.py run` nægter i dag | PASS: "no locked amendment … or before 2026-11-14" |
+| Låsekrav i koden | PASS: regex `^## Ændring … metode n6` / `n4` i PROTOCOL_V3 og dato ≥ 2026-11-14 (`EARLIEST`) |
+| Indlæsere | ikke skrevet (bevidst); `run` nægter også efter låsen, indtil de findes |
+| Tests | PASS: `tests/test_research_n6_n4.py` og `tests/test_research_gates.py` grønne; fuld suite 1.291 OK på `3abae4e` |
+| Låsetekster | MISSION27_3 punkt 6b (A) og 6c (B), rettet i 7d og punkt 10; ikke ændret siden |
+| Næste ledige ændringsnummer | **44** (40-43 brugt, plus 41a, 41b, 42a og 43a) |
+| Datagrænser | A: cache + data.binance.vision, explore0; X3 først fra 11-28 (COIN-M). B: `api.upbit.com` kun efter N4's lås (38 B) |
+| Uændret åbne risici | A: MIN_COINS 20 mod 15-17 mønter i 2020-03..05 (færre uger); B: længden af Upbit-dagscandles er ukontrolleret |
+
+**Lovlig rækkefølge 14/11 (uændret):**
+1. Lås A som ændring 44 og commit.
+2. Lås B som ændring 45 og commit.
+3. Skriv indlæsere, test dem på syntetiske data og kør hele suiten.
+4. Kør A (X1/X2) én gang og B én gang; commit resultaterne.
+5. X3 kører 11-28.
+
+Ingen af trinene kræver deploy.
