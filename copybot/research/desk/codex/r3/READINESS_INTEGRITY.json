@@ -1,0 +1,966 @@
+{
+  "bootstrap": {
+    "baseline_contract_sha256": "962e765786ec088fd61ebc8669fe532edbfcd660e2b0cb9e1f38dc091d107a5e",
+    "dependency_discovery": "recursive static local research/tests AST import closure from frozen evaluator and the three requested test files",
+    "dependency_source_count": 13,
+    "frozen_evaluator_sha256": "dbac993c37c61d5917e34ae4d16b78640c748782e1e00712bbd6065f80074fec",
+    "mode": "explicit reviewed local source snapshot; no runtime enrollment",
+    "source_commit": "2177763da90948f48e88b050d8ec4fbbac4ea517",
+    "trust_anchor": "SHA-256 pinned in reviewed run_mutants.py code; OS/interpreter and dynamic external resources are not attested"
+  },
+  "files": {
+    "research/__init__.py": {
+      "role": "source_dependency",
+      "sha256": "23e453764c6230f0adca8d9fe8294744396fa5508e36cf51bb0d67c73f936305"
+    },
+    "research/desk/__init__.py": {
+      "role": "source_dependency",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "research/desk/codex/r2/fixtures/R2_01_availability.json": {
+      "role": "fixture",
+      "sha256": "b967e890be038e3896ede602b624550d10f1c3656be3da8c5635acc180dfb2f1"
+    },
+    "research/desk/codex/r2/fixtures/R2_02_flip_cost.json": {
+      "role": "fixture",
+      "sha256": "e195a16f0384c7dee43e5dea6a1c76847adff6d18d8debfbe9c17cfd6cfa6f5c"
+    },
+    "research/desk/codex/r2/fixtures/R2_03_clip_turnover.json": {
+      "role": "fixture",
+      "sha256": "bd4db50abac1bf696780b85a29d732e4bf19129555ccce2595a3b4c49bae6346"
+    },
+    "research/desk/codex/r2/fixtures/R2_04_resets.json": {
+      "role": "fixture",
+      "sha256": "96a795d7e094f44d3c39c4dfb66a47a22b5a9f232fff770aae27c15534dc55e1"
+    },
+    "research/desk/codex/r2/fixtures/R2_05_embargo_reset.json": {
+      "role": "fixture",
+      "sha256": "f680bb836a0ab0270e547cb3e03e33559c0980ca602cb7faf7d9e27b4ff045b6"
+    },
+    "research/desk/codex/r2/fixtures/R2_06_embargo_zero.json": {
+      "role": "fixture",
+      "sha256": "1d474e42105f15ad5492290a4bcf8c43099ebf6c3eb7c7fff45468d9b993ea2f"
+    },
+    "research/desk/codex/r2/fixtures/R2_07_embargo_one.json": {
+      "role": "fixture",
+      "sha256": "9b33e0e335727131fb93127e2a89615abe2d14becc745e7d2a989ba3081e26d1"
+    },
+    "research/desk/codex/r2/fixtures/R2_08_T29.json": {
+      "role": "fixture",
+      "sha256": "a3978ebaa5121b5cf9ec00a3d30e980774611129313c32386a5342d813d1a578"
+    },
+    "research/desk/codex/r2/fixtures/R2_09_T30.json": {
+      "role": "fixture",
+      "sha256": "a78a1adf9c5ddc5d3b39be0a2eb6475684ed755d1adaae908743573bbaaa6900"
+    },
+    "research/desk/codex/r2/fixtures/R2_10_T31.json": {
+      "role": "fixture",
+      "sha256": "871b7974d6a044039294d28ab61f3689ca4e4cf0518eeeeada72b52cf3a750dd"
+    },
+    "research/desk/codex/r2/fixtures/R2_11_constant.json": {
+      "role": "fixture",
+      "sha256": "af925d64aca8cb3d1027fa6c8f0ea289903fb9bd2c9897d2e1fe88c9bd7a8efc"
+    },
+    "research/desk/codex/r2/fixtures/R2_12_outlier.json": {
+      "role": "fixture",
+      "sha256": "adbc3f210d2a2c69229ff500e9438736d93b80ad70b7002270428bd2cb64e8be"
+    },
+    "research/desk/codex/r2/fixtures/R2_13_all_empty.json": {
+      "role": "fixture",
+      "sha256": "8063a1fbeeef8fb8c48fe193bbd84fb083d137356fa28a183f6b69af8b22da70"
+    },
+    "research/desk/codex/r2/fixtures/R2_14_fsum_assets.json": {
+      "role": "fixture",
+      "sha256": "d2127024a0ab65fcddb02cbabf47653e651d8aca9ca87b6582741e671a2db7b3"
+    },
+    "research/desk/codex/r2/fixtures/R2_15_tiny.json": {
+      "role": "fixture",
+      "sha256": "7464e8256a1091366072d2ce369778a564437a7e6afbb673f774a299e367db7a"
+    },
+    "research/desk/codex/r2/fixtures/R2_16_large.json": {
+      "role": "fixture",
+      "sha256": "ed3dae3298cff6c4f0574ecb32700a39549c17783401fdf69a3ea9fb34c49c9f"
+    },
+    "research/desk/codex/r2/fixtures/R2_17_holm_ties_all.json": {
+      "role": "fixture",
+      "sha256": "0fc5269f1ba86ec604632f15857801fb715a985a17048ad0fa8c5bb201c5615c"
+    },
+    "research/desk/codex/r2/fixtures/R2_18_holm_single.json": {
+      "role": "fixture",
+      "sha256": "c9dca5cc3a55231e13e0c64a5208c58cbd67d79b8b54732cc7ac37e87e6b2eaa"
+    },
+    "research/desk/codex/r2/fixtures/R2_19_holm_stop.json": {
+      "role": "fixture",
+      "sha256": "03a157194f361cd84ac3705dade20668d31b4db7b3a25087cb9560da4c7d5487"
+    },
+    "research/desk/codex/r2/fixtures/R2_20_bh_vs_holm.json": {
+      "role": "fixture",
+      "sha256": "a8b58f7efb8d1d7fc1c172bc572b38f34856ffc4c5757c1de44c69097cbb3ac9"
+    },
+    "research/desk/codex/r2/fixtures/R2_21_duplicate_cost.json": {
+      "role": "fixture",
+      "sha256": "13862acd888cf742ce58a27a44107bb8ce526a59d274fd8f0ba1f61c1becb38f"
+    },
+    "research/desk/codex/r2/fixtures/R2_22_duplicate_S0.json": {
+      "role": "fixture",
+      "sha256": "74b4fe0dfddcfaf1ba0d4a2bcb5b1f36cbbc89b9e8448e7e5d0834cb9ab18bd0"
+    },
+    "research/desk/codex/r2/fixtures/R2_23_duplicate_short.json": {
+      "role": "fixture",
+      "sha256": "183420ae2473d974394932fa37ea29888f24b38f25edee7ddfce31fb4ea16250"
+    },
+    "research/desk/codex/r2/fixtures/R2_24_ledger_replay.json": {
+      "role": "fixture",
+      "sha256": "67a8fa3457dfb1579329cd25569badd4ddc12816d5d16a8ab4827fad8e9b2de1"
+    },
+    "research/desk/codex/r2/fixtures/R2_25_hash_int.json": {
+      "role": "fixture",
+      "sha256": "43c6c0222004ec93668080f87a58d296f64ae0f121bc9cc59487910e8c24fe02"
+    },
+    "research/desk/codex/r2/fixtures/R2_26_hash_float.json": {
+      "role": "fixture",
+      "sha256": "821cb699c968f4722fef161458ec71699d8b322b47c9f89271668341107cc0e1"
+    },
+    "research/desk/codex/r2/fixtures/R2_27_ledger_fsum.json": {
+      "role": "fixture",
+      "sha256": "0e5e5cfc1b264d08b3a6276af55f506dd4ab2b907f352cb5612f0ac1295f0272"
+    },
+    "research/desk/codex/r2/fixtures/R2_28_missing.json": {
+      "role": "fixture",
+      "sha256": "455f73422a53bc74323f2adea9e2696db8b13e0f14c0dff7ee4d4d0edad12431"
+    },
+    "research/desk/codex/r2/fixtures/R2_29_unknown.json": {
+      "role": "fixture",
+      "sha256": "5b6c5467635d7ee480cd5889b6232774eba6053650b0e81ea84889010ee60dff"
+    },
+    "research/desk/codex/r2/fixtures/R2_30_bad_type.json": {
+      "role": "fixture",
+      "sha256": "d47f0aca0e19b85a5d510cccbf3b389dce6a4da5ab431e3eecda48a0e9d87300"
+    },
+    "research/desk/codex/r2/fixtures/R2_31_bad_time.json": {
+      "role": "fixture",
+      "sha256": "9ff2968eea0a9a1a04b23c3c950e9d49149d697b02126004d7124050ae5ef3ff"
+    },
+    "research/desk/codex/r2/fixtures/R2_32_bad_value.json": {
+      "role": "fixture",
+      "sha256": "7b414cd8676c425d3f43b1f99d31492090e2bc98a56b3789dc6a1836e0289f16"
+    },
+    "research/desk/codex/r2/fixtures/R2_33_duplicate_hid.json": {
+      "role": "fixture",
+      "sha256": "e1bac4345158297cb0ecf0c234ba1150d5bab87dbebcdd7a9541ff0e64c591b4"
+    },
+    "research/desk/codex/r2/fixtures/R2_34_unknown_signal.json": {
+      "role": "fixture",
+      "sha256": "29f03363bdc0fffb5d2668fb4c72f7f3f56592089a487966e5253b21126c6702"
+    },
+    "research/desk/codex/r2/fixtures/R2_35_lock_protocol.json": {
+      "role": "fixture",
+      "sha256": "2e61917252ba68b8dc33944c93b3730eeb8ef703cd71cf3094a0827e433f988a"
+    },
+    "research/desk/codex/r2/fixtures/R2_36_lock_data.json": {
+      "role": "fixture",
+      "sha256": "a0abf722c6e920d62dc35cd222a4866bca82e92893e489fc2cb4c461167fb0d9"
+    },
+    "research/desk/codex/r2/fixtures/R2_37_lock_good.json": {
+      "role": "fixture",
+      "sha256": "6f5fd05060d582eaa65f7ee5f0773b5fba072c13b3307027880d026a532165ab"
+    },
+    "research/desk/codex/r2/fixtures/R2_38_many_errors.json": {
+      "role": "fixture",
+      "sha256": "1ced34efe48997c957a54499f8b1d99953195f24846f36b2175e0661c771b4e3"
+    },
+    "research/desk/codex/r2/fixtures/R2_39_lock_missing.json": {
+      "role": "fixture",
+      "sha256": "ccc644c5b91b9f33f697c94231ec88535e2b1ba3c4703412632b24948c034452"
+    },
+    "research/desk/codex/r2/fixtures/R2_40_measurement_missing.json": {
+      "role": "fixture",
+      "sha256": "95df77290d88eb13860b5172456e2ea777209deb66b13de10d427309e2bc4297"
+    },
+    "research/desk/codex/r2/fixtures/R2_41_membership_dupes.json": {
+      "role": "fixture",
+      "sha256": "ef08ad10bee05bbc73bca04eab371cad3216bb7b47f930123e6fb642d46065af"
+    },
+    "research/desk/codex/r2/fixtures/R2_42_restart.json": {
+      "role": "fixture",
+      "sha256": "2b3b2e2962d3fd85708ddb2a2f68e4656ac9aca09c420fafc5aae0b0f1fa11aa"
+    },
+    "research/desk/codex/r2/fixtures/R2_43_time_upper_valid.json": {
+      "role": "fixture",
+      "sha256": "885e56a788680eabe72070a708d2b6da4e68c0d39d4219de2c2868e88c5017c3"
+    },
+    "research/desk/codex/r2/fixtures/R2_44_empty_collections.json": {
+      "role": "fixture",
+      "sha256": "666ff945ab4aa325482c56e204252a05a3b6f596f16e530cd123a4c2c76f753d"
+    },
+    "research/desk/codex/r2/fixtures/R2_45_container_types.json": {
+      "role": "fixture",
+      "sha256": "3980d5fd96a2a9eeb3e244e11edae086fb7ea4d1669d5fdc8baf1576719cfcfe"
+    },
+    "research/desk/codex/r2/fixtures/R2_46_embargo_fraction.json": {
+      "role": "fixture",
+      "sha256": "4222244803a0bedc442fc2748bf74409ab496e70021820bf9b6a980a428c44db"
+    },
+    "research/desk/codex/r2/fixtures/R2_47_time_types.json": {
+      "role": "fixture",
+      "sha256": "7403d4c69bcbb549e65103f48cbfebccce8ed3a947f48c31dd866f12aa24d72b"
+    },
+    "research/desk/codex/r3/BASELINE_COMPARISON.json": {
+      "role": "control_artifact",
+      "sha256": "ce302ce12602bdb2d3f3f48fc88f1f9723a70c536d0440a71fe628e93576ff68"
+    },
+    "research/desk/codex/r3/EXPECTED_ADDED_SHA256.json": {
+      "role": "control_artifact",
+      "sha256": "ca7c37689f17b568166f3a8fff3b77e7ba807a44bc0b4f0143a6cd2a1d40e025"
+    },
+    "research/desk/codex/r3/EXPECTED_INITIAL_SHA256.json": {
+      "role": "control_artifact",
+      "sha256": "a02980e46bf36a90f5156164851153e851aeb8257120642d18a2ea457b78f18a"
+    },
+    "research/desk/codex/r3/MUTATION_RESULTS.json": {
+      "role": "control_artifact",
+      "sha256": "968fe2954dcb9236b410ecf66cd10566433927fce53e1815b412fa8da7bf9b7d"
+    },
+    "research/desk/codex/r3/MUTATION_RESULTS_AUGMENTED.json": {
+      "role": "control_artifact",
+      "sha256": "c558857cebb52ec1dfd17f7c1d53647257425e18129770650f77599beb592e16"
+    },
+    "research/desk/codex/r3/MUTATION_RESULTS_INITIAL.json": {
+      "role": "control_artifact",
+      "sha256": "e9fa28edf83e74ec3cae857bea86567c0516cb8b3b39b1813818b702ba03e663"
+    },
+    "research/desk/codex/r3/REFERENCE_PROVENANCE.json": {
+      "role": "control_artifact",
+      "sha256": "0486eaec8ffdb8a19b79ea0f6795573af9712e2c321b9a66a3d675708f00f68d"
+    },
+    "research/desk/codex/r3/SUPPLEMENT_PLAN.json": {
+      "role": "control_artifact",
+      "sha256": "e5dc1d7b54098bb34c0e5023bbb7967cc36ef07f779cf6f51e3b2fce3f1650ab"
+    },
+    "research/desk/codex/r3/TRUST_BOOTSTRAP.md": {
+      "role": "control_artifact",
+      "sha256": "a98674447b13b6df79a8a0783e9a23876ad3a39aa2b4feae466952a31ecdbd70"
+    },
+    "research/desk/codex/r3/augmentation_tests.py": {
+      "role": "control_source",
+      "sha256": "cc42f500e28dfa1032ed9ee9d0ee99fcd91de19413793118530c80dbab6b6134"
+    },
+    "research/desk/codex/r3/expected/r1/F1_clean.json": {
+      "role": "expected",
+      "sha256": "4d33d8e717a9add15a153877ac4cf961e4cb17071a9bb2d5a3e898bd44f102a4"
+    },
+    "research/desk/codex/r3/expected/r1/F2_lookahead.json": {
+      "role": "expected",
+      "sha256": "5ee1ae816d8cc085101e3282cc269276f278b2283dac39c683a647c27c56a897"
+    },
+    "research/desk/codex/r3/expected/r1/F3_gaps_nan.json": {
+      "role": "expected",
+      "sha256": "731158dba7c11b3025e577513a960f439e6d25a34e0ca967b723fe110870b65e"
+    },
+    "research/desk/codex/r3/expected/r1/F4_survivorship.json": {
+      "role": "expected",
+      "sha256": "6fab02be6852c1ab1f3b65fff6a845e9fc02f9478f742b03741f7bc93b517469"
+    },
+    "research/desk/codex/r3/expected/r1/F5_extreme_dupes_offgrid.json": {
+      "role": "expected",
+      "sha256": "1114309eacf9d06abe0c8716fe107c94b03b9e3e069f82bfacb11e208e995947"
+    },
+    "research/desk/codex/r3/expected/r1/F6_short.json": {
+      "role": "expected",
+      "sha256": "f44a216edda55c434f141f811c33cc8c64dd3d518303f80a9f682c25beff6659"
+    },
+    "research/desk/codex/r3/expected/r2/R2_01_availability.json": {
+      "role": "expected",
+      "sha256": "6a0045b3cea1d8f9337182ead76a120a52d720986656516e73734bd5313c003e"
+    },
+    "research/desk/codex/r3/expected/r2/R2_02_flip_cost.json": {
+      "role": "expected",
+      "sha256": "7b7c513392f804fb52b78a3b6c1145b440d0a59ae8fc0f2f7dd48976ce76f465"
+    },
+    "research/desk/codex/r3/expected/r2/R2_03_clip_turnover.json": {
+      "role": "expected",
+      "sha256": "deb3850a6c9c8563fec1b77bd2f0ecff633f03a751190920ee052c6d6f597071"
+    },
+    "research/desk/codex/r3/expected/r2/R2_04_resets.json": {
+      "role": "expected",
+      "sha256": "1d391f7819eca53ef0000a6f763f2a1d623a7a06ac4b2a292590281927461f41"
+    },
+    "research/desk/codex/r3/expected/r2/R2_05_embargo_reset.json": {
+      "role": "expected",
+      "sha256": "22ab5166928344151888b66fca70b38f4035140a7a5d677adb6a6cdaa57f6d82"
+    },
+    "research/desk/codex/r3/expected/r2/R2_06_embargo_zero.json": {
+      "role": "expected",
+      "sha256": "8c2cf716c0bb23d944788792b2d17bdd9b116f477fecbc114c17d21d7e213b1e"
+    },
+    "research/desk/codex/r3/expected/r2/R2_07_embargo_one.json": {
+      "role": "expected",
+      "sha256": "d9a9772085aa1bee0eb3f5c997bcf66562d472d99995b8098cf02f39d393799a"
+    },
+    "research/desk/codex/r3/expected/r2/R2_08_T29.json": {
+      "role": "expected",
+      "sha256": "ae0075f013bbbe67031682226dd7476cea24a478309738755c80a0cb96f1801a"
+    },
+    "research/desk/codex/r3/expected/r2/R2_09_T30.json": {
+      "role": "expected",
+      "sha256": "8a2bd85f6f3c20b61b62295c9dd8e5a7f1ac7e86cb50e11a2e12ecef7fe25790"
+    },
+    "research/desk/codex/r3/expected/r2/R2_10_T31.json": {
+      "role": "expected",
+      "sha256": "beb10707c06a60bb9452ce62fd8373ca85e7f484945b10f9f35948b9f9d15a30"
+    },
+    "research/desk/codex/r3/expected/r2/R2_11_constant.json": {
+      "role": "expected",
+      "sha256": "5308df2cb0033702053edd5a22c0b026e70963af2b5ed7c3f594f1285c95e8f4"
+    },
+    "research/desk/codex/r3/expected/r2/R2_12_outlier.json": {
+      "role": "expected",
+      "sha256": "f84c8c1d4f88cc43d7ddb3b5c3a36a2ac44ba8b858fdfb87978b36b1f539b6c4"
+    },
+    "research/desk/codex/r3/expected/r2/R2_13_all_empty.json": {
+      "role": "expected",
+      "sha256": "1bafcdd7e2512c5740626af0b7c18c791c6f492da82837926a4bc369d6b7bf9f"
+    },
+    "research/desk/codex/r3/expected/r2/R2_14_fsum_assets.json": {
+      "role": "expected",
+      "sha256": "9c26903e9b3d8d0b1e0574d5551785b40502e147e6757f884213349517ecebfa"
+    },
+    "research/desk/codex/r3/expected/r2/R2_15_tiny.json": {
+      "role": "expected",
+      "sha256": "24464321d6d1ddf04a2563bb2d418d199fd3e3c5ecfdbfde5a8718cf5f9cdea0"
+    },
+    "research/desk/codex/r3/expected/r2/R2_16_large.json": {
+      "role": "expected",
+      "sha256": "f2d7ef576261e224705d77b3bb1e639b21a3a00c05298e52626ec86e1e5e4a0c"
+    },
+    "research/desk/codex/r3/expected/r2/R2_17_holm_ties_all.json": {
+      "role": "expected",
+      "sha256": "e9bcd1ca9f8711b722740d662add09e1794ae11ecab2127e4cf86efcb32ce5fc"
+    },
+    "research/desk/codex/r3/expected/r2/R2_18_holm_single.json": {
+      "role": "expected",
+      "sha256": "0319dcbf847cdc1abd1bf2cfd7505ba128cf1472ee639219c9acc992f314d330"
+    },
+    "research/desk/codex/r3/expected/r2/R2_19_holm_stop.json": {
+      "role": "expected",
+      "sha256": "6ef94e0bbba2f37cdfc1d5c215e08fc7cb6c69573d577394de7a8322b3f5c4cc"
+    },
+    "research/desk/codex/r3/expected/r2/R2_20_bh_vs_holm.json": {
+      "role": "expected",
+      "sha256": "83261482941f5af2dae77f3400d4d3dd0d18f0da708368588f1de293c9533753"
+    },
+    "research/desk/codex/r3/expected/r2/R2_21_duplicate_cost.json": {
+      "role": "expected",
+      "sha256": "aa4c71f52cf534ac5bc6b4333588e8b34cad83692963c3b978807f99783dfb91"
+    },
+    "research/desk/codex/r3/expected/r2/R2_22_duplicate_S0.json": {
+      "role": "expected",
+      "sha256": "544683d6539b74874f8fa591ac91c11084f06659d236f5de48a447c1840fe286"
+    },
+    "research/desk/codex/r3/expected/r2/R2_23_duplicate_short.json": {
+      "role": "expected",
+      "sha256": "15fc7ff79b5ad00c9eb03b8cf67a9bbca8a8750a6a94b824e5b12aeb068b2bb5"
+    },
+    "research/desk/codex/r3/expected/r2/R2_24_ledger_replay.json": {
+      "role": "expected",
+      "sha256": "2e4dc93a850fd06f7588df255aca0ea05f7cf532cdb847d56470a33d0d024548"
+    },
+    "research/desk/codex/r3/expected/r2/R2_25_hash_int.json": {
+      "role": "expected",
+      "sha256": "76bbfec886b9549363a773dc27715e935596b2ac9327f8a3805335abd34fafc0"
+    },
+    "research/desk/codex/r3/expected/r2/R2_26_hash_float.json": {
+      "role": "expected",
+      "sha256": "6cfcaa9640c7420f2a0466f1c83caa6da1b6e1dfd4ac93d03c2f5aeac955f11c"
+    },
+    "research/desk/codex/r3/expected/r2/R2_27_ledger_fsum.json": {
+      "role": "expected",
+      "sha256": "090b891f59c274db76aa2aa4102b7e7b7b152908271c24f48e1b383eb15cb95a"
+    },
+    "research/desk/codex/r3/expected/r2/R2_28_missing.json": {
+      "role": "expected",
+      "sha256": "64375b8bb6f1c50f72e0defc02cb2fb7f84c0c27c42e0cb4d019d4dc982e937b"
+    },
+    "research/desk/codex/r3/expected/r2/R2_29_unknown.json": {
+      "role": "expected",
+      "sha256": "756ca10604a54e5a4cfc87b6171838be5c10994a6476c2b889eaa43b1fa66314"
+    },
+    "research/desk/codex/r3/expected/r2/R2_30_bad_type.json": {
+      "role": "expected",
+      "sha256": "dc5bd02ef05e5def1875b3c40c9d201edff4f7f9555e88f8bbe90f6d54935c3f"
+    },
+    "research/desk/codex/r3/expected/r2/R2_31_bad_time.json": {
+      "role": "expected",
+      "sha256": "b8bfd4d4222000914998540685143fe7af40213faa01b7a84adf16bf50fd69e6"
+    },
+    "research/desk/codex/r3/expected/r2/R2_32_bad_value.json": {
+      "role": "expected",
+      "sha256": "ed67120156307f40eb0178ae8988a7c0fa3379334df43ff5c826b3c497ff8a73"
+    },
+    "research/desk/codex/r3/expected/r2/R2_33_duplicate_hid.json": {
+      "role": "expected",
+      "sha256": "d456613b0fc8b40409ed69de73e086af223c3d4fd00a362dc7cf3f5fb7a97f4b"
+    },
+    "research/desk/codex/r3/expected/r2/R2_34_unknown_signal.json": {
+      "role": "expected",
+      "sha256": "b73ab4eb0185974489384e85a513cf9dd5c62b692fb83ffe7e9e09f83c2431f2"
+    },
+    "research/desk/codex/r3/expected/r2/R2_35_lock_protocol.json": {
+      "role": "expected",
+      "sha256": "ef78892a11ba17eb2bb332d139776b89f96d08a0d5eced138ac9c6b7a2c7e485"
+    },
+    "research/desk/codex/r3/expected/r2/R2_36_lock_data.json": {
+      "role": "expected",
+      "sha256": "d1f16a4dd6edc089cfb6966b88c2ef4f83f1d28714456b9689ac6830dfca1ea6"
+    },
+    "research/desk/codex/r3/expected/r2/R2_37_lock_good.json": {
+      "role": "expected",
+      "sha256": "5cac4e8a9f45c68fbcb3013ee7611b020365a32bfe66930172e1720ea1e1b348"
+    },
+    "research/desk/codex/r3/expected/r2/R2_38_many_errors.json": {
+      "role": "expected",
+      "sha256": "0ea67f370f52724e591d17bd1ed8fd5d2dc992f204bfecdc96da4b25dec77693"
+    },
+    "research/desk/codex/r3/expected/r2/R2_39_lock_missing.json": {
+      "role": "expected",
+      "sha256": "23eac140363aa6c646fb8c7c3eb2532668fd9d286f608e7388a637ad68f4dda3"
+    },
+    "research/desk/codex/r3/expected/r2/R2_40_measurement_missing.json": {
+      "role": "expected",
+      "sha256": "39566149f8618da03d30c4a6869b2d061da326608def0fa2eca9c92dba5d6a35"
+    },
+    "research/desk/codex/r3/expected/r2/R2_41_membership_dupes.json": {
+      "role": "expected",
+      "sha256": "c84e0a7b209d6d50c22500332de8505b6350e08f81c1b285183283217286d3ec"
+    },
+    "research/desk/codex/r3/expected/r2/R2_42_restart.json": {
+      "role": "expected",
+      "sha256": "8e78e0b15f63c7b9a7c5d7ebbad59ccdb9a3dd626002343e4d7493b24fc8a2c4"
+    },
+    "research/desk/codex/r3/expected/r2/R2_43_time_upper_valid.json": {
+      "role": "expected",
+      "sha256": "aa3eacf905f66071e7dc7b94b324667dd89611e3454ac328eec1f2bcd7def12a"
+    },
+    "research/desk/codex/r3/expected/r2/R2_44_empty_collections.json": {
+      "role": "expected",
+      "sha256": "a16e7a45b08a0dac3208186bc34abe2df4ed9c12dbc23ee27c0f665fbeca26e8"
+    },
+    "research/desk/codex/r3/expected/r2/R2_45_container_types.json": {
+      "role": "expected",
+      "sha256": "2147b0749ab8127014ee081da337e04b13378c15a0913a058b1b6ed6681b805d"
+    },
+    "research/desk/codex/r3/expected/r2/R2_46_embargo_fraction.json": {
+      "role": "expected",
+      "sha256": "ee52736c73a75890eb09097755f97609ca32cf29a2d641e3c2a2b9d6acf27308"
+    },
+    "research/desk/codex/r3/expected/r2/R2_47_time_types.json": {
+      "role": "expected",
+      "sha256": "39a75934a797cfe3e8f80b90beb7b4be1af415b0bee545be793a2b53d3f41cf6"
+    },
+    "research/desk/codex/r3/expected/r3/R3_01_holm_equality.json": {
+      "role": "expected",
+      "sha256": "926f9b73d2269e329571ee681eb99639aacfb4d072b0267d99cd73f60dab4bb9"
+    },
+    "research/desk/codex/r3/expected/r3/R3_02_embargo_boundary.json": {
+      "role": "expected",
+      "sha256": "addd35be3ac822d45fabfac670a35e262094d4e7e8e798034954a431abcd2aa9"
+    },
+    "research/desk/codex/r3/expected/r3/R3_03_grid_origin.json": {
+      "role": "expected",
+      "sha256": "69651e1e35df43c13a8f0873eaf4e3076ee87122123a8e16eafb20175413ed30"
+    },
+    "research/desk/codex/r3/expected/r3/R3_04_short_funding.json": {
+      "role": "expected",
+      "sha256": "59a0a45c670888a570dc47ecd2bec4eb4ccabf5748fb5a54bd0df5603b7462d6"
+    },
+    "research/desk/codex/r3/expected/r3/R3_05_range_exact.json": {
+      "role": "expected",
+      "sha256": "da8e205b19e90a3c2b0308404752a7e6b427a227a0bbf9a581ab73eff70fdde2"
+    },
+    "research/desk/codex/r3/expected/r3/R3_06_range_ret.json": {
+      "role": "expected",
+      "sha256": "996759e0a9d5e59ef3fee89186810ad678f6d523b4e491d511acfa0f69d11ff6"
+    },
+    "research/desk/codex/r3/expected/r3/R3_07_range_funding.json": {
+      "role": "expected",
+      "sha256": "2634e9fdf0f3cc5ade14fafcdbf7114f03cbd279d608d8846e3c58d20f710667"
+    },
+    "research/desk/codex/r3/expected/r3/R3_08_range_value.json": {
+      "role": "expected",
+      "sha256": "6cd722c1f048f17c6e4bdc36eae8fcd55a9d0144a97c3e66d4ac69e6c0e2a7ac"
+    },
+    "research/desk/codex/r3/expected/r3/R3_09_range_cost_bps.json": {
+      "role": "expected",
+      "sha256": "ca9b340a235ad5b39a0085fe199c46492e08499e8de5ad099716292fc5a06aef"
+    },
+    "research/desk/codex/r3/expected/r3/R3_10_lock_extra.json": {
+      "role": "expected",
+      "sha256": "e7d960c63a93751349a7f056e8b09beb12f455d1987110caf3cb017db50b2269"
+    },
+    "research/desk/codex/r3/expected/r3/R3_11_lock_type.json": {
+      "role": "expected",
+      "sha256": "31889f95dce4f3e3bf13edfb200934c351c63099b16df0c6e19596c98b385cdd"
+    },
+    "research/desk/codex/r3/expected/r3/R3_12_replay_types.json": {
+      "role": "expected",
+      "sha256": "a9f3901542555c7edace7da152214e6d23cb03001d534285a71ef1d13a6446ad"
+    },
+    "research/desk/codex/r3/expected/r3/R3_13_numeric_ledger.json": {
+      "role": "expected",
+      "sha256": "637d6cce458e6e7ad6e8e4b65a76b63eb9957ba8e7d4adfb1db3d41c7b901d15"
+    },
+    "research/desk/codex/r3/expected/r3/R3_14_underflow.json": {
+      "role": "expected",
+      "sha256": "2c0d26777df42eacd03b93ce5c7f714b14bfdccf250080021f9eb0a411913ea2"
+    },
+    "research/desk/codex/r3/expected/r3/R3_15_missing_id.json": {
+      "role": "expected",
+      "sha256": "4c12a658ba2f6d11f44053b1b5c363a8ec8857451693f5218098c438c448d4a9"
+    },
+    "research/desk/codex/r3/expected/r3/R3_16_bad_nan.json": {
+      "role": "expected",
+      "sha256": "c864051d4d9d493f7a21d8638ec8be2a4577c834eab6bcd522462f8b71d31806"
+    },
+    "research/desk/codex/r3/expected/r3/R3_17_bad_inf.json": {
+      "role": "expected",
+      "sha256": "c864051d4d9d493f7a21d8638ec8be2a4577c834eab6bcd522462f8b71d31806"
+    },
+    "research/desk/codex/r3/expected/r3/R3_18_bad_json.json": {
+      "role": "expected",
+      "sha256": "c864051d4d9d493f7a21d8638ec8be2a4577c834eab6bcd522462f8b71d31806"
+    },
+    "research/desk/codex/r3/expected/r3/R3_19_zero_funding.json": {
+      "role": "expected",
+      "sha256": "92862cea7de0a435ddf5a0dc6ae27e693df550494e09f8bfa0e68c251723981e"
+    },
+    "research/desk/codex/r3/expected/r3/R3_20_signal_offgrid.json": {
+      "role": "expected",
+      "sha256": "56145762c648c12caff0f5ee15d1ef2adb71093e96f3f31cfbffa40c89b0e548"
+    },
+    "research/desk/codex/r3/expected/r3/R3_21_terminal_cost.json": {
+      "role": "expected",
+      "sha256": "bedaa4c76f1709b24b3d97acfc2fd222fe7d9028a72f123bc2230abedff02c33"
+    },
+    "research/desk/codex/r3/expected/r3/R3_22_missing_future.json": {
+      "role": "expected",
+      "sha256": "657e2069aa0e96de11adb0ad054c5e9373b985365516b0461bed33afb140bd6b"
+    },
+    "research/desk/codex/r3/expected/r3/R3_23_unicode_hash.json": {
+      "role": "expected",
+      "sha256": "1d69c6b9ace36e91c3dc957b228eacada0dcbc6e03c8672fee067d87ef36a1f1"
+    },
+    "research/desk/codex/r3/expected/r3/R3_A01_holm_duplicate_denominator.json": {
+      "role": "expected",
+      "sha256": "3d9aa5719ca19b2d2ec8b00db9c225dfc4e75bb8a8761bfa52b6e315c2163ff5"
+    },
+    "research/desk/codex/r3/expected/r3/R3_A02_bh_level.json": {
+      "role": "expected",
+      "sha256": "e0d6d42de4be45b67ac8df8fb3df07e07eaeaf32fa6a16f8bc61849aa42d9f06"
+    },
+    "research/desk/codex/r3/expected/r3/R3_A03_extreme_equality.json": {
+      "role": "expected",
+      "sha256": "595c826e4c9ee67ac5a9550e2c0112a4474fa4c22f06b57ebadeb4a1ee1b1593"
+    },
+    "research/desk/codex/r3/fixture_manifest.json": {
+      "role": "control_artifact",
+      "sha256": "d607082785efd2721dc57bffa8e3145e0d0d7f540e4fe4e2b7ee799d65f550b2"
+    },
+    "research/desk/codex/r3/fixtures/R3_01_holm_equality.json": {
+      "role": "fixture",
+      "sha256": "d771ad6c80aefe4ce592a2dd96ed9acb24e590d3e8980f10f783af0d49cef10e"
+    },
+    "research/desk/codex/r3/fixtures/R3_02_embargo_boundary.json": {
+      "role": "fixture",
+      "sha256": "4cfeccc9a6fbac15bc809bc109a2936c6a13caa2dc7a101694fcd98b21b0d695"
+    },
+    "research/desk/codex/r3/fixtures/R3_03_grid_origin.json": {
+      "role": "fixture",
+      "sha256": "a68ef43f255c322f75578790de5f0bf7e582697da6a93e96f8b1ec575238b3ee"
+    },
+    "research/desk/codex/r3/fixtures/R3_04_short_funding.json": {
+      "role": "fixture",
+      "sha256": "590a07f93d767ccb94e3a1f32fa53dc125f838bb3c6eb55ec635acdd2217f61c"
+    },
+    "research/desk/codex/r3/fixtures/R3_05_range_exact.json": {
+      "role": "fixture",
+      "sha256": "dec63c6623bfe29808f3380964d95db375ea820181a99228bb3b9910a85c3fb7"
+    },
+    "research/desk/codex/r3/fixtures/R3_06_range_ret.json": {
+      "role": "fixture",
+      "sha256": "6f5b7fda533b8e344df1b82c062b60ca51da00db0b473d9134aeb54ce42289fd"
+    },
+    "research/desk/codex/r3/fixtures/R3_07_range_funding.json": {
+      "role": "fixture",
+      "sha256": "c37f2846882f553cdc7a356086895d139be67a1b631437355a6951947fc4f6c1"
+    },
+    "research/desk/codex/r3/fixtures/R3_08_range_value.json": {
+      "role": "fixture",
+      "sha256": "771b52a7aa8c6f272b136fd387212a098b27e31f4c40db3e1bcfaf09242ea23b"
+    },
+    "research/desk/codex/r3/fixtures/R3_09_range_cost_bps.json": {
+      "role": "fixture",
+      "sha256": "ffeec30193e7f87fc947ee2b1358c4b540d49c9bef48dfbf01bf90e2d0b4b9b6"
+    },
+    "research/desk/codex/r3/fixtures/R3_10_lock_extra.json": {
+      "role": "fixture",
+      "sha256": "b3c0b6d7110275a1dc5a2dc2e278be9d4859f49c5fc4a8d900c748bfb1c2c352"
+    },
+    "research/desk/codex/r3/fixtures/R3_11_lock_type.json": {
+      "role": "fixture",
+      "sha256": "c175efc40fce54069c04ab93ca2840410ac311d9e970f57b5c0f195692e11990"
+    },
+    "research/desk/codex/r3/fixtures/R3_12_replay_types.json": {
+      "role": "fixture",
+      "sha256": "240dd61e80398565f23050ea8cda333d3f29f0c0d315da27aebbab73dfdbccd7"
+    },
+    "research/desk/codex/r3/fixtures/R3_13_numeric_ledger.json": {
+      "role": "fixture",
+      "sha256": "9086d129aea3ad8bc12a186de89494a97c3b0df95c421fbc20fac1595c1b429a"
+    },
+    "research/desk/codex/r3/fixtures/R3_14_underflow.json": {
+      "role": "fixture",
+      "sha256": "d3386bae04889bcb5c39671209aa0800d0c3e5cfbae518ee7ba2f5af7ce5f37e"
+    },
+    "research/desk/codex/r3/fixtures/R3_15_missing_id.json": {
+      "role": "fixture",
+      "sha256": "5ac2bcec7e582713b07d51d85a7c46a7c8a665bcafaafbc72100214ee32db078"
+    },
+    "research/desk/codex/r3/fixtures/R3_16_bad_nan.json": {
+      "role": "fixture",
+      "sha256": "55ac4323d17faf0fc414a8af9514f1d3a9281744b47c254d9b5d4e8b401f270c"
+    },
+    "research/desk/codex/r3/fixtures/R3_17_bad_inf.json": {
+      "role": "fixture",
+      "sha256": "71009e87b4a4cd6286d2b6bf8cc04feb012e0bf23a41a953bda2ffa5f13c2a9e"
+    },
+    "research/desk/codex/r3/fixtures/R3_18_bad_json.json": {
+      "role": "fixture",
+      "sha256": "f505862f6c151daf0f53ec480001af4b0a1bbb3da93315e014b8faab1b302600"
+    },
+    "research/desk/codex/r3/fixtures/R3_19_zero_funding.json": {
+      "role": "fixture",
+      "sha256": "f4ef506761c26118649d671cf1508ae874ef54bd2151356b647000e7d141893c"
+    },
+    "research/desk/codex/r3/fixtures/R3_20_signal_offgrid.json": {
+      "role": "fixture",
+      "sha256": "a512e6e09e154a10964254d94a7dea89b9a839d416f738121abb76e032777ff9"
+    },
+    "research/desk/codex/r3/fixtures/R3_21_terminal_cost.json": {
+      "role": "fixture",
+      "sha256": "c52138502a24696be24a34f1b29feab03b130ceb5a105fea28de62c670bc4a4e"
+    },
+    "research/desk/codex/r3/fixtures/R3_22_missing_future.json": {
+      "role": "fixture",
+      "sha256": "7e53b0af87bb913f412837094da767b2a20b60d4fcc8ef250c91ea90a11d2372"
+    },
+    "research/desk/codex/r3/fixtures/R3_23_unicode_hash.json": {
+      "role": "fixture",
+      "sha256": "659c06693c30d7af1aded66cf985c1bc797ddd3789c080da420d27971678b0de"
+    },
+    "research/desk/codex/r3/fixtures/R3_A01_holm_duplicate_denominator.json": {
+      "role": "fixture",
+      "sha256": "ce0cfb04d9cda0cfbc9d1c89bf444e9e5677bba6ca4b94c626cd217d4cdee99c"
+    },
+    "research/desk/codex/r3/fixtures/R3_A02_bh_level.json": {
+      "role": "fixture",
+      "sha256": "f532a6ec5c4d449feba40b15a14070610d89ccf9932ed775d4c3e47f7edecad4"
+    },
+    "research/desk/codex/r3/fixtures/R3_A03_extreme_equality.json": {
+      "role": "fixture",
+      "sha256": "382a5d870c7d8d533be931c906f33184a80f6fb60e5595a8b7cdc1b779907b67"
+    },
+    "research/desk/codex/r3/make_mutants.py": {
+      "role": "control_source",
+      "sha256": "2afcf8a4b871fe28a9dc322dbbd1bd65cf45a9d0e3df3fefdab6b3e62ddde6c7"
+    },
+    "research/desk/codex/r3/make_r3_fixtures.py": {
+      "role": "control_source",
+      "sha256": "10962ca8825e8c1ec55884f7437bc6fd1a2990e70b7e96bdc0655fcf84b8905e"
+    },
+    "research/desk/codex/r3/make_r3_supplement.py": {
+      "role": "control_source",
+      "sha256": "23c65936124f5e311f193c5d9f5b9d2316368e2f9c7ce72e1fe2c2fbb392a461"
+    },
+    "research/desk/codex/r3/mutant_manifest.json": {
+      "role": "control_artifact",
+      "sha256": "78f66a3a8d7637c179316812d9bd8331678c040c0ec159839d9af7469a5d08f7"
+    },
+    "research/desk/codex/r3/mutants/M01.py": {
+      "role": "mutant",
+      "sha256": "37709084dd03b0458f857262f1bd3c34ee103fdfe75bdcd6f16f89be23e3774d"
+    },
+    "research/desk/codex/r3/mutants/M02.py": {
+      "role": "mutant",
+      "sha256": "1f0b88b67b1a97cb25ccf0deaffcecd786c51b4086abaf3a5e3381375696d632"
+    },
+    "research/desk/codex/r3/mutants/M03.py": {
+      "role": "mutant",
+      "sha256": "353410e52977203fdb92af9e0057ae1aa3c12d38d63a11f1f2133c3329e6b194"
+    },
+    "research/desk/codex/r3/mutants/M04.py": {
+      "role": "mutant",
+      "sha256": "52b9816ad67c73efb12677e7f5c8bcae1637d7ffdfaf57e62edbdebb0b48ef39"
+    },
+    "research/desk/codex/r3/mutants/M05.py": {
+      "role": "mutant",
+      "sha256": "ab7a159b6ffe79b5d37c1c60d8e7b7c48528a216edc4a97d83b3bb726ce6757a"
+    },
+    "research/desk/codex/r3/mutants/M06.py": {
+      "role": "mutant",
+      "sha256": "eabc936437894473d6012715d2c9e781928c08e29b9fb18fe1eb4cad56ef8c2d"
+    },
+    "research/desk/codex/r3/mutants/M07.py": {
+      "role": "mutant",
+      "sha256": "8d78ccdeded44a665a1be5c6d6d2e91b318670f2ff3e32da4b37aeb43f07b707"
+    },
+    "research/desk/codex/r3/mutants/M08.py": {
+      "role": "mutant",
+      "sha256": "d7bd78e2db20340cae9cf437ac27c92890c5d2236f6591b8ab9a2ddfa083f48a"
+    },
+    "research/desk/codex/r3/mutants/M09.py": {
+      "role": "mutant",
+      "sha256": "1e676c9e32b2e5cb2f97a6bfbc971154608754534792132a405d78ceba407804"
+    },
+    "research/desk/codex/r3/mutants/M10.py": {
+      "role": "mutant",
+      "sha256": "aeace57b0d50093ba587c07f4b5cd2372c4dc90b63bd09b03c6201056e2e3883"
+    },
+    "research/desk/codex/r3/mutants/M11.py": {
+      "role": "mutant",
+      "sha256": "3924250c2abb31865b5e0d952ed42f0684a29824112670455f78fa62ad221dd1"
+    },
+    "research/desk/codex/r3/mutants/M12.py": {
+      "role": "mutant",
+      "sha256": "84fc4098e0e20f0f29ecc47cd5b18489cc11962ae7667bbeff11b4607249cb10"
+    },
+    "research/desk/codex/r3/mutants/M13.py": {
+      "role": "mutant",
+      "sha256": "9b046d6c929118a05131001473a616cac4b1265c1507c7ab2ea0535baff1b147"
+    },
+    "research/desk/codex/r3/mutants/M14.py": {
+      "role": "mutant",
+      "sha256": "eb89639f148cc305cca6e99024480d6bf23dbc909057c32fecb07e9e3754d2a5"
+    },
+    "research/desk/codex/r3/mutants/M15.py": {
+      "role": "mutant",
+      "sha256": "8ceaa5a5379cd4754e0b9c332a9fda4cb359b3b729f1d623f89f125b72e1cc9c"
+    },
+    "research/desk/codex/r3/mutants/M16.py": {
+      "role": "mutant",
+      "sha256": "55b03e940cb503fed495a1770510e3ad8f420cd4bf6c0c282c4e19ad7a6d0488"
+    },
+    "research/desk/codex/r3/mutants/M17.py": {
+      "role": "mutant",
+      "sha256": "15caef04529ff998af353f2049cf8ce3b9cc35340a0e9dcc88d15221a70fb186"
+    },
+    "research/desk/codex/r3/mutants/M18.py": {
+      "role": "mutant",
+      "sha256": "604b2bf850fcf53e87284410f0b5ea409cc8263de58279e081251479cfc839a3"
+    },
+    "research/desk/codex/r3/mutants/M19.py": {
+      "role": "mutant",
+      "sha256": "60b5b99d2381dcd5b5b70de04cb485f55a06fa7f06e8a3bc403d52cc9bd74184"
+    },
+    "research/desk/codex/r3/mutants/M20.py": {
+      "role": "mutant",
+      "sha256": "757362207fa4806d6e60919bbcd7f0013cda9dda66f3bce9ff94d2a9ed9d0416"
+    },
+    "research/desk/codex/r3/mutants/M21.py": {
+      "role": "mutant",
+      "sha256": "40a582682a5ad35d386e5d1dfae6bb1dc9cc689176591aae316f142b2d06ca3e"
+    },
+    "research/desk/codex/r3/mutants/M22.py": {
+      "role": "mutant",
+      "sha256": "028e9846d851bea556592e09165b48193c9c38be78059be8e2aaed9cc3c8d7d3"
+    },
+    "research/desk/codex/r3/mutants/M23.py": {
+      "role": "mutant",
+      "sha256": "b78b9d4b744bbc5d5dc7343c755df972c5374c270b2755bec122e4cd8a86a6a6"
+    },
+    "research/desk/codex/r3/mutants/M24.py": {
+      "role": "mutant",
+      "sha256": "44139e57ab027138040c21192c7ef921ba8c037daeaaae493f58837f66032f91"
+    },
+    "research/desk/codex/r3/mutants/M25.py": {
+      "role": "mutant",
+      "sha256": "43c2ec877d9c2ee9673492b3b6a9591d6d950f59f06bc6177644fd7e9a59e37f"
+    },
+    "research/desk/codex/r3/mutants/M26.py": {
+      "role": "mutant",
+      "sha256": "1c562b909749634054e35f180eb84ce74deeea95159ac0f566de50e9c2118660"
+    },
+    "research/desk/codex/r3/mutants/M27.py": {
+      "role": "mutant",
+      "sha256": "a71b53b1860704e49b8ade4a4ed3b0557123eca0f249cdf5bceaaf6d09d203b5"
+    },
+    "research/desk/codex/r3/mutants/M28.py": {
+      "role": "mutant",
+      "sha256": "7adb18b190797bb1b197e3f6bf45c85c7863aa61eaa43e36ab8d18da3f3f5966"
+    },
+    "research/desk/codex/r3/mutants/M29.py": {
+      "role": "mutant",
+      "sha256": "957093e98d809e5139036c9823dc716ad1278bda3ddbc9a9fc75f12fc7995359"
+    },
+    "research/desk/codex/r3/mutants/M30.py": {
+      "role": "mutant",
+      "sha256": "df0d54b1dcd32cc3fdf0df961c1ed33cd54590a29a6853247135051d04dfefc6"
+    },
+    "research/desk/codex/r3/mutants/M31.py": {
+      "role": "mutant",
+      "sha256": "4b7eef5cc22425bf476d5238d39cc4ebe0219879203bda3a489f80db1ee83d00"
+    },
+    "research/desk/codex/r3/mutants/M32.py": {
+      "role": "mutant",
+      "sha256": "1df818073c4dc186a6c14be5f90565967659e80dd920790169d8c0d9f2aaebaf"
+    },
+    "research/desk/codex/r3/mutants/M33.py": {
+      "role": "mutant",
+      "sha256": "8bfe82ac2887e16669a3e1f769b6411668c72c3424abba5086e2f15d4d04efed"
+    },
+    "research/desk/codex/r3/mutants/M34.py": {
+      "role": "mutant",
+      "sha256": "8d7b7abf40eee0f1d6e899bed5ee48afec6b80edc16769c878e1bd0bbbbd0c96"
+    },
+    "research/desk/codex/r3/mutants/M35.py": {
+      "role": "mutant",
+      "sha256": "e23b755247313cc67ef340824bda5aa30c6bb47c36a88cf22f84ec4610d3c0dd"
+    },
+    "research/desk/codex/r3/mutants/M36.py": {
+      "role": "mutant",
+      "sha256": "b1663062ea43ec956e38422469f48c1c5fa97d848e5fa77da2a6cb377f15abb4"
+    },
+    "research/desk/codex/r3/mutants/M37.py": {
+      "role": "mutant",
+      "sha256": "c805d8835ef369a3d619d5384575e578b3e6931dd0337252adc173c20168533d"
+    },
+    "research/desk/codex/r3/mutants/M38.py": {
+      "role": "mutant",
+      "sha256": "f72e9266e7d22ea627777bb22a8b22dfda4eddc9c29a5b0ff3d1fe222b7dc14d"
+    },
+    "research/desk/codex/r3/mutants/M39.py": {
+      "role": "mutant",
+      "sha256": "983782c4cf74bf790a1a3ddf24486f97374ef377a3ab20df644fcba0faed9f3a"
+    },
+    "research/desk/codex/r3/mutants/M40.py": {
+      "role": "mutant",
+      "sha256": "54f0954322788ad6ef0266163786b5be4ba3c744896f636c4efc6eb5b7d8101a"
+    },
+    "research/desk/codex/r3/mutants/M41.py": {
+      "role": "mutant",
+      "sha256": "88b8b704fec05ca1fa793c37f985f731bbc5b5e0c8871f0e449b0ec409fe8f03"
+    },
+    "research/desk/codex/r3/mutants/M42.py": {
+      "role": "mutant",
+      "sha256": "89e1309e1e36654a33a36e0b7d5508663a28525a2a2a831742ef5248e1ac620a"
+    },
+    "research/desk/codex/r3/mutants/M43.py": {
+      "role": "mutant",
+      "sha256": "9d0895f6e45bceb1e5c087db4efffed94ed8220a9df2316a1ad99e22362f3581"
+    },
+    "research/desk/codex/r3/mutants/M44.py": {
+      "role": "mutant",
+      "sha256": "22aad6e30528d8198739cf3a5abcdf652729c8e9a535ad2b3d39b4fa040fc9db"
+    },
+    "research/desk/codex/r3/mutants/M45.py": {
+      "role": "mutant",
+      "sha256": "eed9e9b064fda39d47c07ca1f61d8f50142955b9b96c7e573ce3adad11515a5e"
+    },
+    "research/desk/codex/r3/ref_eval.py": {
+      "role": "control_source",
+      "sha256": "cf9eb45f7cdc8ec2e1f315e2c6e177becb5051d4fdb2a15dc0a9145140446d02"
+    },
+    "research/desk/codex/r3/test_harness.py": {
+      "role": "control_source",
+      "sha256": "d4ac5fbbdd1a1e8c28447ab5f6a3f2cd3d04b8e04f0d4c06fe489372b8324349"
+    },
+    "research/desk/codex/r3/test_ref_eval_v111.py": {
+      "role": "control_source",
+      "sha256": "2d710032149516e638a2517da2015a8474f982b16074dd99fbc52eea87fe07a6"
+    },
+    "research/desk/crosscheck/EVALUATOR_SPEC.md": {
+      "role": "spec_or_lock",
+      "sha256": "993e263f6e3eca789232ca797aead5178d640210cef549b8880abf20d6cc6ff4"
+    },
+    "research/desk/crosscheck/EVALUATOR_SPEC_V1_1.md": {
+      "role": "spec_or_lock",
+      "sha256": "b13413e0123ec4f6240d6290cc01828b6c671d344a83b664574acb4330eadc6b"
+    },
+    "research/desk/crosscheck/EVALUATOR_SPEC_V1_1_1.md": {
+      "role": "spec_or_lock",
+      "sha256": "2ab3ae0319147ff9ebcf092ec2c3d5e07fa1cdccb8c4dc03855cd323d2a000c0"
+    },
+    "research/desk/crosscheck/EVALUATOR_V1_1_1.lock": {
+      "role": "spec_or_lock",
+      "sha256": "758025e70a75db59944cf325be6bd6d3e70466714a8788c783264bc30fac697c"
+    },
+    "research/desk/crosscheck/__init__.py": {
+      "role": "source_dependency",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "research/desk/crosscheck/claude_eval_v11.py": {
+      "role": "source_dependency",
+      "sha256": "016a61178f7ef1bdb1eb153a84e8b2123da6d2aa0ae8dd6063a1b78e36803932"
+    },
+    "research/desk/crosscheck/claude_eval_v111.py": {
+      "role": "source_dependency",
+      "sha256": "dbac993c37c61d5917e34ae4d16b78640c748782e1e00712bbd6065f80074fec"
+    },
+    "research/desk/synthetic_fixtures/F1_clean.json": {
+      "role": "fixture",
+      "sha256": "3c5debad5d902c038406448f485f8b1fc0641ad70b68eea23b58faf7003b3aa2"
+    },
+    "research/desk/synthetic_fixtures/F2_lookahead.json": {
+      "role": "fixture",
+      "sha256": "59edbbaf10392566e9767e42d84a9c279e8abd9d657146db031ae14be2fccf43"
+    },
+    "research/desk/synthetic_fixtures/F3_gaps_nan.json": {
+      "role": "fixture",
+      "sha256": "88f2d58d109dbf7fc9759c85a2227466252f7401591dae4a83a495aa2cce909e"
+    },
+    "research/desk/synthetic_fixtures/F4_survivorship.json": {
+      "role": "fixture",
+      "sha256": "d16e361e1d230e86479a0bb47ee4e5fbf99b3c372dff7b724f96322f232bac73"
+    },
+    "research/desk/synthetic_fixtures/F5_extreme_dupes_offgrid.json": {
+      "role": "fixture",
+      "sha256": "3c4c0ad8c9760ac640eea820852b7a85060be9a49e3d58527853d75b9e135461"
+    },
+    "research/desk/synthetic_fixtures/F6_short.json": {
+      "role": "fixture",
+      "sha256": "058c04fbdb0dbb31e19c0ccb306f8bf04f4c6fff88b51a037167493073f2595d"
+    },
+    "research/tools/desk_factory.py": {
+      "role": "source_dependency",
+      "sha256": "543fefb09b8322c382da106ca886e0491658201ef5e662eb8fcd9386eaf0321a"
+    },
+    "research/tools/factory.py": {
+      "role": "source_dependency",
+      "sha256": "3d07716e87776a1eec5cb8585628f165bf78e7058951a858016d18e43b47426c"
+    },
+    "research/tools/hypo_engine.py": {
+      "role": "source_dependency",
+      "sha256": "9f8446a3e68f15c21b148ad1d388d03d53ed92141e2934b76fc0662eb5219d9a"
+    },
+    "research/tools/owner_approval.py": {
+      "role": "source_dependency",
+      "sha256": "f4b3af0b55f5569c6f38f7199d44e0d08da388ef9f46ad069eb2b83d9979068d"
+    },
+    "research/tools/p2_power.py": {
+      "role": "source_dependency",
+      "sha256": "400392f021f15e8098f75eef14df118251a771ed436e35ed8c37cf9c52a150a6"
+    },
+    "tests/test_research_desk_eval_v11.py": {
+      "role": "test",
+      "sha256": "b1887c4758cffe918e82c404e2d45d21e7ef2d750c0244825e004acc7baea9f1"
+    },
+    "tests/test_research_desk_eval_v111.py": {
+      "role": "test",
+      "sha256": "720633295c6fa051496d13bdcc02dc71499444e734cb60715116a983462f3bb6"
+    },
+    "tests/test_research_desk_factory.py": {
+      "role": "test",
+      "sha256": "ca5e37ec240224cf1956e4a091eb466eb692fba4d200d81ee04bf0e4d47c456b"
+    }
+  },
+  "schema_version": 1
+}

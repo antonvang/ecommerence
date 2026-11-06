@@ -5,6 +5,7 @@ excluded from semantic mutation scores, avoiding two automatic false kills.
 """
 import argparse
 import contextlib
+from datetime import datetime, timezone
 import hashlib
 import importlib
 import importlib.util
@@ -18,6 +19,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import uuid
 
 ROOT = Path(__file__).resolve().parent
 COPYBOT = ROOT.parents[3]
@@ -25,6 +27,108 @@ SOURCE = COPYBOT / "research/desk/crosscheck/claude_eval_v111.py"
 TEST_FILES = ["test_research_desk_eval_v11.py", "test_research_desk_eval_v111.py",
               "test_research_desk_factory.py"]
 WORK = Path("/workspace/work")
+SOURCE_MANIFEST = ROOT / "READINESS_INTEGRITY.json"
+SOURCE_MANIFEST_SHA256 = '272bc9d515d8ca3e5829452bc0b10aee1a60ad75c50be9e9433cc7c7d0f15a1f'
+BASELINE_CONTRACT = ROOT / "BASELINE_CONTRACT.json"
+BASELINE_CONTRACT_SHA256 = '962e765786ec088fd61ebc8669fe532edbfcd660e2b0cb9e1f38dc091d107a5e'
+
+
+class IntegrityError(RuntimeError):
+    """A reviewed source/input trust boundary has changed."""
+
+
+class GateError(RuntimeError):
+    """A fresh baseline or mutation acceptance gate did not pass."""
+
+
+def require(condition, message, error=IntegrityError):
+    # Runtime gates must remain active with -O and PYTHONOPTIMIZE.
+    if not condition:
+        raise error(str(message))
+
+
+def sha256(path):
+    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+
+def trusted_json(path, digest):
+    raw = Path(path).read_bytes()
+    require(hashlib.sha256(raw).hexdigest() == digest, f"Trust document changed: {Path(path).name}")
+    return json.loads(raw)
+
+
+def verify_source_manifest():
+    manifest = trusted_json(SOURCE_MANIFEST, SOURCE_MANIFEST_SHA256)
+    require(manifest.get("schema_version") == 1, "Unsupported integrity manifest schema")
+    base = COPYBOT.resolve()
+    for name, entry in manifest["files"].items():
+        path = (COPYBOT / name).resolve()
+        require(path.is_relative_to(base), f"Manifest path leaves Copybot: {name}")
+        require(path.is_file(), f"Missing trusted file: {name}")
+        require(sha256(path) == entry["sha256"], f"Trusted file changed: {name}")
+    actual_inputs = {str(path.relative_to(COPYBOT)) for path in input_inventory()}
+    declared_inputs = {name for name, entry in manifest["files"].items() if entry["role"] == "fixture"}
+    require(actual_inputs == declared_inputs, "Fixture inventory changed")
+    actual_expected = {str(path.relative_to(COPYBOT)) for path in (ROOT / "expected").rglob("*.json")}
+    declared_expected = {name for name, entry in manifest["files"].items() if entry["role"] == "expected"}
+    require(actual_expected == declared_expected, "Expected-output inventory changed")
+    return manifest
+
+
+def input_inventory():
+    return (sorted((COPYBOT / "research/desk/synthetic_fixtures").glob("*.json"))
+            + sorted((ROOT.parent / "r2/fixtures").glob("*.json"))
+            + sorted((ROOT / "fixtures").glob("*.json")))
+
+
+def verify_baseline_contract(phase, paths, baseline_diffs):
+    contract = trusted_json(BASELINE_CONTRACT, BASELINE_CONTRACT_SHA256)
+    require(phase in contract["phases"], f"Unknown baseline phase: {phase}", GateError)
+    require(len(paths) == contract["phases"][phase]["fixture_count"],
+            f"Baseline fixture count changed for {phase}", GateError)
+    actual = {key: value for key, value in baseline_diffs.items() if value}
+    require(actual == contract["allowed_differences"],
+            f"Baseline differs from the reviewed exact contract: {json.dumps(actual, ensure_ascii=False)}", GateError)
+    return contract
+
+
+def new_run_id():
+    return datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S.%fZ") + "-" + uuid.uuid4().hex
+
+
+def fresh_path(report_dir, run_id, filename):
+    require(isinstance(run_id, str) and run_id not in ("", ".", "..")
+            and Path(run_id).name == run_id, "Invalid report run identity", GateError)
+    destination = Path(report_dir) / run_id
+    destination.mkdir(parents=True, exist_ok=True)
+    return destination / filename
+
+
+def dump_new(path, obj):
+    """Publish complete fresh bytes without overwriting an existing report."""
+    path = Path(path)
+    raw = (json.dumps(obj, ensure_ascii=False, sort_keys=True, indent=2,
+                      allow_nan=False) + "\n").encode("utf-8")
+    fd, temporary = tempfile.mkstemp(prefix=".report-", dir=path.parent)
+    try:
+        with os.fdopen(fd, "wb") as stream:
+            stream.write(raw)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.link(temporary, path)  # atomic and exclusive: existing reports cannot be replaced
+    finally:
+        os.unlink(temporary)
+
+
+def current_provenance():
+    commit = subprocess.run(["git", "rev-parse", "HEAD"], cwd=COPYBOT,
+                            capture_output=True, text=True, check=True).stdout.strip()
+    dirty = subprocess.run(["git", "status", "--porcelain"], cwd=COPYBOT,
+                           capture_output=True, text=True, check=True).stdout.strip()
+    return dict(git_commit=commit, git_worktree_dirty=bool(dirty), python=sys.version, executable=sys.executable,
+                optimization=sys.flags.optimize, source_manifest_sha256=SOURCE_MANIFEST_SHA256,
+                baseline_contract_sha256=BASELINE_CONTRACT_SHA256,
+                harness_sha256=sha256(Path(__file__)), recorded_at_utc=datetime.now(timezone.utc).isoformat())
 
 
 def dump(path, obj):
@@ -53,17 +157,19 @@ def differences(expected, actual, path=""):
 
 
 def verify_frozen():
+    verify_source_manifest()
+    trusted_json(BASELINE_CONTRACT, BASELINE_CONTRACT_SHA256)
     lock = json.loads((SOURCE.parent / "EVALUATOR_V1_1_1.lock").read_text())
-    assert hashlib.sha256(SOURCE.read_bytes()).hexdigest() == lock["sha256"]
-    assert hashlib.sha256((SOURCE.parent / "EVALUATOR_SPEC_V1_1_1.md").read_bytes()).hexdigest() == lock["spec_sha256"]
+    require(sha256(SOURCE) == lock["sha256"], "Frozen evaluator checksum mismatch")
+    require(sha256(SOURCE.parent / "EVALUATOR_SPEC_V1_1_1.md") == lock["spec_sha256"], "Frozen spec checksum mismatch")
     provenance = json.loads((ROOT / "REFERENCE_PROVENANCE.json").read_text())
     for name, digest in provenance["sha256"].items():
-        assert hashlib.sha256((ROOT / name).read_bytes()).hexdigest() == digest, name
+        require(sha256(ROOT / name) == digest, f"Reference provenance mismatch: {name}")
     for name, digest in json.loads((ROOT / "EXPECTED_INITIAL_SHA256.json").read_text()).items():
-        assert hashlib.sha256((ROOT / name).read_bytes()).hexdigest() == digest, name
+        require(sha256(ROOT / name) == digest, f"Initial expected checksum mismatch: {name}")
     if (ROOT / "EXPECTED_ADDED_SHA256.json").exists():
         for name, digest in json.loads((ROOT / "EXPECTED_ADDED_SHA256.json").read_text()).items():
-            assert hashlib.sha256((ROOT / name).read_bytes()).hexdigest() == digest, name
+            require(sha256(ROOT / name) == digest, f"Added expected checksum mismatch: {name}")
     return lock
 
 
@@ -169,22 +275,29 @@ def same_statuses(a, b):
             == {k: v["status"] for k, v in b["hypotheses"].items()})
 
 
-def run_phase(phase):
+def run_phase(phase, *, report_dir=None, run_id=None):
+    require(phase in ("initial", "augmented"), f"Unknown phase: {phase}", GateError)
+    report_dir = Path(report_dir) if report_dir is not None else WORK / "mutation-runs"
+    run_id = run_id or new_run_id()
+    WORK.mkdir(parents=True, exist_ok=True)
     augmented = phase == "augmented"
     lock = verify_frozen()
     paths = fixtures(augmented)
     baseline_tests = run_tests(SOURCE, augmented)
-    assert not baseline_tests["behavioral_failures"] and not baseline_tests["checksum_failures"], baseline_tests
-    assert not baseline_tests["added_test_failures"], baseline_tests
+    require(baseline_tests["tests_run"] == 25, "Baseline test inventory changed", GateError)
+    require(not baseline_tests["behavioral_failures"] and not baseline_tests["checksum_failures"], baseline_tests, GateError)
+    require(not baseline_tests["added_test_failures"], baseline_tests, GateError)
     baseline = cli(SOURCE, paths)
-    assert baseline["exit_code"] == 0 and not baseline["encoding_errors"], baseline
+    require(baseline["exit_code"] == 0 and not baseline["encoding_errors"], baseline, GateError)
     baseline_diffs = {path.stem: differences(expected(path), baseline["outputs"][path.stem]) for path in paths}
+    verify_baseline_contract(phase, paths, baseline_diffs)
     rows = []
     manifest = json.loads((ROOT / "mutant_manifest.json").read_text())
     for mutant in manifest:
         candidate = ROOT / "mutants" / mutant["file"]
-        assert hashlib.sha256(candidate.read_bytes()).hexdigest() == mutant["sha256"]
+        require(sha256(candidate) == mutant["sha256"], f"Mutant checksum mismatch: {mutant['id']}")
         tests = run_tests(candidate, augmented)
+        require(tests["tests_run"] == 25, f"Test inventory changed for {mutant['id']}", GateError)
         observed = cli(candidate, paths)
         evidence, inherited, silent = [], [], None
         for path in paths:
@@ -205,7 +318,7 @@ def run_phase(phase):
         fixtures_detected = bool(evidence or observed["exit_code"] or observed["encoding_errors"])
         detection = "begge" if tests_detected and fixtures_detected else "tests" if tests_detected else "fixtures" if fixtures_detected else "ingen"
         sanity = observed["outputs"].get("R3_01_holm_equality", {})
-        assert sanity.get("status") == "OK", (mutant["id"], "not a normal-running mutant", sanity)
+        require(sanity.get("status") == "OK", (mutant["id"], "not a normal-running mutant", sanity), GateError)
         row = {key: mutant[key] for key in ("id", "description", "category", "classification",
                                               "equivalent", "equivalence_reason", "planned_silent", "sha256")}
         row.update(detected_by=detection, detected=tests_detected or fixtures_detected,
@@ -214,7 +327,7 @@ def run_phase(phase):
                    encoding_errors=observed["encoding_errors"], silent_witness=silent,
                    checksum_detected=bool(tests["checksum_failures"]))
         if mutant["equivalent"]:
-            assert not row["detected"], ("Claimed equivalence falsified", row)
+            require(not row["detected"], ("Claimed equivalence falsified", row), GateError)
         rows.append(row)
         print(phase, mutant["id"], detection, "equivalent" if mutant["equivalent"] else mutant["classification"], flush=True)
     rates = {}
@@ -222,36 +335,42 @@ def run_phase(phase):
         selected = [row for row in rows if row["classification"] == classification and not row["equivalent"]]
         rates[classification] = dict(detected=sum(row["detected"] for row in selected),
                                      total=len(selected), rate=sum(row["detected"] for row in selected) / len(selected))
+    verify_frozen()  # reject source/input changes during the run before publishing success
     report = dict(phase=phase, frozen_sha256=lock["sha256"], fixtures=len(paths),
+                  run_id=run_id, provenance=current_provenance(),
                   tolerance="abs(a-b)<=1e-9*max(1,abs(a),abs(b)); exact structural/nonfloat fields",
                   baseline_tests=baseline_tests,
                   baseline_reference_differences={key: value for key, value in baseline_diffs.items() if value},
                   rates=rates, mutants=rows,
                   survivors=[row["id"] for row in rows if not row["detected"] and not row["equivalent"]],
                   silent_witnesses=sum(row["silent_witness"] is not None for row in rows))
-    name = "MUTATION_RESULTS_INITIAL" if not augmented else "MUTATION_RESULTS_AUGMENTED"
-    target = ROOT / (name + ".json")
-    if target.exists():
-        first_report = json.loads(target.read_text())
-        assert first_report["rates"] == report["rates"]
-        assert first_report["survivors"] == report["survivors"]
-        assert [(m["id"], m["detected_by"]) for m in first_report["mutants"]] == [
-            (m["id"], m["detected_by"]) for m in report["mutants"]]
-        target = WORK / (name + "_REPLAY.json")
-    dump(target, report)
+    report["gate_passed"] = (rates["SIKKERHEDSKRITISK"]["rate"] == 1.0
+                             and rates["ØVRIG"]["rate"] >= 0.9)
+    target = fresh_path(report_dir, run_id, phase + ".json")
+    report["report_path"] = str(target)
+    dump_new(target, report)
     return report
 
 
-def finalize():
-    """Preserve first observations; build the requested combined handoff."""
+def finalize(reports=None, *, report_dir=None, run_id=None):
+    """Summarize fresh phase results; historical experiment archives stay read-only."""
+    require(isinstance(reports, list) and reports, "Fresh phase reports are required; archives are read-only", GateError)
+    ids = {report.get("run_id") for report in reports}
+    require(len(ids) == 1 and None not in ids, "Phase reports do not share a fresh run identity", GateError)
+    run_id = run_id or next(iter(ids))
+    require(ids == {run_id}, "Run identity mismatch", GateError)
+    for report in reports:
+        require(json.loads(Path(report["report_path"]).read_text()) == report,
+                "Fresh report differs from its published bytes", GateError)
+        require(report["provenance"]["source_manifest_sha256"] == SOURCE_MANIFEST_SHA256,
+                "Phase was produced under another trust snapshot", GateError)
+    current = {report["phase"]: report for report in reports}
+    require(len(current) == len(reports), "Duplicate current phase", GateError)
+    final = current.get("augmented", reports[-1])
     initial_path = ROOT / "MUTATION_RESULTS_INITIAL.json"
-    final_path = ROOT / "MUTATION_RESULTS_AUGMENTED.json"
-    if not initial_path.exists() or not final_path.exists():
-        return
     initial = json.loads(initial_path.read_text())
-    final = json.loads(final_path.read_text())
     plan = json.loads((ROOT / "SUPPLEMENT_PLAN.json").read_text())
-    assert hashlib.sha256(initial_path.read_bytes()).hexdigest() == plan["initial_results_sha256"]
+    require(sha256(initial_path) == plan["initial_results_sha256"], "Historical first-observation hash mismatch")
     first = {row["id"]: row for row in initial["mutants"]}
     mutants = []
     for last in final["mutants"]:
@@ -272,10 +391,15 @@ def finalize():
             else "fixtures" if literal_fixtures else "ingen")
         row["semantic_detected_by"] = row["detected_by"]
         mutants.append(row)
-    results = dict(mutants=mutants, total_mutants=len(mutants),
+    results = dict(run_id=run_id, status="PASS" if final["gate_passed"] else "FAIL",
+                   gate_passed=final["gate_passed"], provenance=current_provenance(),
+                   fresh_phase_reports={name: dict(path=report["report_path"], sha256=sha256(report["report_path"]))
+                                        for name, report in current.items()},
+                   mutants=mutants, total_mutants=len(mutants),
                    non_equivalent=sum(not row["equivalent"] for row in mutants),
                    equivalent_ids=[row["id"] for row in mutants if row["equivalent"]],
                    initial_rates=initial["rates"], final_rates=final["rates"],
+                   fresh_initial_rates=current.get("initial", {}).get("rates"),
                    initial_survivors=initial["survivors"], final_survivors=final["survivors"],
                    silent_witnesses=final["silent_witnesses"],
                    original_tests_per_candidate=final["baseline_tests"]["tests_run"],
@@ -286,9 +410,11 @@ def finalize():
                    baseline_matching_fixtures=final["fixtures"] - len(final["baseline_reference_differences"]),
                    baseline_reference_differences=final["baseline_reference_differences"],
                    tolerance=final["tolerance"], frozen_sha256=final["frozen_sha256"],
-                   initial_report_sha256=plan["initial_results_sha256"],
-                   final_report_sha256=hashlib.sha256(final_path.read_bytes()).hexdigest())
-    dump(ROOT / "MUTATION_RESULTS.json", results)
+                   initial_report_sha256=plan["initial_results_sha256"])
+    target = fresh_path(report_dir or WORK / "mutation-runs", run_id, "summary.json")
+    results["report_path"] = str(target)
+    dump_new(target, results)
+    return results
 
 
 def main():
@@ -296,18 +422,38 @@ def main():
     parser.add_argument("--worker", type=Path)
     parser.add_argument("--augmented-worker", action="store_true")
     parser.add_argument("--phase", choices=("initial", "augmented", "both"), default="both")
+    parser.add_argument("--report-dir", type=Path, default=WORK / "mutation-runs")
     args = parser.parse_args()
-    WORK.mkdir(exist_ok=True)
+    WORK.mkdir(parents=True, exist_ok=True)
     if args.worker:
+        verify_frozen()
         print(json.dumps(test_worker(args.worker, args.augmented_worker), ensure_ascii=False))
-        return
-    phases = ("initial", "augmented") if args.phase == "both" else (args.phase,)
-    for phase in phases:
-        report = run_phase(phase)
-        print(json.dumps(dict(phase=phase, rates=report["rates"], survivors=report["survivors"],
-                              silent_witnesses=report["silent_witnesses"])), flush=True)
-    finalize()
+        return 0
+    run_id = new_run_id()
+    reports = []
+    try:
+        phases = ("initial", "augmented") if args.phase == "both" else (args.phase,)
+        for phase in phases:
+            report = run_phase(phase, report_dir=args.report_dir, run_id=run_id)
+            reports.append(report)
+            print(json.dumps(dict(phase=phase, run_id=run_id, rates=report["rates"],
+                                  survivors=report["survivors"], gate_passed=report["gate_passed"],
+                                  report_path=report["report_path"])), flush=True)
+        summary = finalize(reports, report_dir=args.report_dir, run_id=run_id)
+        print(json.dumps(dict(status=summary["status"], run_id=run_id,
+                              report_path=summary["report_path"])), flush=True)
+        return 0 if summary["gate_passed"] else 1
+    except Exception as error:
+        failure = dict(status="FAIL", gate_passed=False, run_id=run_id,
+                       recorded_at_utc=datetime.now(timezone.utc).isoformat(),
+                       error_type=type(error).__name__, error=str(error),
+                       completed_phase_reports=[report["report_path"] for report in reports])
+        target = fresh_path(args.report_dir, run_id, "failure.json")
+        failure["report_path"] = str(target)
+        dump_new(target, failure)
+        print(json.dumps(failure, ensure_ascii=False), file=sys.stderr, flush=True)
+        return 1
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

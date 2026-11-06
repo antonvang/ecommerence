@@ -1,0 +1,68 @@
+{
+  "demo": {
+    "attempts_per_job": 1,
+    "automatic_promotion": false,
+    "counts": {
+      "failed": 0,
+      "queued": 0,
+      "running": 0,
+      "succeeded": 9,
+      "total": 9
+    },
+    "paper_states": {
+      "OK": 7,
+      "RISK_STOPPED": 2
+    },
+    "restart_byte_identical": true,
+    "source_mode": "synthetic",
+    "status": "COMPLETE"
+  },
+  "deployment": {
+    "active_lab_changed": false,
+    "external_orders": false,
+    "market_data_accessed": false,
+    "real_forward_active": false,
+    "remaining": [
+      "trusted owner/collector identities",
+      "approved signed forward export"
+    ]
+  },
+  "generated_at": "2026-11-06T19:21:55.561782+01:00",
+  "implementation_sha256": "43e1780ca8807d4a0a2d73eec34046ee2ac9e12177d7fb265e597915016e28e7",
+  "mutation": {
+    "baseline_match": [
+      78,
+      79
+    ],
+    "gate_passed": true,
+    "rates": {
+      "SIKKERHEDSKRITISK": {
+        "detected": 28,
+        "rate": 1.0,
+        "total": 28
+      },
+      "ØVRIG": {
+        "detected": 15,
+        "rate": 1.0,
+        "total": 15
+      }
+    },
+    "run_id": "20261106T181329.777373Z-3f4aaef63d2f4a1a8a80e7e4d4fbd5ec",
+    "source_sha256": "d5eb714f21580185bb03bb03e3bab1210882881da6d941dc9486924cab89b0a9",
+    "status": "PASS",
+    "summary_sha256": "7fcfe564e8167b369608f69039071b20f6b4c89c797d9c2a1e281812aad9277e",
+    "survivors": []
+  },
+  "tests": {
+    "operations": {
+      "optimized": true,
+      "output": "----------------------------------------------------------------------\nRan 60 tests in 7.787s\n\nOK",
+      "passed": true
+    },
+    "r3": {
+      "optimized": true,
+      "output": "----------------------------------------------------------------------\nRan 16 tests in 0.607s\n\nOK",
+      "passed": true
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "allowed_differences": {
+    "R3_13_numeric_ledger": [
+      {
+        "actual": "OverflowError",
+        "expected": "",
+        "path": ".errors[0].path"
+      }
+    ]
+  },
+  "evaluator_version": "1.1.1",
+  "numeric_tolerance": "abs(a-b)<=1e-9*max(1,abs(a),abs(b)); exact structural/nonfloat fields",
+  "phases": {
+    "augmented": {
+      "fixture_count": 79
+    },
+    "initial": {
+      "fixture_count": 76
+    }
+  },
+  "review": "Explicit single string-path exception from independently frozen R3 reference; no new deviations are enrolled at runtime.",
+  "schema_version": 1
+}
