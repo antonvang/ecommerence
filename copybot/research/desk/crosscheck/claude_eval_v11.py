@@ -86,8 +86,14 @@ def validate(fx):
                 e("UNKNOWN_FIELD", f"{path}.{k}" if path else k)
         return True
 
-    def time_ok(v, path):
-        if not is_int(v) or not (0 <= v <= TMAX):
+    def time_ok(v, path, type_code="BAD_TYPE"):
+        """Spec 1: a non-integer time violates both the type rule (BAD_TYPE; BAD_VALUE for listed_from/delisted_at)
+        and the time rule (BAD_TIME); every error is collected. An integer out of range is BAD_TIME only."""
+        if not is_int(v):
+            e(type_code, path)
+            e("BAD_TIME", path)
+            return False
+        if not (0 <= v <= TMAX):
             e("BAD_TIME", path)
             return False
         return True
@@ -111,7 +117,7 @@ def validate(fx):
                 e("BAD_VALUE", k)
     w = fx.get("window")
     if "window" in fx and fields(w, "window", ("start", "end"), {"start", "end", "embargo_s"}):
-        ok = all(time_ok(w[k], f"window.{k}") for k in ("start", "end") if k in w)
+        ok = all([time_ok(w[k], f"window.{k}") for k in ("start", "end") if k in w])
         if ok and "start" in w and "end" in w and w["start"] >= w["end"]:
             e("BAD_VALUE", "window")
         if "embargo_s" in w:
@@ -128,9 +134,10 @@ def validate(fx):
                 p = f"universe.{a}"
                 if fields(m, p, ("listed_from", "delisted_at"), {"listed_from", "delisted_at"}):
                     lf = m.get("listed_from")
-                    if "listed_from" in m and time_ok(lf, f"{p}.listed_from"):
-                        d = m.get("delisted_at")
-                        if "delisted_at" in m and d is not None and (not time_ok(d, f"{p}.delisted_at") or d <= lf):
+                    lf_ok = "listed_from" in m and time_ok(lf, f"{p}.listed_from", "BAD_VALUE")
+                    d = m.get("delisted_at")
+                    if "delisted_at" in m and d is not None:
+                        if time_ok(d, f"{p}.delisted_at", "BAD_VALUE") and lf_ok and d <= lf:
                             e("BAD_VALUE", f"{p}.delisted_at")
     hyps = fx.get("hypotheses")
     hids, keys_used = set(), set()
@@ -209,13 +216,23 @@ def validate(fx):
                     time_ok(q["ts"], f"{p}.ts")
     if "lock" in fx:
         lk = fx["lock"]
-        if fields(lk, "lock", ("protocol_sha256", "data_sha256"), {"protocol_sha256", "data_sha256"}):
-            if not errs:
-                proto = {k: fx[k] for k in ("cadence_s", "window", "universe", "hypotheses", "alpha", "q_fdr")}
-                if lk.get("protocol_sha256") != sha(proto):
-                    e("LOCK_MISMATCH", "lock.protocol_sha256")
-                if lk.get("data_sha256") != sha(fx["observations"]):
-                    e("LOCK_MISMATCH", "lock.data_sha256")
+        if not isinstance(lk, dict):
+            e("BAD_TYPE", "lock")
+        else:
+            for k in lk:
+                if k not in ("protocol_sha256", "data_sha256"):
+                    e("UNKNOWN_FIELD", f"lock.{k}")
+            # spec 1: a set lock must carry both hashes (a missing one is a LOCK_MISMATCH), and the lock is checked
+            # even when other errors exist (every error is collected)
+            def h(obj):
+                try:
+                    return sha(obj)
+                except (TypeError, ValueError):
+                    return None
+            proto = {k: fx.get(k) for k in ("cadence_s", "window", "universe", "hypotheses", "alpha", "q_fdr")}
+            for k, obj in (("protocol_sha256", proto), ("data_sha256", fx.get("observations"))):
+                if k not in lk or not isinstance(lk[k], str) or lk[k] != h(obj):
+                    e("LOCK_MISMATCH", f"lock.{k}")
     return sorted(errs)
 
 
