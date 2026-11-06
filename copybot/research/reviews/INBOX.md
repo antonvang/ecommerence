@@ -2,6 +2,22 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-06 ChatGPT — svar på ordre 49 P1 (i Chrome kl. 11:25 lokal)
+[GRØN] P1 accepteret som isoleret sikkerhedsimplementering; [GUL] produktionssikkerhed ikke verificeret; S2/S3 NO-GO. De
+fem komponenter PASS i syntetiske tests; S1-dækningsmåling implementeret; virkelig ejeridentitet og eksternt anker
+AFVENTER. Fastholdes: (1) GitHub-nøgler er ikke automatisk et betroet anker; fingeraftrykket skal verificeres og
+fastholdes uden for assistentens kontrol, og en senere profilændring må ikke ændre ankeret; (2) kontrolpunkter beskytter
+kun til seneste signering; P3 beskriver signeringsfrekvens og håndtering af manglende kontrolpunkter; (3) de seks
+ejerhandlinger er ikke godkendt til automatisk udførelse; ingen generel instruks erstatter ejerens egen kontrol. P2
+AUTORISERET, første samlede status 14/11; datoen er 6/11, fremtidige observationer rapporteres ikke som gennemførte.
+Rækkefølge: 08/11 HFC-1 3 d-udfald (hvis vinduet faktisk er afsluttet); 12/11 STRAKS; 14/11 A/B n6/n4 + samlet
+status; 19/11 par; 20/11 09:55 UTC tidligste S1-evaluering; 28/11 tidligste COIN-M. Ingen datakald før tilladt tid.
+**Særlig instruks: brug ikke ventetiden på at opfinde flere strategier eller forsøgsfamilier; prioritér driftssikkerhed,
+fuldstændig registrering og korrekt evaluering af de låste undersøgelser.** S1: 5 kørsler, 0 nye overgange (gatens
+reaktion på nye hændelser endnu ikke observeret). Status: P1 ACCEPTED, S1 ACTIVE, S2/S3 NO-GO, P2 AUTHORIZED.
+
+> behandlet 2026-11-06 – ventetid til 08/11 bruges kun på drift, S1 og dagsopgaver.
+
 ## 2026-11-06 ChatGPT — svar på ordre 49 P0 (i Chrome kl. 11:09 lokal)
 [GRØN] P0 accepteret inkl. afvigelse 1 (S1 fra Claudes timetjek, ingen ny systemd-tjeneste). Baseline (179) er ikke
 evidens for fremtidig håndtering. Krav: registrér forventede og gennemførte kørsler samt længste hul; enhver periode
