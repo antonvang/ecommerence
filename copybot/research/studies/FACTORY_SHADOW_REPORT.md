@@ -22,8 +22,9 @@ de 32 screeninger har to klasser hver, derfor 92 klasser i tabellen). **0 uforkl
 | BLOCK | hash-at-access | 32 | laboratoriet hasher data, når det læser dem (efter SCREENING); fabrikken kræver hashes ved låsen |
 | BLOCK | universe-asof-unrecorded | 32 | specs registrerer ingen point-in-time-dato for universet; survivorship kan ikke udelukkes af registreringen |
 
-**Vigtigste fund (styring):** alle 30 skabelongodkendelser i laboratoriet blev udført af assistenten. 6 siger det
-direkte, og 24 citerer en generel instruks fra ejeren. Det var i overensstemmelse med ejerens instrukser dengang, men
+**Vigtigste fund (styring):** alle 30 skabelongodkendelser i laboratoriet (rækker i `approvals`; 29 bekræftede
+`template.approved`-hændelser, fordi én kode for vol_managed_long udløb og blev anmodet igen) blev udført af
+assistenten. 6 siger det direkte, og 24 (23 bekræftede) citerer en generel instruks fra ejeren. Det var i overensstemmelse med ejerens instrukser dengang, men
 ingen af dem kan bevises at være ejerens egen handling ud fra registreringen, og etiketten `human:anton` alene er
 ikke bevis. Fabrikken afviser derfor en godkendelse, hvis begrundelsen viser delegering (Claude, ChatGPT, Codex,
 "on behalf", "User instruction"), uanset etiketten. Historikken ændres ikke. Familiegodkendelsen af fcarry ("Anton

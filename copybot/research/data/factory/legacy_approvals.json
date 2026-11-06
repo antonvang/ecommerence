@@ -1,0 +1,253 @@
+{
+ "schema": "copybot.legacy_approvals/1",
+ "rule": "director order 48 (INBOX 2026-11-06): legacy approvals keep their results; documentation status UNVERIFIED_ORIGIN; never evidence of the owner's own approval; never upgraded",
+ "approvals": [
+  {
+   "event": 54,
+   "kind": "template.approved",
+   "actor": "human:anton",
+   "template": "vol_managed_long",
+   "reason": "Approved by Claude (AI assistant) on behalf of the user under the Mission 6 instruction to run a continuous research loop; exploratory screening on 2023 train/v",
+   "status": "UNVERIFIED_ORIGIN"
+  },
+  {
+   "event": 57,
+   "kind": "template.approved",
+   "actor": "human:anton",
+   "template": "day_of_week",
+   "reason": "Approved by Claude (AI assistant) on behalf of the user under the Mission 6 instruction to run a continuous research loop; exploratory screening on 2023 train/v",
+   "status": "UNVERIFIED_ORIGIN"
+  },
+  {
+   "event": 60,
+   "kind": "template.approved",
+   "actor": "human:anton",
+   "template": "hour_of_day",
+   "reason": "Approved by Claude (AI assistant) on behalf of the user under the Mission 6 instruction to run a continuous research loop; exploratory screening on 2023 train/v",
+   "status": "UNVERIFIED_ORIGIN"
+  },
+  {
+   "event": 63,
+   "kind": "template.approved",
+   "actor": "human:anton",
+   "template": "funding_contrarian",
+   "reason": "Approved by Claude (AI assistant) on behalf of the user under the Mission 6 instruction to run a continuous research loop; exploratory screening on 2023 train/v",
+   "status": "UNVERIFIED_ORIGIN"
+  },
+  {
+   "event": 66,
+   "kind": "template.approved",
+   "actor": "human:anton",
+   "template": "daily_reversal",
+   "reason": "Approved by Claude (AI assistant) on behalf of the user under the Mission 6 instruction to run a continuous research loop; exploratory screening on 2023 train/v",
+   "status": "UNVERIFIED_ORIGIN"
+  },
+  {
+   "event": 69,
+   "kind": "template.approved",
+   "actor": "human:anton",
+   "template": "donchian_trend",
+   "reason": "Approved by Claude (AI assistant) on behalf of the user under the Mission 6 instruction to run a continuous research loop; exploratory screening on 2023 train/v",
+   "status": "UNVERIFIED_ORIGIN"
+  },
+  {
+   "event": 290,
+   "kind": "template.approved",
+   "actor": "human:anton",
+   "template": "vol_managed_long",
+   "reason": "User instruction 2026-10-17 (second request, first code expired): re-approve vol_managed_long for exploratory screening under PROTOCOL v2 (research/PROTOCOL_V2.",
+   "status": "UNVERIFIED_ORIGIN"
+  },
+  {
+   "event": 327,
+   "kind": "template.approved",
+   "actor": "human:anton",
+   "template": "xs_momentum",
+   "reason": "User instruction 2026-10-17: approve xs_momentum for exploratory screening under PROTOCOL v2 (research/PROTOCOL_V2.md amendment 2); the user asked Claude to con",
+   "status": "UNVERIFIED_ORIGIN"
+  },
+  {
+   "event": 330,
+   "kind": "template.approved",
+   "actor": "human:anton",
+   "template": "xs_max_lottery",
+   "reason": "User instruction 2026-10-17: approve xs_max_lottery for exploratory screening under PROTOCOL v2 (research/PROTOCOL_V2.md amendment 2); the user asked Claude to ",
+   "status": "UNVERIFIED_ORIGIN"
+  },
+  {
+   "event": 333,
+   "kind": "template.approved",
+   "actor": "human:anton",
+   "template": "xs_low_volatility",
+   "reason": "User instruction 2026-10-17: approve xs_low_volatility for exploratory screening under PROTOCOL v2 (research/PROTOCOL_V2.md amendment 2); the user asked Claude ",
+   "status": "UNVERIFIED_ORIGIN"
+  },
+  {
+   "event": 336,
+   "kind": "template.approved",
+   "actor": "human:anton",
+   "template": "xs_betting_against_beta",
+   "reason": "User instruction 2026-10-17: approve xs_betting_against_beta for exploratory screening under PROTOCOL v2 (research/PROTOCOL_V2.md amendment 2); the user asked C",
+   "status": "UNVERIFIED_ORIGIN"
+  },
+  {
+   "event": 476,
+   "kind": "template.approved",
+   "actor": "human:anton",
+   "template": "xs_illiquidity",
+   "reason": "User instruction 2026-10-17 ('Du godkender og gør alt du har tilladelse'): approve xs_illiquidity for exploratory screening under PROTOCOL v2 amendment 3",
+   "status": "UNVERIFIED_ORIGIN"
+  },
+  {
+   "event": 479,
+   "kind": "template.approved",
+   "actor": "human:anton",
+   "template": "xs_high_volume",
+   "reason": "User instruction 2026-10-17 ('Du godkender og gør alt du har tilladelse'): approve xs_high_volume for exploratory screening under PROTOCOL v2 amendment 3",
+   "status": "UNVERIFIED_ORIGIN"
+  },
+  {
+   "event": 482,
+   "kind": "template.approved",
+   "actor": "human:anton",
+   "template": "xs_downside_beta",
+   "reason": "User instruction 2026-10-17 ('Du godkender og gør alt du har tilladelse'): approve xs_downside_beta for exploratory screening under PROTOCOL v2 amendment 3",
+   "status": "UNVERIFIED_ORIGIN"
+  },
+  {
+   "event": 485,
+   "kind": "template.approved",
+   "actor": "human:anton",
+   "template": "xs_coskewness",
+   "reason": "User instruction 2026-10-17 ('Du godkender og gør alt du har tilladelse'): approve xs_coskewness for exploratory screening under PROTOCOL v2 amendment 3",
+   "status": "UNVERIFIED_ORIGIN"
+  },
+  {
+   "event": 488,
+   "kind": "template.approved",
+   "actor": "human:anton",
+   "template": "xs_near_high",
+   "reason": "User instruction 2026-10-17 ('Du godkender og gør alt du har tilladelse'): approve xs_near_high for exploratory screening under PROTOCOL v2 amendment 3",
+   "status": "UNVERIFIED_ORIGIN"
+  },
+  {
+   "event": 491,
+   "kind": "template.approved",
+   "actor": "human:anton",
+   "template": "turn_of_month",
+   "reason": "User instruction 2026-10-17 ('Du godkender og gør alt du har tilladelse'): approve turn_of_month for exploratory screening under PROTOCOL v2 amendment 3",
+   "status": "UNVERIFIED_ORIGIN"
+  },
+  {
+   "event": 494,
+   "kind": "template.approved",
+   "actor": "human:anton",
+   "template": "btc_lead_lag",
+   "reason": "User instruction 2026-10-17 ('Du godkender og gør alt du har tilladelse'): approve btc_lead_lag for exploratory screening under PROTOCOL v2 amendment 3",
+   "status": "UNVERIFIED_ORIGIN"
+  },
+  {
+   "event": 726,
+   "kind": "template.approved",
+   "actor": "human:anton",
+   "template": "oi_growth",
+   "reason": "User instruction 2026-10-17 ('alt', 'du har tilladelse'): approve oi_growth for exploratory screening under research/PROTOCOL_V3.md",
+   "status": "UNVERIFIED_ORIGIN"
+  },
+  {
+   "event": 729,
+   "kind": "template.approved",
+   "actor": "human:anton",
+   "template": "oi_confirmed_return",
+   "reason": "User instruction 2026-10-17 ('alt', 'du har tilladelse'): approve oi_confirmed_return for exploratory screening under research/PROTOCOL_V3.md",
+   "status": "UNVERIFIED_ORIGIN"
+  },
+  {
+   "event": 732,
+   "kind": "template.approved",
+   "actor": "human:anton",
+   "template": "smart_vs_crowd",
+   "reason": "User instruction 2026-10-17 ('alt', 'du har tilladelse'): approve smart_vs_crowd for exploratory screening under research/PROTOCOL_V3.md",
+   "status": "UNVERIFIED_ORIGIN"
+  },
+  {
+   "event": 735,
+   "kind": "template.approved",
+   "actor": "human:anton",
+   "template": "leverage_cycle",
+   "reason": "User instruction 2026-10-17 ('alt', 'du har tilladelse'): approve leverage_cycle for exploratory screening under research/PROTOCOL_V3.md",
+   "status": "UNVERIFIED_ORIGIN"
+  },
+  {
+   "event": 738,
+   "kind": "template.approved",
+   "actor": "human:anton",
+   "template": "vrp_timing",
+   "reason": "User instruction 2026-10-17 ('alt', 'du har tilladelse'): approve vrp_timing for exploratory screening under research/PROTOCOL_V3.md",
+   "status": "UNVERIFIED_ORIGIN"
+  },
+  {
+   "event": 741,
+   "kind": "template.approved",
+   "actor": "human:anton",
+   "template": "stablecoin_flow",
+   "reason": "User instruction 2026-10-17 ('alt', 'du har tilladelse'): approve stablecoin_flow for exploratory screening under research/PROTOCOL_V3.md",
+   "status": "UNVERIFIED_ORIGIN"
+  },
+  {
+   "event": 744,
+   "kind": "template.approved",
+   "actor": "human:anton",
+   "template": "btc_volume_share",
+   "reason": "User instruction 2026-10-17 ('alt', 'du har tilladelse'): approve btc_volume_share for exploratory screening under research/PROTOCOL_V3.md",
+   "status": "UNVERIFIED_ORIGIN"
+  },
+  {
+   "event": 747,
+   "kind": "template.approved",
+   "actor": "human:anton",
+   "template": "taker_pressure",
+   "reason": "User instruction 2026-10-17 ('alt', 'du har tilladelse'): approve taker_pressure for exploratory screening under research/PROTOCOL_V3.md",
+   "status": "UNVERIFIED_ORIGIN"
+  },
+  {
+   "event": 1082,
+   "kind": "template.approved",
+   "actor": "human:anton",
+   "template": "real_rate_filter",
+   "reason": "User instruction 2026-10-18 ('Registrér alle 3 idéer'): approve real_rate_filter for exploratory screening under research/PROTOCOL_V3.md amendment 2",
+   "status": "UNVERIFIED_ORIGIN"
+  },
+  {
+   "event": 1085,
+   "kind": "template.approved",
+   "actor": "human:anton",
+   "template": "supply_dilution",
+   "reason": "User instruction 2026-10-18 ('Registrér alle 3 idéer'): approve supply_dilution for exploratory screening under research/PROTOCOL_V3.md amendment 2",
+   "status": "UNVERIFIED_ORIGIN"
+  },
+  {
+   "event": 1088,
+   "kind": "template.approved",
+   "actor": "human:anton",
+   "template": "mvrv_value",
+   "reason": "User instruction 2026-10-18 ('Registrér alle 3 idéer'): approve mvrv_value for exploratory screening under research/PROTOCOL_V3.md amendment 2",
+   "status": "UNVERIFIED_ORIGIN"
+  },
+  {
+   "event": 1985,
+   "kind": "family.approved",
+   "actor": "human:anton",
+   "template": "fcarry",
+   "reason": "Anton approves F1 fcarry after reading the family file, the graveyard acknowledgements and amendment 8",
+   "status": "UNVERIFIED_ORIGIN"
+  },
+  {
+   "approvals_row": "family:fcarry",
+   "to": "FAMILY_APPROVED",
+   "actor": "human:anton",
+   "reason": "Anton approves F1 fcarry after reading the family file, the graveyard acknowledgements and amendment 8",
+   "status": "UNVERIFIED_ORIGIN"
+  }
+ ]
+}
