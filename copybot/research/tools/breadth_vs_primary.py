@@ -180,6 +180,18 @@ def summarise(rows, M, ic):
                   "evals_per_world": rows[0][a]["evals"], "cpu_s_per_world": sum(r[a]["cpu"] for r in rows) / len(rows)}
     if ic > 0:
         out["C"]["pick_lag_right_share"] = sum(r["C"]["pick_lag_right"] for r in rows) / (len(rows) * M)
+        # cluster-robust interval: the world is the unit (mechanisms in one world share returns); percentile
+        # bootstrap over worlds, 2,000 draws, fixed seed
+        rng = random.Random(48)
+        for a in ("A", "B", "C"):
+            per = [r[a]["true"] / M for r in rows]
+            boots = sorted(sum(rng.choice(per) for _ in per) / len(per) for _ in range(2000))
+            out[a]["power_ci95_cluster"] = (boots[49], boots[1949])
+        diffs = [(r["B"]["true"] - r["A"]["true"]) / M for r in rows]
+        bd = sorted(sum(rng.choice(diffs) for _ in diffs) / len(diffs) for _ in range(2000))
+        out["B_minus_A_power"] = {"mean": sum(diffs) / len(diffs), "ci95_cluster": (bd[49], bd[1949])}
+    out["per_world"] = [{a: r[a]["true"] for a in ("A", "B", "C")} | {f"{a}_false": r[a]["false"]
+                                                                     for a in ("A", "B", "C")} for r in rows]
     return out
 
 
@@ -218,6 +230,12 @@ def md(rep, digest):
             L.append(f"| {s} | {a} | {x['fwer_mechanisms']:.3f} {ci(x['fwer_ci95'])} | {pw} | "
                      f"{x['true_per_world']:.2f} | {x['false_per_world']:.3f} | {x['evals_per_world']} | "
                      f"{x['cpu_s_per_world']:.2f} |")
+    L += ["", "World-clustered 95 % intervals for power (bootstrap over worlds) and B - A:", ""]
+    for s, o in rep["scenarios"].items():
+        if "B_minus_A_power" in o:
+            cl = ", ".join(f"{a} {ci(o[a]['power_ci95_cluster'])}" for a in ("A", "B", "C"))
+            d = o["B_minus_A_power"]
+            L.append(f"- {s}: {cl}; B - A {d['mean']:+.3f} {ci(d['ci95_cluster'])}")
     return "\n".join(L) + "\n"
 
 

@@ -1,7 +1,7 @@
 # BREADTH_VS_PRIMARY P2 — bred screening mod én primær hypotese pr. familie (direktørordre 48 P2, frist 12/11)
 
 Kode `research/tools/breadth_vs_primary.py`, tests `tests/test_research_breadth_vs_primary.py` (4), data
-`research/data/breadth_vs_primary/report.json` + `report.md` (sha256 `fbd4078b2939…`). **Kun syntetiske data**; ingen
+`research/data/breadth_vs_primary/report.json` + `report.md` (sha256 i report.md; genkørt med klynge-intervaller, samme punktestimater). **Kun syntetiske data**; ingen
 alfa, ingen markedsdata, ingen deploy.
 
 ## Opsætning
@@ -65,3 +65,18 @@ C valgte den rigtige forsinkelse i 23-27 % af de ægte familier (tilfældigt gæ
 
 Bekræftende tests: én økonomisk begrundet primær variant pr. familie (K = 1), Holm over familier. Bred screening kun i
 udforskningsvinduet (explore0) eller på data, der aldrig genbruges til bekræftelse, og altid registreret i ledgeren.
+
+## Klynge-intervaller (tilføjet efter direktørens P2-svar)
+
+Percentil-bootstrap over verdener (2.000 træk, fast seed); verden er enheden, fordi mekanismer i samme verden deler
+afkast. Punktestimaterne er de samme som i P2 (deterministiske seeds).
+
+| Scenarie | A bred | B primær | C split | B − A (parret pr. verden) |
+|---|---|---|---|---|
+| ic 0,015 | [0,023; 0,067] | [0,070; 0,140] | [0,030; 0,083] | +0,060 [0,027; 0,093] |
+| ic 0,02 | [0,087; 0,157] | [0,153; 0,233] | [0,050; 0,107] | +0,070 [0,027; 0,113] |
+| ic 0,03 | [0,450; 0,570] | [0,503; 0,623] | [0,213; 0,313] | +0,053 [0,000; 0,107] |
+
+Klynge-intervallerne ligner Wilson-intervallerne her. Den parrede forskel B − A er positiv med et interval over nul ved
+ic 0,015 og 0,02 og på grænsen ved ic 0,03 (nedre grænse 0,000). Konklusionen fra P2 holder: B er mindst lige så god
+som A og bedre ved små effekter, i disse verdener.
