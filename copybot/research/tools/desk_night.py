@@ -144,8 +144,8 @@ def run(out):
         check("ledger chain verifies and an identical re-run charges nothing",
               desk.ledger.verify() and len(desk.ledger.entries) == entries and n5["evaluated"] == [],
               f"entries {entries}")
-        check("every evaluation went through evaluator v1.1",
-              all(r.get("result", {}).get("evaluator") == "1.1" for r in desk.records.values()
+        check("every evaluation went through evaluator v1.1.1",
+              all(r.get("result", {}).get("evaluator") == "1.1.1" for r in desk.records.values()
                   if r["state"] in ("VALIDATED", "REJECTED", "INCONCLUSIVE")))
         check("shortlist drafts never evaluated (their streams are only proposed)",
               all(desk.records[i]["state"] != "EVALUATED" and "result" not in desk.records[i] for i in shortlist_ids))

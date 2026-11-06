@@ -112,7 +112,7 @@ class DeskFactory(unittest.TestCase):
         self.assertIn(["UNKNOWN_FIELD", "hypotheses[0].fee_bps"], rec["evaluation_refused"])
         df.nightly(desk, [], protocols, now + 86400 * 801, data_loader=loader)   # fixed input evaluates normally
         self.assertEqual(rec["state"], "VALIDATED")
-        self.assertEqual(rec["result"]["evaluator"], "1.1")
+        self.assertEqual(rec["result"]["evaluator"], "1.1.1")
 
     def test_protected_period_and_late_freeze_block_data(self):
         desk, rep, protocols, loader, now = self.night1()

@@ -1,0 +1,9 @@
+{
+ "spec_version": "1.1.1",
+ "file": "research/desk/crosscheck/claude_eval_v111.py",
+ "sha256": "dbac993c37c61d5917e34ae4d16b78640c748782e1e00712bbd6065f80074fec",
+ "spec": "research/desk/crosscheck/EVALUATOR_SPEC_V1_1_1.md",
+ "spec_sha256": "2ab3ae0319147ff9ebcf092ec2c3d5e07fa1cdccb8c4dc03855cd323d2a000c0",
+ "frozen": "2026-11-06",
+ "rule": "any change to the evaluator requires a new version and a new lock"
+}

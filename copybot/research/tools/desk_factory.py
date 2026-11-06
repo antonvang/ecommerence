@@ -40,7 +40,7 @@ if HERE not in sys.path:
 from research.tools import hypo_engine as he  # noqa: E402
 from research.tools import p2_power  # noqa: E402
 from research.tools.factory import Ledger, FactoryError  # noqa: E402
-from research.desk.crosscheck import claude_eval_v11 as ev  # noqa: E402
+from research.desk.crosscheck import claude_eval_v111 as ev  # noqa: E402
 
 CHAIN = ["IDEA", "LITERATURE_SCREENED", "PROTOCOL_DRAFT", "POWER_CHECKED", "AWAITING_OWNER_APPROVAL", "APPROVED",
          "FROZEN", "DATA_ELIGIBLE", "EVALUATED"]
