@@ -44,7 +44,7 @@ def base(fid, seed, n_bars, assets, ic=0.08, sigma=0.01):
 
 
 def f1():
-    return base("F1_clean", 101, 400, ["A1", "A2", "A3", "A4"])[1]
+    return base("F1_clean", 101, 400, ["A1", "A2", "A3", "A4"], ic=0.25)[1]
 
 
 def f2():
