@@ -1,0 +1,1 @@
+{"errors":[{"code":"OUT_OF_RANGE","path":"observations[0].signals.s.value"}],"fixture_id":"R3_08_range_value","spec_version":"1.1.1","status":"INVALID_INPUT"}

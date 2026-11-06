@@ -1,0 +1,10 @@
+{
+  "base_commit": "1314bdfd2b6566f29fc6dd4cd8bdf3fbaf6ef55c",
+  "numeric_exception_path_choice": "",
+  "phase": "spec-only reference completed before opening Claude evaluator/tests",
+  "sha256": {
+    "make_r3_fixtures.py": "10962ca8825e8c1ec55884f7437bc6fd1a2990e70b7e96bdc0655fcf84b8905e",
+    "ref_eval.py": "cf9eb45f7cdc8ec2e1f315e2c6e177becb5051d4fdb2a15dc0a9145140446d02",
+    "test_ref_eval_v111.py": "2d710032149516e638a2517da2015a8474f982b16074dd99fbc52eea87fe07a6"
+  }
+}

@@ -1,0 +1,816 @@
+[
+  {
+    "id": "M01",
+    "description": "Reject signal available exactly at t",
+    "category": "lookahead/time",
+    "classification": "ØVRIG",
+    "equivalent": false,
+    "equivalence_reason": "",
+    "planned_silent": false,
+    "edits": [
+      [
+        "elif sig[\"avail_ts\"] > t:",
+        "elif sig[\"avail_ts\"] >= t:"
+      ]
+    ],
+    "extra": "",
+    "file": "M01.py",
+    "sha256": "37709084dd03b0458f857262f1bd3c34ee103fdfe75bdcd6f16f89be23e3774d"
+  },
+  {
+    "id": "M02",
+    "description": "Permit one cadence of future signal availability",
+    "category": "lookahead/time",
+    "classification": "SIKKERHEDSKRITISK",
+    "equivalent": false,
+    "equivalence_reason": "",
+    "planned_silent": false,
+    "edits": [
+      [
+        "elif sig[\"avail_ts\"] > t:",
+        "elif sig[\"avail_ts\"] > t + cad:"
+      ]
+    ],
+    "extra": "",
+    "file": "M02.py",
+    "sha256": "1f0b88b67b1a97cb25ccf0deaffcecd786c51b4086abaf3a5e3381375696d632"
+  },
+  {
+    "id": "M03",
+    "description": "Exclude embargo equality bar",
+    "category": "lookahead/time",
+    "classification": "ØVRIG",
+    "equivalent": false,
+    "equivalence_reason": "",
+    "planned_silent": false,
+    "edits": [
+      [
+        "t >= start + emb",
+        "t > start + emb"
+      ],
+      [
+        "if t < start + emb:",
+        "if t <= start + emb:"
+      ]
+    ],
+    "extra": "",
+    "file": "M03.py",
+    "sha256": "353410e52977203fdb92af9e0057ae1aa3c12d38d63a11f1f2133c3329e6b194"
+  },
+  {
+    "id": "M04",
+    "description": "Ignore configured embargo",
+    "category": "lookahead/time",
+    "classification": "SIKKERHEDSKRITISK",
+    "equivalent": false,
+    "equivalence_reason": "",
+    "planned_silent": false,
+    "edits": [
+      [
+        "emb = fx[\"window\"].get(\"embargo_s\", 0)",
+        "emb = 0"
+      ]
+    ],
+    "extra": "",
+    "file": "M04.py",
+    "sha256": "52b9816ad67c73efb12677e7f5c8bcae1637d7ffdfaf57e62edbdebb0b48ef39"
+  },
+  {
+    "id": "M05",
+    "description": "Anchor grid to Unix zero instead of window start",
+    "category": "lookahead/time",
+    "classification": "SIKKERHEDSKRITISK",
+    "equivalent": false,
+    "equivalence_reason": "",
+    "planned_silent": false,
+    "edits": [
+      [
+        "gset = set(grid)",
+        "gset = {t for t in grid if t % cad == 0}"
+      ]
+    ],
+    "extra": "",
+    "file": "M05.py",
+    "sha256": "ab7a159b6ffe79b5d37c1c60d8e7b7c48528a216edc4a97d83b3bb726ce6757a"
+  },
+  {
+    "id": "M06",
+    "description": "Include exclusive end in time grid",
+    "category": "lookahead/time",
+    "classification": "SIKKERHEDSKRITISK",
+    "equivalent": false,
+    "equivalence_reason": "",
+    "planned_silent": false,
+    "edits": [
+      [
+        "grid = list(range(start, end, cad))",
+        "grid = list(range(start, end + 1, cad))"
+      ]
+    ],
+    "extra": "",
+    "file": "M06.py",
+    "sha256": "eabc936437894473d6012715d2c9e781928c08e29b9fb18fe1eb4cad56ef8c2d"
+  },
+  {
+    "id": "M07",
+    "description": "Exclude listing equality bar",
+    "category": "membership",
+    "classification": "ØVRIG",
+    "equivalent": false,
+    "equivalence_reason": "",
+    "planned_silent": false,
+    "edits": [
+      [
+        "m[\"listed_from\"] <= t",
+        "m[\"listed_from\"] < t"
+      ]
+    ],
+    "extra": "",
+    "file": "M07.py",
+    "sha256": "8d78ccdeded44a665a1be5c6d6d2e91b318670f2ff3e32da4b37aeb43f07b707"
+  },
+  {
+    "id": "M08",
+    "description": "Retain previous positions through gap and MISSING",
+    "category": "position/cost",
+    "classification": "SIKKERHEDSKRITISK",
+    "equivalent": false,
+    "equivalence_reason": "",
+    "planned_silent": true,
+    "edits": [
+      [
+        "            prev = cur",
+        "            prev.update(cur)"
+      ]
+    ],
+    "extra": "",
+    "file": "M08.py",
+    "sha256": "d7bd78e2db20340cae9cf437ac27c92890c5d2236f6591b8ab9a2ddfa083f48a"
+  },
+  {
+    "id": "M09",
+    "description": "Reverse funding sign",
+    "category": "position/cost",
+    "classification": "SIKKERHEDSKRITISK",
+    "equivalent": false,
+    "equivalence_reason": "",
+    "planned_silent": true,
+    "edits": [
+      [
+        "f = w * fr",
+        "f = -w * fr"
+      ]
+    ],
+    "extra": "",
+    "file": "M09.py",
+    "sha256": "1e676c9e32b2e5cb2f97a6bfbc971154608754534792132a405d78ceba407804"
+  },
+  {
+    "id": "M10",
+    "description": "Charge absolute position rather than turnover",
+    "category": "position/cost",
+    "classification": "SIKKERHEDSKRITISK",
+    "equivalent": false,
+    "equivalence_reason": "",
+    "planned_silent": true,
+    "edits": [
+      [
+        "abs(w - prev.get(a, 0.0))",
+        "abs(w)"
+      ]
+    ],
+    "extra": "",
+    "file": "M10.py",
+    "sha256": "aeace57b0d50093ba587c07f4b5cd2372c4dc90b63bd09b03c6201056e2e3883"
+  },
+  {
+    "id": "M11",
+    "description": "Undercharge costs by tenfold unit conversion",
+    "category": "position/cost",
+    "classification": "SIKKERHEDSKRITISK",
+    "equivalent": false,
+    "equivalence_reason": "",
+    "planned_silent": true,
+    "edits": [
+      [
+        "h[\"cost_bps\"] / 10_000",
+        "h[\"cost_bps\"] / 100_000"
+      ]
+    ],
+    "extra": "",
+    "file": "M11.py",
+    "sha256": "3924250c2abb31865b5e0d952ed42f0684a29824112670455f78fa62ad221dd1"
+  },
+  {
+    "id": "M12",
+    "description": "Lose funding position sign",
+    "category": "position/cost",
+    "classification": "SIKKERHEDSKRITISK",
+    "equivalent": false,
+    "equivalence_reason": "",
+    "planned_silent": true,
+    "edits": [
+      [
+        "f = w * fr",
+        "f = abs(w) * fr"
+      ]
+    ],
+    "extra": "",
+    "file": "M12.py",
+    "sha256": "84fc4098e0e20f0f29ecc47cd5b18489cc11962ae7667bbeff11b4607249cb10"
+  },
+  {
+    "id": "M13",
+    "description": "Report mean cost instead of summed cost",
+    "category": "reporting",
+    "classification": "ØVRIG",
+    "equivalent": false,
+    "equivalence_reason": "",
+    "planned_silent": true,
+    "edits": [
+      [
+        "\"total_cost\": math.fsum(costs)",
+        "\"total_cost\": math.fsum(costs) / max(1, T)"
+      ]
+    ],
+    "extra": "",
+    "file": "M13.py",
+    "sha256": "9b046d6c929118a05131001473a616cac4b1265c1507c7ab2ea0535baff1b147"
+  },
+  {
+    "id": "M14",
+    "description": "Include missing assets in portfolio denominator",
+    "category": "missing/numerics",
+    "classification": "SIKKERHEDSKRITISK",
+    "equivalent": false,
+    "equivalence_reason": "",
+    "planned_silent": true,
+    "edits": [
+      [
+        "math.fsum(nets) / len(nets)",
+        "math.fsum(nets) / max(1, len(fx[\"universe\"]))"
+      ]
+    ],
+    "extra": "",
+    "file": "M14.py",
+    "sha256": "eb89639f148cc305cca6e99024480d6bf23dbc909057c32fecb07e9e3754d2a5"
+  },
+  {
+    "id": "M15",
+    "description": "Impute MISSING returns with zero",
+    "category": "missing/numerics",
+    "classification": "SIKKERHEDSKRITISK",
+    "equivalent": false,
+    "equivalence_reason": "",
+    "planned_silent": false,
+    "edits": [
+      [
+        "r = num(o[\"ret\"])",
+        "r = num(o[\"ret\"])\n                r = 0.0 if r is None else r"
+      ]
+    ],
+    "extra": "",
+    "file": "M15.py",
+    "sha256": "8ceaa5a5379cd4754e0b9c332a9fda4cb359b3b729f1d623f89f125b72e1cc9c"
+  },
+  {
+    "id": "M16",
+    "description": "Let infinity through finite-number helper",
+    "category": "missing/numerics",
+    "classification": "SIKKERHEDSKRITISK",
+    "equivalent": false,
+    "equivalence_reason": "",
+    "planned_silent": false,
+    "edits": [
+      [
+        "if not is_num(v) or not math.isfinite(v):",
+        "if not is_num(v) or math.isnan(v):"
+      ]
+    ],
+    "extra": "",
+    "file": "M16.py",
+    "sha256": "55b03e940cb503fed495a1770510e3ad8f420cd4bf6c0c282c4e19ad7a6d0488"
+  },
+  {
+    "id": "M17",
+    "description": "Do not count missing funding at flat position",
+    "category": "reporting",
+    "classification": "ØVRIG",
+    "equivalent": false,
+    "equivalence_reason": "",
+    "planned_silent": true,
+    "edits": [
+      [
+        "c[\"n_funding_missing\"] += 1",
+        "c[\"n_funding_missing\"] += int(w != 0)"
+      ]
+    ],
+    "extra": "",
+    "file": "M17.py",
+    "sha256": "15caef04529ff998af353f2049cf8ce3b9cc35340a0e9dcc88d15221a70fb186"
+  },
+  {
+    "id": "M18",
+    "description": "Reject returns/funding exactly at permitted size",
+    "category": "validation/numerics",
+    "classification": "ØVRIG",
+    "equivalent": false,
+    "equivalence_reason": "",
+    "planned_silent": false,
+    "edits": [
+      [
+        "abs(o[k]) > lim",
+        "abs(o[k]) >= lim"
+      ]
+    ],
+    "extra": "",
+    "file": "M18.py",
+    "sha256": "604b2bf850fcf53e87284410f0b5ea409cc8263de58279e081251479cfc839a3"
+  },
+  {
+    "id": "M19",
+    "description": "Relax return size bound tenfold",
+    "category": "validation/numerics",
+    "classification": "SIKKERHEDSKRITISK",
+    "equivalent": false,
+    "equivalence_reason": "",
+    "planned_silent": false,
+    "edits": [
+      [
+        "MAX_RET, MAX_FUNDING, MAX_VALUE, MAX_COST_BPS = 1e6, 1e6, 1e12, 1e6",
+        "MAX_RET, MAX_FUNDING, MAX_VALUE, MAX_COST_BPS = 1e7, 1e6, 1e12, 1e6"
+      ]
+    ],
+    "extra": "",
+    "file": "M19.py",
+    "sha256": "60b5b99d2381dcd5b5b70de04cb485f55a06fa7f06e8a3bc403d52cc9bd74184"
+  },
+  {
+    "id": "M20",
+    "description": "Silently accept undeclared fee component",
+    "category": "validation/protocol",
+    "classification": "SIKKERHEDSKRITISK",
+    "equivalent": false,
+    "equivalence_reason": "",
+    "planned_silent": false,
+    "edits": [
+      [
+        "fields(h, p, hreq, set(hreq))",
+        "fields(h, p, hreq, set(hreq) | {\"fee_bps\"})"
+      ]
+    ],
+    "extra": "",
+    "file": "M20.py",
+    "sha256": "757362207fa4806d6e60919bbcd7f0013cda9dda66f3bce9ff94d2a9ed9d0416"
+  },
+  {
+    "id": "M21",
+    "description": "Apply DUPLICATE only to statistically tested rows",
+    "category": "multiple testing",
+    "classification": "ØVRIG",
+    "equivalent": false,
+    "equivalence_reason": "",
+    "planned_silent": false,
+    "edits": [
+      [
+        "if fp in seen_fp:",
+        "if fp in seen_fp and res[\"status\"] == \"TESTED\":"
+      ]
+    ],
+    "extra": "",
+    "file": "M21.py",
+    "sha256": "40a582682a5ad35d386e5d1dfae6bb1dc9cc689176591aae316f142b2d06ca3e"
+  },
+  {
+    "id": "M22",
+    "description": "Include cost in fingerprint and test duplicate idea again",
+    "category": "multiple testing",
+    "classification": "SIKKERHEDSKRITISK",
+    "equivalent": false,
+    "equivalence_reason": "",
+    "planned_silent": false,
+    "edits": [
+      [
+        "fp = (h[\"family\"], h[\"signal_key\"], h[\"rule\"])",
+        "fp = (h[\"family\"], h[\"signal_key\"], h[\"rule\"], h[\"cost_bps\"])"
+      ]
+    ],
+    "extra": "",
+    "file": "M22.py",
+    "sha256": "028e9846d851bea556592e09165b48193c9c38be78059be8e2aaed9cc3c8d7d3"
+  },
+  {
+    "id": "M23",
+    "description": "Count excluded duplicates in Holm denominator",
+    "category": "multiple testing",
+    "classification": "ØVRIG",
+    "equivalent": false,
+    "equivalence_reason": "",
+    "planned_silent": false,
+    "edits": [
+      [
+        "he.holm(ps, fx[\"alpha\"])",
+        "_mutation_holm(ps, fx[\"alpha\"], size=len(out))"
+      ]
+    ],
+    "extra": "\ndef _mutation_holm(ps, alpha, mode=\"normal\", size=None):\n    order = sorted(range(len(ps)), key=lambda i: (ps[i], i))\n    m = len(ps) if size is None else size\n    rejected = [False] * len(ps)\n    for k, i in enumerate(order):\n        threshold = alpha / (m - k)\n        yes = ps[i] < threshold if mode == \"strict\" else ps[i] <= threshold\n        if yes:\n            rejected[i] = True\n        elif mode != \"nostop\":\n            break\n    return rejected\n\ndef _mutation_family_holm(tested, out, hyps, alpha):\n    families = {h[\"hid\"]: h[\"family\"] for h in hyps}\n    result = [False] * len(tested)\n    for family in sorted(set(families.values())):\n        indices = [i for i, hid in enumerate(tested) if families[hid] == family]\n        flags = _mutation_holm([out[tested[i]][\"p_one\"] for i in indices], alpha)\n        for i, flag in zip(indices, flags):\n            result[i] = flag\n    return result\n",
+    "file": "M23.py",
+    "sha256": "b78b9d4b744bbc5d5dc7343c755df972c5374c270b2755bec122e4cd8a86a6a6"
+  },
+  {
+    "id": "M24",
+    "description": "Use strict inequality in Holm",
+    "category": "multiple testing",
+    "classification": "ØVRIG",
+    "equivalent": false,
+    "equivalence_reason": "",
+    "planned_silent": false,
+    "edits": [
+      [
+        "he.holm(ps, fx[\"alpha\"])",
+        "_mutation_holm(ps, fx[\"alpha\"], mode=\"strict\")"
+      ]
+    ],
+    "extra": "\ndef _mutation_holm(ps, alpha, mode=\"normal\", size=None):\n    order = sorted(range(len(ps)), key=lambda i: (ps[i], i))\n    m = len(ps) if size is None else size\n    rejected = [False] * len(ps)\n    for k, i in enumerate(order):\n        threshold = alpha / (m - k)\n        yes = ps[i] < threshold if mode == \"strict\" else ps[i] <= threshold\n        if yes:\n            rejected[i] = True\n        elif mode != \"nostop\":\n            break\n    return rejected\n\ndef _mutation_family_holm(tested, out, hyps, alpha):\n    families = {h[\"hid\"]: h[\"family\"] for h in hyps}\n    result = [False] * len(tested)\n    for family in sorted(set(families.values())):\n        indices = [i for i, hid in enumerate(tested) if families[hid] == family]\n        flags = _mutation_holm([out[tested[i]][\"p_one\"] for i in indices], alpha)\n        for i, flag in zip(indices, flags):\n            result[i] = flag\n    return result\n",
+    "file": "M24.py",
+    "sha256": "44139e57ab027138040c21192c7ef921ba8c037daeaaae493f58837f66032f91"
+  },
+  {
+    "id": "M25",
+    "description": "Continue Holm after its first non-rejection",
+    "category": "multiple testing",
+    "classification": "SIKKERHEDSKRITISK",
+    "equivalent": false,
+    "equivalence_reason": "",
+    "planned_silent": false,
+    "edits": [
+      [
+        "he.holm(ps, fx[\"alpha\"])",
+        "_mutation_holm(ps, fx[\"alpha\"], mode=\"nostop\")"
+      ]
+    ],
+    "extra": "\ndef _mutation_holm(ps, alpha, mode=\"normal\", size=None):\n    order = sorted(range(len(ps)), key=lambda i: (ps[i], i))\n    m = len(ps) if size is None else size\n    rejected = [False] * len(ps)\n    for k, i in enumerate(order):\n        threshold = alpha / (m - k)\n        yes = ps[i] < threshold if mode == \"strict\" else ps[i] <= threshold\n        if yes:\n            rejected[i] = True\n        elif mode != \"nostop\":\n            break\n    return rejected\n\ndef _mutation_family_holm(tested, out, hyps, alpha):\n    families = {h[\"hid\"]: h[\"family\"] for h in hyps}\n    result = [False] * len(tested)\n    for family in sorted(set(families.values())):\n        indices = [i for i, hid in enumerate(tested) if families[hid] == family]\n        flags = _mutation_holm([out[tested[i]][\"p_one\"] for i in indices], alpha)\n        for i, flag in zip(indices, flags):\n            result[i] = flag\n    return result\n",
+    "file": "M25.py",
+    "sha256": "43c2ec877d9c2ee9673492b3b6a9591d6d950f59f06bc6177644fd7e9a59e37f"
+  },
+  {
+    "id": "M26",
+    "description": "Restart Holm independently per family",
+    "category": "multiple testing",
+    "classification": "SIKKERHEDSKRITISK",
+    "equivalent": false,
+    "equivalence_reason": "",
+    "planned_silent": false,
+    "edits": [
+      [
+        "he.holm(ps, fx[\"alpha\"])",
+        "_mutation_family_holm(tested, out, fx[\"hypotheses\"], fx[\"alpha\"])"
+      ]
+    ],
+    "extra": "\ndef _mutation_holm(ps, alpha, mode=\"normal\", size=None):\n    order = sorted(range(len(ps)), key=lambda i: (ps[i], i))\n    m = len(ps) if size is None else size\n    rejected = [False] * len(ps)\n    for k, i in enumerate(order):\n        threshold = alpha / (m - k)\n        yes = ps[i] < threshold if mode == \"strict\" else ps[i] <= threshold\n        if yes:\n            rejected[i] = True\n        elif mode != \"nostop\":\n            break\n    return rejected\n\ndef _mutation_family_holm(tested, out, hyps, alpha):\n    families = {h[\"hid\"]: h[\"family\"] for h in hyps}\n    result = [False] * len(tested)\n    for family in sorted(set(families.values())):\n        indices = [i for i, hid in enumerate(tested) if families[hid] == family]\n        flags = _mutation_holm([out[tested[i]][\"p_one\"] for i in indices], alpha)\n        for i, flag in zip(indices, flags):\n            result[i] = flag\n    return result\n",
+    "file": "M26.py",
+    "sha256": "1c562b909749634054e35f180eb84ce74deeea95159ac0f566de50e9c2118660"
+  },
+  {
+    "id": "M27",
+    "description": "Use alpha instead of q_fdr for diagnostic BH",
+    "category": "multiple testing",
+    "classification": "ØVRIG",
+    "equivalent": false,
+    "equivalence_reason": "",
+    "planned_silent": true,
+    "edits": [
+      [
+        "he.bh(ps, fx[\"q_fdr\"])",
+        "he.bh(ps, fx[\"alpha\"])"
+      ]
+    ],
+    "extra": "",
+    "file": "M27.py",
+    "sha256": "a71b53b1860704e49b8ade4a4ed3b0557123eca0f249cdf5bceaaf6d09d203b5"
+  },
+  {
+    "id": "M28",
+    "description": "Accidentally use doubled normal tail",
+    "category": "statistics",
+    "classification": "ØVRIG",
+    "equivalent": false,
+    "equivalence_reason": "",
+    "planned_silent": true,
+    "edits": [
+      [
+        "p_one=he.p_one(tstat)",
+        "p_one=2 * he.p_one(tstat)"
+      ]
+    ],
+    "extra": "",
+    "file": "M28.py",
+    "sha256": "7adb18b190797bb1b197e3f6bf45c85c7863aa61eaa43e36ab8d18da3f3f5966"
+  },
+  {
+    "id": "M29",
+    "description": "Drop HAC serial covariance by forcing lag zero",
+    "category": "statistics",
+    "classification": "SIKKERHEDSKRITISK",
+    "equivalent": false,
+    "equivalence_reason": "",
+    "planned_silent": true,
+    "edits": [
+      [
+        "L = nw_lag(T)",
+        "L = 0"
+      ]
+    ],
+    "extra": "",
+    "file": "M29.py",
+    "sha256": "957093e98d809e5139036c9823dc716ad1278bda3ddbc9a9fc75f12fc7995359"
+  },
+  {
+    "id": "M30",
+    "description": "Allow T29 into the test set",
+    "category": "statistics",
+    "classification": "SIKKERHEDSKRITISK",
+    "equivalent": false,
+    "equivalence_reason": "",
+    "planned_silent": false,
+    "edits": [
+      [
+        "if T >= 30:",
+        "if T >= 29:"
+      ]
+    ],
+    "extra": "",
+    "file": "M30.py",
+    "sha256": "df0d54b1dcd32cc3fdf0df961c1ed33cd54590a29a6853247135051d04dfefc6"
+  },
+  {
+    "id": "M31",
+    "description": "Charge accepted alpha again on idempotent hit",
+    "category": "ledger/replay",
+    "classification": "SIKKERHEDSKRITISK",
+    "equivalent": false,
+    "equivalence_reason": "",
+    "planned_silent": true,
+    "edits": [
+      [
+        "                hits += 1",
+        "                hits += 1\n                totals[q[\"family\"]][\"alphas\"].append(a)"
+      ]
+    ],
+    "extra": "",
+    "file": "M31.py",
+    "sha256": "4b7eef5cc22425bf476d5238d39cc4ebe0219879203bda3a489f80db1ee83d00"
+  },
+  {
+    "id": "M32",
+    "description": "Accept and charge a changed-key payload",
+    "category": "ledger/replay",
+    "classification": "SIKKERHEDSKRITISK",
+    "equivalent": false,
+    "equivalence_reason": "",
+    "planned_silent": false,
+    "edits": [
+      [
+        "        if q[\"key\"] in accepted:\n            if canonical(accepted[q[\"key\"]]) == canonical([q[\"hid\"], q[\"family\"], v, a]):\n                hits += 1\n            else:\n                errors.append({\"key\": q[\"key\"], \"reason\": \"key_conflict\"})\n            continue",
+        "        if q[\"key\"] in accepted:\n            if canonical(accepted[q[\"key\"]]) == canonical([q[\"hid\"], q[\"family\"], v, a]):\n                hits += 1\n                continue\n            # retry with changed payload is incorrectly allowed to append"
+      ]
+    ],
+    "extra": "",
+    "file": "M32.py",
+    "sha256": "1df818073c4dc186a6c14be5f90565967659e80dd920790169d8c0d9f2aaebaf"
+  },
+  {
+    "id": "M33",
+    "description": "Reserve rejected key before variants validation",
+    "category": "ledger/replay",
+    "classification": "SIKKERHEDSKRITISK",
+    "equivalent": false,
+    "equivalence_reason": "",
+    "planned_silent": false,
+    "edits": [
+      [
+        "errors.append({\"key\": q[\"key\"], \"reason\": \"variants\"})",
+        "errors.append({\"key\": q[\"key\"], \"reason\": \"variants\"})\n            accepted[q[\"key\"]] = [q[\"hid\"], q[\"family\"], v, a]"
+      ]
+    ],
+    "extra": "",
+    "file": "M33.py",
+    "sha256": "8bfe82ac2887e16669a3e1f769b6411668c72c3424abba5086e2f15d4d04efed"
+  },
+  {
+    "id": "M34",
+    "description": "Compare replay by Python value rather than canonical types",
+    "category": "ledger/replay",
+    "classification": "SIKKERHEDSKRITISK",
+    "equivalent": false,
+    "equivalence_reason": "",
+    "planned_silent": false,
+    "edits": [
+      [
+        "canonical(accepted[q[\"key\"]]) == canonical([q[\"hid\"], q[\"family\"], v, a])",
+        "accepted[q[\"key\"]] == [q[\"hid\"], q[\"family\"], v, a]"
+      ]
+    ],
+    "extra": "",
+    "file": "M34.py",
+    "sha256": "8d7b7abf40eee0f1d6e899bed5ee48afec6b80edc16769c878e1bd0bbbbd0c96"
+  },
+  {
+    "id": "M35",
+    "description": "Omit timestamp from ledger hash preimage",
+    "category": "ledger/hash",
+    "classification": "ØVRIG",
+    "equivalent": false,
+    "equivalence_reason": "",
+    "planned_silent": true,
+    "edits": [
+      [
+        "prev = sha(e)",
+        "prev = sha({k: v for k, v in e.items() if k != \"ts\"})"
+      ]
+    ],
+    "extra": "",
+    "file": "M35.py",
+    "sha256": "e23b755247313cc67ef340824bda5aa30c6bb47c36a88cf22f84ec4610d3c0dd"
+  },
+  {
+    "id": "M36",
+    "description": "Skip data/protocol lock when any other error exists",
+    "category": "lock/protocol",
+    "classification": "SIKKERHEDSKRITISK",
+    "equivalent": false,
+    "equivalence_reason": "",
+    "planned_silent": false,
+    "edits": [
+      [
+        "if \"lock\" in fx:",
+        "if \"lock\" in fx and not errs:"
+      ]
+    ],
+    "extra": "",
+    "file": "M36.py",
+    "sha256": "b1663062ea43ec956e38422469f48c1c5fa97d848e5fa77da2a6cb377f15abb4"
+  },
+  {
+    "id": "M37",
+    "description": "Hash universe in place of observation data",
+    "category": "lock/protocol",
+    "classification": "SIKKERHEDSKRITISK",
+    "equivalent": false,
+    "equivalence_reason": "",
+    "planned_silent": false,
+    "edits": [
+      [
+        "(\"data_sha256\", fx.get(\"observations\"))",
+        "(\"data_sha256\", fx.get(\"universe\"))"
+      ]
+    ],
+    "extra": "",
+    "file": "M37.py",
+    "sha256": "c805d8835ef369a3d619d5384575e578b3e6931dd0337252adc173c20168533d"
+  },
+  {
+    "id": "M38",
+    "description": "Omit alpha from protocol identity",
+    "category": "lock/protocol",
+    "classification": "SIKKERHEDSKRITISK",
+    "equivalent": false,
+    "equivalence_reason": "",
+    "planned_silent": false,
+    "edits": [
+      [
+        "proto = {k: fx.get(k) for k in (\"cadence_s\", \"window\", \"universe\", \"hypotheses\", \"alpha\", \"q_fdr\")}",
+        "proto = {k: fx.get(k) for k in (\"cadence_s\", \"window\", \"universe\", \"hypotheses\", \"q_fdr\")}"
+      ]
+    ],
+    "extra": "",
+    "file": "M38.py",
+    "sha256": "f72e9266e7d22ea627777bb22a8b22dfda4eddc9c29a5b0ff3d1fe222b7dc14d"
+  },
+  {
+    "id": "M39",
+    "description": "Ignore unknown lock fields",
+    "category": "lock/protocol",
+    "classification": "SIKKERHEDSKRITISK",
+    "equivalent": false,
+    "equivalence_reason": "",
+    "planned_silent": false,
+    "edits": [
+      [
+        "if k not in (\"protocol_sha256\", \"data_sha256\"):",
+        "if False and k not in (\"protocol_sha256\", \"data_sha256\"):"
+      ]
+    ],
+    "extra": "",
+    "file": "M39.py",
+    "sha256": "983782c4cf74bf790a1a3ddf24486f97374ef377a3ab20df644fcba0faed9f3a"
+  },
+  {
+    "id": "M40",
+    "description": "Disable digest mismatch rejection",
+    "category": "lock/protocol",
+    "classification": "SIKKERHEDSKRITISK",
+    "equivalent": false,
+    "equivalence_reason": "",
+    "planned_silent": false,
+    "edits": [
+      [
+        "if k not in lk or not isinstance(lk[k], str) or lk[k] != h(obj):",
+        "if False and (k not in lk or not isinstance(lk[k], str) or lk[k] != h(obj)):"
+      ]
+    ],
+    "extra": "",
+    "file": "M40.py",
+    "sha256": "54f0954322788ad6ef0266163786b5be4ba3c744896f636c4efc6eb5b7d8101a"
+  },
+  {
+    "id": "M41",
+    "description": "Overwrite final file directly without atomic replacement",
+    "category": "restart/write",
+    "classification": "ØVRIG",
+    "equivalent": false,
+    "equivalence_reason": "",
+    "planned_silent": true,
+    "edits": [
+      [
+        "    d = os.path.dirname(path) or \".\"\n    fd, tmp = tempfile.mkstemp(dir=d, prefix=\".tmp_\")\n    with os.fdopen(fd, \"w\", encoding=\"utf-8\") as f:\n        f.write(text)\n    os.replace(tmp, path)",
+        "    with open(path, \"w\", encoding=\"utf-8\") as f:\n        f.write(text)"
+      ]
+    ],
+    "extra": "",
+    "file": "M41.py",
+    "sha256": "88b8b704fec05ca1fa793c37f985f731bbc5b5e0c8871f0e449b0ec409fe8f03"
+  },
+  {
+    "id": "M42",
+    "description": "Append new serialized result to previous result",
+    "category": "restart/write",
+    "classification": "ØVRIG",
+    "equivalent": false,
+    "equivalence_reason": "",
+    "planned_silent": false,
+    "edits": [
+      [
+        "    os.replace(tmp, path)",
+        "    with open(path, \"a\", encoding=\"utf-8\") as out, open(tmp, encoding=\"utf-8\") as src:\n        out.write(src.read())\n    os.unlink(tmp)"
+      ]
+    ],
+    "extra": "",
+    "file": "M42.py",
+    "sha256": "89e1309e1e36654a33a36e0b7d5508663a28525a2a2a831742ef5248e1ac620a"
+  },
+  {
+    "id": "M43",
+    "description": "Equivalent signed extreme predicate",
+    "category": "equivalent",
+    "classification": "ØVRIG",
+    "equivalent": true,
+    "equivalence_reason": "r is finite after num(); abs(r)>0.5 iff r>0.5 or r<-0.5, including signed zero",
+    "planned_silent": false,
+    "edits": [
+      [
+        "if abs(r) > 0.5:",
+        "if r > 0.5 or r < -0.5:"
+      ]
+    ],
+    "extra": "",
+    "file": "M43.py",
+    "sha256": "9d0895f6e45bceb1e5c087db4efffed94ed8220a9df2316a1ad99e22362f3581"
+  },
+  {
+    "id": "M44",
+    "description": "Equivalent integer sample-size predicate",
+    "category": "equivalent",
+    "classification": "ØVRIG",
+    "equivalent": true,
+    "equivalence_reason": "T=len(xs) is an integer; T>=30 iff T>29",
+    "planned_silent": false,
+    "edits": [
+      [
+        "if T >= 30:",
+        "if T > 29:"
+      ]
+    ],
+    "extra": "",
+    "file": "M44.py",
+    "sha256": "22aad6e30528d8198739cf3a5abcdf652729c8e9a535ad2b3d39b4fa040fc9db"
+  },
+  {
+    "id": "M45",
+    "description": "Count exact half-unit returns as extreme",
+    "category": "reporting",
+    "classification": "ØVRIG",
+    "equivalent": false,
+    "equivalence_reason": "",
+    "planned_silent": true,
+    "edits": [
+      [
+        "if abs(r) > 0.5:",
+        "if abs(r) >= 0.5:"
+      ]
+    ],
+    "extra": "",
+    "file": "M45.py",
+    "sha256": "eed9e9b064fda39d47c07ca1f61d8f50142955b9b96c7e573ce3adad11515a5e"
+  }
+]

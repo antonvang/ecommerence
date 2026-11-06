@@ -1,0 +1,18 @@
+{
+  "fixtures": 76,
+  "matching": 75,
+  "tolerance": "abs(a-b) <= 1e-9*max(1,abs(a),abs(b)); exact nonfloats",
+  "differences": [
+    {
+      "fixture": "R3_13_numeric_ledger",
+      "differences": [
+        [
+          ".errors[0].path",
+          "",
+          "OverflowError"
+        ]
+      ]
+    }
+  ],
+  "frozen_sha256": "dbac993c37c61d5917e34ae4d16b78640c748782e1e00712bbd6065f80074fec"
+}

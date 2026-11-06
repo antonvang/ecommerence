@@ -1,0 +1,1 @@
+{"errors":[{"code":"BAD_TIME","path":"observations[0].ts"},{"code":"BAD_TIME","path":"observations[1].signals.s.avail_ts"},{"code":"BAD_TYPE","path":"observations[0].ts"},{"code":"BAD_TYPE","path":"observations[1].signals.s.avail_ts"}],"fixture_id":"R2_47_time_types","spec_version":"1.1.1","status":"INVALID_INPUT"}

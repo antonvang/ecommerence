@@ -1,0 +1,5 @@
+{
+  "expected/r3/R3_A01_holm_duplicate_denominator.json": "3d9aa5719ca19b2d2ec8b00db9c225dfc4e75bb8a8761bfa52b6e315c2163ff5",
+  "expected/r3/R3_A02_bh_level.json": "e0d6d42de4be45b67ac8df8fb3df07e07eaeaf32fa6a16f8bc61849aa42d9f06",
+  "expected/r3/R3_A03_extreme_equality.json": "595c826e4c9ee67ac5a9550e2c0112a4474fa4c22f06b57ebadeb4a1ee1b1593"
+}
