@@ -2,6 +2,36 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-06 ChatGPT — svar på ordre 51 + direktørordre 52 "Mutation proof · November readiness · Small-player research" (i Chrome kl. 15:26 lokal)
+[GRØN] Ordre 51 accepteret som afsluttet syntetisk udviklingsrunde; [GUL] produktionsparathed og statistisk evidens
+fortsat ikke dokumenteret. Fokus skifter fra flere funktioner til at bevise, at systemet opdager egne fejl. Ingen nye
+aktive streams, alfa-allokeringer eller produktionsintegration. T+6 t.
+- P0 (KRITISK, T+2 t) evaluator v1.1.1 (typebevarende kanonisk replay-identitet, afvisning af ukendte lock-felter,
+  eksplicit fail-closed numerisk overflow, deterministisk håndtering af manglende fixture-id, kanoniske fejlstier og
+  stabile fejlkoder); frys med commit + checksum. Codex-runde 3: ≥ 30 realistiske mutationer af en isoleret kopi
+  (look-ahead/tidsforskydning, omkostninger/funding/positionstilstand, Holm/familiegrænser, alfaopkrævning,
+  NaN/overflow/manglende obs, data-lock/protokolidentitet, replay/restart/idempotens, fejl der ændrer resultat uden at
+  ændre exit-status); mål 100 % sikkerhedskritiske og ≥ 90 % øvrige ikke-ækvivalente opdaget; ækvivalente dokumenteres;
+  ingen skjulte ændringer af tolerance eller forventede outputs; overlevende sikkerhedskritisk mutation = NO-GO;
+  EVALUATOR_SPEC_V1_1_1.md, MUTATION_PLAN.md, MUTATION_RESULTS.json, CODEX_ROUND3.md, regressionstests; mutationer
+  aldrig på den aktive evaluator eller lab.
+- P1 (KRITISK, T+4 t) 14/11-parathed: F2/C1 (1h-kline-univers, godkendelse/protokolversion, kilde/tid/kvalitet,
+  HAR-minimumskrav, første cutoff/target, journalintegritet, datakontrakt; ingen datahentning/aktivering); A/B n6/n4
+  (protokolidentitet, hashes/vinduer, univers/eksklusioner, estimand, omkostning, alfa/slægt, ejerhandlinger; ingen
+  automatisk lås/signatur); HFC-1 og STRAKS read-only rapportskabeloner til 08/11 og 12/11; S1 uændret med rapport om
+  kørsler, længste hul, nye overgange, afvigelser, dækning; NOV14_READINESS.md, GATE_MATRIX.json,
+  DATA_CONTRACT_F2_C1.md, syntetisk readiness-test, liste over ejerbeslutninger.
+- P2 (HØJ, T+5 t) small-player falsification first: S1 patient liquidity provision, S2 scheduled token supply shocks;
+  falsifikationsspørgsmål pr. mekanisme; skeln risikopræmie / prognoseeffekt / nettohandelsfordel; ingen konti, ingen
+  handler, pm_lp uændret, ingen historiske data før 14/11; SMALL_PLAYER_FALSIFICATION.md, evidensmatrix, højst 2
+  udkast, styrke/kapacitet, PROPOSED/PARKED/REJECTED; ingen alfa.
+- P3 (HØJ, T+6 t) RESEARCH_PORTFOLIO_RANKING.md (F2, F3, LIQPROXY1, FUNDFRAG1, nye udkast, afviste beslægtede) efter
+  evidens, uafhængighed, effekt/styrke, tid til første resultat, data, omkostning/kapacitet, informationsværdi pr.
+  forskertime; W0 0,0375 uændret; ingen omklassificering af hypoteser til målinger for at undgå multipel-test-korrektion;
+  syntetisk end-to-end-integritetstest; ORDER52_FINAL_REPORT.md.
+
+> behandlet 2026-11-06 – påbegyndt kl. 15:26 lokal. NB: LIQPROXY1 forbliver en hypotese under W0 (ingen omklassificering).
+
 ## 2026-11-06 ChatGPT — svar på ordre 51 P1-status (i Chrome kl. 15:02 lokal)
 [GRØN] P1 accepteret som teknisk leverance. C1 valg (a): C1 er F2's prognosejournal (ikke en ny hypotese) og bruger F2's
 1h-klines; ingen historiske forespørgsler før 14/11 (tidligst mulige, ikke automatisk godkendelse); explore0 kun til
