@@ -1,16 +1,19 @@
 {
  "schema": "copybot.factory.offdb/1",
- "rule": "director order 47 P0: studies run outside lab.db that still count as tests; attempts None = UNKNOWN (ledger is a lower bound until filled)",
+ "rule": "director order 47 P0: studies run outside lab.db that still count as tests; attempts exclude tests already counted via lab events/experiments (see counted_elsewhere)",
  "studies": [
   {
    "id": "MAALING_14a_2026-10-21",
    "files": [
     "research/studies/MAALING_14a_2026-10-21.md"
    ],
-   "lineage": null,
-   "attempts": null,
-   "alpha": null,
-   "note": "inventory pending (P0): attempts/variants/alpha not yet counted"
+   "lineage": "unclassified",
+   "attempts": 0,
+   "alpha": 0.0,
+   "note": "inventory 2026-11-06 (subagent read of the study files, spot-checked); attempts = tests not already counted elsewhere",
+   "counted_elsewhere": "lab events research.measurement 12126/12129/12130 (m17:H1-H3; 3 tests sharing 0.05)",
+   "evidence": "md table H1-H3; PROTOCOL 14a pt 2",
+   "confidence": "high"
   },
   {
    "id": "MAALING_16a_H4_2026-10-21",
@@ -18,10 +21,13 @@
     "research/studies/MAALING_16a_H4_2026-10-21.md",
     "research/studies/MAALING_16a_H4_2026-10-21.json"
    ],
-   "lineage": null,
-   "attempts": null,
-   "alpha": null,
-   "note": "inventory pending (P0): attempts/variants/alpha not yet counted"
+   "lineage": "delta_neutral_funding_carry",
+   "attempts": 0,
+   "alpha": 0.0,
+   "note": "inventory 2026-11-06 (subagent read of the study files, spot-checked); attempts = tests not already counted elsewhere",
+   "counted_elsewhere": "lab event research.measurement 12787 (m17:H4, 0.05)",
+   "evidence": "md status; 16a pt 2",
+   "confidence": "high"
   },
   {
    "id": "MAALING_16c_H5_2026-10-21",
@@ -29,10 +35,13 @@
     "research/studies/MAALING_16c_H5_2026-10-21.md",
     "research/studies/MAALING_16c_H5_2026-10-21.json"
    ],
-   "lineage": null,
-   "attempts": null,
-   "alpha": null,
-   "note": "inventory pending (P0): attempts/variants/alpha not yet counted"
+   "lineage": "delta_neutral_funding_carry",
+   "attempts": 0,
+   "alpha": 0.0,
+   "note": "inventory 2026-11-06 (subagent read of the study files, spot-checked); attempts = tests not already counted elsewhere",
+   "counted_elsewhere": "lab event research.measurement 13181 (m17:H5, 0.05)",
+   "evidence": "md 'PASS p=0.00001'; 16c pt 3",
+   "confidence": "high"
   },
   {
    "id": "MOVESCREEN_m21c",
@@ -40,10 +49,13 @@
     "research/studies/MOVESCREEN_m21c.md",
     "research/studies/MOVESCREEN_m21c.json"
    ],
-   "lineage": null,
-   "attempts": null,
-   "alpha": null,
-   "note": "inventory pending (P0): attempts/variants/alpha not yet counted"
+   "lineage": "short_term_reversal_liquidity",
+   "attempts": 2,
+   "alpha": 0.0,
+   "note": "inventory 2026-11-06 (subagent read of the study files, spot-checked); attempts = tests not already counted elsewhere",
+   "counted_elsewhere": null,
+   "evidence": "21c pt 6: cont_4h/cont_24h SCREEN_FAIL; no alpha",
+   "confidence": "high"
   },
   {
    "id": "DROP4S_LOO_m21c",
@@ -51,10 +63,13 @@
     "research/studies/DROP4S_LOO_m21c.md",
     "research/studies/DROP4S_LOO_m21c.json"
    ],
-   "lineage": null,
-   "attempts": null,
-   "alpha": null,
-   "note": "inventory pending (P0): attempts/variants/alpha not yet counted"
+   "lineage": "short_term_reversal_liquidity",
+   "attempts": 0,
+   "alpha": 0.0,
+   "note": "inventory 2026-11-06 (subagent read of the study files, spot-checked); attempts = tests not already counted elsewhere",
+   "counted_elsewhere": null,
+   "evidence": "md 'Ingen test, intet alfa'",
+   "confidence": "high"
   },
   {
    "id": "DISCOVERY_m21f",
@@ -62,10 +77,13 @@
     "research/studies/DISCOVERY_m21f.md",
     "research/studies/DISCOVERY_m21f.json"
    ],
-   "lineage": null,
-   "attempts": null,
-   "alpha": null,
-   "note": "inventory pending (P0): attempts/variants/alpha not yet counted"
+   "lineage": "lead_lag_diffusion",
+   "attempts": 2,
+   "alpha": 0.0,
+   "note": "inventory 2026-11-06 (subagent read of the study files, spot-checked); attempts = tests not already counted elsewhere",
+   "counted_elsewhere": null,
+   "evidence": "A, B SCREEN_FAIL; C UNTESTABLE (not counted)",
+   "confidence": "high"
   },
   {
    "id": "FUNDING_m21h",
@@ -73,10 +91,13 @@
     "research/studies/FUNDING_m21h.md",
     "research/studies/FUNDING_m21h.json"
    ],
-   "lineage": null,
-   "attempts": null,
-   "alpha": null,
-   "note": "inventory pending (P0): attempts/variants/alpha not yet counted"
+   "lineage": "funding_crowding_contrarian",
+   "attempts": 1,
+   "alpha": 0.0,
+   "note": "inventory 2026-11-06 (subagent read of the study files, spot-checked); attempts = tests not already counted elsewhere",
+   "counted_elsewhere": null,
+   "evidence": "one key SCREEN_FAIL",
+   "confidence": "high"
   },
   {
    "id": "SPOTPERP_m21i",
@@ -84,10 +105,13 @@
     "research/studies/SPOTPERP_m21i.md",
     "research/studies/SPOTPERP_m21i.json"
    ],
-   "lineage": null,
-   "attempts": null,
-   "alpha": null,
-   "note": "inventory pending (P0): attempts/variants/alpha not yet counted"
+   "lineage": "perp_premium_convergence",
+   "attempts": 2,
+   "alpha": 0.0,
+   "note": "inventory 2026-11-06 (subagent read of the study files, spot-checked); attempts = tests not already counted elsewhere",
+   "counted_elsewhere": null,
+   "evidence": "S1 p=0.039, S2 p=0.79, both SCREEN_FAIL",
+   "confidence": "high"
   },
   {
    "id": "NEWINFO_m21j",
@@ -95,10 +119,13 @@
     "research/studies/NEWINFO_m21j.md",
     "research/studies/NEWINFO_m21j.json"
    ],
-   "lineage": null,
-   "attempts": null,
-   "alpha": null,
-   "note": "inventory pending (P0): attempts/variants/alpha not yet counted"
+   "lineage": "unclassified",
+   "attempts": 2,
+   "alpha": 0.0,
+   "note": "inventory 2026-11-06 (subagent read of the study files, spot-checked); attempts = tests not already counted elsewhere",
+   "counted_elsewhere": null,
+   "evidence": "J1 macro_release, J2 attention_shock SCREEN_FAIL",
+   "confidence": "high"
   },
   {
    "id": "FOMC_2026-10-28",
@@ -106,10 +133,13 @@
     "research/studies/FOMC_2026-10-28.md",
     "research/studies/FOMC_2026-10-28.json"
    ],
-   "lineage": null,
-   "attempts": null,
-   "alpha": null,
-   "note": "inventory pending (P0): attempts/variants/alpha not yet counted"
+   "lineage": "unclassified",
+   "attempts": 0,
+   "alpha": 0.0,
+   "note": "inventory 2026-11-06 (subagent read of the study files, spot-checked); attempts = tests not already counted elsewhere",
+   "counted_elsewhere": null,
+   "evidence": "descriptive integration test, one event",
+   "confidence": "high"
   },
   {
    "id": "R3_m24",
@@ -117,10 +147,13 @@
     "research/studies/R3_m24.md",
     "research/studies/R3_m24.json"
    ],
-   "lineage": null,
-   "attempts": null,
-   "alpha": null,
-   "note": "inventory pending (P0): attempts/variants/alpha not yet counted"
+   "lineage": "unclassified",
+   "attempts": 1,
+   "alpha": 0.0,
+   "note": "inventory 2026-11-06 (subagent read of the study files, spot-checked); attempts = tests not already counted elsewhere",
+   "counted_elsewhere": null,
+   "evidence": "macro_release|minute_drift_60m p=0.918, EXPLORATORY",
+   "confidence": "high"
   },
   {
    "id": "V1_DOM_2026-10-29",
@@ -128,10 +161,13 @@
     "research/studies/V1_DOM_2026-10-29.md",
     "research/studies/V1_DOM_2026-10-29.json"
    ],
-   "lineage": null,
-   "attempts": null,
-   "alpha": null,
-   "note": "inventory pending (P0): attempts/variants/alpha not yet counted"
+   "lineage": "unclassified",
+   "attempts": 5,
+   "alpha": 0.0,
+   "note": "inventory 2026-11-06 (subagent read of the study files, spot-checked); attempts = tests not already counted elsewhere",
+   "counted_elsewhere": null,
+   "evidence": "5 venue verdicts, median rule, no p (18 if per coin x venue)",
+   "confidence": "medium"
   },
   {
    "id": "PBO_LANE_2026-10-21",
@@ -139,80 +175,104 @@
     "research/studies/PBO_LANE_2026-10-21.md",
     "research/studies/PBO_LANE_2026-10-21.json"
    ],
-   "lineage": null,
-   "attempts": null,
-   "alpha": null,
-   "note": "inventory pending (P0): attempts/variants/alpha not yet counted"
+   "lineage": "delta_neutral_funding_carry",
+   "attempts": 0,
+   "alpha": 0.0,
+   "note": "inventory 2026-11-06 (subagent read of the study files, spot-checked); attempts = tests not already counted elsewhere",
+   "counted_elsewhere": "recomputes 1,230 explore-lane fcarry variants already in the explore0 entry (diagnostic, 0 new)",
+   "evidence": "md 'Alle 1.230 varianter'",
+   "confidence": "medium"
   },
   {
    "id": "H_SPR1_INSTRUMENT_SPREAD_2026-11-03",
    "files": [
     "research/studies/H_SPR1_INSTRUMENT_SPREAD_2026-11-03.md"
    ],
-   "lineage": null,
-   "attempts": null,
-   "alpha": null,
-   "note": "inventory pending (P0): attempts/variants/alpha not yet counted"
+   "lineage": "unclassified",
+   "attempts": 0,
+   "alpha": 0.0,
+   "note": "inventory 2026-11-06 (subagent read of the study files, spot-checked); attempts = tests not already counted elsewhere",
+   "counted_elsewhere": null,
+   "evidence": "tally n=3/4 of 30, no test yet",
+   "confidence": "high"
   },
   {
    "id": "H_SPR2_TICK_SPREAD_2026-11-04",
    "files": [
     "research/studies/H_SPR2_TICK_SPREAD_2026-11-04.md"
    ],
-   "lineage": null,
-   "attempts": null,
-   "alpha": null,
-   "note": "inventory pending (P0): attempts/variants/alpha not yet counted"
+   "lineage": "unclassified",
+   "attempts": 0,
+   "alpha": 0.0,
+   "note": "inventory 2026-11-06 (subagent read of the study files, spot-checked); attempts = tests not already counted elsewhere",
+   "counted_elsewhere": null,
+   "evidence": "criteria only, not evaluated",
+   "confidence": "high"
   },
   {
    "id": "M27_H27A_STRUKTUR_2026-11-01",
    "files": [
     "research/studies/M27_H27A_STRUKTUR_2026-11-01.json"
    ],
-   "lineage": null,
-   "attempts": null,
-   "alpha": null,
-   "note": "inventory pending (P0): attempts/variants/alpha not yet counted"
+   "lineage": "unclassified",
+   "attempts": 0,
+   "alpha": 0.0,
+   "note": "inventory 2026-11-06 (subagent read of the study files, spot-checked); attempts = tests not already counted elsewhere",
+   "counted_elsewhere": null,
+   "evidence": "structure stats on pre-lock days, no test",
+   "confidence": "medium"
   },
   {
    "id": "M27_DSR_GRAENSE_2026-11-02",
    "files": [
     "research/studies/M27_DSR_GRAENSE_2026-11-02.md"
    ],
-   "lineage": null,
-   "attempts": null,
-   "alpha": null,
-   "note": "inventory pending (P0): attempts/variants/alpha not yet counted"
+   "lineage": "unclassified",
+   "attempts": 0,
+   "alpha": 0.0,
+   "note": "inventory 2026-11-06 (subagent read of the study files, spot-checked); attempts = tests not already counted elsewhere",
+   "counted_elsewhere": "reads lab results of 8 families only",
+   "evidence": "md 'Kun læsning af results'",
+   "confidence": "high"
   },
   {
    "id": "PREREG_CA38_1669_2026-11-04",
    "files": [
     "research/studies/PREREG_CA38_1669_2026-11-04.md"
    ],
-   "lineage": null,
-   "attempts": null,
-   "alpha": null,
-   "note": "inventory pending (P0): attempts/variants/alpha not yet counted"
+   "lineage": "delta_neutral_funding_carry",
+   "attempts": 8,
+   "alpha": 0.0,
+   "note": "inventory 2026-11-06 (subagent read of the study files, spot-checked); attempts = tests not already counted elsewhere",
+   "counted_elsewhere": null,
+   "evidence": "K1-K4 x 2 lanes, no p-values",
+   "confidence": "medium"
   },
   {
    "id": "HFC1_HIGH_FUNDING_FEASIBILITY_2026-11-04",
    "files": [
     "research/studies/HFC1_HIGH_FUNDING_FEASIBILITY_2026-11-04.md"
    ],
-   "lineage": null,
-   "attempts": null,
-   "alpha": null,
-   "note": "inventory pending (P0): attempts/variants/alpha not yet counted"
+   "lineage": "delta_neutral_funding_carry",
+   "attempts": 0,
+   "alpha": 0.0,
+   "note": "inventory 2026-11-06 (subagent read of the study files, spot-checked); attempts = tests not already counted elsewhere",
+   "counted_elsewhere": null,
+   "evidence": "no test; outcomes from 11-08 (count then)",
+   "confidence": "high"
   },
   {
    "id": "M2_FORWARD_LEDGER",
    "files": [
     "research/studies/M2_FORWARD_LEDGER.md"
    ],
-   "lineage": null,
-   "attempts": null,
-   "alpha": null,
-   "note": "inventory pending (P0): attempts/variants/alpha not yet counted"
+   "lineage": "delta_neutral_funding_carry",
+   "attempts": 0,
+   "alpha": 0.0,
+   "note": "inventory 2026-11-06 (subagent read of the study files, spot-checked); attempts = tests not already counted elsewhere",
+   "counted_elsewhere": null,
+   "evidence": "2 rows, no outcomes yet",
+   "confidence": "high"
   },
   {
    "id": "PILOT_TOER_2026-10-30",
@@ -220,20 +280,26 @@
     "research/studies/PILOT_TOER_2026-10-30.md",
     "research/studies/PILOT_TOER_2026-10-30.json"
    ],
-   "lineage": null,
-   "attempts": null,
-   "alpha": null,
-   "note": "inventory pending (P0): attempts/variants/alpha not yet counted"
+   "lineage": "unclassified",
+   "attempts": 0,
+   "alpha": 0.0,
+   "note": "inventory 2026-11-06 (subagent read of the study files, spot-checked); attempts = tests not already counted elsewhere",
+   "counted_elsewhere": null,
+   "evidence": "ops dry run, no market test",
+   "confidence": "high"
   },
   {
    "id": "CARRY_BASIS_2026-10-21",
    "files": [
     "research/studies/CARRY_BASIS_2026-10-21.json"
    ],
-   "lineage": null,
-   "attempts": null,
-   "alpha": null,
-   "note": "inventory pending (P0): attempts/variants/alpha not yet counted"
+   "lineage": "delta_neutral_funding_carry",
+   "attempts": 1,
+   "alpha": 0.05,
+   "note": "inventory 2026-11-06 (subagent read of the study files, spot-checked); attempts = tests not already counted elsewhere",
+   "counted_elsewhere": null,
+   "evidence": "one rule, one-sided 95 % bootstrap (implicit alpha 0.05), 6 cost scenarios = sensitivity",
+   "confidence": "medium"
   }
  ]
 }

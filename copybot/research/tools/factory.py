@@ -294,7 +294,8 @@ def snapshot(con, vocab, offdb):
                       "explore0 window only; never evidence; counted so breadth stays visible")
     for s in offdb:
         if s.get("attempts"):
-            ledger.charge(s["id"], s.get("lineage") or s["id"], 0, int(s["attempts"]), float(s.get("alpha") or 0),
+            ledger.charge(s["id"], lineage_of(s.get("lineage") or s["id"], lmap)[0], 0, int(s["attempts"]),
+                          float(s.get("alpha") or 0),
                           "off-database study", s.get("note", ""))
     ledger.verify()
 
@@ -304,7 +305,7 @@ def snapshot(con, vocab, offdb):
         "tested_without_trials_or_alpha (counted as 1 attempt)": sorted(r["id"] for r in records
                                                  if r["status"] in ("TESTED", "REJECTED", "INCONCLUSIVE", "VALIDATED")
                                                  and not r["trials"] and not r["alpha_spent"]),
-        "offdb_unknown_fields": sorted(s["id"] for s in offdb if any(v is None for v in s.values())),
+        "offdb_unknown_fields": sorted(s["id"] for s in offdb if s.get("attempts") is None or s.get("alpha") is None),
     }
     by_status = {}
     for r in records:

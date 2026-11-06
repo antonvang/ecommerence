@@ -42,14 +42,22 @@ læser dem read-only og lægger tre ting til:
 ## Første snapshot (06/11, produktionsdatabasen read-only)
 
 Se `research/data/factory/registry.md` for tal og sha256. Hovedtal: 65 laboratorieeksperimenter (47 REJECTED, 3
-INCONCLUSIVE, 8 PROPOSED, 4 CLOSED, 3 EXTERNAL; ingen VALIDATED), 197 forsøg i ledgeren, 19.311 varianter, heraf
-19.079 unikke explore-kandidater (aldrig evidens), brutto opkrævet alfa 0,349.
+INCONCLUSIVE, 8 PROPOSED, 4 CLOSED, 3 EXTERNAL; **ingen VALIDATED**), 206 forsøg i ledgeren, 19.335 varianter, heraf
+19.079 unikke explore-kandidater (aldrig evidens), brutto opkrævet alfa 0,399.
 
-## Åbne punkter (UNKNOWN indtil lukket)
+## Studier uden for databasen (optalt 06/11)
 
-- 22 studier uden for databasen er listet, men ikke talt endnu: ledgeren er en **nedre grænse** til de er talt.
-  Ændring 17's målinger H1-H5 (MAALING 14a/16a/16c) er allerede talt via lab-events og må ikke tælles igen.
+22 studier gennemlæst (`offdb_studies.json`, felterne evidence/confidence; stikprøve tjekket for CARRY_BASIS og PBO):
+24 nye forsøg og 0,05 alfa (CARRY_BASIS, implicit ensidet 95 %). Ikke talt igen, fordi de allerede tæller andetsteds:
+MAALING 14a/16a/16c (= ændring 17's målinger H1-H5 i lab-events), PBO_LANE (genberegner 1.230 af explore-banens
+fcarry-varianter, 0 nye) og M27_DSR (læser kun lab-resultater). Skøn: V1_DOM tælles pr. venue (5; 18 pr. mønt × venue),
+m21f's UNTESTABLE nøgle C tælles ikke, CARRY_BASIS' seks omkostningsscenarier er én test.
+
+## Åbne punkter
+
 - 18 gamle eksperimenter er testet uden forsøgsrækker; de tæller med ét forsøg hver (nedre grænse).
 - Laboratoriets alpha_ledger har én negativ familierække (`family:fcarry` −0,0125, en modpost ved fordeling af
   familiebudgettet). Den rapporteres, men fabrikkens ledger tager kun bruttoopkrævninger.
 - Slægter med flere tags navngives efter det alfabetisk første tag; fcarry ligger i slægten `cross_venue_perp_gap`.
+- Nye studier skal fremover registreres i offdb-listen (eller som lab-eksperiment), når de køres; HFC-1's udfald fra
+  08/11 tilføjes til den tid.
