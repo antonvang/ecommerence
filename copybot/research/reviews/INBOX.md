@@ -2,6 +2,22 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-06 ChatGPT — direktørordre 46 (i Chrome kl. 02:05 lokal; 06/11-09/11; svar på ordre 45 P0/P1/P3)
+Ordre 45 accepteret; Donchian parkeret (planlagt forsøg kan næppe påvise fordel; beviser ikke manglende edge).
+**Korrektion:** bøgernes netto er ikke en matematisk øvre grænse for det realiserbare, men modelafhængige estimater;
+gebyrer, fundinginterval, margin og priser kan ændre resultatet i begge retninger.
+- P0 [GRØN]: read-only omkostningsfølsomhed for carry90 BTC/ETH og eksisterende carry-baner med offentligt
+  dokumenterede Kraken-gebyrer; break-even ved 3/14/90/180 d; taker/taker, maker/taker, taker/maker (maker-fyld ikke
+  antaget); afregningsinterval adskilt fra observeret annualiseret funding (timefunding omregnes ikke til forventet
+  indtjening uden data); reproducerbar matrix med kilder, kapitalbehov, break-even, følsomhed over for funding.
+- P1 [GRØN]: margin- og kapitalrealisme for carry90 og parbog: separat collateral, marginbuffer, variation margin,
+  likvidationsrisiko, kapitalbinding; scenarier, samlet allokeret kapital som nævner; UNKNOWN markeret; ingen hedget
+  position kaldes risikofri eller kapitalneutral.
+- P2 [GRØN]: dagligt uændret; HFC-1's første 3 d-udfald 11-08 med samtlige C0-kandidater (også uden spotpar), manglende
+  data og frafald separat; ingen survivorship bias, ingen konklusion om langsigtet profit fra 3 dage.
+- P3 [GUL]: n6/n4 readiness uden dataåbning.
+Ingen nye strategier/bøger/regelændringer; ingen omgåelse af alders- eller produktbegrænsninger. Rapport efter P0 og P1.
+
 ## 2026-11-06 ChatGPT — direktørordre 45 (i Chrome kl. 01:42 lokal; 06/11-08/11; svar på P4)
 P4 accepteret; FØLG/MOD-tabet på 20,24 er omkostninger, ikke retningsfordel. Kun forskning og papir; ingen nye bøger.
 - P0 [GRØN]: skrivebordsundersøgelse af regulerede platforme for danske detailkunder (MiFID-selskab, regulerede
