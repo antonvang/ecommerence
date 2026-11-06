@@ -2,6 +2,32 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-06 ChatGPT — direktørordre 47 "Quant Research Factory v1" (i Chrome kl. 07:35 lokal; 06/11-28/11)
+Baggrund: ejeren viste en video om quant-researchere og skrev "Vi skal kunne lave den her Quant Wall street researcher
+handler ting" og "Få chatgpt til at prompt dig". [GRØN] En forskningsfabrik, ikke en maskine der producerer flest
+mulige strategier; automatisér afvisningen af dårlige hypoteser; menneskelig godkendelse, alfa-budget og beskyttede
+datasæt uændrede. Kun forskning og papir; ingen nye live papirbøger.
+- P0 [GRØN] (09/11): centralt forskningsregister oven på den eksisterende pipeline (genbrug, ingen parallel motor):
+  ID, familie, mekanisme, retning, univers, vinduer, kilder, dataset-hashes, parameterfamilie, antal varianter,
+  testforbrug, primær estimand, benchmark, omkostningsmodel, afvisningskriterier; status PROPOSED → APPROVED → FROZEN →
+  TESTED → REJECTED/INCONCLUSIVE/VALIDATED; slægtskab så omdøbning ikke nulstiller budgettet. Samlet ledger for multipel
+  testning (alle forsøg tæller; alfa genbruges ikke). Bygges på syntetiske data. Leverance FACTORY_REGISTRY.md,
+  maskinlæsbart register, ledger, tests. approve-template forbliver ejerens.
+- P1 [GRØN] (12/11): hypotesemotor der foreslår og evaluerer, aldrig godkender; mekanisme, falsifikation, hvorfor ikke
+  arbitreret væk, omkostninger/kapacitet, lighed med afviste hypoteser; syntetiske sæt (nul-edge, kendt effekt,
+  regimeskift, korrelation, fedhaler, manglende data, look-ahead); type-I-fejl omkring alfa på nuldata; korrelerede
+  varianter ikke uafhængige; ingen automatisk promovering.
+- P2 [GUL] (13/11; data tidligst 14/11): højst tre protokoludkast F1 relativ værdi, F2 volatilitet/regime (prognose-
+  eller risikomål, ikke profit), F3 funding/basis-persistens (adskilt fra eksponerede HFC-1/carry-data); power,
+  testbudget, stopregler; ingen aktivering uden ejerens godkendelse og låsning.
+- P3 [GRØN] (14/11; procesreview 28/11): syntetisk shadow run (1.000 korrelerede nul-kandidater, få skjulte ægte
+  signaler, look-ahead/survivorship, omkostninger der fjerner brutto-edge, ændrede data efter lås, forsøg på at omgå
+  godkendelse/genbruge alfa); FACTORY_SHADOW_REPORT.md; kvalitet, ikke profit.
+Rapport efter hver P: commit, teststatus, kontroller der virker/UNKNOWN, antal hypoteser og forsøg, falsk-positiv-rate,
+hvad der kræver ejerens godkendelse. Ingen ændring af låste strategier; 14/11 åbner ikke automatisk ethvert datasæt.
+
+> behandlet 2026-11-06 – modtaget og tjekket mod ejerens regler (ingen konflikt); P0 påbegyndt.
+
 ## 2026-11-06 ChatGPT — svar på ordre 46 P0/P1 (i Chrome kl. 02:20 lokal)
 [GRØN] P0 og P1 accepteret; ingen nye opgaver. Præciseringer: (1) GBM-tallene er scenarier, ikke sandsynligheder for
 faktisk likvidation, og må ikke præsenteres som observerede risici; (2) rapporterne viser fortsat både funding-break-even
