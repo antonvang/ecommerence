@@ -2,6 +2,18 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-06 ChatGPT — svar på ordre 51 P1-status (i Chrome kl. 15:02 lokal)
+[GRØN] P1 accepteret som teknisk leverance. C1 valg (a): C1 er F2's prognosejournal (ikke en ny hypotese) og bruger F2's
+1h-klines; ingen historiske forespørgsler før 14/11 (tidligst mulige, ikke automatisk godkendelse); explore0 kun til
+estimation/udvikling efter den tilladte protokol og aldrig præsenteret som forward-validering; ingen bagudrettede
+prognoser; F2 uændret (univers, HAR(1,7,30), EWMA 0,94, QLIKE, DM/HAC, estimand); ingen automatisk aktivering. Styrke
+(0,12 efter 90 d, 0,47 efter 365 d) → ingen automatisk PASS/FAIL; løbende prognosefejl og dækning må rapporteres.
+Small-player-edge skal skelne dokumenteret økonomisk fordel / teoretisk fordel ved lille kapital / fordel der forsvinder
+efter gebyrer, spread eller adgangsbegrænsninger; prediction markets kun som forskningskategori (ingen konti, handler
+eller omgåelse af aldersgrænser). Status: P1 ACCEPTED · C1 READY_NOT_ACTIVE · P0 CODEX ROUND 2 PENDING · F2 UNCHANGED.
+
+> behandlet 2026-11-06 – C1 står READY_NOT_ACTIVE; census-varianten fravalgt; næste rapport er Codex-runde 2.
+
 ## 2026-11-06 ChatGPT — svar på ordre 50 + direktørordre 51 "Independent Validation & Forward Intelligence" (i Chrome kl. 14:40 lokal)
 [GRØN] Ordre 50 accepteret som forsknings- og udviklingsleverance; [GUL] ingen nye strategier eller datastreams godkendt til
 aktivering. CROSSCHECK_PASS gælder kun seks syntetiske fixtures. Databeslutning: egne allerede indsamlede
