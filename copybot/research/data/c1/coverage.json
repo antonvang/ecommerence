@@ -1,0 +1,522 @@
+{
+ "config_sha256": "8a6fb2c3a719e1727b45eb8355f42b94e27ee7c309c20a24361b8425956349b0",
+ "days": {
+  "complete_days_all_snapshots": [
+   "2026-10-28",
+   "2026-10-29",
+   "2026-11-01",
+   "2026-11-02",
+   "2026-11-03",
+   "2026-11-04",
+   "2026-11-05"
+  ],
+  "current_complete_run_days": 5,
+  "current_run_start": "2026-11-01",
+  "first_full_day": "2026-10-28",
+  "full_days_elapsed": 9,
+  "incomplete_days": [
+   "2026-10-30",
+   "2026-10-31"
+  ],
+  "last_full_day": "2026-11-05",
+  "today": "2026-11-06",
+  "today_so_far_complete": true
+ },
+ "fields": {
+  "lastPrice": {
+   "complete_days": {
+    "max": 7,
+    "median": 7,
+    "min": 1
+   },
+   "current_run_days": {
+    "max": 5,
+    "median": 5,
+    "min": 0
+   },
+   "current_run_start_counts": {
+    "2026-11-01": 800,
+    "2026-11-07": 1
+   },
+   "focus": {
+    "BTCUSDT": {
+     "complete_days": [
+      "2026-10-28",
+      "2026-10-29",
+      "2026-11-01",
+      "2026-11-02",
+      "2026-11-03",
+      "2026-11-04",
+      "2026-11-05"
+     ],
+     "coverage": 0.9205020920502092,
+     "current_complete_run_days": 5,
+     "current_run_start": "2026-11-01",
+     "first_seen": "2026-10-27 15:00:00",
+     "first_valid": {
+      "ewma_094": {
+       "complete_days_needed": 50,
+       "creation_window_utc": "after the 23:00 mark of 2026-12-20, before 2026-12-21 00:00",
+       "first_input_day": "2026-11-01",
+       "first_reveal_utc": "2026-12-22 01:00:00",
+       "first_target_day": "2026-12-21",
+       "last_input_day": "2026-12-20"
+      },
+      "har_rv_1_7_30": {
+       "complete_days_needed": 395,
+       "creation_window_utc": "after the 23:00 mark of 2027-11-30, before 2027-12-01 00:00",
+       "first_input_day": "2026-11-01",
+       "first_reveal_utc": "2027-12-02 01:00:00",
+       "first_target_day": "2027-12-01",
+       "last_input_day": "2027-11-30"
+      }
+     },
+     "incomplete_days": [
+      "2026-10-30",
+      "2026-10-31"
+     ],
+     "missing_slot_ranges": [
+      {
+       "from": "2026-10-30 19:00:00",
+       "slots": 7,
+       "to": "2026-10-31 01:00:00"
+      },
+      {
+       "from": "2026-10-31 04:00:00",
+       "slots": 3,
+       "to": "2026-10-31 06:00:00"
+      },
+      {
+       "from": "2026-10-31 08:00:00",
+       "slots": 3,
+       "to": "2026-10-31 10:00:00"
+      },
+      {
+       "from": "2026-10-31 13:00:00",
+       "slots": 3,
+       "to": "2026-10-31 15:00:00"
+      },
+      {
+       "from": "2026-10-31 18:00:00",
+       "slots": 2,
+       "to": "2026-10-31 19:00:00"
+      },
+      {
+       "from": "2026-10-31 22:00:00",
+       "slots": 1,
+       "to": "2026-10-31 22:00:00"
+      }
+     ],
+     "slots_expected": 239,
+     "slots_present": 220,
+     "today_so_far_complete": true
+    },
+    "ETHUSDT": {
+     "complete_days": [
+      "2026-10-28",
+      "2026-10-29",
+      "2026-11-01",
+      "2026-11-02",
+      "2026-11-03",
+      "2026-11-04",
+      "2026-11-05"
+     ],
+     "coverage": 0.9205020920502092,
+     "current_complete_run_days": 5,
+     "current_run_start": "2026-11-01",
+     "first_seen": "2026-10-27 15:00:00",
+     "first_valid": {
+      "ewma_094": {
+       "complete_days_needed": 50,
+       "creation_window_utc": "after the 23:00 mark of 2026-12-20, before 2026-12-21 00:00",
+       "first_input_day": "2026-11-01",
+       "first_reveal_utc": "2026-12-22 01:00:00",
+       "first_target_day": "2026-12-21",
+       "last_input_day": "2026-12-20"
+      },
+      "har_rv_1_7_30": {
+       "complete_days_needed": 395,
+       "creation_window_utc": "after the 23:00 mark of 2027-11-30, before 2027-12-01 00:00",
+       "first_input_day": "2026-11-01",
+       "first_reveal_utc": "2027-12-02 01:00:00",
+       "first_target_day": "2027-12-01",
+       "last_input_day": "2027-11-30"
+      }
+     },
+     "incomplete_days": [
+      "2026-10-30",
+      "2026-10-31"
+     ],
+     "missing_slot_ranges": [
+      {
+       "from": "2026-10-30 19:00:00",
+       "slots": 7,
+       "to": "2026-10-31 01:00:00"
+      },
+      {
+       "from": "2026-10-31 04:00:00",
+       "slots": 3,
+       "to": "2026-10-31 06:00:00"
+      },
+      {
+       "from": "2026-10-31 08:00:00",
+       "slots": 3,
+       "to": "2026-10-31 10:00:00"
+      },
+      {
+       "from": "2026-10-31 13:00:00",
+       "slots": 3,
+       "to": "2026-10-31 15:00:00"
+      },
+      {
+       "from": "2026-10-31 18:00:00",
+       "slots": 2,
+       "to": "2026-10-31 19:00:00"
+      },
+      {
+       "from": "2026-10-31 22:00:00",
+       "slots": 1,
+       "to": "2026-10-31 22:00:00"
+      }
+     ],
+     "slots_expected": 239,
+     "slots_present": 220,
+     "today_so_far_complete": true
+    }
+   },
+   "slot_coverage": {
+    "max": 0.9205020920502092,
+    "median": 0.9205020920502092,
+    "min": 0.17573221757322174,
+    "symbols_100pct": 0
+   },
+   "symbols": 801,
+   "symbols_first_seen_after_start": 6,
+   "symbols_more_missing_than_global": 801
+  },
+  "markPrice": {
+   "complete_days": {
+    "max": 7,
+    "median": 7,
+    "min": 5
+   },
+   "current_run_days": {
+    "max": 5,
+    "median": 5,
+    "min": 5
+   },
+   "current_run_start_counts": {
+    "2026-11-01": 941
+   },
+   "focus": {
+    "BTCUSDT": {
+     "complete_days": [
+      "2026-10-28",
+      "2026-10-29",
+      "2026-11-01",
+      "2026-11-02",
+      "2026-11-03",
+      "2026-11-04",
+      "2026-11-05"
+     ],
+     "coverage": 0.9246861924686193,
+     "current_complete_run_days": 5,
+     "current_run_start": "2026-11-01",
+     "first_seen": "2026-10-27 15:00:00",
+     "first_valid": {
+      "ewma_094": {
+       "complete_days_needed": 50,
+       "creation_window_utc": "after the 23:00 mark of 2026-12-20, before 2026-12-21 00:00",
+       "first_input_day": "2026-11-01",
+       "first_reveal_utc": "2026-12-22 01:00:00",
+       "first_target_day": "2026-12-21",
+       "last_input_day": "2026-12-20"
+      },
+      "har_rv_1_7_30": {
+       "complete_days_needed": 395,
+       "creation_window_utc": "after the 23:00 mark of 2027-11-30, before 2027-12-01 00:00",
+       "first_input_day": "2026-11-01",
+       "first_reveal_utc": "2027-12-02 01:00:00",
+       "first_target_day": "2027-12-01",
+       "last_input_day": "2027-11-30"
+      }
+     },
+     "incomplete_days": [
+      "2026-10-30",
+      "2026-10-31"
+     ],
+     "missing_slot_ranges": [
+      {
+       "from": "2026-10-30 19:00:00",
+       "slots": 7,
+       "to": "2026-10-31 01:00:00"
+      },
+      {
+       "from": "2026-10-31 04:00:00",
+       "slots": 3,
+       "to": "2026-10-31 06:00:00"
+      },
+      {
+       "from": "2026-10-31 08:00:00",
+       "slots": 3,
+       "to": "2026-10-31 10:00:00"
+      },
+      {
+       "from": "2026-10-31 13:00:00",
+       "slots": 2,
+       "to": "2026-10-31 14:00:00"
+      },
+      {
+       "from": "2026-10-31 18:00:00",
+       "slots": 2,
+       "to": "2026-10-31 19:00:00"
+      },
+      {
+       "from": "2026-10-31 22:00:00",
+       "slots": 1,
+       "to": "2026-10-31 22:00:00"
+      }
+     ],
+     "slots_expected": 239,
+     "slots_present": 221,
+     "today_so_far_complete": true
+    },
+    "ETHUSDT": {
+     "complete_days": [
+      "2026-10-28",
+      "2026-10-29",
+      "2026-11-01",
+      "2026-11-02",
+      "2026-11-03",
+      "2026-11-04",
+      "2026-11-05"
+     ],
+     "coverage": 0.9246861924686193,
+     "current_complete_run_days": 5,
+     "current_run_start": "2026-11-01",
+     "first_seen": "2026-10-27 15:00:00",
+     "first_valid": {
+      "ewma_094": {
+       "complete_days_needed": 50,
+       "creation_window_utc": "after the 23:00 mark of 2026-12-20, before 2026-12-21 00:00",
+       "first_input_day": "2026-11-01",
+       "first_reveal_utc": "2026-12-22 01:00:00",
+       "first_target_day": "2026-12-21",
+       "last_input_day": "2026-12-20"
+      },
+      "har_rv_1_7_30": {
+       "complete_days_needed": 395,
+       "creation_window_utc": "after the 23:00 mark of 2027-11-30, before 2027-12-01 00:00",
+       "first_input_day": "2026-11-01",
+       "first_reveal_utc": "2027-12-02 01:00:00",
+       "first_target_day": "2027-12-01",
+       "last_input_day": "2027-11-30"
+      }
+     },
+     "incomplete_days": [
+      "2026-10-30",
+      "2026-10-31"
+     ],
+     "missing_slot_ranges": [
+      {
+       "from": "2026-10-30 19:00:00",
+       "slots": 7,
+       "to": "2026-10-31 01:00:00"
+      },
+      {
+       "from": "2026-10-31 04:00:00",
+       "slots": 3,
+       "to": "2026-10-31 06:00:00"
+      },
+      {
+       "from": "2026-10-31 08:00:00",
+       "slots": 3,
+       "to": "2026-10-31 10:00:00"
+      },
+      {
+       "from": "2026-10-31 13:00:00",
+       "slots": 2,
+       "to": "2026-10-31 14:00:00"
+      },
+      {
+       "from": "2026-10-31 18:00:00",
+       "slots": 2,
+       "to": "2026-10-31 19:00:00"
+      },
+      {
+       "from": "2026-10-31 22:00:00",
+       "slots": 1,
+       "to": "2026-10-31 22:00:00"
+      }
+     ],
+     "slots_expected": 239,
+     "slots_present": 221,
+     "today_so_far_complete": true
+    }
+   },
+   "slot_coverage": {
+    "max": 0.9246861924686193,
+    "median": 0.9246861924686193,
+    "min": 0.9081632653061225,
+    "symbols_100pct": 0
+   },
+   "symbols": 941,
+   "symbols_first_seen_after_start": 6,
+   "symbols_more_missing_than_global": 0
+  }
+ },
+ "first_valid_if_no_more_gaps": {
+  "ewma_094": {
+   "complete_days_needed": 50,
+   "creation_window_utc": "after the 23:00 mark of 2026-12-20, before 2026-12-21 00:00",
+   "first_input_day": "2026-11-01",
+   "first_reveal_utc": "2026-12-22 01:00:00",
+   "first_target_day": "2026-12-21",
+   "last_input_day": "2026-12-20"
+  },
+  "har_rv_1_7_30": {
+   "complete_days_needed": 395,
+   "creation_window_utc": "after the 23:00 mark of 2027-11-30, before 2027-12-01 00:00",
+   "first_input_day": "2026-11-01",
+   "first_reveal_utc": "2027-12-02 01:00:00",
+   "first_target_day": "2027-12-01",
+   "last_input_day": "2027-11-30"
+  }
+ },
+ "generated_utc": "2026-11-06 13:59:38",
+ "power_note": {
+  "rows": [
+   {
+    "alpha": 0.0125,
+    "coins": 20,
+    "e": 0.05,
+    "eval_days": 90,
+    "n_eff": 114.3,
+    "power": 0.044,
+    "rho_c": 0.5
+   },
+   {
+    "alpha": 0.0125,
+    "coins": 20,
+    "e": 0.1,
+    "eval_days": 90,
+    "n_eff": 114.3,
+    "power": 0.121,
+    "rho_c": 0.5
+   },
+   {
+    "alpha": 0.0125,
+    "coins": 20,
+    "e": 0.05,
+    "eval_days": 180,
+    "n_eff": 228.6,
+    "power": 0.069,
+    "rho_c": 0.5
+   },
+   {
+    "alpha": 0.0125,
+    "coins": 20,
+    "e": 0.1,
+    "eval_days": 180,
+    "n_eff": 228.6,
+    "power": 0.233,
+    "rho_c": 0.5
+   },
+   {
+    "alpha": 0.0125,
+    "coins": 20,
+    "e": 0.05,
+    "eval_days": 365,
+    "n_eff": 463.5,
+    "power": 0.122,
+    "rho_c": 0.5
+   },
+   {
+    "alpha": 0.0125,
+    "coins": 20,
+    "e": 0.1,
+    "eval_days": 365,
+    "n_eff": 463.5,
+    "power": 0.465,
+    "rho_c": 0.5
+   }
+  ],
+  "rule": "p2_power.dm_power(e, coins, days, rho_c, alpha, hac=1.5); e = E[d]/sd(d) per coin-day is UNKNOWN; purely arithmetic, no data"
+ },
+ "rule": {
+  "complete_day": "24 of 24 slot marks present (UTC hours 00..23)",
+  "ewma_burn_in_days": 50,
+  "ewma_burn_in_rule": "seed = first RV of the run; lambda^(n-1) <= 0.05",
+  "har_complete_days_needed": 395,
+  "har_estimation_window": "365 regression rows (target days), each needing 30 lag days; min_rows 365",
+  "rv_returns_per_day": 23
+ },
+ "snapshots": {
+  "coverage": 0.9246861924686193,
+  "duplicate_rows": 0,
+  "error_rows": 0,
+  "expected_slots": 239,
+  "first_slot": "2026-10-27 15:00:00",
+  "last_slot": "2026-11-06 13:00:00",
+  "missing_ranges": [
+   {
+    "from": "2026-10-30 19:00:00",
+    "slots": 7,
+    "to": "2026-10-31 01:00:00"
+   },
+   {
+    "from": "2026-10-31 04:00:00",
+    "slots": 3,
+    "to": "2026-10-31 06:00:00"
+   },
+   {
+    "from": "2026-10-31 08:00:00",
+    "slots": 3,
+    "to": "2026-10-31 10:00:00"
+   },
+   {
+    "from": "2026-10-31 13:00:00",
+    "slots": 2,
+    "to": "2026-10-31 14:00:00"
+   },
+   {
+    "from": "2026-10-31 18:00:00",
+    "slots": 2,
+    "to": "2026-10-31 19:00:00"
+   },
+   {
+    "from": "2026-10-31 22:00:00",
+    "slots": 1,
+    "to": "2026-10-31 22:00:00"
+   }
+  ],
+  "missing_slots": 18,
+  "present_slots": 221,
+  "row_ts_minus_premium_time_s": {
+   "max": 1.0,
+   "min": -93.0
+  },
+  "row_ts_minus_slot_s": {
+   "max": 503,
+   "median": 34,
+   "min": 0
+  }
+ },
+ "source": {
+  "db": "file:/home/anton/ecommerence/copybot/data/lab/lab.db?mode=ro + PRAGMA query_only=ON",
+  "detector": "census/1",
+  "fields_checked": [
+   "markPrice",
+   "lastPrice"
+  ],
+  "metric": "snapshot",
+  "metrics_rows": {
+   "snapshot": 221
+  },
+  "price_field_for_c1": "markPrice",
+  "rows_since": "2026-10-27 00:00:00",
+  "table": "observations",
+  "what_was_read": "slot presence and validity (finite > 0) only; no price level, return, RV, fit or loss was computed or written"
+ },
+ "version": "c1_forecast/1"
+}
