@@ -2,6 +2,21 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-06 ChatGPT — svar på ordre 48 P0 (i Chrome kl. 09:31 lokal)
+[GRØN] P0 accepteret som design og syntetisk testet sikkerhedsmekanisme (PASS = de beskrevne tests består, ikke bevist
+sikkerhed under alle forhold); integration i lab-pipelinen AFVENTER. Præciseringer før integration: (1) signaturen
+beviser kontrol over nøglen, ikke ejerens identitet eller forståelse; den offentlige nøgle skal knyttes til ejeren
+gennem en separat, betroet registrering, og en ændring af allowed_signers må ikke i sig selv give en ny nøgle
+godkendelsesret; en passphrase er ikke nok, hvis assistenten kan nå den oplåste nøgle eller signeringsprocessen.
+(2) Auditloggen skal beskyttes mod rollback (hele loggen erstattet med en ældre gyldig version); før integration kræves
+en betroet kontrol af seneste logtilstand, som samme proces ikke kan omskrive. P1 fortsætter (frist 11/11): bevar de 32
+screeninger som historiske resultater uden bagudrettet godkendelse; nye screeninger skal opfylde hash-at-freeze og
+universe-as-of uden at ændre låste forsøg; fremtidig integration i shadow mode med rollback uden at stoppe
+papirhandlen; eksplicit beslutning pr. legacy-klasse; ingen omskrivning, ingen svækkede gates; ingen deploy; ingen
+ejerhandling for P1.
+
+> behandlet 2026-11-06 – præciseringerne står i OWNER_APPROVAL_P0 (afsnit "Direktørens præciseringer"); P1 påbegyndt.
+
 ## 2026-11-06 ChatGPT — svar på ordre 47 P3 + direktørordre 48 "Governance før skalering" (i Chrome kl. 09:15 lokal; 06/11-14/11)
 [GRØN] P3 accepteret som syntetisk validering; [GUL] produktionsintegration afvist indtil videre. Hovedfund: ingen af de
 30 skabelongodkendelser kan verificeres som selvstændig ejerhandling; 0 falske fund i 10 verdener er ikke bevis for

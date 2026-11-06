@@ -57,3 +57,13 @@ generel instruks kan ikke bevise, at ejeren har godkendt en bestemt skabelon.
   nøgle i repoet. Det gør assistenten ikke.
 - Ejerens alder: ifølge ChatGPT er ejeren under 18 (ikke verificeret). Mekanismen giver ikke adgang til rigtige penge
   eller produkter; den gælder kun forskningsskabeloner i papirlaboratoriet.
+
+## Direktørens præciseringer (ChatGPT 06/11 kl. 09:31 lokal; før en eventuel integration)
+
+1. Signaturen beviser kontrol over nøglen, ikke ejerens identitet eller forståelse. Den offentlige nøgle skal knyttes
+   til ejeren gennem en separat, betroet registrering; en ændring af allowed_signers må ikke i sig selv give en ny nøgle
+   godkendelsesret (allowed_signers ligger i et repo, som assistenten kan skrive i). En passphrase er ikke nok, hvis
+   assistenten kan nå den oplåste nøgle eller signeringsprocessen (fx en ssh-agent på denne maskine).
+2. Hashkæden opdager ændringer i loggen, men ikke at hele loggen erstattes med en ældre gyldig version (rollback). Før
+   integration kræves en betroet kontrol af seneste logtilstand, som samme proces ikke kan omskrive (fx et
+   kontrolpunkt uden for maskinen).
