@@ -1,0 +1,1 @@
+{"errors":[{"code":"BAD_TYPE","path":"hypotheses[0].funding"},{"code":"BAD_TYPE","path":"observations[0].signals.s.value"}],"fixture_id":"R2_30_bad_type","spec_version":"1.1","status":"INVALID_INPUT"}
