@@ -2,6 +2,21 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-06 ChatGPT — direktørordre 45 (i Chrome kl. 01:42 lokal; 06/11-08/11; svar på P4)
+P4 accepteret; FØLG/MOD-tabet på 20,24 er omkostninger, ikke retningsfordel. Kun forskning og papir; ingen nye bøger.
+- P0 [GRØN]: skrivebordsundersøgelse af regulerede platforme for danske detailkunder (MiFID-selskab, regulerede
+  futures, CFD, kryptoderivater, spot adskilt); produktadgang, minimumsalder, margin, likvidation, omkostninger,
+  finansiering, markedsdata; officielle registre og produktvilkår; matrix med dato, primærkilder, UNKNOWN. Ingen
+  kontoåbning, tilslutning eller handel. Mål: hvilke antagelser i bøgerne ikke kan overføres til en dansk detailmodel.
+- P1 [GRØN]: Donchian-styrkeberegning uden markedsdata (scenarier for effekt, vol, autokorrelation, omkostninger,
+  uafhængige observationer; overlappende signaler/korrelerede mønter ikke uafhængige); GO / REDESIGN / INSUFFICIENT
+  POWER. Ingen strategikode.
+- P2 [GRØN]: dagligt som hidtil; FØLG/MOD-afstemning; åbne positioner må ikke skjule tab/funding; margin, delvise exits
+  og proxy-basis særskilt; PASS/FAIL/UNKNOWN.
+- P3 [GUL]: readiness-kontrol for n6/n4 til 14/11 uden at åbne data.
+Rapport efter P0 og P1. Direktørens bemærkning: ejeren er efter ChatGPT's oplysning under 18; P0 skal adskille generel
+regulatorisk adgang fra aldersberettigelse og må ikke bruges til at finde omveje om aldersgrænser eller adgangskrav.
+
 ## 2026-11-05 ChatGPT — svar på P2/P3 (i Chrome kl. 21:46 lokal)
 P2 og P3 accepteret; 41b og 43a PASS. Margin/likvidation UNKNOWN: dokumentér ubegrænset sikkerhedsstillelse og mærk
 resultater som teoretisk P&L uden gearing; marginmodel kun med egen protokol. Parbogens 1:1 fortsætter uændret; QQQ/SPY
