@@ -40,6 +40,7 @@ if HERE not in sys.path:
 from research.tools import hypo_engine as he  # noqa: E402
 from research.tools import p2_power  # noqa: E402
 from research.tools.factory import Ledger, FactoryError  # noqa: E402
+from research.desk.crosscheck import claude_eval_v11 as ev  # noqa: E402
 
 CHAIN = ["IDEA", "LITERATURE_SCREENED", "PROTOCOL_DRAFT", "POWER_CHECKED", "AWAITING_OWNER_APPROVAL", "APPROVED",
          "FROZEN", "DATA_ELIGIBLE", "EVALUATED"]
@@ -174,18 +175,29 @@ class Desk:
         return True
 
     def evaluate(self, rec, now, data_loader, family_results):
+        """The loader returns an EVALUATOR_SPEC v1.1 fixture whose hypotheses include rec["id"] (the primary).
+        Input is validated fail-closed BEFORE the ledger charge; an invalid input charges nothing, changes no state
+        and is reported. A valid evaluation charges first (idempotent key), then runs the cross-checked evaluator."""
         if rec["state"] != "DATA_ELIGIBLE":
             raise DeskError("data only after DATA_ELIGIBLE")
-        key = sha([rec["id"], rec["protocol_sha256"], "v1"])
+        fx = data_loader(rec)
+        errs = ev.validate(fx)
+        hids = [h.get("hid") for h in fx.get("hypotheses", [])] if isinstance(fx, dict) else []
+        if not errs and rec["id"] not in hids:
+            errs = [("PRIMARY_MISSING", "hypotheses")]
+        if errs:
+            rec["evaluation_refused"] = [list(e) for e in errs]
+            raise DeskError(f"{rec['id']}: evaluator input invalid: {errs[:3]}")
+        key = sha([rec["id"], rec["protocol_sha256"], ev.sha(fx), ev.VERSION])
         self.ledger.charge(rec["id"], rec["lineage"], now, 1, rec["protocol"]["alpha_f"], "desk_factory", key=key)
-        x = data_loader(rec)
-        if len(x) < 30:
-            rec["result"] = {"T": len(x), "p_one": None}
-            self._move(rec, "EVALUATED", now, "T < 30")
-            return self._move(rec, "INCONCLUSIVE", now, "insufficient observations")
-        t, m = he.hac_t(x, lags=max(0, int(4 * (len(x) / 100) ** (2 / 9))))
-        rec["result"] = {"T": len(x), "mean": m, "t": t, "p_one": he.p_one(t)}
-        self._move(rec, "EVALUATED", now, f"t {t:.2f}")
+        out = ev.evaluate(fx)
+        r = out["hypotheses"][rec["id"]]
+        rec["result"] = {k: r[k] for k in ("T", "mean_net", "t", "p_one", "status", "hac_lag")}
+        rec["result"]["evaluator"] = ev.VERSION
+        if r["status"] != "TESTED":
+            self._move(rec, "EVALUATED", now, r["status"])
+            return self._move(rec, "INCONCLUSIVE", now, r["status"])
+        self._move(rec, "EVALUATED", now, f"t {r['t']:.2f}")
         family_results.setdefault(rec["lineage"], []).append(rec)
 
     def decide(self, family_results, now):
@@ -309,9 +321,18 @@ def synthetic(seed=0):
     effects = {"fund_persist_A": 0.004, "basis_B": 0.0, "tsmom_C": 0.0}
 
     def loader(rec):
+        """Synthetic v1.1 fixture: one asset, daily bars, signal always long, effect mu per bar."""
         r2 = random.Random(rec["id"])
         mu = effects.get(rec["idea"]["name"], 0.0)
-        return [mu + r2.gauss(0, 0.01) for _ in range(rec["protocol"]["n_planned"])]
+        p = rec["protocol"]
+        obs = [{"ts": p["window_start"] + k * 86400, "asset": "U", "ret": mu + r2.gauss(0, 0.01), "funding": 0.0,
+                "signals": {"s": {"value": 1.0, "avail_ts": p["window_start"]}}} for k in range(p["n_planned"])]
+        return {"fixture_id": rec["id"], "cadence_s": 86400, "alpha": 0.05, "q_fdr": 0.1,
+                "window": {"start": p["window_start"], "end": p["window_end"]},
+                "universe": {"U": {"listed_from": p["window_start"], "delisted_at": None}},
+                "hypotheses": [{"hid": rec["id"], "family": rec["lineage"], "signal_key": "s", "rule": "sign",
+                                "cost_bps": 0.0, "funding": False}],
+                "observations": obs, "ledger_requests": []}
     _ = rng
     return Desk(evidence, lambda m: lineage.get(m, m), streams, [(0, 1_735_689_600, "2024 holdout")]), ideas, \
         protocols, loader, now
