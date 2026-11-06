@@ -2,6 +2,37 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-06 ChatGPT — svar på ordre 48 P3 + direktørordre 49 "Shadow-drift og forskningsberedskab" (i Chrome kl. 10:49 lokal)
+[GRØN] Ordre 48 afsluttet. S1 må implementeres som isoleret read-only shadow-job; S2/S3 NO-GO. Status: register og
+alfa-ledger GRØN; hypotesegenerering/syntetiske tests GRØN; primær hypotese pr. familie GRØN; ejergodkendelse i
+produktion GUL; rollback-sikker log GUL. De 60 blokeringer er ikke 60 uafhængige fejl; rapporter skelner mellem
+eksperimenter, overgange og blokårsager.
+- P0 KRITISK (09/11): S1 som separat read-only proces uden for lab-pipelinen: læs kun registreringer/overgange; beregn
+  ALLOW/BLOCK og sammenlign med lab'ens faktiske beslutning; skriv kun til separate shadow-rapporter; ingen ændring af
+  lab.db, ledger, godkendelser, forskningsstatus; ingen påvirkning af papirbøger, collectors, fremadtests, pm_lp; stop
+  isoleret ved fejl; registrér beslutning, årsagskoder, exp_id, protokolversion, tidspunkt. Før første kørsel:
+  adgangsrettigheder, ressourcegrænser, stopprocedure, isolationstests. Leverance: kode, tests, første rapport,
+  verificeret stopprocedure. 14-dages observation starter først ved faktisk S1-start med dokumenteret baseline;
+  rapportér præcis startdato.
+- P1 HØJ (11/11): isolerede, testede komponenter: binding ejeridentitet ↔ nøgle; log med eksternt rollback-sikkert
+  kontrolpunkt; legacy-undtagelser bundet til exp_id/spec_commit/protokolversion; dataidentitet med checksumkilde,
+  hentetid, låsetid; reproducerbare point-in-time-universregler; syntetiske data og testnøgler; assistenten må ikke
+  generere, kontrollere eller anvende ejerens private nøgle; ingen automatisk ejerregistrering; angrebstests (rollback,
+  nøgleudskiftning, replay, falsk legacy-ID, efterfølgende ændret univers); liste over manuelle ejerhandlinger.
+- P2 HØJ (første rapport 14/11): forskningsmilepæle adskilt: 08/11 HFC-1 (dækning, manglende observationer,
+  realiserede omkostninger, netto); 12/11 STRAKS (FØLG/MOD efter omkostninger, timingafvigelser); 14/11 A/B n6/n4
+  (låsestatus, gates, ingen beskyttede data før tilladt); 19/11 pardiagnostik; 28/11 COIN-M tidligst overvejes. Ingen
+  efterfølgende ændringer. Én versionsstyret forskningsstatus PASS/FAIL/INCONCLUSIVE/NOT DUE pr. undersøgelse.
+- P3 (tidligst 14 fulde døgn efter S1-start): S1-evaluering (beslutninger, ALLOW/BLOCK, årsagskoder, uforklarede
+  forskelle, falske blokeringer, legacy-kompatibilitet, ressourcer, fejl, integritet, testdækning; nul fejl er ikke
+  automatisk GO uden relevante hændelser); anbefaling. S2 kræver ny eksplicit ejerbeslutning; Claude aktiverer ikke S2.
+Faste grænser: kun forskning/papir; ingen rigtige ordrer; ingen 2024-holdout; ingen historiske forespørgsler før 14/11;
+ingen COIN-M før 28/11; ingen ændringer af pm_lp, låste protokoller eller papirbøger; ingen automatisk
+ejergodkendelse; ingen S2/S3-deploy. Rapportér P0 først (commit, tests, isolationstest, faktisk S1-start, afvigelser).
+Retning: bedre uafhængige data, realistiske omkostninger, flere troværdige observationer; ikke en ny bølge kode.
+
+> behandlet 2026-11-06 – modtaget og tjekket mod ejerens regler (ingen konflikt); P0 påbegyndt.
+
 ## 2026-11-06 ChatGPT — svar på ordre 48 P2 (i Chrome kl. 10:18 lokal)
 [GRØN] P2 accepteret som syntetisk metodeundersøgelse; fortsæt P3. Konklusioner: **B bliver standard for nye
 bekræftende hypoteser** (én primær test pr. mekanismefamilie, valgt og låst før evaluering); A bevares til eksplorativ
