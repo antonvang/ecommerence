@@ -1,0 +1,3023 @@
+{
+ "schema": "desk.evidence_registry/1",
+ "schema_ext": {
+  "version": "desk.evidence_registry_ext/1",
+  "same_fields_as": "evidence_registry.json entries",
+  "added_fields": {
+   "copybot_families": "VOCABULARY.json tag ids only (subset of copybot_links semantics)",
+   "supports_ids / contradicts_ids / extends_ids": "E-ids (evidence_registry.json) or X-ids (this file)",
+   "post_2022_data": "true if the sample includes data after 2022-01-01 (as stated by the source)",
+   "net_of_cost_evidence": "no / partial / yes(...) - whether the source itself compares the effect with trading costs"
+  },
+  "added_pub_type": "peer_reviewed_conference (WWW, IMC, Financial Cryptography)"
+ },
+ "order": "director order 51 P2 support (literature register extension)",
+ "built": "2026-11-06",
+ "rules": "only sources opened in this session (url_opened); numbers copied from opened abstract/PDF text or UNKNOWN; summaries in own words; no market data fetched; existing E01-E44 untouched",
+ "data_availability_codes": [
+  "AVAILABLE_FORWARD",
+  "AVAILABLE_AFTER_2026-11-14",
+  "BLOCKED_UNTIL_2026-11-28",
+  "NOT_AVAILABLE",
+  "UNKNOWN"
+ ],
+ "entries": [
+  {
+   "id": "X001",
+   "category": 2,
+   "secondary_categories": [
+    1
+   ],
+   "title": "Crypto Carry",
+   "authors": "Maik Schmeling; Andreas Schrimpf; Karamfil Todorov",
+   "year": 2025,
+   "venue": "CEPR Discussion Paper 20719 (Oct 2025); later version of BIS WP 1087 (E04)",
+   "pub_type": "working_paper",
+   "url_opened": "https://ideas.repec.org/p/cpr/ceprdp/20719.html",
+   "doi": null,
+   "mechanism": "futures-spot carry as a volatile 'inconvenience yield' of spot: trend-chasing leveraged demand meets scarce arbitrage capital (regulatory and margin frictions)",
+   "market": "crypto futures vs spot (BTC/ETH)",
+   "period": "UNKNOWN (abstract only)",
+   "universe": "UNKNOWN (abstract only)",
+   "effect_size": "carry sometimes above 40% p.a.; strongly time-varying (abstract)",
+   "effect_unit_horizon": "annualised futures-spot carry level",
+   "gross_or_net": "gross (carry level, not a trading P&L)",
+   "costs_included": "no",
+   "capacity_notes": "authors attribute persistence to limited arbitrage capital; not quantified",
+   "oos_or_replication": "updated version of E04; the headline level wording moved from 'up to 60%' (E04) to 'sometimes exceeding 40%'",
+   "result_type": "descriptive",
+   "copybot_families": [
+    "dated_futures_basis_carry",
+    "delta_neutral_funding_carry",
+    "funding_carry"
+   ],
+   "copybot_links": [
+    "families/drafts/dbasis.json",
+    "F2_PLAN.md",
+    "studies/CARRY_REALISM_P0P1_2026-11-06.md",
+    "../lab/carry90.py"
+   ],
+   "data_availability": "AVAILABLE_FORWARD",
+   "supports_ids": [
+    "E04",
+    "E05",
+    "E08"
+   ],
+   "contradicts_ids": [],
+   "extends_ids": [
+    "E04"
+   ],
+   "post_2022_data": true,
+   "net_of_cost_evidence": "no",
+   "notes": "Management Science version (doi 10.1287/mnsc.2024.05069) still 403 in this session; the CEPR 2025 abstract is the newest verified text. Level only, no net result."
+  },
+  {
+   "id": "X002",
+   "category": 1,
+   "secondary_categories": [],
+   "title": "Designing funding rates for perpetual futures in cryptocurrency markets",
+   "authors": "Jaehyun Kim; Hyungbin Park",
+   "year": 2025,
+   "venue": "arXiv:2506.08573 (v1)",
+   "pub_type": "working_paper",
+   "url_opened": "https://arxiv.org/abs/2506.08573",
+   "doi": "10.48550/arXiv.2506.08573",
+   "mechanism": "funding-rate design that keeps perp price at a target value; replicating portfolios; path-dependent funding (BSDE theory)",
+   "market": "theoretical perpetual futures",
+   "period": "n/a",
+   "universe": "n/a",
+   "effect_size": "n/a (theory)",
+   "effect_unit_horizon": "n/a",
+   "gross_or_net": "n/a",
+   "costs_included": "n/a",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "n/a",
+   "result_type": "theory",
+   "copybot_families": [
+    "delta_neutral_funding_carry",
+    "perp_premium_convergence"
+   ],
+   "copybot_links": [
+    "FUNDING_AUDIT.md"
+   ],
+   "data_availability": "UNKNOWN",
+   "supports_ids": [],
+   "contradicts_ids": [],
+   "extends_ids": [
+    "E07"
+   ],
+   "post_2022_data": false,
+   "net_of_cost_evidence": "no",
+   "notes": "Theory only. Useful for understanding why funding formulas (premium index + clamp) mechanically anchor the perp; no empirical predictability claim."
+  },
+  {
+   "id": "X003",
+   "category": 1,
+   "secondary_categories": [],
+   "title": "A primer on perpetuals",
+   "authors": "Guillermo Angeris; Tarun Chitra; Alex Evans; Matthew Lorig",
+   "year": 2022,
+   "venue": "arXiv:2209.03307 (RePEc arx papers)",
+   "pub_type": "working_paper",
+   "url_opened": "https://ideas.repec.org/p/arx/papers/2209.03307.html",
+   "doi": null,
+   "mechanism": "model-free funding and discount rates for perpetual contracts; replication of the short side; jump case semi-robust",
+   "market": "theoretical perpetual contracts",
+   "period": "n/a",
+   "universe": "n/a",
+   "effect_size": "n/a (theory)",
+   "effect_unit_horizon": "n/a",
+   "gross_or_net": "n/a",
+   "costs_included": "no (frictionless setting stated)",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "n/a",
+   "result_type": "theory",
+   "copybot_families": [
+    "delta_neutral_funding_carry"
+   ],
+   "copybot_links": [
+    "FUNDING_AUDIT.md"
+   ],
+   "data_availability": "UNKNOWN",
+   "supports_ids": [],
+   "contradicts_ids": [],
+   "extends_ids": [
+    "E07"
+   ],
+   "post_2022_data": false,
+   "net_of_cost_evidence": "no",
+   "notes": "Theory; frictionless, no transaction costs by assumption."
+  },
+  {
+   "id": "X004",
+   "category": 2,
+   "secondary_categories": [
+    1,
+    8
+   ],
+   "title": "Where Are the Rates? Derivative-Implied Interest Rates in Cryptocurrency Markets",
+   "authors": "Philippe Bergault; Sébastien Bieber; Olivier Guéant; Wenkai Zhang",
+   "year": 2025,
+   "venue": "arXiv:2509.03964 (v3)",
+   "pub_type": "working_paper",
+   "url_opened": "https://arxiv.org/abs/2509.03964",
+   "doi": "10.48550/arXiv.2509.03964",
+   "mechanism": "USD and coin discount factors jointly inferred from inverse options (put-call parity) and futures basis",
+   "market": "Deribit BTC and ETH options and futures (hourly)",
+   "period": "2023-02 to 2026-02",
+   "universe": "BTC, ETH",
+   "effect_size": "implied USD rates average about 8% per year and rose in the 2024 rallies; implied BTC/ETH rates near zero; persistent gap vs Aave USDC rates",
+   "effect_unit_horizon": "annualised implied rate across maturities",
+   "gross_or_net": "n/a",
+   "costs_included": "n/a",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "UNKNOWN",
+   "result_type": "descriptive",
+   "copybot_families": [
+    "dated_futures_basis_carry",
+    "funding_carry",
+    "delta_neutral_funding_carry"
+   ],
+   "copybot_links": [
+    "studies/CARRY_REALISM_P0P1_2026-11-06.md",
+    "families/drafts/dbasis.json"
+   ],
+   "data_availability": "NOT_AVAILABLE",
+   "supports_ids": [
+    "E04",
+    "E08"
+   ],
+   "contradicts_ids": [],
+   "extends_ids": [],
+   "post_2022_data": true,
+   "net_of_cost_evidence": "no",
+   "notes": "Post-2022 evidence that the derivative-implied USD rate (the carry benchmark) is about 8% p.a. and disconnected from DeFi lending rates (limited integration). Deribit data is outside host gates; the concept transfers to Binance dated USD-M basis (F2), which is AVAILABLE_FORWARD."
+  },
+  {
+   "id": "X005",
+   "category": 2,
+   "secondary_categories": [
+    1,
+    5
+   ],
+   "title": "Arbitrage, contract design, and market structure in Bitcoin futures markets",
+   "authors": "Riccardo De Blasis; Alexander Webb",
+   "year": 2022,
+   "venue": "Journal of Futures Markets 42(3), 492-524",
+   "pub_type": "peer_reviewed_journal",
+   "url_opened": "https://ideas.repec.org/a/wly/jfutmk/v42y2022i3p492-524.html",
+   "doi": "10.1002/fut.22305",
+   "mechanism": "quarterly vs perpetual contract design; intraday patterns in perps; cash-and-carry opportunities",
+   "market": "Bitcoin quarterly and perpetual futures",
+   "period": "UNKNOWN (abstract only)",
+   "universe": "BTC",
+   "effect_size": "UNKNOWN (abstract: perps show multiple u-shaped intraday curves, seasonal and opening effects; quarterly cash-and-carry opportunities mainly during market dislocations)",
+   "effect_unit_horizon": "UNKNOWN",
+   "gross_or_net": "UNKNOWN",
+   "costs_included": "UNKNOWN",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "UNKNOWN",
+   "result_type": "descriptive",
+   "copybot_families": [
+    "dated_futures_basis_carry",
+    "intraday_seasonality",
+    "perp_premium_convergence"
+   ],
+   "copybot_links": [
+    "families/drafts/dbasis.json",
+    "F2_PLAN.md",
+    "drafts/K3_INDSAMLING_UDKAST_2026-10-25.md"
+   ],
+   "data_availability": "AVAILABLE_FORWARD",
+   "supports_ids": [
+    "E06",
+    "E04"
+   ],
+   "contradicts_ids": [],
+   "extends_ids": [],
+   "post_2022_data": false,
+   "net_of_cost_evidence": "no",
+   "notes": "Peer-reviewed support for 'basis opportunities cluster in dislocations' (cf. E04 margin spikes). Intraday perp seasonality relevant to K3 funding-time question."
+  },
+  {
+   "id": "X006",
+   "category": 2,
+   "secondary_categories": [
+    3
+   ],
+   "title": "Bitcoin futures risk premia",
+   "authors": "Shimeng Shi",
+   "year": 2022,
+   "venue": "Journal of Futures Markets 42(12), 2190-2217",
+   "pub_type": "peer_reviewed_journal",
+   "url_opened": "https://ideas.repec.org/a/wly/jfutmk/v42y2022i12p2190-2217.html",
+   "doi": "10.1002/fut.22373",
+   "mechanism": "position-based (trader-category positioning), microstructure and macro predictors of bitcoin futures returns",
+   "market": "regulated bitcoin futures (positions by trader type; venue not stated in abstract)",
+   "period": "UNKNOWN",
+   "universe": "BTC futures",
+   "effect_size": "UNKNOWN (abstract: trading activity and extreme speculator/retail sentiment predict futures price changes; lower transaction cost goes with higher premia; speculators negative-feedback, retail positive-feedback)",
+   "effect_unit_horizon": "UNKNOWN (several horizons)",
+   "gross_or_net": "UNKNOWN",
+   "costs_included": "UNKNOWN",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "UNKNOWN",
+   "result_type": "forecast",
+   "copybot_families": [
+    "informed_positioning_divergence",
+    "funding_crowding_contrarian",
+    "leverage_cycle_timing"
+   ],
+   "copybot_links": [
+    "studies/FUNDING_m21h.md"
+   ],
+   "data_availability": "NOT_AVAILABLE",
+   "supports_ids": [],
+   "contradicts_ids": [],
+   "extends_ids": [],
+   "post_2022_data": false,
+   "net_of_cost_evidence": "no",
+   "notes": "Positioning data by trader category is a regulated-futures (COT-type) concept; not in lab gates. Retail positive-feedback finding is consistent with the trend-chasing demand story of E04 and X001."
+  },
+  {
+   "id": "X007",
+   "category": 8,
+   "secondary_categories": [
+    2
+   ],
+   "title": "Jump risk premia in the presence of clustered jumps",
+   "authors": "Francis Liu; Natalie Packham; Artur Sepp",
+   "year": 2025,
+   "venue": "arXiv:2510.21297",
+   "pub_type": "working_paper",
+   "url_opened": "https://arxiv.org/abs/2510.21297",
+   "doi": "10.48550/arXiv.2510.21297",
+   "mechanism": "bivariate Hawkes jumps; positive/negative jump premia inferred from BTC options; skew can change sign with sentiment",
+   "market": "BTC options (and futures carry)",
+   "period": "UNKNOWN",
+   "universe": "BTC",
+   "effect_size": "UNKNOWN (abstract: inferred jump premia have predictive power for BTC futures cost of carry and for delta-hedged option P&L)",
+   "effect_unit_horizon": "UNKNOWN",
+   "gross_or_net": "UNKNOWN",
+   "costs_included": "UNKNOWN",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "UNKNOWN",
+   "result_type": "forecast",
+   "copybot_families": [
+    "variance_risk_premium_timing",
+    "dated_futures_basis_carry"
+   ],
+   "copybot_links": [],
+   "data_availability": "NOT_AVAILABLE",
+   "supports_ids": [
+    "E27"
+   ],
+   "contradicts_ids": [],
+   "extends_ids": [],
+   "post_2022_data": true,
+   "net_of_cost_evidence": "no",
+   "notes": "Links option-implied jump premia to futures carry; options data outside gates."
+  },
+  {
+   "id": "X008",
+   "category": 1,
+   "secondary_categories": [
+    2
+   ],
+   "title": "Dynamic Collateral Control for Permissionless Spot Perpetual Basis Trading",
+   "authors": "Anatoly Krestenko; Mikhail Butov; Rostislav Berezovskiy; Danila Bolotin",
+   "year": 2026,
+   "venue": "arXiv:2605.05089",
+   "pub_type": "working_paper",
+   "url_opened": "https://arxiv.org/abs/2605.05089",
+   "doi": "10.48550/arXiv.2605.05089",
+   "mechanism": "spot long + short perp basis trade as a collateral-allocation control problem under on-chain execution frictions",
+   "market": "DeFi spot and perpetuals (BTC, LINK, DOGE among calibrated assets)",
+   "period": "UNKNOWN",
+   "universe": "BTC, LINK, DOGE and others (UNKNOWN full list)",
+   "effect_size": "UNKNOWN (abstract: required collateral lowest for BTC and much higher for long-tail assets; realised execution wedges significant, worse when selling the basis; realised performance mostly explained by the funding environment)",
+   "effect_unit_horizon": "UNKNOWN",
+   "gross_or_net": "net of modelled execution wedges (live routed execution measured)",
+   "costs_included": "yes (execution wedges, rebalancing cost)",
+   "capacity_notes": "collateral need rises with volatility stress and for long-tail assets",
+   "oos_or_replication": "historical backtest + live routed execution test",
+   "result_type": "net_trading",
+   "copybot_families": [
+    "delta_neutral_funding_carry",
+    "funding_carry_leverage"
+   ],
+   "copybot_links": [
+    "studies/CARRY_REALISM_P0P1_2026-11-06.md",
+    "studies/HFC1_HIGH_FUNDING_FEASIBILITY_2026-11-04.md"
+   ],
+   "data_availability": "AVAILABLE_FORWARD",
+   "supports_ids": [
+    "E42",
+    "E05"
+   ],
+   "contradicts_ids": [],
+   "extends_ids": [],
+   "post_2022_data": true,
+   "net_of_cost_evidence": "partial",
+   "notes": "No headline return number in abstract. Key qualitative point for the lab: basis P&L is driven by the funding regime, and execution wedges are material. CEX analogue AVAILABLE_FORWARD; DeFi venues not collected."
+  },
+  {
+   "id": "X009",
+   "category": 4,
+   "secondary_categories": [
+    1
+   ],
+   "title": "Liquidation, Leverage and Optimal Margin in Bitcoin Futures Markets",
+   "authors": "Zhiyong Cheng; Jun Deng; Tianyi Wang; Mei Yu",
+   "year": 2021,
+   "venue": "arXiv:2102.04591",
+   "pub_type": "working_paper",
+   "url_opened": "https://arxiv.org/abs/2102.04591",
+   "doi": "10.48550/arXiv.2102.04591",
+   "mechanism": "extreme-value tails of perp returns vs forced liquidations and margin levels",
+   "market": "BitMEX BTC perpetual",
+   "period": "UNKNOWN (abstract only)",
+   "universe": "BTC",
+   "effect_size": "daily forced liquidations average 3.51% (long) and 1.89% (short) of outstanding futures; liquidated traders use about 60x leverage on average; margin of 33% (long) / 20% (short) needed for 1% daily margin-call probability",
+   "effect_unit_horizon": "daily share of open interest",
+   "gross_or_net": "n/a",
+   "costs_included": "n/a",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "UNKNOWN",
+   "result_type": "descriptive",
+   "copybot_families": [
+    "liquidation_cascade_reversal",
+    "funding_carry_leverage"
+   ],
+   "copybot_links": [
+    "../lab/risk.py"
+   ],
+   "data_availability": "UNKNOWN",
+   "supports_ids": [
+    "E16"
+   ],
+   "contradicts_ids": [],
+   "extends_ids": [],
+   "post_2022_data": false,
+   "net_of_cost_evidence": "no",
+   "notes": "Scale of forced flow on a pre-2021 venue. Per-order liquidation data in the lab collector is UNKNOWN (same as E16). Not a price-response study."
+  },
+  {
+   "id": "X010",
+   "category": 4,
+   "secondary_categories": [
+    5
+   ],
+   "title": "Towards Understanding Cryptocurrency Derivatives: A Case Study of BitMEX",
+   "authors": "Kyle Soska; Jin-Dong Dong; Alex Khodaverdian; Ariel Zetlin-Jones; Bryan Routledge; Nicolas Christin",
+   "year": 2021,
+   "venue": "The Web Conference (WWW '21), Ljubljana",
+   "pub_type": "peer_reviewed_conference",
+   "url_opened": "https://www.andrew.cmu.edu/user/nicolasc/publications/Soska-WWW21.pdf",
+   "doi": "10.1145/3442381.3450059",
+   "mechanism": "leverage and public liquidation events vs discrete price jumps ('barts')",
+   "market": "BitMEX derivatives (perpetual and settled)",
+   "period": "2017 to early 2021 (figures in PDF)",
+   "universe": "BitMEX products",
+   "effect_size": "over 425,000 liquidation events collected; weekly liquidations peaked near USD 1bn (Nov 2018); liquidation events above USD 100M every few weeks in 2018 coincided with discrete jumps; long liquidations dominate even in up-trends; 1 Apr 2019 25% spot jump liquidated over USD 400M of shorts",
+   "effect_unit_horizon": "USD liquidated per day/week (7-day moving average)",
+   "gross_or_net": "n/a",
+   "costs_included": "n/a",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "descriptive; authors state causality between leverage and jumps is unresolved",
+   "result_type": "descriptive",
+   "copybot_families": [
+    "liquidation_cascade_reversal",
+    "funding_carry_leverage"
+   ],
+   "copybot_links": [],
+   "data_availability": "UNKNOWN",
+   "supports_ids": [
+    "E05"
+   ],
+   "contradicts_ids": [],
+   "extends_ids": [],
+   "post_2022_data": false,
+   "net_of_cost_evidence": "no",
+   "notes": "Same CMU group as E05. Important caveat stated by the authors: correlation of liquidations with jumps, not shown causal; no post-liquidation return statistics."
+  },
+  {
+   "id": "X011",
+   "category": 4,
+   "secondary_categories": [
+    5
+   ],
+   "title": "Hedging with Bitcoin Futures: The Effect of Liquidation Loss Aversion and Aggressive Trading",
+   "authors": "Carol Alexander; Jun Deng; Bin Zou",
+   "year": 2021,
+   "venue": "arXiv:2101.01261 (v2)",
+   "pub_type": "working_paper",
+   "url_opened": "https://arxiv.org/abs/2101.01261 (abstract) + https://arxiv.org/pdf/2101.01261 (PDF text)",
+   "doi": "10.48550/arXiv.2101.01261",
+   "mechanism": "optimal hedge under automatic liquidation risk; liquidation probability by leverage and horizon",
+   "market": "7 BTC direct and inverse hedging instruments on 5 exchanges (BitMEX, Binance, Bybit, Deribit, OKEx), minute data",
+   "period": "sample ends May 2021; includes 11-14 Mar 2020 and 18-21 May 2021 crashes",
+   "universe": "BTC",
+   "effect_size": "19 May 2021: USD 8.6bn liquidations reported across products and exchanges; Binance liquidation reports for May judged inaccurate; 100x positions: over 95% of 1-day positions end in liquidation; 30-day horizon: 5x shorts above 60% liquidation probability",
+   "effect_unit_horizon": "liquidation probability per holding horizon; USD liquidated per day",
+   "gross_or_net": "n/a",
+   "costs_included": "n/a",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "UNKNOWN",
+   "result_type": "descriptive",
+   "copybot_families": [
+    "liquidation_cascade_reversal",
+    "funding_carry_leverage"
+   ],
+   "copybot_links": [
+    "../lab/risk.py",
+    "studies/CARRY_REALISM_P0P1_2026-11-06.md"
+   ],
+   "data_availability": "UNKNOWN",
+   "supports_ids": [
+    "E16"
+   ],
+   "contradicts_ids": [],
+   "extends_ids": [],
+   "post_2022_data": false,
+   "net_of_cost_evidence": "no",
+   "notes": "Data-quality warning: exchange-reported liquidation feeds can be wrong (Binance, May 2021) - relevant if the lab ever uses liquidation feeds. Leverage/liquidation tables relevant to carry margin realism."
+  },
+  {
+   "id": "X012",
+   "category": 4,
+   "secondary_categories": [
+    5
+   ],
+   "title": "Where does the criticality live? Early-warning signals are event-heterogeneous across seven crypto-perpetual liquidation cascades",
+   "authors": "Ramon Marc Garcia Seuma",
+   "year": 2026,
+   "venue": "arXiv:2607.27070",
+   "pub_type": "working_paper",
+   "url_opened": "https://arxiv.org/abs/2607.27070",
+   "doi": "10.48550/arXiv.2607.27070",
+   "mechanism": "critical-slowing-down early-warning signals (variance, lag-1 autocorrelation) before liquidation cascades",
+   "market": "Binance BTC perpetual (minute price, 5-minute leverage and taker flow)",
+   "period": "2022-2025 (7 cascades incl. 10 Oct 2025)",
+   "universe": "BTC",
+   "effect_size": "no variable warns in all events; price shows the signature in 5 of 7 events, absent in the 2 tariff-news shocks; only taker order-flow variance compression survives all events (300-onset placebo, Fisher p about 5e-6) and only as a population-level precursor",
+   "effect_unit_horizon": "Kendall-tau trend of pre-cascade indicators",
+   "gross_or_net": "n/a",
+   "costs_included": "n/a",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "out-of-event check: the Oct 2025 in-sample signature did not generalise",
+   "result_type": "descriptive",
+   "copybot_families": [
+    "liquidation_cascade_reversal",
+    "orderflow_imbalance"
+   ],
+   "copybot_links": [
+    "../lab/straks.py"
+   ],
+   "data_availability": "AVAILABLE_FORWARD",
+   "supports_ids": [],
+   "contradicts_ids": [],
+   "extends_ids": [
+    "E16"
+   ],
+   "post_2022_data": true,
+   "net_of_cost_evidence": "no",
+   "notes": "Single author, very recent, not replicated. Strong negative result: no per-event alarm. Minute prices and taker flow are collectable forward; 5-min OI/positioning availability: UNKNOWN."
+  },
+  {
+   "id": "X013",
+   "category": 4,
+   "secondary_categories": [
+    5
+   ],
+   "title": "Measuring the engine of a liquidation cascade: subcritical branching inside a first-order transition",
+   "authors": "Ramon Marc Garcia Seuma",
+   "year": 2026,
+   "venue": "arXiv:2608.03616",
+   "pub_type": "working_paper",
+   "url_opened": "https://arxiv.org/abs/2608.03616",
+   "doi": "10.48550/arXiv.2608.03616",
+   "mechanism": "branching ratio of forced selling; liquidity withdrawal vs multiplier as the driver of cascade severity",
+   "market": "seven crypto-perp cascades; fill-level data from one fully transparent on-chain venue for Oct 2025",
+   "period": "2022-2025",
+   "universe": "BTC and multi-asset coupling",
+   "effect_size": "Oct 2025 branching ratio about 0.1-0.2 (subcritical); 88% of post-onset forced selling within 30 minutes; 63% absorbed off-book by the venue backstop; open interest cleared by 25-70%; inter-asset coupling jumps 1.6-4.4 baseline SD at onset",
+   "effect_unit_horizon": "event-level ratios; minutes after onset",
+   "gross_or_net": "n/a",
+   "costs_included": "n/a",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "subsampling invariance reported; Galton-Watson pre-state model rejected at simulated power >= 0.96",
+   "result_type": "descriptive",
+   "copybot_families": [
+    "liquidation_cascade_reversal"
+   ],
+   "copybot_links": [
+    "../lab/straks.py"
+   ],
+   "data_availability": "UNKNOWN",
+   "supports_ids": [],
+   "contradicts_ids": [],
+   "extends_ids": [
+    "E16"
+   ],
+   "post_2022_data": true,
+   "net_of_cost_evidence": "no",
+   "notes": "Venue not named in abstract (described as fully transparent with a backstop). Consistent with E16 that the cascade signature is in liquidity. Still no post-cascade return reversal statistic."
+  },
+  {
+   "id": "X014",
+   "category": 4,
+   "secondary_categories": [
+    1
+   ],
+   "title": "Autodeleveraging: Impossibilities and Optimization",
+   "authors": "Tarun Chitra",
+   "year": 2025,
+   "venue": "arXiv:2512.01112 (v3)",
+   "pub_type": "working_paper",
+   "url_opened": "https://arxiv.org/abs/2512.01112",
+   "doi": "10.48550/arXiv.2512.01112",
+   "mechanism": "auto-deleveraging (ADL) as loss socialisation when liquidations fail; solvency/revenue/fairness trilemma",
+   "market": "Hyperliquid perps (10 Oct 2025); comparison with Binance",
+   "period": "10 Oct 2025 event",
+   "universe": "Hyperliquid positions",
+   "effect_size": "ADL closed USD 2.1bn of positions in 12 minutes; production ADL overshot the needed haircut: excess profit taken from winners USD 45.0-51.7M (about USD 653.6M of positions); Binance judged to over-use ADL more than Hyperliquid",
+   "effect_unit_horizon": "USD per event",
+   "gross_or_net": "n/a",
+   "costs_included": "n/a",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "single event",
+   "result_type": "descriptive",
+   "copybot_families": [
+    "delta_neutral_funding_carry",
+    "liquidation_cascade_reversal",
+    "cross_venue_perp_gap"
+   ],
+   "copybot_links": [
+    "studies/CARRY_REALISM_P0P1_2026-11-06.md",
+    "studies/VENUE_REGISTER_2026-10-27.md"
+   ],
+   "data_availability": "UNKNOWN",
+   "supports_ids": [],
+   "contradicts_ids": [],
+   "extends_ids": [],
+   "post_2022_data": true,
+   "net_of_cost_evidence": "no",
+   "notes": "Direct relevance to hedged books: a profitable short-perp hedge leg can be force-closed by ADL in a crash (tail risk for carry not priced in E05/E08)."
+  },
+  {
+   "id": "X015",
+   "category": 4,
+   "secondary_categories": [
+    5
+   ],
+   "title": "Reconciling Open Interest with Traded Volume in Perpetual Swaps",
+   "authors": "Ioannis Giagkiozis; Emilio Said",
+   "year": 2024,
+   "venue": "Ledger (2024); arXiv:2310.14973",
+   "pub_type": "peer_reviewed_journal",
+   "url_opened": "https://arxiv.org/abs/2310.14973",
+   "doi": "10.5195/ledger.2024.325",
+   "mechanism": "consistency check of reported open interest against tick-level traded volume",
+   "market": "BTC perpetual swaps on 7 of the most liquid derivatives exchanges",
+   "period": "two periods in 2023",
+   "universe": "BTC",
+   "effect_size": "UNKNOWN magnitude (abstract: OI systematically misquoted by some large exchanges; some implausible, some apparently delaying liquidation messages)",
+   "effect_unit_horizon": "n/a",
+   "gross_or_net": "n/a",
+   "costs_included": "n/a",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "UNKNOWN",
+   "result_type": "descriptive",
+   "copybot_families": [
+    "open_interest_growth",
+    "oi_confirmed_trend",
+    "liquidation_cascade_reversal"
+   ],
+   "copybot_links": [
+    "FUNDING_AUDIT.md"
+   ],
+   "data_availability": "AVAILABLE_FORWARD",
+   "supports_ids": [],
+   "contradicts_ids": [],
+   "extends_ids": [],
+   "post_2022_data": true,
+   "net_of_cost_evidence": "no",
+   "notes": "Data-quality source: OI and liquidation feeds may be unreliable per venue. Supports X038's finding that OI publication time is unverifiable on public archives."
+  },
+  {
+   "id": "X016",
+   "category": 4,
+   "secondary_categories": [
+    7
+   ],
+   "title": "Systemic fragility in decentralised markets",
+   "authors": "Alfred Lehar; Christine A Parlour",
+   "year": 2022,
+   "venue": "BIS Working Paper 1062 (Dec 2022)",
+   "pub_type": "working_paper",
+   "url_opened": "https://www.bis.org/publ/work1062.htm",
+   "doi": null,
+   "mechanism": "flash-loan liquidators must sell seized collateral immediately; price impact spreads from DEXs to other venues",
+   "market": "Compound and Aave liquidations; price impact on 9 DEXs",
+   "period": "UNKNOWN (abstract only)",
+   "universe": "DeFi collateral assets",
+   "effect_size": "UNKNOWN (abstract: temporary and permanent price impact like equity block trades; effect on return distributions documented)",
+   "effect_unit_horizon": "high-frequency price impact",
+   "gross_or_net": "n/a",
+   "costs_included": "n/a",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "UNKNOWN",
+   "result_type": "descriptive",
+   "copybot_families": [
+    "liquidation_cascade_reversal"
+   ],
+   "copybot_links": [],
+   "data_availability": "NOT_AVAILABLE",
+   "supports_ids": [],
+   "contradicts_ids": [],
+   "extends_ids": [],
+   "post_2022_data": false,
+   "net_of_cost_evidence": "no",
+   "notes": "Forced liquidation sales have a permanent component -> argues against assuming full reversal. On-chain data not available in the lab."
+  },
+  {
+   "id": "X017",
+   "category": 4,
+   "secondary_categories": [
+    7
+   ],
+   "title": "Liquidation Mechanisms and Price Impacts in DeFi",
+   "authors": "Phoebe Tian; Yu Zhu",
+   "year": 2025,
+   "venue": "Bank of Canada Staff Working Paper 2025-12",
+   "pub_type": "working_paper",
+   "url_opened": "https://ideas.repec.org/p/bca/bocawp/25-12.html",
+   "doi": "10.34989/swp-2025-12",
+   "mechanism": "fixed-spread vs auction liquidations; participation cost sets liquidator competition and price impact",
+   "market": "Ethereum DeFi lending",
+   "period": "UNKNOWN",
+   "universe": "UNKNOWN",
+   "effect_size": "UNKNOWN (abstract: auction-based liquidations give smaller price drops when participation cost is low)",
+   "effect_unit_horizon": "UNKNOWN",
+   "gross_or_net": "n/a",
+   "costs_included": "n/a",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "UNKNOWN",
+   "result_type": "descriptive",
+   "copybot_families": [
+    "liquidation_cascade_reversal"
+   ],
+   "copybot_links": [],
+   "data_availability": "NOT_AVAILABLE",
+   "supports_ids": [
+    "X016"
+   ],
+   "contradicts_ids": [],
+   "extends_ids": [],
+   "post_2022_data": false,
+   "net_of_cost_evidence": "no",
+   "notes": "Mechanism design shapes the size of liquidation price impact; no return-reversal statistic."
+  },
+  {
+   "id": "X018",
+   "category": 4,
+   "secondary_categories": [
+    7
+   ],
+   "title": "An Empirical Study of DeFi Liquidations: Incentives, Risks, and Instabilities",
+   "authors": "Kaihua Qin; Liyi Zhou; Pablo Gamito; Philipp Jovanovic; Arthur Gervais",
+   "year": 2021,
+   "venue": "ACM Internet Measurement Conference (IMC '21); arXiv:2106.06389",
+   "pub_type": "peer_reviewed_conference",
+   "url_opened": "https://arxiv.org/abs/2106.06389",
+   "doi": "10.1145/3487552.3487811",
+   "mechanism": "liquidation designs of Aave, Compound, MakerDAO, dYdX; liquidator incentives and borrower losses",
+   "market": "Ethereum DeFi lending (over 85% of lending market)",
+   "period": "UNKNOWN (to 2021)",
+   "universe": "DeFi lending positions",
+   "effect_size": "UNKNOWN headline size (abstract: designs over-sell discounted collateral at borrowers' expense; TVL context USD 39.88bn)",
+   "effect_unit_horizon": "n/a",
+   "gross_or_net": "n/a",
+   "costs_included": "n/a",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "UNKNOWN",
+   "result_type": "descriptive",
+   "copybot_families": [
+    "liquidation_cascade_reversal",
+    "speed_onchain_sniping"
+   ],
+   "copybot_links": [],
+   "data_availability": "NOT_AVAILABLE",
+   "supports_ids": [],
+   "contradicts_ids": [],
+   "extends_ids": [],
+   "post_2022_data": false,
+   "net_of_cost_evidence": "no",
+   "notes": "DeFi liquidation microstructure; not CEX perps."
+  },
+  {
+   "id": "X019",
+   "category": 4,
+   "secondary_categories": [
+    7
+   ],
+   "title": "Liquidations: DeFi on a Knife-edge",
+   "authors": "Daniel Perez; Sam M. Werner; Jiahua Xu; Benjamin Livshits",
+   "year": 2021,
+   "venue": "Financial Cryptography and Data Security 2021 (LNCS); arXiv:2009.13235",
+   "pub_type": "peer_reviewed_conference",
+   "url_opened": "https://arxiv.org/abs/2009.13235",
+   "doi": "10.1007/978-3-662-64331-0_24",
+   "mechanism": "sensitivity of liquidable debt to small price moves; liquidator efficiency",
+   "market": "Compound",
+   "period": "protocol start to Sep 2020",
+   "universe": "Compound positions",
+   "effect_size": "a 3% price move can make over USD 10M liquidable; over 70% of liquidable positions are liquidated immediately",
+   "effect_unit_horizon": "USD liquidable per % price move; share liquidated immediately",
+   "gross_or_net": "n/a",
+   "costs_included": "n/a",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "UNKNOWN",
+   "result_type": "descriptive",
+   "copybot_families": [
+    "liquidation_cascade_reversal"
+   ],
+   "copybot_links": [],
+   "data_availability": "NOT_AVAILABLE",
+   "supports_ids": [],
+   "contradicts_ids": [],
+   "extends_ids": [],
+   "post_2022_data": false,
+   "net_of_cost_evidence": "no",
+   "notes": "Shows liquidation thresholds cluster -> cascade fuel; pre-2021 DeFi only."
+  },
+  {
+   "id": "X020",
+   "category": 4,
+   "secondary_categories": [
+    3
+   ],
+   "title": "Cryptocurrency return reversals",
+   "authors": "Steven E. Kozlowski; Michael R. Puleo; Jizhou Zhou",
+   "year": 2021,
+   "venue": "Applied Economics Letters 28(11), 887-893",
+   "pub_type": "peer_reviewed_journal",
+   "url_opened": "https://ideas.repec.org/a/taf/apeclt/v28y2021i11p887-893.html",
+   "doi": "10.1080/13504851.2020.1784831",
+   "mechanism": "cross-sectional short-term reversal as market inefficiency plus liquidity-provision compensation",
+   "market": "spot crypto (aggregator data)",
+   "period": "2015-2019",
+   "universe": "200 cryptocurrencies",
+   "effect_size": "UNKNOWN size (abstract: significant reversal at daily, weekly and monthly rebalancing; both sample halves; strongest in small, illiquid coins)",
+   "effect_unit_horizon": "daily/weekly/monthly portfolio returns",
+   "gross_or_net": "UNKNOWN",
+   "costs_included": "UNKNOWN",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "split-sample robustness",
+   "result_type": "descriptive",
+   "copybot_families": [
+    "short_term_reversal_liquidity",
+    "illiquidity_premium"
+   ],
+   "copybot_links": [
+    "studies/MOVESCREEN_m21c.md"
+   ],
+   "data_availability": "AVAILABLE_AFTER_2026-11-14",
+   "supports_ids": [
+    "E14",
+    "E15"
+   ],
+   "contradicts_ids": [],
+   "extends_ids": [],
+   "post_2022_data": false,
+   "net_of_cost_evidence": "no",
+   "notes": "Monthly reversal here differs from E15/E14 large-coin momentum; same small/illiquid concentration."
+  },
+  {
+   "id": "X021",
+   "category": 4,
+   "secondary_categories": [
+    5
+   ],
+   "title": "Trading volume and liquidity provision in cryptocurrency markets",
+   "authors": "Daniele Bianchi; Mykola Babiak; Alexander Dickerson",
+   "year": 2022,
+   "venue": "Journal of Banking & Finance 142, 106547",
+   "pub_type": "peer_reviewed_journal",
+   "url_opened": "https://ideas.repec.org/a/eee/jbfina/v142y2022ics0378426622001418.html",
+   "doi": "10.1016/j.jbankfin.2022.106547",
+   "mechanism": "short-term reversal as return to liquidity provision; lagged return x volume interaction (inventory risk, adverse selection)",
+   "market": "USD crypto pairs on multiple centralised exchanges",
+   "period": "2017-03-01 to 2022-03-01",
+   "universe": "moderately large cross-section of USD pairs",
+   "effect_size": "UNKNOWN size (abstract: reversal returns concentrated in low-activity pairs, larger in small, volatile, illiquid pairs)",
+   "effect_unit_horizon": "UNKNOWN",
+   "gross_or_net": "UNKNOWN",
+   "costs_included": "UNKNOWN",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "panel regressions",
+   "result_type": "descriptive",
+   "copybot_families": [
+    "short_term_reversal_liquidity",
+    "high_volume_return_premium",
+    "maker_adverse_selection_measurement"
+   ],
+   "copybot_links": [
+    "studies/MOVESCREEN_m21c.md",
+    "../lab/straks.py"
+   ],
+   "data_availability": "AVAILABLE_AFTER_2026-11-14",
+   "supports_ids": [
+    "E14",
+    "E15",
+    "X020"
+   ],
+   "contradicts_ids": [],
+   "extends_ids": [],
+   "post_2022_data": false,
+   "net_of_cost_evidence": "no",
+   "notes": "Peer-reviewed confirmation that reversal sits where the lab does not trade (low-activity pairs)."
+  },
+  {
+   "id": "X022",
+   "category": 4,
+   "secondary_categories": [
+    5
+   ],
+   "title": "Short-horizon mean reversion in cryptocurrency markets: a matched cross-market measurement",
+   "authors": "Nadav A. Kitron; Jonathan M. Wengrowicz",
+   "year": 2026,
+   "venue": "arXiv:2608.21888",
+   "pub_type": "working_paper",
+   "url_opened": "https://arxiv.org/abs/2608.21888",
+   "doi": "10.48550/arXiv.2608.21888",
+   "mechanism": "15-minute directional mean reversion; conditioning on aggressive taker flow (compensated liquidity provision)",
+   "market": "Binance spot pairs vs US stocks/ETFs",
+   "period": "focal coin-years 2021 onward; frozen 6-month holdout",
+   "universe": "183 Binance pairs; 187 US stocks/ETFs",
+   "effect_size": "significant directional reversal in 90% of 183 Binance pairs vs 2.7% of US names; gross edge peaks near 1.3 bp per trade vs 5 bp round-trip cost; AUC gap +0.011 (95% CI +0.008 to +0.014) under the most conservative accounting",
+   "effect_unit_horizon": "bp per 15-minute trade; classification AUC",
+   "gross_or_net": "gross edge compared explicitly against cost",
+   "costs_included": "compared: 5 bp round trip exceeds the 1.3 bp gross edge",
+   "capacity_notes": "edge below cost -> not capturable at benchmark spot costs",
+   "oos_or_replication": "strictly out-of-sample protocol, permutation null, frozen 6-month holdout",
+   "result_type": "net_trading",
+   "copybot_families": [
+    "short_term_reversal_liquidity",
+    "orderflow_imbalance",
+    "maker_adverse_selection_measurement"
+   ],
+   "copybot_links": [
+    "studies/MOVESCREEN_m21c.md",
+    "studies/COSTS_2026-10-24.md",
+    "../lab/straks.py"
+   ],
+   "data_availability": "AVAILABLE_FORWARD",
+   "supports_ids": [
+    "E14"
+   ],
+   "contradicts_ids": [],
+   "extends_ids": [],
+   "post_2022_data": true,
+   "net_of_cost_evidence": "yes (negative: gross < cost)",
+   "notes": "Post-2022, liquid venue, explicit cost comparison: statistically real, economically below taker cost. Matches the lab's SCREEN_FAIL on MOVESCREEN."
+  },
+  {
+   "id": "X023",
+   "category": 4,
+   "secondary_categories": [
+    3
+   ],
+   "title": "New behaviorally-based cross-sectional reversal portfolios in the cryptocurrency market and market uncertainty",
+   "authors": "Kei Nakagawa; Ryuta Sakemoto",
+   "year": 2025,
+   "venue": "Finance Research Letters 85, 107800",
+   "pub_type": "peer_reviewed_journal",
+   "url_opened": "https://ideas.repec.org/a/eee/finlet/v85y2025ipas154461232501058x.html",
+   "doi": "10.1016/j.frl.2025.107800",
+   "mechanism": "reversal portfolios anchored on the formation-period low (behavioural decomposition)",
+   "market": "crypto cross-section",
+   "period": "UNKNOWN (includes COVID-19 period)",
+   "universe": "UNKNOWN",
+   "effect_size": "UNKNOWN (abstract: higher returns than conventional reversal; robust to conservative transaction costs; hedge vs stock/gold uncertainty)",
+   "effect_unit_horizon": "UNKNOWN",
+   "gross_or_net": "both considered (conservative costs stated)",
+   "costs_included": "yes (conservative transaction costs, per abstract)",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "UNKNOWN",
+   "result_type": "descriptive",
+   "copybot_families": [
+    "short_term_reversal_liquidity",
+    "anchoring_to_high"
+   ],
+   "copybot_links": [],
+   "data_availability": "AVAILABLE_AFTER_2026-11-14",
+   "supports_ids": [],
+   "contradicts_ids": [],
+   "extends_ids": [],
+   "post_2022_data": false,
+   "net_of_cost_evidence": "claimed (no number in abstract)",
+   "notes": "Claim of cost-robustness without stated size; universe/liquidity screen UNKNOWN -> weak until full text."
+  },
+  {
+   "id": "X024",
+   "category": 5,
+   "secondary_categories": [
+    10
+   ],
+   "title": "Explainable Patterns in Cryptocurrency Microstructure",
+   "authors": "Bartosz Bieganowski; Robert Ślepaczuk",
+   "year": 2026,
+   "venue": "arXiv:2602.00776 (v1)",
+   "pub_type": "working_paper",
+   "url_opened": "https://arxiv.org/abs/2602.00776 (abstract) + https://arxiv.org/pdf/2602.00776 (PDF tables 1-3)",
+   "doi": "10.48550/arXiv.2602.00776",
+   "mechanism": "order-book/trade features (order flow imbalance, spread, adverse selection) in a CatBoost model; SHAP shapes stable across assets",
+   "market": "Binance Futures perpetuals, 1-second order books and trades",
+   "period": "2022-01-01 to 2025-10-12",
+   "universe": "BTC, LTC, ETC, ENJ, ROSE",
+   "effect_size": "taker backtest annualised return on capital: BTC 0.13 (buy-and-hold 0.83), ENJ 4.06, ETC 5.78, LTC 0.07, ROSE 7.00 (ROSE largely from 10 Oct 2025); maker backtest BTC 2.93, others near zero or negative",
+   "effect_unit_horizon": "annualised return on capital (fraction) of fixed-notional strategy",
+   "gross_or_net": "UNKNOWN which table is fee-adjusted (text says gross and taker-fee-adjusted are reported); latency not modelled",
+   "costs_included": "spread crossing yes (taker at best bid/ask, pessimistic marking); latency no; fees UNKNOWN per table",
+   "capacity_notes": "authors call results an upper bound in the fastest regime",
+   "oos_or_replication": "time-series cross-validation; robustness around a flash crash",
+   "result_type": "forecast",
+   "copybot_families": [
+    "orderflow_imbalance",
+    "maker_adverse_selection_measurement"
+   ],
+   "copybot_links": [
+    "studies/ONLINE_EDGES_2026-11-05.md#7",
+    "studies/H_SPR1_INSTRUMENT_SPREAD_2026-11-03.md"
+   ],
+   "data_availability": "UNKNOWN",
+   "supports_ids": [
+    "E18",
+    "E19"
+   ],
+   "contradicts_ids": [],
+   "extends_ids": [],
+   "post_2022_data": true,
+   "net_of_cost_evidence": "partial (spread yes, latency no)",
+   "notes": "Trade-level and 1-second book data needed; collector trade-level storage UNKNOWN. BTC taker result is below buy-and-hold; strong results come from small coins and one crash day."
+  },
+  {
+   "id": "X025",
+   "category": 5,
+   "secondary_categories": [
+    4
+   ],
+   "title": "The Market Maker's Dilemma: Navigating the Fill Probability vs. Post-Fill Returns Trade-Off",
+   "authors": "Jakob Albers; Mihai Cucuringu; Sam Howison; Alexander Y. Shestopaloff",
+   "year": 2025,
+   "venue": "arXiv:2502.18625 (v2)",
+   "pub_type": "working_paper",
+   "url_opened": "https://arxiv.org/abs/2502.18625",
+   "doi": "10.48550/arXiv.2502.18625",
+   "mechanism": "maker fill probability negatively related to post-fill returns (adverse selection); contrarian quoting vs book imbalance",
+   "market": "Binance BTC perpetual, live trading experiment",
+   "period": "UNKNOWN",
+   "universe": "BTC perp",
+   "effect_size": "UNKNOWN size (abstract: negative correlation between fill likelihood and post-fill return; commonly cited maker strategies highly unprofitable)",
+   "effect_unit_horizon": "post-fill return over immediate to short horizons",
+   "gross_or_net": "UNKNOWN",
+   "costs_included": "live fills (real queue positions)",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "live experiment",
+   "result_type": "descriptive",
+   "copybot_families": [
+    "maker_adverse_selection_measurement",
+    "orderflow_imbalance"
+   ],
+   "copybot_links": [
+    "studies/H_SPR2_TICK_SPREAD_2026-11-04.md"
+   ],
+   "data_availability": "AVAILABLE_FORWARD",
+   "supports_ids": [],
+   "contradicts_ids": [],
+   "extends_ids": [],
+   "post_2022_data": true,
+   "net_of_cost_evidence": "qualitative (common strategies unprofitable)",
+   "notes": "Live evidence of adverse selection for passive orders on the lab's main venue; consistent with Bieganowski maker-vs-taker contrast."
+  },
+  {
+   "id": "X026",
+   "category": 5,
+   "secondary_categories": [],
+   "title": "Order flow analysis of cryptocurrency markets",
+   "authors": "Eduard Silantyev",
+   "year": 2019,
+   "venue": "Digital Finance 1(1)",
+   "pub_type": "peer_reviewed_journal",
+   "url_opened": "https://ideas.repec.org/a/spr/digfin/v1y2019i1d10.1007_s42521-019-00007-w.html",
+   "doi": "10.1007/s42521-019-00007-w",
+   "mechanism": "Cont-style order flow imbalance and trade flow imbalance vs contemporaneous price change",
+   "market": "BitMEX XBTUSD perpetual trades and quotes",
+   "period": "UNKNOWN",
+   "universe": "XBTUSD",
+   "effect_size": "UNKNOWN coefficients (abstract: trade flow imbalance explains contemporaneous price changes better than aggregate OFI; strong linear relation over long enough intervals)",
+   "effect_unit_horizon": "contemporaneous price change",
+   "gross_or_net": "n/a",
+   "costs_included": "n/a",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "UNKNOWN",
+   "result_type": "descriptive",
+   "copybot_families": [
+    "orderflow_imbalance"
+   ],
+   "copybot_links": [],
+   "data_availability": "UNKNOWN",
+   "supports_ids": [],
+   "contradicts_ids": [],
+   "extends_ids": [],
+   "post_2022_data": false,
+   "net_of_cost_evidence": "no",
+   "notes": "Contemporaneous (not predictive) OFI relation; replicates the equity Cont-Kukanov-Stoikov form on a crypto perp. Thin depth and slow updates noted."
+  },
+  {
+   "id": "X027",
+   "category": 5,
+   "secondary_categories": [
+    4,
+    10
+   ],
+   "title": "High-Frequency Jump Analysis of the Bitcoin Market",
+   "authors": "Olivier Scaillet; Adrien Treccani; Christopher Trevisan",
+   "year": 2017,
+   "venue": "arXiv:1704.08175 (journal version not verified in this session)",
+   "pub_type": "working_paper",
+   "url_opened": "https://arxiv.org/abs/1704.08175",
+   "doi": "10.48550/arXiv.1704.08175",
+   "mechanism": "jumps predicted by order flow imbalance, aggressive traders and spread widening; persistent post-jump price change",
+   "market": "Mt. Gox tick data with trader identifiers",
+   "period": "2011-06 to 2013-11",
+   "universe": "BTC/USD on Mt. Gox",
+   "effect_size": "UNKNOWN size (abstract: jumps frequent and clustered; OFI, aggressive traders and wider spreads predict them; jumps bring a persistent price change)",
+   "effect_unit_horizon": "UNKNOWN",
+   "gross_or_net": "n/a",
+   "costs_included": "n/a",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "UNKNOWN",
+   "result_type": "descriptive",
+   "copybot_families": [
+    "orderflow_imbalance",
+    "liquidation_cascade_reversal"
+   ],
+   "copybot_links": [],
+   "data_availability": "NOT_AVAILABLE",
+   "supports_ids": [],
+   "contradicts_ids": [],
+   "extends_ids": [],
+   "post_2022_data": false,
+   "net_of_cost_evidence": "no",
+   "notes": "Persistent post-jump price change contradicts a naive 'jumps revert' premise; very old single-venue data."
+  },
+  {
+   "id": "X028",
+   "category": 5,
+   "secondary_categories": [],
+   "title": "A Million Metaorder Analysis of Market Impact on the Bitcoin",
+   "authors": "Jonathan Donier; Julius Bonart",
+   "year": 2014,
+   "venue": "arXiv:1412.4503 (journal version not verified)",
+   "pub_type": "working_paper",
+   "url_opened": "https://arxiv.org/abs/1412.4503",
+   "doi": "10.48550/arXiv.1412.4503",
+   "mechanism": "square-root market impact of metaorders; informed vs uninformed flow decomposition",
+   "market": "BTC/USD exchange (complete dataset)",
+   "period": "UNKNOWN (pre-2015)",
+   "universe": "over one million reconstructed metaorders",
+   "effect_size": "square-root impact law holds over four decades of size; uninformed impact decays almost completely",
+   "effect_unit_horizon": "impact vs metaorder size",
+   "gross_or_net": "n/a",
+   "costs_included": "n/a (it is a cost model)",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "UNKNOWN",
+   "result_type": "descriptive",
+   "copybot_families": [
+    "orderflow_imbalance"
+   ],
+   "copybot_links": [
+    "studies/COSTS_2026-10-24.md"
+   ],
+   "data_availability": "UNKNOWN",
+   "supports_ids": [],
+   "contradicts_ids": [],
+   "extends_ids": [],
+   "post_2022_data": false,
+   "net_of_cost_evidence": "no",
+   "notes": "Cost-model input: impact grows with the square root of size, so capacity is concave."
+  },
+  {
+   "id": "X029",
+   "category": 5,
+   "secondary_categories": [],
+   "title": "Trading in the Sunshine or in the Shade: Market Impact and Adverse Selection on Hyperliquid",
+   "authors": "Davide Barone; Fabrizio Lillo",
+   "year": 2026,
+   "venue": "arXiv:2606.15715",
+   "pub_type": "working_paper",
+   "url_opened": "https://arxiv.org/abs/2606.15715",
+   "doi": "10.48550/arXiv.2606.15715",
+   "mechanism": "pre-announced (visible TWAP) vs hidden metaorders: execution cost, permanent impact, liquidity response",
+   "market": "Hyperliquid perpetuals, address-level data",
+   "period": "UNKNOWN (2024-2026 implied)",
+   "universe": "4.3 million hidden metaorders; 465,000 visible TWAPs",
+   "effect_size": "UNKNOWN size (abstract: visible TWAPs pay lower execution cost and leave smaller permanent impact; hidden orders alongside same-side TWAP pay more; displayed depth rises during TWAPs)",
+   "effect_unit_horizon": "UNKNOWN",
+   "gross_or_net": "n/a",
+   "costs_included": "it measures execution cost",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "UNKNOWN",
+   "result_type": "descriptive",
+   "copybot_families": [
+    "orderflow_imbalance",
+    "cross_venue_perp_gap",
+    "maker_adverse_selection_measurement"
+   ],
+   "copybot_links": [
+    "studies/VENUE_REGISTER_2026-10-27.md"
+   ],
+   "data_availability": "UNKNOWN",
+   "supports_ids": [],
+   "contradicts_ids": [],
+   "extends_ids": [],
+   "post_2022_data": true,
+   "net_of_cost_evidence": "no",
+   "notes": "Hyperliquid-specific execution evidence. Address-level fills are public on-chain, but the lab does not collect them (UNKNOWN)."
+  },
+  {
+   "id": "X030",
+   "category": 5,
+   "secondary_categories": [],
+   "title": "The intraday dynamics of bitcoin",
+   "authors": "Andrea Eross; Frank McGroarty; Andrew Urquhart; Simon Wolfe",
+   "year": 2019,
+   "venue": "Research in International Business and Finance 49, 71-81",
+   "pub_type": "peer_reviewed_journal",
+   "url_opened": "https://ideas.repec.org/a/eee/riibaf/v49y2019icp71-81.html",
+   "doi": "10.1016/j.ribaf.2019.01.008",
+   "mechanism": "intraday seasonality of volume, volatility and liquidity aligned with global market opening times",
+   "market": "leading BTC exchange by information share, 5-minute GMT data",
+   "period": "about 4 years (UNKNOWN exact)",
+   "universe": "BTC",
+   "effect_size": "UNKNOWN size (abstract: volume rises through the day and falls from about 16:00 to midnight GMT; volatility highest at opening of major stock markets; liquidity highest at major exchange openings, illiquid early morning)",
+   "effect_unit_horizon": "5-minute intraday profile",
+   "gross_or_net": "n/a",
+   "costs_included": "n/a",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "UNKNOWN",
+   "result_type": "descriptive",
+   "copybot_families": [
+    "intraday_seasonality"
+   ],
+   "copybot_links": [
+    "studies/H_SPR1_INSTRUMENT_SPREAD_2026-11-03.md",
+    "drafts/K3_INDSAMLING_UDKAST_2026-10-25.md"
+   ],
+   "data_availability": "AVAILABLE_FORWARD",
+   "supports_ids": [
+    "X031"
+   ],
+   "contradicts_ids": [],
+   "extends_ids": [],
+   "post_2022_data": false,
+   "net_of_cost_evidence": "no",
+   "notes": "Pre-2018 spot data."
+  },
+  {
+   "id": "X031",
+   "category": 5,
+   "secondary_categories": [
+    1
+   ],
+   "title": "Periodicity in Cryptocurrency Volatility and Liquidity",
+   "authors": "Peter Reinhard Hansen; Chan Kim; Wade Kimbrough",
+   "year": 2021,
+   "venue": "arXiv:2109.12142",
+   "pub_type": "working_paper",
+   "url_opened": "https://arxiv.org/abs/2109.12142",
+   "doi": "10.48550/arXiv.2109.12142",
+   "mechanism": "day-of-week, hour-of-day and within-hour patterns in volatility and volume, linked to algorithmic trading and futures funding times",
+   "market": "Coinbase Pro, Binance, Uniswap V2",
+   "period": "UNKNOWN (to 2021)",
+   "universe": "BTC, ETH",
+   "effect_size": "UNKNOWN size (abstract: systematic patterns at all three periodicities, growing stronger over the years; DEX price adjustment sluggish)",
+   "effect_unit_horizon": "intraday/intraweek profile",
+   "gross_or_net": "n/a",
+   "costs_included": "n/a",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "UNKNOWN",
+   "result_type": "descriptive",
+   "copybot_families": [
+    "intraday_seasonality",
+    "lead_lag_diffusion"
+   ],
+   "copybot_links": [
+    "drafts/K3_INDSAMLING_UDKAST_2026-10-25.md",
+    "studies/H_SPR2_TICK_SPREAD_2026-11-04.md"
+   ],
+   "data_availability": "AVAILABLE_FORWARD",
+   "supports_ids": [
+    "E19",
+    "X030"
+   ],
+   "contradicts_ids": [],
+   "extends_ids": [],
+   "post_2022_data": false,
+   "net_of_cost_evidence": "no",
+   "notes": "The only verified source linking intraday patterns to funding settlement times (the K3 question) - qualitative only. Same authors as E19 (Kim & Hansen)."
+  },
+  {
+   "id": "X032",
+   "category": 5,
+   "secondary_categories": [
+    2,
+    9
+   ],
+   "title": "Bitcoin spot and futures market microstructure",
+   "authors": "Saketh Aleti; Bruce Mizrach",
+   "year": 2021,
+   "venue": "Journal of Futures Markets 41(2), 194-225",
+   "pub_type": "peer_reviewed_journal",
+   "url_opened": "https://ideas.repec.org/a/wly/jfutmk/v41y2021i2p194-225.html",
+   "doi": "10.1002/fut.22163",
+   "mechanism": "spreads, trade sizes, impact, latency and price discovery across CME and spot exchanges",
+   "market": "CME BTC futures and 4 USD settlement spot exchanges",
+   "period": "UNKNOWN (abstract only)",
+   "universe": "BTC/USD",
+   "effect_size": "average bid-ask spread 0.0298%; trades above USD 1M move prices less than 1%; spreads exceed 0.8% for only 226 seconds; most executions trade through better quotes (est. USD 36M losses); CME leads price discovery; BTC leads ETH",
+   "effect_unit_horizon": "percent spread; percent impact",
+   "gross_or_net": "n/a",
+   "costs_included": "n/a (cost measurement)",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "UNKNOWN",
+   "result_type": "descriptive",
+   "copybot_families": [
+    "lead_lag_diffusion",
+    "orderflow_imbalance"
+   ],
+   "copybot_links": [
+    "studies/COSTS_2026-10-24.md",
+    "studies/SPOTPERP_m21i.md"
+   ],
+   "data_availability": "AVAILABLE_FORWARD",
+   "supports_ids": [
+    "E35",
+    "E17"
+   ],
+   "contradicts_ids": [],
+   "extends_ids": [],
+   "post_2022_data": false,
+   "net_of_cost_evidence": "no",
+   "notes": "Cost benchmark (about 3 bp spread on USD spot). Trade-through losses imply fragmentation cost (cf. X035)."
+  },
+  {
+   "id": "X033",
+   "category": 5,
+   "secondary_categories": [],
+   "title": "What drives the liquidity of cryptocurrencies? A long-term analysis",
+   "authors": "Alexander Brauneis; Roland Mestel; Erik Theissen",
+   "year": 2021,
+   "venue": "Finance Research Letters 39, 101537",
+   "pub_type": "peer_reviewed_journal",
+   "url_opened": "https://ideas.repec.org/a/eee/finlet/v39y2021ics154461231931400x.html",
+   "doi": "10.1016/j.frl.2020.101537",
+   "mechanism": "determinants of Abdi-Ranaldo spreads: volatility, dollar volume, number of trades",
+   "market": "4 cryptocurrencies on 4 large venues, hourly",
+   "period": "four years (UNKNOWN exact)",
+   "universe": "4 coins x 4 venues",
+   "effect_size": "UNKNOWN size (abstract: volatility, dollar volume and trade count are the main drivers; general financial market variables have no explanatory power)",
+   "effect_unit_horizon": "hourly spread estimator",
+   "gross_or_net": "n/a",
+   "costs_included": "n/a",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "UNKNOWN",
+   "result_type": "descriptive",
+   "copybot_families": [
+    "intraday_seasonality",
+    "illiquidity_premium"
+   ],
+   "copybot_links": [
+    "studies/COSTS_2026-10-24.md"
+   ],
+   "data_availability": "AVAILABLE_FORWARD",
+   "supports_ids": [],
+   "contradicts_ids": [],
+   "extends_ids": [
+    "E17"
+   ],
+   "post_2022_data": false,
+   "net_of_cost_evidence": "no",
+   "notes": "Companion to E17 (same group)."
+  },
+  {
+   "id": "X034",
+   "category": 5,
+   "secondary_categories": [],
+   "title": "Exchange market share, market makers, and murky behavior: The impact of no-fee trading on cryptocurrency market quality",
+   "authors": "Luca Galati",
+   "year": 2024,
+   "venue": "Journal of Banking & Finance 165, 107222",
+   "pub_type": "peer_reviewed_journal",
+   "url_opened": "https://ideas.repec.org/a/eee/jbfina/v165y2024ics0378426624001390.html",
+   "doi": "10.1016/j.jbankfin.2024.107222",
+   "mechanism": "removal of maker-taker fees (Binance BTC, July 2022) as natural experiment: market makers widen spreads and thin depth",
+   "market": "Binance BTC spot",
+   "period": "around July 2022",
+   "universe": "BTC pairs",
+   "effect_size": "UNKNOWN size (abstract: spreads wider, depth shallower; total transaction costs for customers rose despite zero fees)",
+   "effect_unit_horizon": "UNKNOWN",
+   "gross_or_net": "n/a",
+   "costs_included": "it measures total transaction cost",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "natural experiment",
+   "result_type": "descriptive",
+   "copybot_families": [
+    "maker_adverse_selection_measurement",
+    "venue_subsidy_liquidity_rewards"
+   ],
+   "copybot_links": [
+    "studies/COSTS_2026-10-24.md",
+    "studies/V1_DOM_2026-10-29.md"
+   ],
+   "data_availability": "AVAILABLE_FORWARD",
+   "supports_ids": [],
+   "contradicts_ids": [],
+   "extends_ids": [],
+   "post_2022_data": true,
+   "net_of_cost_evidence": "no",
+   "notes": "Post-2022 peer-reviewed cost evidence on the lab's venue: headline fee is a poor proxy for total cost; spread/depth must be measured (the lab does)."
+  },
+  {
+   "id": "X035",
+   "category": 5,
+   "secondary_categories": [
+    9
+   ],
+   "title": "Fragmentation in the Bitcoin market: Evidence from multiple coexisting order books",
+   "authors": "Yoontae Jeon; Laleh Samarbakhsh; Kenji Hewitt",
+   "year": 2021,
+   "venue": "Finance Research Letters 39, 101654",
+   "pub_type": "peer_reviewed_journal",
+   "url_opened": "https://ideas.repec.org/a/eee/finlet/v39y2021ics1544612320301136.html",
+   "doi": "10.1016/j.frl.2020.101654",
+   "mechanism": "consolidated order book of 5 exchanges; fragmentation cost; smart order routing",
+   "market": "5 major BTC exchanges, intraday book snapshots",
+   "period": "UNKNOWN",
+   "universe": "BTC",
+   "effect_size": "UNKNOWN size (abstract: exchange liquidity measure significantly negative even for small trades)",
+   "effect_unit_horizon": "UNKNOWN",
+   "gross_or_net": "n/a",
+   "costs_included": "n/a",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "UNKNOWN",
+   "result_type": "descriptive",
+   "copybot_families": [
+    "cross_venue_perp_gap"
+   ],
+   "copybot_links": [],
+   "data_availability": "AVAILABLE_FORWARD",
+   "supports_ids": [
+    "E30"
+   ],
+   "contradicts_ids": [],
+   "extends_ids": [],
+   "post_2022_data": false,
+   "net_of_cost_evidence": "no",
+   "notes": ""
+  },
+  {
+   "id": "X036",
+   "category": 5,
+   "secondary_categories": [
+    9,
+    10
+   ],
+   "title": "The Role of Binance in Bitcoin Volatility Transmission",
+   "authors": "Carol Alexander; Daniel Heck; Andreas Kaeck",
+   "year": 2021,
+   "venue": "arXiv:2107.00298 (journal version not verified)",
+   "pub_type": "working_paper",
+   "url_opened": "https://arxiv.org/abs/2107.00298",
+   "doi": "10.48550/arXiv.2107.00298",
+   "mechanism": "realised-volatility spillovers across BTC/USD and BTC/USDT spot and derivatives",
+   "market": "BTC/USD and BTC/USDT instruments incl. Binance USDT-margined perpetual",
+   "period": "UNKNOWN",
+   "universe": "BTC",
+   "effect_size": "UNKNOWN size (abstract: Binance USDT-margined perp is the main volatility transmitter; interconnectedness higher when Western stock markets are open)",
+   "effect_unit_horizon": "high-frequency RV spillover share",
+   "gross_or_net": "n/a",
+   "costs_included": "n/a",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "UNKNOWN",
+   "result_type": "descriptive",
+   "copybot_families": [
+    "lead_lag_diffusion",
+    "intraday_seasonality"
+   ],
+   "copybot_links": [
+    "studies/SPOTPERP_m21i.md"
+   ],
+   "data_availability": "AVAILABLE_FORWARD",
+   "supports_ids": [
+    "E35"
+   ],
+   "contradicts_ids": [],
+   "extends_ids": [],
+   "post_2022_data": false,
+   "net_of_cost_evidence": "no",
+   "notes": "Volatility (not return) leadership of the perp."
+  },
+  {
+   "id": "X037",
+   "category": 5,
+   "secondary_categories": [
+    9
+   ],
+   "title": "On The Quality Of Cryptocurrency Markets: Centralized Versus Decentralized Exchanges",
+   "authors": "Andrea Barbon; Angelo Ranaldo",
+   "year": 2021,
+   "venue": "arXiv:2112.07386",
+   "pub_type": "working_paper",
+   "url_opened": "https://arxiv.org/abs/2112.07386",
+   "doi": "10.48550/arXiv.2112.07386",
+   "mechanism": "gas fees as fixed costs on DEXs; arbitrage deviations CEX vs DEX",
+   "market": "CEXs and DEXs",
+   "period": "UNKNOWN",
+   "universe": "UNKNOWN",
+   "effect_size": "UNKNOWN size (abstract: gas fees burden small DEX trades and cause persistent arbitrage deviations; DEXs cheaper for large trades)",
+   "effect_unit_horizon": "UNKNOWN",
+   "gross_or_net": "n/a",
+   "costs_included": "it measures transaction cost",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "causal design (abstract)",
+   "result_type": "descriptive",
+   "copybot_families": [
+    "dex_pool_arbitrage",
+    "cross_venue_perp_gap"
+   ],
+   "copybot_links": [
+    "RESULTS_arb_v1.md"
+   ],
+   "data_availability": "NOT_AVAILABLE",
+   "supports_ids": [],
+   "contradicts_ids": [],
+   "extends_ids": [],
+   "post_2022_data": false,
+   "net_of_cost_evidence": "no",
+   "notes": "Explains why visible CEX-DEX gaps persist (fixed costs), consistent with RESULTS_arb_v1 finding 0 opportunities net."
+  },
+  {
+   "id": "X038",
+   "category": 5,
+   "secondary_categories": [
+    6
+   ],
+   "title": "Point-in-Time Audit Before Alpha: Public-Archive Availability and a Negative Matched-Budget Study on BTC Perpetual Futures",
+   "authors": "Baocheng Zeng; Jinhao Yang; Peilin Han; Kangnan He",
+   "year": 2026,
+   "venue": "arXiv:2608.25348",
+   "pub_type": "working_paper",
+   "url_opened": "https://arxiv.org/abs/2608.25348",
+   "doi": "10.48550/arXiv.2608.25348",
+   "mechanism": "point-in-time availability audit of public Binance archives; matched-budget search vs random search; one-time holdout",
+   "market": "Binance BTCUSDT USD-M perpetual public archive (trades, mark, index, funding, OI)",
+   "period": "727 complete UTC days (436/145/146 train/validation/holdout)",
+   "universe": "BTCUSDT perp",
+   "effect_size": "longest gapless 5-minute intersection of all streams only 304.57 days; auditing cut mean false passes from 0.2910 to 0.0625 on null signals; adaptive agent tied random search; in holdout all runs had positive IC but negative net Sharpe under primary costs",
+   "effect_unit_horizon": "IC and net Sharpe of factor templates",
+   "gross_or_net": "net (primary cost assumption)",
+   "costs_included": "yes",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "one-time historical holdout",
+   "result_type": "net_trading",
+   "copybot_families": [
+    "orderflow_imbalance",
+    "open_interest_growth",
+    "funding_crowding_contrarian"
+   ],
+   "copybot_links": [
+    "studies/FACTORY_SECURITY_P1_2026-11-06.md",
+    "FUNDING_AUDIT.md"
+   ],
+   "data_availability": "AVAILABLE_AFTER_2026-11-14",
+   "supports_ids": [
+    "X015"
+   ],
+   "contradicts_ids": [],
+   "extends_ids": [],
+   "post_2022_data": true,
+   "net_of_cost_evidence": "yes (negative)",
+   "notes": "Methodological twin of the lab's evaluator discipline: positive IC does not survive costs; OI publication time unverifiable on public archives (cf. X015)."
+  },
+  {
+   "id": "X039",
+   "category": 6,
+   "secondary_categories": [],
+   "title": "Cryptocurrency Cross-listing Incentives and Abnormal Returns",
+   "authors": "Sebastian Laucht",
+   "year": 2022,
+   "venue": "Master thesis, Erasmus School of Economics (final 09-09-2022)",
+   "pub_type": "thesis",
+   "url_opened": "https://thesis.eur.nl/pub/65625/Laucht_603384_Thesis.pdf",
+   "doi": null,
+   "mechanism": "cross-listing returns by exchange volume, licensing and reputation (segmentation, liquidity, disclosure theories)",
+   "market": "11 major centralised exchanges",
+   "period": "2020-01 to 2021-12",
+   "universe": "390 cross-listing events",
+   "effect_size": "listing-day abnormal return 2.35% (constant-mean model); CAAR [-3,+3] about 9.5%; positive before the listing, negative afterwards",
+   "effect_unit_horizon": "daily abnormal return; 7-day CAAR",
+   "gross_or_net": "gross",
+   "costs_included": "no",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "n/a (event study)",
+   "result_type": "descriptive",
+   "copybot_families": [
+    "short_new_listings",
+    "memecoin_launch_selection"
+   ],
+   "copybot_links": [
+    "drafts/H5F_NOTERING_FREMAD.md",
+    "drafts/M1F_MONITORING_FREMAD.md"
+   ],
+   "data_availability": "AVAILABLE_FORWARD",
+   "supports_ids": [
+    "E20",
+    "E21"
+   ],
+   "contradicts_ids": [],
+   "extends_ids": [],
+   "post_2022_data": false,
+   "net_of_cost_evidence": "no",
+   "notes": "Master thesis (not peer reviewed) but extends E20 to 2020-2021: run-up before, decline after -> the post-listing leg is negative."
+  },
+  {
+   "id": "X040",
+   "category": 6,
+   "secondary_categories": [],
+   "title": "Cross-listings of blockchain-based tokens issued through initial coin offerings: Do liquidity and specific cryptocurrency exchanges matter?",
+   "authors": "Lennart Ante; André Meyer",
+   "year": 2021,
+   "venue": "Decisions in Economics and Finance 44(2)",
+   "pub_type": "peer_reviewed_journal",
+   "url_opened": "https://ideas.repec.org/a/spr/decfin/v44y2021i2d10.1007_s10203-021-00323-0.html",
+   "doi": "10.1007/s10203-021-00323-0",
+   "mechanism": "cross-listing abnormal returns by exchange and pre-listing liquidity",
+   "market": "22 cryptocurrency exchanges",
+   "period": "UNKNOWN (pre-2020)",
+   "universe": "250 cross-listings of 135 ICO tokens",
+   "effect_size": "abnormal return 6.51% on listing day and 9.97% over a 7-day window; up to 34% on the event day for some exchanges, negligible for others; lower prior volume and market cap -> higher listing return",
+   "effect_unit_horizon": "daily AR; 7-day CAR",
+   "gross_or_net": "gross",
+   "costs_included": "no",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "n/a",
+   "result_type": "descriptive",
+   "copybot_families": [
+    "short_new_listings"
+   ],
+   "copybot_links": [
+    "drafts/H5F_NOTERING_FREMAD.md"
+   ],
+   "data_availability": "AVAILABLE_FORWARD",
+   "supports_ids": [
+    "E20"
+   ],
+   "contradicts_ids": [],
+   "extends_ids": [],
+   "post_2022_data": false,
+   "net_of_cost_evidence": "no",
+   "notes": "Same author as E20; overlapping era -> not independent replication."
+  },
+  {
+   "id": "X041",
+   "category": 6,
+   "secondary_categories": [],
+   "title": "A New Wolf in Town? Pump-and-Dump Manipulation in Cryptocurrency Markets",
+   "authors": "Anirudh Dhawan; Tālis J. Putniņš",
+   "year": 2023,
+   "venue": "Review of Finance 27(3), 935-975",
+   "pub_type": "peer_reviewed_journal",
+   "url_opened": "https://ideas.repec.org/a/oup/revfin/v27y2023i3p935-975..html",
+   "doi": "10.1093/rof/rfac051",
+   "mechanism": "openly announced pump-and-dump schemes; overconfidence and gambling preferences explain participation",
+   "market": "small-cap coins targeted by Telegram pump groups",
+   "period": "6 months (UNKNOWN exact)",
+   "universe": "355 pump cases",
+   "effect_size": "pumps create average price distortions of 65% and abnormal volume in the millions of USD; participants face negative expected returns",
+   "effect_unit_horizon": "peak price distortion per event",
+   "gross_or_net": "n/a",
+   "costs_included": "n/a",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "UNKNOWN",
+   "result_type": "descriptive",
+   "copybot_families": [
+    "memecoin_launch_selection",
+    "lottery_demand_max"
+   ],
+   "copybot_links": [],
+   "data_availability": "NOT_AVAILABLE",
+   "supports_ids": [
+    "E23"
+   ],
+   "contradicts_ids": [],
+   "extends_ids": [],
+   "post_2022_data": false,
+   "net_of_cost_evidence": "no",
+   "notes": "Manipulation risk in illiquid listings; relevant as a data-quality filter."
+  },
+  {
+   "id": "X042",
+   "category": 6,
+   "secondary_categories": [
+    3,
+    4
+   ],
+   "title": "Market Efficiency in a Changing Asset Population: Mobility, Entry, and Survival over Cryptocurrency's Full History",
+   "authors": "Antonis Ballis; Christos Ioannidis",
+   "year": 2026,
+   "venue": "arXiv:2610.23283 (v1)",
+   "pub_type": "working_paper",
+   "url_opened": "https://arxiv.org/abs/2610.23283",
+   "doi": "10.48550/arXiv.2610.23283",
+   "mechanism": "Markov mobility across the market-cap distribution; entry/exit observed; neglected-coin premium",
+   "market": "full listed crypto population",
+   "period": "2013 to 2026",
+   "universe": "8,970 assets, 690 weekly cross-sections",
+   "effect_size": "mobility asymmetry falls about 70% over eras; bottom decile earns 27.5% per week on paper and nothing among assets that trade, with capacity of USD 293,000",
+   "effect_unit_horizon": "weekly decile return; USD capacity",
+   "gross_or_net": "gross on paper vs tradable subset",
+   "costs_included": "liquidity/tradability screen",
+   "capacity_notes": "USD 293,000",
+   "oos_or_replication": "full-history, survival observed",
+   "result_type": "descriptive",
+   "copybot_families": [
+    "illiquidity_premium",
+    "short_term_reversal_liquidity",
+    "short_new_listings"
+   ],
+   "copybot_links": [],
+   "data_availability": "AVAILABLE_AFTER_2026-11-14",
+   "supports_ids": [
+    "E22",
+    "E01"
+   ],
+   "contradicts_ids": [],
+   "extends_ids": [],
+   "post_2022_data": true,
+   "net_of_cost_evidence": "yes (paper premium disappears when tradability imposed)",
+   "notes": "Search snippet also claimed delisted-as-total-loss cuts a 'frontier premium' by a quarter; not in the opened abstract -> not used."
+  },
+  {
+   "id": "X043",
+   "category": 6,
+   "secondary_categories": [
+    7
+   ],
+   "title": "Market reactions to Crypto-Specific announcements: Analyzing behaviors in coins and tokens",
+   "authors": "Jaeho Myeong; Donghoon Kim",
+   "year": 2025,
+   "venue": "Economics Letters 250, 112305",
+   "pub_type": "peer_reviewed_journal",
+   "url_opened": "https://ideas.repec.org/a/eee/ecolet/v250y2025ics0165176525001429.html",
+   "doi": "10.1016/j.econlet.2025.112305",
+   "mechanism": "price, volatility, volume and wallet-activity response to project disclosures (Xangle platform)",
+   "market": "coins (BTC, ETH) and tokens",
+   "period": "UNKNOWN",
+   "universe": "UNKNOWN",
+   "effect_size": "UNKNOWN size (abstract: positive and neutral announcements give significant cumulative-return increases with volatility and volume spikes; wallet transactions fall; negative news mixed)",
+   "effect_unit_horizon": "cumulative return around announcement",
+   "gross_or_net": "gross",
+   "costs_included": "no",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "UNKNOWN",
+   "result_type": "descriptive",
+   "copybot_families": [
+    "short_new_listings"
+   ],
+   "copybot_links": [
+    "drafts/U1F_UPBIT_FREMAD.md",
+    "drafts/M1F_MONITORING_FREMAD.md"
+   ],
+   "data_availability": "UNKNOWN",
+   "supports_ids": [],
+   "contradicts_ids": [],
+   "extends_ids": [],
+   "post_2022_data": true,
+   "net_of_cost_evidence": "no",
+   "notes": "Xangle is a Korean disclosure platform - closest verified source to the Upbit/Korea announcement channel; no Upbit-listing-specific study was verified."
+  },
+  {
+   "id": "X044",
+   "category": 7,
+   "secondary_categories": [],
+   "title": "The influence of stablecoin issuances on cryptocurrency markets",
+   "authors": "Lennart Ante; Ingo Fiedler; Elias Strehle",
+   "year": 2021,
+   "venue": "Finance Research Letters 41, 101867",
+   "pub_type": "peer_reviewed_journal",
+   "url_opened": "https://ideas.repec.org/a/eee/finlet/v41y2021ics1544612320316810.html",
+   "doi": "10.1016/j.frl.2020.101867",
+   "mechanism": "stablecoin issuance events and crypto returns (event study)",
+   "market": "major cryptocurrencies around stablecoin mints",
+   "period": "2019-04 to 2020-03",
+   "universe": "565 issuances of USD 1M+, 7 stablecoins",
+   "effect_size": "UNKNOWN size (abstract: market falls in the week before issuance; positive abnormal returns in the 24 hours around issuance; issuance size not significant; some subsamples insignificant)",
+   "effect_unit_horizon": "abnormal return, 24 h window",
+   "gross_or_net": "gross",
+   "costs_included": "no",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "UNKNOWN",
+   "result_type": "descriptive",
+   "copybot_families": [
+    "stablecoin_liquidity_flow"
+   ],
+   "copybot_links": [
+    "drafts/ONCHAIN_KILDEAUDIT_2026-10-24.md"
+   ],
+   "data_availability": "NOT_AVAILABLE",
+   "supports_ids": [
+    "E26",
+    "E24"
+   ],
+   "contradicts_ids": [],
+   "extends_ids": [],
+   "post_2022_data": false,
+   "net_of_cost_evidence": "no",
+   "notes": "Pattern 'issuance after downturn' matches E26; one-year pre-2021 sample."
+  },
+  {
+   "id": "X045",
+   "category": 7,
+   "secondary_categories": [],
+   "title": "The impact of transparent money flows: Effects of stablecoin transfers on the returns and trading volume of Bitcoin",
+   "authors": "Lennart Ante; Ingo Fiedler; Elias Strehle",
+   "year": 2021,
+   "venue": "Technological Forecasting and Social Change 170, 120851",
+   "pub_type": "peer_reviewed_journal",
+   "url_opened": "https://ideas.repec.org/a/eee/tefoso/v170y2021ics0040162521002833.html",
+   "doi": "10.1016/j.techfore.2021.120851",
+   "mechanism": "large stablecoin transfers by sender/receiver type (unknown, exchange, treasury) vs BTC returns and volume",
+   "market": "BTC",
+   "period": "2019-04 to 2020-03",
+   "universe": "1,587 stablecoin transfers of USD 1M+",
+   "effect_size": "UNKNOWN size (abstract: highly significant abnormal volume and significant abnormal returns in the hours around transfers; effects differ across 9 sender-receiver subsamples)",
+   "effect_unit_horizon": "hourly abnormal return/volume",
+   "gross_or_net": "gross",
+   "costs_included": "no",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "UNKNOWN",
+   "result_type": "descriptive",
+   "copybot_families": [
+    "stablecoin_liquidity_flow",
+    "smart_money_following"
+   ],
+   "copybot_links": [],
+   "data_availability": "NOT_AVAILABLE",
+   "supports_ids": [
+    "E24"
+   ],
+   "contradicts_ids": [],
+   "extends_ids": [],
+   "post_2022_data": false,
+   "net_of_cost_evidence": "no",
+   "notes": "Requires address labelling (vendor)."
+  },
+  {
+   "id": "X046",
+   "category": 7,
+   "secondary_categories": [],
+   "title": "Tethered, or Untethered? On the interplay between stablecoins and major cryptoassets",
+   "authors": "Ladislav Kristoufek",
+   "year": 2021,
+   "venue": "Finance Research Letters 43, 101991",
+   "pub_type": "peer_reviewed_journal",
+   "url_opened": "https://ideas.repec.org/a/eee/finlet/v43y2021ics1544612321000726.html",
+   "doi": "10.1016/j.frl.2021.101991",
+   "mechanism": "directed spillovers (GVAR forecast-error variance) between stablecoin supply and crypto prices",
+   "market": "stablecoins and major cryptoassets",
+   "period": "UNKNOWN",
+   "universe": "UNKNOWN",
+   "effect_size": "UNKNOWN size (abstract: no evidence that stablecoins push other crypto prices up; issuance reacts to price changes)",
+   "effect_unit_horizon": "variance-decomposition spillover",
+   "gross_or_net": "n/a",
+   "costs_included": "n/a",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "UNKNOWN",
+   "result_type": "descriptive",
+   "copybot_families": [
+    "stablecoin_liquidity_flow"
+   ],
+   "copybot_links": [],
+   "data_availability": "NOT_AVAILABLE",
+   "supports_ids": [
+    "X047"
+   ],
+   "contradicts_ids": [
+    "E26"
+   ],
+   "extends_ids": [],
+   "post_2022_data": false,
+   "net_of_cost_evidence": "no",
+   "notes": "Direction of causality opposite to the 'Tether pumps BTC' reading of E26 (outside 2017)."
+  },
+  {
+   "id": "X047",
+   "category": 7,
+   "secondary_categories": [],
+   "title": "The impact of Tether grants on Bitcoin",
+   "authors": "Wang Chun Wei",
+   "year": 2018,
+   "venue": "Economics Letters 171, 19-22",
+   "pub_type": "peer_reviewed_journal",
+   "url_opened": "https://ideas.repec.org/a/eee/ecolet/v171y2018icp19-22.html",
+   "doi": "10.1016/j.econlet.2018.07.001",
+   "mechanism": "VAR of Tether issuance on subsequent BTC returns and volume",
+   "market": "BTC",
+   "period": "UNKNOWN (to 2018)",
+   "universe": "BTC, USDT",
+   "effect_size": "UNKNOWN size (abstract: Tether issuance does not affect subsequent BTC returns but does affect volume; Tether trading rises after BTC return declines)",
+   "effect_unit_horizon": "VAR responses",
+   "gross_or_net": "n/a",
+   "costs_included": "n/a",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "UNKNOWN",
+   "result_type": "descriptive",
+   "copybot_families": [
+    "stablecoin_liquidity_flow"
+   ],
+   "copybot_links": [],
+   "data_availability": "NOT_AVAILABLE",
+   "supports_ids": [
+    "X046"
+   ],
+   "contradicts_ids": [
+    "E26"
+   ],
+   "extends_ids": [],
+   "post_2022_data": false,
+   "net_of_cost_evidence": "no",
+   "notes": ""
+  },
+  {
+   "id": "X048",
+   "category": 7,
+   "secondary_categories": [
+    1
+   ],
+   "title": "The instability of stablecoins",
+   "authors": "Kun Duan; Andrew Urquhart",
+   "year": 2023,
+   "venue": "Finance Research Letters 52, 103573",
+   "pub_type": "peer_reviewed_journal",
+   "url_opened": "https://ideas.repec.org/a/eee/finlet/v52y2023ics1544612322007498.html",
+   "doi": "10.1016/j.frl.2022.103573",
+   "mechanism": "fractional integration of stablecoin deviations from USD 1; speed of peg correction",
+   "market": "USDT, USDC, BUSD, DAI, PAX (hourly)",
+   "period": "UNKNOWN",
+   "universe": "5 largest stablecoins",
+   "effect_size": "UNKNOWN size (abstract: strong evidence of instability; deviations corrected at different speeds except DAI, which does not converge; BUSD fastest)",
+   "effect_unit_horizon": "hourly deviation persistence",
+   "gross_or_net": "n/a",
+   "costs_included": "n/a",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "rolling windows",
+   "result_type": "descriptive",
+   "copybot_families": [
+    "delta_neutral_funding_carry",
+    "funding_carry"
+   ],
+   "copybot_links": [
+    "studies/CARRY_REALISM_P0P1_2026-11-06.md"
+   ],
+   "data_availability": "AVAILABLE_FORWARD",
+   "supports_ids": [],
+   "contradicts_ids": [],
+   "extends_ids": [],
+   "post_2022_data": false,
+   "net_of_cost_evidence": "no",
+   "notes": "Relevant to USDT-margined carry: stablecoin depeg is an unpriced risk (gap A3 in research_gaps). USDT/USDC spot prices are collectable forward."
+  },
+  {
+   "id": "X049",
+   "category": 7,
+   "secondary_categories": [
+    9
+   ],
+   "title": "Blockchain Analysis of the Bitcoin Market",
+   "authors": "Igor Makarov; Antoinette Schoar",
+   "year": 2021,
+   "venue": "NBER Working Paper 29396",
+   "pub_type": "working_paper",
+   "url_opened": "https://www.nber.org/papers/w29396 (abstract) + https://www.nber.org/system/files/working_papers/w29396/w29396.pdf (intro)",
+   "doi": "10.3386/w29396",
+   "mechanism": "entity-labelled Bitcoin transaction network: exchanges, miners, large holders",
+   "market": "Bitcoin blockchain",
+   "period": "2015 onward (per intro)",
+   "universe": "all Bitcoin addresses linked to entities",
+   "effect_size": "90% of on-chain transaction volume is not economically meaningful; since 2015 about 75% of real volume is linked to exchanges or exchange-like entities; illegal activity, scams and gambling below 3% of volume",
+   "effect_unit_horizon": "share of transaction volume",
+   "gross_or_net": "n/a",
+   "costs_included": "n/a",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "n/a",
+   "result_type": "descriptive",
+   "copybot_families": [
+    "smart_money_following",
+    "onchain_value_mvrv",
+    "stablecoin_liquidity_flow"
+   ],
+   "copybot_links": [
+    "drafts/ONCHAIN_KILDEAUDIT_2026-10-24.md"
+   ],
+   "data_availability": "NOT_AVAILABLE",
+   "supports_ids": [
+    "E25",
+    "E30"
+   ],
+   "contradicts_ids": [],
+   "extends_ids": [],
+   "post_2022_data": false,
+   "net_of_cost_evidence": "no",
+   "notes": "Warning for raw on-chain flow signals: most volume is noise/internal; exchange flows dominate and are cross-exchange arbitrage-driven."
+  },
+  {
+   "id": "X050",
+   "category": 7,
+   "secondary_categories": [],
+   "title": "The Moby Dick effect: Contagious Bitcoin whales in the crypto market",
+   "authors": "Nicolás Magner; Aliro Sanhueza",
+   "year": 2025,
+   "venue": "Finance Research Letters 85, 107906",
+   "pub_type": "peer_reviewed_journal",
+   "url_opened": "https://ideas.repec.org/a/eee/finlet/v85y2025ipbs154461232501164x.html",
+   "doi": "10.1016/j.frl.2025.107906",
+   "mechanism": "Whale Alert wallet<->exchange BTC transfers as a contagion signal for other coins",
+   "market": "15 largest cryptocurrencies",
+   "period": "UNKNOWN",
+   "universe": "15 coins",
+   "effect_size": "UNKNOWN size (abstract: significant contagion mainly 6 and 24 hours after the transfer)",
+   "effect_unit_horizon": "TVP-VAR response at 1, 6, 24 h",
+   "gross_or_net": "n/a",
+   "costs_included": "no",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "UNKNOWN",
+   "result_type": "descriptive",
+   "copybot_families": [
+    "smart_money_following"
+   ],
+   "copybot_links": [],
+   "data_availability": "NOT_AVAILABLE",
+   "supports_ids": [
+    "E25"
+   ],
+   "contradicts_ids": [],
+   "extends_ids": [],
+   "post_2022_data": true,
+   "net_of_cost_evidence": "no",
+   "notes": ""
+  },
+  {
+   "id": "X051",
+   "category": 7,
+   "secondary_categories": [],
+   "title": "The Intraday Bitcoin Response to Tether Minting and Burning Events: Asymmetry, Investor Sentiment, And \"Whale Alerts\" On Twitter",
+   "authors": "Aman Saggu",
+   "year": 2025,
+   "venue": "arXiv:2501.05232 (RePEc arx papers; journal version not verified)",
+   "pub_type": "working_paper",
+   "url_opened": "https://ideas.repec.org/p/arx/papers/2501.05232.html",
+   "doi": null,
+   "mechanism": "BTC response to USDT mint/burn events; amplification by public Whale Alert announcements",
+   "market": "BTC intraday",
+   "period": "2014-2021",
+   "universe": "USDT supply-change events",
+   "effect_size": "UNKNOWN size (abstract: positive BTC response to mints over 5-30 minute windows, fading after 60 minutes; stronger with positive sentiment and Whale Alert announcement; asymmetric vs burns)",
+   "effect_unit_horizon": "5-60 minute event windows",
+   "gross_or_net": "gross",
+   "costs_included": "no",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "UNKNOWN",
+   "result_type": "descriptive",
+   "copybot_families": [
+    "stablecoin_liquidity_flow"
+   ],
+   "copybot_links": [],
+   "data_availability": "NOT_AVAILABLE",
+   "supports_ids": [
+    "X044"
+   ],
+   "contradicts_ids": [
+    "X047"
+   ],
+   "extends_ids": [],
+   "post_2022_data": false,
+   "net_of_cost_evidence": "no",
+   "notes": "Minute-scale positive response vs Wei's (X047) no effect on subsequent (daily) returns: horizon matters."
+  },
+  {
+   "id": "X052",
+   "category": 7,
+   "secondary_categories": [
+    4,
+    9
+   ],
+   "title": "Quantifying Blockchain Extractable Value: How dark is the forest?",
+   "authors": "Kaihua Qin; Liyi Zhou; Arthur Gervais",
+   "year": 2021,
+   "venue": "arXiv:2101.05511",
+   "pub_type": "working_paper",
+   "url_opened": "https://arxiv.org/abs/2101.05511",
+   "doi": "10.48550/arXiv.2101.05511",
+   "mechanism": "extractable value from sandwich attacks, liquidations and DEX arbitrage",
+   "market": "Ethereum DeFi",
+   "period": "32 months (to early 2021)",
+   "universe": "49,691 cryptocurrencies, 60,830 on-chain markets",
+   "effect_size": "BEV profit USD 540.54M over 32 months across 11,289 addresses; largest single instance USD 4.1M",
+   "effect_unit_horizon": "USD over sample",
+   "gross_or_net": "gross (extracted profit)",
+   "costs_included": "UNKNOWN",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "n/a",
+   "result_type": "descriptive",
+   "copybot_families": [
+    "speed_onchain_sniping",
+    "dex_pool_arbitrage"
+   ],
+   "copybot_links": [
+    "RESULTS_arb_v1.md"
+   ],
+   "data_availability": "NOT_AVAILABLE",
+   "supports_ids": [],
+   "contradicts_ids": [],
+   "extends_ids": [],
+   "post_2022_data": false,
+   "net_of_cost_evidence": "no",
+   "notes": "On-chain arbitrage/liquidation value accrues to specialised searchers; capacity concentrated."
+  },
+  {
+   "id": "X053",
+   "category": 7,
+   "secondary_categories": [
+    10
+   ],
+   "title": "Forecasting Bitcoin volatility spikes from whale transactions and CryptoQuant data using Synthesizer Transformer models",
+   "authors": "Dorien Herremans; Kah Wee Low",
+   "year": 2022,
+   "venue": "arXiv:2211.08281",
+   "pub_type": "working_paper",
+   "url_opened": "https://arxiv.org/abs/2211.08281",
+   "doi": "10.48550/arXiv.2211.08281",
+   "mechanism": "whale-alert tweets and on-chain/exchange data as predictors of next-day volatility spikes",
+   "market": "BTC",
+   "period": "UNKNOWN",
+   "universe": "BTC",
+   "effect_size": "UNKNOWN (abstract: model beats state-of-the-art on extreme spikes; backtest reduces drawdown)",
+   "effect_unit_horizon": "next-day volatility spike",
+   "gross_or_net": "UNKNOWN",
+   "costs_included": "UNKNOWN",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "UNKNOWN",
+   "result_type": "forecast",
+   "copybot_families": [
+    "volatility_managed_exposure",
+    "smart_money_following"
+   ],
+   "copybot_links": [],
+   "data_availability": "NOT_AVAILABLE",
+   "supports_ids": [
+    "E24"
+   ],
+   "contradicts_ids": [],
+   "extends_ids": [],
+   "post_2022_data": false,
+   "net_of_cost_evidence": "no",
+   "notes": "Weak source (ML, no effect sizes in abstract)."
+  },
+  {
+   "id": "X054",
+   "category": 8,
+   "secondary_categories": [
+    10
+   ],
+   "title": "Pricing Cryptocurrency Options",
+   "authors": "Ai Jun Hou; Weining Wang; Cathy Y H Chen; Wolfgang Karl Härdle",
+   "year": 2020,
+   "venue": "Journal of Financial Econometrics 18(2), 250-279",
+   "pub_type": "peer_reviewed_journal",
+   "url_opened": "https://ideas.repec.org/a/oup/jfinec/v18y2020i2p250-279..html",
+   "doi": "10.1093/jjfinec/nbaa006",
+   "mechanism": "stochastic volatility with correlated jumps (SVCJ) vs cojump model for BTC option pricing",
+   "market": "BTC (and CRIX) options via simulation",
+   "period": "UNKNOWN",
+   "universe": "BTC",
+   "effect_size": "UNKNOWN size (abstract: a sizeable share of price jumps is significantly and contemporaneously anticorrelated with volatility jumps)",
+   "effect_unit_horizon": "n/a",
+   "gross_or_net": "n/a",
+   "costs_included": "n/a",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "UNKNOWN",
+   "result_type": "descriptive",
+   "copybot_families": [
+    "variance_risk_premium_timing"
+   ],
+   "copybot_links": [],
+   "data_availability": "NOT_AVAILABLE",
+   "supports_ids": [
+    "E38"
+   ],
+   "contradicts_ids": [],
+   "extends_ids": [],
+   "post_2022_data": false,
+   "net_of_cost_evidence": "no",
+   "notes": "Pricing model, not a premium estimate."
+  },
+  {
+   "id": "X055",
+   "category": 8,
+   "secondary_categories": [
+    10
+   ],
+   "title": "Forecasting bitcoin volatility: Evidence from the options market",
+   "authors": "Lai T. Hoang; Dirk G. Baur",
+   "year": 2020,
+   "venue": "Journal of Futures Markets 40(10), 1584-1602",
+   "pub_type": "peer_reviewed_journal",
+   "url_opened": "https://ideas.repec.org/a/wly/jfutmk/v40y2020i10p1584-1602.html",
+   "doi": "10.1002/fut.22144",
+   "mechanism": "Deribit implied volatility vs ARMA/HAR forecasts of realised volatility",
+   "market": "Deribit BTC options",
+   "period": "UNKNOWN",
+   "universe": "BTC",
+   "effect_size": "UNKNOWN loss values (abstract: IV worse than ARMA/HAR 1 day ahead, better 7, 10 and 15 days ahead; combination best at all horizons)",
+   "effect_unit_horizon": "volatility forecast accuracy by horizon",
+   "gross_or_net": "n/a",
+   "costs_included": "n/a",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "out-of-sample forecasts",
+   "result_type": "forecast",
+   "copybot_families": [
+    "variance_risk_premium_timing",
+    "volatility_managed_exposure"
+   ],
+   "copybot_links": [],
+   "data_availability": "NOT_AVAILABLE",
+   "supports_ids": [
+    "E36",
+    "E37"
+   ],
+   "contradicts_ids": [],
+   "extends_ids": [
+    "E44"
+   ],
+   "post_2022_data": false,
+   "net_of_cost_evidence": "no",
+   "notes": "IV contains information beyond HAR at 1-2 week horizons; DVOL-type data outside gates."
+  },
+  {
+   "id": "X056",
+   "category": 8,
+   "secondary_categories": [
+    1
+   ],
+   "title": "Delta hedging bitcoin options with a smile",
+   "authors": "Carol Alexander; Arben Imeraj",
+   "year": 2023,
+   "venue": "Quantitative Finance 23(5), 799-817",
+   "pub_type": "peer_reviewed_journal",
+   "url_opened": "https://ideas.repec.org/a/taf/quantf/v23y2023i5p799-817.html",
+   "doi": "10.1080/14697688.2023.2181205",
+   "mechanism": "smile-adjusted vs Black-Scholes deltas; perpetual vs calendar futures as hedge instrument",
+   "market": "Deribit BTC options, hourly; BTC perpetual and futures",
+   "period": "two one-year periods (incl. 2021)",
+   "universe": "10, 20, 30-day synthetic maturities",
+   "effect_size": "smile-implied deltas cut hedging error variance by over 30% for OTM puts and about 15% on average for short-term OTM calls when the IV curve slopes up; perp basis risk much smaller than calendar futures",
+   "effect_unit_horizon": "hedging-error variance ratio",
+   "gross_or_net": "n/a",
+   "costs_included": "n/a",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "UNKNOWN",
+   "result_type": "descriptive",
+   "copybot_families": [
+    "variance_risk_premium_timing"
+   ],
+   "copybot_links": [],
+   "data_availability": "NOT_AVAILABLE",
+   "supports_ids": [],
+   "contradicts_ids": [],
+   "extends_ids": [],
+   "post_2022_data": false,
+   "net_of_cost_evidence": "no",
+   "notes": "Authors' Bitcoin VIX/VRP paper (JAI 2021) remains unverified (SSRN 403); this verified paper gives hedging, not VRP size."
+  },
+  {
+   "id": "X057",
+   "category": 8,
+   "secondary_categories": [
+    7
+   ],
+   "title": "Effects of Social Media-Based Peer Opinions on the Prices of Cryptocurrency Options",
+   "authors": "Da-Hea Kim",
+   "year": 2025,
+   "venue": "Journal of Futures Markets 45(10), 1512-1543",
+   "pub_type": "peer_reviewed_journal",
+   "url_opened": "https://ideas.repec.org/a/wly/jfutmk/v45y2025i10p1512-1543.html",
+   "doi": "10.1002/fut.70004",
+   "mechanism": "text-based social-media opinion vs option-implied smile slope and risk-neutral skewness",
+   "market": "BTC and ETH options",
+   "period": "UNKNOWN",
+   "universe": "BTC, ETH options",
+   "effect_size": "UNKNOWN size (abstract: bearish opinion steepens the smile and makes RN skewness more negative; robust to controls; no later reversal)",
+   "effect_unit_horizon": "UNKNOWN",
+   "gross_or_net": "n/a",
+   "costs_included": "n/a",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "UNKNOWN",
+   "result_type": "descriptive",
+   "copybot_families": [
+    "variance_risk_premium_timing"
+   ],
+   "copybot_links": [],
+   "data_availability": "NOT_AVAILABLE",
+   "supports_ids": [
+    "E28"
+   ],
+   "contradicts_ids": [],
+   "extends_ids": [],
+   "post_2022_data": true,
+   "net_of_cost_evidence": "no",
+   "notes": "Skew responds to sentiment; this is about option prices, not underlying returns."
+  },
+  {
+   "id": "X058",
+   "category": 9,
+   "secondary_categories": [],
+   "title": "Arbitrage in the market for cryptocurrencies",
+   "authors": "Tommy Crépellière; Matthias Pelster; Stefan Zeisberger",
+   "year": 2023,
+   "venue": "Journal of Financial Markets 64, 100817",
+   "pub_type": "peer_reviewed_journal",
+   "url_opened": "https://ideas.repec.org/a/eee/finmar/v64y2023ics1386418123000150.html",
+   "doi": "10.1016/j.finmar.2023.100817",
+   "mechanism": "cross-exchange arbitrage opportunities over time; informed trading and efficiency",
+   "market": "multiple crypto exchanges",
+   "period": "UNKNOWN (spans before and after April 2018)",
+   "universe": "UNKNOWN",
+   "effect_size": "UNKNOWN size (abstract: opportunities exist but shrank greatly from April 2018; tested strategies can barely exploit them since)",
+   "effect_unit_horizon": "UNKNOWN",
+   "gross_or_net": "net (strategies evaluated)",
+   "costs_included": "yes (implied by 'barely possible to exploit')",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "sub-period comparison",
+   "result_type": "net_trading",
+   "copybot_families": [
+    "cross_venue_perp_gap",
+    "dex_pool_arbitrage"
+   ],
+   "copybot_links": [
+    "RESULTS_arb_v1.md",
+    "studies/VENUE_REGISTER_2026-10-27.md"
+   ],
+   "data_availability": "AVAILABLE_FORWARD",
+   "supports_ids": [
+    "E34"
+   ],
+   "contradicts_ids": [
+    "E30"
+   ],
+   "extends_ids": [],
+   "post_2022_data": false,
+   "net_of_cost_evidence": "yes (negative after 2018)",
+   "notes": "Contradicts the exploitability reading of E30's large gaps for the post-2018 period; consistent with RESULTS_arb_v1 (0 opportunities)."
+  },
+  {
+   "id": "X059",
+   "category": 9,
+   "secondary_categories": [],
+   "title": "Bitcoin arbitrage and exchange default risk",
+   "authors": "Weiwei Guo; Silvia Intini; Hossein Jahanshahloo",
+   "year": 2025,
+   "venue": "Finance Research Letters 71, 106364",
+   "pub_type": "peer_reviewed_journal",
+   "url_opened": "https://ideas.repec.org/a/eee/finlet/v71y2025ics154461232401393x.html",
+   "doi": "10.1016/j.frl.2024.106364",
+   "mechanism": "exchange default risk, liquidity, fees and blockchain congestion as limits to cross-exchange arbitrage",
+   "market": "16 crypto exchanges, minute data",
+   "period": "2013-04 to 2024-04",
+   "universe": "BTC",
+   "effect_size": "UNKNOWN size (abstract: gaps last longer when the riskier exchange has the higher price; capital flows from risky to safe venues track gaps; liquidity speeds arbitrage; fees and congestion slow it)",
+   "effect_unit_horizon": "duration of arbitrage opportunities",
+   "gross_or_net": "n/a",
+   "costs_included": "fees as a determinant",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "UNKNOWN",
+   "result_type": "descriptive",
+   "copybot_families": [
+    "cross_venue_perp_gap"
+   ],
+   "copybot_links": [
+    "studies/VENUE_REGISTER_2026-10-27.md"
+   ],
+   "data_availability": "AVAILABLE_FORWARD",
+   "supports_ids": [
+    "E34",
+    "X058"
+   ],
+   "contradicts_ids": [],
+   "extends_ids": [],
+   "post_2022_data": true,
+   "net_of_cost_evidence": "no",
+   "notes": "Post-2022 data included (to 2024). Default-risk pricing means some gaps are compensation, not free money (cf. FTX)."
+  },
+  {
+   "id": "X060",
+   "category": 9,
+   "secondary_categories": [],
+   "title": "Kimchi premium and speculative trading in bitcoin",
+   "authors": "Yunsung Eom",
+   "year": 2021,
+   "venue": "Finance Research Letters 38, 101505",
+   "pub_type": "peer_reviewed_journal",
+   "url_opened": "https://ideas.repec.org/a/eee/finlet/v38y2021ics1544612319301357.html",
+   "doi": "10.1016/j.frl.2020.101505",
+   "mechanism": "kimchi premium explained by elevated volume and volatility (speculative bubble / belief dispersion)",
+   "market": "Korean vs US BTC",
+   "period": "UNKNOWN (bubble period)",
+   "universe": "BTC",
+   "effect_size": "UNKNOWN size (abstract: volume and volatility explain the premium; relation clearer as bubble grows)",
+   "effect_unit_horizon": "UNKNOWN",
+   "gross_or_net": "n/a",
+   "costs_included": "n/a",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "contested by X061",
+   "result_type": "descriptive",
+   "copybot_families": [
+    "cross_venue_perp_gap"
+   ],
+   "copybot_links": [
+    "N4 kimchi: studies/MISSION27_4_2026-11-02.md",
+    "drafts/U1F_UPBIT_FREMAD.md"
+   ],
+   "data_availability": "AVAILABLE_AFTER_2026-11-14",
+   "supports_ids": [],
+   "contradicts_ids": [
+    "E33"
+   ],
+   "extends_ids": [],
+   "post_2022_data": false,
+   "net_of_cost_evidence": "no",
+   "notes": "Speculation story vs E33's risk story."
+  },
+  {
+   "id": "X061",
+   "category": 9,
+   "secondary_categories": [],
+   "title": "Is the Kimchi premium a speculative bubble?",
+   "authors": "Hyunmin Ok; Jinyong Kim; Yongsik Kim",
+   "year": 2023,
+   "venue": "Finance Research Letters 57, 104207",
+   "pub_type": "peer_reviewed_journal",
+   "url_opened": "https://ideas.repec.org/a/eee/finlet/v57y2023ics1544612323005792.html",
+   "doi": "10.1016/j.frl.2023.104207",
+   "mechanism": "time-varying coefficient re-test of Eom (2021)",
+   "market": "Korean vs US BTC",
+   "period": "UNKNOWN",
+   "universe": "BTC",
+   "effect_size": "UNKNOWN size (abstract: positive premium-volume/volatility relation not robust over time)",
+   "effect_unit_horizon": "time-varying coefficient",
+   "gross_or_net": "n/a",
+   "costs_included": "n/a",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "replication/critique of X060",
+   "result_type": "descriptive",
+   "copybot_families": [
+    "cross_venue_perp_gap"
+   ],
+   "copybot_links": [
+    "N4 kimchi: studies/MISSION27_4_2026-11-02.md"
+   ],
+   "data_availability": "AVAILABLE_AFTER_2026-11-14",
+   "supports_ids": [],
+   "contradicts_ids": [
+    "X060"
+   ],
+   "extends_ids": [],
+   "post_2022_data": false,
+   "net_of_cost_evidence": "no",
+   "notes": "Direct failed robustness of a published kimchi explanation."
+  },
+  {
+   "id": "X062",
+   "category": 9,
+   "secondary_categories": [],
+   "title": "Nonlinear dynamics of Kimchi premium",
+   "authors": "Myung Hwan Seo; Bonsoo Koo; Yangzhuoran Fin Yang",
+   "year": 2024,
+   "venue": "Economic Modelling 135, 106726",
+   "pub_type": "peer_reviewed_journal",
+   "url_opened": "https://ideas.repec.org/a/eee/ecmode/v135y2024ics0264999324000828.html",
+   "doi": "10.1016/j.econmod.2024.106726",
+   "mechanism": "multi-regime threshold regression: arbitrage only beyond a band; fees set the band",
+   "market": "Korean vs US BTC",
+   "period": "UNKNOWN",
+   "universe": "BTC",
+   "effect_size": "long-run steady-state premium 1.24% for BTC; mean reversion only outside threshold band, random walk inside; trading fee positively correlated with the threshold",
+   "effect_unit_horizon": "premium level (%)",
+   "gross_or_net": "n/a",
+   "costs_included": "fees as determinant of no-arbitrage band",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "UNKNOWN",
+   "result_type": "descriptive",
+   "copybot_families": [
+    "cross_venue_perp_gap"
+   ],
+   "copybot_links": [
+    "N4 kimchi: studies/MISSION27_4_2026-11-02.md",
+    "drafts/U1F_UPBIT_FREMAD.md"
+   ],
+   "data_availability": "AVAILABLE_AFTER_2026-11-14",
+   "supports_ids": [
+    "E31",
+    "E32"
+   ],
+   "contradicts_ids": [],
+   "extends_ids": [],
+   "post_2022_data": false,
+   "net_of_cost_evidence": "no",
+   "notes": "Previously an unverified lead in LITERATURE_MAP (Seo, Koo & Yang 2024, 1.24%) - now verified via IDEAS. Band structure = friction view."
+  },
+  {
+   "id": "X063",
+   "category": 9,
+   "secondary_categories": [],
+   "title": "Cryptomarket discounts",
+   "authors": "Nicola Borri; Kirill Shakhnov",
+   "year": 2023,
+   "venue": "Journal of International Money and Finance 139, 102963",
+   "pub_type": "peer_reviewed_journal",
+   "url_opened": "https://ideas.repec.org/a/eee/jimfin/v139y2023ics026156062300164x.html",
+   "doi": "10.1016/j.jimonfin.2023.102963",
+   "mechanism": "relative BTC price discounts across exchange-currency pairs; capital controls, mining location, attention",
+   "market": "BTC across exchange-currency pairs",
+   "period": "UNKNOWN",
+   "universe": "BTC",
+   "effect_size": "discount half-life 1 day; distribution leptokurtic, right-skewed, standard deviation 3.9%; variability larger under tighter capital controls",
+   "effect_unit_horizon": "relative price discount; half-life in days",
+   "gross_or_net": "n/a",
+   "costs_included": "n/a",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "UNKNOWN",
+   "result_type": "descriptive",
+   "copybot_families": [
+    "cross_venue_perp_gap"
+   ],
+   "copybot_links": [
+    "N4 kimchi: studies/MISSION27_4_2026-11-02.md"
+   ],
+   "data_availability": "AVAILABLE_AFTER_2026-11-14",
+   "supports_ids": [
+    "E30",
+    "E31",
+    "E33"
+   ],
+   "contradicts_ids": [],
+   "extends_ids": [
+    "E33"
+   ],
+   "post_2022_data": false,
+   "net_of_cost_evidence": "no",
+   "notes": "Same authors as E33; half-life gives a mean-reversion speed benchmark."
+  },
+  {
+   "id": "X064",
+   "category": 9,
+   "secondary_categories": [],
+   "title": "Who are the arbitrageurs? Empirical evidence from Bitcoin traders in the Mt. Gox exchange platform",
+   "authors": "Pietro Saggese; Alessandro Belmonte; Nicola Dimitri; Angelo Facchini; Rainer Böhme",
+   "year": 2021,
+   "venue": "arXiv:2109.10958",
+   "pub_type": "working_paper",
+   "url_opened": "https://arxiv.org/abs/2109.10958",
+   "doi": "10.48550/arXiv.2109.10958",
+   "mechanism": "triangular arbitrage profitability by trader expertise",
+   "market": "Mt. Gox (leaked trade history)",
+   "period": "2011 to early 2014",
+   "universe": "440 identified arbitrageurs",
+   "effect_size": "UNKNOWN size (abstract: one expertise group is on average unprofitable after transaction costs while multi-market skilled traders earn a positive significant premium; skill = fast reaction and order splitting)",
+   "effect_unit_horizon": "per-trade arbitrage premium",
+   "gross_or_net": "net of transaction costs",
+   "costs_included": "yes",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "within-user variation",
+   "result_type": "net_trading",
+   "copybot_families": [
+    "cross_venue_perp_gap",
+    "dex_pool_arbitrage"
+   ],
+   "copybot_links": [],
+   "data_availability": "NOT_AVAILABLE",
+   "supports_ids": [
+    "X058"
+   ],
+   "contradicts_ids": [],
+   "extends_ids": [],
+   "post_2022_data": false,
+   "net_of_cost_evidence": "yes (only skilled minority profitable)",
+   "notes": "Abstract wording on which group is unprofitable is ambiguous; summary kept to 'arbitrage profits concentrated in a few sophisticated users'."
+  },
+  {
+   "id": "X065",
+   "category": 3,
+   "secondary_categories": [],
+   "title": "Cryptocurrency factor momentum",
+   "authors": "Christian Fieberg; Gerrit Liedtke; Daniel Metko; Adam Zaremba",
+   "year": 2023,
+   "venue": "Quantitative Finance 23(12), 1853-1869",
+   "pub_type": "peer_reviewed_journal",
+   "url_opened": "https://ideas.repec.org/a/taf/quantf/v23y2023i12p1853-1869.html",
+   "doi": "10.1080/14697688.2023.2269999",
+   "mechanism": "momentum in anomaly (factor) returns; replication of 34 crypto anomalies",
+   "market": "crypto spot cross-section",
+   "period": "2014-2022",
+   "universe": "over 3,900 coins; 34 anomalies",
+   "effect_size": "UNKNOWN size (abstract: past winning factors beat losers, robust across subperiods, comparable to stocks; driven by size and volatility anomalies; originates from price momentum)",
+   "effect_unit_horizon": "UNKNOWN",
+   "gross_or_net": "UNKNOWN",
+   "costs_included": "UNKNOWN",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "replicates 34 anomalies; subperiod robustness",
+   "result_type": "descriptive",
+   "copybot_families": [
+    "cross_sectional_momentum",
+    "time_series_momentum"
+   ],
+   "copybot_links": [
+    "RESULTS_tsmom_v1.md"
+   ],
+   "data_availability": "AVAILABLE_AFTER_2026-11-14",
+   "supports_ids": [
+    "E10",
+    "E01"
+   ],
+   "contradicts_ids": [],
+   "extends_ids": [],
+   "post_2022_data": false,
+   "net_of_cost_evidence": "no",
+   "notes": "Replication-scale study; size/volatility anomalies live in small coins (cf. E22)."
+  },
+  {
+   "id": "X066",
+   "category": 3,
+   "secondary_categories": [],
+   "title": "The Cryptocurrency Trend Factor Revisited: Predictive Information, Portfolio Construction, and Pricing Claims",
+   "authors": "Yifei Wang; Zhenling Pang",
+   "year": 2026,
+   "venue": "arXiv:2611.01951 (SSRN 7669458)",
+   "pub_type": "working_paper",
+   "url_opened": "https://arxiv.org/abs/2611.01951",
+   "doi": "10.2139/ssrn.7669458",
+   "mechanism": "code audit and correction of the published crypto trend factor (CTREND): look-ahead, indicators, forecast coverage, accounting",
+   "market": "crypto spot cross-section",
+   "period": "UNKNOWN (original CTREND sample)",
+   "universe": "full CTREND universe; largest 100 coins subset",
+   "effect_size": "after full correction: mean weekly gross return 4.07% -> 0.05%, annualised Sharpe 2.08 -> 0.01, weekly alpha 2.77% -> -1.38% (insignificant); net weekly long-short return at lowest costs 2.93% -> -0.87%; largest-100 gross 2.93% -> 1.00%",
+   "effect_unit_horizon": "weekly portfolio return; annualised Sharpe",
+   "gross_or_net": "both reported",
+   "costs_included": "yes (lowest assumed trading costs for net figures)",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "replication with code audit; published claims fail after correction",
+   "result_type": "net_trading",
+   "copybot_families": [
+    "trend_following",
+    "cross_sectional_momentum",
+    "time_series_momentum"
+   ],
+   "copybot_links": [
+    "RESULTS_tsmom_v1.md",
+    "studies/DONCHIAN_POWER_P1_2026-11-06.md"
+   ],
+   "data_availability": "AVAILABLE_AFTER_2026-11-14",
+   "supports_ids": [
+    "E22",
+    "E01"
+   ],
+   "contradicts_ids": [
+    "E12"
+   ],
+   "extends_ids": [],
+   "post_2022_data": true,
+   "net_of_cost_evidence": "yes (negative after correction)",
+   "notes": "Strongest new replication evidence: a published crypto factor collapses after look-ahead and accounting fixes. Posted 2026-11-01, not yet reviewed."
+  },
+  {
+   "id": "X067",
+   "category": 3,
+   "secondary_categories": [
+    6
+   ],
+   "title": "On survivor cryptocurrency momentum",
+   "authors": "Klaus Grobys; Davide Sandretto; Janne Äijö",
+   "year": 2026,
+   "venue": "Finance Research Letters 92, 109602",
+   "pub_type": "peer_reviewed_journal",
+   "url_opened": "https://ideas.repec.org/a/eee/finlet/v92y2026ics1544612326001339.html",
+   "doi": "10.1016/j.frl.2026.109602",
+   "mechanism": "currency-style momentum among survivor coins vs plain top-30 momentum; trimming sensitivity",
+   "market": "top-100 altcoins, weekly",
+   "period": "2017-01 to 2024-08",
+   "universe": "9 survivor coins; largest 30 coins per year",
+   "effect_size": "UNKNOWN size (abstract: no momentum among survivors; plain momentum profitable only after trimming; highly sample-dependent even then)",
+   "effect_unit_horizon": "weekly portfolio returns",
+   "gross_or_net": "UNKNOWN",
+   "costs_included": "UNKNOWN",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "robustness to trimming fails",
+   "result_type": "descriptive",
+   "copybot_families": [
+    "cross_sectional_momentum"
+   ],
+   "copybot_links": [
+    "RESULTS_tsmom_v1.md"
+   ],
+   "data_availability": "AVAILABLE_AFTER_2026-11-14",
+   "supports_ids": [
+    "E11",
+    "E22"
+   ],
+   "contradicts_ids": [
+    "E10"
+   ],
+   "extends_ids": [],
+   "post_2022_data": true,
+   "net_of_cost_evidence": "no",
+   "notes": "Same first author as E11."
+  },
+  {
+   "id": "X068",
+   "category": 3,
+   "secondary_categories": [],
+   "title": "Technical trading and cryptocurrencies",
+   "authors": "Robert Hudson; Andrew Urquhart",
+   "year": 2021,
+   "venue": "Annals of Operations Research 297(1), 191-220",
+   "pub_type": "peer_reviewed_journal",
+   "url_opened": "https://ideas.repec.org/a/spr/annopr/v297y2021i1d10.1007_s10479-019-03357-1.html",
+   "doi": "10.1007/s10479-019-03357-1",
+   "mechanism": "about 15,000 technical rules with multiple-hypothesis (data-snooping) control",
+   "market": "two BTC markets and three other cryptocurrencies",
+   "period": "UNKNOWN",
+   "universe": "5 series",
+   "effect_size": "UNKNOWN size (abstract: significant predictability after data-snooping control; breakeven costs above typical costs; but no predictability for Bitcoin out-of-sample, some remains for other coins)",
+   "effect_unit_horizon": "UNKNOWN",
+   "gross_or_net": "breakeven cost reported",
+   "costs_included": "breakeven transaction cost analysis",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "out-of-sample period: BTC predictability vanishes",
+   "result_type": "forecast",
+   "copybot_families": [
+    "trend_following",
+    "time_series_momentum"
+   ],
+   "copybot_links": [
+    "RESULTS_tsmom_v1.md",
+    "studies/DONCHIAN_POWER_P1_2026-11-06.md"
+   ],
+   "data_availability": "AVAILABLE_AFTER_2026-11-14",
+   "supports_ids": [
+    "E43"
+   ],
+   "contradicts_ids": [
+    "E12"
+   ],
+   "extends_ids": [],
+   "post_2022_data": false,
+   "net_of_cost_evidence": "partial (breakeven only)",
+   "notes": "In-sample data-snooping-robust result that fails OOS for BTC - the most liquid asset."
+  },
+  {
+   "id": "X069",
+   "category": 3,
+   "secondary_categories": [],
+   "title": "Are simple technical trading rules profitable in bitcoin markets?",
+   "authors": "Niek Deprez; Michael Frömmel",
+   "year": 2024,
+   "venue": "International Review of Economics & Finance 93, 858-874",
+   "pub_type": "peer_reviewed_journal",
+   "url_opened": "https://ideas.repec.org/a/eee/reveco/v93y2024ipbp858-874.html",
+   "doi": "10.1016/j.iref.2024.05.003",
+   "mechanism": "75,360 simple rules (6 classes, daily and intraday), selection after costs with multiple-hypothesis procedure, OOS portfolios",
+   "market": "bitcoin markets",
+   "period": "UNKNOWN",
+   "universe": "BTC",
+   "effect_size": "UNKNOWN size (abstract: selected rule portfolios can beat buy-and-hold out-of-sample, especially risk-adjusted)",
+   "effect_unit_horizon": "UNKNOWN",
+   "gross_or_net": "net (selection after transaction costs)",
+   "costs_included": "yes",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "out-of-sample portfolios after data-mining control",
+   "result_type": "net_trading",
+   "copybot_families": [
+    "trend_following",
+    "time_series_momentum"
+   ],
+   "copybot_links": [
+    "RESULTS_tsmom_v1.md"
+   ],
+   "data_availability": "AVAILABLE_AFTER_2026-11-14",
+   "supports_ids": [
+    "E43"
+   ],
+   "contradicts_ids": [
+    "X068"
+   ],
+   "extends_ids": [],
+   "post_2022_data": false,
+   "net_of_cost_evidence": "yes (positive, risk-adjusted; size UNKNOWN)",
+   "notes": "Contradicts Hudson & Urquhart's BTC OOS null; claim is mainly risk-adjusted (drawdown) not raw return. Sample period UNKNOWN."
+  },
+  {
+   "id": "X070",
+   "category": 3,
+   "secondary_categories": [
+    4
+   ],
+   "title": "Machine learning and the cross-section of cryptocurrency returns",
+   "authors": "Nusret Cakici; Syed Jawad Hussain Shahzad; Barbara Będowska-Sójka; Adam Zaremba",
+   "year": 2024,
+   "venue": "International Review of Financial Analysis 94, 103244",
+   "pub_type": "peer_reviewed_journal",
+   "url_opened": "https://ideas.repec.org/a/eee/finana/v94y2024ics1057521924001765.html",
+   "doi": "10.1016/j.irfa.2024.103244",
+   "mechanism": "ML models on crypto characteristics; predictability from price, past alpha, illiquidity, momentum",
+   "market": "crypto spot cross-section",
+   "period": "UNKNOWN",
+   "universe": "UNKNOWN",
+   "effect_size": "UNKNOWN size (abstract: most ML strategies profitable after trading costs, but alphas concentrated in hard-to-trade small, illiquid, volatile coins; from the long leg)",
+   "effect_unit_horizon": "UNKNOWN",
+   "gross_or_net": "net (after trading costs per abstract)",
+   "costs_included": "yes",
+   "capacity_notes": "alphas depend on hard-to-trade coins",
+   "oos_or_replication": "ML out-of-sample",
+   "result_type": "net_trading",
+   "copybot_families": [
+    "cross_sectional_momentum",
+    "illiquidity_premium",
+    "lottery_demand_max"
+   ],
+   "copybot_links": [],
+   "data_availability": "AVAILABLE_AFTER_2026-11-14",
+   "supports_ids": [
+    "E01",
+    "E14"
+   ],
+   "contradicts_ids": [],
+   "extends_ids": [],
+   "post_2022_data": false,
+   "net_of_cost_evidence": "yes but in illiquid coins",
+   "notes": "Net-of-cost claim conditional on trading illiquid coins - outside the lab's liquid perp universe."
+  },
+  {
+   "id": "X071",
+   "category": 3,
+   "secondary_categories": [
+    4
+   ],
+   "title": "Cross-sectional interactions in cryptocurrency returns",
+   "authors": "Aleksander Mercik; Barbara Będowska-Sójka; Sitara Karim; Adam Zaremba",
+   "year": 2025,
+   "venue": "International Review of Financial Analysis 97, 103809",
+   "pub_type": "peer_reviewed_journal",
+   "url_opened": "https://ideas.repec.org/a/eee/finana/v97y2025ics1057521924007415.html",
+   "doi": "10.1016/j.irfa.2024.103809",
+   "mechanism": "double sorts on 40 characteristics; liquidity x risk x past return interactions",
+   "market": "crypto spot cross-section",
+   "period": "2017-2023",
+   "universe": "over 500 major coins and tokens",
+   "effect_size": "OOS long-short of top/bottom interactions: Sharpe ratio above 1; low liquidity raises costs and sustains anomalies",
+   "effect_unit_horizon": "annualised Sharpe (OOS)",
+   "gross_or_net": "UNKNOWN",
+   "costs_included": "UNKNOWN (costs discussed as cause of persistence)",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "out-of-sample selection",
+   "result_type": "descriptive",
+   "copybot_families": [
+    "illiquidity_premium",
+    "short_term_reversal_liquidity",
+    "cross_sectional_momentum"
+   ],
+   "copybot_links": [],
+   "data_availability": "AVAILABLE_AFTER_2026-11-14",
+   "supports_ids": [
+    "E01",
+    "X070"
+   ],
+   "contradicts_ids": [],
+   "extends_ids": [],
+   "post_2022_data": true,
+   "net_of_cost_evidence": "no",
+   "notes": "Sample reaches 2023. Multiple-testing scale (40 chars, many pairs) acknowledged only via OOS selection."
+  },
+  {
+   "id": "X072",
+   "category": 3,
+   "secondary_categories": [],
+   "title": "Psychological anchoring effect and cross section of cryptocurrency returns",
+   "authors": "Yuecheng Jia; Betty Simkins; Shu Yan; Hongyu Zhang; Jiangyu Zhao",
+   "year": 2026,
+   "venue": "Journal of Banking & Finance 182, 107592",
+   "pub_type": "peer_reviewed_journal",
+   "url_opened": "https://ideas.repec.org/a/eee/jbfina/v182y2026ics0378426625002122.html",
+   "doi": "10.1016/j.jbankfin.2025.107592",
+   "mechanism": "nearness to 52-week high (anchoring) predicts cross-sectional returns",
+   "market": "crypto spot cross-section",
+   "period": "UNKNOWN",
+   "universe": "UNKNOWN",
+   "effect_size": "value-weighted high-minus-low Nearness52 portfolio about 130 bp per week",
+   "effect_unit_horizon": "weekly long-short return",
+   "gross_or_net": "gross",
+   "costs_included": "UNKNOWN (abstract says frictions ruled out as explanation)",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "robustness to controls and specifications",
+   "result_type": "descriptive",
+   "copybot_families": [
+    "anchoring_to_high",
+    "cross_sectional_momentum"
+   ],
+   "copybot_links": [],
+   "data_availability": "AVAILABLE_AFTER_2026-11-14",
+   "supports_ids": [
+    "E10"
+   ],
+   "contradicts_ids": [],
+   "extends_ids": [],
+   "post_2022_data": false,
+   "net_of_cost_evidence": "no",
+   "notes": "Copybot tag anchoring_to_high exists; size is gross. Note the CTREND correction (X066) as a warning for weekly crypto factor claims."
+  },
+  {
+   "id": "X073",
+   "category": 3,
+   "secondary_categories": [
+    7
+   ],
+   "title": "Crypto trading and Bitcoin prices: evidence from a new database of retail adoption",
+   "authors": "Raphael Auer; Giulio Cornelli; Sebastian Doerr; Jon Frost; Leonardo Gambacorta",
+   "year": 2022,
+   "venue": "BIS Working Paper 1049 (Nov 2022)",
+   "pub_type": "working_paper",
+   "url_opened": "https://www.bis.org/publ/work1049.pdf (BIS landing page with abstract)",
+   "doi": null,
+   "mechanism": "price-driven retail entry (trend-chasing adoption) using daily crypto-app usage in 95 countries",
+   "market": "crypto exchange apps, 95 countries",
+   "period": "2015-2022",
+   "universe": "retail app users",
+   "effect_size": "rising BTC price followed by new-user entry; about 40% of new users are men under 35; about three-quarters of users estimated to have lost money on BTC",
+   "effect_unit_horizon": "daily app adoption",
+   "gross_or_net": "n/a",
+   "costs_included": "n/a",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "two exogenous shocks (China mining ban 2021, Kazakhstan 2022) + PVAR",
+   "result_type": "descriptive",
+   "copybot_families": [
+    "time_series_momentum",
+    "leverage_cycle_timing"
+   ],
+   "copybot_links": [],
+   "data_availability": "NOT_AVAILABLE",
+   "supports_ids": [
+    "E04",
+    "X001",
+    "E09"
+   ],
+   "contradicts_ids": [],
+   "extends_ids": [],
+   "post_2022_data": false,
+   "net_of_cost_evidence": "no",
+   "notes": "Independent evidence for the trend-chasing retail demand that E04/X001 use to explain carry."
+  },
+  {
+   "id": "X074",
+   "category": 3,
+   "secondary_categories": [
+    7
+   ],
+   "title": "Crypto shocks and retail losses",
+   "authors": "Giulio Cornelli; Sebastian Doerr; Jon Frost; Leonardo Gambacorta",
+   "year": 2023,
+   "venue": "BIS Bulletin 69 (20 Feb 2023)",
+   "pub_type": "working_paper",
+   "url_opened": "https://www.bis.org/publ/bisbull69.pdf (BIS landing page with abstract)",
+   "doi": null,
+   "mechanism": "flows by investor size around Terra/Luna and FTX",
+   "market": "major crypto trading platforms/apps",
+   "period": "2022-08 to 2022-12 (losses); data 2015-2022",
+   "universe": "retail app users",
+   "effect_size": "UNKNOWN size (abstract: large investors sold while small retail bought; majority of app users lost money on BTC)",
+   "effect_unit_horizon": "UNKNOWN",
+   "gross_or_net": "n/a",
+   "costs_included": "n/a",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "n/a",
+   "result_type": "descriptive",
+   "copybot_families": [
+    "informed_positioning_divergence",
+    "smart_money_following"
+   ],
+   "copybot_links": [],
+   "data_availability": "NOT_AVAILABLE",
+   "supports_ids": [
+    "X073"
+   ],
+   "contradicts_ids": [],
+   "extends_ids": [],
+   "post_2022_data": true,
+   "net_of_cost_evidence": "no",
+   "notes": ""
+  },
+  {
+   "id": "X075",
+   "category": 3,
+   "secondary_categories": [
+    5
+   ],
+   "title": "Artificial Intelligence in Equity and Crypto Markets: Progress, Profitability Evidence, and the Limits of Automated Investing",
+   "authors": "Linsen Zhu; Mengqing Cai",
+   "year": 2026,
+   "venue": "arXiv:2609.04917 (review)",
+   "pub_type": "working_paper",
+   "url_opened": "https://arxiv.org/abs/2609.04917",
+   "doi": "10.48550/arXiv.2609.04917",
+   "mechanism": "critical review: alpha-translation chain from point-in-time signal to net returns; failure modes (contamination, selection, survivorship, costs, capacity)",
+   "market": "equities, ETFs, crypto spot, perps, on-chain",
+   "period": "literature to 31 Aug 2026",
+   "universe": "n/a",
+   "effect_size": "qualitative: no AI architecture shown to deliver persistent, cross-regime, capacity-aware net alpha in the public record",
+   "effect_unit_horizon": "n/a",
+   "gross_or_net": "n/a (review)",
+   "costs_included": "n/a",
+   "capacity_notes": "UNKNOWN",
+   "oos_or_replication": "review",
+   "result_type": "descriptive",
+   "copybot_families": [
+    "orderflow_imbalance",
+    "cross_sectional_momentum"
+   ],
+   "copybot_links": [
+    "studies/FACTORY_SECURITY_P1_2026-11-06.md"
+   ],
+   "data_availability": "UNKNOWN",
+   "supports_ids": [
+    "X066",
+    "X038"
+   ],
+   "contradicts_ids": [],
+   "extends_ids": [],
+   "post_2022_data": true,
+   "net_of_cost_evidence": "no",
+   "notes": "Review; useful as a checklist of replication failure modes."
+  }
+ ]
+}
