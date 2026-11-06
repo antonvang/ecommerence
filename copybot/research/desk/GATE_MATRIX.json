@@ -1,0 +1,1463 @@
+{
+ "version": "gate_matrix/1",
+ "rule": "director order 52 P1 (research/reviews/INBOX.md 2026-11-06 15:26 local). Read-only description of the gates that already exist in the locked texts; this file opens, locks, signs or changes nothing. Fail-closed: an action or gate not listed here is BLOCKED. Times are UTC. Companion texts: research/desk/NOV14_READINESS.md, research/desk/DATA_CONTRACT_F2_C1.md, research/desk/OWNER_DECISIONS_NOV14.md. Checker: research/tools/nov14_readiness.py.",
+ "as_of_utc": "2026-11-06T14:38:27Z",
+ "horizon_end_utc": "2026-11-28T23:59:59Z",
+ "status_values": [
+  "CLOSED",
+  "OPEN",
+  "OPENS_AT"
+ ],
+ "opening_kinds": {
+  "date": "opens at earliest_utc with no further condition",
+  "date+owner": "opens at earliest_utc only if the owner action flags are present",
+  "date+lock": "opens at earliest_utc only after the study's lock amendment is committed (and the owner flags it needs)",
+  "owner": "opens only by the owner action flags; an earliest_utc, if given, is a floor before which the flags do not help",
+  "never": "never opens for the assistant inside this horizon",
+  "constraint": "always applies; does not block by itself, it restricts how an allowed action is done"
+ },
+ "date_floors": {
+  "historical_market_data": "2026-11-14T00:00:00Z",
+  "coinm_files": "2026-11-28T00:00:00Z",
+  "host_restart": "2026-11-28T00:00:00Z"
+ },
+ "studies": {
+  "F2": "FACTORY F2 volatility forecast (HAR-RV vs EWMA, QLIKE), CONDITIONAL; not the PROTOCOL_V3 amendment-8 family F2 (see AMB-01)",
+  "C1": "F2's forward forecast journal (director decision (a) 2026-11-06), READY_NOT_ACTIVE",
+  "A_n6": "lock A, H27-F, method n6, X1/X2 (planned amendment 44)",
+  "A_n6_X3": "lock A, X3 quarterly basis, run only from COIN-M opening",
+  "B_n4": "lock B, N4 kimchi spillover, method n4 (planned amendment 45)",
+  "HFC1": "HFC-1 high-funding cohorts, descriptive; first 3 d outcome",
+  "STRAKS": "straks book, amendments 41/41a/41b; first descriptive report",
+  "PAIRS": "pair book, amendments 43/43a; diagnostic report",
+  "S1": "factory S1 read-only shadow job; earliest evaluation",
+  "F3": "FACTORY F3 dated COIN-M basis, DEFERRED to 2026-11-28",
+  "LIQPROXY1": "desk draft, competes for W0",
+  "FUNDFRAG1": "desk draft, competes for W0",
+  "OPS": "host operations (reboot, system update)"
+ },
+ "protocol_identities": [
+  {
+   "id": "PROTOCOL_V3",
+   "path": "research/PROTOCOL_V3.md",
+   "commit": "ec91280",
+   "sha256": "0a09b3e954d92c8294e1b15f27b12fbc344187562bc73f393d2dd892b2ce6c80"
+  },
+  {
+   "id": "READINESS_1114",
+   "path": "research/studies/READINESS_2026-11-14.md",
+   "commit": "dba9bda",
+   "sha256": "33de9d7bcd485ea36e548e4e2c01b101fc524726ead634fad81736bce6f74f5e"
+  },
+  {
+   "id": "MISSION27_3",
+   "path": "research/studies/MISSION27_3_2026-11-02.md",
+   "commit": "586a34d",
+   "sha256": "103fd0afe3e2fd47a1aa289c83b549b625b1046814d68e27873682fecf252fd8"
+  },
+  {
+   "id": "N6_TOOL",
+   "path": "research/tools/n6_funding.py",
+   "commit": "7012c2b",
+   "sha256": "e481a43cf1b47488ac4d18a125ad6d9bcfa7e1acfe2e5708982163b1c5989709"
+  },
+  {
+   "id": "N4_TOOL",
+   "path": "research/tools/n4_kimchi.py",
+   "commit": "8fac269",
+   "sha256": "c0e42309017725aee0d3406c023122eb187d7a96d614659dd1d09c7f73b533c4"
+  },
+  {
+   "id": "FACTORY_P2",
+   "path": "research/studies/FACTORY_P2_PROTOCOLS_2026-11-06.md",
+   "commit": "b54cb3c",
+   "sha256": "6dd1ca82934419c0913bccb3a8962f5e5e5154d678eee59179292a7694ae5f43"
+  },
+  {
+   "id": "C1_DESIGN",
+   "path": "research/desk/C1_FORECAST_DESIGN.md",
+   "commit": "80fb255",
+   "sha256": "530a86d5bb56ec62f6d5f900456c608f67f3964ad7ff2d141e0ad12ec91ff994"
+  },
+  {
+   "id": "C1_TOOL",
+   "path": "research/tools/c1_forecast.py",
+   "commit": "80fb255",
+   "sha256": "5bedfb002fb1c1fb1fb6453dcbe2fe85d0c2b7c363838c95d6422e0242275c10"
+  },
+  {
+   "id": "HFC1_PROTOCOL",
+   "path": "research/studies/HFC1_HIGH_FUNDING_FEASIBILITY_2026-11-04.md",
+   "commit": "368eaec",
+   "sha256": "0c283522e31b36555ec5801addd28ab6f5437c2438c0e81034ac2d3dbe0e352d"
+  },
+  {
+   "id": "HFC1_TOOL",
+   "path": "research/tools/hfc1_daily.py",
+   "commit": "5a62465",
+   "sha256": "5893a526d8482b4a0c446a53ef61dbd0c6d037774df41fb1573d8e1073135347"
+  },
+  {
+   "id": "STRAKS_CODE",
+   "path": "lab/straks.py",
+   "commit": "814ef8b",
+   "sha256": "7a110f1fa20fb7d28b76269fc039eec4c75ddfa7353602f2f8824490b722a542"
+  },
+  {
+   "id": "PAIRS_CODE",
+   "path": "lab/pairs.py",
+   "commit": "b1ef7a6",
+   "sha256": "5c9b60a4314a40a5e4d517427c4960220682b8f6179a445a5554903180ce1219"
+  },
+  {
+   "id": "NET_REPORT",
+   "path": "research/tools/net_report.py",
+   "commit": "7b49afd",
+   "sha256": "9370876d006b9bd98bd94d45cc8fd092eb53ad2577a01f63b9e42876d507c70b"
+  },
+  {
+   "id": "S1_TOOL",
+   "path": "research/tools/factory_s1.py",
+   "commit": "003a8a2",
+   "sha256": "e18278f4827dd2d0288bba2c39243d99e6aa29114f57930fc2fc5e8a0cb20f5d"
+  },
+  {
+   "id": "S1_P0",
+   "path": "research/studies/FACTORY_S1_P0_2026-11-06.md",
+   "commit": "7a395e3",
+   "sha256": "0bd0f5db7ffb8e082fd7b08615100bbb165ed1b68dd2c37ee8f181e676a08af1"
+  },
+  {
+   "id": "QUARANTINE",
+   "path": "research/data/QUARANTINE.json",
+   "commit": "8fac269",
+   "sha256": "7e98e1b38c552ef962aa0adfb97862fb94be79302580521bf2dd479ea966d117"
+  },
+  {
+   "id": "LINUX_DRIFT",
+   "path": "research/LINUX_DRIFT.md",
+   "commit": "6e25c9c",
+   "sha256": "659fc33159085b8a196907c03b423b86f0de341bd67a04a994a80f7c43987d58"
+  },
+  {
+   "id": "GATES_TOOL",
+   "path": "research/tools/gates.py",
+   "commit": "8fac269",
+   "sha256": "7f5050805714ccd206e2cae2d32d0c0124ef320bc0e47b6605447d6e40089558"
+  },
+  {
+   "id": "STREAM_REGISTRY",
+   "path": "research/desk/stream_registry.json",
+   "commit": "2e23f52",
+   "sha256": "e4b564f11b5b28bb927ff2bbc003e237d0ce3779d1acab0631eb5893f3ebcc5b"
+  },
+  {
+   "id": "PROTOCOL_SHORTLIST",
+   "path": "research/desk/PROTOCOL_SHORTLIST.md",
+   "commit": "f624184",
+   "sha256": "4012fb71d07fa35d56d870e4bc17b35774cdfda318a7a3b2375bafb33edbe4d8"
+  },
+  {
+   "id": "OWNER_APPROVAL_P0",
+   "path": "research/studies/OWNER_APPROVAL_P0_2026-11-06.md",
+   "commit": "ea91152",
+   "sha256": "fd759c4af25f464b9297d3aecec74257b70dda01fe49d8d111d87c7ba4a3f03f"
+  },
+  {
+   "id": "FACTORY_MIGRATION_P1",
+   "path": "research/studies/FACTORY_MIGRATION_P1_2026-11-06.md",
+   "commit": "6b69703",
+   "sha256": "2fbb81f014435ebb69e4c6b0e428e7569335477edcb1732456d5e308b1fb08c9"
+  },
+  {
+   "id": "LIQPROXY1",
+   "path": "research/desk/protocols/LIQPROXY1_v1.md",
+   "commit": "f624184",
+   "sha256": "f882d1e253e435498944eb213534bc27ffd13f3aef91eca4f0bf53a1fa9a1f01"
+  },
+  {
+   "id": "FUNDFRAG1",
+   "path": "research/desk/protocols/FUNDFRAG1_v1.md",
+   "commit": "f624184",
+   "sha256": "840ec54ec45eaa234bb1c568aba0ce36a13a530f0005a9f716a547f8779eaf0d"
+  }
+ ],
+ "gates": [
+  {
+   "id": "G01_HIST_1114",
+   "protects": "no historical market-data access (network query or reading historical files already in the cache) before 2026-11-14 00:00 UTC; the owner's rule",
+   "source": [
+    {
+     "file": "research/PROTOCOL_V3.md",
+     "loc": "amendment 24a, line 3575 (the user's rule 'ingen historiske forespørgsler før 2026-11-14' applies to everything else)"
+    },
+    {
+     "file": "research/PROTOCOL_V3.md",
+     "loc": "amendment 10b point 2, lines 867-869; amendment 38 B point 2, lines 4263-4266"
+    },
+    {
+     "file": "research/desk/stream_registry.json",
+     "loc": "historical_archive_agent, lines 597-614 (BLOCKED_UNTIL_2026-11-14)"
+    },
+    {
+     "file": "research/tools/n6_funding.py",
+     "loc": "EARLIEST line 23, refusal line 154"
+    },
+    {
+     "file": "research/tools/n4_kimchi.py",
+     "loc": "EARLIEST line 28, refusal line 105"
+    },
+    {
+     "file": "research/reviews/INBOX.md",
+     "loc": "reply to order 49 P1, lines 100-110 ('Ingen datakald før tilladt tid')"
+    }
+   ],
+   "earliest_utc": "2026-11-14T00:00:00Z",
+   "kind": "date+lock",
+   "status_at_as_of": "OPENS_AT",
+   "opens_by": "date AND, per study, its lock commit (A_n6, B_n4) or its committed pre-data calibration spec with the owner's acknowledgement (F2); the date alone opens nothing",
+   "required_flags": [],
+   "studies": [
+    "A_n6",
+    "B_n4",
+    "F2",
+    "C1"
+   ],
+   "actions_at_opening": [
+    "check UTC time (date -u) before anything",
+    "commit lock A (A_n6) and lock B (B_n4) before any byte of their data is read",
+    "write the data identity manifest (file names, local sha256 marked POST_HOC_IDENTITY, host .CHECKSUM marked CHECKSUM_SAME_SOURCE) and commit it before parsing any file",
+    "fetch only from data.binance.vision through the lab's download path, at most 2 concurrent downloads, absent_404.json respected",
+    "discard every row outside explore0 at ingest; never open a 2024 or 2025+ file"
+   ]
+  },
+  {
+   "id": "G02_EXPLORE0_ONLY",
+   "protects": "screenings A/B and the F2 calibration read only explore0 = 2020-03-01..2021-12-31; rows outside are discarded at ingest",
+   "source": [
+    {
+     "file": "research/PROTOCOL_V3.md",
+     "loc": "amendment 10c point 1, line 885"
+    },
+    {
+     "file": "research/studies/MISSION27_3_2026-11-02.md",
+     "loc": "point 6b item 1 (line 299), point 6c item 1 (line 346)"
+    },
+    {
+     "file": "research/PROTOCOL_V3.md",
+     "loc": "amendment 38 B point 2, line 4266"
+    },
+    {
+     "file": "research/studies/FACTORY_P2_PROTOCOLS_2026-11-06.md",
+     "loc": "F2 'Vindue', line 107"
+    }
+   ],
+   "earliest_utc": null,
+   "kind": "constraint",
+   "status_at_as_of": "OPEN",
+   "opens_by": "always applies",
+   "required_flags": [],
+   "studies": [
+    "A_n6",
+    "B_n4",
+    "F2",
+    "C1"
+   ],
+   "actions_at_opening": [
+    "filter by file name (month) before opening; filter rows by open_time at ingest; log the discarded row count"
+   ]
+  },
+  {
+   "id": "G03_HOLDOUT_2024",
+   "protects": "the sealed final test 2024-01-01..2024-12-31 (incl. news/1 backfill rows published >= 2024-01-01)",
+   "source": [
+    {
+     "file": "research/PROTOCOL_V3.md",
+     "loc": "section 2 'Vinduer', lines 28-35"
+    },
+    {
+     "file": "research/PROTOCOL_V3.md",
+     "loc": "amendment 9 point 1, line 702"
+    },
+    {
+     "file": "research/data/QUARANTINE.json",
+     "loc": "entry news-backfill-2024plus-exposure"
+    }
+   ],
+   "earliest_utc": null,
+   "kind": "never",
+   "status_at_as_of": "CLOSED",
+   "opens_by": "never inside this horizon (only a separate human approval, once, outside these studies)",
+   "required_flags": [],
+   "studies": [
+    "A_n6",
+    "B_n4",
+    "F2",
+    "C1",
+    "F3",
+    "HFC1",
+    "STRAKS",
+    "PAIRS",
+    "S1"
+   ],
+   "actions_at_opening": []
+  },
+  {
+   "id": "G04_RESERVED_2025PLUS",
+   "protects": "archive data from 2025-01-01 onward is never read (also not as estimation input for forward forecasts)",
+   "source": [
+    {
+     "file": "research/PROTOCOL_V3.md",
+     "loc": "section 2 'Vinduer', line 35 ('Reserveret 2025-01-01 -> Læses aldrig')"
+    }
+   ],
+   "earliest_utc": null,
+   "kind": "never",
+   "status_at_as_of": "CLOSED",
+   "opens_by": "never; the lab's own forward observations since 2026-10-27 are a separate gate (G05)",
+   "required_flags": [],
+   "studies": [
+    "F2",
+    "C1",
+    "F3",
+    "A_n6",
+    "B_n4"
+   ],
+   "actions_at_opening": []
+  },
+  {
+   "id": "G05_OWN_FORWARD_OBS",
+   "protects": "own forward observations (lab.db rows >= 2026-10-27) may be read for operations and data quality, never to calibrate, select or test a new hypothesis before its locked protocol and window",
+   "source": [
+    {
+     "file": "research/reviews/INBOX.md",
+     "loc": "reply to order 50 + order 51, line 49 ('Databeslutning')"
+    }
+   ],
+   "earliest_utc": null,
+   "kind": "constraint",
+   "status_at_as_of": "OPEN",
+   "opens_by": "always applies",
+   "required_flags": [],
+   "studies": [
+    "HFC1",
+    "STRAKS",
+    "PAIRS",
+    "S1",
+    "C1"
+   ],
+   "actions_at_opening": [
+    "read-only, rows >= 2026-10-27, aggregate where possible"
+   ]
+  },
+  {
+   "id": "G06_NEWS_GATE",
+   "protects": "research tools read news/1 only through gates.news_rows (backfill >= 2024 never reaches Python)",
+   "source": [
+    {
+     "file": "research/PROTOCOL_V3.md",
+     "loc": "amendment 40 point 4, lines 4290-4307"
+    },
+    {
+     "file": "research/tools/gates.py",
+     "loc": "news_rows"
+    },
+    {
+     "file": "tests/test_research_gates.py",
+     "loc": "NewsGate"
+    }
+   ],
+   "earliest_utc": null,
+   "kind": "constraint",
+   "status_at_as_of": "OPEN",
+   "opens_by": "always applies",
+   "required_flags": [],
+   "studies": [
+    "A_n6",
+    "B_n4",
+    "F2",
+    "C1",
+    "HFC1",
+    "STRAKS",
+    "PAIRS",
+    "S1",
+    "F3"
+   ],
+   "actions_at_opening": []
+  },
+  {
+   "id": "G07_QUARANTINE",
+   "protects": "files and datasets from documented deviations are never used for a lock, universe or analysis (incl. the 2026-11-02 Upbit pair file)",
+   "source": [
+    {
+     "file": "research/PROTOCOL_V3.md",
+     "loc": "amendment 40 points 1-2, 5"
+    },
+    {
+     "file": "research/data/QUARANTINE.json",
+     "loc": "entries upbit-pairs-2026-11-02, upbit-raw-2026-11-02, news-backfill-2024plus-exposure"
+    }
+   ],
+   "earliest_utc": null,
+   "kind": "never",
+   "status_at_as_of": "CLOSED",
+   "opens_by": "never",
+   "required_flags": [],
+   "studies": [
+    "B_n4",
+    "A_n6",
+    "F2",
+    "C1"
+   ],
+   "actions_at_opening": []
+  },
+  {
+   "id": "G08_UPBIT_N4",
+   "protects": "Upbit's public API (market/all, candles/days) only for N4's research tool, only after N4's lock and from 2026-11-14, one request at a time, >= 0.2 s apart, explore0 rows only",
+   "source": [
+    {
+     "file": "research/PROTOCOL_V3.md",
+     "loc": "amendment 38 B points 1-4, lines 4258-4270"
+    },
+    {
+     "file": "research/PROTOCOL_V3.md",
+     "loc": "amendment 17h point 1 (host otherwise banned), amendment 40 point 3"
+    },
+    {
+     "file": "tests/test_research_gates.py",
+     "loc": "UpbitHost.test_only_n4_kimchi_names_the_host"
+    }
+   ],
+   "earliest_utc": "2026-11-14T00:00:00Z",
+   "kind": "date+lock",
+   "status_at_as_of": "OPENS_AT",
+   "opens_by": "date AND lock B committed (with point 1 of lock text B resolved by the owner, AMB-18)",
+   "required_flags": [
+    "lock_B_committed"
+   ],
+   "studies": [
+    "B_n4"
+   ],
+   "actions_at_opening": [
+    "one new market/all call after the lock commit (the quarantined pair list is never used)",
+    "candles/days only for explore0 dates, one request at a time, >= 0.2 s apart; rows outside explore0 discarded"
+   ]
+  },
+  {
+   "id": "G09_COINM_1128",
+   "protects": "COIN-M files (cm klines, quarterly contracts) only from 2026-11-28 00:00 UTC and only from data.binance.vision; dapi.binance.com is not an allowed host",
+   "source": [
+    {
+     "file": "research/PROTOCOL_V3.md",
+     "loc": "amendment 8 point 17, lines 647-650"
+    },
+    {
+     "file": "research/PROTOCOL_V3.md",
+     "loc": "amendment 10b point 2, lines 868-869; amendment 10d, lines 1210-1211"
+    },
+    {
+     "file": "research/studies/MISSION27_3_2026-11-02.md",
+     "loc": "point 7a item 1 (line 412), point 7d"
+    },
+    {
+     "file": "research/desk/stream_registry.json",
+     "loc": "hosts.forbidden (dapi.binance.com), coinm_archives BLOCKED_UNTIL_2026-11-28"
+    }
+   ],
+   "earliest_utc": "2026-11-28T00:00:00Z",
+   "kind": "date+lock",
+   "status_at_as_of": "OPENS_AT",
+   "opens_by": "date AND the study's own lock (A_n6_X3: lock A committed on 11-14; F3: its own signed activation)",
+   "required_flags": [],
+   "studies": [
+    "A_n6_X3",
+    "F3"
+   ],
+   "actions_at_opening": [
+    "A_n6_X3: fetch BTCUSD quarterly daily klines for explore0 from data.binance.vision (cm path), same weeks and same outcome M_t as X1/X2, one run",
+    "F3: nothing before its observation unit and activation are approved (G25)"
+   ]
+  },
+  {
+   "id": "G10_FAMILY_NET_1128",
+   "protects": "code for amendment-8 families makes no network request (no HEAD, no download) before 2026-11-28 00:00 UTC; forward data for families only after 2026-11-27",
+   "source": [
+    {
+     "file": "research/PROTOCOL_V3.md",
+     "loc": "amendment 8 point 17, line 648; amendment 8 point 7, line 560"
+    },
+    {
+     "file": "research/PROTOCOL_V3.md",
+     "loc": "amendment 9 point 1, lines 699-702"
+    }
+   ],
+   "earliest_utc": "2026-11-28T00:00:00Z",
+   "kind": "date",
+   "status_at_as_of": "OPENS_AT",
+   "opens_by": "date; whether the factory drafts F2/F3 count as amendment-8 family code is AMB-27 (fail-closed: F2 needs no network, its 1h files are already cached)",
+   "required_flags": [],
+   "studies": [
+    "F3"
+   ],
+   "actions_at_opening": []
+  },
+  {
+   "id": "G11_RESTART_1128",
+   "protects": "no planned host reboot and no system update up to and including 2026-11-27; the pm_lp collector is never stopped on purpose",
+   "source": [
+    {
+     "file": "research/LINUX_DRIFT.md",
+     "loc": "rule B, lines 198-199 ('til og med 2026-11-27')"
+    },
+    {
+     "file": "research/PROTOCOL_V3.md",
+     "loc": "amendment 10b point 5, lines 875-876 ('før 2026-11-28')"
+    },
+    {
+     "file": "research/LINUX_DRIFT.md",
+     "loc": "lines 233 and 295 (disable the pm_lp unit after 2026-11-27, before holdout)"
+    }
+   ],
+   "earliest_utc": "2026-11-28T00:00:00Z",
+   "kind": "date+owner",
+   "status_at_as_of": "OPENS_AT",
+   "opens_by": "date AND the owner's own request (reboot is on the owner's standing list)",
+   "required_flags": [
+    "owner_requests_restart"
+   ],
+   "studies": [
+    "OPS"
+   ],
+   "actions_at_opening": [
+    "pm_lp's own steps first (LINUX_DRIFT line 233/295); after any restart: collector first, then deploy-check"
+   ]
+  },
+  {
+   "id": "G12_PMLP",
+   "protects": "pm_lp, its collector, watcher and systemd unit are never touched by these studies",
+   "source": [
+    {
+     "file": "research/LINUX_DRIFT.md",
+     "loc": "'pm_lp: beskyttelse af holdout' (rules A-C)"
+    },
+    {
+     "file": "research/reviews/INBOX.md",
+     "loc": "order 49 fixed limits, line 153"
+    }
+   ],
+   "earliest_utc": null,
+   "kind": "never",
+   "status_at_as_of": "CLOSED",
+   "opens_by": "never for these studies",
+   "required_flags": [],
+   "studies": [
+    "A_n6",
+    "B_n4",
+    "F2",
+    "C1",
+    "HFC1",
+    "STRAKS",
+    "PAIRS",
+    "S1",
+    "F3",
+    "OPS"
+   ],
+   "actions_at_opening": []
+  },
+  {
+   "id": "G13_LOCK_A",
+   "protects": "lock text A (MISSION27_3 6b with the 7d corrections) is committed as '## Ændring 44 ... metode n6' before any n6 data is read",
+   "source": [
+    {
+     "file": "research/studies/MISSION27_3_2026-11-02.md",
+     "loc": "point 6b (line 295: 'før første explore0-læsning, tidligst 11-14'), point 7d (lines 439-450)"
+    },
+    {
+     "file": "research/studies/READINESS_2026-11-14.md",
+     "loc": "section 6"
+    },
+    {
+     "file": "research/tools/n6_funding.py",
+     "loc": "locked() regex line 145, main() line 154"
+    }
+   ],
+   "earliest_utc": "2026-11-14T00:00:00Z",
+   "kind": "date+owner",
+   "status_at_as_of": "OPENS_AT",
+   "opens_by": "date AND the owner's explicit confirmation of the lock (director: no automatic lock; the 2026-11-04 'gør alt' is a general instruction, AMB-29)",
+   "required_flags": [
+    "owner_confirms_lock_A"
+   ],
+   "studies": [
+    "A_n6",
+    "A_n6_X3"
+   ],
+   "actions_at_opening": [
+    "insert 6b and 7d verbatim as the next free amendment with a level-2 heading naming 'metode n6'; commit; then the loader"
+   ]
+  },
+  {
+   "id": "G14_LOCK_B",
+   "protects": "lock text B is committed as '## Ændring 45 ... metode n4' before any n4 data is read",
+   "source": [
+    {
+     "file": "research/studies/MISSION27_3_2026-11-02.md",
+     "loc": "point 6c (line 342), 7d, 10"
+    },
+    {
+     "file": "research/PROTOCOL_V3.md",
+     "loc": "amendment 38 B point 4 (line 4269-4270), amendment 40 point 5"
+    },
+    {
+     "file": "research/tools/n4_kimchi.py",
+     "loc": "locked() regex line 96, main() line 105"
+    }
+   ],
+   "earliest_utc": "2026-11-14T00:00:00Z",
+   "kind": "date+owner",
+   "status_at_as_of": "OPENS_AT",
+   "opens_by": "date AND the owner's explicit confirmation AND the owner's resolution of point 1 (the text names the quarantined pair list, AMB-18)",
+   "required_flags": [
+    "owner_confirms_lock_B",
+    "owner_resolves_B_point1"
+   ],
+   "studies": [
+    "B_n4"
+   ],
+   "actions_at_opening": [
+    "only after the owner's replacement wording for point 1 exists: insert 6c (+7d, 10) with that wording; commit; then market/all"
+   ]
+  },
+  {
+   "id": "G15_OWNER_SIGNATURE",
+   "protects": "a new template / activation needs a verified owner signature; historic template approvals are UNVERIFIED_ORIGIN and never reused",
+   "source": [
+    {
+     "file": "research/studies/OWNER_APPROVAL_P0_2026-11-06.md",
+     "loc": "'Mekanisme' lines 14-35"
+    },
+    {
+     "file": "research/studies/FACTORY_MIGRATION_P1_2026-11-06.md",
+     "loc": "table line 25-26 (UNVERIFIED_ORIGIN)"
+    },
+    {
+     "file": "research/reviews/INBOX.md",
+     "loc": "reply to order 49 P1, lines 100-110"
+    }
+   ],
+   "earliest_utc": null,
+   "kind": "owner",
+   "status_at_as_of": "CLOSED",
+   "opens_by": "owner actions 1-3 of FACTORY_SECURITY_P1 (key off this machine, published fingerprint, signed root), then a signed statement per template",
+   "required_flags": [
+    "owner_key_registered"
+   ],
+   "studies": [
+    "F2",
+    "C1",
+    "F3",
+    "LIQPROXY1",
+    "FUNDFRAG1"
+   ],
+   "actions_at_opening": []
+  },
+  {
+   "id": "G16_F2_WINDOW",
+   "protects": "F2 confirmation needs a separately approved evaluation window with sufficient power; the explore0 calibration is never validation",
+   "source": [
+    {
+     "file": "research/studies/FACTORY_P2_PROTOCOLS_2026-11-06.md",
+     "loc": "director's decisions, lines 198-200; F2 'Vindue' line 107"
+    }
+   ],
+   "earliest_utc": "2026-11-14T00:00:00Z",
+   "kind": "owner",
+   "status_at_as_of": "CLOSED",
+   "opens_by": "owner-signed approval of the window and protocol (plus lock amendment) after the calibration; never before 2026-11-14",
+   "required_flags": [
+    "f2_window_approved"
+   ],
+   "studies": [
+    "F2"
+   ],
+   "actions_at_opening": []
+  },
+  {
+   "id": "G17_F2_CALIBRATION",
+   "protects": "the explore0 calibration may only estimate effect size and variance (sd(d), autocorrelation, cross-section correlation); it is development information, never independent validation, and may not change model, universe or benchmark",
+   "source": [
+    {
+     "file": "research/studies/FACTORY_P2_PROTOCOLS_2026-11-06.md",
+     "loc": "F2 'Vindue' lines 107-109, 'Vurdering' lines 119-122, decisions lines 198-200"
+    },
+    {
+     "file": "research/reviews/INBOX.md",
+     "loc": "reply to order 51 P1, lines 35-40"
+    }
+   ],
+   "earliest_utc": "2026-11-14T00:00:00Z",
+   "kind": "date+owner",
+   "status_at_as_of": "OPENS_AT",
+   "opens_by": "date AND a committed pre-data calibration spec AND the owner's acknowledgement (who authorises the calibration is not written, AMB-09; fail-closed)",
+   "required_flags": [
+    "owner_ack_f2_calibration",
+    "f2_calibration_spec_committed"
+   ],
+   "studies": [
+    "F2",
+    "C1"
+   ],
+   "actions_at_opening": [
+    "write and commit the calibration spec (estimands, RV convention, coverage rule, warm-up) before any file is parsed"
+   ]
+  },
+  {
+   "id": "G18_C1_ACTIVATION",
+   "protects": "C1 writes no real forecast until a dated PROTOCOL_V3 amendment activates it with a frozen config (v2 for 1h klines), an approved stream and external head anchoring",
+   "source": [
+    {
+     "file": "research/desk/C1_FORECAST_DESIGN.md",
+     "loc": "section 10"
+    },
+    {
+     "file": "research/desk/stream_registry.json",
+     "loc": "fwd_vol_forecast_register, lines 744-768 (PROPOSED_NEEDS_SEPARATE_APPROVAL)"
+    },
+    {
+     "file": "research/reviews/INBOX.md",
+     "loc": "reply to order 51 P1, lines 35-40 (decision (a), no automatic activation)"
+    }
+   ],
+   "earliest_utc": "2026-11-14T00:00:00Z",
+   "kind": "owner",
+   "status_at_as_of": "CLOSED",
+   "opens_by": "owner-signed activation + amendment + config v2 + forward kline stream approval (G19) + external anchor",
+   "required_flags": [
+    "owner_signed_c1_activation",
+    "c1_amendment_committed",
+    "c1_config_v2_frozen",
+    "external_anchor_ready"
+   ],
+   "studies": [
+    "C1"
+   ],
+   "actions_at_opening": []
+  },
+  {
+   "id": "G19_FWD_KLINE_SOURCE",
+   "protects": "there is no approved forward 1h-kline stream; a fapi 1h-kline collector was rejected as a duplicate and daily archive files arrive after the day",
+   "source": [
+    {
+     "file": "research/desk/stream_registry.json",
+     "loc": "dup_universe_1h_klines, lines 1034-1045 (REJECTED_DUPLICATE)"
+    },
+    {
+     "file": "research/desk/C1_FORECAST_DESIGN.md",
+     "loc": "section 2 (census was the only forward source)"
+    }
+   ],
+   "earliest_utc": null,
+   "kind": "owner",
+   "status_at_as_of": "CLOSED",
+   "opens_by": "a separately approved stream (owner/director) naming host, endpoint and cadence; not decided here",
+   "required_flags": [
+    "fwd_kline_stream_approved"
+   ],
+   "studies": [
+    "C1"
+   ],
+   "actions_at_opening": []
+  },
+  {
+   "id": "G20_W0_ALPHA",
+   "protects": "amendment 8's programme wealth W0 = 0.05; fcarry reserved 0.0125; 0.0375 left = 3 families at alpha_F 0.0125; four claimants; no reclassification of hypotheses as measurements",
+   "source": [
+    {
+     "file": "research/PROTOCOL_V3.md",
+     "loc": "amendment 8, lines 613-626 and point 15 lines 628-639"
+    },
+    {
+     "file": "research/studies/FACTORY_REGISTRY.md",
+     "loc": "'Åbne punkter', line 61"
+    },
+    {
+     "file": "research/desk/PROTOCOL_SHORTLIST.md",
+     "loc": "section 6, lines 147-160"
+    },
+    {
+     "file": "research/reviews/INBOX.md",
+     "loc": "order 52 P3 and note, lines 26-31"
+    }
+   ],
+   "earliest_utc": null,
+   "kind": "owner",
+   "status_at_as_of": "CLOSED",
+   "opens_by": "the owner's signed ranking (at most 3 of F2, F3, LIQPROXY1, FUNDFRAG1)",
+   "required_flags": [
+    "owner_signed_alpha_ranking"
+   ],
+   "studies": [
+    "F2",
+    "F3",
+    "LIQPROXY1",
+    "FUNDFRAG1"
+   ],
+   "actions_at_opening": []
+  },
+  {
+   "id": "G21_HFC1_3D",
+   "protects": "the first HFC-1 3 d outcome (cohort 2026-11-04) is computed only after its window [2026-11-05 00:00, 2026-11-08 00:00) has closed",
+   "source": [
+    {
+     "file": "research/studies/HFC1_HIGH_FUNDING_FEASIBILITY_2026-11-04.md",
+     "loc": "'Udfald' lines 30-36, 'Leverancer' lines 38-43, line 65"
+    },
+    {
+     "file": "research/tools/hfc1_daily.py",
+     "loc": "outcomes(), lines 172-180 (t1 = end + 3 d)"
+    },
+    {
+     "file": "research/reviews/INBOX.md",
+     "loc": "order 46 P2 line 332; reply to order 49 P1 line 108"
+    }
+   ],
+   "earliest_utc": "2026-11-08T00:00:00Z",
+   "kind": "date",
+   "status_at_as_of": "OPENS_AT",
+   "opens_by": "date only (read-only lab.db census rows)",
+   "required_flags": [],
+   "studies": [
+    "HFC1"
+   ],
+   "actions_at_opening": [
+    "run after the last 23:xx snapshot has landed (suggested >= 00:35 UTC, the cohort window)",
+    "report all C0 members incl. no spot pair; missing and dropout separately; descriptive only"
+   ]
+  },
+  {
+   "id": "G22_STRAKS_7D",
+   "protects": "the first descriptive straks report covers 7 days from the accounts' start (lane.started 2026-11-05 17:01:51 UTC); fail-closed reading of '2026-11-12 (7 dage)' (AMB-24)",
+   "source": [
+    {
+     "file": "research/PROTOCOL_V3.md",
+     "loc": "amendment 41 point 7 (line 4336), 41a point 4 (line 4358), 41b (lines 4445-4453)"
+    }
+   ],
+   "earliest_utc": "2026-11-12T17:01:51Z",
+   "kind": "date",
+   "status_at_as_of": "OPENS_AT",
+   "opens_by": "date only",
+   "required_flags": [],
+   "studies": [
+    "STRAKS"
+   ],
+   "actions_at_opening": [
+    "read-only report with data cutoff 2026-11-12 17:01:51 UTC, 41b_timing trades with and without"
+   ]
+  },
+  {
+   "id": "G23_PAIRS_1119",
+   "protects": "the pair-book diagnostic report on 2026-11-19; fail-closed reading = 14 x 24 h from lane.started 2026-11-05 20:41:09 UTC (AMB-25)",
+   "source": [
+    {
+     "file": "research/PROTOCOL_V3.md",
+     "loc": "amendment 43 point 7 (line 4442), 43a"
+    }
+   ],
+   "earliest_utc": "2026-11-19T20:41:09Z",
+   "kind": "date",
+   "status_at_as_of": "OPENS_AT",
+   "opens_by": "date only",
+   "required_flags": [],
+   "studies": [
+    "PAIRS"
+   ],
+   "actions_at_opening": [
+    "read-only report per pair with exit reason (normal/stop/tid), cutoff 2026-11-19 20:41:09 UTC"
+   ]
+  },
+  {
+   "id": "G24_S1_EVAL",
+   "protects": "S1 is evaluated only after 14 full days from its actual start 2026-11-06 09:55:07 UTC",
+   "source": [
+    {
+     "file": "research/studies/FACTORY_S1_P0_2026-11-06.md",
+     "loc": "'Faktisk start', line 10"
+    },
+    {
+     "file": "research/reviews/INBOX.md",
+     "loc": "order 49 P3 (lines 151-153), reply to order 49 P0 (lines 116-127)"
+    }
+   ],
+   "earliest_utc": "2026-11-20T09:55:07Z",
+   "kind": "date",
+   "status_at_as_of": "OPENS_AT",
+   "opens_by": "date only; few new transitions give INSUFFICIENT_OBSERVATION, never an automatic PASS",
+   "required_flags": [],
+   "studies": [
+    "S1"
+   ],
+   "actions_at_opening": [
+    "one S1 run, then the evaluation report (runs, longest gap, MONITORING_GAP periods, new transitions, unexplained, coverage)"
+   ]
+  },
+  {
+   "id": "G25_F3_DEFERRED",
+   "protects": "F3 is not activated before its observation unit (dependence between coins, expiries, overlapping positions) and the calibration/evaluation split are fixed",
+   "source": [
+    {
+     "file": "research/studies/FACTORY_P2_PROTOCOLS_2026-11-06.md",
+     "loc": "F3 lines 125-185, director's decisions lines 201-205"
+    }
+   ],
+   "earliest_utc": "2026-11-28T00:00:00Z",
+   "kind": "owner",
+   "status_at_as_of": "CLOSED",
+   "opens_by": "date AND owner-signed activation with the observation unit locked",
+   "required_flags": [
+    "owner_signed_f3_template",
+    "f3_observation_unit_locked"
+   ],
+   "studies": [
+    "F3"
+   ],
+   "actions_at_opening": []
+  },
+  {
+   "id": "G26_S2_S3",
+   "protects": "S2 needs a new explicit owner decision and is never activated by the assistant; S3 is not approved",
+   "source": [
+    {
+     "file": "research/studies/FACTORY_MIGRATION_P1_2026-11-06.md",
+     "loc": "director's decisions, line 65"
+    },
+    {
+     "file": "research/reviews/INBOX.md",
+     "loc": "order 49 P3, line 153"
+    }
+   ],
+   "earliest_utc": null,
+   "kind": "never",
+   "status_at_as_of": "CLOSED",
+   "opens_by": "never by the assistant",
+   "required_flags": [],
+   "studies": [
+    "S1"
+   ],
+   "actions_at_opening": []
+  },
+  {
+   "id": "G27_NO_REAL_MONEY",
+   "protects": "research and paper only; no real orders, keys or accounts",
+   "source": [
+    {
+     "file": "research/reviews/INBOX.md",
+     "loc": "order 50 standing limits, lines 92-96; order 49 fixed limits, line 152"
+    }
+   ],
+   "earliest_utc": null,
+   "kind": "never",
+   "status_at_as_of": "CLOSED",
+   "opens_by": "never",
+   "required_flags": [],
+   "studies": [
+    "A_n6",
+    "B_n4",
+    "F2",
+    "C1",
+    "HFC1",
+    "STRAKS",
+    "PAIRS",
+    "S1",
+    "F3"
+   ],
+   "actions_at_opening": []
+  },
+  {
+   "id": "G28_NO_ASSISTANT_SIGNATURE",
+   "protects": "the assistant never signs, never generates or uses the owner's key, never runs approve-template, never locks automatically",
+   "source": [
+    {
+     "file": "research/reviews/INBOX.md",
+     "loc": "order 52 P1 (line 20: 'ingen automatisk lås/signatur'); order 49 P1 (line 145)"
+    },
+    {
+     "file": "research/studies/FACTORY_SECURITY_P1_2026-11-06.md",
+     "loc": "lines 19-28"
+    }
+   ],
+   "earliest_utc": null,
+   "kind": "never",
+   "status_at_as_of": "CLOSED",
+   "opens_by": "never",
+   "required_flags": [],
+   "studies": [
+    "A_n6",
+    "B_n4",
+    "F2",
+    "C1",
+    "F3",
+    "LIQPROXY1",
+    "FUNDFRAG1"
+   ],
+   "actions_at_opening": []
+  },
+  {
+   "id": "G29_LABDB_RO",
+   "protects": "the production lab.db is opened only as file:...?mode=ro with PRAGMA query_only=ON",
+   "source": [
+    {
+     "file": "research/studies/FACTORY_S1_P0_2026-11-06.md",
+     "loc": "access table, 'Læseadgang'"
+    },
+    {
+     "file": "research/tools/hfc1_daily.py",
+     "loc": "DB constant, line 22"
+    }
+   ],
+   "earliest_utc": null,
+   "kind": "constraint",
+   "status_at_as_of": "OPEN",
+   "opens_by": "always applies",
+   "required_flags": [],
+   "studies": [
+    "HFC1",
+    "STRAKS",
+    "PAIRS",
+    "S1",
+    "C1"
+   ],
+   "actions_at_opening": []
+  }
+ ],
+ "actions": [
+  {
+   "id": "historical_fetch",
+   "description": "historical market data in explore0 (network fetch from data.binance.vision or reading cached historical files)",
+   "gates": [
+    "G01_HIST_1114"
+   ],
+   "studies": {
+    "A_n6": [
+     "owner_confirms_lock_A",
+     "lock_A_committed"
+    ],
+    "B_n4": [
+     "owner_confirms_lock_B",
+     "owner_resolves_B_point1",
+     "lock_B_committed"
+    ],
+    "F2": [
+     "owner_ack_f2_calibration",
+     "f2_calibration_spec_committed"
+    ]
+   },
+   "constraints": [
+    "G02_EXPLORE0_ONLY",
+    "G03_HOLDOUT_2024",
+    "G04_RESERVED_2025PLUS"
+   ]
+  },
+  {
+   "id": "historical_fetch_train3_validation3",
+   "description": "F2 confirmation data 2022-01..2023-12",
+   "gates": [
+    "G01_HIST_1114",
+    "G15_OWNER_SIGNATURE",
+    "G16_F2_WINDOW"
+   ],
+   "studies": {
+    "F2": [
+     "owner_key_registered",
+     "owner_signed_f2_template",
+     "f2_window_approved",
+     "f2_lock_amendment_committed"
+    ]
+   },
+   "constraints": [
+    "G03_HOLDOUT_2024",
+    "G04_RESERVED_2025PLUS"
+   ]
+  },
+  {
+   "id": "upbit_fetch",
+   "description": "N4's market/all and candles/days",
+   "gates": [
+    "G01_HIST_1114",
+    "G08_UPBIT_N4",
+    "G14_LOCK_B"
+   ],
+   "studies": {
+    "B_n4": [
+     "owner_confirms_lock_B",
+     "owner_resolves_B_point1",
+     "lock_B_committed"
+    ]
+   },
+   "constraints": [
+    "G02_EXPLORE0_ONLY"
+   ]
+  },
+  {
+   "id": "coinm_fetch",
+   "description": "COIN-M quarterly daily klines from data.binance.vision",
+   "gates": [
+    "G09_COINM_1128"
+   ],
+   "studies": {
+    "A_n6_X3": [
+     "owner_confirms_lock_A",
+     "lock_A_committed"
+    ],
+    "F3": [
+     "owner_key_registered",
+     "owner_signed_f3_template",
+     "f3_observation_unit_locked",
+     "f3_lock_amendment_committed"
+    ]
+   },
+   "constraints": [
+    "G03_HOLDOUT_2024",
+    "G04_RESERVED_2025PLUS"
+   ]
+  },
+  {
+   "id": "lock_commit_A",
+   "description": "commit lock text A as the next amendment (method n6)",
+   "gates": [
+    "G13_LOCK_A"
+   ],
+   "studies": {
+    "A_n6": [
+     "owner_confirms_lock_A"
+    ]
+   },
+   "constraints": []
+  },
+  {
+   "id": "lock_commit_B",
+   "description": "commit lock text B as the next amendment (method n4)",
+   "gates": [
+    "G14_LOCK_B"
+   ],
+   "studies": {
+    "B_n4": [
+     "owner_confirms_lock_B",
+     "owner_resolves_B_point1"
+    ]
+   },
+   "constraints": []
+  },
+  {
+   "id": "run_n6_x1x2",
+   "description": "one run of n6 X1/X2",
+   "gates": [
+    "G01_HIST_1114",
+    "G13_LOCK_A"
+   ],
+   "studies": {
+    "A_n6": [
+     "owner_confirms_lock_A",
+     "lock_A_committed",
+     "loader_tests_green"
+    ]
+   },
+   "constraints": [
+    "G02_EXPLORE0_ONLY"
+   ]
+  },
+  {
+   "id": "run_n6_x3",
+   "description": "one run of n6 X3 on the same weeks",
+   "gates": [
+    "G09_COINM_1128",
+    "G13_LOCK_A"
+   ],
+   "studies": {
+    "A_n6_X3": [
+     "owner_confirms_lock_A",
+     "lock_A_committed",
+     "loader_tests_green"
+    ]
+   },
+   "constraints": [
+    "G02_EXPLORE0_ONLY"
+   ]
+  },
+  {
+   "id": "run_n4",
+   "description": "one run of n4",
+   "gates": [
+    "G01_HIST_1114",
+    "G08_UPBIT_N4",
+    "G14_LOCK_B"
+   ],
+   "studies": {
+    "B_n4": [
+     "owner_confirms_lock_B",
+     "owner_resolves_B_point1",
+     "lock_B_committed",
+     "loader_tests_green"
+    ]
+   },
+   "constraints": [
+    "G02_EXPLORE0_ONLY"
+   ]
+  },
+  {
+   "id": "f2_calibration_run",
+   "description": "one explore0 calibration run (effect size and variance only)",
+   "gates": [
+    "G01_HIST_1114",
+    "G17_F2_CALIBRATION"
+   ],
+   "studies": {
+    "F2": [
+     "owner_ack_f2_calibration",
+     "f2_calibration_spec_committed",
+     "loader_tests_green"
+    ]
+   },
+   "constraints": [
+    "G02_EXPLORE0_ONLY"
+   ]
+  },
+  {
+   "id": "c1_activate",
+   "description": "activate C1 as an observation stream",
+   "gates": [
+    "G18_C1_ACTIVATION",
+    "G19_FWD_KLINE_SOURCE",
+    "G15_OWNER_SIGNATURE"
+   ],
+   "studies": {
+    "C1": [
+     "owner_key_registered",
+     "owner_signed_c1_activation",
+     "c1_amendment_committed",
+     "c1_config_v2_frozen",
+     "fwd_kline_stream_approved",
+     "external_anchor_ready"
+    ]
+   },
+   "constraints": []
+  },
+  {
+   "id": "c1_write_real_forecast",
+   "description": "append a real (non-synthetic) forecast to the C1 journal",
+   "gates": [
+    "G18_C1_ACTIVATION",
+    "G19_FWD_KLINE_SOURCE",
+    "G15_OWNER_SIGNATURE"
+   ],
+   "studies": {
+    "C1": [
+     "owner_key_registered",
+     "owner_signed_c1_activation",
+     "c1_amendment_committed",
+     "c1_config_v2_frozen",
+     "fwd_kline_stream_approved",
+     "external_anchor_ready",
+     "c1_active"
+    ]
+   },
+   "constraints": []
+  },
+  {
+   "id": "alpha_charge_w0",
+   "description": "charge alpha_F 0.0125 from W0",
+   "gates": [
+    "G20_W0_ALPHA",
+    "G15_OWNER_SIGNATURE"
+   ],
+   "studies": {
+    "F2": [
+     "owner_key_registered",
+     "owner_signed_alpha_ranking",
+     "w0_rank_includes_F2"
+    ],
+    "F3": [
+     "owner_key_registered",
+     "owner_signed_alpha_ranking",
+     "w0_rank_includes_F3"
+    ],
+    "LIQPROXY1": [
+     "owner_key_registered",
+     "owner_signed_alpha_ranking",
+     "w0_rank_includes_LIQPROXY1"
+    ],
+    "FUNDFRAG1": [
+     "owner_key_registered",
+     "owner_signed_alpha_ranking",
+     "w0_rank_includes_FUNDFRAG1"
+    ]
+   },
+   "constraints": []
+  },
+  {
+   "id": "f3_activate",
+   "description": "activate F3",
+   "gates": [
+    "G25_F3_DEFERRED",
+    "G09_COINM_1128",
+    "G15_OWNER_SIGNATURE"
+   ],
+   "studies": {
+    "F3": [
+     "owner_key_registered",
+     "owner_signed_f3_template",
+     "f3_observation_unit_locked",
+     "f3_lock_amendment_committed"
+    ]
+   },
+   "constraints": []
+  },
+  {
+   "id": "hfc1_report_3d",
+   "description": "read-only 3 d outcome report of cohort 2026-11-04",
+   "gates": [
+    "G21_HFC1_3D"
+   ],
+   "studies": {
+    "HFC1": []
+   },
+   "constraints": [
+    "G05_OWN_FORWARD_OBS",
+    "G29_LABDB_RO"
+   ]
+  },
+  {
+   "id": "straks_report_7d",
+   "description": "read-only first straks report",
+   "gates": [
+    "G22_STRAKS_7D"
+   ],
+   "studies": {
+    "STRAKS": []
+   },
+   "constraints": [
+    "G05_OWN_FORWARD_OBS",
+    "G29_LABDB_RO"
+   ]
+  },
+  {
+   "id": "pairs_report_diag",
+   "description": "read-only pair-book diagnostic report",
+   "gates": [
+    "G23_PAIRS_1119"
+   ],
+   "studies": {
+    "PAIRS": []
+   },
+   "constraints": [
+    "G05_OWN_FORWARD_OBS",
+    "G29_LABDB_RO"
+   ]
+  },
+  {
+   "id": "s1_evaluate",
+   "description": "S1 evaluation report",
+   "gates": [
+    "G24_S1_EVAL"
+   ],
+   "studies": {
+    "S1": []
+   },
+   "constraints": [
+    "G05_OWN_FORWARD_OBS",
+    "G29_LABDB_RO"
+   ]
+  },
+  {
+   "id": "host_restart",
+   "description": "planned reboot of the host",
+   "gates": [
+    "G11_RESTART_1128"
+   ],
+   "studies": {
+    "OPS": [
+     "owner_requests_restart"
+    ]
+   },
+   "constraints": []
+  },
+  {
+   "id": "system_update",
+   "description": "planned system update",
+   "gates": [
+    "G11_RESTART_1128"
+   ],
+   "studies": {
+    "OPS": [
+     "owner_requests_restart"
+    ]
+   },
+   "constraints": []
+  },
+  {
+   "id": "read_2024_holdout",
+   "description": "any read of 2024 data",
+   "gates": [
+    "G03_HOLDOUT_2024"
+   ],
+   "studies": {},
+   "constraints": []
+  },
+  {
+   "id": "read_reserved_2025plus",
+   "description": "any read of archive data from 2025-01-01",
+   "gates": [
+    "G04_RESERVED_2025PLUS"
+   ],
+   "studies": {},
+   "constraints": []
+  },
+  {
+   "id": "use_quarantined_file",
+   "description": "use a quarantined file for a lock, universe or analysis",
+   "gates": [
+    "G07_QUARANTINE"
+   ],
+   "studies": {},
+   "constraints": []
+  },
+  {
+   "id": "pm_lp_change",
+   "description": "touch pm_lp, its collector, watcher or unit",
+   "gates": [
+    "G12_PMLP"
+   ],
+   "studies": {},
+   "constraints": []
+  },
+  {
+   "id": "real_money_order",
+   "description": "any real order or account action",
+   "gates": [
+    "G27_NO_REAL_MONEY"
+   ],
+   "studies": {},
+   "constraints": []
+  },
+  {
+   "id": "s2_activate",
+   "description": "activate S2 (advisory calls inside the lab)",
+   "gates": [
+    "G26_S2_S3"
+   ],
+   "studies": {},
+   "constraints": []
+  },
+  {
+   "id": "assistant_sign_or_approve",
+   "description": "the assistant signs, runs approve-template or locks without an owner action",
+   "gates": [
+    "G28_NO_ASSISTANT_SIGNATURE"
+   ],
+   "studies": {},
+   "constraints": []
+  }
+ ],
+ "ambiguities_ref": "AMB-01..AMB-29 in research/desk/NOV14_READINESS.md section 11",
+ "rule_actions": "An action is allowed only if every gate in 'gates' is OPEN for the given flags, the study is listed and the study's flags are present. 'constraints' are prohibitions and rules the allowed action must obey (they are listed, not passed). An action with no studies is a prohibited action: its 'never' gate blocks it always."
+}
