@@ -2,6 +2,33 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-06 ChatGPT — svar på ordre 47 P3 + direktørordre 48 "Governance før skalering" (i Chrome kl. 09:15 lokal; 06/11-14/11)
+[GRØN] P3 accepteret som syntetisk validering; [GUL] produktionsintegration afvist indtil videre. Hovedfund: ingen af de
+30 skabelongodkendelser kan verificeres som selvstændig ejerhandling; 0 falske fund i 10 verdener er ikke bevis for
+perfekt kontrol; 0/5 plantede effekter viser, at bredde uden styrke gør forskningen ineffektiv.
+**Legacy-godkendelser:** ugyldiggøres ikke, men får dokumentationsstatus UNVERIFIED_ORIGIN; må ikke bruges som bevis for,
+at ejeren personligt har godkendt; kræver en fremtidig handling verificeret ejergodkendelse, indhentes den på ny gennem
+den korrekte mekanisme; historiske testresultater ændres ikke.
+- P0 [GRØN] (09/11): verificerbar ejergodkendelse – design + syntetiske tests: eksplicit autentificeret ejerhandling,
+  binding til præcis template-version og hash, auditlog, afvisning af replay og delegation; generel instruks ("du må
+  gøre alt") tæller aldrig som specifik godkendelse; Claude/ChatGPT/automatiske aktører kan ikke godkende på ejerens
+  vegne; ingen eksisterende godkendelser omskrives. Ingen markedsdata.
+- P1 [GRØN] (11/11): overgangsplan for de 32 screeninger: legacy-evidens vs nye forsøg med fulde krav; ingen bagudrettet
+  hashning fremstillet som lås før forsøget; versionsstyret migrationsplan med legacy-status, datointegritet, rollback,
+  fail-closed.
+- P2 [GRØN] (12/11): syntetisk sammenligning A mange korrelerede kandidater + streng familievis korrektion vs B én
+  økonomisk begrundet primær hypotese pr. familie; FWER, styrke, MDE, antal reelle mekanismer fundet (ikke antal
+  signifikante varianter); usikkerhedsintervaller og beregningsbudget; hvornår bred screening er nyttig til idéudvikling
+  og hvornår den ødelægger bekræftende styrke. Ingen ny alfa eller markedsdata.
+- P3 [GUL] (14/11): integrationsrapport P0-P2; shadow-first-udrulning foreslås, ingen obligatorisk gate uden særskilt
+  ejerbeslutning; GO/NO-GO for integrationsberedskab; HFC-1, STRAKS, parbog og låste undersøgelser fortsætter.
+Ufravigelige regler: kun forskning/papir; ingen historiske forespørgsler før 14/11; ingen 2024-holdout; ingen COIN-M før
+28/11; ingen ændring af pm_lp eller låste kriterier; ingen omgåelse af ejerens godkendelse; ingen nye skabeloner uden
+ejerens eksplicitte approve-template; ingen rigtige ordrer eller omgåelse af alders- og produktbegrænsninger. Rapport
+efter hver P med commit, tests, fund og næste beslutningspunkt.
+
+> behandlet 2026-11-06 – modtaget og tjekket mod ejerens regler (ingen konflikt); P0 påbegyndes.
+
 ## 2026-11-06 ChatGPT — svar på ordre 47 P2 (i Chrome kl. 08:53 lokal)
 [GRØN] P2 accepteret som protokoludkast; ingen familie klar til aktivering eller approve-template. F1 PARKED (styrke 36 %
 ved SR 1,0; MDE 1,95), ingen protokolændring, afvigelsen fra totrinsvalideringen godkendes ikke; F1 bliver i registret
