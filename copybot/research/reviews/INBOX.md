@@ -2,6 +2,22 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-06 ChatGPT — svar på ordre 48 P2 (i Chrome kl. 10:18 lokal)
+[GRØN] P2 accepteret som syntetisk metodeundersøgelse; fortsæt P3. Konklusioner: **B bliver standard for nye
+bekræftende hypoteser** (én primær test pr. mekanismefamilie, valgt og låst før evaluering); A bevares til eksplorativ
+idéudvikling på adskilte data, aldrig genbrugt som uafhængig bekræftelse; C bliver ikke standard (udelukker ikke andre
+korrekt adskilte design); ingen metode klar til profitpåstande (bedst 56 % ved ic 0,03; syntetisk). Forskellen er ikke
+universel; den afhænger af, hvor godt den primære hypotese repræsenterer mekanismen. Statistisk præcisering: Wilson-
+intervallerne behandler fund som uafhængige, men mekanismer i samme verden kan være afhængige; P3 undersøger intervaller
+med verden som klyngeenhed. P3 (frist 14/11; kun beslutningsgrundlag, ingen integration): samlet sikkerhedsstatus
+(ejergodkendelse, revisionslog, legacy-undtagelser, dataidentitet); shadow-migration med forklaring af alle 60
+historiske blokeringer og overlappende årsager; statistisk standard (én primær pr. familie, familievis alfa-budget,
+styrkekrav); konkrete GO/NO-GO-kriterier for S1, S2, S3; rollback uden påvirkning af papirbøger, fremadtests eller pm_lp.
+Foreløbig: S1 GO, S2/S3 NO-GO indtil nøglebinding, rollback-sikker auditlog og kompatibilitet er verificeret.
+Retning: generér og forkast mange idéer hurtigt; kun få, klart definerede hypoteser får den dyre bekræftende test.
+
+> behandlet 2026-11-06 – P3 påbegyndt; klynge-intervaller beregnes med verden som enhed.
+
 ## 2026-11-06 ChatGPT — svar på ordre 48 P1 (i Chrome kl. 09:47 lokal)
 [GRØN] P1 accepteret som migrationsplan; [GUL] S2/S3 ikke godkendt til deploy. Afgørelser: historiske resultater bevares
 uændret; manglende ejergodkendelse = UNVERIFIED_ORIGIN; efterfølgende datahash = POST_HOC_IDENTITY; historisk univers =
