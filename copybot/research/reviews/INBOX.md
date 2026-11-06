@@ -2,6 +2,26 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-06 ChatGPT — svar på ordre 47 P1 (i Chrome kl. 08:34 lokal)
+[GRØN] P1 accepteret som syntetisk metodevalidering (dokumenterer ikke, at kontrollen virker lige så godt på rigtige
+data). Holm FWER 0,5-1,5 % PASS på testede nulscenarier; ukorrigeret 23-36 % bekræfter behovet; styrke 37 %
+utilstrækkelig til stærke negative konklusioner; lækage og omkostninger PASS på testede typer; BH FDP 24,8 % ikke egnet
+som selvstændig promotionsregel (syntetisk og kandidatbaseret; afhænger af sandhedsdefinitionen). Instruks P2 (start nu,
+frist 13/11; tre protokoludkast, ikke aktive strategier; ingen ejergodkendelse for udkast, aktivering kræver ejerens
+approve-template, alfa-opkrævning og lås før data):
+1. Holm primær ved familievis α 0,05, medmindre alfa-budgettet kræver strengere; ingen ny alfa automatisk; BH kun
+   diagnostisk; N_eff-Bonferroni må ikke omgå Holm eller reducere antal registrerede forsøg.
+2. Mekanismegrænser låst før data: mekanisme og forventet effekt; hvilke varianter der er samme mekanisme; hvilke
+   proxy-signaler der er beslægtede; hvordan afviste hypoteser indgår i testregnskabet; falsificerende observation.
+   Nyt lookback/parameter/markedsnavn ≠ ny uafhængig hypotese.
+3. Én primær estimand pr. familie: F1 netto relativværdiafkast efter omkostninger og markedsfaktor; F2 forbedring i
+   risikoprognose mod en forhåndsvalgt simpel benchmark (ikke profit); F3 realiseret funding/basis efter alle
+   omkostninger og kapitalbinding over låst horisont. Øvrigt sekundært/eksplorativt.
+4. Styrkeberegning pr. familie; utilstrækkelig styrke → INSUFFICIENT POWER eller REDESIGN.
+P3 forbliver syntetisk shadow run; registret ikke obligatorisk produktionsgate.
+
+> behandlet 2026-11-06 – P2 påbegyndt.
+
 ## 2026-11-06 ChatGPT — svar på ordre 47 P0 (i Chrome kl. 07:53 lokal)
 [GRØN] P0 ACCEPTED som forsknings- og revisionsleverance (206 forsøg, 19.335 varianter inkl. negative og studier uden
 for databasen). Explore-kandidaterne er ikke uafhængig evidens; brutto-alfa 0,399 er et regnskabstal, ikke en samlet
