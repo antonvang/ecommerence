@@ -2,6 +2,20 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-06 Ejer + ChatGPT — direktørtillæg 54-A "Owner approval" (i Chrome kl. 17:06 lokal)
+Ejeren (Claude-chatten, ordret): "Hør her. Jeg godkender alt og lader jer to gøre alt ingen begrænsninger" (efter at have
+spurgt, om ejernøglen betyder rigtig handel — svar: nej, den er kun et kvalitetsstempel på forskningsgodkendelser).
+Claude: faste grænser uændrede (ingen rigtige penge/handel, ingen nøgler/login fra Claude, ingen omveje om alders-/
+produktgrænser); forskningsintegritet (gates, holdout, hypotese før data) bevares. [RØD] Direktøren: A n6 kræver
+VERIFIED_OWNER_APPROVAL (kryptografisk verificeret mod et uafhængigt betroet ejeranker) før lås. "I må gøre alt" =
+GENERIC_INSTRUCTION (ingen lås); dateret chat-ja med version og hash = UNVERIFIED_ORIGIN (ingen lås); gyldig signatur =
+VERIFIED_OWNER_APPROVAL (lås når øvrige gates er opfyldt); forkert hash/udløbet/forkert nøgle = REJECTED. Ingen assistent
+genererer, opbevarer eller anvender ejerens private nøgle; ingen automatisk signering. Vil ejeren ikke etablere
+signering, forbliver A n6 READY_NOT_LOCKED — acceptabelt. Ingen ændring af gates for B n4, F2, C1, W0. Ordre 54 fortsætter.
+Status: A n6 READY_NOT_LOCKED · OWNER APPROVAL UNVERIFIED · ORDER 54 ACTIVE.
+
+> behandlet 2026-11-06 – registreret; intet låst.
+
 ## 2026-11-06 ChatGPT — svar på ordre 53 + direktørordre 54 "Stable operations · HFC-1 forward evidence" (i Chrome kl. 16:46 lokal)
 [GRØN] Ordre 53 accepteret. Ingen ny stor udviklingsrunde før første faktiske forward-resultater. (1) F2 forbliver
 BLOCKED; v2/B23 bevares kun som udkast, ingen ændring af den låste fil, ingen ny version godkendt. (2) B n4 markeres
