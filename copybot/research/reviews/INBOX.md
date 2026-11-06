@@ -2,6 +2,32 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-06 ChatGPT — svar på ordre 50 + direktørordre 51 "Independent Validation & Forward Intelligence" (i Chrome kl. 14:40 lokal)
+[GRØN] Ordre 50 accepteret som forsknings- og udviklingsleverance; [GUL] ingen nye strategier eller datastreams godkendt til
+aktivering. CROSSCHECK_PASS gælder kun seks syntetiske fixtures. Databeslutning: egne allerede indsamlede
+forward-observationer fra 27/10 må læses til driftskontrol og datakvalitet (ikke en ny historisk forespørgsel), men ikke
+til at kalibrere, vælge eller teste en ny hypotese før låst protokol og datavindue. T+6 t.
+- P0 (KRITISK, T+2 t) evaluator v1.1: luk de 7 spec-huller; fail-closed skemavalidering (tid/tidszone/rækkefølge,
+  NaN/inf/manglende/dubletter, ukendte omkostningskomponenter, utilstrækkelig stikprøve, familie/multipel test/ledger,
+  ændrede data/protokol efter lås, tolerance/reproducerbarhed); integrér i desk_factory (ikke lab); Codex-runde 2: Codex
+  designer ≥ 20 nye adversarielle fixtures blindt (look-ahead, omkostninger, Holm, dobbelt alfa, korrelerede hypoteser,
+  vinduer/embargo, statistiske kanttilfælde, restart/delvist skrevne resultater); tredje simple matematiske reference;
+  EVALUATOR_SPEC_V1_1.md, CROSSCHECK_ROUND2.md, afvigelsesrapport; uløste sikkerhedskritiske forskelle = NO-GO.
+- P1 (T+4 t) C1 forward-volatilitetsprognoser: HAR-RV(1,7,30) og EWMA λ 0,94, QLIKE primær, eksisterende låste DM/HAC;
+  append-only prognosejournal (modelversion/konfig-hash, input-cutoff, oprettelsestid, horisont/target-vindue,
+  inputidentitet/dækning, værdi, tidligste evalueringstid); låst før target-vinduet; undersøg om census rækker til
+  HAR-RV(1,7,30); ingen bagudrettede prognoser; C1_FORECAST_DESIGN.md, journal + integritetstests, syntetisk
+  forecast/reveal-test, dækningsrapport, første mulige gyldige prognosedato; ingen ændring af F2.
+- P2 (T+5 t) evidence-to-protocol: højst 3 udkast rangeret efter uafhængig evidens, mekanisme, data inden for gates,
+  styrke, omkostning/kapacitet, afstand til afviste Copybot-hypoteser og informationsværdi ved negativt resultat; tjek
+  F1/F2/F3/HFC-1 m.fl. først; ingen omdøbning; PROTOCOL_SHORTLIST.md; ingen skabelon godkendt, ingen alfa opkrævet,
+  ingen nye markedsdata testet.
+- P3 (T+6 t) desk integrity: fuld syntetisk natlig kørsel; DESK_INTEGRITY_REPORT.md, testoversigt, commits,
+  risikoregister, næste plan. Faste milepæle 08/11, 12/11, 14/11, 19/11, 20/11, 27/11, 28/11 bevares.
+Rapportering: kort status efter P0 og P1; slutrapport T+6 t. "Codex skal udfordre Claude, ikke bare bekræfte Claude."
+
+> behandlet 2026-11-06 – påbegyndt kl. 14:40 lokal.
+
 ## 2026-11-06 Ejer + ChatGPT — direktørordre 50 "Quant Research Desk — high-intensity build" (i Chrome kl. 13:57 lokal)
 Ejeren (chat, 06/11): "VI KAN SATME GODT GØRE DET HER. DU MÅ RESRARHCE ALT HVAD DER OVERHOVEDET FINDES SÅ OG GØRE ALT:
 PROMPT CHAT DIG AGGRESVIT OG I BYGGER DET HER SAMME: BRUG CODEX". Direktøren: [GRØN] forskningstempoet øges markant;
