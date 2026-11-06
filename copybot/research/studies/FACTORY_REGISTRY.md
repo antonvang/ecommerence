@@ -56,8 +56,12 @@ m21f's UNTESTABLE nøgle C tælles ikke, CARRY_BASIS' seks omkostningsscenarier 
 ## Åbne punkter
 
 - 18 gamle eksperimenter er testet uden forsøgsrækker; de tæller med ét forsøg hver (nedre grænse).
-- Laboratoriets alpha_ledger har én negativ familierække (`family:fcarry` −0,0125, en modpost ved fordeling af
-  familiebudgettet). Den rapporteres, men fabrikkens ledger tager kun bruttoopkrævninger.
+- `family:fcarry` har to rækker i laboratoriets alpha_ledger: "A8 reserve" +0,0125 og "A8 spend" −0,0125 (19/10).
+  Spend-rækken er en overførsel til instanserne (2 × 0,00625, som ledgeren opkræver), ikke en tilbagebetaling.
+  Ændring 8's programformue W0 = 0,05 har derfor 0,0375 tilbage (tre familier à α_F = 0,0125). (Rettet 06/11: den
+  første rapport viste kun spend-rækken.)
+- Snapshot-tallene ændrer sig, mens laboratoriet kører (explore-banen tilføjer kandidater); hvert snapshot er dateret
+  med sin sha256.
 - Slægter med flere tags navngives efter det alfabetisk første tag; fcarry ligger i slægten `cross_venue_perp_gap`.
 - Nye studier skal fremover registreres i offdb-listen (eller som lab-eksperiment), når de køres; HFC-1's udfald fra
   08/11 tilføjes til den tid.

@@ -262,7 +262,8 @@ def snapshot(con, vocab, offdb):
                 "tested but no trials/alpha rows (legacy): counted as 1 attempt, a lower bound"
             ledger.charge(exp_id, lin, e["created_ts"] or 0, max(n_trials, 1), alpha_pos.get(exp_id, 0.0), "lab", note)
     # family-level alpha rows that are not experiments (e.g. family:fcarry allocations and offsets)
-    family_alpha = {k: round(v, 10) for k, v in sorted({**alpha_pos, **alpha_neg}.items()) if k not in exps}
+    family_alpha = {k: {"reserved": round(alpha_pos.get(k, 0.0), 10), "offset": round(alpha_neg.get(k, 0.0), 10)}
+                    for k in sorted(set(alpha_pos) | set(alpha_neg)) if k not in exps}
     offsets = {k: round(v, 10) for k, v in sorted(alpha_neg.items())}
 
     hyp = {}

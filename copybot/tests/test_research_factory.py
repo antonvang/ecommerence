@@ -185,6 +185,7 @@ class Snapshot(unittest.TestCase):
         self.assertEqual(rep["gaps"]["tested_without_trials_or_alpha (counted as 1 attempt)"], ["E3"])
         self.assertEqual(rep["gaps"]["offdb_unknown_fields"], ["S2"])
         self.assertEqual(rep["alpha_offsets"], {"family:x": -0.01})
+        self.assertEqual(rep["family_alpha_rows"], {"family:x": {"reserved": 0.02, "offset": -0.01}})
         lg = rep["ledger"]
         # E1 3 trials, E2 alpha only (1), E3 legacy (1), m17 screen+measurement (2), explore 3 unique, S1 4
         self.assertEqual(lg["variants"], 3 + 1 + 1 + 2 + 3 + 4)
