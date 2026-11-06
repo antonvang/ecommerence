@@ -1,0 +1,364 @@
+{
+ "alpha": 0.05,
+ "candidates": 51,
+ "days": 500,
+ "families": {
+  "char": 6,
+  "leak": 1,
+  "mom": 24,
+  "rev": 8,
+  "vol": 12
+ },
+ "n_assets": 24,
+ "nw_lags": 5,
+ "q_fdr": 0.1,
+ "rule": "research/reviews/INBOX.md director order 47 P1",
+ "scenarios": {
+  "null_base": {
+   "bh": {
+    "false_selected": 87,
+    "fdp_pooled": 1.0,
+    "fwer": 0.075,
+    "fwer_ci95": [
+     0.045974507057252416,
+     0.12004459797332034
+    ],
+    "selected": 87,
+    "worlds_with_a_true_selection": null
+   },
+   "bonf_neff": {
+    "false_selected": 3,
+    "fdp_pooled": 1.0,
+    "fwer": 0.01,
+    "fwer_ci95": [
+     0.0027466006037749346,
+     0.03572248519617954
+    ],
+    "selected": 3,
+    "worlds_with_a_true_selection": null
+   },
+   "gross_significant_killed_by_costs": 0,
+   "holm": {
+    "false_selected": 3,
+    "fdp_pooled": 1.0,
+    "fwer": 0.01,
+    "fwer_ci95": [
+     0.0027466006037749346,
+     0.03572248519617954
+    ],
+    "selected": 3,
+    "worlds_with_a_true_selection": null
+   },
+   "leak_caught": 1.0,
+   "leak_false_alarm": 0,
+   "n_eff_mean": 44.17196688660093,
+   "per_test_type1_net": {
+    "ci95": [
+     0.023811739702064093,
+     0.030151689706894164
+    ],
+    "n_tests": 10000,
+    "note": "tests within a world are correlated; the interval treats them as independent and is too narrow",
+    "rate": 0.0268
+   },
+   "profit_pass_with_net_mean_le_0": 0,
+   "raw": {
+    "false_selected": 268,
+    "fdp_pooled": 1.0,
+    "fwer": 0.355,
+    "fwer_ci95": [
+     0.29198518653239286,
+     0.4234801551839203
+    ],
+    "selected": 268,
+    "worlds_with_a_true_selection": null
+   },
+   "reps": 200,
+   "scenario": {
+    "cost": 0.0005,
+    "df": 5.0,
+    "ic": 0.0,
+    "missing": 0.01,
+    "regime": true,
+    "rho": 0.4
+   }
+  },
+  "null_fat_regime": {
+   "bh": {
+    "false_selected": 12,
+    "fdp_pooled": 1.0,
+    "fwer": 0.015,
+    "fwer_ci95": [
+     0.005114145184492387,
+     0.043166480556278884
+    ],
+    "selected": 12,
+    "worlds_with_a_true_selection": null
+   },
+   "bonf_neff": {
+    "false_selected": 1,
+    "fdp_pooled": 1.0,
+    "fwer": 0.005,
+    "fwer_ci95": [
+     0.0008831459893662054,
+     0.02777439986977148
+    ],
+    "selected": 1,
+    "worlds_with_a_true_selection": null
+   },
+   "gross_significant_killed_by_costs": 3,
+   "holm": {
+    "false_selected": 1,
+    "fdp_pooled": 1.0,
+    "fwer": 0.005,
+    "fwer_ci95": [
+     0.0008831459893662054,
+     0.02777439986977148
+    ],
+    "selected": 1,
+    "worlds_with_a_true_selection": null
+   },
+   "leak_caught": 1.0,
+   "leak_false_alarm": 0,
+   "n_eff_mean": 44.09012140539081,
+   "per_test_type1_net": {
+    "ci95": [
+     0.01224448493012277,
+     0.016928467988284093
+    ],
+    "n_tests": 10000,
+    "note": "tests within a world are correlated; the interval treats them as independent and is too narrow",
+    "rate": 0.0144
+   },
+   "profit_pass_with_net_mean_le_0": 0,
+   "raw": {
+    "false_selected": 144,
+    "fdp_pooled": 1.0,
+    "fwer": 0.23,
+    "fwer_ci95": [
+     0.1770925624139232,
+     0.2930842807819702
+    ],
+    "selected": 144,
+    "worlds_with_a_true_selection": null
+   },
+   "reps": 200,
+   "scenario": {
+    "cost": 0.0005,
+    "df": 3.0,
+    "ic": 0.0,
+    "missing": 0.05,
+    "regime": true,
+    "rho": 0.7
+   }
+  },
+  "null_gauss_calm": {
+   "bh": {
+    "false_selected": 46,
+    "fdp_pooled": 1.0,
+    "fwer": 0.04,
+    "fwer_ci95": [
+     0.02040538715065641,
+     0.07693293829419882
+    ],
+    "selected": 46,
+    "worlds_with_a_true_selection": null
+   },
+   "bonf_neff": {
+    "false_selected": 4,
+    "fdp_pooled": 1.0,
+    "fwer": 0.015,
+    "fwer_ci95": [
+     0.005114145184492387,
+     0.043166480556278884
+    ],
+    "selected": 4,
+    "worlds_with_a_true_selection": null
+   },
+   "gross_significant_killed_by_costs": 8,
+   "holm": {
+    "false_selected": 4,
+    "fdp_pooled": 1.0,
+    "fwer": 0.015,
+    "fwer_ci95": [
+     0.005114145184492387,
+     0.043166480556278884
+    ],
+    "selected": 4,
+    "worlds_with_a_true_selection": null
+   },
+   "leak_caught": 1.0,
+   "leak_false_alarm": 0,
+   "n_eff_mean": 44.335208724180205,
+   "per_test_type1_net": {
+    "ci95": [
+     0.018555034963298515,
+     0.024212695385410724
+    ],
+    "n_tests": 10000,
+    "note": "tests within a world are correlated; the interval treats them as independent and is too narrow",
+    "rate": 0.0212
+   },
+   "profit_pass_with_net_mean_le_0": 0,
+   "raw": {
+    "false_selected": 212,
+    "fdp_pooled": 1.0,
+    "fwer": 0.28,
+    "fwer_ci95": [
+     0.22236792842635128,
+     0.34592431417771
+    ],
+    "selected": 212,
+    "worlds_with_a_true_selection": null
+   },
+   "reps": 200,
+   "scenario": {
+    "cost": 0.0005,
+    "df": null,
+    "ic": 0.0,
+    "missing": 0.0,
+    "regime": false,
+    "rho": 0.4
+   }
+  },
+  "signal": {
+   "bh": {
+    "false_selected": 121,
+    "fdp_pooled": 0.24845995893223818,
+    "fwer": 0.095,
+    "fwer_ci95": [
+     0.06166261364986359,
+     0.14360265114397636
+    ],
+    "selected": 487,
+    "worlds_with_a_true_selection": 110
+   },
+   "bonf_neff": {
+    "false_selected": 5,
+    "fdp_pooled": 0.030864197530864196,
+    "fwer": 0.015,
+    "fwer_ci95": [
+     0.005114145184492387,
+     0.043166480556278884
+    ],
+    "selected": 162,
+    "worlds_with_a_true_selection": 75
+   },
+   "gross_significant_killed_by_costs": 1,
+   "holm": {
+    "false_selected": 4,
+    "fdp_pooled": 0.025806451612903226,
+    "fwer": 0.01,
+    "fwer_ci95": [
+     0.0027466006037749346,
+     0.03572248519617954
+    ],
+    "selected": 155,
+    "worlds_with_a_true_selection": 74
+   },
+   "leak_caught": 1.0,
+   "leak_false_alarm": 0,
+   "n_eff_mean": 44.05337655460884,
+   "per_test_type1_net": {
+    "ci95": [
+     0.03221962596806156,
+     0.04000357259562001
+    ],
+    "n_tests": 8800,
+    "note": "tests within a world are correlated; the interval treats them as independent and is too narrow",
+    "rate": 0.03590909090909091
+   },
+   "profit_pass_with_net_mean_le_0": 0,
+   "raw": {
+    "false_selected": 316,
+    "fdp_pooled": 0.31822759315206445,
+    "fwer": 0.375,
+    "fwer_ci95": [
+     0.3108532530524515,
+     0.44385824842712884
+    ],
+    "selected": 993,
+    "worlds_with_a_true_selection": 173
+   },
+   "reps": 200,
+   "scenario": {
+    "cost": 0.0005,
+    "df": 5.0,
+    "ic": 0.03,
+    "missing": 0.01,
+    "regime": true,
+    "rho": 0.4
+   }
+  },
+  "signal_cost_killed": {
+   "bh": {
+    "false_selected": 0,
+    "fdp_pooled": null,
+    "fwer": 0.0,
+    "fwer_ci95": [
+     0.0,
+     0.018846005918320894
+    ],
+    "selected": 0,
+    "worlds_with_a_true_selection": 0
+   },
+   "bonf_neff": {
+    "false_selected": 0,
+    "fdp_pooled": null,
+    "fwer": 0.0,
+    "fwer_ci95": [
+     0.0,
+     0.018846005918320894
+    ],
+    "selected": 0,
+    "worlds_with_a_true_selection": 0
+   },
+   "gross_significant_killed_by_costs": 724,
+   "holm": {
+    "false_selected": 0,
+    "fdp_pooled": null,
+    "fwer": 0.0,
+    "fwer_ci95": [
+     0.0,
+     0.018846005918320894
+    ],
+    "selected": 0,
+    "worlds_with_a_true_selection": 0
+   },
+   "leak_caught": 1.0,
+   "leak_false_alarm": 0,
+   "n_eff_mean": 43.96143477905247,
+   "per_test_type1_net": {
+    "ci95": [
+     0.0,
+     0.00043635496576857987
+    ],
+    "n_tests": 8800,
+    "note": "tests within a world are correlated; the interval treats them as independent and is too narrow",
+    "rate": 0.0
+   },
+   "profit_pass_with_net_mean_le_0": 0,
+   "raw": {
+    "false_selected": 0,
+    "fdp_pooled": null,
+    "fwer": 0.0,
+    "fwer_ci95": [
+     0.0,
+     0.018846005918320894
+    ],
+    "selected": 0,
+    "worlds_with_a_true_selection": 0
+   },
+   "reps": 200,
+   "scenario": {
+    "cost": 0.004,
+    "df": 5.0,
+    "ic": 0.015,
+    "missing": 0.01,
+    "regime": true,
+    "rho": 0.4
+   }
+  }
+ },
+ "schema": "copybot.hypo_engine/1"
+}
