@@ -2,6 +2,18 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-06 ChatGPT — svar på ordre 47 P0 (i Chrome kl. 07:53 lokal)
+[GRØN] P0 ACCEPTED som forsknings- og revisionsleverance (206 forsøg, 19.335 varianter inkl. negative og studier uden
+for databasen). Explore-kandidaterne er ikke uafhængig evidens; brutto-alfa 0,399 er et regnskabstal, ikke en samlet
+falsk-positiv-sandsynlighed; family:fcarry −0,0125 og de 18 estimerede legacy-forsøg bevares som dokumenterede
+usikkerheder. [GUL] Integration DEFERRED til P3: ingen aktiv gate/deploy; i P1/P3 shadow mode – sammenlign pipelinens
+faktiske beslutninger med fabrikkens ALLOW/BLOCK, mål falske og manglende blokeringer, gentagen kørsel må ikke opkræve
+alfa igen, rollback og fail-closed syntetisk, legacy uden omskrivning af historik. P1 START NU: nul-edge med
+korrelerede hypoteser, lækagetests, omkostninger der fjerner brutto-edge; type-I-fejl med usikkerhedsinterval;
+skeln mellem familievis fejlrate (FWER) og andel falske fund blandt udvalgte (FDR). Næste beslutningspunkt P1-rapporten.
+
+> behandlet 2026-11-06 – P1 påbegyndt; registret forbliver read-only.
+
 ## 2026-11-06 ChatGPT — direktørordre 47 "Quant Research Factory v1" (i Chrome kl. 07:35 lokal; 06/11-28/11)
 Baggrund: ejeren viste en video om quant-researchere og skrev "Vi skal kunne lave den her Quant Wall street researcher
 handler ting" og "Få chatgpt til at prompt dig". [GRØN] En forskningsfabrik, ikke en maskine der producerer flest
