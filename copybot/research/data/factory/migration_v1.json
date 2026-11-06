@@ -1,0 +1,971 @@
+{
+ "class_counts": {
+  "delegated-approval": 9,
+  "family-approval": 4,
+  "hash-at-access": 32,
+  "human-verdict": 1,
+  "instruction-cited-approval": 19,
+  "legacy": 25,
+  "universe-asof-unrecorded": 32
+ },
+ "decisions": {
+  "delegated-approval": "UNVERIFIED_ORIGIN approval; results kept as exploratory evidence; no new instance of the template without a fresh verified owner approval (order 48 P0)",
+  "family-approval": "UNVERIFIED_ORIGIN approval (text cannot prove origin); the family's locked forward test continues under its own rules and is not blocked",
+  "hash-at-access": "HASH_AT_ACCESS: the hashes identify what was read; the lock before data is the git commit of the spec (see spec_locked_before_screening); no post-hoc hash is presented as a lock",
+  "instruction-cited-approval": "same as delegated-approval",
+  "legacy": "LEGACY_RECORD: kept as recorded; 1 attempt in the ledger (lower bound); never re-tested",
+  "no-charge": "LEDGER_GAP: verdict without trials/alpha rows; counted as 1 attempt",
+  "universe-asof-unrecorded": "SURVIVORSHIP_UNKNOWN: fixed symbol list without a point-in-time date; cross-sectional results carry this flag; no re-test (a re-test would be a new experiment)"
+ },
+ "experiments": 65,
+ "plan_version": 1,
+ "rows": [
+  {
+   "approval_status": null,
+   "classes": [],
+   "decisions": [],
+   "exp_id": "C_0755f34d6d",
+   "results": "unchanged",
+   "spec_locked_before_screening": null,
+   "universe": null
+  },
+  {
+   "approval_status": null,
+   "classes": [],
+   "decisions": [],
+   "exp_id": "C_ce89a47faa",
+   "results": "unchanged",
+   "spec_locked_before_screening": null,
+   "universe": null
+  },
+  {
+   "approval_status": "UNVERIFIED_ORIGIN",
+   "classes": [
+    "hash-at-access",
+    "instruction-cited-approval",
+    "universe-asof-unrecorded"
+   ],
+   "decisions": [
+    "HASH_AT_ACCESS: the hashes identify what was read; the lock before data is the git commit of the spec (see spec_locked_before_screening); no post-hoc hash is presented as a lock",
+    "same as delegated-approval",
+    "SURVIVORSHIP_UNKNOWN: fixed symbol list without a point-in-time date; cross-sectional results carry this flag; no re-test (a re-test would be a new experiment)"
+   ],
+   "exp_id": "E_btc_lead_lag_p2",
+   "results": "unchanged",
+   "spec_locked_before_screening": true,
+   "universe": "list[30]"
+  },
+  {
+   "approval_status": "UNVERIFIED_ORIGIN",
+   "classes": [
+    "hash-at-access",
+    "instruction-cited-approval",
+    "universe-asof-unrecorded"
+   ],
+   "decisions": [
+    "HASH_AT_ACCESS: the hashes identify what was read; the lock before data is the git commit of the spec (see spec_locked_before_screening); no post-hoc hash is presented as a lock",
+    "same as delegated-approval",
+    "SURVIVORSHIP_UNKNOWN: fixed symbol list without a point-in-time date; cross-sectional results carry this flag; no re-test (a re-test would be a new experiment)"
+   ],
+   "exp_id": "E_btc_volume_share_p3",
+   "results": "unchanged",
+   "spec_locked_before_screening": true,
+   "universe": "list[30]"
+  },
+  {
+   "approval_status": "UNVERIFIED_ORIGIN",
+   "classes": [
+    "delegated-approval",
+    "hash-at-access",
+    "universe-asof-unrecorded"
+   ],
+   "decisions": [
+    "UNVERIFIED_ORIGIN approval; results kept as exploratory evidence; no new instance of the template without a fresh verified owner approval (order 48 P0)",
+    "HASH_AT_ACCESS: the hashes identify what was read; the lock before data is the git commit of the spec (see spec_locked_before_screening); no post-hoc hash is presented as a lock",
+    "SURVIVORSHIP_UNKNOWN: fixed symbol list without a point-in-time date; cross-sectional results carry this flag; no re-test (a re-test would be a new experiment)"
+   ],
+   "exp_id": "E_daily_reversal_p1",
+   "results": "unchanged",
+   "spec_locked_before_screening": true,
+   "universe": "list[8]"
+  },
+  {
+   "approval_status": null,
+   "classes": [],
+   "decisions": [],
+   "exp_id": "E_daily_reversal_p2",
+   "results": "unchanged",
+   "spec_locked_before_screening": null,
+   "universe": null
+  },
+  {
+   "approval_status": "UNVERIFIED_ORIGIN",
+   "classes": [
+    "delegated-approval",
+    "hash-at-access",
+    "universe-asof-unrecorded"
+   ],
+   "decisions": [
+    "UNVERIFIED_ORIGIN approval; results kept as exploratory evidence; no new instance of the template without a fresh verified owner approval (order 48 P0)",
+    "HASH_AT_ACCESS: the hashes identify what was read; the lock before data is the git commit of the spec (see spec_locked_before_screening); no post-hoc hash is presented as a lock",
+    "SURVIVORSHIP_UNKNOWN: fixed symbol list without a point-in-time date; cross-sectional results carry this flag; no re-test (a re-test would be a new experiment)"
+   ],
+   "exp_id": "E_day_of_week_p1",
+   "results": "unchanged",
+   "spec_locked_before_screening": true,
+   "universe": "list[8]"
+  },
+  {
+   "approval_status": null,
+   "classes": [],
+   "decisions": [],
+   "exp_id": "E_day_of_week_p2",
+   "results": "unchanged",
+   "spec_locked_before_screening": null,
+   "universe": null
+  },
+  {
+   "approval_status": null,
+   "classes": [],
+   "decisions": [],
+   "exp_id": "E_donchian_trend_p1",
+   "results": "unchanged",
+   "spec_locked_before_screening": null,
+   "universe": null
+  },
+  {
+   "approval_status": null,
+   "classes": [],
+   "decisions": [],
+   "exp_id": "E_donchian_trend_p2",
+   "results": "unchanged",
+   "spec_locked_before_screening": null,
+   "universe": null
+  },
+  {
+   "approval_status": "UNVERIFIED_ORIGIN",
+   "classes": [
+    "family-approval",
+    "hash-at-access",
+    "universe-asof-unrecorded"
+   ],
+   "decisions": [
+    "UNVERIFIED_ORIGIN approval (text cannot prove origin); the family's locked forward test continues under its own rules and is not blocked",
+    "HASH_AT_ACCESS: the hashes identify what was read; the lock before data is the git commit of the spec (see spec_locked_before_screening); no post-hoc hash is presented as a lock",
+    "SURVIVORSHIP_UNKNOWN: fixed symbol list without a point-in-time date; cross-sectional results carry this flag; no re-test (a re-test would be a new experiment)"
+   ],
+   "exp_id": "E_fcarry__filt_a8",
+   "results": "unchanged",
+   "spec_locked_before_screening": true,
+   "universe": "list[30]"
+  },
+  {
+   "approval_status": "UNVERIFIED_ORIGIN",
+   "classes": [
+    "family-approval",
+    "hash-at-access",
+    "universe-asof-unrecorded"
+   ],
+   "decisions": [
+    "UNVERIFIED_ORIGIN approval (text cannot prove origin); the family's locked forward test continues under its own rules and is not blocked",
+    "HASH_AT_ACCESS: the hashes identify what was read; the lock before data is the git commit of the spec (see spec_locked_before_screening); no post-hoc hash is presented as a lock",
+    "SURVIVORSHIP_UNKNOWN: fixed symbol list without a point-in-time date; cross-sectional results carry this flag; no re-test (a re-test would be a new experiment)"
+   ],
+   "exp_id": "E_fcarry__filt_w_a8",
+   "results": "unchanged",
+   "spec_locked_before_screening": true,
+   "universe": "list[30]"
+  },
+  {
+   "approval_status": "UNVERIFIED_ORIGIN",
+   "classes": [
+    "family-approval",
+    "hash-at-access",
+    "universe-asof-unrecorded"
+   ],
+   "decisions": [
+    "UNVERIFIED_ORIGIN approval (text cannot prove origin); the family's locked forward test continues under its own rules and is not blocked",
+    "HASH_AT_ACCESS: the hashes identify what was read; the lock before data is the git commit of the spec (see spec_locked_before_screening); no post-hoc hash is presented as a lock",
+    "SURVIVORSHIP_UNKNOWN: fixed symbol list without a point-in-time date; cross-sectional results carry this flag; no re-test (a re-test would be a new experiment)"
+   ],
+   "exp_id": "E_fcarry__floor_a8",
+   "results": "unchanged",
+   "spec_locked_before_screening": true,
+   "universe": "list[30]"
+  },
+  {
+   "approval_status": "UNVERIFIED_ORIGIN",
+   "classes": [
+    "family-approval",
+    "hash-at-access",
+    "universe-asof-unrecorded"
+   ],
+   "decisions": [
+    "UNVERIFIED_ORIGIN approval (text cannot prove origin); the family's locked forward test continues under its own rules and is not blocked",
+    "HASH_AT_ACCESS: the hashes identify what was read; the lock before data is the git commit of the spec (see spec_locked_before_screening); no post-hoc hash is presented as a lock",
+    "SURVIVORSHIP_UNKNOWN: fixed symbol list without a point-in-time date; cross-sectional results carry this flag; no re-test (a re-test would be a new experiment)"
+   ],
+   "exp_id": "E_fcarry__hyst_a8",
+   "results": "unchanged",
+   "spec_locked_before_screening": true,
+   "universe": "list[30]"
+  },
+  {
+   "approval_status": "UNVERIFIED_ORIGIN",
+   "classes": [
+    "delegated-approval",
+    "hash-at-access",
+    "universe-asof-unrecorded"
+   ],
+   "decisions": [
+    "UNVERIFIED_ORIGIN approval; results kept as exploratory evidence; no new instance of the template without a fresh verified owner approval (order 48 P0)",
+    "HASH_AT_ACCESS: the hashes identify what was read; the lock before data is the git commit of the spec (see spec_locked_before_screening); no post-hoc hash is presented as a lock",
+    "SURVIVORSHIP_UNKNOWN: fixed symbol list without a point-in-time date; cross-sectional results carry this flag; no re-test (a re-test would be a new experiment)"
+   ],
+   "exp_id": "E_funding_contrarian_p1",
+   "results": "unchanged",
+   "spec_locked_before_screening": true,
+   "universe": "list[8]"
+  },
+  {
+   "approval_status": null,
+   "classes": [],
+   "decisions": [],
+   "exp_id": "E_funding_contrarian_p2",
+   "results": "unchanged",
+   "spec_locked_before_screening": null,
+   "universe": null
+  },
+  {
+   "approval_status": "UNVERIFIED_ORIGIN",
+   "classes": [
+    "delegated-approval",
+    "hash-at-access",
+    "universe-asof-unrecorded"
+   ],
+   "decisions": [
+    "UNVERIFIED_ORIGIN approval; results kept as exploratory evidence; no new instance of the template without a fresh verified owner approval (order 48 P0)",
+    "HASH_AT_ACCESS: the hashes identify what was read; the lock before data is the git commit of the spec (see spec_locked_before_screening); no post-hoc hash is presented as a lock",
+    "SURVIVORSHIP_UNKNOWN: fixed symbol list without a point-in-time date; cross-sectional results carry this flag; no re-test (a re-test would be a new experiment)"
+   ],
+   "exp_id": "E_hour_of_day_p1",
+   "results": "unchanged",
+   "spec_locked_before_screening": true,
+   "universe": "list[8]"
+  },
+  {
+   "approval_status": null,
+   "classes": [],
+   "decisions": [],
+   "exp_id": "E_hour_of_day_p2",
+   "results": "unchanged",
+   "spec_locked_before_screening": null,
+   "universe": null
+  },
+  {
+   "approval_status": "UNVERIFIED_ORIGIN",
+   "classes": [
+    "hash-at-access",
+    "instruction-cited-approval",
+    "universe-asof-unrecorded"
+   ],
+   "decisions": [
+    "HASH_AT_ACCESS: the hashes identify what was read; the lock before data is the git commit of the spec (see spec_locked_before_screening); no post-hoc hash is presented as a lock",
+    "same as delegated-approval",
+    "SURVIVORSHIP_UNKNOWN: fixed symbol list without a point-in-time date; cross-sectional results carry this flag; no re-test (a re-test would be a new experiment)"
+   ],
+   "exp_id": "E_leverage_cycle_p3",
+   "results": "unchanged",
+   "spec_locked_before_screening": true,
+   "universe": "list[30]"
+  },
+  {
+   "approval_status": "UNVERIFIED_ORIGIN",
+   "classes": [
+    "hash-at-access",
+    "instruction-cited-approval",
+    "universe-asof-unrecorded"
+   ],
+   "decisions": [
+    "HASH_AT_ACCESS: the hashes identify what was read; the lock before data is the git commit of the spec (see spec_locked_before_screening); no post-hoc hash is presented as a lock",
+    "same as delegated-approval",
+    "SURVIVORSHIP_UNKNOWN: fixed symbol list without a point-in-time date; cross-sectional results carry this flag; no re-test (a re-test would be a new experiment)"
+   ],
+   "exp_id": "E_mvrv_value_p3",
+   "results": "unchanged",
+   "spec_locked_before_screening": true,
+   "universe": "list[16]"
+  },
+  {
+   "approval_status": "UNVERIFIED_ORIGIN",
+   "classes": [
+    "hash-at-access",
+    "instruction-cited-approval",
+    "universe-asof-unrecorded"
+   ],
+   "decisions": [
+    "HASH_AT_ACCESS: the hashes identify what was read; the lock before data is the git commit of the spec (see spec_locked_before_screening); no post-hoc hash is presented as a lock",
+    "same as delegated-approval",
+    "SURVIVORSHIP_UNKNOWN: fixed symbol list without a point-in-time date; cross-sectional results carry this flag; no re-test (a re-test would be a new experiment)"
+   ],
+   "exp_id": "E_oi_confirmed_return_p3",
+   "results": "unchanged",
+   "spec_locked_before_screening": true,
+   "universe": "list[30]"
+  },
+  {
+   "approval_status": "UNVERIFIED_ORIGIN",
+   "classes": [
+    "hash-at-access",
+    "instruction-cited-approval",
+    "universe-asof-unrecorded"
+   ],
+   "decisions": [
+    "HASH_AT_ACCESS: the hashes identify what was read; the lock before data is the git commit of the spec (see spec_locked_before_screening); no post-hoc hash is presented as a lock",
+    "same as delegated-approval",
+    "SURVIVORSHIP_UNKNOWN: fixed symbol list without a point-in-time date; cross-sectional results carry this flag; no re-test (a re-test would be a new experiment)"
+   ],
+   "exp_id": "E_oi_growth_p3",
+   "results": "unchanged",
+   "spec_locked_before_screening": true,
+   "universe": "list[30]"
+  },
+  {
+   "approval_status": "UNVERIFIED_ORIGIN",
+   "classes": [
+    "hash-at-access",
+    "instruction-cited-approval",
+    "universe-asof-unrecorded"
+   ],
+   "decisions": [
+    "HASH_AT_ACCESS: the hashes identify what was read; the lock before data is the git commit of the spec (see spec_locked_before_screening); no post-hoc hash is presented as a lock",
+    "same as delegated-approval",
+    "SURVIVORSHIP_UNKNOWN: fixed symbol list without a point-in-time date; cross-sectional results carry this flag; no re-test (a re-test would be a new experiment)"
+   ],
+   "exp_id": "E_real_rate_filter_p3",
+   "results": "unchanged",
+   "spec_locked_before_screening": true,
+   "universe": "list[30]"
+  },
+  {
+   "approval_status": "UNVERIFIED_ORIGIN",
+   "classes": [
+    "hash-at-access",
+    "instruction-cited-approval",
+    "universe-asof-unrecorded"
+   ],
+   "decisions": [
+    "HASH_AT_ACCESS: the hashes identify what was read; the lock before data is the git commit of the spec (see spec_locked_before_screening); no post-hoc hash is presented as a lock",
+    "same as delegated-approval",
+    "SURVIVORSHIP_UNKNOWN: fixed symbol list without a point-in-time date; cross-sectional results carry this flag; no re-test (a re-test would be a new experiment)"
+   ],
+   "exp_id": "E_smart_vs_crowd_p3",
+   "results": "unchanged",
+   "spec_locked_before_screening": true,
+   "universe": "list[30]"
+  },
+  {
+   "approval_status": "UNVERIFIED_ORIGIN",
+   "classes": [
+    "hash-at-access",
+    "instruction-cited-approval",
+    "universe-asof-unrecorded"
+   ],
+   "decisions": [
+    "HASH_AT_ACCESS: the hashes identify what was read; the lock before data is the git commit of the spec (see spec_locked_before_screening); no post-hoc hash is presented as a lock",
+    "same as delegated-approval",
+    "SURVIVORSHIP_UNKNOWN: fixed symbol list without a point-in-time date; cross-sectional results carry this flag; no re-test (a re-test would be a new experiment)"
+   ],
+   "exp_id": "E_stablecoin_flow_p3",
+   "results": "unchanged",
+   "spec_locked_before_screening": true,
+   "universe": "list[30]"
+  },
+  {
+   "approval_status": "UNVERIFIED_ORIGIN",
+   "classes": [
+    "hash-at-access",
+    "instruction-cited-approval",
+    "universe-asof-unrecorded"
+   ],
+   "decisions": [
+    "HASH_AT_ACCESS: the hashes identify what was read; the lock before data is the git commit of the spec (see spec_locked_before_screening); no post-hoc hash is presented as a lock",
+    "same as delegated-approval",
+    "SURVIVORSHIP_UNKNOWN: fixed symbol list without a point-in-time date; cross-sectional results carry this flag; no re-test (a re-test would be a new experiment)"
+   ],
+   "exp_id": "E_supply_dilution_p3",
+   "results": "unchanged",
+   "spec_locked_before_screening": true,
+   "universe": "list[16]"
+  },
+  {
+   "approval_status": "UNVERIFIED_ORIGIN",
+   "classes": [
+    "hash-at-access",
+    "instruction-cited-approval",
+    "universe-asof-unrecorded"
+   ],
+   "decisions": [
+    "HASH_AT_ACCESS: the hashes identify what was read; the lock before data is the git commit of the spec (see spec_locked_before_screening); no post-hoc hash is presented as a lock",
+    "same as delegated-approval",
+    "SURVIVORSHIP_UNKNOWN: fixed symbol list without a point-in-time date; cross-sectional results carry this flag; no re-test (a re-test would be a new experiment)"
+   ],
+   "exp_id": "E_taker_pressure_p3",
+   "results": "unchanged",
+   "spec_locked_before_screening": true,
+   "universe": "list[30]"
+  },
+  {
+   "approval_status": "UNVERIFIED_ORIGIN",
+   "classes": [
+    "hash-at-access",
+    "instruction-cited-approval",
+    "universe-asof-unrecorded"
+   ],
+   "decisions": [
+    "HASH_AT_ACCESS: the hashes identify what was read; the lock before data is the git commit of the spec (see spec_locked_before_screening); no post-hoc hash is presented as a lock",
+    "same as delegated-approval",
+    "SURVIVORSHIP_UNKNOWN: fixed symbol list without a point-in-time date; cross-sectional results carry this flag; no re-test (a re-test would be a new experiment)"
+   ],
+   "exp_id": "E_turn_of_month_p2",
+   "results": "unchanged",
+   "spec_locked_before_screening": true,
+   "universe": "list[30]"
+  },
+  {
+   "approval_status": "UNVERIFIED_ORIGIN",
+   "classes": [
+    "delegated-approval",
+    "hash-at-access",
+    "human-verdict",
+    "universe-asof-unrecorded"
+   ],
+   "decisions": [
+    "UNVERIFIED_ORIGIN approval; results kept as exploratory evidence; no new instance of the template without a fresh verified owner approval (order 48 P0)",
+    "HASH_AT_ACCESS: the hashes identify what was read; the lock before data is the git commit of the spec (see spec_locked_before_screening); no post-hoc hash is presented as a lock",
+    "SURVIVORSHIP_UNKNOWN: fixed symbol list without a point-in-time date; cross-sectional results carry this flag; no re-test (a re-test would be a new experiment)"
+   ],
+   "exp_id": "E_vol_managed_long_p1",
+   "results": "unchanged",
+   "spec_locked_before_screening": true,
+   "universe": "list[8]"
+  },
+  {
+   "approval_status": "UNVERIFIED_ORIGIN",
+   "classes": [
+    "hash-at-access",
+    "instruction-cited-approval",
+    "universe-asof-unrecorded"
+   ],
+   "decisions": [
+    "HASH_AT_ACCESS: the hashes identify what was read; the lock before data is the git commit of the spec (see spec_locked_before_screening); no post-hoc hash is presented as a lock",
+    "same as delegated-approval",
+    "SURVIVORSHIP_UNKNOWN: fixed symbol list without a point-in-time date; cross-sectional results carry this flag; no re-test (a re-test would be a new experiment)"
+   ],
+   "exp_id": "E_vol_managed_long_p2",
+   "results": "unchanged",
+   "spec_locked_before_screening": true,
+   "universe": "list[8]"
+  },
+  {
+   "approval_status": "UNVERIFIED_ORIGIN",
+   "classes": [
+    "hash-at-access",
+    "instruction-cited-approval",
+    "universe-asof-unrecorded"
+   ],
+   "decisions": [
+    "HASH_AT_ACCESS: the hashes identify what was read; the lock before data is the git commit of the spec (see spec_locked_before_screening); no post-hoc hash is presented as a lock",
+    "same as delegated-approval",
+    "SURVIVORSHIP_UNKNOWN: fixed symbol list without a point-in-time date; cross-sectional results carry this flag; no re-test (a re-test would be a new experiment)"
+   ],
+   "exp_id": "E_vrp_timing_p3",
+   "results": "unchanged",
+   "spec_locked_before_screening": true,
+   "universe": "list[2]"
+  },
+  {
+   "approval_status": "UNVERIFIED_ORIGIN",
+   "classes": [
+    "delegated-approval",
+    "hash-at-access",
+    "universe-asof-unrecorded"
+   ],
+   "decisions": [
+    "UNVERIFIED_ORIGIN approval; results kept as exploratory evidence; no new instance of the template without a fresh verified owner approval (order 48 P0)",
+    "HASH_AT_ACCESS: the hashes identify what was read; the lock before data is the git commit of the spec (see spec_locked_before_screening); no post-hoc hash is presented as a lock",
+    "SURVIVORSHIP_UNKNOWN: fixed symbol list without a point-in-time date; cross-sectional results carry this flag; no re-test (a re-test would be a new experiment)"
+   ],
+   "exp_id": "E_xs_betting_against_beta_p2",
+   "results": "unchanged",
+   "spec_locked_before_screening": true,
+   "universe": "list[8]"
+  },
+  {
+   "approval_status": "UNVERIFIED_ORIGIN",
+   "classes": [
+    "hash-at-access",
+    "instruction-cited-approval",
+    "universe-asof-unrecorded"
+   ],
+   "decisions": [
+    "HASH_AT_ACCESS: the hashes identify what was read; the lock before data is the git commit of the spec (see spec_locked_before_screening); no post-hoc hash is presented as a lock",
+    "same as delegated-approval",
+    "SURVIVORSHIP_UNKNOWN: fixed symbol list without a point-in-time date; cross-sectional results carry this flag; no re-test (a re-test would be a new experiment)"
+   ],
+   "exp_id": "E_xs_coskewness_p2",
+   "results": "unchanged",
+   "spec_locked_before_screening": true,
+   "universe": "list[30]"
+  },
+  {
+   "approval_status": "UNVERIFIED_ORIGIN",
+   "classes": [
+    "hash-at-access",
+    "instruction-cited-approval",
+    "universe-asof-unrecorded"
+   ],
+   "decisions": [
+    "HASH_AT_ACCESS: the hashes identify what was read; the lock before data is the git commit of the spec (see spec_locked_before_screening); no post-hoc hash is presented as a lock",
+    "same as delegated-approval",
+    "SURVIVORSHIP_UNKNOWN: fixed symbol list without a point-in-time date; cross-sectional results carry this flag; no re-test (a re-test would be a new experiment)"
+   ],
+   "exp_id": "E_xs_downside_beta_p2",
+   "results": "unchanged",
+   "spec_locked_before_screening": true,
+   "universe": "list[30]"
+  },
+  {
+   "approval_status": "UNVERIFIED_ORIGIN",
+   "classes": [
+    "hash-at-access",
+    "instruction-cited-approval",
+    "universe-asof-unrecorded"
+   ],
+   "decisions": [
+    "HASH_AT_ACCESS: the hashes identify what was read; the lock before data is the git commit of the spec (see spec_locked_before_screening); no post-hoc hash is presented as a lock",
+    "same as delegated-approval",
+    "SURVIVORSHIP_UNKNOWN: fixed symbol list without a point-in-time date; cross-sectional results carry this flag; no re-test (a re-test would be a new experiment)"
+   ],
+   "exp_id": "E_xs_high_volume_p2",
+   "results": "unchanged",
+   "spec_locked_before_screening": true,
+   "universe": "list[30]"
+  },
+  {
+   "approval_status": "UNVERIFIED_ORIGIN",
+   "classes": [
+    "hash-at-access",
+    "instruction-cited-approval",
+    "universe-asof-unrecorded"
+   ],
+   "decisions": [
+    "HASH_AT_ACCESS: the hashes identify what was read; the lock before data is the git commit of the spec (see spec_locked_before_screening); no post-hoc hash is presented as a lock",
+    "same as delegated-approval",
+    "SURVIVORSHIP_UNKNOWN: fixed symbol list without a point-in-time date; cross-sectional results carry this flag; no re-test (a re-test would be a new experiment)"
+   ],
+   "exp_id": "E_xs_illiquidity_p2",
+   "results": "unchanged",
+   "spec_locked_before_screening": true,
+   "universe": "list[30]"
+  },
+  {
+   "approval_status": "UNVERIFIED_ORIGIN",
+   "classes": [
+    "delegated-approval",
+    "hash-at-access",
+    "universe-asof-unrecorded"
+   ],
+   "decisions": [
+    "UNVERIFIED_ORIGIN approval; results kept as exploratory evidence; no new instance of the template without a fresh verified owner approval (order 48 P0)",
+    "HASH_AT_ACCESS: the hashes identify what was read; the lock before data is the git commit of the spec (see spec_locked_before_screening); no post-hoc hash is presented as a lock",
+    "SURVIVORSHIP_UNKNOWN: fixed symbol list without a point-in-time date; cross-sectional results carry this flag; no re-test (a re-test would be a new experiment)"
+   ],
+   "exp_id": "E_xs_low_volatility_p2",
+   "results": "unchanged",
+   "spec_locked_before_screening": true,
+   "universe": "list[8]"
+  },
+  {
+   "approval_status": "UNVERIFIED_ORIGIN",
+   "classes": [
+    "delegated-approval",
+    "hash-at-access",
+    "universe-asof-unrecorded"
+   ],
+   "decisions": [
+    "UNVERIFIED_ORIGIN approval; results kept as exploratory evidence; no new instance of the template without a fresh verified owner approval (order 48 P0)",
+    "HASH_AT_ACCESS: the hashes identify what was read; the lock before data is the git commit of the spec (see spec_locked_before_screening); no post-hoc hash is presented as a lock",
+    "SURVIVORSHIP_UNKNOWN: fixed symbol list without a point-in-time date; cross-sectional results carry this flag; no re-test (a re-test would be a new experiment)"
+   ],
+   "exp_id": "E_xs_max_lottery_p2",
+   "results": "unchanged",
+   "spec_locked_before_screening": true,
+   "universe": "list[8]"
+  },
+  {
+   "approval_status": "UNVERIFIED_ORIGIN",
+   "classes": [
+    "delegated-approval",
+    "hash-at-access",
+    "universe-asof-unrecorded"
+   ],
+   "decisions": [
+    "UNVERIFIED_ORIGIN approval; results kept as exploratory evidence; no new instance of the template without a fresh verified owner approval (order 48 P0)",
+    "HASH_AT_ACCESS: the hashes identify what was read; the lock before data is the git commit of the spec (see spec_locked_before_screening); no post-hoc hash is presented as a lock",
+    "SURVIVORSHIP_UNKNOWN: fixed symbol list without a point-in-time date; cross-sectional results carry this flag; no re-test (a re-test would be a new experiment)"
+   ],
+   "exp_id": "E_xs_momentum_p2",
+   "results": "unchanged",
+   "spec_locked_before_screening": true,
+   "universe": "list[8]"
+  },
+  {
+   "approval_status": "UNVERIFIED_ORIGIN",
+   "classes": [
+    "hash-at-access",
+    "instruction-cited-approval",
+    "universe-asof-unrecorded"
+   ],
+   "decisions": [
+    "HASH_AT_ACCESS: the hashes identify what was read; the lock before data is the git commit of the spec (see spec_locked_before_screening); no post-hoc hash is presented as a lock",
+    "same as delegated-approval",
+    "SURVIVORSHIP_UNKNOWN: fixed symbol list without a point-in-time date; cross-sectional results carry this flag; no re-test (a re-test would be a new experiment)"
+   ],
+   "exp_id": "E_xs_near_high_p2",
+   "results": "unchanged",
+   "spec_locked_before_screening": true,
+   "universe": "list[30]"
+  },
+  {
+   "approval_status": null,
+   "classes": [
+    "legacy"
+   ],
+   "decisions": [
+    "LEGACY_RECORD: kept as recorded; 1 attempt in the ledger (lower bound); never re-tested"
+   ],
+   "exp_id": "L01_copy_kol",
+   "results": "unchanged",
+   "spec_locked_before_screening": null,
+   "universe": null
+  },
+  {
+   "approval_status": null,
+   "classes": [
+    "legacy"
+   ],
+   "decisions": [
+    "LEGACY_RECORD: kept as recorded; 1 attempt in the ledger (lower bound); never re-tested"
+   ],
+   "exp_id": "L02_self_found_traders",
+   "results": "unchanged",
+   "spec_locked_before_screening": null,
+   "universe": null
+  },
+  {
+   "approval_status": null,
+   "classes": [
+    "legacy"
+   ],
+   "decisions": [
+    "LEGACY_RECORD: kept as recorded; 1 attempt in the ledger (lower bound); never re-tested"
+   ],
+   "exp_id": "L03_sol_trend_hourly",
+   "results": "unchanged",
+   "spec_locked_before_screening": null,
+   "universe": null
+  },
+  {
+   "approval_status": null,
+   "classes": [
+    "legacy"
+   ],
+   "decisions": [
+    "LEGACY_RECORD: kept as recorded; 1 attempt in the ledger (lower bound); never re-tested"
+   ],
+   "exp_id": "L04_buy_graduations",
+   "results": "unchanged",
+   "spec_locked_before_screening": null,
+   "universe": null
+  },
+  {
+   "approval_status": null,
+   "classes": [
+    "legacy"
+   ],
+   "decisions": [
+    "LEGACY_RECORD: kept as recorded; 1 attempt in the ledger (lower bound); never re-tested"
+   ],
+   "exp_id": "L05_graduation_sniper",
+   "results": "unchanged",
+   "spec_locked_before_screening": null,
+   "universe": null
+  },
+  {
+   "approval_status": null,
+   "classes": [
+    "legacy"
+   ],
+   "decisions": [
+    "LEGACY_RECORD: kept as recorded; 1 attempt in the ledger (lower bound); never re-tested"
+   ],
+   "exp_id": "L06_short_new_hl_listings",
+   "results": "unchanged",
+   "spec_locked_before_screening": null,
+   "universe": null
+  },
+  {
+   "approval_status": null,
+   "classes": [
+    "legacy"
+   ],
+   "decisions": [
+    "LEGACY_RECORD: kept as recorded; 1 attempt in the ledger (lower bound); never re-tested"
+   ],
+   "exp_id": "L07_funding_carry_v0",
+   "results": "unchanged",
+   "spec_locked_before_screening": null,
+   "universe": null
+  },
+  {
+   "approval_status": null,
+   "classes": [
+    "legacy"
+   ],
+   "decisions": [
+    "LEGACY_RECORD: kept as recorded; 1 attempt in the ledger (lower bound); never re-tested"
+   ],
+   "exp_id": "L08_funding_carry_leverage",
+   "results": "unchanged",
+   "spec_locked_before_screening": null,
+   "universe": null
+  },
+  {
+   "approval_status": null,
+   "classes": [
+    "legacy"
+   ],
+   "decisions": [
+    "LEGACY_RECORD: kept as recorded; 1 attempt in the ledger (lower bound); never re-tested"
+   ],
+   "exp_id": "L09_stop_when_ahead",
+   "results": "unchanged",
+   "spec_locked_before_screening": null,
+   "universe": null
+  },
+  {
+   "approval_status": null,
+   "classes": [
+    "legacy"
+   ],
+   "decisions": [
+    "LEGACY_RECORD: kept as recorded; 1 attempt in the ledger (lower bound); never re-tested"
+   ],
+   "exp_id": "L10_launch_v1",
+   "results": "unchanged",
+   "spec_locked_before_screening": null,
+   "universe": null
+  },
+  {
+   "approval_status": null,
+   "classes": [
+    "legacy"
+   ],
+   "decisions": [
+    "LEGACY_RECORD: kept as recorded; 1 attempt in the ledger (lower bound); never re-tested"
+   ],
+   "exp_id": "L11_smart_v2",
+   "results": "unchanged",
+   "spec_locked_before_screening": null,
+   "universe": null
+  },
+  {
+   "approval_status": null,
+   "classes": [
+    "legacy"
+   ],
+   "decisions": [
+    "LEGACY_RECORD: kept as recorded; 1 attempt in the ledger (lower bound); never re-tested"
+   ],
+   "exp_id": "L12_arb_v1",
+   "results": "unchanged",
+   "spec_locked_before_screening": null,
+   "universe": null
+  },
+  {
+   "approval_status": null,
+   "classes": [
+    "legacy"
+   ],
+   "decisions": [
+    "LEGACY_RECORD: kept as recorded; 1 attempt in the ledger (lower bound); never re-tested"
+   ],
+   "exp_id": "L13_carry_v1",
+   "results": "unchanged",
+   "spec_locked_before_screening": null,
+   "universe": null
+  },
+  {
+   "approval_status": null,
+   "classes": [
+    "legacy"
+   ],
+   "decisions": [
+    "LEGACY_RECORD: kept as recorded; 1 attempt in the ledger (lower bound); never re-tested"
+   ],
+   "exp_id": "L14_tsmom_v1",
+   "results": "unchanged",
+   "spec_locked_before_screening": null,
+   "universe": null
+  },
+  {
+   "approval_status": null,
+   "classes": [
+    "legacy"
+   ],
+   "decisions": [
+    "LEGACY_RECORD: kept as recorded; 1 attempt in the ledger (lower bound); never re-tested"
+   ],
+   "exp_id": "L15_tsmom_v2",
+   "results": "unchanged",
+   "spec_locked_before_screening": null,
+   "universe": null
+  },
+  {
+   "approval_status": null,
+   "classes": [
+    "legacy"
+   ],
+   "decisions": [
+    "LEGACY_RECORD: kept as recorded; 1 attempt in the ledger (lower bound); never re-tested"
+   ],
+   "exp_id": "L16_pmcal_v1",
+   "results": "unchanged",
+   "spec_locked_before_screening": null,
+   "universe": null
+  },
+  {
+   "approval_status": null,
+   "classes": [
+    "legacy"
+   ],
+   "decisions": [
+    "LEGACY_RECORD: kept as recorded; 1 attempt in the ledger (lower bound); never re-tested"
+   ],
+   "exp_id": "L17_p1_btc15m_model",
+   "results": "unchanged",
+   "spec_locked_before_screening": null,
+   "universe": null
+  },
+  {
+   "approval_status": null,
+   "classes": [
+    "legacy"
+   ],
+   "decisions": [
+    "LEGACY_RECORD: kept as recorded; 1 attempt in the ledger (lower bound); never re-tested"
+   ],
+   "exp_id": "L18_p2_negrisk_arb",
+   "results": "unchanged",
+   "spec_locked_before_screening": null,
+   "universe": null
+  },
+  {
+   "approval_status": null,
+   "classes": [
+    "legacy"
+   ],
+   "decisions": [
+    "LEGACY_RECORD: kept as recorded; 1 attempt in the ledger (lower bound); never re-tested"
+   ],
+   "exp_id": "L19_p3_maker_fills",
+   "results": "unchanged",
+   "spec_locked_before_screening": null,
+   "universe": null
+  },
+  {
+   "approval_status": null,
+   "classes": [
+    "legacy"
+   ],
+   "decisions": [
+    "LEGACY_RECORD: kept as recorded; 1 attempt in the ledger (lower bound); never re-tested"
+   ],
+   "exp_id": "L20_m1_orderflow",
+   "results": "unchanged",
+   "spec_locked_before_screening": null,
+   "universe": null
+  },
+  {
+   "approval_status": null,
+   "classes": [
+    "legacy"
+   ],
+   "decisions": [
+    "LEGACY_RECORD: kept as recorded; 1 attempt in the ledger (lower bound); never re-tested"
+   ],
+   "exp_id": "L21_m2_liquidation_reversal",
+   "results": "unchanged",
+   "spec_locked_before_screening": null,
+   "universe": null
+  },
+  {
+   "approval_status": null,
+   "classes": [
+    "legacy"
+   ],
+   "decisions": [
+    "LEGACY_RECORD: kept as recorded; 1 attempt in the ledger (lower bound); never re-tested"
+   ],
+   "exp_id": "L22_m3_premium_convergence",
+   "results": "unchanged",
+   "spec_locked_before_screening": null,
+   "universe": null
+  },
+  {
+   "approval_status": null,
+   "classes": [
+    "legacy"
+   ],
+   "decisions": [
+    "LEGACY_RECORD: kept as recorded; 1 attempt in the ledger (lower bound); never re-tested"
+   ],
+   "exp_id": "X01_pm_lp_v1",
+   "results": "unchanged",
+   "spec_locked_before_screening": null,
+   "universe": null
+  },
+  {
+   "approval_status": null,
+   "classes": [
+    "legacy"
+   ],
+   "decisions": [
+    "LEGACY_RECORD: kept as recorded; 1 attempt in the ledger (lower bound); never re-tested"
+   ],
+   "exp_id": "X02_copybot_paper",
+   "results": "unchanged",
+   "spec_locked_before_screening": null,
+   "universe": null
+  },
+  {
+   "approval_status": null,
+   "classes": [
+    "legacy"
+   ],
+   "decisions": [
+    "LEGACY_RECORD: kept as recorded; 1 attempt in the ledger (lower bound); never re-tested"
+   ],
+   "exp_id": "X03_funding_live_v0",
+   "results": "unchanged",
+   "spec_locked_before_screening": null,
+   "universe": null
+  }
+ ],
+ "rule": "research/reviews/INBOX.md director order 48 P1",
+ "schema": "copybot.factory_migration/1",
+ "screenings": 32,
+ "spec_locked_before_screening": 32,
+ "unexplained": []
+}
