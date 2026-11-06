@@ -31,7 +31,7 @@
    "result": "PASS"
   },
   {
-   "check": "every evaluation went through evaluator v1.1",
+   "check": "every evaluation went through evaluator v1.1.1",
    "detail": "",
    "result": "PASS"
   },
@@ -110,7 +110,7 @@
    "VALIDATED": 1
   }
  },
- "seconds": 24.43,
+ "seconds": 27.75,
  "synthetic_now": 1800000000,
- "ts": 1793974291
+ "ts": 1793976903
 }
