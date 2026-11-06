@@ -1,0 +1,153 @@
+{
+ "generated": "2026-11-06",
+ "note": "A text packet is not an owner signature; nothing here is approved.",
+ "blocked_actions": [
+  {
+   "id": "lock_A_n6",
+   "packet": "PKT-A",
+   "earliest_utc": "2026-11-14T00:00:00Z",
+   "requires": [
+    "explicit dated owner yes naming 586a34d/103fd0afe3e2fd47 and PROTOCOL_V3 ec91280/0a09b3e954d92c82"
+   ],
+   "note": "never by the assistant on a general instruction",
+   "status": "BLOCKED"
+  },
+  {
+   "id": "run_A_n6_X1_X2",
+   "packet": "PKT-A",
+   "earliest_utc": "after lock commit",
+   "requires": [
+    "lock_A_n6 done",
+    "loader written after lock",
+    "green suite"
+   ],
+   "note": "one run each",
+   "status": "BLOCKED"
+  },
+  {
+   "id": "lock_B_n4",
+   "packet": "PKT-B",
+   "earliest_utc": "never in current form",
+   "requires": [
+    "B n4 identity cannot survive a legal universe; BLOCKED"
+   ],
+   "note": "see B-1 (withdraw + new N4b) / B-2 (not recommended)",
+   "status": "BLOCKED"
+  },
+  {
+   "id": "upbit_host_access",
+   "packet": "PKT-B",
+   "earliest_utc": "2026-11-14T00:00:00Z",
+   "requires": [
+    "owner yes to B-1 N4b protocol with version+hash",
+    "N4b committed before data"
+   ],
+   "note": "38 B allows N4 only",
+   "status": "BLOCKED"
+  },
+  {
+   "id": "f2_v2_material_changes",
+   "packet": "PKT-F2",
+   "earliest_utc": "before any F2 data",
+   "requires": [
+    "F2 v2 file+hash",
+    "separate dated owner yes"
+   ],
+   "note": "B23, HAR<=0 floor, power rule",
+   "status": "BLOCKED"
+  },
+  {
+   "id": "f2_explore0_calibration_fetch",
+   "packet": "PKT-F2",
+   "earliest_utc": "2026-11-14T00:00:00Z",
+   "requires": [
+    "G01 open",
+    "owner yes naming F2_CALIBRATION_SPEC_DRAFT version+sha256",
+    "manifest committed before parsing"
+   ],
+   "note": "never evidence",
+   "status": "BLOCKED"
+  },
+  {
+   "id": "f2_confirmation_run",
+   "packet": "PKT-F2",
+   "earliest_utc": "no date",
+   "requires": [
+    "approved evaluation window",
+    "signed template approval (needs owner key)",
+    "W0 allocation"
+   ],
+   "note": "may end INCONCLUSIVE",
+   "status": "BLOCKED"
+  },
+  {
+   "id": "c1_activation",
+   "packet": "PKT-C1",
+   "earliest_utc": "no date",
+   "requires": [
+    "forward 1h-kline source approved",
+    "C1 config v2",
+    "external head anchoring",
+    "dated amendment",
+    "deploy outside K1-K3",
+    "no restart before 2026-11-27"
+   ],
+   "note": "READY_NOT_ACTIVE",
+   "status": "BLOCKED"
+  },
+  {
+   "id": "w0_allocation",
+   "packet": "PKT-W0",
+   "earliest_utc": "no date",
+   "requires": [
+    "named candidate with locked estimand/test/data",
+    "signed owner approval"
+   ],
+   "note": "director has not accepted the ranking",
+   "status": "BLOCKED"
+  },
+  {
+   "id": "any_factory_gate_or_S2",
+   "packet": "D5",
+   "earliest_utc": "no date",
+   "requires": [
+    "owner key created off-host",
+    "fingerprint published",
+    "root entry signed"
+   ],
+   "note": "S2/S3 NO-GO",
+   "status": "BLOCKED"
+  },
+  {
+   "id": "coinm_access_F3_X3",
+   "packet": "—",
+   "earliest_utc": "2026-11-28T00:00:00Z",
+   "requires": [
+    "dapi host approval",
+    "F3 observation unit defined"
+   ],
+   "note": "F3 DEFERRED",
+   "status": "BLOCKED"
+  },
+  {
+   "id": "host_restart",
+   "packet": "—",
+   "earliest_utc": "2026-11-28T00:00:00Z",
+   "requires": [
+    "owner call"
+   ],
+   "note": "rule B through 11-27",
+   "status": "BLOCKED"
+  },
+  {
+   "id": "historical_queries",
+   "packet": "—",
+   "earliest_utc": "2026-11-14T00:00:00Z",
+   "requires": [
+    "study-specific gate + lock as listed in GATE_MATRIX.json"
+   ],
+   "note": "never 2024 holdout",
+   "status": "BLOCKED"
+  }
+ ]
+}
