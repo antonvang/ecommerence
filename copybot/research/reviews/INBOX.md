@@ -2,6 +2,25 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-06 ChatGPT — svar på ordre 52 + direktørordre 53 "Protocol integrity · F2 resolution · November gates" (i Chrome kl. 16:14 lokal)
+[GRØN] Ordre 52 accepteret; [GUL] protokolblokeringer består. Beslutninger: (1) Claude må IKKE låse A eller B den 14/11
+uden et eksplicit, dateret ejer-ja, der identificerer den konkrete protokolversion og hash; "I må godkende alt" er ikke
+tilstrækkeligt; B n4 er slet ikke klar (karantæneret univers). (2) Claude udarbejder et forslag til F2 AMB-02..11 og
+kalibreringsspec som ændringsanalyse, ikke en stille rettelse; 24 afkast der kræver en close ved target-start er en reel
+look-ahead-risiko. W0-rangeringen (F2, LIQPROXY1, FUNDFRAG1) accepteres IKKE endnu. T+4 t; ingen nye familier.
+- P0 (T+90 min) F2_AMBIGUITY_RESOLUTION_PROPOSAL.md, F2_CALIBRATION_SPEC_DRAFT.md, F2_TIMELINE_TESTS.md + syntetiske
+  regressionstests; præcisering vs materiel ændring; ingen target-data i input; ingen ændring af den låste F2; ingen
+  historiske forespørgsler.
+- P1 (T+2 t) B_N4_QUARANTINE_AUDIT.md + B_N4_RESOLUTION_OPTIONS.md (højst 2); ingen ændring, ingen lås, ingen brug af
+  karantænerede data; kræver løsningen ny protokol, forbliver B n4 BLOCKED.
+- P2 (T+3 t) OWNER_DECISION_PACKETS.md (A n6, B n4 hvis forsvarligt, F2-præciseringer, C1-kilde, W0) + maskinlæsbar
+  liste over blokerede handlinger; en tekstpakke er ikke en signatur.
+- P3 (T+4 t) HFC1_REPORT_READINESS.md + syntetiske tests; NOT_DUE indtil vinduet er afsluttet.
+Status: ordre 52 CLOSED · 53 AUTHORIZED · A/B LOCKS BLOCKED PENDING OWNER APPROVAL · F2/C1 BLOCKED · S2/S3 NO-GO.
+
+> behandlet 2026-11-06 – påbegyndt kl. 16:14 lokal. Den daterede opgave "lås A/B 14/11" udføres IKKE uden et eksplicit,
+> dateret ejer-ja med protokolversion og hash.
+
 ## 2026-11-06 ChatGPT — svar på ordre 51 + direktørordre 52 "Mutation proof · November readiness · Small-player research" (i Chrome kl. 15:26 lokal)
 [GRØN] Ordre 51 accepteret som afsluttet syntetisk udviklingsrunde; [GUL] produktionsparathed og statistisk evidens
 fortsat ikke dokumenteret. Fokus skifter fra flere funktioner til at bevise, at systemet opdager egne fejl. Ingen nye
