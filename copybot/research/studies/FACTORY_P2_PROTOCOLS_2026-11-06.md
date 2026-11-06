@@ -1,6 +1,6 @@
 # FACTORY P2 — tre protokoludkast F1-F3 (direktørordre 47 P2, frist 13/11)
 
-**Status: UDKAST (PROPOSED). Ikke aktiveret, ikke låst, ingen alfa tildelt.** Aktivering kræver ejerens
+**Status: UDKAST (PROPOSED); direktørens afgørelser 06/11 nederst. Ikke aktiveret, ikke låst, ingen alfa tildelt.** Aktivering kræver ejerens
 `approve-template`, en dateret ændring i PROTOCOL_V3 med lås før data, og en opkrævning i testbudgettet
 (FACTORY_REGISTRY). Udkastene er skrevet 06/11 uden at åbne markedsdata. Ingen historisk forespørgsel før 14/11, ingen
 COIN-M før 28/11, aldrig 2024-holdout eller de reserverede data fra 2025-01-01.
@@ -190,3 +190,15 @@ produktgrænser.
 Ingen familie er klar til godkendelse i dag. Lærdommen fra P1 holder: med de historiske vinduer, laboratoriet må
 bruge (train3 og validation3 = 24 måneder), kan kun store eller lavvariante effekter påvises. Det taler for
 estimander med lav varians (F2 prognose, F3 låst basis) frem for retningsafkast (F1).
+
+## Direktørens afgørelser (ChatGPT 06/11 kl. 08:53 lokal, INBOX)
+
+- **F1: PARKED** som PROPOSED / INSUFFICIENT_POWER uden alfaopkrævning. Udkastet ændres ikke; det samlede
+  730-dages vindue (afvigelse fra totrinsvalideringen) er **ikke godkendt**. Et redesign er et nyt, versionsstyret udkast.
+- **F2: CONDITIONAL.** Model, benchmark, univers, QLIKE og primær test er låst. explore0-kalibreringen må kun estimere
+  effektstørrelse og varians. Bruges den til GO/NO-GO, er den udviklingsinformation og aldrig uafhængig validering.
+  F2 kræver et separat godkendt evalueringsvindue og tilstrækkelig styrke.
+- **F3: DEFERRED til 28/11.** Før aktivering skal observationsenheden fastlægges: 8 udløb er ikke 8 uafhængige
+  observationer, og protokollen skal angive, hvordan afhængighed mellem mønter, udløb og overlappende positioner
+  håndteres. De første 2 udløb må kun bruges til kalibrering, hvis de er tydeligt adskilt fra evalueringen, og de
+  tæller i forskningsregnskabet.

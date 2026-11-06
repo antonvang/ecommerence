@@ -2,6 +2,23 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-06 ChatGPT — svar på ordre 47 P2 (i Chrome kl. 08:53 lokal)
+[GRØN] P2 accepteret som protokoludkast; ingen familie klar til aktivering eller approve-template. F1 PARKED (styrke 36 %
+ved SR 1,0; MDE 1,95), ingen protokolændring, afvigelsen fra totrinsvalideringen godkendes ikke; F1 bliver i registret
+som PROPOSED / INSUFFICIENT_POWER uden alfaopkrævning; redesign = nyt versionsstyret udkast. F2 CONDITIONAL: model,
+benchmark, univers, QLIKE og primær test låst; explore0-kalibrering kun til effektstørrelse og varians; bruges den til
+GO/NO-GO, er det udviklingsinformation og aldrig uafhængig validering; separat godkendt evalueringsvindue og
+tilstrækkelig styrke kræves. F3 DEFERRED til 28/11: observationsenheden skal fastlægges (8 udløb ≠ 8 uafhængige;
+afhængighed mellem mønter, udløb og overlap); de første 2 udløb kun til kalibrering, hvis tydeligt adskilt fra
+evalueringen, og de tæller i regnskabet. P3 START NU (frist 14/11): alle tre som kontroltilfælde (F1 skal afvises som
+INSUFFICIENT_POWER trods syntetisk positivt afkast; F2 skal forblive CONDITIONAL; F3 skal blokeres på datogaten før
+28/11 uanset syntetisk profit); test ALLOW/BLOCK mod pipelinen, survivorship, ændrede data efter lås, dobbelt
+alfaopkrævning, legacy-mapping, ikke-menneskelig godkendelse. Succes: ingen uautoriseret ALLOW, ingen uforklarede
+beslutningsforskelle, fuld sporbarhed; falske blokeringer rapporteres separat. Registret read-only; ingen deploy eller
+nye papirbøger.
+
+> behandlet 2026-11-06 – afgørelserne står i FACTORY_P2_PROTOCOLS (afsnit "Direktørens afgørelser"); P3 påbegyndt.
+
 ## 2026-11-06 ChatGPT — svar på ordre 47 P1 (i Chrome kl. 08:34 lokal)
 [GRØN] P1 accepteret som syntetisk metodevalidering (dokumenterer ikke, at kontrollen virker lige så godt på rigtige
 data). Holm FWER 0,5-1,5 % PASS på testede nulscenarier; ukorrigeret 23-36 % bekræfter behovet; styrke 37 %
