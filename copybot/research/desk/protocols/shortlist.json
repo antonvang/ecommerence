@@ -1,0 +1,1150 @@
+{
+ "schema": "desk.protocol_shortlist/1",
+ "order": "director order 51 P2 (evidence-to-protocol)",
+ "built": "2026-11-06T13:55Z",
+ "status": "DRAFTS ONLY: nothing approved, no template approved, no alpha charged, no market data read or tested, no network, no database",
+ "inputs": [
+  "research/desk/LITERATURE_MAP.md",
+  "research/desk/evidence_registry.json",
+  "research/desk/mechanism_graph.json",
+  "research/desk/research_gaps.md",
+  "research/desk/FORWARD_DATA_PLAN.md",
+  "research/desk/stream_registry.json",
+  "research/families/VOCABULARY.json",
+  "research/studies/FACTORY_P2_PROTOCOLS_2026-11-06.md",
+  "research/studies/FACTORY_INTEGRATION_P3_2026-11-06.md",
+  "research/tools/p2_power.py",
+  "research/tools/desk_factory.py"
+ ],
+ "rules": {
+  "coverage_first": "a mechanism already covered by a registered family/test is dropped as covered (no renaming)",
+  "data_gates": "forward data that exists or is PROPOSED; history only after 2026-11-14 and only <= 2023-12-31 (2025+ reserved, 2024 holdout never); COIN-M from 2026-11-28",
+  "power": "power >= 0.8 at a stated plausible effect (p2_power.sr_power at alpha_F 0.0125, K = 1), else REDESIGN/PARKED",
+  "power_mapping": "non-Sharpe estimands: sr_power(e, n_eff, per_year=1, alpha) = one-sided test of a mean with standardised effect e per independent observation; this is what desk_factory.check_power computes from plausible_sr/n_planned/per_year",
+  "amendment8_point14": "defined for daily net-return Sharpe; not applicable to the measurement/risk estimands here (as for F2)"
+ },
+ "scoring": {
+  "scale": "1-5, higher is better",
+  "E": "independent evidence (5 replicated peer-reviewed ... 1 practitioner only)",
+  "M": "economically explainable mechanism",
+  "D": "data within gates (5 existing forward stream, 4 PROPOSED stream, 3 history after 11-14, 2 COIN-M/new host, 1 not available)",
+  "P": "power at a plausible effect (5 >= 0.8 in <= 12 months ... 1 < 0.3)",
+  "C": "cost and capacity realism (5 = no trading/measurement)",
+  "A": "distance from previously rejected Copybot hypotheses",
+  "I": "information value of a negative result",
+  "note": "scores rank only; the coverage rule is applied first, so a high-scoring covered mechanism is still dropped"
+ },
+ "alpha_budget": {
+  "W0": 0.05,
+  "reserved_fcarry": 0.0125,
+  "remaining": 0.0375,
+  "alpha_F_per_family": 0.0125,
+  "demand_if_all_approved": {
+   "F2": 0.0125,
+   "F3": 0.0125,
+   "LIQPROXY1": 0.0125,
+   "FUNDFRAG1": 0.0125
+  },
+  "demand_total": 0.05,
+  "shortfall": 0.0125,
+  "note": "W0 cannot fund F2 + F3 + both PROPOSED drafts; owner must rank or classify LIQPROXY1 as a measurement outside W0 (H-SPR precedent)"
+ },
+ "candidates": [
+  {
+   "id": "C01",
+   "graph_node": "funding_carry_level",
+   "mechanism": "same-asset long spot / short perp earns funding",
+   "registry_ids": [
+    "E04",
+    "E05",
+    "E08",
+    "E42",
+    "E03"
+   ],
+   "covered_by": [
+    "families/fcarry.json (amendment 8, forward from 2026-12-01)",
+    "RESULTS_carry_v1.md (FAIL)",
+    "studies/M2_DECISION_NOTE_2026-11-04.md",
+    "studies/HFC1_HIGH_FUNDING_FEASIBILITY_2026-11-04.md",
+    "studies/CARRY_ECON_DAILY_2026-11-04.md",
+    "studies/CARRY_REALISM_P0P1_2026-11-06.md",
+    "PROTOCOL_V3 amendment 42/42a (carry90)"
+   ],
+   "scores": {
+    "E": 3,
+    "M": 4,
+    "D": 5,
+    "P": 2,
+    "C": 2,
+    "A": 1,
+    "I": 2,
+    "total": 19
+   },
+   "decision": "DROPPED_COVERED",
+   "data_status": "AVAILABLE_FORWARD",
+   "power": "not computed (covered)",
+   "plausible_effect": "registry: E08 Sharpe 6.45 -> 4.06 from 2024, negative 2025 (gross)",
+   "reason": "covered by fcarry, carry_v1, lane carry + M2, HFC-1, carry90; decay matches E08/E42",
+   "draft": null
+  },
+  {
+   "id": "C02",
+   "graph_node": "funding_persistence_forecast",
+   "mechanism": "funding rates are forecastable (cash-flow, not price)",
+   "registry_ids": [
+    "E40",
+    "E42"
+   ],
+   "covered_by": [
+    "studies/HFC1_HIGH_FUNDING_FEASIBILITY_2026-11-04.md (3 d/14 d outcomes 11-08, 12-09)",
+    "studies/CARRY_ECON_DAILY_2026-11-04.md (persistence)",
+    "studies/MISSION27_3_2026-11-02.md 6b n6/H27-F (lock 11-14, controls M_t)",
+    "families/drafts/fregime.json (BLOCKED)",
+    "studies/M2_FORWARD_LEDGER.md"
+   ],
+   "scores": {
+    "E": 2,
+    "M": 4,
+    "D": 5,
+    "P": 3,
+    "C": 5,
+    "A": 3,
+    "I": 3,
+    "total": 25
+   },
+   "decision": "DROPPED_COVERED",
+   "data_status": "AVAILABLE_FORWARD",
+   "power": "not computed (covered)",
+   "plausible_effect": "UNKNOWN (E40 abstract only)",
+   "reason": "same quantity on the same census data as HFC-1/CARRY_ECON (descriptive, running) and n6 (locked 11-14); a fourth measurement would be a rename; revisit only after HFC-1's 14 d report (12-09) and n6's result",
+   "draft": null
+  },
+  {
+   "id": "C03",
+   "graph_node": "funding_directional_signal",
+   "mechanism": "funding predicts the coin's own price",
+   "registry_ids": [
+    "E41",
+    "E42"
+   ],
+   "covered_by": [
+    "studies/FUNDING_m21h.md (SCREEN_FAIL)",
+    "VOCABULARY funding_crowding_contrarian"
+   ],
+   "scores": {
+    "E": 1,
+    "M": 2,
+    "D": 5,
+    "P": 1,
+    "C": 2,
+    "A": 1,
+    "I": 1,
+    "total": 13
+   },
+   "decision": "DROPPED_COVERED",
+   "data_status": "AVAILABLE_FORWARD",
+   "power": "not computed (covered)",
+   "plausible_effect": "registry: predictive R2 ~0 (E41), rank IC -0.005 t -0.89 (E42)",
+   "reason": "rejected in the lab (m21h) and null in both practitioner sources",
+   "draft": null
+  },
+  {
+   "id": "C04",
+   "graph_node": "cross_sectional_funding_factor",
+   "mechanism": "long low-funding / short high-funding perps, dollar neutral",
+   "registry_ids": [
+    "E42"
+   ],
+   "covered_by": [
+    "studies/ONLINE_EDGES_2026-11-05.md section 5 (hypothesis only, not tested as a portfolio)",
+    "studies/FUNDING_m21h.md (24 h price reaction)"
+   ],
+   "scores": {
+    "E": 1,
+    "M": 3,
+    "D": 5,
+    "P": 1,
+    "C": 3,
+    "A": 2,
+    "I": 2,
+    "total": 17
+   },
+   "decision": "DROPPED_POWER",
+   "data_status": "AVAILABLE_FORWARD",
+   "power": {
+    "power_at_SR0.39_12m": 0.03,
+    "power_at_SR0.71_12m": 0.055,
+    "power_at_SR0.39_24m": 0.041,
+    "MDE_SR_12m": 3.49,
+    "MDE_SR_24m": 2.44,
+    "assumptions": "daily net returns, AR(1) 0.1, kurtosis 8 (as F1), alpha_F 0.0125"
+   },
+   "plausible_effect": "registry E42: net Sharpe 0.71 in-sample, 0.39 OOS, PBO 0.81 (self-reported)",
+   "reason": "only a practitioner claim with PBO 0.81; at the stated OOS SR 0.39 a 12-month forward test has power 0.03 (MDE SR 3.49); not same-asset hedged (amendment 8 point 2)",
+   "draft": null
+  },
+  {
+   "id": "C05",
+   "graph_node": "perp_spot_deviation_convergence",
+   "mechanism": "perp deviates from no-arbitrage bound and converges",
+   "registry_ids": [
+    "E03",
+    "E07",
+    "E06"
+   ],
+   "covered_by": [
+    "VOCABULARY perp_premium_convergence (legacy L22)",
+    "PROTOCOL_V3 amendment 12/12a (premium lanes)",
+    "studies/PREMIUM_BANER_REKONSTRUKTION_2026-10-25.md (depth ate the lanes)",
+    "PROTOCOL_V3 amendment 22 (K3)",
+    "studies/SPOTPERP_m21i.md"
+   ],
+   "scores": {
+    "E": 3,
+    "M": 5,
+    "D": 5,
+    "P": 3,
+    "C": 2,
+    "A": 1,
+    "I": 2,
+    "total": 21
+   },
+   "decision": "DROPPED_COVERED",
+   "data_status": "AVAILABLE_FORWARD",
+   "power": "not computed (covered)",
+   "plausible_effect": "registry E03: |deviation| 60-90 % p.a., BTC Sharpe 1.8 (retail fees) to 3.5, shrinking ~11 %/yr",
+   "reason": "covered by the premium lanes, their reconstruction and K3",
+   "draft": null
+  },
+  {
+   "id": "C06",
+   "graph_node": "dated_futures_basis_carry",
+   "mechanism": "dated futures basis converges at expiry",
+   "registry_ids": [
+    "E04",
+    "E06"
+   ],
+   "covered_by": [
+    "studies/FACTORY_P2_PROTOCOLS_2026-11-06.md F3 (DEFERRED to 11-28)",
+    "families/drafts/dbasis.json",
+    "PROTOCOL_V3 amendment 42 (carry90)",
+    "studies/CARRY_BASIS_PLAN.md",
+    "n6 X3"
+   ],
+   "scores": {
+    "E": 3,
+    "M": 5,
+    "D": 2,
+    "P": 3,
+    "C": 3,
+    "A": 3,
+    "I": 3,
+    "total": 22
+   },
+   "decision": "DROPPED_COVERED",
+   "data_status": "BLOCKED_UNTIL_2026-11-28",
+   "power": "not computed (covered)",
+   "plausible_effect": "registry E04: carry up to 60 % p.a., >10 % average (gross level)",
+   "reason": "covered by F3/dbasis/carry90; COIN-M from 11-28",
+   "draft": null
+  },
+  {
+   "id": "C07",
+   "graph_node": "basis_factor_cross_section",
+   "mechanism": "log-basis and price-volume factors span perp predictors",
+   "registry_ids": [
+    "E02"
+   ],
+   "covered_by": [
+    "NEXT_MECHANISMS.md row J (rejected: multiple testing, overlaps carry/momentum)"
+   ],
+   "scores": {
+    "E": 2,
+    "M": 2,
+    "D": 3,
+    "P": 2,
+    "C": 2,
+    "A": 1,
+    "I": 1,
+    "total": 13
+   },
+   "decision": "DROPPED_COVERED",
+   "data_status": "AVAILABLE_AFTER_2026-11-14",
+   "power": "not computed (covered)",
+   "plausible_effect": "registry E02: 63 of 170 predictors significant, spanned by 2 factors; returns UNKNOWN",
+   "reason": "rejected before; E02 confirms the overlap",
+   "draft": null
+  },
+  {
+   "id": "C08",
+   "graph_node": "time_series_momentum",
+   "mechanism": "own trend predicts own return",
+   "registry_ids": [
+    "E09",
+    "E12",
+    "E43"
+   ],
+   "covered_by": [
+    "RESULTS_tsmom_v1.md (FAIL)",
+    "TSMOM_V2_PROPOSAL.md (stopped)",
+    "studies/DONCHIAN_POWER_P1_2026-11-06.md (INSUFFICIENT POWER)",
+    "PROTOCOL_V3 amendment 41 (straks FOLLOW)"
+   ],
+   "scores": {
+    "E": 4,
+    "M": 3,
+    "D": 3,
+    "P": 1,
+    "C": 3,
+    "A": 1,
+    "I": 2,
+    "total": 17
+   },
+   "decision": "DROPPED_COVERED",
+   "data_status": "AVAILABLE_AFTER_2026-11-14",
+   "power": "not computed (covered)",
+   "plausible_effect": "registry E12: TSMOM 31.96 % p.a. (no costs); E43 pairwise corr ~0.6",
+   "reason": "power fails in the lab (Donchian MDE dSR 1.68-2.33 for 24 m)",
+   "draft": null
+  },
+  {
+   "id": "C09",
+   "graph_node": "cross_sectional_momentum",
+   "mechanism": "winners minus losers",
+   "registry_ids": [
+    "E10",
+    "E11",
+    "E13",
+    "E01",
+    "E22"
+   ],
+   "covered_by": [
+    "v2 catalogue (8 of 9 failed vs buy-and-hold; studies/ONLINE_EDGES_2026-11-05.md section 0)",
+    "E22 survivorship"
+   ],
+   "scores": {
+    "E": 4,
+    "M": 2,
+    "D": 3,
+    "P": 1,
+    "C": 2,
+    "A": 1,
+    "I": 1,
+    "total": 14
+   },
+   "decision": "DROPPED_COVERED",
+   "data_status": "AVAILABLE_AFTER_2026-11-14",
+   "power": "not computed (covered)",
+   "plausible_effect": "registry E22: premium vanishes after survivorship correction",
+   "reason": "tested in the catalogue; contested literature",
+   "draft": null
+  },
+  {
+   "id": "C10",
+   "graph_node": "attention_forecast",
+   "mechanism": "investor attention forecasts returns",
+   "registry_ids": [
+    "E09"
+   ],
+   "covered_by": [
+    "studies/NEWINFO_m21j.md (attention_shock SCREEN_FAIL)"
+   ],
+   "scores": {
+    "E": 3,
+    "M": 2,
+    "D": 2,
+    "P": 1,
+    "C": 3,
+    "A": 1,
+    "I": 1,
+    "total": 13
+   },
+   "decision": "DROPPED_COVERED",
+   "data_status": "AVAILABLE_AFTER_2026-11-14",
+   "power": "not computed (covered)",
+   "plausible_effect": "UNKNOWN",
+   "reason": "screened and failed (m21j); pageviews only via the blocked history agent",
+   "draft": null
+  },
+  {
+   "id": "C11",
+   "graph_node": "short_term_reversal_illiquid",
+   "mechanism": "daily/weekly reversal in small illiquid coins",
+   "registry_ids": [
+    "E14",
+    "E15"
+   ],
+   "covered_by": [
+    "studies/MOVESCREEN_m21c.md (SCREEN_FAIL)",
+    "PROTOCOL_V3 amendment 41 (straks AGAINST)",
+    "PROTOCOL_V3 amendment 43 (pairs book)",
+    "FACTORY_P2 F1 (PARKED)"
+   ],
+   "scores": {
+    "E": 4,
+    "M": 3,
+    "D": 3,
+    "P": 1,
+    "C": 1,
+    "A": 1,
+    "I": 1,
+    "total": 14
+   },
+   "decision": "DROPPED_COVERED",
+   "data_status": "AVAILABLE_AFTER_2026-11-14",
+   "power": "not computed (covered)",
+   "plausible_effect": "registry E15: t -7.31 small / t 2.33 large (no magnitudes)",
+   "reason": "lab universe is liquid (momentum side); effect sits where capacity and costs make it untradeable",
+   "draft": null
+  },
+  {
+   "id": "C12",
+   "graph_node": "post_cascade_liquidity_recovery",
+   "mechanism": "after stress spreads normalise fast, depth stays impaired",
+   "registry_ids": [
+    "E16",
+    "E04",
+    "E03"
+   ],
+   "covered_by": [],
+   "scores": {
+    "E": 3,
+    "M": 4,
+    "D": 4,
+    "P": 1,
+    "C": 5,
+    "A": 4,
+    "I": 3,
+    "total": 24
+   },
+   "decision": "DRAFT_PARKED",
+   "data_status": "PROPOSED_STREAM (fwd_tob_universe)",
+   "power": {
+    "events_12m_assumed": 6,
+    "power_e0.67_12m": 0.224,
+    "power_e0.67_24m": 0.443,
+    "MDE_e_12m": 2.76,
+    "events_needed_e0.67": 26,
+    "events_needed_e0.5": 43
+   },
+   "plausible_effect": "registry E16: depth 66-79 % after 23 days (one cascade); assumed -0.10 log at D+7, sd 0.15 -> e 0.67",
+   "reason": "not covered (R1/costreport and straks fills measure the same hour only); far from rejected work; but ~6 events/yr gives power 0.22",
+   "draft": "protocols/LIQREC1_v1.md"
+  },
+  {
+   "id": "C13",
+   "graph_node": "liquidity_measurement_and_volume_quality",
+   "mechanism": "low-frequency proxies (Abdi-Ranaldo) track measured liquidity",
+   "registry_ids": [
+    "E17",
+    "E23"
+   ],
+   "covered_by": [],
+   "scores": {
+    "E": 4,
+    "M": 4,
+    "D": 4,
+    "P": 4,
+    "C": 5,
+    "A": 5,
+    "I": 4,
+    "total": 30
+   },
+   "decision": "DRAFT_PROPOSED",
+   "data_status": "AVAILABLE_FORWARD (census) + PROPOSED_STREAM (fwd_tob_universe, fwd_spec_journal)",
+   "power": {
+    "n_eff": 501.9,
+    "power_r0.10": 0.497,
+    "power_r0.15": 0.864,
+    "power_r0.20": 0.986,
+    "MDE_r": 0.138,
+    "sensitivity_r0.15": {
+     "rho_c_0.05": 0.992,
+     "rho_c_0.2": 0.558,
+     "N100": 0.845,
+     "39_weeks": 0.743,
+     "26_weeks": 0.548,
+     "alpha_F_div_3": 0.759
+    },
+    "scenario": "N 250 coins with varying spreads, 52 weeks, rho_c 0.1, alpha_F 0.0125 one-sided"
+   },
+   "plausible_effect": "registry E17: UNKNOWN magnitude; assumed partial r 0.15",
+   "reason": "not covered: m21i used AR on 1 h bars descriptively ('reliability low'); prerequisite for any cost-aware historical test after 11-14",
+   "draft": "protocols/LIQPROXY1_v1.md"
+  },
+  {
+   "id": "C14",
+   "graph_node": "orderflow_and_clock_time_imbalance",
+   "mechanism": "quarter-hour opening imbalance forecasts 4-12 h returns",
+   "registry_ids": [
+    "E19",
+    "E18"
+   ],
+   "covered_by": [
+    "PROTOCOL_V3 section 6 (L20 minute OFI rejected)",
+    "v3 idea 8 taker_pressure (REJECTED in train3)",
+    "PROTOCOL_V3 amendment 21k R4 (rejected as reuse)",
+    "studies/ONLINE_EDGES_2026-11-05.md section 7"
+   ],
+   "scores": {
+    "E": 2,
+    "M": 3,
+    "D": 2,
+    "P": 3,
+    "C": 1,
+    "A": 1,
+    "I": 2,
+    "total": 14
+   },
+   "decision": "DROPPED_DATA_COST",
+   "data_status": "NOT_COLLECTED (aggTrades); history only <= 2023 after 11-14",
+   "power": {
+    "n_eff_train3_val3": 5840,
+    "power_e0.02": 0.238,
+    "MDE_e": 0.0404,
+    "note": "power is not the blocker: a 4-12 h trade must clear the 21i cost floor (~46 bp round trip) and aggTrades are not collected"
+   },
+   "plausible_effect": "UNKNOWN (E19 abstract has no bp)",
+   "reason": "unreplicated July-2026 WP; neighbours rejected three times; no trade-level stream exists or is proposed; cost floor",
+   "draft": null
+  },
+  {
+   "id": "C15",
+   "graph_node": "listing_announcement_return",
+   "mechanism": "abnormal returns around exchange listings",
+   "registry_ids": [
+    "E20",
+    "E21"
+   ],
+   "covered_by": [
+    "drafts/H4_NOTERING_FUNDING.md",
+    "drafts/H5_NOTERING_LAV.md",
+    "drafts/H5F_NOTERING_FREMAD.md",
+    "drafts/H5X_NOTERING_TVAERS.md",
+    "PROTOCOL_V3 17f/17g/17h",
+    "drafts/U1F_UPBIT_FREMAD.md",
+    "drafts/M1F_MONITORING_FREMAD.md",
+    "NEXT_MECHANISMS.md row H (speed race)"
+   ],
+   "scores": {
+    "E": 3,
+    "M": 3,
+    "D": 5,
+    "P": 2,
+    "C": 1,
+    "A": 1,
+    "I": 2,
+    "total": 17
+   },
+   "decision": "DROPPED_COVERED",
+   "data_status": "AVAILABLE_FORWARD",
+   "power": "not computed (covered)",
+   "plausible_effect": "registry E20: +5.7 % day 0, +9.2 % [-3,+3] (pre-2019)",
+   "reason": "lab measures listing funding and post-listing drift in locked forward tests",
+   "draft": null
+  },
+  {
+   "id": "C16",
+   "graph_node": "survivorship_and_selection_bias",
+   "mechanism": "dead/delisted coins inflate premia",
+   "registry_ids": [
+    "E22",
+    "E01",
+    "E23"
+   ],
+   "covered_by": [
+    "studies/FACTORY_SECURITY_P1_2026-11-06.md (PIT universe rule)",
+    "stream fwd_universe_versions (PROPOSED)",
+    "NEXT_CANDIDATES.md #7-8"
+   ],
+   "scores": {
+    "E": 3,
+    "M": 3,
+    "D": 4,
+    "P": 1,
+    "C": 5,
+    "A": 5,
+    "I": 3,
+    "total": 24
+   },
+   "decision": "DROPPED_INFRASTRUCTURE",
+   "data_status": "PROPOSED_STREAM (fwd_universe_versions, fwd_spec_journal)",
+   "power": "not computed: no single estimand with power (few delistings, return-gap estimand very noisy)",
+   "plausible_effect": "registry E22: 0.93 % p.a. value-weighted, 62.19 % equal-weighted",
+   "reason": "a data property, not a hypothesis; served by the PIT rule used in all three drafts",
+   "draft": null
+  },
+  {
+   "id": "C17",
+   "graph_node": "exchange_flow_pressure",
+   "mechanism": "coins moved to exchanges signal selling pressure",
+   "registry_ids": [
+    "E24",
+    "E25"
+   ],
+   "covered_by": [
+    "stream onchain_flows (CoinMetrics BTC/ETH, no locked consumer)",
+    "drafts/ONCHAIN_KILDEAUDIT_2026-10-24.md",
+    "NEXT_MECHANISMS.md row G (neighbour)"
+   ],
+   "scores": {
+    "E": 3,
+    "M": 3,
+    "D": 4,
+    "P": 1,
+    "C": 3,
+    "A": 2,
+    "I": 2,
+    "total": 18
+   },
+   "decision": "DROPPED_POWER",
+   "data_status": "AVAILABLE_FORWARD (onchain/1, 2 assets only)",
+   "power": {
+    "n_eff_12m": 405.6,
+    "power_r0.05_12m": 0.108,
+    "power_r0.10_12m": 0.408,
+    "MDE_r_12m": 0.154,
+    "scenario": "BTC+ETH daily, corr 0.8"
+   },
+   "plausible_effect": "UNKNOWN (E24/E25 give signs only); assumed daily predictive r 0.05",
+   "reason": "two assets, daily: power 0.11 at r 0.05 in 12 months (MDE r 0.154)",
+   "draft": null
+  },
+  {
+   "id": "C18",
+   "graph_node": "stablecoin_flow_liquidity",
+   "mechanism": "stablecoin issuance supports prices",
+   "registry_ids": [
+    "E26",
+    "E24"
+   ],
+   "covered_by": [
+    "PROTOCOL_V3 section 5 v3 idea 6 stablecoin_flow (rejected in catalogue p3, studies/SPOTPERP_m21i.md)",
+    "NEXT_MECHANISMS.md row G",
+    "stream fwd_stablecoin_supply (BLOCKED to 11-14)"
+   ],
+   "scores": {
+    "E": 3,
+    "M": 2,
+    "D": 2,
+    "P": 1,
+    "C": 3,
+    "A": 1,
+    "I": 1,
+    "total": 13
+   },
+   "decision": "DROPPED_COVERED",
+   "data_status": "BLOCKED_UNTIL_2026-11-14",
+   "power": "not computed (covered)",
+   "plausible_effect": "UNKNOWN",
+   "reason": "tested in the v3 catalogue and rejected as episode-specific",
+   "draft": null
+  },
+  {
+   "id": "C19",
+   "graph_node": "variance_risk_premium",
+   "mechanism": "implied variance exceeds realised",
+   "registry_ids": [
+    "E27",
+    "E29",
+    "E44"
+   ],
+   "covered_by": [
+    "PROTOCOL_V3 section 5 v3 idea 5 vrp_timing (rejected in catalogue p3, studies/SPOTPERP_m21i.md)",
+    "NEXT_MECHANISMS.md row B (selling options)",
+    "stream fwd_dvol (PROPOSED, from 11-14)"
+   ],
+   "scores": {
+    "E": 2,
+    "M": 4,
+    "D": 2,
+    "P": 1,
+    "C": 1,
+    "A": 1,
+    "I": 2,
+    "total": 13
+   },
+   "decision": "DROPPED_COVERED",
+   "data_status": "NOT_AVAILABLE (options); DVOL PROPOSED",
+   "power": {
+    "n_eff_12m": 13.3,
+    "power_e0.5_12m": 0.301,
+    "power_e0.5_24m": 0.577,
+    "MDE_e_12m": 1.05,
+    "scenario": "monthly non-overlapping DVOL^2-RV^2, BTC+ETH corr 0.8"
+   },
+   "plausible_effect": "UNKNOWN (no VRP size verified)",
+   "reason": "covered by vrp_timing and row B; even a pure measurement has power 0.30 in 12 months; Deribit not EU-authorised for Danish clients",
+   "draft": null
+  },
+  {
+   "id": "C20",
+   "graph_node": "option_informed_flow",
+   "mechanism": "OTM option flow is directional",
+   "registry_ids": [
+    "E28"
+   ],
+   "covered_by": [],
+   "scores": {
+    "E": 2,
+    "M": 3,
+    "D": 1,
+    "P": 1,
+    "C": 1,
+    "A": 4,
+    "I": 1,
+    "total": 13
+   },
+   "decision": "DROPPED_DATA",
+   "data_status": "NOT_AVAILABLE",
+   "power": "not computed (no data)",
+   "plausible_effect": "UNKNOWN",
+   "reason": "no option trade data inside the gates",
+   "draft": null
+  },
+  {
+   "id": "C21",
+   "graph_node": "cross_venue_premium_capital_controls",
+   "mechanism": "kimchi: persistent cross-country gaps",
+   "registry_ids": [
+    "E30",
+    "E31",
+    "E32",
+    "E33"
+   ],
+   "covered_by": [
+    "studies/MISSION27_4_2026-11-02.md (N4 / n4, lock 11-14)",
+    "studies/READINESS_2026-11-14.md",
+    "drafts/U1F_UPBIT_FREMAD.md (17i)"
+   ],
+   "scores": {
+    "E": 5,
+    "M": 4,
+    "D": 3,
+    "P": 3,
+    "C": 1,
+    "A": 2,
+    "I": 3,
+    "total": 21
+   },
+   "decision": "DROPPED_COVERED",
+   "data_status": "AVAILABLE_AFTER_2026-11-14 (api.upbit.com N4 only)",
+   "power": "not computed (covered)",
+   "plausible_effect": "registry E31: +4.73 % average 2016-18; E32 peak 20.8 %",
+   "reason": "covered by N4 (locked 11-14) and U1F",
+   "draft": null
+  },
+  {
+   "id": "C22",
+   "graph_node": "settlement_latency_arbitrage_bounds",
+   "mechanism": "settlement delay bounds cross-venue arbitrage",
+   "registry_ids": [
+    "E34",
+    "E30"
+   ],
+   "covered_by": [
+    "RESULTS_arb_v1.md (REJECTED, 0 opportunities)",
+    "PROTOCOL_V3 amendment 13a (perp-perp lost at all thresholds)",
+    "VOCABULARY cross_venue_perp_gap (scanner)"
+   ],
+   "scores": {
+    "E": 3,
+    "M": 4,
+    "D": 3,
+    "P": 2,
+    "C": 1,
+    "A": 1,
+    "I": 1,
+    "total": 15
+   },
+   "decision": "DROPPED_COVERED",
+   "data_status": "AVAILABLE_FORWARD (HL-Binance)",
+   "power": "not computed (covered)",
+   "plausible_effect": "UNKNOWN (121 bp only in a snippet, not verified)",
+   "reason": "covered and rejected",
+   "draft": null
+  },
+  {
+   "id": "C23",
+   "graph_node": "derivatives_lead_spot",
+   "mechanism": "derivatives lead spot at minute scale",
+   "registry_ids": [
+    "E35"
+   ],
+   "covered_by": [
+    "studies/SPOTPERP_m21i.md (spot_lead SCREEN_FAIL)",
+    "NEXT_MECHANISMS.md pattern 1 (speed race)"
+   ],
+   "scores": {
+    "E": 3,
+    "M": 3,
+    "D": 3,
+    "P": 2,
+    "C": 1,
+    "A": 1,
+    "I": 1,
+    "total": 14
+   },
+   "decision": "DROPPED_COVERED",
+   "data_status": "AVAILABLE_AFTER_2026-11-14",
+   "power": "not computed (covered)",
+   "plausible_effect": "UNKNOWN",
+   "reason": "screened and failed; minute scale is a speed race",
+   "draft": null
+  },
+  {
+   "id": "C24",
+   "graph_node": "realised_volatility_forecast_HAR",
+   "mechanism": "HAR-RV forecasts RV out of sample",
+   "registry_ids": [
+    "E36",
+    "E37",
+    "E38",
+    "E44"
+   ],
+   "covered_by": [
+    "studies/FACTORY_P2_PROTOCOLS_2026-11-06.md F2 (CONDITIONAL)",
+    "director order 51 P1 C1 forecast journal",
+    "stream fwd_vol_forecast_register (PROPOSED)"
+   ],
+   "scores": {
+    "E": 5,
+    "M": 4,
+    "D": 5,
+    "P": 3,
+    "C": 5,
+    "A": 4,
+    "I": 3,
+    "total": 29
+   },
+   "decision": "DROPPED_COVERED",
+   "data_status": "AVAILABLE_FORWARD",
+   "power": "not computed (covered)",
+   "plausible_effect": "UNKNOWN (E37: best model varies)",
+   "reason": "covered by F2 and C1; F2's mechanism boundary includes jump/semivariance HAR (E38)",
+   "draft": null
+  },
+  {
+   "id": "C25",
+   "graph_node": "volatility_regimes",
+   "mechanism": "Markov/regime switching improves risk forecasts",
+   "registry_ids": [
+    "E39",
+    "E27"
+   ],
+   "covered_by": [
+    "F2 mechanism boundary (GARCH family, regime models)",
+    "PROTOCOL_V3 amendment 28a C3 (tail share -> BTC RV)"
+   ],
+   "scores": {
+    "E": 3,
+    "M": 3,
+    "D": 5,
+    "P": 2,
+    "C": 5,
+    "A": 3,
+    "I": 2,
+    "total": 23
+   },
+   "decision": "DROPPED_COVERED",
+   "data_status": "AVAILABLE_FORWARD",
+   "power": "not computed (covered)",
+   "plausible_effect": "UNKNOWN",
+   "reason": "same mechanism as F2 by its locked boundary; VaR backtests of regime GARCH are the same lineage",
+   "draft": null
+  },
+  {
+   "id": "C26",
+   "graph_node": "funding_crowding_fragility (combination; not a graph node)",
+   "mechanism": "crowded high-funding perps have higher forward volatility than vol-matched normal-funding perps",
+   "registry_ids": [
+    "E04",
+    "E05",
+    "E16",
+    "E41"
+   ],
+   "covered_by": [],
+   "scores": {
+    "E": 2,
+    "M": 4,
+    "D": 4,
+    "P": 4,
+    "C": 5,
+    "A": 3,
+    "I": 4,
+    "total": 26
+   },
+   "decision": "DRAFT_PROPOSED",
+   "data_status": "AVAILABLE_FORWARD (census) + PROPOSED_STREAM (fwd_spec_journal)",
+   "power": {
+    "n_eff": 500.0,
+    "events": 1350,
+    "power_e0.10": 0.496,
+    "power_e0.15": 0.863,
+    "power_e0.20": 0.986,
+    "MDE_e": 0.139,
+    "sensitivity_e0.15": {
+     "180d_5perday": 0.685,
+     "180d_7perday_rho0.1": 0.88,
+     "270d_7perday": 0.908,
+     "365d_5perday": 0.949,
+     "alpha_F_div_3": 0.757
+    },
+    "scenario": "270 days, 5 events/day, within-day rho 0.2, HAC 1.5, alpha_F 0.0125 one-sided"
+   },
+   "plausible_effect": "registry E04: 'high carry predicts future crashes', no number (UNKNOWN); assumed e 0.15 per event",
+   "reason": "not covered: m21h tested direction (failed), C4 uses a volume trigger, n6 the reverse direction; directly relevant to HFC-1 cohorts",
+   "draft": "protocols/FUNDFRAG1_v1.md"
+  },
+  {
+   "id": "C27",
+   "graph_node": "anchoring_to_high (E15 distance to 1-week high)",
+   "mechanism": "distance to recent high predicts returns",
+   "registry_ids": [
+    "E15"
+   ],
+   "covered_by": [
+    "v2 catalogue 'near the top' (studies/ONLINE_EDGES_2026-11-05.md section 0)",
+    "VOCABULARY anchoring_to_high"
+   ],
+   "scores": {
+    "E": 2,
+    "M": 2,
+    "D": 3,
+    "P": 1,
+    "C": 2,
+    "A": 1,
+    "I": 1,
+    "total": 12
+   },
+   "decision": "DROPPED_COVERED",
+   "data_status": "AVAILABLE_AFTER_2026-11-14",
+   "power": "not computed (covered)",
+   "plausible_effect": "registry E15: t -9.03 small / t 4.93 large",
+   "reason": "tested in the v2 catalogue",
+   "draft": null
+  },
+  {
+   "id": "C28",
+   "graph_node": "perp_vs_dated_contract_design (E06)",
+   "mechanism": "perps reduce dislocations and arbitrage drawdowns vs quarterlies",
+   "registry_ids": [
+    "E06",
+    "E04"
+   ],
+   "covered_by": [
+    "FACTORY_P2 F3 (DEFERRED)",
+    "families/drafts/dbasis.json"
+   ],
+   "scores": {
+    "E": 2,
+    "M": 4,
+    "D": 2,
+    "P": 2,
+    "C": 3,
+    "A": 3,
+    "I": 2,
+    "total": 18
+   },
+   "decision": "DROPPED_COVERED",
+   "data_status": "BLOCKED_UNTIL_2026-11-28",
+   "power": "not computed (covered)",
+   "plausible_effect": "UNKNOWN",
+   "reason": "needs COIN-M quarterlies; F3's lineage",
+   "draft": null
+  },
+  {
+   "id": "C29",
+   "graph_node": "listing_incentive_conflicts (E21)",
+   "mechanism": "exchange-invested listings have weaker fundamentals",
+   "registry_ids": [
+    "E21"
+   ],
+   "covered_by": [
+    "drafts/H5F_NOTERING_FREMAD.md",
+    "drafts/M1F_MONITORING_FREMAD.md"
+   ],
+   "scores": {
+    "E": 2,
+    "M": 3,
+    "D": 5,
+    "P": 1,
+    "C": 2,
+    "A": 2,
+    "I": 2,
+    "total": 17
+   },
+   "decision": "DROPPED_COVERED",
+   "data_status": "AVAILABLE_FORWARD",
+   "power": "not computed (covered)",
+   "plausible_effect": "UNKNOWN (32.8 %/22.7 % only in a snippet, not verified)",
+   "reason": "H5F/M1F lineage; no investor data",
+   "draft": null
+  },
+  {
+   "id": "C30",
+   "graph_node": "deviation_decay_trend (E03)",
+   "mechanism": "perp deviations shrink ~11 %/yr",
+   "registry_ids": [
+    "E03"
+   ],
+   "covered_by": [
+    "stream bn_premium_watch medians",
+    "PROTOCOL_V3 amendment 21w (edge-decay monitor)"
+   ],
+   "scores": {
+    "E": 2,
+    "M": 3,
+    "D": 5,
+    "P": 1,
+    "C": 5,
+    "A": 3,
+    "I": 1,
+    "total": 20
+   },
+   "decision": "DROPPED_POWER",
+   "data_status": "AVAILABLE_FORWARD",
+   "power": "not computed: a trend of ~11 %/yr is not separable from regime noise in < several years",
+   "plausible_effect": "registry E03: ~11 %/yr decline",
+   "reason": "descriptive monitoring only",
+   "draft": null
+  }
+ ],
+ "drafts": [
+  {
+   "rank": 1,
+   "id": "LIQPROXY1",
+   "file": "research/desk/protocols/LIQPROXY1_v1.md",
+   "candidate": "C13",
+   "decision": "PROPOSED",
+   "desk_state_expected": "AWAITING_OWNER_APPROVAL (then blocked by gates until fwd_tob_universe and fwd_spec_journal are EXISTING_ACTIVE)",
+   "lineage": "cost measurement (H-SPR-1/2, R1); proposed new VOCABULARY tag liquidity_proxy_validation (needs a vocabulary amendment)",
+   "alpha_f": 0.0125,
+   "alpha_charged": false,
+   "power": {
+    "n_eff": 501.9,
+    "power_r0.10": 0.497,
+    "power_r0.15": 0.864,
+    "power_r0.20": 0.986,
+    "MDE_r": 0.138,
+    "sensitivity_r0.15": {
+     "rho_c_0.05": 0.992,
+     "rho_c_0.2": 0.558,
+     "N100": 0.845,
+     "39_weeks": 0.743,
+     "26_weeks": 0.548,
+     "alpha_F_div_3": 0.759
+    },
+    "scenario": "N 250 coins with varying spreads, 52 weeks, rho_c 0.1, alpha_F 0.0125 one-sided"
+   },
+   "protocol_fields": {
+    "primary_hypothesis": "Within coin and week, weekly Abdi-Ranaldo from census daily bars co-moves positively with the measured median quoted spread beyond realised volatility (Binance USDT crypto perps).",
+    "estimand": "beta (~ partial r) in z(dS) = a + beta z(dAR) + gamma z(dRV) + u, within-week normal scores, week-clustered SE",
+    "direction": "positive",
+    "universe_rule": "weekly PIT at Monday 00:00: census coin_perps, quoteVolume >= 1M USD, first_seen >= 30 d, tickSize/mark < 8 bp",
+    "window_start": 1796601600,
+    "window_end": 1828051200,
+    "window_start_utc": "2026-12-07T00:00:00Z",
+    "window_end_utc": "2027-12-06T00:00:00Z",
+    "cost_model": "n/a (measurement, no orders)",
+    "data_streams": [
+     "bn_census",
+     "fwd_tob_universe",
+     "fwd_spec_journal",
+     "fwd_universe_versions"
+    ],
+    "alpha_f": 0.0125,
+    "plausible_sr": 0.15,
+    "per_year": 1,
+    "n_planned": 502
+   }
+  },
+  {
+   "rank": 2,
+   "id": "FUNDFRAG1",
+   "file": "research/desk/protocols/FUNDFRAG1_v1.md",
+   "candidate": "C26",
+   "decision": "PROPOSED",
+   "desk_state_expected": "AWAITING_OWNER_APPROVAL (then blocked by gates until fwd_spec_journal and fwd_universe_versions are EXISTING_ACTIVE)",
+   "lineage": "funding_crowding_contrarian (same trigger as m21h; materially different outcome)",
+   "alpha_f": 0.0125,
+   "alpha_charged": false,
+   "power": {
+    "n_eff": 500.0,
+    "events": 1350,
+    "power_e0.10": 0.496,
+    "power_e0.15": 0.863,
+    "power_e0.20": 0.986,
+    "MDE_e": 0.139,
+    "sensitivity_e0.15": {
+     "180d_5perday": 0.685,
+     "180d_7perday_rho0.1": 0.88,
+     "270d_7perday": 0.908,
+     "365d_5perday": 0.949,
+     "alpha_F_div_3": 0.757
+    },
+    "scenario": "270 days, 5 events/day, within-day rho 0.2, HAC 1.5, alpha_F 0.0125 one-sided"
+   },
+   "protocol_fields": {
+    "primary_hypothesis": "USDT perps with 72 h funding >= 18.8 % p.a. have higher log(RV next 72 h / RV last 168 h) than perps with funding in [0, 12.5 %] p.a. in the same RV decile on the same day.",
+    "estimand": "E[ybar_D], day mean of y = g - median(g of matched controls), g = ln(RVf/RVt)",
+    "direction": "positive",
+    "universe_rule": "daily PIT at D 00:00: census coin_perps, quoteVolume >= 1M USD, first_seen >= 30 d, no known delisting notice, >= 150/168 hourly returns",
+    "window_start": 1796601600,
+    "window_end": 1819929600,
+    "window_start_utc": "2026-12-07T00:00:00Z",
+    "window_end_utc": "2027-09-03T00:00:00Z",
+    "cost_model": "n/a (risk forecast, no orders)",
+    "data_streams": [
+     "bn_census",
+     "fwd_spec_journal",
+     "fwd_universe_versions",
+     "news_watch"
+    ],
+    "alpha_f": 0.0125,
+    "plausible_sr": 0.15,
+    "per_year": 1,
+    "n_planned": 500
+   }
+  },
+  {
+   "rank": 3,
+   "id": "LIQREC1",
+   "file": "research/desk/protocols/LIQREC1_v1.md",
+   "candidate": "C12",
+   "decision": "PARKED",
+   "desk_state_expected": "PARKED (INSUFFICIENT_POWER 0.224 < 0.8)",
+   "lineage": "maker_adverse_selection_measurement",
+   "alpha_f": 0.0125,
+   "alpha_charged": false,
+   "power": {
+    "events_12m_assumed": 6,
+    "power_e0.67_12m": 0.224,
+    "power_e0.67_24m": 0.443,
+    "MDE_e_12m": 2.76,
+    "events_needed_e0.67": 26,
+    "events_needed_e0.5": 43
+   },
+   "protocol_fields": {
+    "primary_hypothesis": "7 days after a BTC 3-sigma stress day, top-of-book depth across Binance USDT crypto perps is below its pre-event level, beyond placebo days.",
+    "estimand": "E[L_j] = mean_i ln(dep(D+7)/dep(base)) minus placebo median",
+    "direction": "negative",
+    "universe_rule": "PIT at D-14: census coin_perps, quoteVolume >= 1M USD, first_seen >= 30 d, tickSize/mark < 8 bp",
+    "window_start": 1796601600,
+    "window_end": 1828137600,
+    "window_start_utc": "2026-12-07T00:00:00Z",
+    "window_end_utc": "2027-12-07T00:00:00Z",
+    "cost_model": "n/a (measurement, no orders)",
+    "data_streams": [
+     "bn_census",
+     "fwd_tob_universe",
+     "fwd_spec_journal"
+    ],
+    "alpha_f": 0.0125,
+    "plausible_sr": 0.67,
+    "per_year": 1,
+    "n_planned": 6
+   }
+  }
+ ]
+}
