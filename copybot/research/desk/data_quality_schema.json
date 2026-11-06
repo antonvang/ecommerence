@@ -1,0 +1,177 @@
+{
+ "version": "forward_obs/1",
+ "rule": "director order 50 P1; research/desk/FORWARD_DATA_PLAN.md",
+ "types": {
+  "number": "int or float, finite, not bool",
+  "int": "int, not bool",
+  "str": "non-empty str",
+  "bool": "bool",
+  "number|null": "number or null",
+  "int|null": "int or null",
+  "str|null": "str or null"
+ },
+ "common_required": {
+  "kind": "str",
+  "stream": "str",
+  "ts": "number"
+ },
+ "kinds": {
+  "book": {
+   "required": {
+    "venue": "str",
+    "symbol": "str",
+    "market": "str",
+    "bid": "number",
+    "ask": "number",
+    "bid_qty": "number",
+    "ask_qty": "number"
+   },
+   "optional": {
+    "quote_ts": "number|null"
+   },
+   "checks": [
+    "bid > 0 and ask > 0",
+    "bid_qty >= 0 and ask_qty >= 0",
+    "bid <= ask (bid == ask: locked)",
+    "ts - quote_ts <= max_quote_age_s",
+    "repeat_n unchanged quotes without quote_ts: suspected"
+   ],
+   "market_values": [
+    "perp",
+    "spot"
+   ]
+  },
+  "funding": {
+   "required": {
+    "venue": "str",
+    "symbol": "str",
+    "rate": "number",
+    "interval_h": "int",
+    "funding_time": "int"
+   },
+   "optional": {
+    "mark": "number|null"
+   },
+   "checks": [
+    "interval_h in allowed_funding_intervals_h",
+    "funding_time[i] - funding_time[i-1] == interval_h * 3600 per symbol",
+    "|rate| <= max_abs_funding_rate"
+   ]
+  },
+  "basis": {
+   "required": {
+    "venue": "str",
+    "symbol": "str",
+    "spot_ts": "number",
+    "perp_ts": "number",
+    "spot_mid": "number",
+    "perp_mid": "number",
+    "basis": "number"
+   },
+   "checks": [
+    "|spot_ts - perp_ts| <= basis_tol_s",
+    "basis == perp_mid / spot_mid - 1 (1e-9)"
+   ]
+  },
+  "universe": {
+   "required": {
+    "venue": "str",
+    "symbol": "str",
+    "status": "str"
+   },
+   "optional": {
+    "onboard_ts": "int|null",
+    "contract_type": "str|null",
+    "tick_size": "number|null"
+   },
+   "checks": [
+    "versions from consecutive snapshots: listed, delisted, relisted, spec_changed",
+    "first_seen(symbol) <= as_of for every universe dated as_of"
+   ]
+  },
+  "forecast": {
+   "required": {
+    "model_id": "str",
+    "symbol": "str",
+    "issued_ts": "number",
+    "target_start": "number",
+    "target_end": "number",
+    "value": "number",
+    "hash": "str"
+   },
+   "checks": [
+    "issued_ts < target_start",
+    "target_start < target_end",
+    "hash == forecast_hash()",
+    "first issue per (model_id, symbol, target_start) is frozen; later ones are revisions"
+   ]
+  },
+  "outcome": {
+   "required": {
+    "symbol": "str",
+    "target_start": "number",
+    "target_end": "number",
+    "realized": "number"
+   },
+   "checks": [
+    "ts >= target_end"
+   ]
+  }
+ },
+ "defaults": {
+  "gap_factor": 2.0,
+  "gap_jitter_factor": 0.1,
+  "max_quote_age_factor": 0.5,
+  "repeat_n": 5,
+  "basis_tol_s": 5.0,
+  "allowed_funding_intervals_h": [
+   1,
+   2,
+   4,
+   8
+  ],
+  "max_abs_funding_rate": 0.03,
+  "trading_status": [
+   "TRADING"
+  ]
+ },
+ "coverage": {
+  "expected": "slots of the cadence inside the key's active window [max(start, listed), min(end, delisted))",
+  "valid": "slots with >= 1 accepted record",
+  "dropped": "slots with records, all rejected",
+  "missing": "slots with no record at all",
+  "coverage_pct": "100 * valid / expected"
+ },
+ "errors": [
+  "invalid",
+  "out_of_order",
+  "duplicate",
+  "conflicting_duplicate",
+  "crossed",
+  "stale",
+  "bad_funding_interval",
+  "funding_step_mismatch",
+  "funding_rate_out_of_range",
+  "basis_time_mismatch",
+  "basis_recompute_mismatch",
+  "gaps",
+  "pit_violations",
+  "survivorship_omissions",
+  "lookahead",
+  "revised",
+  "tampered",
+  "outcome_early"
+ ],
+ "warnings": [
+  "locked",
+  "stale_suspected",
+  "unpaired_basis",
+  "missing_outcome"
+ ],
+ "info": [
+  "listings",
+  "delistings",
+  "relistings",
+  "spec_changes"
+ ]
+}

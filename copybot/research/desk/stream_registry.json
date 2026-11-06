@@ -1,0 +1,1100 @@
+{
+ "version": "stream_registry/1",
+ "rule": "director order 50 P1; research/desk/FORWARD_DATA_PLAN.md",
+ "audited_at": "2026-11-06 ~13:00 UTC",
+ "audit_sources": [
+  "systemctl --user list-units",
+  "ps",
+  "production lab/*.py, research/tools/*.py headers",
+  "lab.db mode=ro query_only: aggregates only, ts >= 2026-10-17",
+  "PROTOCOL_V3.md",
+  "QUARANTINE.json",
+  "tests/test_lab_safety.py"
+ ],
+ "processes": {
+  "889": "python3 -m lab watch --port 8770 (copybot-watch.service)",
+  "1512": "python3 -u -m research.pm_lp collect --approved (pm-lp-collector.service)",
+  "1018211": "python3 -m lab web --port 8770 (manual)",
+  "1018279": "python3 -m lab fleet (manual start ~16 h before audit; copybot-lab.service inactive since 2026-11-02)"
+ },
+ "existing_weekly_storage_mb": 176.4,
+ "proposed_weekly_storage_mb": 31.2,
+ "proposed_weekly_new_requests": 672,
+ "hosts": {
+  "allowed_lab": [
+   "data.binance.vision",
+   "fapi.binance.com",
+   "data-api.binance.vision",
+   "community-api.coinmetrics.io",
+   "fred.stlouisfed.org",
+   "stablecoins.llama.fi",
+   "www.deribit.com",
+   "api.hyperliquid.xyz",
+   "clob.polymarket.com",
+   "gamma-api.polymarket.com",
+   "wikimedia.org",
+   "www.federalreserve.gov",
+   "www.binance.com",
+   "cointelegraph.com",
+   "www.coindesk.com",
+   "api.gdeltproject.org",
+   "www.ecb.europa.eu",
+   "www.cnbc.com",
+   "www.bls.gov",
+   "doi.org",
+   "www.bis.org",
+   "127.0.0.1",
+   "localhost"
+  ],
+  "allowed_lab_source": "tests/test_lab_safety.py ALLOWED_HOSTS (production checkout, read 2026-11-06)",
+  "research_tool_only": {
+   "V1 (29a/29b)": [
+    "api.kraken.com",
+    "api.bitvavo.com",
+    "api.exchange.coinbase.com",
+    "www.bitstamp.net",
+    "eea.okx.com"
+   ],
+   "pm_lp only": [
+    "data-api.polymarket.com"
+   ],
+   "N4 only from 2026-11-14 after lock (38 B)": [
+    "Upbit's own API host"
+   ]
+  },
+  "forbidden": [
+   "api.binance.com (trading host)",
+   "dapi.binance.com (not allowed; COIN-M from 2026-11-28 needs a host approval)",
+   "api.hyperliquid.xyz/exchange",
+   "any host needing a key"
+  ]
+ },
+ "never": [
+  "2024 holdout (any row dated 2024, incl. news/1 backfill titles)",
+  "pm_lp process, data, watcher",
+  "real money"
+ ],
+ "streams": [
+  {
+   "id": "bn_premium_watch",
+   "status": "EXISTING_ACTIVE",
+   "source_host": "fapi.binance.com",
+   "fields": [
+    "markPrice",
+    "indexPrice",
+    "lastFundingRate",
+    "time",
+    "predicted_funding (per 8h, 12i interval-normalised)",
+    "funding_median",
+    "funding_top",
+    "funding_above_floor"
+   ],
+   "cadence_s": 60,
+   "storage": "lab.db observations detector pricing_constraint/2 source .../fapi/v1/premiumIndex (flagged rows + market medians only; full rows are NOT stored except via census/1 hourly and k3/1 windows)",
+   "started": "2026-10-17 00:38 UTC",
+   "consumers": [
+    "scanner lanes 12e/12i (LIVE funding)",
+    "k3/1 (reuses the fetch)",
+    "census/1 (reuses the fetch)",
+    "dashboard"
+   ],
+   "gate": "allowed host (tests/test_lab_safety.py ALLOWED_HOSTS); amendment 12a/12e/12i",
+   "est_weekly_bytes": 69822171,
+   "est_weekly_requests": 10416,
+   "notes": "3-day coverage 4273/4320 minutes (98.9 %), one gap of 244 s. Requests: premiumIndex 60/h + exchangeInfo 1/h + fundingInfo 1/h. measured: lab.db rows 2026-11-03 12:58..11-06 12:58 UTC, sum(len(payload)+~150 B row overhead) x 7/3",
+   "coverage_3d": {
+    "expected": 4320,
+    "observed": 4273,
+    "max_gap_s": 244
+   }
+  },
+  {
+   "id": "bn_exchangeinfo_fundinginfo_mem",
+   "status": "EXISTING_ACTIVE",
+   "source_host": "fapi.binance.com",
+   "fields": [
+    "exchangeInfo symbols (contractType, underlyingType, status, quoteAsset)",
+    "fundingInfo fundingIntervalHours"
+   ],
+   "cadence_s": 3600,
+   "storage": "process memory only (scanner._PERPS, scanner.INTERVALS) - NOT persisted",
+   "started": "with premium-watch",
+   "consumers": [
+    "premium-watch perp filter",
+    "12i interval normalisation",
+    "k3 selection"
+   ],
+   "gate": "allowed host",
+   "est_weekly_bytes": 0,
+   "est_weekly_requests": 0,
+   "notes": "Already fetched hourly (requests counted in bn_premium_watch). Contract metadata and funding-interval history are lost; reuse target of proposed fwd_spec_journal."
+  },
+  {
+   "id": "hl_premium_watch",
+   "status": "EXISTING_ACTIVE",
+   "source_host": "api.hyperliquid.xyz (/info POST metaAndAssetCtxs)",
+   "fields": [
+    "hl_predicted_funding x8 (flagged >= 0.05 %)",
+    "hl_funding_median",
+    "hl_funding_top",
+    "hl_symbols_compared"
+   ],
+   "cadence_s": 60,
+   "storage": "lab.db observations pricing_constraint/2 source https://api.hyperliquid.xyz/info",
+   "started": "2026-10-17 00:38 UTC",
+   "consumers": [
+    "HL lanes (amendment 13)",
+    "hlcensus/1 (reuses the response)"
+   ],
+   "gate": "allowed host; /info only, /exchange forbidden",
+   "est_weekly_bytes": 13053303,
+   "est_weekly_requests": 10080,
+   "notes": "3-day coverage 4205/4320 (97.3 %), max gap 244 s. measured: lab.db rows 2026-11-03 12:58..11-06 12:58 UTC, sum(len(payload)+~150 B row overhead) x 7/3",
+   "coverage_3d": {
+    "expected": 4320,
+    "observed": 4205,
+    "max_gap_s": 244
+   }
+  },
+  {
+   "id": "bn_census",
+   "status": "EXISTING_ACTIVE",
+   "source_host": "fapi.binance.com",
+   "fields": [
+    "markPrice",
+    "indexPrice",
+    "lastFundingRate",
+    "lastPrice",
+    "openPrice (24h rolling)",
+    "highPrice (24h rolling)",
+    "lowPrice (24h rolling)",
+    "quoteVolume (24h)",
+    "count (24h)",
+    "premium_time_ms",
+    "ticker_close_ms"
+   ],
+   "cadence_s": 3600,
+   "storage": "lab.db observations detector census/1 metric snapshot (one row per hour, columnar payload, 941 symbols on 11-06: 896 USDT, 39 USDC; 519 COIN perps)",
+   "started": "2026-10-27 15:00 UTC",
+   "consumers": [
+    "HFC-1 (research/tools/hfc1_daily.py)",
+    "research/tools/census_check.py",
+    "carry_census_check.py",
+    "amendment 28a C1-C3"
+   ],
+   "gate": "allowed host; amendment 28/28a",
+   "est_weekly_bytes": 15300000,
+   "est_weekly_requests": 168,
+   "notes": "3-day coverage 73/72 hours (100 %), max gap 3654 s. +1 ticker/24hr call per hour; premiumIndex reused. Symbols seen: 935 first snapshot -> 941 now (+6, -0): delistings are not visible here. measured: lab.db rows 2026-11-03 12:58..11-06 12:58 UTC, sum(len(payload)+~150 B row overhead) x 7/3",
+   "coverage_3d": {
+    "expected": 72,
+    "observed": 73,
+    "max_gap_s": 3654
+   }
+  },
+  {
+   "id": "hl_census",
+   "status": "EXISTING_ACTIVE",
+   "source_host": "api.hyperliquid.xyz",
+   "fields": [
+    "funding",
+    "premium",
+    "markPx",
+    "oraclePx",
+    "midPx",
+    "openInterest",
+    "dayNtlVlm",
+    "prevDayPx",
+    "isDelisted"
+   ],
+   "cadence_s": 3600,
+   "storage": "lab.db observations detector hlcensus/1 (235 names incl. k-prefixed and delisted)",
+   "started": "2026-11-02 15:00 UTC",
+   "consumers": [
+    "research/tools/hlcensus_look.py (MISSION27_3 12b)"
+   ],
+   "gate": "allowed host; amendment 38 A",
+   "est_weekly_bytes": 3400000,
+   "est_weekly_requests": 0,
+   "notes": "3-day coverage 73/72 (100 %). No new request (reuses premium-watch's response). measured: lab.db rows 2026-11-03 12:58..11-06 12:58 UTC, sum(len(payload)+~150 B row overhead) x 7/3",
+   "coverage_3d": {
+    "expected": 72,
+    "observed": 73,
+    "max_gap_s": 3654
+   }
+  },
+  {
+   "id": "bn_abnormal_move",
+   "status": "EXISTING_ACTIVE",
+   "source_host": "fapi.binance.com",
+   "fields": [
+    "1h kline returns",
+    "z_1h",
+    "z_24h",
+    "volume_ratio",
+    "premium",
+    "spread",
+    "book_rt (5000 USD round trip)",
+    "funding_rate",
+    "next_funding_ts"
+   ],
+   "cadence_s": 3600,
+   "storage": "lab.db observations detector abnormal_move/1 (12 markets: BTC, ETH, XAU, XAG, XPT, CL, BZ, NATGAS, COPPER, SPY, QQQ, USDBRL)",
+   "started": "2026-10-24 12:23 UTC",
+   "consumers": [
+    "K1/K2 (amendment 21y)",
+    "dashboard markets",
+    "opportunity.move/outcome",
+    "straks book (41)"
+   ],
+   "gate": "allowed host; amendment 21",
+   "est_weekly_bytes": 12400000,
+   "est_weekly_requests": 4032,
+   "notes": "3-day coverage 74 scans/72 h, max gap 3649 s. Requests approx 12 klines + 12 depth per hour (not counted from logs). measured: lab.db rows 2026-11-03 12:58..11-06 12:58 UTC, sum(len(payload)+~150 B row overhead) x 7/3",
+   "coverage_3d": {
+    "expected": 72,
+    "observed": 74,
+    "max_gap_s": 3649
+   }
+  },
+  {
+   "id": "bn_funding_settled_watch",
+   "status": "EXISTING_ACTIVE",
+   "source_host": "fapi.binance.com",
+   "fields": [
+    "rate",
+    "funding_time",
+    "mark_price",
+    "fetched_ts"
+   ],
+   "cadence_s": 3600,
+   "storage": "lab.db observations detector funding_settled/1 (12 WATCH markets only)",
+   "started": "2026-10-24 21:00 UTC (START_MS; never earlier)",
+   "consumers": [
+    "K1/K2",
+    "carry economics"
+   ],
+   "gate": "allowed host; amendment 21y B (forward only)",
+   "est_weekly_bytes": 100000,
+   "est_weekly_requests": 2016,
+   "notes": "18 settlement times in 3 days, all 4h apart. Universe-wide settled funding is NOT collected (census holds lastFundingRate only). measured: lab.db rows 2026-11-03 12:58..11-06 12:58 UTC, sum(len(payload)+~150 B row overhead) x 7/3"
+  },
+  {
+   "id": "bn_k3",
+   "status": "EXISTING_ACTIVE",
+   "source_host": "fapi.binance.com",
+   "fields": [
+    "mark",
+    "index",
+    "rate",
+    "next_ts per selected coin in S+-35 min and placebo window",
+    "selection",
+    "entry/exit book rt_1000/rt_5000",
+    "round_audit",
+    "missed"
+   ],
+   "cadence_s": 60,
+   "storage": "lab.db observations detector k3/1",
+   "started": "2026-10-25 11:25 UTC",
+   "consumers": [
+    "K3 forward screening (amendment 22, deadline 2027-03-31)"
+   ],
+   "gate": "allowed host; amendment 22; K3 windows S+-35 min are deploy-forbidden (K3 rule)",
+   "est_weekly_bytes": 59100000,
+   "est_weekly_requests": 1642,
+   "notes": "Marks reuse the premium-watch fetch; depth calls ~704 per 3 days. measured: lab.db rows 2026-11-03 12:58..11-06 12:58 UTC, sum(len(payload)+~150 B row overhead) x 7/3"
+  },
+  {
+   "id": "bn_hl_cross_venue_hourly",
+   "status": "EXISTING_ACTIVE",
+   "source_host": "api.hyperliquid.xyz allMids + fapi.binance.com ticker/bookTicker",
+   "fields": [
+    "cross_venue_gap (flagged 0.3-3 %)",
+    "binance_spread",
+    "coins_compared",
+    "identity_mismatch_suspected",
+    "perp_premium (>= 0.5 %)"
+   ],
+   "cadence_s": 3600,
+   "storage": "lab.db observations pricing_constraint/2 (flagged rows only; the full bookTicker response is NOT stored)",
+   "started": "2026-10-17 00:38 UTC",
+   "consumers": [
+    "discovery candidates (scanner)"
+   ],
+   "gate": "allowed hosts",
+   "est_weekly_bytes": 200000,
+   "est_weekly_requests": 504,
+   "notes": "72 cycles in 3 days, one missed hour (max gap 7201 s). The all-symbol perp bookTicker is already fetched hourly: reuse target of fwd_tob_universe."
+  },
+  {
+   "id": "pm_scanner_detectors",
+   "status": "EXISTING_ACTIVE",
+   "source_host": "clob.polymarket.com, gamma-api.polymarket.com",
+   "fields": [
+    "configured_pool_usd_day",
+    "median_gross_yield_day",
+    "negRisk events_checked",
+    "negrisk_locked_profit"
+   ],
+   "cadence_s": 3600,
+   "storage": "lab.db observations venue_subsidy/1 and pricing_constraint/2 (gamma)",
+   "started": "2026-10-17 00:38 UTC",
+   "consumers": [
+    "discovery scanner"
+   ],
+   "gate": "allowed hosts; NOT pm_lp (separate collector, untouched)",
+   "est_weekly_bytes": 100000,
+   "est_weekly_requests": null,
+   "notes": "Requests: 1 rewards GET + 1 gamma GET + book POSTs for up to 150 negRisk events per hour; exact count not determined."
+  },
+  {
+   "id": "news_watch",
+   "status": "EXISTING_ACTIVE",
+   "source_host": "www.federalreserve.gov, www.bls.gov, www.ecb.europa.eu, www.cnbc.com, www.coindesk.com, cointelegraph.com, www.binance.com (bapi cms), api.gdeltproject.org",
+   "fields": [
+    "source id",
+    "published_ts",
+    "collected ts",
+    "usable_from",
+    "title",
+    "url",
+    "category",
+    "coins"
+   ],
+   "cadence_s": 600,
+   "storage": "lab.db observations detector news/1 (news_item, news_fetch, news_error)",
+   "started": "2026-10-21 13:54 UTC",
+   "consumers": [
+    "lane delistings (16e)",
+    "H5F/M1F listing and Monitoring Tag events",
+    "moves news context",
+    "measure_h4"
+   ],
+   "gate": "allowed hosts; amendment 16/21b. Backfilled 2024+ rows are holdout (QUARANTINE.json news-backfill-2024plus-exposure): research tools read news/1 only via gates.news_rows",
+   "est_weekly_bytes": 1300000,
+   "est_weekly_requests": 7056,
+   "notes": "3-day coverage 428/432 passes (99.1 %), 2 gaps of ~1200 s. Requests approx 7 sources x 6 passes/h (GDELT ~daily). measured: lab.db rows 2026-11-03 12:58..11-06 12:58 UTC, sum(len(payload)+~150 B row overhead) x 7/3",
+   "coverage_3d": {
+    "expected": 432,
+    "observed": 428,
+    "max_gap_s": 1209
+   }
+  },
+  {
+   "id": "onchain_flows",
+   "status": "EXISTING_ACTIVE",
+   "source_host": "community-api.coinmetrics.io",
+   "fields": [
+    "FlowInExNtv",
+    "FlowOutExNtv",
+    "SplyExNtv (btc, eth)",
+    "flow_first (first value seen + fetch time)",
+    "flow_revision"
+   ],
+   "cadence_s": 21600,
+   "storage": "lab.db observations detector onchain/1",
+   "started": "2026-10-24 19:40 UTC",
+   "consumers": [
+    "amendment 21q data; no locked consumer found (could not determine)"
+   ],
+   "gate": "allowed host; CC BY-NC 4.0 (non-commercial)",
+   "est_weekly_bytes": 20000,
+   "est_weekly_requests": 28,
+   "notes": "13 polls in 3 days (100 %). Point in time only from 2026-10-24 (CoinMetrics revises retroactively)."
+  },
+  {
+   "id": "bn_capacity",
+   "status": "EXISTING_ACTIVE",
+   "source_host": "fapi.binance.com, data-api.binance.vision",
+   "fields": [
+    "round_trip 500..50000 USD (500 levels)",
+    "spread",
+    "depth_bid_usd",
+    "depth_ask_usd",
+    "fits_20_levels",
+    "censored"
+   ],
+   "cadence_s": 82800,
+   "storage": "lab.db observations detector capacity/1",
+   "started": "2026-10-24 21:00 UTC",
+   "consumers": [
+    "amendment 21v capacity status",
+    "cost reports"
+   ],
+   "gate": "allowed hosts",
+   "est_weekly_bytes": 900000,
+   "est_weekly_requests": 413,
+   "notes": "3 runs in 3 days (every 23 h). ~37 perp + 22 spot instruments per run."
+  },
+  {
+   "id": "bn_benchmark",
+   "status": "EXISTING_ACTIVE",
+   "source_host": "fapi.binance.com",
+   "fields": [
+    "bh_start_price",
+    "fwd_bh_return per forward ledger"
+   ],
+   "cadence_s": 3600,
+   "storage": "lab.db observations detector benchmark/1",
+   "started": "2026-10-23 16:05 UTC",
+   "consumers": [
+    "dashboard Total P&L card"
+   ],
+   "gate": "allowed host",
+   "est_weekly_bytes": 700000,
+   "est_weekly_requests": 168,
+   "notes": "72 runs in 3 days."
+  },
+  {
+   "id": "bn_depth500_diag",
+   "status": "EXISTING_ACTIVE",
+   "source_host": "fapi.binance.com, data-api.binance.vision",
+   "fields": [
+    "depth",
+    "spread",
+    "mid",
+    "vwap distance 20/500 levels"
+   ],
+   "cadence_s": null,
+   "storage": "lab.db observations detector depth500/1",
+   "started": "2026-10-26",
+   "consumers": [
+    "diagnostics only (amendment 27)"
+   ],
+   "gate": "allowed hosts",
+   "est_weekly_bytes": 1000,
+   "est_weekly_requests": null,
+   "notes": "Event-triggered after a 12g thin-book skip; 14 rows total, none since 2026-11-01."
+  },
+  {
+   "id": "paper_books",
+   "status": "EXISTING_ACTIVE",
+   "source_host": "fapi.binance.com, data-api.binance.vision, api.hyperliquid.xyz",
+   "fields": [
+    "20-level book at order time",
+    "fill px",
+    "mid",
+    "book_ts",
+    "slippage",
+    "fee",
+    "settled funding"
+   ],
+   "cadence_s": null,
+   "storage": "lab.db sim_orders / sim_exec / sim_fills / sim_funding",
+   "started": "2026-10-18",
+   "consumers": [
+    "net_report.py (order 44)",
+    "costreport",
+    "lane reviews"
+   ],
+   "gate": "allowed hosts",
+   "est_weekly_bytes": null,
+   "est_weekly_requests": 2473,
+   "notes": "Event-driven: 1,060 sim_exec and 1,156 fills in the last 3 days (42 instruments). Book snapshots are tied to paper orders, so they are a biased (selected) liquidity sample."
+  },
+  {
+   "id": "bn_spot_pairs_mem",
+   "status": "EXISTING_ACTIVE",
+   "source_host": "data-api.binance.vision",
+   "fields": [
+    "spot symbols with status TRADING"
+   ],
+   "cadence_s": 3600,
+   "storage": "process memory only (lane._SPOT_LIST) - NOT persisted",
+   "started": "with lanes (amendment 19)",
+   "consumers": [
+    "lane spot checks"
+   ],
+   "gate": "allowed host",
+   "est_weekly_bytes": 0,
+   "est_weekly_requests": 168,
+   "notes": "Reuse target of fwd_spec_journal (spot list changes)."
+  },
+  {
+   "id": "hfc1_daily_cohort",
+   "status": "EXISTING_ACTIVE",
+   "source_host": "data-api.binance.vision, fapi.binance.com",
+   "fields": [
+    "cohort c0 from census/1",
+    "spot exchangeInfo sha256",
+    "one book per leg"
+   ],
+   "cadence_s": 86400,
+   "storage": "research/data/hfc1/<day>.json",
+   "started": "2026-11-04 (manual daily run)",
+   "consumers": [
+    "HFC-1 study (3 d / 14 d outcomes)"
+   ],
+   "gate": "allowed hosts",
+   "est_weekly_bytes": null,
+   "est_weekly_requests": null,
+   "notes": "Manual daily CLI, not a service; cohorts 11-04 (production) and 11-05 (dev worktree). Request count depends on cohort size (C0 119 on 11-05)."
+  },
+  {
+   "id": "pm_lp_collector",
+   "status": "EXISTING_ACTIVE",
+   "source_host": "clob.polymarket.com, data-api.polymarket.com",
+   "fields": [
+    "reward config (60 min)",
+    "YES books (target 60 s)",
+    "taker/all trades (5 min)",
+    "market status (6 h)"
+   ],
+   "cadence_s": 60,
+   "storage": "data/research/pm_lp/ (not inspected)",
+   "started": "2026-10-17 (systemd pm-lp-collector.service, pid 1512)",
+   "consumers": [
+    "pm_lp_v1 only"
+   ],
+   "gate": "UNTOUCHABLE: holdout D0+14..D0+27, follow-up to 2026-11-27; no restart, stop or reboot 10-31..11-27",
+   "est_weekly_bytes": null,
+   "est_weekly_requests": null,
+   "notes": "Out of scope for the observatory: never read, never reused, never quality-checked here. Cadences from research/PM_LP_SPEC.md."
+  },
+  {
+   "id": "v1_eu_books",
+   "status": "EXISTING_INACTIVE",
+   "source_host": "data-api.binance.vision, api.kraken.com, api.bitvavo.com, api.exchange.coinbase.com, www.bitstamp.net, eea.okx.com",
+   "fields": [
+    "coin",
+    "venue",
+    "mid",
+    "spread_bp",
+    "buy_bp",
+    "sell_bp",
+    "rt_bp (15-unit walk)"
+   ],
+   "cadence_s": 900,
+   "storage": "data/v1/books.jsonl (2,684 rows, 396 KB)",
+   "started": "2026-10-27 16:42 -> 2026-10-30 17:13 UTC",
+   "consumers": [
+    "V1 venue-cost hypothesis (amendments 29a/29b)"
+   ],
+   "gate": "research tool only (not lab); hosts approved for V1 under 29a/29b, not in the lab allowlist",
+   "est_weekly_bytes": 0,
+   "est_weekly_requests": 0,
+   "notes": "Stopped. 4 coins (3 on Bitstamp/OKX), 122 samples per venue and coin over 72 h (V1 needs >= 50 over >= 48 h). Reuse for venue differences instead of a new stream; a restart needs its own yes."
+  },
+  {
+   "id": "cm_listing_catalog",
+   "status": "EXISTING_INACTIVE",
+   "source_host": "community-api.coinmetrics.io",
+   "fields": [
+    "first trade per Coinbase USD / Upbit KRW market"
+   ],
+   "cadence_s": null,
+   "storage": "lab.db observations coinbase/1 (508), upbit/1 (388)",
+   "started": "2026-10-23 / 2026-10-24 (one-shot)",
+   "consumers": [
+    "H5/U1F/M1F listing tests (17g/17h/17i)"
+   ],
+   "gate": "17i: 'ingen ny vaert, ingen indsamler' - no forward collector may be added",
+   "est_weekly_bytes": 0,
+   "est_weekly_requests": 0,
+   "notes": "One-time catalogue reads; rerun skips stored markets."
+  },
+  {
+   "id": "historical_archive_agent",
+   "status": "BLOCKED_UNTIL_2026-11-14",
+   "source_host": "data.binance.vision, wikimedia.org, fred.stlouisfed.org, stablecoins.llama.fi, www.deribit.com, community-api.coinmetrics.io",
+   "fields": [
+    "monthly/daily archives (klines, funding, metrics, aggTrades, bookDepth)",
+    "DVOL",
+    "FRED",
+    "stablecoins",
+    "pageviews"
+   ],
+   "cadence_s": null,
+   "storage": "data/lab/market/* (last written 2026-10-24/27)",
+   "started": "2026-10-17",
+   "consumers": [
+    "backtests, screenings, R3 (24a)"
+   ],
+   "gate": "no historical query before 2026-11-14 00:00 UTC; COIN-M files only from 2026-11-28; 2024 holdout never; data-1 agent idle",
+   "est_weekly_bytes": 0,
+   "est_weekly_requests": 0,
+   "notes": "Historical, not forward. Listed so that no forward stream re-implements it."
+  },
+  {
+   "id": "launch_data",
+   "status": "EXISTING_INACTIVE",
+   "source_host": "Solana RPC (research/launch_data.py)",
+   "fields": [
+    "pump.fun graduations",
+    "PumpSwap pool trades"
+   ],
+   "cadence_s": null,
+   "storage": "data/research/launches.db (absent)",
+   "started": null,
+   "consumers": [
+    "RESULTS_launch_v1"
+   ],
+   "gate": "research only",
+   "est_weekly_bytes": 0,
+   "est_weekly_requests": 0,
+   "notes": "Not running; no database present."
+  },
+  {
+   "id": "fwd_funding_settled_universe",
+   "status": "PROPOSED_NEEDS_SEPARATE_APPROVAL",
+   "source_host": "fapi.binance.com (GET /fapi/v1/fundingRate, no symbol)",
+   "fields": [
+    "symbol",
+    "fundingTime",
+    "fundingRate",
+    "markPrice",
+    "fetched_ts",
+    "truncated flag"
+   ],
+   "cadence_s": 3600,
+   "storage": "lab.db observations detector funding_settled_all/1 (or a research JSONL file if kept outside lab)",
+   "started": null,
+   "consumers": [
+    "A: carry/HFC-1 realised funding",
+    "H5F/H5X early funding",
+    "C1 regimes",
+    "fund_study"
+   ],
+   "gate": "allowed host; startTime >= stream start (forward only, same pattern as 21y B); separate dated amendment; deploy outside K1/K2/K3",
+   "est_weekly_bytes": 7453000,
+   "est_weekly_requests": 168,
+   "notes": "Rows: 941 symbols x ~27.3 settlements/week (mix 70 % 8h, 30 % 4h, assumed; fundingInfo is not persisted) = ~25,700 rows x ~290 B. One request per hour returns that hour's settlements (<= 1000); at 00/08/16 UTC ~941 rows -> close to the 1000 limit: if a response has 1000 rows, split the time range and record truncated=true. Weight/limits of the no-symbol form to be verified in Binance docs before approval."
+  },
+  {
+   "id": "fwd_spec_journal",
+   "status": "PROPOSED_NEEDS_SEPARATE_APPROVAL",
+   "source_host": "fapi.binance.com exchangeInfo + fundingInfo, data-api.binance.vision exchangeInfo (already fetched hourly)",
+   "fields": [
+    "symbol",
+    "status",
+    "contractType",
+    "underlyingType",
+    "onboardDate",
+    "deliveryDate",
+    "tickSize",
+    "stepSize",
+    "minNotional",
+    "fundingIntervalHours",
+    "adjustedFundingRateCap/Floor",
+    "spot status",
+    "sha256 of each full response"
+   ],
+   "cadence_s": 3600,
+   "storage": "lab.db observations detector spec_journal/1: one full snapshot per UTC day + one row per changed symbol per hour",
+   "started": null,
+   "consumers": [
+    "A: funding interval changes",
+    "D: listings, delistings, settling, spec changes",
+    "factory point-in-time universe rule (order 49 P1)",
+    "fwd_universe_versions"
+   ],
+   "gate": "Option 1 (preferred): persist what premium-watch and lanes already fetch -> 0 new requests, but changes lab/scanner.py and lab/lane.py: separate amendment, full suite, deploy outside K1/K2/K3, pm_lp restart check. Option 2: research job with its own 3 calls/h.",
+   "est_weekly_bytes": 3735000,
+   "est_weekly_requests": 0,
+   "notes": "Storage: daily full = perps ~941 x ~220 B + spot TRADING ~1,500 x ~200 B + fundingInfo ~150 x 120 B = ~0.53 MB/day -> 3.7 MB/week + diffs (~25 KB). Option 2 would add 504 requests/week and, at an assumed ~0.7 MB (fapi) + ~3 MB (spot) per hour, ~620 MB/week of download - reason to prefer option 1."
+  },
+  {
+   "id": "fwd_tob_universe",
+   "status": "PROPOSED_NEEDS_SEPARATE_APPROVAL",
+   "source_host": "fapi.binance.com ticker/bookTicker (already fetched hourly) + data-api.binance.vision /api/v3/ticker/bookTicker (new, all symbols)",
+   "fields": [
+    "symbol",
+    "market (perp|spot)",
+    "bidPrice",
+    "bidQty",
+    "askPrice",
+    "askQty",
+    "perp time (venue ms)",
+    "fetched_ts per response"
+   ],
+   "cadence_s": 3600,
+   "storage": "lab.db observations detector tob/1, one columnar row per hour (like census/1)",
+   "started": null,
+   "consumers": [
+    "B: spreads, stale quotes, liquidity regimes",
+    "A: spot/perp basis (same-time legs only, <= 5 s)",
+    "cost model checks"
+   ],
+   "gate": "allowed hosts; perp leg = hook in scanner pricing_constraint (lab change, separate amendment); spot leg = 1 new GET/h; deploy outside K1/K2/K3",
+   "est_weekly_bytes": 13440000,
+   "est_weekly_requests": 168,
+   "notes": "Storage: perps ~941 x ~55 B + spot USDT TRADING ~450 x ~60 B = ~80 KB/snapshot x 168 = 13.4 MB/week. Network: spot all-symbol response assumed ~0.3 MB x 168 = ~50 MB/week. Limits: level 1 only, hourly (no intra-hour), spot bookTicker has no venue timestamp (staleness only by repetition), legs ~1-2 s apart."
+  },
+  {
+   "id": "fwd_hl_impact",
+   "status": "PROPOSED_NEEDS_SEPARATE_APPROVAL",
+   "source_host": "api.hyperliquid.xyz (same metaAndAssetCtxs response)",
+   "fields": [
+    "impactPxs (bid, ask)",
+    "dayBaseVlm"
+   ],
+   "cadence_s": 3600,
+   "storage": "added columns in hlcensus/1 snapshot",
+   "started": null,
+   "consumers": [
+    "B: HL liquidity proxy and venue differences",
+    "hlcensus_look"
+   ],
+   "gate": "0 new requests; changes lab/hlcensus.py (separate amendment, deploy windows)",
+   "est_weekly_bytes": 1421280,
+   "est_weekly_requests": 0,
+   "notes": "235 names x 3 numbers x ~12 B x 168 = ~1.4 MB/week. Field presence to verify on the first approved snapshot (no response was read in this task)."
+  },
+  {
+   "id": "fwd_vol_forecast_register",
+   "status": "PROPOSED_NEEDS_SEPARATE_APPROVAL",
+   "source_host": "none (computed from census/1 marks)",
+   "fields": [
+    "model_id",
+    "symbol",
+    "issued_ts",
+    "target_start",
+    "target_end",
+    "value",
+    "hash",
+    "outcome realized"
+   ],
+   "cadence_s": 86400,
+   "storage": "research/data/forward_obs/forecasts.jsonl (append-only, hash per record)",
+   "started": null,
+   "consumers": [
+    "C: volatility clustering and regime filters (ARCH/GARCH, HAR-RV)",
+    "HFC-1 funding-vol regime",
+    "K3 windows (descriptive)"
+   ],
+   "gate": "no network; reads lab.db read-only (forward rows since 2026-10-27 only); forecasts issued at 00:05 UTC for the next 24 h, never re-issued; first issue only after approval",
+   "est_weekly_bytes": 4610900,
+   "est_weekly_requests": 0,
+   "notes": "941 symbols x 2 models (EWMA 0.94, HAR 1d/7d on hourly mark returns) x (~200 B forecast + ~150 B outcome) x 7 days = ~4.6 MB/week. CPU: seconds per day. Limit: hourly close-to-close only (census high/low are 24h rolling)."
+  },
+  {
+   "id": "fwd_dvol",
+   "status": "PROPOSED_NEEDS_SEPARATE_APPROVAL",
+   "source_host": "www.deribit.com (public/get_volatility_index_data)",
+   "fields": [
+    "currency",
+    "ts",
+    "open",
+    "high",
+    "low",
+    "close (DVOL)"
+   ],
+   "cadence_s": 3600,
+   "storage": "lab.db observations detector dvol/1 or research JSONL",
+   "started": null,
+   "consumers": [
+    "C: implied vs forecast vs realised",
+    "E: variance risk premium"
+   ],
+   "gate": "allowed host; the endpoint takes a time range -> strictly forward windows [now-2h, now] only and not before 2026-11-14 00:00 UTC; separate approval",
+   "est_weekly_bytes": 67200,
+   "est_weekly_requests": 336,
+   "notes": "2 currencies x 168 = 336 requests/week; ~200 B stored per hourly row -> ~67 KB/week."
+  },
+  {
+   "id": "fwd_universe_versions",
+   "status": "PROPOSED_NEEDS_SEPARATE_APPROVAL",
+   "source_host": "none (derived from census/1, hlcensus/1, fwd_spec_journal)",
+   "fields": [
+    "symbol",
+    "venue",
+    "first_seen",
+    "listed_after",
+    "intervals [first, gone)",
+    "delisted status",
+    "spec_changes"
+   ],
+   "cadence_s": 3600,
+   "storage": "research/data/forward_obs/universe_versions.json (rebuilt, sha256 recorded)",
+   "started": null,
+   "consumers": [
+    "D: point-in-time universe for every study",
+    "factory universe rule (RECONSTRUCTED status)",
+    "HFC-1 cohorts"
+   ],
+   "gate": "no network; read-only lab.db; forward rows only",
+   "est_weekly_bytes": 100000,
+   "est_weekly_requests": 0,
+   "notes": "Uses forward_obs.universe_versions/live_at/check_universe_pit. Census alone shows no removals (935 -> 941, -0): delistings need fwd_spec_journal status."
+  },
+  {
+   "id": "fwd_quality_monitor",
+   "status": "PROPOSED_NEEDS_SEPARATE_APPROVAL",
+   "source_host": "none (reads existing streams)",
+   "fields": [
+    "per stream: coverage %, gaps > 2x cadence, missing vs dropped, duplicates, out-of-order, stale, crossed"
+   ],
+   "cadence_s": 86400,
+   "storage": "research/data/forward_obs/quality_<UTC day>.json",
+   "started": null,
+   "consumers": [
+    "all studies",
+    "S1/factory data identity"
+   ],
+   "gate": "no network; read-only lab.db (mode=ro, query_only) like factory_s1; adapters from observations rows to forward_obs records are not written yet",
+   "est_weekly_bytes": 350000,
+   "est_weekly_requests": 0,
+   "notes": "~50 KB report per day. CPU: one pass over the last 24 h of observations (~48k pricing rows) per day."
+  },
+  {
+   "id": "fwd_stablecoin_supply",
+   "status": "BLOCKED_UNTIL_2026-11-14",
+   "source_host": "stablecoins.llama.fi",
+   "fields": [
+    "date",
+    "total circulating USD (latest point only)",
+    "fetched_ts"
+   ],
+   "cadence_s": 86400,
+   "storage": "lab.db observations detector stablecoin/1",
+   "started": null,
+   "consumers": [
+    "E: stablecoin_liquidity_flow family (PROTOCOL_V3 family 6)"
+   ],
+   "gate": "allowed host, but the endpoint always returns the whole history (a historical download): not before 2026-11-14 and only the latest point kept; separate approval",
+   "est_weekly_bytes": 2100,
+   "est_weekly_requests": 7,
+   "notes": "1 request/day; response size unknown (full history, assumed ~1-3 MB); stores one row per day."
+  },
+  {
+   "id": "coinm_live",
+   "status": "BLOCKED_UNTIL_2026-11-28",
+   "source_host": "dapi.binance.com",
+   "fields": [
+    "COIN-M premiumIndex, funding, books"
+   ],
+   "cadence_s": null,
+   "storage": "-",
+   "started": null,
+   "consumers": [
+    "F2 COIN-M families"
+   ],
+   "gate": "COIN-M from 2026-11-28 AND dapi.binance.com is not in ALLOWED_HOSTS (needs a host approval)",
+   "est_weekly_bytes": 0,
+   "est_weekly_requests": 0,
+   "notes": "Not designed."
+  },
+  {
+   "id": "coinm_archives",
+   "status": "BLOCKED_UNTIL_2026-11-28",
+   "source_host": "data.binance.vision (cm/ paths)",
+   "fields": [
+    "COIN-M monthly archives"
+   ],
+   "cadence_s": null,
+   "storage": "data/lab/market",
+   "started": null,
+   "consumers": [
+    "F2"
+   ],
+   "gate": "amendment 8 point 17: COIN-M files only from 2026-11-28; historical",
+   "est_weekly_bytes": 0,
+   "est_weekly_requests": 0,
+   "notes": "Historical; via the existing data agent only."
+  },
+  {
+   "id": "upbit_direct",
+   "status": "BLOCKED_UNTIL_2026-11-14",
+   "source_host": "Upbit's own API host (named only in research/tools/n4_kimchi.py)",
+   "fields": [
+    "market/all",
+    "candles/days"
+   ],
+   "cadence_s": null,
+   "storage": "-",
+   "started": null,
+   "consumers": [
+    "N4 only"
+   ],
+   "gate": "amendment 38 B: N4 research tool only, from 2026-11-14 after N4's lock; never a forward stream; U1F stays on CoinMetrics (17i)",
+   "est_weekly_bytes": 0,
+   "est_weekly_requests": 0,
+   "notes": "No observatory stream may use this host."
+  },
+  {
+   "id": "historical_backfills",
+   "status": "BLOCKED_UNTIL_2026-11-14",
+   "source_host": "any",
+   "fields": [
+    "funding history",
+    "klines",
+    "DVOL history",
+    "book archives"
+   ],
+   "cadence_s": null,
+   "storage": "-",
+   "started": null,
+   "consumers": [],
+   "gate": "no historical query before 2026-11-14; 2024 holdout never; every forward stream starts at its approval time with no backfill",
+   "est_weekly_bytes": 0,
+   "est_weekly_requests": 0,
+   "notes": "Applies to every proposed stream above."
+  },
+  {
+   "id": "dup_universe_mark_funding_hourly",
+   "status": "REJECTED_DUPLICATE",
+   "source_host": "fapi.binance.com",
+   "fields": [
+    "mark",
+    "index",
+    "lastFundingRate"
+   ],
+   "cadence_s": 3600,
+   "storage": "-",
+   "started": null,
+   "consumers": [],
+   "gate": "-",
+   "est_weekly_bytes": 0,
+   "est_weekly_requests": 0,
+   "notes": "= bn_census."
+  },
+  {
+   "id": "dup_hl_universe_hourly",
+   "status": "REJECTED_DUPLICATE",
+   "source_host": "api.hyperliquid.xyz",
+   "fields": [
+    "funding",
+    "OI",
+    "mark"
+   ],
+   "cadence_s": 3600,
+   "storage": "-",
+   "started": null,
+   "consumers": [],
+   "gate": "-",
+   "est_weekly_bytes": 0,
+   "est_weekly_requests": 0,
+   "notes": "= hl_census."
+  },
+  {
+   "id": "dup_watch_settled_funding",
+   "status": "REJECTED_DUPLICATE",
+   "source_host": "fapi.binance.com",
+   "fields": [
+    "settled funding (12 WATCH)"
+   ],
+   "cadence_s": 3600,
+   "storage": "-",
+   "started": null,
+   "consumers": [],
+   "gate": "-",
+   "est_weekly_bytes": 0,
+   "est_weekly_requests": 0,
+   "notes": "= bn_funding_settled_watch; fwd_funding_settled_universe would supersede it, not run beside it for the same symbols (or keep both and cross-check, decided at approval)."
+  },
+  {
+   "id": "dup_minute_full_premium",
+   "status": "REJECTED_DUPLICATE",
+   "source_host": "fapi.binance.com",
+   "fields": [
+    "all premiumIndex rows every minute"
+   ],
+   "cadence_s": 60,
+   "storage": "-",
+   "started": null,
+   "consumers": [],
+   "gate": "-",
+   "est_weekly_bytes": 569116800,
+   "est_weekly_requests": 0,
+   "notes": "Already fetched each minute; storing all rows = 941 x 60 B x 10,080 = ~570 MB/week. census/1 (hourly) and k3/1 (windows) cover it."
+  },
+  {
+   "id": "dup_eu_books_collector",
+   "status": "REJECTED_DUPLICATE",
+   "source_host": "EU venues",
+   "fields": [
+    "books"
+   ],
+   "cadence_s": 900,
+   "storage": "-",
+   "started": null,
+   "consumers": [],
+   "gate": "-",
+   "est_weekly_bytes": 0,
+   "est_weekly_requests": 0,
+   "notes": "= v1_eu_books (restart instead)."
+  },
+  {
+   "id": "dup_listing_collector",
+   "status": "REJECTED_DUPLICATE",
+   "source_host": "community-api.coinmetrics.io / exchanges",
+   "fields": [
+    "new markets"
+   ],
+   "cadence_s": null,
+   "storage": "-",
+   "started": null,
+   "consumers": [],
+   "gate": "-",
+   "est_weekly_bytes": 0,
+   "est_weekly_requests": 0,
+   "notes": "= cm_listing_catalog + news_watch; 17i forbids a new collector for U1F."
+  },
+  {
+   "id": "dup_universe_1h_klines",
+   "status": "REJECTED_DUPLICATE",
+   "source_host": "fapi.binance.com",
+   "fields": [
+    "1h klines all perps"
+   ],
+   "cadence_s": 3600,
+   "storage": "-",
+   "started": null,
+   "consumers": [],
+   "gate": "-",
+   "est_weekly_bytes": 0,
+   "est_weekly_requests": 158088,
+   "notes": "C uses census/1 marks; 941 requests/h would duplicate them and kline ranges look like historical queries."
+  }
+ ],
+ "assessments": [
+  {
+   "id": "E_onchain_coinmetrics",
+   "verdict": "REUSE onchain_flows; no extension now",
+   "host": "community-api.coinmetrics.io (allowed)",
+   "cost": "free, keyless",
+   "legal": "CC BY-NC 4.0 (non-commercial)",
+   "quality": "revised retroactively; point in time only from first-seen rows (2026-10-24 on)"
+  },
+  {
+   "id": "E_stablecoins_defillama",
+   "verdict": "fwd_stablecoin_supply after 2026-11-14 if a family needs it",
+   "host": "stablecoins.llama.fi (allowed)",
+   "cost": "free, keyless",
+   "legal": "public API; terms not re-read in this task",
+   "quality": "always full history -> only the latest point can be point-in-time"
+  },
+  {
+   "id": "E_options_deribit_chain",
+   "verdict": "NOT PROPOSED (assessment only)",
+   "host": "www.deribit.com (allowed for DVOL)",
+   "cost": "free; ~1-2 calls/h but ~0.3-0.6 MB each (assumed) -> ~50+ MB/week stored at hourly cadence",
+   "legal": "public market data; Deribit is not an EU-authorised venue for Danish clients (data use only)",
+   "quality": "mark IV, OI, bid/ask per instrument; no locked options hypothesis exists -> information value not shown"
+  },
+  {
+   "id": "E_options_dvol",
+   "verdict": "fwd_dvol (proposed)",
+   "host": "www.deribit.com",
+   "cost": "336 requests/week, ~67 KB/week",
+   "legal": "as above",
+   "quality": "index, 1 h resolution"
+  },
+  {
+   "id": "E_paid_vendors",
+   "verdict": "REJECTED",
+   "host": "Glassnode, CryptoQuant, Kaiko, Amberdata, Tardis.dev, Laevitas (new hosts)",
+   "cost": "paid subscriptions (prices not verified here) = real money -> owner decision only",
+   "legal": "licences limit redistribution",
+   "quality": "n/a"
+  },
+  {
+   "id": "E_keyed_chain_apis",
+   "verdict": "REJECTED",
+   "host": "Etherscan, node RPC, Dune",
+   "cost": "free tiers need API keys",
+   "legal": "keys/secrets are forbidden by the safety test",
+   "quality": "n/a"
+  }
+ ]
+}
