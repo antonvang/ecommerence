@@ -1,0 +1,116 @@
+{
+ "checks": [
+  {
+   "check": "night 1 without approver approves nothing",
+   "detail": "",
+   "result": "PASS"
+  },
+  {
+   "check": "injected job failure is visible",
+   "detail": "[{\"idea\": \"boom_job\", \"error\": \"TypeError: unsupported operand type(s) for -: 'int' and 'str'\"}]",
+   "result": "PASS"
+  },
+  {
+   "check": "real shortlist drafts reach the owner gate or are parked, never approved",
+   "detail": "{\"LIQPROXY1\": \"PARKED\", \"FUNDFRAG1\": \"PARKED\", \"LIQREC1\": \"PARKED\"}",
+   "result": "PASS"
+  },
+  {
+   "check": "assistant key and delegated words never approve",
+   "detail": "",
+   "result": "PASS"
+  },
+  {
+   "check": "approved drafts stay blocked by gates (window, proposed streams)",
+   "detail": "blocked 4",
+   "result": "PASS"
+  },
+  {
+   "check": "ledger chain verifies and an identical re-run charges nothing",
+   "detail": "entries 3",
+   "result": "PASS"
+  },
+  {
+   "check": "every evaluation went through evaluator v1.1",
+   "detail": "",
+   "result": "PASS"
+  },
+  {
+   "check": "shortlist drafts never evaluated (their streams are only proposed)",
+   "detail": "",
+   "result": "PASS"
+  },
+  {
+   "check": "C1 synthetic forecast/reveal journal runs and verifies",
+   "detail": "c1_synthetic_journal.jsonl",
+   "result": "PASS"
+  },
+  {
+   "check": "forward-observation quality module importable without network or database",
+   "detail": "",
+   "result": "PASS"
+  },
+  {
+   "check": "no database opened during the run; locked F2 protocol and S1 decisions unchanged",
+   "detail": "{\"FACTORY_P2_PROTOCOLS_2026-11-06.md\": \"6dd1ca829344\", \"decisions.jsonl\": \"4ba8c5cef9f6\"}",
+   "result": "PASS"
+  },
+  {
+   "check": "no lab or pm_lp import in desk components (AST)",
+   "detail": "",
+   "result": "PASS"
+  }
+ ],
+ "fail": 0,
+ "ledger_entries": 3,
+ "nights": {
+  "n1": {
+   "APPROVED": 0,
+   "AWAITING_OWNER_APPROVAL": 4,
+   "DATA_ELIGIBLE": 0,
+   "EVALUATED": 0,
+   "FROZEN": 0,
+   "IDEA": 0,
+   "INCONCLUSIVE": 0,
+   "LITERATURE_SCREENED": 0,
+   "PARKED": 8,
+   "POWER_CHECKED": 0,
+   "PROTOCOL_DRAFT": 0,
+   "REJECTED": 0,
+   "VALIDATED": 0
+  },
+  "n3": {
+   "APPROVED": 0,
+   "AWAITING_OWNER_APPROVAL": 0,
+   "DATA_ELIGIBLE": 0,
+   "EVALUATED": 0,
+   "FROZEN": 4,
+   "IDEA": 0,
+   "INCONCLUSIVE": 0,
+   "LITERATURE_SCREENED": 0,
+   "PARKED": 8,
+   "POWER_CHECKED": 0,
+   "PROTOCOL_DRAFT": 0,
+   "REJECTED": 0,
+   "VALIDATED": 0
+  },
+  "n4": {
+   "APPROVED": 0,
+   "AWAITING_OWNER_APPROVAL": 0,
+   "DATA_ELIGIBLE": 0,
+   "EVALUATED": 0,
+   "FROZEN": 1,
+   "IDEA": 0,
+   "INCONCLUSIVE": 0,
+   "LITERATURE_SCREENED": 0,
+   "PARKED": 8,
+   "POWER_CHECKED": 0,
+   "PROTOCOL_DRAFT": 0,
+   "REJECTED": 2,
+   "VALIDATED": 1
+  }
+ },
+ "seconds": 24.43,
+ "synthetic_now": 1800000000,
+ "ts": 1793974291
+}
