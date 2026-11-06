@@ -1,0 +1,486 @@
+{
+ "schema": "desk.mechanism_graph/1",
+ "order": "director order 50 P0",
+ "built": "2026-11-06",
+ "registry": "research/desk/evidence_registry.json",
+ "vocabulary": "research/families/VOCABULARY.json",
+ "nodes": [
+  {
+   "id": "funding_carry_level",
+   "category": 1,
+   "description": "same-asset long spot / short perp earns funding; large historically, compressed since 2024",
+   "supporting_registry_ids": [
+    "E04",
+    "E05",
+    "E08",
+    "E42",
+    "E03"
+   ],
+   "overlaps_copybot_family": true,
+   "vocabulary_ids": [
+    "delta_neutral_funding_carry",
+    "funding_carry"
+   ]
+  },
+  {
+   "id": "funding_persistence_forecast",
+   "category": 1,
+   "description": "funding rates are themselves forecastable (persistence); forecasts cash-flow, not price",
+   "supporting_registry_ids": [
+    "E40",
+    "E42"
+   ],
+   "overlaps_copybot_family": true,
+   "vocabulary_ids": [
+    "delta_neutral_funding_carry"
+   ]
+  },
+  {
+   "id": "funding_directional_signal",
+   "category": 1,
+   "description": "funding level/change as predictor of the coin's own price: near-zero predictive R2 / rank IC",
+   "supporting_registry_ids": [
+    "E41",
+    "E42"
+   ],
+   "overlaps_copybot_family": true,
+   "vocabulary_ids": [
+    "funding_crowding_contrarian"
+   ]
+  },
+  {
+   "id": "cross_sectional_funding_factor",
+   "category": 1,
+   "description": "long low-funding / short high-funding perps, dollar-neutral (claims only)",
+   "supporting_registry_ids": [
+    "E42"
+   ],
+   "overlaps_copybot_family": false,
+   "vocabulary_ids": []
+  },
+  {
+   "id": "perp_spot_deviation_convergence",
+   "category": 2,
+   "description": "perp price deviates from no-arbitrage bound and converges; deviations shrink over time",
+   "supporting_registry_ids": [
+    "E03",
+    "E07",
+    "E06"
+   ],
+   "overlaps_copybot_family": true,
+   "vocabulary_ids": [
+    "perp_premium_convergence"
+   ]
+  },
+  {
+   "id": "dated_futures_basis_carry",
+   "category": 2,
+   "description": "futures-spot carry of dated contracts converges at expiry; driven by convenience yield",
+   "supporting_registry_ids": [
+    "E04",
+    "E06"
+   ],
+   "overlaps_copybot_family": true,
+   "vocabulary_ids": [
+    "dated_futures_basis_carry"
+   ]
+  },
+  {
+   "id": "basis_factor_cross_section",
+   "category": 2,
+   "description": "log-basis and price-volume factors span many perp return predictors",
+   "supporting_registry_ids": [
+    "E02"
+   ],
+   "overlaps_copybot_family": false,
+   "vocabulary_ids": []
+  },
+  {
+   "id": "time_series_momentum",
+   "category": 3,
+   "description": "own past return predicts own future return (trend), often vol-scaled",
+   "supporting_registry_ids": [
+    "E09",
+    "E12",
+    "E43"
+   ],
+   "overlaps_copybot_family": true,
+   "vocabulary_ids": [
+    "time_series_momentum",
+    "trend_following",
+    "time_series_momentum_diversified"
+   ]
+  },
+  {
+   "id": "cross_sectional_momentum",
+   "category": 3,
+   "description": "winners minus losers; evidence contested after costs and survivorship correction",
+   "supporting_registry_ids": [
+    "E10",
+    "E11",
+    "E13",
+    "E01",
+    "E22"
+   ],
+   "overlaps_copybot_family": true,
+   "vocabulary_ids": [
+    "cross_sectional_momentum"
+   ]
+  },
+  {
+   "id": "attention_forecast",
+   "category": 3,
+   "description": "investor-attention proxies forecast returns (one peer-reviewed source)",
+   "supporting_registry_ids": [
+    "E09"
+   ],
+   "overlaps_copybot_family": false,
+   "vocabulary_ids": []
+  },
+  {
+   "id": "short_term_reversal_illiquid",
+   "category": 4,
+   "description": "daily/weekly reversal concentrated in small, illiquid coins",
+   "supporting_registry_ids": [
+    "E14",
+    "E15"
+   ],
+   "overlaps_copybot_family": true,
+   "vocabulary_ids": [
+    "short_term_reversal_liquidity",
+    "illiquidity_premium"
+   ]
+  },
+  {
+   "id": "post_cascade_liquidity_recovery",
+   "category": 4,
+   "description": "after a liquidation cascade spreads normalise fast, depth stays impaired",
+   "supporting_registry_ids": [
+    "E16"
+   ],
+   "overlaps_copybot_family": true,
+   "vocabulary_ids": [
+    "liquidation_cascade_reversal"
+   ]
+  },
+  {
+   "id": "liquidity_measurement_and_volume_quality",
+   "category": 5,
+   "description": "which low-frequency proxies track true liquidity; reported volume often fabricated",
+   "supporting_registry_ids": [
+    "E17",
+    "E23"
+   ],
+   "overlaps_copybot_family": true,
+   "vocabulary_ids": [
+    "illiquidity_premium",
+    "high_volume_return_premium"
+   ]
+  },
+  {
+   "id": "orderflow_and_clock_time_imbalance",
+   "category": 5,
+   "description": "order imbalance / microstructure metrics forecast short-horizon dynamics",
+   "supporting_registry_ids": [
+    "E19",
+    "E18"
+   ],
+   "overlaps_copybot_family": true,
+   "vocabulary_ids": [
+    "orderflow_imbalance",
+    "intraday_seasonality"
+   ]
+  },
+  {
+   "id": "listing_announcement_return",
+   "category": 6,
+   "description": "positive short-run abnormal returns around exchange listings, venue dependent",
+   "supporting_registry_ids": [
+    "E20",
+    "E21"
+   ],
+   "overlaps_copybot_family": true,
+   "vocabulary_ids": [
+    "short_new_listings",
+    "memecoin_launch_selection"
+   ]
+  },
+  {
+   "id": "survivorship_and_selection_bias",
+   "category": 6,
+   "description": "dead/delisted coins and micro-caps inflate published premia",
+   "supporting_registry_ids": [
+    "E22",
+    "E01",
+    "E23"
+   ],
+   "overlaps_copybot_family": false,
+   "vocabulary_ids": []
+  },
+  {
+   "id": "exchange_flow_pressure",
+   "category": 7,
+   "description": "coins moved onto exchanges signal selling pressure",
+   "supporting_registry_ids": [
+    "E24",
+    "E25"
+   ],
+   "overlaps_copybot_family": false,
+   "vocabulary_ids": []
+  },
+  {
+   "id": "stablecoin_flow_liquidity",
+   "category": 7,
+   "description": "stablecoin issuance/inflows associated with subsequent price support",
+   "supporting_registry_ids": [
+    "E26",
+    "E24"
+   ],
+   "overlaps_copybot_family": true,
+   "vocabulary_ids": [
+    "stablecoin_liquidity_flow"
+   ]
+  },
+  {
+   "id": "variance_risk_premium",
+   "category": 8,
+   "description": "implied variance exceeds realised; BTC VRP larger than equities, regime dependent",
+   "supporting_registry_ids": [
+    "E27",
+    "E29"
+   ],
+   "overlaps_copybot_family": true,
+   "vocabulary_ids": [
+    "variance_risk_premium_timing"
+   ]
+  },
+  {
+   "id": "option_informed_flow",
+   "category": 8,
+   "description": "OTM option order flow carries directional information",
+   "supporting_registry_ids": [
+    "E28"
+   ],
+   "overlaps_copybot_family": false,
+   "vocabulary_ids": []
+  },
+  {
+   "id": "cross_venue_premium_capital_controls",
+   "category": 9,
+   "description": "persistent cross-country price gaps (kimchi) where capital cannot move",
+   "supporting_registry_ids": [
+    "E30",
+    "E31",
+    "E32",
+    "E33"
+   ],
+   "overlaps_copybot_family": true,
+   "vocabulary_ids": [
+    "cross_venue_perp_gap"
+   ]
+  },
+  {
+   "id": "settlement_latency_arbitrage_bounds",
+   "category": 9,
+   "description": "blockchain settlement delay and default risk bound arbitrage",
+   "supporting_registry_ids": [
+    "E34",
+    "E30"
+   ],
+   "overlaps_copybot_family": true,
+   "vocabulary_ids": [
+    "dex_pool_arbitrage"
+   ]
+  },
+  {
+   "id": "derivatives_lead_spot",
+   "category": 9,
+   "description": "price discovery happens first in derivatives at minute scale",
+   "supporting_registry_ids": [
+    "E35"
+   ],
+   "overlaps_copybot_family": true,
+   "vocabulary_ids": [
+    "lead_lag_diffusion"
+   ]
+  },
+  {
+   "id": "realised_volatility_forecast_HAR",
+   "category": 10,
+   "description": "HAR-type RV models with jumps/semivariance forecast volatility out of sample",
+   "supporting_registry_ids": [
+    "E36",
+    "E37",
+    "E38",
+    "E44"
+   ],
+   "overlaps_copybot_family": true,
+   "vocabulary_ids": [
+    "volatility_managed_exposure"
+   ]
+  },
+  {
+   "id": "volatility_regimes",
+   "category": 10,
+   "description": "Markov/regime switching in volatility improves risk forecasts",
+   "supporting_registry_ids": [
+    "E39",
+    "E27"
+   ],
+   "overlaps_copybot_family": false,
+   "vocabulary_ids": []
+  }
+ ],
+ "edges": [
+  {
+   "source": "funding_carry_level",
+   "target": "perp_spot_deviation_convergence",
+   "relation": "related_or_overlapping",
+   "reason": "funding is paid in proportion to the perp-spot gap; same economic quantity"
+  },
+  {
+   "source": "funding_carry_level",
+   "target": "dated_futures_basis_carry",
+   "relation": "related_or_overlapping",
+   "reason": "both harvest the crypto convenience yield; perp pays it continuously, dated futures at expiry"
+  },
+  {
+   "source": "dated_futures_basis_carry",
+   "target": "perp_spot_deviation_convergence",
+   "relation": "related_or_overlapping",
+   "reason": "basis on dated vs perpetual contracts; Gornall et al. compare the two designs"
+  },
+  {
+   "source": "funding_carry_level",
+   "target": "funding_persistence_forecast",
+   "relation": "related_or_overlapping",
+   "reason": "carry P&L depends on funding staying high: persistence is the carry's forecast problem"
+  },
+  {
+   "source": "funding_carry_level",
+   "target": "cross_sectional_funding_factor",
+   "relation": "related_or_overlapping",
+   "reason": "same funding cash-flow, hedged within the cross-section instead of with same-asset spot"
+  },
+  {
+   "source": "funding_directional_signal",
+   "target": "time_series_momentum",
+   "relation": "related_or_overlapping",
+   "reason": "high funding accompanies trend-chasing longs (Schmeling et al.); directional content overlaps momentum"
+  },
+  {
+   "source": "funding_directional_signal",
+   "target": "short_term_reversal_illiquid",
+   "relation": "related_or_overlapping",
+   "reason": "fade-extreme-funding is a reversal bet on crowding"
+  },
+  {
+   "source": "basis_factor_cross_section",
+   "target": "funding_carry_level",
+   "relation": "related_or_overlapping",
+   "reason": "log-basis factor is the cross-sectional face of carry"
+  },
+  {
+   "source": "basis_factor_cross_section",
+   "target": "cross_sectional_momentum",
+   "relation": "related_or_overlapping",
+   "reason": "price-volume factor absorbs momentum-type predictors"
+  },
+  {
+   "source": "time_series_momentum",
+   "target": "cross_sectional_momentum",
+   "relation": "related_or_overlapping",
+   "reason": "same past-return signal, absolute vs relative; high coin correlation (~0.6) makes them close"
+  },
+  {
+   "source": "cross_sectional_momentum",
+   "target": "short_term_reversal_illiquid",
+   "relation": "related_or_overlapping",
+   "reason": "horizon/liquidity split: momentum in large/liquid, reversal in small/illiquid and at >~1 month"
+  },
+  {
+   "source": "short_term_reversal_illiquid",
+   "target": "liquidity_measurement_and_volume_quality",
+   "relation": "related_or_overlapping",
+   "reason": "reversal is compensation for illiquidity; needs valid liquidity proxies"
+  },
+  {
+   "source": "short_term_reversal_illiquid",
+   "target": "post_cascade_liquidity_recovery",
+   "relation": "related_or_overlapping",
+   "reason": "liquidity shock then partial recovery; price-reversal leg not documented"
+  },
+  {
+   "source": "cross_sectional_momentum",
+   "target": "survivorship_and_selection_bias",
+   "relation": "related_or_overlapping",
+   "reason": "survivorship correction removes the momentum premium (Ammann et al.)"
+  },
+  {
+   "source": "listing_announcement_return",
+   "target": "survivorship_and_selection_bias",
+   "relation": "related_or_overlapping",
+   "reason": "new listings are the entry point of the universe; selection by exchange incentives"
+  },
+  {
+   "source": "orderflow_and_clock_time_imbalance",
+   "target": "liquidity_measurement_and_volume_quality",
+   "relation": "related_or_overlapping",
+   "reason": "imbalance signals depend on trustworthy trade/volume data"
+  },
+  {
+   "source": "orderflow_and_clock_time_imbalance",
+   "target": "derivatives_lead_spot",
+   "relation": "related_or_overlapping",
+   "reason": "both are short-horizon information-flow effects in perps"
+  },
+  {
+   "source": "exchange_flow_pressure",
+   "target": "stablecoin_flow_liquidity",
+   "relation": "related_or_overlapping",
+   "reason": "same on-chain flow data, opposite sign for coin vs stablecoin inflows"
+  },
+  {
+   "source": "variance_risk_premium",
+   "target": "realised_volatility_forecast_HAR",
+   "relation": "related_or_overlapping",
+   "reason": "VRP = implied minus forecast realised variance; RV forecast quality sets VRP measurement"
+  },
+  {
+   "source": "variance_risk_premium",
+   "target": "volatility_regimes",
+   "relation": "related_or_overlapping",
+   "reason": "BVRP differs by volatility regime (Almeida et al.)"
+  },
+  {
+   "source": "realised_volatility_forecast_HAR",
+   "target": "time_series_momentum",
+   "relation": "related_or_overlapping",
+   "reason": "vol-scaling of trend positions uses RV forecasts"
+  },
+  {
+   "source": "cross_venue_premium_capital_controls",
+   "target": "settlement_latency_arbitrage_bounds",
+   "relation": "related_or_overlapping",
+   "reason": "both are limits to arbitrage across venues"
+  },
+  {
+   "source": "cross_venue_premium_capital_controls",
+   "target": "perp_spot_deviation_convergence",
+   "relation": "related_or_overlapping",
+   "reason": "price gaps persist where arbitrage capital is scarce"
+  },
+  {
+   "source": "option_informed_flow",
+   "target": "orderflow_and_clock_time_imbalance",
+   "relation": "related_or_overlapping",
+   "reason": "informed order flow in a different instrument"
+  },
+  {
+   "source": "attention_forecast",
+   "target": "time_series_momentum",
+   "relation": "related_or_overlapping",
+   "reason": "attention-driven flows are a proposed driver of trend"
+  }
+ ]
+}
