@@ -1,0 +1,47 @@
+{
+ "awaiting_owner": [
+  "D0000",
+  "D0002",
+  "D0003",
+  "D0006"
+ ],
+ "blocked_by_gates": [],
+ "budget_exhausted": false,
+ "cpu_s": 0.001,
+ "errors": [],
+ "evaluated": [],
+ "ledger_ok": true,
+ "new": [
+  "D0000",
+  "D0001",
+  "D0002",
+  "D0003",
+  "D0004",
+  "D0005",
+  "D0006",
+  "D0007"
+ ],
+ "parked": [
+  "D0001:DUPLICATE of D0000",
+  "D0004:NO_VERIFIED_LITERATURE",
+  "D0005:INSUFFICIENT_POWER 0.021 < 0.8",
+  "D0007:PROTOCOL_INCOMPLETE:primary_hypothesis,direction,universe_rule,window_start,window_end,cost_model,data_streams,alpha_f,plausible_sr,per_year,n_planned"
+ ],
+ "queued": 0,
+ "states": {
+  "APPROVED": 0,
+  "AWAITING_OWNER_APPROVAL": 4,
+  "DATA_ELIGIBLE": 0,
+  "EVALUATED": 0,
+  "FROZEN": 0,
+  "IDEA": 0,
+  "INCONCLUSIVE": 0,
+  "LITERATURE_SCREENED": 0,
+  "PARKED": 4,
+  "POWER_CHECKED": 0,
+  "PROTOCOL_DRAFT": 0,
+  "REJECTED": 0,
+  "VALIDATED": 0
+ },
+ "ts": 1800000000
+}
