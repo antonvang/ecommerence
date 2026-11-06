@@ -131,12 +131,14 @@ def member_rows(body, snaps, horizon):
     days, k = H[horizon]
     expect = days * 24                                   # hourly census snapshots (hfc1_daily.outcomes)
     last = snaps[-1] if snaps else None
+    coin = set().union(*(x[2] for x in snaps)) if snaps else set()     # census coin_perps: COIN-underlying only
     out = []
     for r in body["rows"]:
         sym = r["symbol"]
         v = [s[1][sym] for s in snaps if sym in s[1]]
         present_last = bool(last and sym in last[1])
-        trading_last = bool(last and sym in last[2])
+        # None: never in census coin_perps in the window (e.g. a tokenised stock perp); TRADING status unknown
+        trading_last = bool(last and sym in last[2]) if sym in coin else None
         reasons = []
         if not v:
             reasons.append("ingen observationer i vinduet")
@@ -152,8 +154,9 @@ def member_rows(body, snaps, horizon):
              "missing_75pct_rule_only": len(v) < (1 - MISSING_FRAC) * expect,
              "realised_f8h": None if missing else st.fmean(v),
              "partial_f8h_not_used": st.fmean(v) if (missing and v) else None,
-             "status": ("manglende" if missing else "observeret") + ("" if trading_last or not present_last
-                                                                     else "; perp ikke TRADING ved vinduets slut")}
+             "status": ("manglende" if missing else "observeret") + (
+                 "; perp ikke TRADING ved vinduets slut" if trading_last is False and present_last else
+                 "; perp-status ukendt (ikke i census coin_perps)" if trading_last is None and present_last else "")}
         m["realised_apr"] = None if missing else m["realised_f8h"] * 1095
         for n in SIZES:
             N = float(n)
@@ -197,7 +200,9 @@ def summarise(ms):
                                                                                 for m in ms),
          "dropouts": sum(1 for m in ms if m["drop"]), "observed": sum(not m["missing"] for m in ms),
          "absent_in_last_snapshot": sum(not m["present_in_last_snapshot"] for m in ms),
-         "perp_not_trading_at_end": sum(m["present_in_last_snapshot"] and not m["perp_trading_at_end"] for m in ms),
+         "perp_not_trading_at_end": sum(m["present_in_last_snapshot"] and m["perp_trading_at_end"] is False
+                                        for m in ms),
+         "perp_status_unknown_not_coin_perp": sum(m["perp_trading_at_end"] is None for m in ms),
          "obs_coverage": _q([m["obs_coverage"] for m in ms]), "realised_apr": _q([m["realised_apr"] for m in ms])}
     for n in SIZES:
         d = [m[f"N{n}"] for m in ms]
@@ -348,6 +353,9 @@ def run(db, cohort_dir, out, days, horizon, now, dry_run=False, pins=PINNED):
         status, reports = build(con, cohort_dir, days, horizon, now, pins)
     finally:
         con.close()
+    if any(s["status"] == "NO_COHORT_FILE" and now >= window(dt.date.fromisoformat(d), horizon)[2]
+           for d, s in status.items()):
+        raise Refused("NO_COHORT_FILE", 3, json.dumps(status, sort_keys=True))    # due but no file: integrity
     if not reports:
         raise Refused("NOT_DUE", 2, json.dumps(status, sort_keys=True))
     cohorts = [r["cohort"] for r in reports]
@@ -357,7 +365,9 @@ def run(db, cohort_dir, out, days, horizon, now, dry_run=False, pins=PINNED):
               "sizes_usdt_per_leg": [int(n) for n in SIZES], "fixed_lines": list(FIXED_LINES),
               "research_status": "INCONCLUSIVE (beskrivende; ingen test; afgør intet)",
               "offdb_proposal": offdb_proposal(cohorts, horizon, files)}
-    rsha = hashlib.sha256(json.dumps(result, sort_keys=True).encode()).hexdigest()
+    hashed = {**result, "cohort_status": {k: v for k, v in status.items() if v["status"] == "REPORTED"},
+              "offdb_proposal": {k: v for k, v in result["offdb_proposal"].items() if k != "already_present"}}
+    rsha = hashlib.sha256(json.dumps(hashed, sort_keys=True).encode()).hexdigest()   # only what the data decide
     rep = {**result, "result_sha256": rsha, "run_utc": utc(now), "db_uri": ro_uri(db), "dry_run": dry_run}
     raw = json.dumps(rep, sort_keys=True, indent=1, ensure_ascii=False).encode()
     text = md(rep)
@@ -374,13 +384,23 @@ def write_outputs(out, base, raw, text):
                 same = json.loads(f.read()).get("result_sha256") == json.loads(raw)["result_sha256"]
         except (OSError, ValueError):
             same = False
-        if same:
+        if same and os.path.exists(mp):
             return                                       # idempotent: the same result is already on disk
+        if same:                                         # a crash after the .json: complete the pair
+            _atomic(mp, text.encode("utf-8"))
+            return
         raise Refused("EXISTS", 3, f"{jp} exists with a different result; not overwritten")
-    with open(jp, "wb") as f:
-        f.write(raw)
-    with open(mp, "w", encoding="utf-8") as f:
-        f.write(text)
+    _atomic(mp, text.encode("utf-8"))                    # .md first: a lone .md is refused (EXISTS), never trusted
+    _atomic(jp, raw)
+
+
+def _atomic(path, data):
+    tmp = path + ".tmp"
+    with open(tmp, "wb") as f:
+        f.write(data)
+        f.flush()
+        os.fsync(f.fileno())
+    os.replace(tmp, path)
 
 
 # ---- synthetic data (--dry-run and tests only) ---------------------------------------------------------------------

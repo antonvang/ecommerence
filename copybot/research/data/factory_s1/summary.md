@@ -1,11 +1,11 @@
 # Factory S1 shadow report (director order 49)
 
-S1 started 2026-11-06 09:55 UTC; runs 14; last run 2026-11-06 14:55 UTC; chain head `e1da0cd60c4941e2d58ad6f24a921df20887ca441d6e4317ba046fc98c8c726a`.
+S1 started 2026-11-06 09:55 UTC; runs 15; last run 2026-11-06 15:16 UTC; chain head `e1da0cd60c4941e2d58ad6f24a921df20887ca441d6e4317ba046fc98c8c726a`.
 
 Baseline: 179 transitions (all that existed at S1 start; not observations).
 Observation period (order 49 P3 counts 14 full days from the start): 0 new transitions, 0 unexplained, 0 BLOCK.
 
-Monitoring coverage: 14 successful runs over 6 elapsed hourly slots, 0 failed; longest gap 1.19 h; MONITORING_GAP periods (> 2 h): 0.
+Monitoring coverage: 15 successful runs over 6 elapsed hourly slots, 0 failed; longest gap 1.19 h; MONITORING_GAP periods (> 2 h): 0.
 
 Event coverage: few new transitions mean INSUFFICIENT_OBSERVATION at the evaluation, never an automatic PASS.
 
