@@ -66,3 +66,14 @@ U2 (17 mønter med carry-perp-ben): ADA, APE, AXS, BCH, BNB, BTC, CRV, ETC, ETH,
 - XTZ havde et dagsmiddel på −111,8 % p.a.: de korte perp-ben betalte funding (LANE_ec1b0457b8 holder XTZ; M2 ville
   ikke have startet den, f̂ −1,25 %).
 - Beskrivende; afgør intet; ingen regel ændret.
+
+## Kørsel 11-07 (kl. 20:32 lokal; dag 11-06, 24 snapshots; ca. 19 t forsinket pga. overvågningshul)
+
+| Dag | Snapshots | U1 n | U1 ≥ 12,5 % | U1 ≥ 18,8 % | U1 median-APR | U2 ≥ 12,5 % | U2 højeste | Persistens 3 d (U1) |
+|---|---|---|---|---|---|---|---|---|
+| 11-06 | 24 | 896 | 10,2 % | 5,7 % | 5,5 % | 0/18 | 10,9 % (APE, ICP) | endnu ikke |
+
+- Ingen af de 18 carry-mønter over break-even; XTZ −40,9 % p.a. (korte perp-ben betaler stadig).
+- Persistens for 11-03 kan nu beregnes: 104 over break-even på 72 t, 69 af dem stadig over i de næste 3 døgn (66 %).
+- 11-07 er ufuldstændig (20 snapshots) og indgår først i morgen.
+- Ingen nye carry-starter (M2-regnskabet uændret). Beskrivende; afgør intet; ingen regel ændret.

@@ -89,3 +89,10 @@ kapacitet, omkostning og datakvalitet. Ingen ny udvælgelsesregel før da.
 - De samme to mønter som 11-04 (TST 16,0 %, XVG 37,2 %); spotspread 17 og 19 bp. Flaskehalsen er fortsat F1.
 - Udfald 3 d / 14 d for kohorterne 11-04 og 11-05: endnu ikke (første 11-08).
 - Beskrivende; afgør intet; protokollen er uændret.
+
+## Kohorte 11-06 — IKKE DANNET (kl. 20:32 lokal 11-07)
+
+`hfc1_daily.py cohort --day 2026-11-06` blev først kørt ca. 19 t for sent (overvågningshul 11-07 00:19–19:31 UTC) og
+fejlede med ConnectionRefused mod data-api.binance.vision, som den lokale DNS nu blokerer. Kohorten efterdannes ikke
+(formationstidspunktet ville afvige). Status: BLOCKED/MISSING; rapporteres som manglende kohorte, ikke som frafald.
+`outcomes`: 11-04 og 11-05 3 d/14 d "endnu ikke". HFC-1's kriterier er uændrede.
