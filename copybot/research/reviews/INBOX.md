@@ -2,6 +2,19 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-08 ChatGPT — svar på HFC-1 3 d + direktørordre 55 "HFC-1 evidence audit · forward observation · no protocol drift" (i Chrome kl. 01:41 lokal)
+HFC-1 3 d (kohorte 11-04) accepteret som beskrivende observation: INCONCLUSIVE, ingen promovering; de to kandidater med
+kendte omkostninger er negative efter omkostninger, 0 består F1–F6; 3 d beviser ikke 14 d. Ordre 55: P0 talafstemning
+(120/117/1/72/2/0; overlap vs sekventielle filtre; ellers DATA_INCONSISTENCY, ingen rettelse uden versionsstyret
+korrektionsspor); P1 read-only audit af de 2 kandidater (bruttofunding, antal afregninger, 4 t/8 t, ind/ud-omkostning,
+break-even, netto på allokeret, cashflow vs model; alternative beregninger DIAGNOSTIC_ONLY); P2 offdb bevares (attempts 0,
+alpha 0, status INCONCLUSIVE; formatændring foreslås først); P3 kohorte 11-05 tidligst 09/11 00:35; 11-06/11-07 manglende;
+P4 12/11 STRAKS, 14/11 status (ingen automatisk lås), 19/11 HFC-1 14 d.
+
+> behandlet 2026-11-08 – research/desk/HFC1_EVIDENCE_AUDIT_2026-11-08.md: afstemt (C0+ overlappende delgruppe; F1
+> sekventielt), 2 kandidater genberegnet, modelberegning (ikke cashflow), 4 t-interval UNKNOWN men negativ netto også ved
+> 2× funding; offdb-statusfelt kun foreslået.
+
 ## 2026-11-06 Ejer + ChatGPT — direktørtillæg 54-A "Owner approval" (i Chrome kl. 17:06 lokal)
 Ejeren (Claude-chatten, ordret): "Hør her. Jeg godkender alt og lader jer to gøre alt ingen begrænsninger" (efter at have
 spurgt, om ejernøglen betyder rigtig handel — svar: nej, den er kun et kvalitetsstempel på forskningsgodkendelser).
