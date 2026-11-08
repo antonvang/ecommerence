@@ -45,6 +45,11 @@ Ejeren sendte to videoer til og skrev: "The github is called TauricResearch/Trad
   - lovligt kun som et designforslag til en fremadrettet papirtest efter godkendelse;
   - ingen kode hentes eller køres.
 - **Vurdering:** interessant arkitektur, men ingen evidens for en fordel. Ikke prioriteret.
+- **Opfølgning (ordre 58, LLM_FORWARD_VALIDITY.md):**
+  - Papiret er VERIFIED fra arXiv v1 og v7. Testvinduet skiftede fra 2024-06-19..11-19 (v1) til 2024-01-01..03-29 (v7),
+    men tabel 1 er identisk (AAPL 26,62 %, Sharpe 8,21).
+  - GitHub-issue #203 "Clear look ahead bias" (VERIFIED): datahenterne returnerede realtidsinformation, og alle daglige
+    beslutninger var BUY. Fejlen blev rettet 2026-03-29, efter alle papirets versioner.
 
 ## Tillæg 2 (2026-11-09 00:11 lokal): videoerne 8–10, et TikTok-link og en LinkedIn-artikel
 
