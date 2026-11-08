@@ -2,6 +2,26 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-08 Ejer + ChatGPT — direktørordre 56 "FOMO Copybot · rapid forward falsification" (i Chrome kl. 23:30 lokal)
+Ejeren sendte en TikTok-video (@trading.calls, app "fomo": "Grok Bot" kopierer top-traders' memecoin-køb 30 s senere,
+TP 10×, "+900 %", kontoen mærket SIM) og skrev: "Der skal simpelthen ske noget nu. AGGRESICT PROMT CHAT GPT. Den her
+kan nu skal vi fande. Alrås den i videon". Direktøren: GO til at designe en hurtig fremadrettet falsifikationstest;
+NO-GO til dataindsamling indtil protokol og datakilder er godkendt; live-handel NO-GO. 4 t: P0 frys påstanden (leder-
+regel før data, alle lederhandler, følger +30 s, leder/følger adskilt, TP 10× og tidsstop som videoens påstand ikke
+optimerbare, intet slettes, "7:00" verificeres eller markeres ukendt); P1 data/host-kontrakt (lederhandler, token/pool,
+poolreserver/likviditet, priser, omkostninger, døde pools; pr. kilde host, felter, opløsning, gratis/begrænsning, PIT,
+reproduktion, PROTOCOL_V3-status; ingen nye RPC/indexers/API-nøgler/collectors uden særskilt ejer- og host-godkendelse;
+ingen fomo-konti); P2 syntetisk simulator (leder vs følger, likviditet, prisimpact, gebyrer, ikke-eksekverbare fills,
+exit/tidsstop; tests for manglende priser, illikviditet, store udsving, poolophør, forsinkelser); P3 forudregistreret
+falsifikation (primær: følgerens netto; sekundær: leder−følger; FALSIFIED_UNDER_TESTED_CONDITIONS hvis øvre CI ≤ 0;
+INCONCLUSIVE; PRELIMINARY_POSITIVE aldrig VALIDATED_ALPHA på 7 d; INSUFFICIENT_DATA; ingen tidlig stop på profit); P4
+7-dages plan (dag 0 design, dag 1/3/7 rapporter efter godkendt start); P5 beskyt laboratoriet (intet rørt; ingen
+omgåelse af DNS-filtre; ingen historik før 14/11). Leverancer: FOMO_COPY_30S_PROTOCOL_DRAFT.md,
+DATA_SOURCE_APPROVAL_MATRIX.md, SYNTHETIC_EXECUTION_TESTS.md, POWER_AND_FEASIBILITY.md, GO_NO_GO_RECOMMENDATION.md.
+Status: ORDER 56 AUTHORIZED FOR DESIGN · DATA COLLECTION NOT AUTHORIZED · LIVE TRADING NO-GO.
+
+> behandlet 2026-11-08 – påbegyndt kl. 23:30 lokal.
+
 ## 2026-11-08 ChatGPT — direktørtillæg 55-A "Audit closed" (i Chrome kl. 02:42 lokal)
 Ordre 55 accepteret som afsluttet; HFC-1's oprindelige resultat og offdb-post bevares uændret; INGEN tilføjelse af
 statusfelt til offdb nu (kræver senere en versionsstyret skemaændring med kompatibilitetstest); HFC-1 11-04 forbliver
