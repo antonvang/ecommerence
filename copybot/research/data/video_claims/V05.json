@@ -1,0 +1,151 @@
+{
+ "schema": "copybot.video_claim/1",
+ "id": "V05",
+ "source": "@best.trading.bot / mobile bot, automatic trading bot system",
+ "video_sha256": "UNKNOWN",
+ "provenance": {
+  "method": "SEED_FROM_TRIAGE_NOTES: frames were viewed in the session, video not in repo; no frame times in note",
+  "refs": [
+   "research/desk/VIDEO_TRIAGE_2026-11-08.md #5"
+  ]
+ },
+ "claims": {
+  "performance_claimed": true,
+  "trading_rule_claimed": false
+ },
+ "observed_facts": [
+  {
+   "at": "UNKNOWN",
+   "quote": "Mobile bot / automatic trading bot system",
+   "fact": "MT5 mobile, gold (XAUUSD)"
+  },
+  {
+   "at": "UNKNOWN",
+   "quote": "30,72 → 746,11",
+   "fact": "balance growth shown"
+  },
+  {
+   "at": "UNKNOWN",
+   "quote": "6 × 5,46 lot",
+   "fact": "six positions of 5.46 lots, +$3,832 floating"
+  },
+  {
+   "at": "UNKNOWN",
+   "quote": "Margin 0,01",
+   "fact": "margin shown as 0.01 with margin level 55,642,500 %"
+  }
+ ],
+ "assumptions": [
+  {
+   "label": "ASSUMPTION",
+   "text": "the account is demo or the screen is edited (triage note: 'ligner demo eller redigering')"
+  },
+  {
+   "label": "ASSUMPTION",
+   "text": "XAUUSD standard lot = 100 oz"
+  },
+  {
+   "label": "UNKNOWN",
+   "text": "gold price 5,026 and balance 1,731.87 are from director order 58; the note rounds to $1.732"
+  }
+ ],
+ "rule_checklist": {
+  "market": {
+   "status": "PARTIAL",
+   "note": "gold on MT5 (CFD broker, not named)"
+  },
+  "instrument": {
+   "status": "OBSERVED",
+   "note": "XAUUSD"
+  },
+  "calendar_timezone": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "entry_signal": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "entry_execution": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "stop": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "target": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "time_exit": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "short_rule": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "max_signals_per_session": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "position_size": {
+   "status": "PARTIAL",
+   "note": "6 x 5.46 lots shown; no sizing rule"
+  },
+  "costs": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "data_source": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  }
+ },
+ "performance": {
+  "numbers": [
+   "balance 30.72 → 746.11",
+   "+$3,832 floating"
+  ],
+  "trades_shown": 6,
+  "account": "UNKNOWN"
+ },
+ "selection": {
+  "trades_total": null,
+  "strategies_tried_n": null,
+  "backtest_years_t": null,
+  "stated_sharpe": null,
+  "note": ""
+ },
+ "red_flags": {
+  "free": [
+   "6 x 5.46 lots of gold is about 3,300 oz, about $16 M notional on a $1,732 balance",
+   "margin level 55,642,500 % is not possible on a normal account",
+   "classic signal-group / expert-advisor pattern"
+  ],
+  "standard": {
+   "lead_generation": null,
+   "selected_examples_only": true,
+   "backtest_only": null,
+   "paid_product_or_fee": null,
+   "sim_or_demo_account": null,
+   "forbidden_resource_needed": null
+  },
+  "notional_check": {
+   "instrument": "XAUUSD",
+   "positions": 6,
+   "lots": 5.46,
+   "contract_size": 100,
+   "price": 5026,
+   "balance": 1731.87,
+   "source": "lots/positions from triage #5; price and balance from director order 58; 100 oz/lot"
+  }
+ },
+ "lab_prior": {
+  "lineages": [],
+  "mechanism_tags": [],
+  "matches": []
+ },
+ "classification": "NOT_REPLICABLE_FROM_VIDEO"
+}

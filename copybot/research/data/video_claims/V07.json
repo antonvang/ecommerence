@@ -1,0 +1,140 @@
+{
+ "schema": "copybot.video_claim/1",
+ "id": "V07",
+ "source": "@marlonnq / DeepSeek writes MQL5 EMA-crossover EA NQBLADE",
+ "video_sha256": "UNKNOWN",
+ "provenance": {
+  "method": "SEED_FROM_TRIAGE_NOTES: frames were viewed in the session, video not in repo; no frame times in note",
+  "refs": [
+   "research/desk/VIDEO_TRIAGE_2026-11-08.md #7"
+  ]
+ },
+ "claims": {
+  "performance_claimed": true,
+  "trading_rule_claimed": true
+ },
+ "observed_facts": [
+  {
+   "at": "UNKNOWN",
+   "quote": "sixty seconds",
+   "fact": "DeepSeek writes an MQL5 EMA-crossover EA ('NQBLADE')"
+  },
+  {
+   "at": "UNKNOWN",
+   "quote": "NAS100 M3",
+   "fact": "MT5 strategy tester, 2025-01-01 to 2026-04-30"
+  },
+  {
+   "at": "UNKNOWN",
+   "quote": "CONGRATS",
+   "fact": "end screen of the backtest"
+  }
+ ],
+ "assumptions": [
+  {
+   "label": "UNKNOWN",
+   "text": "EMA lengths and all other parameters are not shown"
+  },
+  {
+   "label": "UNKNOWN",
+   "text": "backtest result figures are not in the triage note"
+  }
+ ],
+ "rule_checklist": {
+  "market": {
+   "status": "OBSERVED",
+   "note": "NAS100 CFD at a CFD broker"
+  },
+  "instrument": {
+   "status": "OBSERVED",
+   "note": "NAS100, M3 bars"
+  },
+  "calendar_timezone": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "entry_signal": {
+   "status": "PARTIAL",
+   "note": "EMA crossover; parameters not shown"
+  },
+  "entry_execution": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "stop": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "target": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "time_exit": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "short_rule": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "max_signals_per_session": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "position_size": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "costs": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "data_source": {
+   "status": "PARTIAL",
+   "note": "MT5 strategy tester, broker feed"
+  }
+ },
+ "performance": {
+  "numbers": [
+   "one backtest 2025-01-01 to 2026-04-30 ('CONGRATS')"
+  ],
+  "trades_shown": null,
+  "account": "BACKTEST"
+ },
+ "selection": {
+  "trades_total": null,
+  "strategies_tried_n": null,
+  "backtest_years_t": null,
+  "stated_sharpe": null,
+  "note": "one backtest; period about 1.33 years; N not stated"
+ },
+ "red_flags": {
+  "free": [
+   "one backtest without cost analysis and without a forward test",
+   "account at a CFD broker"
+  ],
+  "standard": {
+   "lead_generation": null,
+   "selected_examples_only": null,
+   "backtest_only": true,
+   "paid_product_or_fee": null,
+   "sim_or_demo_account": null,
+   "forbidden_resource_needed": null
+  },
+  "notional_check": null
+ },
+ "lab_prior": {
+  "lineages": [],
+  "mechanism_tags": [
+   "trend_following",
+   "time_series_momentum"
+  ],
+  "matches": [
+   "E_donchian_trend_p1",
+   "E_donchian_trend_p2",
+   "L03_sol_trend_hourly",
+   "L14_tsmom_v1"
+  ]
+ },
+ "classification": "NOT_REPLICABLE_FROM_VIDEO"
+}

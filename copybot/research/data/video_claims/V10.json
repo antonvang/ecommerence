@@ -1,0 +1,128 @@
+{
+ "schema": "copybot.video_claim/1",
+ "id": "V10",
+ "source": "@cotraderia / 6 years of trading rules in Obsidian, 7 AI agents",
+ "video_sha256": "UNKNOWN",
+ "provenance": {
+  "method": "SEED_FROM_TRIAGE_NOTES: frames were viewed in the session, video not in repo; no frame times in note",
+  "refs": [
+   "research/desk/VIDEO_TRIAGE_2026-11-08.md #10"
+  ]
+ },
+ "claims": {
+  "performance_claimed": false,
+  "trading_rule_claimed": false
+ },
+ "observed_facts": [
+  {
+   "at": "UNKNOWN",
+   "quote": "6 years of trading rules in Obsidian",
+   "fact": "rules kept in Obsidian"
+  },
+  {
+   "at": "UNKNOWN",
+   "quote": "Claude built 7 AI agents.",
+   "fact": "each agent checks one rule"
+  },
+  {
+   "at": "UNKNOWN",
+   "quote": "Each one checks a rule I used to break.",
+   "fact": "a discipline layer"
+  },
+  {
+   "at": "UNKNOWN",
+   "quote": "I don't trade anymore. It does.",
+   "fact": "claim that the system trades"
+  }
+ ],
+ "assumptions": [
+  {
+   "label": "UNKNOWN",
+   "text": "the rules are mentioned but not shown; no performance"
+  }
+ ],
+ "rule_checklist": {
+  "market": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "instrument": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "calendar_timezone": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "entry_signal": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "entry_execution": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "stop": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "target": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "time_exit": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "short_rule": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "max_signals_per_session": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "position_size": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "costs": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "data_source": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  }
+ },
+ "performance": {
+  "numbers": [],
+  "trades_shown": null,
+  "account": "UNKNOWN"
+ },
+ "selection": {
+  "trades_total": null,
+  "strategies_tried_n": null,
+  "backtest_years_t": null,
+  "stated_sharpe": null,
+  "note": ""
+ },
+ "red_flags": {
+  "free": [],
+  "standard": {
+   "lead_generation": null,
+   "selected_examples_only": null,
+   "backtest_only": null,
+   "paid_product_or_fee": null,
+   "sim_or_demo_account": null,
+   "forbidden_resource_needed": null
+  },
+  "notional_check": null
+ },
+ "lab_prior": {
+  "lineages": [],
+  "mechanism_tags": [],
+  "matches": []
+ },
+ "classification": "NO_TRADING_CLAIM"
+}

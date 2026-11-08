@@ -1,0 +1,192 @@
+{
+ "schema": "copybot.video_claim/1",
+ "id": "EDWARD",
+ "source": "@jamiedoestradez / Edward, bot with AI (NQ opening range)",
+ "video_sha256": "UNKNOWN",
+ "provenance": {
+  "method": "SEED_FROM_TRIAGE_NOTES: 30 frames every 2 s viewed in the session (59.4 s video), video not in repo; 'at' = seconds from the audit table",
+  "refs": [
+   "research/desk/orb15/ORB15_VIDEO_RULE_AUDIT.md sections 1-4"
+  ]
+ },
+ "claims": {
+  "performance_claimed": true,
+  "trading_rule_claimed": true
+ },
+ "observed_facts": [
+  {
+   "at": 2,
+   "quote": "Edward, bot with A I. Hi.",
+   "fact": "intro"
+  },
+  {
+   "at": 6,
+   "quote": "Firstly, continuation breakouts.",
+   "fact": "first setup"
+  },
+  {
+   "at": 10,
+   "quote": "...then gets in when ... that level.",
+   "fact": "Cont_Long @ 29860.50 → stop loss @ 29849.75 (-10.75 pt)"
+  },
+  {
+   "at": 16,
+   "quote": "sorry forgot to film this trade lol",
+   "fact": "WT_Long @ 30998.25 → profit target @ 31008.25 (+10 pt)"
+  },
+  {
+   "at": 30,
+   "quote": "15 minute opening range",
+   "fact": "ORB box; ORB_Long @ 29517.00; Sell LMT above, Sell STP at box low"
+  },
+  {
+   "at": 32,
+   "quote": "starting at 7:00AM Central",
+   "fact": "box starts at chart time about 13:00"
+  },
+  {
+   "at": 34,
+   "quote": "New York session.",
+   "fact": "session named"
+  },
+  {
+   "at": 36,
+   "quote": "he looks for a breakout,",
+   "fact": "price above the box about 13:35-14:25"
+  },
+  {
+   "at": 38,
+   "quote": "long at the middle of ...",
+   "fact": "sentence cut; ORB_Long about 14:32 after a big red candle"
+  },
+  {
+   "at": 40,
+   "quote": "with a much bigger target",
+   "fact": "order lines Sell LMT (target) and Sell STP (stop)"
+  },
+  {
+   "at": 42,
+   "quote": "+$1,000 of $1,000.",
+   "fact": "one result, 1 contract; $1,000 / $20 per point = 50 pt"
+  },
+  {
+   "at": 46,
+   "quote": "I'll show you his performance",
+   "fact": "no total performance is shown"
+  }
+ ],
+ "assumptions": [
+  {
+   "label": "ASSUMPTION",
+   "text": "bars are about 5 min (about 12 candles per hour; INFERRED)"
+  },
+  {
+   "label": "ASSUMPTION",
+   "text": "chart time zone is UTC (7:00 CT = 13:00 UTC after 1/11; INFERRED, not shown)"
+  },
+  {
+   "label": "UNKNOWN",
+   "text": "long signal: the sentence 'long at the middle of ...' is cut"
+  },
+  {
+   "label": "UNKNOWN",
+   "text": "gap / missing-bar handling not mentioned"
+  }
+ ],
+ "rule_checklist": {
+  "market": {
+   "status": "OBSERVED",
+   "note": "NQ (E-mini Nasdaq-100) futures"
+  },
+  "instrument": {
+   "status": "OBSERVED",
+   "note": "NQ 12-26"
+  },
+  "calendar_timezone": {
+   "status": "PARTIAL",
+   "note": "7:00 CT range start, 'New York session', 'everyday'; holidays and half days UNKNOWN; chart time zone INFERRED"
+  },
+  "entry_signal": {
+   "status": "UNKNOWN",
+   "note": "'looks for a breakout' then 'long at the middle of ...' (cut)"
+  },
+  "entry_execution": {
+   "status": "UNKNOWN",
+   "note": "ORB_Long @ 29517.00 about 2 min after cash open; order type not shown"
+  },
+  "stop": {
+   "status": "PARTIAL",
+   "note": "'Sell STP' at the box low (range low?); level not readable"
+  },
+  "target": {
+   "status": "UNKNOWN",
+   "note": "'Sell LMT', 'much bigger target'; no multiple or level"
+  },
+  "time_exit": {
+   "status": "UNKNOWN",
+   "note": "not shown"
+  },
+  "short_rule": {
+   "status": "UNKNOWN",
+   "note": "not shown"
+  },
+  "max_signals_per_session": {
+   "status": "UNKNOWN",
+   "note": "not shown; continuation example re-enters after a stop"
+  },
+  "position_size": {
+   "status": "OBSERVED",
+   "note": "1 contract in the shown trades (audit: observed)"
+  },
+  "costs": {
+   "status": "UNKNOWN",
+   "note": "not shown"
+  },
+  "data_source": {
+   "status": "UNKNOWN",
+   "note": "chart platform not named in the audit"
+  }
+ },
+ "performance": {
+  "numbers": [
+   "ORB +$1,000 (1 contract, 50 pt)",
+   "continuation -10.75 pt (about -$215)",
+   "WT +10 pt (not filmed)"
+  ],
+  "trades_shown": 3,
+  "account": "UNKNOWN"
+ },
+ "selection": {
+  "trades_total": null,
+  "strategies_tried_n": null,
+  "backtest_years_t": null,
+  "stated_sharpe": null,
+  "note": "selected trades, no total; 'Follow me' for performance"
+ },
+ "red_flags": {
+  "free": [
+   "+$1,000 on 1 NQ contract is 50 pt, about 0.17 % of a ~$590,000 notional; says nothing about return",
+   "one trade 'not filmed'"
+  ],
+  "standard": {
+   "lead_generation": true,
+   "selected_examples_only": true,
+   "backtest_only": null,
+   "paid_product_or_fee": null,
+   "sim_or_demo_account": null,
+   "forbidden_resource_needed": null
+  },
+  "notional_check": null
+ },
+ "lab_prior": {
+  "lineages": [],
+  "mechanism_tags": [
+   "intraday_seasonality"
+  ],
+  "matches": [
+   "E_hour_of_day_p1",
+   "E_hour_of_day_p2"
+  ]
+ },
+ "classification": "NOT_REPLICABLE_FROM_VIDEO"
+}

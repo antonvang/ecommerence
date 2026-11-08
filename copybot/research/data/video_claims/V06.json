@@ -1,0 +1,145 @@
+{
+ "schema": "copybot.video_claim/1",
+ "id": "V06",
+ "source": "@ray_fu / How to build a trading firm with AI agents",
+ "video_sha256": "UNKNOWN",
+ "provenance": {
+  "method": "SEED_FROM_TRIAGE_NOTES: frames were viewed in the session, video not in repo; no frame times in note",
+  "refs": [
+   "research/desk/VIDEO_TRIAGE_2026-11-08.md #6",
+   "research/desk/VIDEO_USABLE_2026-11-09.md U5"
+  ]
+ },
+ "claims": {
+  "performance_claimed": false,
+  "trading_rule_claimed": true
+ },
+ "observed_facts": [
+  {
+   "at": "UNKNOWN",
+   "quote": "How to build a trading firm with AI agents",
+   "fact": "news analyst, risk agent, portfolio manager"
+  },
+  {
+   "at": "UNKNOWN",
+   "quote": "limit @ $89.50",
+   "fact": "example order approved by the portfolio-manager agent"
+  },
+  {
+   "at": "UNKNOWN",
+   "quote": "stop $86.90",
+   "fact": "example stop on that order"
+  },
+  {
+   "at": "UNKNOWN",
+   "quote": "target $99.50",
+   "fact": "example target on that order"
+  },
+  {
+   "at": "UNKNOWN",
+   "quote": "2.1 %",
+   "fact": "example position size: 2.1 % of the portfolio"
+  }
+ ],
+ "assumptions": [
+  {
+   "label": "ASSUMPTION",
+   "text": "the video corresponds to the repo TauricResearch/TradingAgents (owner's message)"
+  },
+  {
+   "label": "UNKNOWN",
+   "text": "paper figures (AAPL ~23-27 %, Sharpe 8.21) are UNVERIFIED; PDF not read"
+  },
+  {
+   "label": "UNKNOWN",
+   "text": "LLM decisions cannot be frozen as a formula; entry rule is the model's judgement"
+  }
+ ],
+ "rule_checklist": {
+  "market": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "instrument": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "calendar_timezone": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "entry_signal": {
+   "status": "UNKNOWN",
+   "note": "LLM agent decision; no fixed rule"
+  },
+  "entry_execution": {
+   "status": "PARTIAL",
+   "note": "limit order in the example"
+  },
+  "stop": {
+   "status": "PARTIAL",
+   "note": "$86.90 in one example; rule not stated"
+  },
+  "target": {
+   "status": "PARTIAL",
+   "note": "$99.50 in one example; rule not stated"
+  },
+  "time_exit": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "short_rule": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "max_signals_per_session": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "position_size": {
+   "status": "PARTIAL",
+   "note": "2.1 % of portfolio in one example"
+  },
+  "costs": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "data_source": {
+   "status": "PARTIAL",
+   "note": "news and fundamental data via LLM APIs; providers not named"
+  }
+ },
+ "performance": {
+  "numbers": [],
+  "trades_shown": null,
+  "account": "UNKNOWN"
+ },
+ "selection": {
+  "trades_total": null,
+  "strategies_tried_n": null,
+  "backtest_years_t": null,
+  "stated_sharpe": null,
+  "note": ""
+ },
+ "red_flags": {
+  "free": [
+   "LLM look-ahead: models trained on the test period 'know' the outcome",
+   "needs LLM API keys and new hosts (forbidden for the lab)"
+  ],
+  "standard": {
+   "lead_generation": null,
+   "selected_examples_only": null,
+   "backtest_only": null,
+   "paid_product_or_fee": null,
+   "sim_or_demo_account": null,
+   "forbidden_resource_needed": true
+  },
+  "notional_check": null
+ },
+ "lab_prior": {
+  "lineages": [],
+  "mechanism_tags": [],
+  "matches": []
+ },
+ "classification": "NOT_REPLICABLE_FROM_VIDEO"
+}

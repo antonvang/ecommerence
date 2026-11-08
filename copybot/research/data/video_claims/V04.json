@@ -1,0 +1,149 @@
+{
+ "schema": "copybot.video_claim/1",
+ "id": "V04",
+ "source": "@fvllport / Day 1 of using trading bot to pass 50K Funded",
+ "video_sha256": "UNKNOWN",
+ "provenance": {
+  "method": "SEED_FROM_TRIAGE_NOTES: frames were viewed in the session, video not in repo; no frame times in note",
+  "refs": [
+   "research/desk/VIDEO_TRIAGE_2026-11-08.md #4 and note"
+  ]
+ },
+ "claims": {
+  "performance_claimed": true,
+  "trading_rule_claimed": false
+ },
+ "observed_facts": [
+  {
+   "at": "UNKNOWN",
+   "quote": "Day 1 of using trading bot to pass 50K Funded",
+   "fact": "FundedNext challenge, $299.99"
+  },
+  {
+   "at": "UNKNOWN",
+   "quote": "DEAD",
+   "fact": "21 strategies marked DEAD in his own test tool"
+  },
+  {
+   "at": "UNKNOWN",
+   "quote": "no edge to trade",
+   "fact": "combined report over 9,132 trades: t = -2.19"
+  },
+  {
+   "at": "UNKNOWN",
+   "quote": "+61.6 %, max drawdown 7.85 %, PF 1.75, Sharpe 1.46",
+   "fact": "3 strategies kept; over 2.9 years in the MetaTrader 5 strategy tester"
+  },
+  {
+   "at": "UNKNOWN",
+   "quote": "real spread + financing",
+   "fact": "cost setting stated for the MT5 backtest"
+  }
+ ],
+ "assumptions": [
+  {
+   "label": "UNKNOWN",
+   "text": "the three kept strategies are not disclosed"
+  },
+  {
+   "label": "ASSUMPTION",
+   "text": "N = 24 tries (21 dead + 3 kept), as in the triage note ('cirka 24 forsøg')"
+  },
+  {
+   "label": "UNKNOWN",
+   "text": "whether the Sharpe 1.46 is annualised and for the combined three"
+  }
+ ],
+ "rule_checklist": {
+  "market": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "instrument": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "calendar_timezone": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "entry_signal": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "entry_execution": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "stop": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "target": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "time_exit": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "short_rule": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "max_signals_per_session": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "position_size": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "costs": {
+   "status": "PARTIAL",
+   "note": "'real spread + financing' in the MT5 tester; size unknown"
+  },
+  "data_source": {
+   "status": "PARTIAL",
+   "note": "MetaTrader 5 strategy tester; broker feed not stated"
+  }
+ },
+ "performance": {
+  "numbers": [
+   "+61.6 % over 2.9 years",
+   "max drawdown 7.85 %",
+   "PF 1.75",
+   "Sharpe 1.46"
+  ],
+  "trades_shown": null,
+  "account": "BACKTEST"
+ },
+ "selection": {
+  "trades_total": null,
+  "strategies_tried_n": 24,
+  "backtest_years_t": 2.9,
+  "stated_sharpe": 1.46,
+  "note": "3 of about 24 strategies kept; backtest only, no forward observation"
+ },
+ "red_flags": {
+  "free": [
+   "kept 3 of about 24 strategies",
+   "test happens in a paid prop challenge (real money, age requirement)"
+  ],
+  "standard": {
+   "lead_generation": null,
+   "selected_examples_only": true,
+   "backtest_only": true,
+   "paid_product_or_fee": true,
+   "sim_or_demo_account": null,
+   "forbidden_resource_needed": true
+  },
+  "notional_check": null
+ },
+ "lab_prior": {
+  "lineages": [],
+  "mechanism_tags": [],
+  "matches": []
+ },
+ "classification": "NOT_REPLICABLE_FROM_VIDEO"
+}

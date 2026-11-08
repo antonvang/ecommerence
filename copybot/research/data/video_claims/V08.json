@@ -1,0 +1,120 @@
+{
+ "schema": "copybot.video_claim/1",
+ "id": "V08",
+ "source": "@dub9287 / Deepseek 4.1 Uncensored X Opus 5.5 (sent twice, identical files)",
+ "video_sha256": "UNKNOWN",
+ "provenance": {
+  "method": "SEED_FROM_TRIAGE_NOTES: frames were viewed in the session, video not in repo; no frame times in note",
+  "refs": [
+   "research/desk/VIDEO_TRIAGE_2026-11-08.md #8"
+  ]
+ },
+ "claims": {
+  "performance_claimed": false,
+  "trading_rule_claimed": false
+ },
+ "observed_facts": [
+  {
+   "at": "UNKNOWN",
+   "quote": "Deepseek 4.1 Uncensored X Opus 5.5",
+   "fact": "title"
+  },
+  {
+   "at": "UNKNOWN",
+   "quote": "MT5",
+   "fact": "a tool that checks and claims usernames via TikTok/Instagram/Discord, plus an MT5 window"
+  }
+ ],
+ "assumptions": [
+  {
+   "label": "UNKNOWN",
+   "text": "no trading claim at all"
+  }
+ ],
+ "rule_checklist": {
+  "market": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "instrument": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "calendar_timezone": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "entry_signal": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "entry_execution": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "stop": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "target": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "time_exit": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "short_rule": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "max_signals_per_session": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "position_size": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "costs": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "data_source": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  }
+ },
+ "performance": {
+  "numbers": [],
+  "trades_shown": null,
+  "account": "UNKNOWN"
+ },
+ "selection": {
+  "trades_total": null,
+  "strategies_tried_n": null,
+  "backtest_years_t": null,
+  "stated_sharpe": null,
+  "note": ""
+ },
+ "red_flags": {
+  "free": [
+   "username-claim tool breaks the platforms' terms; the lab does not build it"
+  ],
+  "standard": {
+   "lead_generation": null,
+   "selected_examples_only": null,
+   "backtest_only": null,
+   "paid_product_or_fee": null,
+   "sim_or_demo_account": null,
+   "forbidden_resource_needed": null
+  },
+  "notional_check": null
+ },
+ "lab_prior": {
+  "lineages": [],
+  "mechanism_tags": [],
+  "matches": []
+ },
+ "classification": "NO_TRADING_CLAIM"
+}

@@ -1,0 +1,139 @@
+{
+ "schema": "copybot.video_claim/1",
+ "id": "V03",
+ "source": "Danish account ('Trading er held') / TradingView replay on an index",
+ "video_sha256": "UNKNOWN",
+ "provenance": {
+  "method": "SEED_FROM_TRIAGE_NOTES: frames were viewed in the session, video not in repo; no frame times in note",
+  "refs": [
+   "research/desk/VIDEO_TRIAGE_2026-11-08.md #3"
+  ]
+ },
+ "claims": {
+  "performance_claimed": false,
+  "trading_rule_claimed": true
+ },
+ "observed_facts": [
+  {
+   "at": "UNKNOWN",
+   "quote": "Data High",
+   "fact": "target label on the replay chart"
+  },
+  {
+   "at": "UNKNOWN",
+   "quote": "BE",
+   "fact": "break-even label on the replay chart"
+  },
+  {
+   "at": "UNKNOWN",
+   "quote": "17/7/2025",
+   "fact": "one TradingView replay on an index chart around 14:30, a US data release"
+  }
+ ],
+ "assumptions": [
+  {
+   "label": "ASSUMPTION",
+   "text": "14:30 is local (CEST) time; the note does not state the time zone"
+  },
+  {
+   "label": "UNKNOWN",
+   "text": "which index; the note says only 'indeksdiagram'"
+  },
+  {
+   "label": "UNKNOWN",
+   "text": "result of the replay trade is not in the note"
+  }
+ ],
+ "rule_checklist": {
+  "market": {
+   "status": "PARTIAL",
+   "note": "an index chart; which index is not stated"
+  },
+  "instrument": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "calendar_timezone": {
+   "status": "PARTIAL",
+   "note": "17/7/2025 around 14:30 (US data release); time zone not stated"
+  },
+  "entry_signal": {
+   "status": "PARTIAL",
+   "note": "entry in a 'gap' zone after the news candle; discretionary ICT style"
+  },
+  "entry_execution": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "stop": {
+   "status": "PARTIAL",
+   "note": "'BE' (break-even) shown; initial stop not stated"
+  },
+  "target": {
+   "status": "PARTIAL",
+   "note": "'Data High' shown as target; rule for the level not stated"
+  },
+  "time_exit": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "short_rule": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "max_signals_per_session": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "position_size": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "costs": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "data_source": {
+   "status": "PARTIAL",
+   "note": "TradingView replay"
+  }
+ },
+ "performance": {
+  "numbers": [],
+  "trades_shown": 1,
+  "account": "UNKNOWN"
+ },
+ "selection": {
+  "trades_total": null,
+  "strategies_tried_n": null,
+  "backtest_years_t": null,
+  "stated_sharpe": null,
+  "note": "one selected historical replay"
+ },
+ "red_flags": {
+  "free": [
+   "one selected historical replay",
+   "discretionary, no fixed rules"
+  ],
+  "standard": {
+   "lead_generation": null,
+   "selected_examples_only": true,
+   "backtest_only": true,
+   "paid_product_or_fee": null,
+   "sim_or_demo_account": null,
+   "forbidden_resource_needed": null
+  },
+  "notional_check": null
+ },
+ "lab_prior": {
+  "lineages": [],
+  "mechanism_tags": [
+   "intraday_seasonality"
+  ],
+  "matches": [
+   "E_hour_of_day_p1",
+   "E_hour_of_day_p2"
+  ]
+ },
+ "classification": "NOT_REPLICABLE_FROM_VIDEO"
+}

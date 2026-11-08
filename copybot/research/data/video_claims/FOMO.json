@@ -1,0 +1,192 @@
+{
+ "schema": "copybot.video_claim/1",
+ "id": "FOMO",
+ "source": "@trading.calls / fomo app, Grok Bot copies 4 traders 30 s later",
+ "video_sha256": "UNKNOWN",
+ "provenance": {
+  "method": "SEED_FROM_TRIAGE_NOTES: frames viewed one by one in the session, video not in repo; no frame times in the draft",
+  "refs": [
+   "research/desk/fomo/FOMO_COPY_30S_PROTOCOL_DRAFT.md section 1"
+  ]
+ },
+ "claims": {
+  "performance_claimed": true,
+  "trading_rule_claimed": true
+ },
+ "observed_facts": [
+  {
+   "at": "UNKNOWN",
+   "quote": "copying 4 traders",
+   "fact": "leaders are fomo users, e.g. aiwass, panceramic"
+  },
+  {
+   "at": "UNKNOWN",
+   "quote": "4 traders · 30s → Grok Bot",
+   "fact": "the copy delay"
+  },
+  {
+   "at": "UNKNOWN",
+   "quote": "Grok Bot copied · 30s later",
+   "fact": "the copy delay; one card shows 'AI in 26s'"
+  },
+  {
+   "at": "UNKNOWN",
+   "quote": "TP 10× · 7:00",
+   "fact": "risk card; '7:00' is not explained"
+  },
+  {
+   "at": "UNKNOWN",
+   "quote": "$47.6K",
+   "fact": "leader buys at MC $47.6K at 12:19; bot 30 s later at $49.8K (+4.6 % dearer)"
+  },
+  {
+   "at": "UNKNOWN",
+   "quote": "10× take profit",
+   "fact": "exit reason of the example trade, sold at 3:39"
+  },
+  {
+   "at": "UNKNOWN",
+   "quote": "$72,00 → $720,00 (+900,0 %)",
+   "fact": "the example trade, sold at 3:39"
+  },
+  {
+   "at": "UNKNOWN",
+   "quote": "aiwass still holding · rule kept",
+   "fact": "the bot exits on its own after TP"
+  },
+  {
+   "at": "UNKNOWN",
+   "quote": "SIM",
+   "fact": "simulated account"
+  },
+  {
+   "at": "UNKNOWN",
+   "quote": "$245.53, +$5.73 (+2%) since deposit",
+   "fact": "account total; another frame '$243.70, +$0.00 24h'"
+  }
+ ],
+ "assumptions": [
+  {
+   "label": "ASSUMPTION",
+   "text": "'7:00' = time stop 7 h 00 min after the follower's entry (assumption A, fixed before data)"
+  },
+  {
+   "label": "UNKNOWN",
+   "text": "'7:00' as a clock time in an unknown time zone (assumption B, not tested)"
+  },
+  {
+   "label": "UNKNOWN",
+   "text": "whether the bot follows the leader's sell"
+  },
+  {
+   "label": "UNKNOWN",
+   "text": "bot fee, DEX fee, priority fee: $72 → exactly $720 means 0 fees in the display"
+  },
+  {
+   "label": "UNKNOWN",
+   "text": "how the 4 leaders were chosen"
+  }
+ ],
+ "rule_checklist": {
+  "market": {
+   "status": "PARTIAL",
+   "note": "memecoins in the fomo app; chain not stated in section 1"
+  },
+  "instrument": {
+   "status": "PARTIAL",
+   "note": "whatever mint a leader buys"
+  },
+  "calendar_timezone": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "entry_signal": {
+   "status": "PARTIAL",
+   "note": "copy a leader's buy; leader selection rule not shown"
+  },
+  "entry_execution": {
+   "status": "PARTIAL",
+   "note": "30 s after the leader; order type and slippage not shown"
+  },
+  "stop": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "target": {
+   "status": "OBSERVED",
+   "note": "TP 10x"
+  },
+  "time_exit": {
+   "status": "PARTIAL",
+   "note": "'7:00' not explained"
+  },
+  "short_rule": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "max_signals_per_session": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "position_size": {
+   "status": "PARTIAL",
+   "note": "$72 in the example trade"
+  },
+  "costs": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "data_source": {
+   "status": "PARTIAL",
+   "note": "the fomo app"
+  }
+ },
+ "performance": {
+  "numbers": [
+   "one trade +900.0 % ($72 → $720)",
+   "account +$5.73 (+2 %) since deposit"
+  ],
+  "trades_shown": 1,
+  "account": "SIM"
+ },
+ "selection": {
+  "trades_total": null,
+  "strategies_tried_n": null,
+  "backtest_years_t": null,
+  "stated_sharpe": null,
+  "note": "one selected trade on a SIM account"
+ },
+ "red_flags": {
+  "free": [
+   "0 fees and 0 slippage in the displayed trade",
+   "fomo app needs an account and login (forbidden)"
+  ],
+  "standard": {
+   "lead_generation": null,
+   "selected_examples_only": true,
+   "backtest_only": null,
+   "paid_product_or_fee": null,
+   "sim_or_demo_account": true,
+   "forbidden_resource_needed": true
+  },
+  "notional_check": null
+ },
+ "lab_prior": {
+  "lineages": [
+   "copy_trading"
+  ],
+  "mechanism_tags": [
+   "memecoin_launch_selection"
+  ],
+  "matches": [
+   "E_smart_vs_crowd_p3",
+   "L01_copy_kol",
+   "L02_self_found_traders",
+   "L04_buy_graduations",
+   "L10_launch_v1",
+   "L11_smart_v2",
+   "X02_copybot_paper"
+  ]
+ },
+ "classification": "NOT_REPLICABLE_FROM_VIDEO"
+}

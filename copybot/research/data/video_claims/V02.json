@@ -1,0 +1,125 @@
+{
+ "schema": "copybot.video_claim/1",
+ "id": "V02",
+ "source": "@stickmanxwx / general trading-bot guide",
+ "video_sha256": "UNKNOWN",
+ "provenance": {
+  "method": "SEED_FROM_TRIAGE_NOTES: frames were viewed in the session, video not in repo; no frame times in note",
+  "refs": [
+   "research/desk/VIDEO_TRIAGE_2026-11-08.md #2"
+  ]
+ },
+ "claims": {
+  "performance_claimed": false,
+  "trading_rule_claimed": false
+ },
+ "observed_facts": [
+  {
+   "at": "UNKNOWN",
+   "quote": "crypto 24/7",
+   "fact": "advice: choose a market, e.g. crypto that trades 24/7"
+  },
+  {
+   "at": "UNKNOWN",
+   "quote": "TA-Lib",
+   "fact": "names TA-Lib, trend / mean reversion / arbitrage, milliseconds"
+  },
+  {
+   "at": "UNKNOWN",
+   "quote": "Comment 'Trade' + your country",
+   "fact": "a guide is offered in exchange for a comment"
+  }
+ ],
+ "assumptions": [
+  {
+   "label": "UNKNOWN",
+   "text": "no specific rule and no performance"
+  }
+ ],
+ "rule_checklist": {
+  "market": {
+   "status": "PARTIAL",
+   "note": "crypto 24/7 suggested in general terms only"
+  },
+  "instrument": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "calendar_timezone": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "entry_signal": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "entry_execution": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "stop": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "target": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "time_exit": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "short_rule": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "max_signals_per_session": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "position_size": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "costs": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  },
+  "data_source": {
+   "status": "UNKNOWN",
+   "note": "not in the triage note"
+  }
+ },
+ "performance": {
+  "numbers": [],
+  "trades_shown": null,
+  "account": "UNKNOWN"
+ },
+ "selection": {
+  "trades_total": null,
+  "strategies_tried_n": null,
+  "backtest_years_t": null,
+  "stated_sharpe": null,
+  "note": ""
+ },
+ "red_flags": {
+  "free": [
+   "lead generation: 'Comment Trade + your country' for a guide"
+  ],
+  "standard": {
+   "lead_generation": true,
+   "selected_examples_only": null,
+   "backtest_only": null,
+   "paid_product_or_fee": null,
+   "sim_or_demo_account": null,
+   "forbidden_resource_needed": null
+  },
+  "notional_check": null
+ },
+ "lab_prior": {
+  "lineages": [],
+  "mechanism_tags": [],
+  "matches": []
+ },
+ "classification": "NO_TRADING_CLAIM"
+}
