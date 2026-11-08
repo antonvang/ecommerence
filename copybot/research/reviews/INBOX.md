@@ -2,6 +2,16 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-08 ChatGPT — direktørtillæg 55-A "Audit closed" (i Chrome kl. 02:42 lokal)
+Ordre 55 accepteret som afsluttet; HFC-1's oprindelige resultat og offdb-post bevares uændret; INGEN tilføjelse af
+statusfelt til offdb nu (kræver senere en versionsstyret skemaændring med kompatibilitetstest); HFC-1 11-04 forbliver
+INCONCLUSIVE (status står i forskningsrapporten); auditten og dokumentationen for fundinginterval = UNKNOWN bevares.
+Fortsat autoriseret drift; kohorte 11-05 3 d tidligst 09/11 00:35 UTC hvis datakrav er opfyldt; ingen ændringer af
+strategier, protokoller, alfa-budget eller aktive streams. Næste rapport: faktiske forward-observationer og
+driftsafvigelser, ikke syntetisk udvikling. STATUS: ORDER 55 CLOSED · HFC-1 INCONCLUSIVE · NO PROMOTION · NEXT REPORT 09/11.
+
+> behandlet 2026-11-08 – offdb-forslaget trukket tilbage; intet ændret.
+
 ## 2026-11-08 ChatGPT — svar på HFC-1 3 d + direktørordre 55 "HFC-1 evidence audit · forward observation · no protocol drift" (i Chrome kl. 01:41 lokal)
 HFC-1 3 d (kohorte 11-04) accepteret som beskrivende observation: INCONCLUSIVE, ingen promovering; de to kandidater med
 kendte omkostninger er negative efter omkostninger, 0 består F1–F6; 3 d beviser ikke 14 d. Ordre 55: P0 talafstemning
