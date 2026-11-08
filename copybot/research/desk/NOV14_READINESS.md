@@ -48,6 +48,14 @@ som HFC-1-værktøjerne allerede fastlåser), og resten er tilføjede driftsnote
 (`prefix_bytes` 3178 i `GATE_MATRIX.json`). Den er bekræftet identisk med låse-committen `368eaec`. En ændring af
 reglerne giver stadig `HASH_MISMATCH`; en ny driftsnote gør ikke.
 
+Korrektionsspor (append-only):
+
+| Dato | Ændring | Grundlag |
+|---|---|---|
+| 2026-11-06 | `HFC1_PROTOCOL` fastlåst på hele filen: `368eaec`, sha256 `0c283522e31b36555ec5801addd28ab6f5437c2438c0e81034ac2d3dbe0e352d` | ordre 53 P1 |
+| 2026-11-09 | Fastlåst på regelpræfikset (3178 bytes, sha256 `cd1b6fc6…`), commit `368eaec` | `12b6e1c`; status PROVENANCE_REVIEW_REQUIRED (ordre 58) |
+| 2026-11-09 | Commit-kolonnen rettet til `48a0a63` (protokollens oprindelige version). Hele-fil-pinnen bevares i `GATE_MATRIX.json` (`superseded_full_file_pin`) og kan verificeres i `368eaec`. Vagttesten R18 bevares | direktørtillæg 58-A; `HFC1_PROVENANCE_AUDIT.md` |
+
 <!-- protocol-identities:start -->
 | id | fil | commit | sha256 |
 |---|---|---|---|
@@ -59,7 +67,7 @@ reglerne giver stadig `HASH_MISMATCH`; en ny driftsnote gør ikke.
 | `FACTORY_P2` | `research/studies/FACTORY_P2_PROTOCOLS_2026-11-06.md` | `b54cb3c` | `6dd1ca82934419c0913bccb3a8962f5e5e5154d678eee59179292a7694ae5f43` |
 | `C1_DESIGN` | `research/desk/C1_FORECAST_DESIGN.md` | `80fb255` | `530a86d5bb56ec62f6d5f900456c608f67f3964ad7ff2d141e0ad12ec91ff994` |
 | `C1_TOOL` | `research/tools/c1_forecast.py` | `80fb255` | `5bedfb002fb1c1fb1fb6453dcbe2fe85d0c2b7c363838c95d6422e0242275c10` |
-| `HFC1_PROTOCOL` | `research/studies/HFC1_HIGH_FUNDING_FEASIBILITY_2026-11-04.md` | `368eaec` | `cd1b6fc66000544f6e58a5e202f4c3f0c2d10913c3882f3eda6b8d06cdfe53c6` |
+| `HFC1_PROTOCOL` | `research/studies/HFC1_HIGH_FUNDING_FEASIBILITY_2026-11-04.md` | `48a0a63` | `cd1b6fc66000544f6e58a5e202f4c3f0c2d10913c3882f3eda6b8d06cdfe53c6` |
 | `HFC1_TOOL` | `research/tools/hfc1_daily.py` | `5a62465` | `5893a526d8482b4a0c446a53ef61dbd0c6d037774df41fb1573d8e1073135347` |
 | `STRAKS_CODE` | `lab/straks.py` | `814ef8b` | `7a110f1fa20fb7d28b76269fc039eec4c75ddfa7353602f2f8824490b722a542` |
 | `PAIRS_CODE` | `lab/pairs.py` | `b1ef7a6` | `5c9b60a4314a40a5e4d517427c4960220682b8f6179a445a5554903180ce1219` |

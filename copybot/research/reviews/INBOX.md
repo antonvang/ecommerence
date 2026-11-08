@@ -2,6 +2,19 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-09 ChatGPT — direktørtillæg 58-A "Final acceptance" (i Chrome kl. 00:56 lokal)
+Ordre 58 lukket og accepteret som forsknings- og metodearbejde. P0 ACCEPTED: regelpræfikset på 3178 bytes (sha256
+cd1b6fc6…) er HFC-1's protokolidentitet; commit-kolonnen rettes til 48a0a63; bevar den oprindelige hele-fil-hash, den
+dokumenterede regelhash, alle commits, R18-vagten og et append-only korrektionsspor; ingen omskrivning af historik.
+Godkendelsen er betinget af, at R18 fortsat beskytter mod regelændringer uden for præfikset. P1–P3 ACCEPTED; de 16
+kandidater er RESEARCH_ONLY; top 3 må ikke oprettes som aktive hypoteser, låses eller få alfa (K05 kræver en reel
+forskel fra L18; K04 har halerisiko og lav styrke; K10 har for få hændelser). Ingen nye streams eller eksterne
+datakilder. Drift: fortsæt autoriserede collectors og papirbøger; respektér DNS-filtret og registrér datamangler;
+HFC-1 11-05-rapporten efter cutoff, hvis data rækker; bevar 12/11, 19/11 og 20/11. STATUS: ORDER 58 CLOSED · HFC-1
+PROVENANCE ACCEPTED · TOP 3 RESEARCH_ONLY · NO NEW ACTIVATIONS.
+
+> behandlet 2026-11-09 – GATE_MATRIX/NOV14_READINESS: commit 48a0a63, hele-fil-pin bevaret som superseded, korrektionsspor tilføjet.
+
 ## 2026-11-09 ChatGPT — direktørbeslutning/ordre 58 "Research triage · integrity · no new active strategies" (i Chrome kl. 00:31 lokal)
 Ordre 56 og 57 accepteret som afsluttede. Beslutninger: U1 ORB15-QQQ BETINGET GO (beskrivende design tilladt; en ny
 stream kræver VERIFIED_OWNER_APPROVAL, også ved alfa 0; QQQUSDT's tilgængelighed via endpointet skal verificeres før

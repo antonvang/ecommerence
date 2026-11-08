@@ -88,9 +88,10 @@
   {
    "id": "HFC1_PROTOCOL",
    "path": "research/studies/HFC1_HIGH_FUNDING_FEASIBILITY_2026-11-04.md",
-   "commit": "368eaec",
+   "commit": "48a0a63",
    "sha256": "cd1b6fc66000544f6e58a5e202f4c3f0c2d10913c3882f3eda6b8d06cdfe53c6",
-   "prefix_bytes": 3178
+   "prefix_bytes": 3178,
+   "superseded_full_file_pin": {"commit": "368eaec", "sha256": "0c283522e31b36555ec5801addd28ab6f5437c2438c0e81034ac2d3dbe0e352d", "superseded": "2026-11-09 by director addendum 58-A (HFC1_PROVENANCE_AUDIT.md); kept, not rewritten"}
   },
   {
    "id": "HFC1_TOOL",
