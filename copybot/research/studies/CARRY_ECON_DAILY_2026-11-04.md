@@ -77,3 +77,12 @@ U2 (17 mønter med carry-perp-ben): ADA, APE, AXS, BCH, BNB, BTC, CRV, ETC, ETH,
 - Persistens for 11-03 kan nu beregnes: 104 over break-even på 72 t, 69 af dem stadig over i de næste 3 døgn (66 %).
 - 11-07 er ufuldstændig (20 snapshots) og indgår først i morgen.
 - Ingen nye carry-starter (M2-regnskabet uændret). Beskrivende; afgør intet; ingen regel ændret.
+
+## Kørsel 11-08 (kl. 01:38 lokal; dag 11-07, 24 snapshots)
+
+| Dag | Snapshots | U1 n | U1 ≥ 12,5 % | U1 ≥ 18,8 % | U1 median-APR | U2 ≥ 12,5 % | U2 højeste | Persistens 3 d (U1) |
+|---|---|---|---|---|---|---|---|---|
+| 11-07 | 24 | 896 | 9,2 % | 6,2 % | 3,4 % | 0/18 | 10,9 % (ICP) | endnu ikke |
+
+- Ingen carry-mønt over break-even; BCH −9,9 %, XTZ −8,6 %, VET −4,7 %, TRX −3,1 % p.a. (negativ funding).
+- Ingen nye carry-starter. Beskrivende; afgør intet.

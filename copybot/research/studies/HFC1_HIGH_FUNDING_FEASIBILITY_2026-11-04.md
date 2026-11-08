@@ -96,3 +96,28 @@ kapacitet, omkostning og datakvalitet. Ingen ny udvælgelsesregel før da.
 fejlede med ConnectionRefused mod data-api.binance.vision, som den lokale DNS nu blokerer. Kohorten efterdannes ikke
 (formationstidspunktet ville afvige). Status: BLOCKED/MISSING; rapporteres som manglende kohorte, ikke som frafald.
 `outcomes`: 11-04 og 11-05 3 d/14 d "endnu ikke". HFC-1's kriterier er uændrede.
+
+## 3 d-udfald kohorte 11-04 (kl. 01:38 lokal 11-08; `hfc1_report3d.py --cohort 2026-11-04`, resultat-sha256 `d9311dc724c4…`)
+
+Kørt 2026-11-08 00:37:11 UTC efter cutoff (vindue [11-05 00:00, 11-08 00:00) UTC afsluttet); kohortefil-sha256
+`a5f831c40c19…` og regelhash `cd1b6fc6…` kontrolleret før kørsel. Census 72/72 snapshots. Beskrivende; ingen test.
+
+- **Alle 120 C0-medlemmer** i opgørelsen; 0 manglende. 117 faldt fra ved F1 (intet spotpar) og 1 ved F1
+  (multiplikator) — de har realiseret funding (median 12,6 % / 14,2 % APR), men kan ikke afdækkes, så omkostning og
+  netto er n/a (frafald, ikke manglende). C0+ 72 medlemmer, realiseret APR-median 16,2 %.
+- **Bestod F1–F5: 2** (begge størrelser); bestod F1–F6 (3 d): 0. De 2 havde realiseret funding median 23,7 % APR.
+- **N 1.000 pr. ben (allokeret 2.000):** dækningsgrad median 0,21; break-even 111,7 % APR (perp-notional); netto median
+  −7,23 USDT (−7,72; −6,74) = −0,4 % af allokeret kapital; dækket ex post 0 af 2.
+- **N 5.000 pr. ben (allokeret 10.000):** dækningsgrad 0,12; break-even 189,1 % APR; netto median −68,00 USDT
+  (−70,23; −65,76) = −0,7 %; dækket 0 af 2.
+- Diagnostik (adskilt, ændrer ikke protokollen): ved dækningsgrad 0,21 skulle omkostningerne falde ~79 % for at funding
+  over 3 døgn dækkede dem.
+- Begrænsninger: 8 t-intervalantagelse (4 t-perps undervurderes); omkostning = bogens gennemgang ved kohortedannelsen
+  (ingen realiseret exit-bog); "realiseret funding" = middel af timevise lastFundingRate-aflæsninger.
+- Ingen konklusion eller ny udvælgelsesregel før beslutningsnotatet efter 11-28 (protokollen). offdb-post
+  HFC1_OUTCOME_3D_2026-11-04 tilføjet (attempts 0, alfa 0).
+
+## Kohorte 11-07 — IKKE DANNET (kl. 01:38 lokal 11-08)
+
+`hfc1_daily.py cohort --day 2026-11-07` fejler med ConnectionRefused mod data-api.binance.vision (lokal DNS-blokering
+siden 11-07). BLOCKED/MISSING; efterdannes ikke.

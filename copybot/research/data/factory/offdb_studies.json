@@ -300,6 +300,20 @@
    "counted_elsewhere": null,
    "evidence": "one rule, one-sided 95 % bootstrap (implicit alpha 0.05), 6 cost scenarios = sensitivity",
    "confidence": "medium"
+  },
+  {
+   "id": "HFC1_OUTCOME_3D_2026-11-04",
+   "files": [
+    "research/data/hfc1_report3d/hfc1_3d_2026-11-04.json",
+    "research/data/hfc1_report3d/hfc1_3d_2026-11-04.md"
+   ],
+   "lineage": "delta_neutral_funding_carry",
+   "attempts": 0,
+   "alpha": 0.0,
+   "note": "added 2026-11-08 from the proposal of research/tools/hfc1_report3d.py (result sha256 d9311dc724c4...); attempts 0 because the protocol runs no statistical test (MRT-4; the director may decide to count it)",
+   "counted_elsewhere": "protocol entry HFC1_HIGH_FUNDING_FEASIBILITY_2026-11-04 (descriptive)",
+   "evidence": "descriptive 3d outcome of cohort 2026-11-04; no statistical test, no p-value",
+   "confidence": "high"
   }
  ]
 }
