@@ -43,6 +43,11 @@ ejerhandlinger foreligger. Det er aldrig en forudsigelse af et resultat.
 Ændres en fil efter i dag (fx når lås A tilføjes PROTOCOL_V3), giver kontrollen `HASH_MISMATCH`. Det er meningen:
 tabellen skal så udgives i en ny version, med den nye hash og en henvisning til låse-committen.
 
+Undtagelse (2026-11-09): `HFC1_PROTOCOL` er et levende dokument. Reglerne er de første 3178 bytes (regelhashen,
+som HFC-1-værktøjerne allerede fastlåser), og resten er tilføjede driftsnoter. For den række er sha256 regelhashen
+(`prefix_bytes` 3178 i `GATE_MATRIX.json`). Den er bekræftet identisk med låse-committen `368eaec`. En ændring af
+reglerne giver stadig `HASH_MISMATCH`; en ny driftsnote gør ikke.
+
 <!-- protocol-identities:start -->
 | id | fil | commit | sha256 |
 |---|---|---|---|
@@ -54,7 +59,7 @@ tabellen skal så udgives i en ny version, med den nye hash og en henvisning til
 | `FACTORY_P2` | `research/studies/FACTORY_P2_PROTOCOLS_2026-11-06.md` | `b54cb3c` | `6dd1ca82934419c0913bccb3a8962f5e5e5154d678eee59179292a7694ae5f43` |
 | `C1_DESIGN` | `research/desk/C1_FORECAST_DESIGN.md` | `80fb255` | `530a86d5bb56ec62f6d5f900456c608f67f3964ad7ff2d141e0ad12ec91ff994` |
 | `C1_TOOL` | `research/tools/c1_forecast.py` | `80fb255` | `5bedfb002fb1c1fb1fb6453dcbe2fe85d0c2b7c363838c95d6422e0242275c10` |
-| `HFC1_PROTOCOL` | `research/studies/HFC1_HIGH_FUNDING_FEASIBILITY_2026-11-04.md` | `368eaec` | `0c283522e31b36555ec5801addd28ab6f5437c2438c0e81034ac2d3dbe0e352d` |
+| `HFC1_PROTOCOL` | `research/studies/HFC1_HIGH_FUNDING_FEASIBILITY_2026-11-04.md` | `368eaec` | `cd1b6fc66000544f6e58a5e202f4c3f0c2d10913c3882f3eda6b8d06cdfe53c6` |
 | `HFC1_TOOL` | `research/tools/hfc1_daily.py` | `5a62465` | `5893a526d8482b4a0c446a53ef61dbd0c6d037774df41fb1573d8e1073135347` |
 | `STRAKS_CODE` | `lab/straks.py` | `814ef8b` | `7a110f1fa20fb7d28b76269fc039eec4c75ddfa7353602f2f8824490b722a542` |
 | `PAIRS_CODE` | `lab/pairs.py` | `b1ef7a6` | `5c9b60a4314a40a5e4d517427c4960220682b8f6179a445a5554903180ce1219` |

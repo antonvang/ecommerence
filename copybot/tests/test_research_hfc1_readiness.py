@@ -373,10 +373,13 @@ class Integrity(Readiness):
         rep = self.run3d()
         self.assertEqual(sha(hr.OFFDB), before)
         p = rep["offdb_proposal"]
-        self.assertEqual((p["written"], p["already_present"], p["target"]),
-                         (False, False, "research/data/factory/offdb_studies.json"))
         with open(hr.OFFDB, encoding="utf-8") as f:
-            schema = {tuple(sorted(s)) for s in json.load(f)["studies"]}
+            studies = json.load(f)["studies"]
+        # the entry was added by hand after the real run (director order 55); the tool must report that, never write
+        present = any(s.get("id") == p["entry"]["id"] for s in studies)
+        self.assertEqual((p["written"], p["already_present"], p["target"]),
+                         (False, present, "research/data/factory/offdb_studies.json"))
+        schema = {tuple(sorted(s)) for s in studies}
         self.assertEqual(schema, {tuple(sorted(p["entry"]))})                 # exactly the existing entries' fields
         e = p["entry"]
         self.assertEqual((e["id"], e["lineage"], e["attempts"], e["alpha"]),

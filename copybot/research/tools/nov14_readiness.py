@@ -291,9 +291,17 @@ def readiness_identities(path=READINESS):
     return [dict(zip(("id", "path", "commit", "sha256"), r)) for r in ID_ROW.findall(m.group(1))]
 
 
-def sha256_file(path):
+def sha256_file(path, prefix_bytes=None):
+    """sha256 of the file, or of its first prefix_bytes bytes (a living document whose locked rules are a fixed
+    prefix and whose later sections are append-only notes, e.g. the HFC-1 protocol: rules hash = first 3178 bytes)."""
     h = hashlib.sha256()
     with open(path, "rb") as fh:
+        if prefix_bytes is not None:
+            data = fh.read(prefix_bytes)
+            if len(data) != prefix_bytes:
+                return "SHORT_FILE"
+            h.update(data)
+            return h.hexdigest()
         for chunk in iter(lambda: fh.read(1 << 20), b""):
             h.update(chunk)
     return h.hexdigest()
@@ -318,7 +326,7 @@ def verify_hashes(matrix, readiness_path=READINESS, root=HERE):
         if not os.path.isfile(p):
             errs.append("MISSING %s" % r["path"])
             continue
-        got = sha256_file(p)
+        got = sha256_file(p, r.get("prefix_bytes"))
         if got != r["sha256"]:
             errs.append("HASH_MISMATCH %s listed %s repo %s" % (r["path"], r["sha256"][:12], got[:12]))
     return errs

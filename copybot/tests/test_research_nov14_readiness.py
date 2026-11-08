@@ -193,6 +193,26 @@ class Hashes(NoNetwork):
     def test_listed_hashes_match_repo(self):
         self.assertEqual(nr.verify_hashes(self.m), [])
 
+    def test_prefix_pinned_row_ignores_appended_notes_but_not_rule_edits(self):
+        rows = [r for r in self.m["protocol_identities"] if r.get("prefix_bytes")]
+        self.assertEqual([r["id"] for r in rows], ["HFC1_PROTOCOL"])
+        tmp = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, tmp)
+        r = rows[0]
+        dst = os.path.join(tmp, r["path"])
+        os.makedirs(os.path.dirname(dst), exist_ok=True)
+        shutil.copyfile(os.path.join(HERE, r["path"]), dst)
+        with open(dst, "a", encoding="utf-8") as fh:
+            fh.write("\n- driftsnote (syntetisk)\n")
+        self.assertEqual(nr.sha256_file(dst, r["prefix_bytes"]), r["sha256"])
+        with open(dst, "r+b") as fh:
+            fh.seek(100)
+            b = fh.read(1)
+            fh.seek(100)
+            fh.write(bytes([b[0] ^ 1]))
+        self.assertNotEqual(nr.sha256_file(dst, r["prefix_bytes"]), r["sha256"])
+        self.assertEqual(nr.sha256_file(os.path.join(HERE, "research", "desk", "fomo", "__init__.py"), 10), "SHORT_FILE")
+
     def test_hash_mismatch_detected(self):
         tmp = tempfile.mkdtemp()
         self.addCleanup(shutil.rmtree, tmp)
