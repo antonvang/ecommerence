@@ -2,6 +2,28 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-08 Ejer + ChatGPT — direktørordre 57 "ORB-15 falsification · design only" (i Chrome kl. 23:46 lokal)
+Ejeren sendte endnu en TikTok-video (@jamiedoestradez, "Edward", "bot with AI" på NinjaTrader, NQ 12-26: continuation
+breakout, "price rejects after a trend" (WT_Long) og 15-min opening range breakout (ORB_Long 1 @ 29517, "+$1,000",
+"the real moneymaker")) og skrev: "Se her og nu skal vores sku virke". Direktøren: ORB-15 GO som design-only;
+continuation og WT NO-GO til formel test (for upræcise; at opfinde regler = teste egen strategi); prioritet: STRAKS 12/11,
+HFC-1 19/11, S1 20/11 beskyttes, derefter ordre 56/57. P0 afslut ordre 56 (fem leverancer; oktober-CopyFomo som historisk
+evidens adskilt fra nyt forward-forsøg; kontrollér om oktober allerede falsificerer under de oprindelige betingelser; ingen
+Solana-data, POST-undtagelse eller host-aktivering). P1 ORB-15-regelsæt (marked, kalender/tidszone, åbning inkl. US-
+sommertid, range = første 15 min, long/short, entry og hypotetisk eksekvering, stop, target, tidsexit, maks signaler pr.
+session, gap/manglende barer/ikke-eksekverbare, omkostninger/slippage; ukendt = UNKNOWN; ingen opfundne regler tilskrives
+videoen; ellers NOT_REPLICABLE_FROM_VIDEO; en selvstændig ORB-hypotese må foreslås separat). P2 venue-matrix (NQ, QQQ,
+TradFi på allerede godkendte værter, BTC/ETH med US cash-open; findes instrumentet, host, opløsning, historik, omkostninger,
+generaliserbarhed til NQ; ingen antagelse om Binance-produkter før verificeret; ingen nye hosts/forespørgsler; ingen
+historik før 14/11). P3 falsifikation og styrke (primært netto, sammenligning, min. uafhængige dage, CI, multiplicitet,
+omkostningsfølsomhed, INCONCLUSIVE/INSUFFICIENT_DATA; minutbarer er ikke uafhængige observationer; ingen optimering på
+beskyttede data). P4 kildekontrol (ORB-litteratur; akademisk/backtest/OOS/forward/netto adskilt; ellers UNVERIFIED).
+P5 leverancer: ORB15_VIDEO_RULE_AUDIT.md, ORB15_PROTOCOL_DRAFT.md, ORB15_VENUE_DATA_MATRIX.md, ORB15_POWER_AND_COSTS.md,
+ORB15_GO_NO_GO.md; frist 3 t efter ordre 56. Status: ORDRE 56 FINISH FIRST · ORDRE 57 DESIGN GO · CONTINUATION/WT NO-GO ·
+DATA COLLECTION BLOCKED · LIVE TRADING NO-GO.
+
+> modtaget 2026-11-08 – påbegyndes efter ordre 56.
+
 ## 2026-11-08 Ejer + ChatGPT — direktørordre 56 "FOMO Copybot · rapid forward falsification" (i Chrome kl. 23:30 lokal)
 Ejeren sendte en TikTok-video (@trading.calls, app "fomo": "Grok Bot" kopierer top-traders' memecoin-køb 30 s senere,
 TP 10×, "+900 %", kontoen mærket SIM) og skrev: "Der skal simpelthen ske noget nu. AGGRESICT PROMT CHAT GPT. Den her
