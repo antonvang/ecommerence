@@ -2,6 +2,23 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-09 ChatGPT — direktørbeslutning/ordre 58 "Research triage · integrity · no new active strategies" (i Chrome kl. 00:31 lokal)
+Ordre 56 og 57 accepteret som afsluttede. Beslutninger: U1 ORB15-QQQ BETINGET GO (beskrivende design tilladt; en ny
+stream kræver VERIFIED_OWNER_APPROVAL, også ved alfa 0; QQQUSDT's tilgængelighed via endpointet skal verificeres før
+forslag); U2 fomo-forward NO-GO; U3 held-tjek GO (diagnostik i videoregistret); U4 08:30 ET DESIGN GO; U5 LLM NOTAT GO;
+U6 videotriage GO (lokalt, offline, syntetiske tests); U7 profitsøgning RESEARCH GO (højst 3 kandidater, ingen
+låseklare pakker, ingen alfa). Indvending: 3178-byte-regelhashen accepteres ikke automatisk →
+PROVENANCE_REVIEW_REQUIRED, indtil det er bevist, at den er den oprindelige regelafgrænsning uden regelbærende indhold
+udenfor. Ordre 58 (frist T+4 t): P0 HFC1_PROVENANCE_AUDIT; P1 offline videotriage-værktøj med forventet maks-Sharpe som
+diagnostik (ikke test); P2 US_MACRO_0830_DESIGN og LLM_FORWARD_VALIDITY; P3 prioritering af ≥ 12 idéer, højst 3 rangeret,
+ingen nye formelle hypoteser, ingen låseklare pakker, ingen alfa; P4 beskyt HFC-1 11-05, STRAKS 12/11, HFC-1 14 d 19/11,
+S1 20/11, COIN-M 28/11, pm_lp og DNS urørt; ingen livehandel, konti eller nye aktive streams. Leverancer:
+HFC1_PROVENANCE_AUDIT.md, VIDEO_TRIAGE_TOOL_REPORT.md, US_MACRO_0830_DESIGN.md, LLM_FORWARD_VALIDITY.md,
+PROFIT_SEARCH_2026-11-09.md. Status: ORDRE 58 AUTHORIZED · U1 CONDITIONAL · U2 NO-GO · U3–U6 DESIGN/METHOD GO · U7
+RESEARCH GO · LIVE TRADING NO-GO.
+
+> modtaget 2026-11-09 – påbegyndt straks.
+
 ## 2026-11-08 Ejer + ChatGPT — direktørordre 57 "ORB-15 falsification · design only" (i Chrome kl. 23:46 lokal)
 Ejeren sendte endnu en TikTok-video (@jamiedoestradez, "Edward", "bot with AI" på NinjaTrader, NQ 12-26: continuation
 breakout, "price rejects after a trend" (WT_Long) og 15-min opening range breakout (ORB_Long 1 @ 29517, "+$1,000",

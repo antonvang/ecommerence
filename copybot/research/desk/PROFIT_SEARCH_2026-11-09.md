@@ -1,5 +1,12 @@
 # PROFIT_SEARCH: rangeret søgning efter en ærlig nettofordel (2026-11-09 00:25 lokal, 23:25 UTC 11-08)
 
+> **Status efter direktørordre 58 (2026-11-09):** dette er en prioriteringsrapport, ikke en tilladelse.
+> - Ingen nye formelle hypoteser oprettes.
+> - Ejerpakkerne PKT-NR2, PKT-HLP1 og PKT-M1S nedenfor er **illustrative udkast. De er ikke låseklare og må ikke
+>   signeres.**
+> - Ingen lås, ingen data, ingen alfa.
+> - Datoplanen i afsnit 6 er et scenarie, ikke en beslutning.
+
 **Kun design.** Ingen markedsdata er hentet. Ingen kald til børser eller API'er. lab.db er ikke åbnet. 2024-holdout er
 ikke rørt, og N4-filen i karantæne er ikke læst. Web er kun brugt til papirer og dokumentation (arXiv 2607.09426 HTML;
 søgning om HLP). Ingen konto, ingen nøgle, ingen rigtige penge. Dette er en rangering til lab'et, ikke investeringsråd.

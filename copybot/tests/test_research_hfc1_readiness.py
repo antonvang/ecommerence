@@ -472,6 +472,23 @@ class Integrity(Readiness):
         self.run3d()
         self.assertEqual(sha(self.db), before)
 
+    def test_R18_appended_sections_are_notes_only(self):
+        """Director order 58 P0: everything after the locked rules (first 3178 bytes) is an append-only note. A heading
+        that is not one of the note forms, or that claims an amendment, fails: rule changes need a new version."""
+        import re
+        with open(PROTO, "rb") as f:
+            data = f.read()
+        self.assertEqual(hashlib.sha256(data[:PROTO_RULES_LEN]).hexdigest(), PROTO_RULES_SHA)
+        tail = data[PROTO_RULES_LEN:].decode("utf-8")
+        allowed = [re.compile(r"^## Kohorte \d\d-\d\d( — IKKE DANNET)? \("),
+                   re.compile(r"^## (3|14) d-udfald kohorte \d\d-\d\d \("),
+                   re.compile(r"^## Kendte begrænsninger \(.*ændrer ikke HFC-1\)$")]
+        heads = [ln for ln in tail.splitlines() if ln.startswith("#")]
+        self.assertTrue(heads)
+        for h in heads:
+            self.assertTrue(any(a.match(h) for a in allowed), h)
+            self.assertIsNone(re.search(r"(?i)ændring|rettelse|amendment|ny regel|erstatter", h.split("(")[0]), h)
+
     def test_R17_protocol_rules_unchanged_and_tool_run_changes_no_input(self):
         with open(PROTO, "rb") as f:
             head = f.read(PROTO_RULES_LEN)
