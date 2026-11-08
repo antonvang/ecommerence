@@ -1,4 +1,4 @@
-# US_MACRO_0830_DESIGN: kl. 08:30 ET som fast hændelsestid (direktørordre 58 P2, U4)
+# US_MACRO_0830_DESIGN: 08:30 ET som fast hændelsestid (direktørordre 58 P2, U4)
 
 **Status:** DESIGN-ONLY. Ingen data, ingen lås, ingen alfa. Ingen ny formel hypotese oprettes (ordre 58 P3).
 **Skrevet:** 2026-11-09 ca. 00:40 lokal (2026-11-08 23:40 UTC, tjekket med `date`). **Metode:** Kun officielle kalendersider, dokumentation og papirer (WebFetch/WebSearch). Ingen kurser, ingen klines, intet
@@ -10,7 +10,7 @@ kun læst for symbolernes eksistens og onboard-dato. N4-filen i karantæne er ik
 (R3 og J1: SCREEN_FAIL). Kun en beskrivende volatilitetsmåling (H1) er forsvarlig. Den giver ingen handel. Den er
 næppe afgørbar inden for et år for BTC, og TradFi-perps kan kun måles fremad.
 
-## 1. Hvilke US-udgivelser ligger kl. 08:30 ET?
+## 1. Hvilke US-udgivelser ligger 08:30 ET?
 
 | Udgivelse | Kilde (vært) | Tid ET | Pr. år | Næste datoer (læst 2026-11-09) | Tilladt vært? | Status |
 |---|---|---|---|---|---|---|
