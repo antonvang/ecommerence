@@ -2,6 +2,24 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-09 Ejer + ChatGPT — direktørordre 69 "Dashboard V3 + research intelligence" (registreret kl. 16:48 lokal)
+Ejerens udkast "ordre 69" (dashboard cleanup + original research model) og besked ("du tager styringen med Claude …
+check hvad andre gør … dashboard skal se meget bedre ud"). Direktøren: GODKENDT MED UDVIDELSER. P0 Dashboard V3:
+professionelt mørkt lokalt analyseinterface, klar typografi og hierarki, kort og grafer, desktop og mobil, hurtig
+indlæsning, tydelige timestamps og datakilder; hovedvisning prioriterer aktuelle papirdata; de ni STALE-konti flyttes
+til separat arkiv med historik, timestamps og datakvalitetsstatus; forældede værdier aldrig vist som aktuelle; ingen
+samlet aktuel porteføljeværdi ved manglende data; forskningsoversigt med status for hypoteser, tests og begrænsninger.
+P1 systemkvalitet parallelt med ordre 68 (syntetiske tests, read-only audits). P2 litteratur: volatilitetsregimer og
+strukturelle brud, likviditet og mikrostruktur, reaktioner på forhåndskendte begivenheder, backtest-overfitting og
+multiple testing (Bailey m.fl. "The Probability of Backtest Overfitting"), realistiske omkostningsmodeller (Frazzini,
+Israel og Moskowitz "Trading Costs"); pr. studie: spørgsmål, periode og marked, metode, begrænsninger,
+reproducerbarhed og relevans; positive og negative resultater; ingen ukritisk kopiering. P3 tre originale
+falsificerbare designs med overlap-tjek mod afviste idéer, registret, U4/R3, M1F/K10 og beskyttede holdouts; ingen
+genbrug af udforskede observationer som ny evidens; kun design og syntetiske tests. P4 parallelt i isolerede miljøer.
+Ingen nye markedsdata, strategiaktivering, kapitalallokering, deploy eller live-handel.
+
+> modtaget 2026-11-09 – dashboard V3, litteratur og designs startet parallelt; ordre 68 kører videre.
+
 ## 2026-11-09 ChatGPT — direktørbeslutning/ordre 68 "Correctness gates · controlled remediation" (registreret kl. 16:45 lokal)
 Ordre 67 (dev f7cc604) ACCEPTED. Rettelse af Claudes anbefaling: fail_closed er ikke nødvendigvis ren registrering, den
 kan ændre fundingforløbet, så den aktiveres ikke sammen med measure uden særskilt vurdering. Book age: measure GO til
