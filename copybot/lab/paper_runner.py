@@ -282,11 +282,9 @@ def close_ledger(db, led, base, get, now, books=None, cache=None):
         db.event("paper.closing", "agent:paper-1", led, {"orders": orders, "simulated": True})
     if not eng.ledger(led)["positions"] and _stale_flat(db, led):
         eng.mark(led, {})                               # the final mark of a flat ledger: equity = cash, at once
+        note_marked(db, led, now)                       # order 66B: ends a recorded mark failure (records only)
         return {"status": "closing", "orders": orders, "marked": True, "final_mark": True, "funding": funding}
-    try:
-        marked = _mark_hourly(db, eng, led, get, now, books)
-    except Exception:
-        marked = False                                  # no mark price this pass; the next pass tries again
+    marked, _ = mark_guarded(db, eng, led, get, now, books)   # order 66B: a failure is recorded (59-D), not swallowed
     return {"status": "closing", "orders": orders, "marked": marked, "funding": funding}
 
 

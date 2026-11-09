@@ -493,6 +493,8 @@ class PaperEngine:
         for o, remaining in self.open_orders(instrument=instrument):
             if left <= 1e-12:
                 break
+            if ts < o["ts"]:                                          # order 66B: a print before the order never fills it
+                continue
             buy = o["side"] == "buy"
             through = price < o["limit_px"] if buy else price > o["limit_px"]
             if at_price:

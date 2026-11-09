@@ -76,8 +76,10 @@ def expected(con, day):
         if t0 >= end or (g is not None and g[0] < a):
             continue
         capital = float(p.get("capital") or 0.0)
+        # order 66B: "latest" is the latest row by id, as the engine (Risk.paused, lane.stats/account_row) reads it; a
+        # row written later can carry an older pass clock, so ordering by ts could disagree with a correct report
         mark = con.execute("SELECT id, ts, equity, cash FROM sim_equity WHERE exp_id=? AND ts<? "
-                           "ORDER BY ts DESC, id DESC LIMIT 1", (led, end)).fetchone()
+                           "ORDER BY id DESC LIMIT 1", (led, end)).fetchone()
         equity = mark["equity"] if mark else capital
         dd = con.execute("SELECT MAX(drawdown) FROM sim_equity WHERE exp_id=? AND ts<?", (led, end)).fetchone()[0]
         funding = con.execute("SELECT COALESCE(SUM(amount), 0) FROM sim_funding WHERE exp_id=? AND ts<?",
@@ -87,7 +89,7 @@ def expected(con, day):
             status = f"stoppet: {g[1].get('rule')}"
         else:
             r = con.execute("SELECT action, rule FROM risk_events WHERE exp_id=? AND action IN ('PAUSE','CLEAR') "
-                            "AND ts<? ORDER BY ts DESC, id DESC LIMIT 1", (led, end)).fetchone()
+                            "AND ts<? ORDER BY id DESC LIMIT 1", (led, end)).fetchone()
             status = f"pause: {r['rule']}" if r is not None and r["action"] == "PAUSE" else "aktiv"
         cash = None
         if mark is not None:
