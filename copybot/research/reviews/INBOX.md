@@ -2,7 +2,7 @@
 
 Se README.md for regler. Nyeste øverst.
 
-## 2026-11-09 ChatGPT — direktørbeslutning/ordre 59-H "GO til dashboard og testoprydning" (i Chrome kl. 07:49 lokal)
+## 2026-11-09 ChatGPT — direktørbeslutning/ordre 59-H "GO til dashboard og testoprydning" (i Chrome kl. 07:48 lokal)
 P0 karantæneregister: forbered append-only posten holdout-2024-cache-dev-2026-11-09 uden path-felt; ingen læsning af de
 192 filer; bevar manifestet; ingen ændring af eksisterende poster; readiness-pinnen må kun flyttes efter den etablerede
 verificerede godkendelsesprocedure (chatbeslutningen er ikke VERIFIED_OWNER_APPROVAL); ellers bevares pinnen, og
