@@ -2,6 +2,19 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-09 ChatGPT — direktørordre 63 "Automatisk dashboard" og 64 "System reliability · controlled dev integration" (registreret kl. 14:52 lokal)
+63: A (meta refresh hvert 5. min) GO; B (bruger-systemd-timer hvert 5. min, read-only, ingen netværk, atomisk, flock, ingen
+genstartsløkke, ingen ændring af andre units) GO betinget af test; aktivering kun hvis godkendelsesproceduren tillader det,
+ellers leveres units uaktiverede; C NO-GO som primær løsning. 64: 59-D/E (mark_failed) merge til dev GO, betinget af
+regressionstest; produktionsdeploy NO-GO nu; deploy efter 20/11 kun efter nyt review; INBOX-linjenumre opdateres uden
+ændring af pinnede dokumenter; U4-lås NO-GO; pm_lp: ingen genstart, DNS-omgåelse eller backfill; manglende
+observationer registreres. STATUS: DEV INTEGRATION GO · PRODUCTION UNCHANGED.
+
+> behandlet 2026-11-09 – 63: units leveret og testet; aktivering afvist af Claude Codes sikkerhedsklassifikator
+> (vedvarende baggrundsjob), så ejeren aktiverer selv (research/ops/dashboard_timer/INSTALL.md). 64: 59-D/E integreret i dev
+> (kun lab/lane.py, paper_runner.py, command.py + test og dokument); straks/pairs byte-identiske; guarded suite
+> 1766 OK; INBOX_REFERENCE_MAP.md.
+
 ## 2026-11-09 ChatGPT — direktørbeslutning/ordre 62 "U4 audit · S1 protocol clarification · milestone protection" (registreret kl. 14:09 lokal)
 Ordre 60/61 CLOSED. Milepæle GO efter låste procedurer, uden tidlig evaluering og uden ændring af observationer, perioder
 eller acceptkriterier. U4 GO til offline audit: proveniens for de 22 cachede minutfiler, holdout/beskyttelse, eventkalender

@@ -1220,15 +1220,14 @@ def run_one(db, ledger, get, now, cache=None, books=None):
                                  bk[inst], reduce_only=reduce_only,
                                  signal_ref=f"{info['family']}.{info['function']}@{hour}")
             orders.append({"instrument": inst, "status": r["status"], "qty": abs(delta)})
-    try:
-        marked = pr._mark_hourly(db, eng, ledger, get, now, books)
-    except Exception as e:
-        marked = f"no mark prices: {e!r}"[:120]          # the next pass tries again
+    marked, err = pr.mark_guarded(db, eng, ledger, get, now, books)   # 59-D: a failure is recorded (deduped)
+    if err is not None:
+        marked = f"no mark prices: {err!r}"[:120]        # unchanged return value; the next pass tries again
     rec = eng.reconcile(ledger)
     if not rec["ok"]:
         risk.trip_fail_closed("reconciliation", f"{ledger}: {rec['problems']}"[:500])
     return {"status": "ok", "orders": orders, "marked": marked, "reconciled": rec["ok"], "funding": len(funded),
-            "signal": want}
+            "signal": want, **pr.mark_fields(marked, err)}
 
 
 # ---------- classification and observed decomposition (amendment 12h; display only) ----------

@@ -13,7 +13,10 @@ that books funding) every processed ledger - trading, paused or closing - books 
 from __future__ import annotations
 
 import json
+import re
+import socket
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 
@@ -309,17 +312,136 @@ def _mark_hourly(db, eng, ledger, get, now, books=None):
     return True
 
 
+# ---------- mark observability (director order 59-D; research/desk/MARK_FAILED_59D.md) ----------
+# A failed hourly mark used to leave no record: the pass still said "ok" and equity froze unseen. Now the failure is
+# recorded once (paper.mark_failed) and the first real mark after it once (paper.mark_recovered). Records only: no
+# pause, no gate, no change to orders, fills, cash or marks. Recovery is only ever a mark that was actually written.
+MARK_FAILED, MARK_RECOVERED = "paper.mark_failed", "paper.mark_recovered"
+MARK_ACTOR = "agent:paper-1"
+MARK_RULE = "director order 59-D (research/desk/MARK_FAILED_59D.md)"
+_DNS_TEXT = ("name or service not known", "temporary failure in name resolution", "nodename nor servname",
+             "no address associated with hostname", "getaddrinfo failed")
+_URL = re.compile(r"\b([A-Za-z][A-Za-z0-9+.-]*)://(?:[^@/\s'\"]*@)?([^/\s'\"?#]+)[^\s'\"]*")
+_QUERY = re.compile(r"\?[^\s'\"]*")
+_SECRET = re.compile(r"(?i)\b(api[_-]?key|apikey|token|secret|signature|password|passwd|authorization)\s*[=:]\s*"
+                     r"[^\s'\",&)]+|\b(bearer)\s+[^\s'\",&)]+")
+_LONG = re.compile(r"[A-Za-z0-9_\-+/]{32,}={0,2}")
+
+
+def mark_error_class(e):
+    """A coarse class of a mark failure from the exception object alone (no network call, no DNS lookup):
+    dns, timeout, http, connection, no_price or other. A DNS filter that answers 0.0.0.0 shows as connection
+    (refused); only a resolver error (socket.gaierror or its text) is dns."""
+    seen, todo = [], [e]
+    while todo and len(seen) < 8:                      # the exception, URLError.reason, __cause__, __context__
+        x = todo.pop(0)
+        if not isinstance(x, BaseException) or any(x is s for s in seen):
+            continue
+        seen.append(x)
+        todo += [getattr(x, "reason", None), x.__cause__, x.__context__]
+    text = " ".join(str(x) for x in seen).lower()
+    if any(isinstance(x, socket.gaierror) for x in seen) or any(m in text for m in _DNS_TEXT):
+        return "dns"
+    if any(isinstance(x, urllib.error.HTTPError) for x in seen):
+        return "http"
+    if any(isinstance(x, (TimeoutError, socket.timeout)) for x in seen):
+        return "timeout"
+    if any(isinstance(x, (ConnectionError, urllib.error.URLError, OSError)) for x in seen):
+        return "connection"
+    if isinstance(e, (KeyError, IndexError, ValueError, TypeError, ZeroDivisionError)):
+        return "no_price"                              # a book without the level or field a mid needs
+    return "other"
+
+
+def safe_error(e, limit=200):
+    """repr(e) without anything sensitive: URLs cut to scheme://host, query strings dropped, key/token-like values
+    and long opaque strings redacted; then truncated."""
+    s = _URL.sub(lambda m: f"{m.group(1)}://{m.group(2)}", repr(e))
+    s = _QUERY.sub("", s)
+    s = _SECRET.sub(lambda m: f"{m.group(1) or m.group(2)}=[redacted]", s)
+    return _LONG.sub("[redacted]", s)[:limit]
+
+
+def _payload(raw):
+    return json.loads(raw) if isinstance(raw, str) else (raw or {})
+
+
+def _mark_state(db, ledger):
+    """The ledger's latest paper.mark_failed / paper.mark_recovered event as (kind, payload), or (None, {})."""
+    r = db.one("SELECT kind, payload FROM events WHERE exp_id=? AND kind IN (?, ?) ORDER BY id DESC LIMIT 1",
+               ledger, MARK_FAILED, MARK_RECOVERED)
+    return (r["kind"], _payload(r["payload"])) if r else (None, {})
+
+
+def note_mark_failed(db, ledger, e, now):
+    """One paper.mark_failed per failure episode and error class: on the change from success to failure, or when the
+    class changes while it fails. The same persistent failure writes nothing more. Returns the payload or None."""
+    cls = mark_error_class(e)
+    with db.tx():                                      # BEGIN IMMEDIATE: one check and one write
+        kind, last = _mark_state(db, ledger)
+        failing = kind == MARK_FAILED
+        if failing and last.get("error_class") == cls:
+            return None
+        last_mark = db.one("SELECT MAX(ts) FROM sim_equity WHERE exp_id=?", ledger)[0]
+        p = {"ledger": ledger, "t": int(now), "marked": False, "error_type": type(e).__name__, "error_class": cls,
+             "error": safe_error(e), "last_mark_ts": last_mark,
+             "mark_age_s": None if last_mark is None else int(now) - int(last_mark),
+             "failing_since": (last.get("failing_since") or last.get("t")) if failing else int(now),
+             "previous_class": last.get("error_class") if failing else None,
+             "events_in_episode": int(last.get("events_in_episode") or 1) + 1 if failing else 1,
+             "simulated": True, "rule": MARK_RULE}
+        db.event(MARK_FAILED, MARK_ACTOR, ledger, p)
+    return p
+
+
+def note_marked(db, ledger, now):
+    """After a mark was written: one paper.mark_recovered if the ledger's last mark record is a failure."""
+    with db.tx():
+        kind, last = _mark_state(db, ledger)
+        if kind != MARK_FAILED:
+            return None
+        ts = db.one("SELECT MAX(ts) FROM sim_equity WHERE exp_id=?", ledger)[0]
+        since, before = last.get("failing_since") or last.get("t"), last.get("last_mark_ts")
+        p = {"ledger": ledger, "t": int(now), "marked": True, "first_mark_ts": ts, "failing_since": since,
+             "failure_duration_s": None if since is None or ts is None else int(ts) - int(since),
+             "last_mark_before_ts": before,
+             "mark_gap_s": None if before is None or ts is None else int(ts) - int(before),
+             "error_class": last.get("error_class"), "events_in_episode": int(last.get("events_in_episode") or 1),
+             "simulated": True, "rule": MARK_RULE}
+        db.event(MARK_RECOVERED, MARK_ACTOR, ledger, p)
+    return p
+
+
+def mark_guarded(db, eng, ledger, get, now, books=None):
+    """_mark_hourly as before (a failure never stops the pass; the next pass tries again), now recorded:
+    returns (marked, error or None)."""
+    try:
+        marked = _mark_hourly(db, eng, ledger, get, now, books)
+    except Exception as e:                             # noqa: BLE001 - recorded, not swallowed
+        note_mark_failed(db, ledger, e, now)
+        return False, e
+    if marked:
+        note_marked(db, ledger, now)
+    return marked, None
+
+
+def mark_fields(marked, err):
+    """59-D status fields beside the unchanged `status`: the pass ran; a mark was written; a mark attempt failed.
+    Both mark fields False: no mark was due (the ledger was already marked this hour)."""
+    return {"run_completed": True, "mark_succeeded": marked is True and err is None, "mark_failed": err is not None}
+
+
 def mark_only(db, ledger, get, now, books=None, cache=None):
     """Amendment 4 section 7: under a pause nothing new is opened; the positions are kept and marked once an hour.
     Their settled funding is still booked (amendment 9 section 2), with data only through the shared hourly cache."""
     eng = PaperEngine(db, lambda: now)
     funding = _funding_guarded(db, eng, ledger, get, now, cache)
-    try:
-        marked = _mark_hourly(db, eng, ledger, get, now, books)
-    except Exception as e:
-        return {"status": "paused", "marked": False, "reason": f"no mark prices: {e!r}"[:200], "funding": funding}
+    marked, err = mark_guarded(db, eng, ledger, get, now, books)
+    if err is not None:
+        return {"status": "paused", "marked": False, "reason": f"no mark prices: {err!r}"[:200], "funding": funding,
+                **mark_fields(False, err)}
     return {"status": "paused", "marked": marked, "positions": len(eng.ledger(ledger)["positions"]),
-            "funding": funding}
+            "funding": funding, **mark_fields(marked, None)}
 
 
 def _guarded(db, ledger, fn):
@@ -490,6 +612,7 @@ def run_one(db, eid, get, now, ledger=None, cm_get=_cm_get, cache=None, cm_cache
         orders.append({"symbol": s, "status": r["status"], "qty": abs(delta)})
     if not db.one("SELECT 1 FROM sim_equity WHERE exp_id=? AND ts>=?", L, hour):
         eng.mark(L, marks)
+        note_marked(db, L, now)     # 59-D: mark_only (shared with E_ ledgers) records failures; this ends one
     rec = eng.reconcile(L)
     if not rec["ok"]:
         risk.trip_fail_closed("reconciliation", f"{L}: {rec['problems']}"[:500])
