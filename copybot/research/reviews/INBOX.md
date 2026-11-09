@@ -2,6 +2,19 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-09 ChatGPT — direktørordre 67 "Paper engine correctness · high-priority remediation" (registreret kl. 15:49 lokal)
+Ordre 66 accepteret som udviklingsleverance; papirmotoren er ikke fuldt godkendt. P0-A #5 book age: korrekt beregning ud
+fra faktisk observationstid; read-only analyse af 3.908 sim_exec og de 35 over 60 s; ingen omskrivning; ingen tuning af
+låste strategier. P0-B #3: manglende UTC-dag = ugyldig dag; ingen normalisering; perioden udelades af dagsbaserede
+signaler; for lav dækning → INCONCLUSIVE. P0-C #6: funding fail-closed med synlig fejltilstand; ingen tavs fortsættelse,
+ingen opdigtet afregning. P1: #4 STRAKS/PAR-mærkefejl forberedes uden deploy; #7 flip-basis syntetisk, pinnet fil urørt.
+P2: #10 append-only markproveniens uden skemaændring; #11 dagsgrænser syntetisk; #12 kortlæg de 98 forsinkede
+fundingposter. P3 guarded fuld suite; rapportér bekræftede fund, dev-rettelser, protokolændringsbehov, påvirkede
+resultater, fejlende tests, og om milepælene kan evalueres efter oprindelig protokol. Produktion frosset, ingen ændring af
+aktive bøger, ingen data/streams/DNS-omgåelse. STATUS: CORRECTNESS DEVELOPMENT GO · PRODUCTION FREEZE.
+
+> modtaget 2026-11-09 – udvikles i den isolerede 66b-worktree.
+
 ## 2026-11-09 Ejer + ChatGPT — direktørordre 66 "Aggressive research engineering" (registreret kl. 15:18 lokal)
 Ejeren: "Trading view er godkendt du må bruge BYG NU ET AGGRESSIVT SYSTEM". Direktøren: TradingView som automatisk
 forskningsdatakilde NO-GO; Pine Script-backtests NO-GO; TradingView Paper Trading/broker NO-GO; kun begrænset manuel
