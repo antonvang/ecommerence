@@ -70,11 +70,12 @@ RECONCILE_GLOB = os.path.join("research", "data", "net_report", "reconcile_*.md"
 # Static data-quality note (order 69): why the lane/carry90 books are STALE. Text only; it is shown as the documented
 # cause for STALE accounts whose source has a spot leg, never used to compute or hide anything.
 SPOT_SOURCES = ("lane", "carry90")
-STALE_NOTE = ("Spotbenet i lane- og carry90-kontiene mærkes fra data-api.binance.vision. Den lokale DNS blokerer den "
-              "vært siden ca. 2026-11-06 20:45 UTC (kun en kort åbning 2026-11-08 06:39–06:45 UTC), så equity-mærket "
-              "står stille, mens funding stadig bogføres. Blokeringen omgås ikke.")
+STALE_NOTE = ("DATA_SOURCE_UNAVAILABLE: spotbenet i lane- og carry90-kontiene mærkes fra data-api.binance.vision. Den lokale "
+              "DNS blokerer den vært permanent siden ca. 2026-11-06 20:45 UTC (kun en kort åbning 2026-11-08 06:39–06:45 "
+              "UTC), så equity-mærket står stille, mens funding stadig bogføres. Blokeringen omgås ikke, kontiene genoptages "
+              "ikke automatisk, og sidste kendte tal er ikke aktuelle.")
 STALE_NOTE_SRC = ("research/desk/MARK_FAILED_59D.md", "research/desk/STALE_EQUITY_59C.md",
-                  "research/desk/FALSIFICATION_MATRIX_ORDER61.md §3")
+                  "research/desk/FALSIFICATION_MATRIX_ORDER61.md §3", "research/reviews/INBOX.md ordre 76")
 STALE_NOTE_AS_OF = "2026-11-09"
 
 
@@ -435,7 +436,7 @@ def bot_card(a, nm, conspark, quality, cutoff):
     if st != "FRESH":
         n, last = quality.get(led, (0, None))
         mf = (f"paper.mark_failed {n}×, senest {e(utc(last, '%m-%d %H:%M'))}" if n else "0× paper.mark_failed")
-        why = ("årsag: spotben/DNS (se noten øverst)" if a["source"] in SPOT_SOURCES and st == "STALE"
+        why = ("DATA_SOURCE_UNAVAILABLE: spotben/DNS (se noten øverst)" if a["source"] in SPOT_SOURCES and st == "STALE"
                else "årsag ikke registreret her; kør lab_qc")
         o.append(f'<div class="dq"><b>Datakvalitet:</b> {st} · {mf} · {e(why)}</div>')
     o.append("</article>")
