@@ -104,7 +104,7 @@ DEPENDENCIES = (
     {"id": "A_n6_X3", "hosts": ("data.binance.vision",), "gates": ("G09_COINM_1128",),
      "coverage": "COIN-M cm-sti, tidligst 2026-11-28; dapi.binance.com er ikke tilladt",
      "sources": ((MATRIX_REL, "only from data.binance.vision; dapi.binance.com is not an allowed host"),)},
-    {"id": "B_n4", "hosts": ("api.upbit.com",), "gates": ("G08_UPBIT_N4", "G14_LOCK_B"),
+    {"id": "B_n4", "hosts": ("upbit (kun N4; vært navngives kun i n4_kimchi.py)",), "gates": ("G08_UPBIT_N4", "G14_LOCK_B"),
      "coverage": "WITHDRAWN_BEFORE_LOCK: ingen adgang; Binance-krydsningens kilde er ikke fastlagt (AMB-19); den "
                  "karantænerede parliste bruges aldrig",
      "sources": ((MATRIX_REL, "Upbit's public API (market/all, candles/days) only for N4's research tool"),)},
@@ -157,7 +157,7 @@ OUTSIDE_MATRIX = (
      "coverage": "design alene (ordre 60 E); ingen data eller strøm",
      "sources": (("research/desk/PROFIT_SEARCH_2026-11-09.md", "GET på gamma-api.polymarket.com og"),)},
 )
-GATE_HOSTS = {"G01_HIST_1114": ("data.binance.vision",), "G08_UPBIT_N4": ("api.upbit.com",),
+GATE_HOSTS = {"G01_HIST_1114": ("data.binance.vision",), "G08_UPBIT_N4": ("upbit (kun N4; vært navngives kun i n4_kimchi.py)",),
               "G09_COINM_1128": ("data.binance.vision",), "G19_FWD_KLINE_SOURCE": ()}
 
 

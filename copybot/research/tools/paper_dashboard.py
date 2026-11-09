@@ -486,6 +486,22 @@ def render(con, now, cutoff, db_path=DB, feed_n=200, factory_dir=paper_graveyard
                 lambda: paper_graveyard.section(factory_dir))
 
 
+def write_atomic(path, doc):
+    """Director order 63: the browser must never read a half-written page. Write a temp file in the same folder,
+    fsync it and rename it over the target; on any error the last good snapshot stays."""
+    d = os.path.dirname(os.path.abspath(path)) or "."
+    tmp = os.path.join(d, f".{os.path.basename(path)}.{os.getpid()}.tmp")
+    try:
+        with open(tmp, "w", encoding="utf-8") as f:
+            f.write(doc)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp, path)
+    finally:
+        if os.path.exists(tmp):
+            os.remove(tmp)
+
+
 def main(argv=None, now=None):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--db", default=DB)
@@ -494,6 +510,8 @@ def main(argv=None, now=None):
     ap.add_argument("--feed", type=int, default=200, help="max feed rows (default 200)")
     ap.add_argument("--factory", default=paper_graveyard.FACTORY,
                     help="factory register folder for STRATEGIKIRKEGÅRD (read-only; default research/data/factory)")
+    ap.add_argument("--refresh", type=int, default=0,
+                    help="add <meta http-equiv=refresh> every N seconds (director order 63; 0 = off; no JavaScript)")
     a = ap.parse_args(argv)
     now = int(dt.datetime.now(dt.timezone.utc).timestamp()) if now is None else int(now)
     cutoff = parse_cutoff(a.cutoff) if a.cutoff else now
@@ -502,8 +520,12 @@ def main(argv=None, now=None):
         doc = render(con, now, cutoff, a.db, a.feed, a.factory)
     finally:
         con.close()
-    with open(a.out, "w", encoding="utf-8") as f:
-        f.write(doc)
+    if a.refresh:
+        if not 30 <= a.refresh <= 3600:
+            raise SystemExit("--refresh must be 30..3600 seconds")
+        doc = doc.replace('<meta charset="utf-8">',
+                          f'<meta charset="utf-8"><meta http-equiv="refresh" content="{int(a.refresh)}">', 1)
+    write_atomic(a.out, doc)
     print(f"{a.out}: {len(doc.encode())} bytes, cutoff {utc(cutoff)}")
     return 0
 

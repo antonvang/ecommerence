@@ -1,0 +1,13 @@
+# Director order 63: every 5 minutes. Rollback: systemctl --user disable --now copybot-dashboard.timer
+# and remove only these two files from ~/.config/systemd/user/.
+[Unit]
+Description=Copybot paper dashboard snapshot every 5 minutes
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=5min
+AccuracySec=30s
+Unit=copybot-dashboard.service
+
+[Install]
+WantedBy=timers.target

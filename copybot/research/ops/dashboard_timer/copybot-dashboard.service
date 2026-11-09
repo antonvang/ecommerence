@@ -1,0 +1,14 @@
+# Director order 63: regenerate the read-only paper dashboard (static HTML) every 5 minutes.
+# User unit (systemd --user, no root). Reads lab.db with mode=ro + query_only; writes only the output file
+# atomically; no network (AF_UNIX only); no restart loop; never touches pm_lp or any other unit.
+[Unit]
+Description=Copybot paper dashboard snapshot (read-only, every 5 min)
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/anton/copybot-dev/copybot
+ExecStart=/usr/bin/flock -n /home/anton/.copybot_dashboard.lock /usr/bin/python3 research/tools/paper_dashboard.py --refresh 300 --out /home/anton/copybot_dashboard.html
+NoNewPrivileges=yes
+RestrictAddressFamilies=AF_UNIX
+Nice=10
+TimeoutStartSec=120
