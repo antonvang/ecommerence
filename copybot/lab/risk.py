@@ -20,6 +20,21 @@ DEFAULTS = {"consecutive_losses": 2, "max_drawdown": 0.10, "data_max_age_s": 60,
 ACTOR = "system:risk"
 SIMULATED = ("SHADOW_", "FWD_", "LANE_")          # amendments 3, 7 and 11: simulated ledgers, never approved trading
 AUTO_RULE, AUTO_RUN_S, AUTO_MAX, AUTO_WINDOW_S = "data_fetch", 50 * 60, 2, 86400    # amendment 18
+# Director order 67 P0-A (research/desk/PAPER_ENGINE_REMEDIATION_67.md): the book's real age is the wall-clock time from
+# its observation (Book.observed, set when the public book was read) to the simulated execution (WALL() at submit), not
+# the pass clock. "off" (default, active books): nothing changes. "measure": sim_exec rows also carry the observed time
+# and that age. "guard": additionally the entry gate's data_stale check uses that age instead of now - book.ts.
+# Activating "measure" or "guard" on active books needs a separate, dated approval.
+BOOK_AGE_MODE = "off"
+BOOK_AGE_MODES = ("off", "measure", "guard")
+WALL = time.time                                  # the real clock (tests replace it); never the pass clock
+
+
+def book_age(book, exec_wall):
+    """Seconds from the book's real observation to the simulated execution, or None when the book carries no
+    observation time (built by hand or before order 67)."""
+    observed = getattr(book, "observed", None)
+    return None if observed is None or exec_wall is None else exec_wall - observed
 
 
 def rules_for(db, exp_id):
@@ -111,6 +126,8 @@ class Risk:
         if book is None:
             return self.block(exp_id, "data_missing", None, None, "no order book")
         age = self.now() - book.ts
+        if BOOK_AGE_MODE == "guard" and book_age(book, WALL()) is not None:    # order 67 P0-A, off by default
+            age = book_age(book, WALL())
         lim = rules_for(self.db, exp_id)["data_max_age_s"]
         if age > lim:
             return self.block(exp_id, "data_stale", age, lim, f"book is {age:.0f}s old")

@@ -16,9 +16,10 @@ from __future__ import annotations
 import json
 import sqlite3
 import time
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 
 from lab import lifecycle
+from lab import risk as _risk
 from lab.risk import Risk
 
 SIMULATED = True
@@ -108,6 +109,12 @@ class CostModel:
 
 
 _EXEC_ERR = {}
+# Director order 67 P0-C (research/desk/PAPER_ENGINE_REMEDIATION_67.md): "legacy" (default, active books) books funding
+# exactly as before. "fail_closed": a held settlement whose 1h bar is missing while later bars exist is a visible error
+# (one paper.funding_missing event per ledger, instrument and settlement, and a status field in the pass result); the
+# instrument still books nothing after it (no skipped, invented or estimated settlement). Activation needs approval.
+FUNDING_MISSING_MODE = "legacy"
+FUNDING_MISSING = "paper.funding_missing"
 
 
 def _vwap_distance(levels, mid, qty):
@@ -123,8 +130,9 @@ def _vwap_distance(levels, mid, qty):
     return abs(cost / got - mid) / mid, got / qty
 
 
-def exec_record(order_id, exp_id, side, qty, book, now, fills, reduce_only):
-    """Amendment 26 point 1: the minimum needed to check one taker order's book and execution later."""
+def exec_record(order_id, exp_id, side, qty, book, now, fills, reduce_only, exec_wall=None):
+    """Amendment 26 point 1: the minimum needed to check one taker order's book and execution later. Order 67 P0-A:
+    with BOOK_AGE_MODE "measure" or "guard" also the book's real observation time and its age at execution."""
     mid = book.mid() if book.bids and book.asks else None
     same, other = (book.asks, book.bids) if side == "buy" else (book.bids, book.asks)
     d_same, share_same = _vwap_distance(same, mid or 0, qty)
@@ -141,7 +149,9 @@ def exec_record(order_id, exp_id, side, qty, book, now, fills, reduce_only):
             share_same >= 1 - 1e-9 and share_other >= 1 - 1e-9 else None,
             "filled_share": got / qty if qty else None,
             "fill_distance": (abs(paid / got - mid) / mid) if got and mid else None,
-            "rule": "research/PROTOCOL_V3.md amendment 26"}
+            "rule": "research/PROTOCOL_V3.md amendment 26",
+            **({"book_observed_wall": book.observed, "exec_wall": exec_wall,
+                "book_age_exec_s": _risk.book_age(book, exec_wall)} if _risk.BOOK_AGE_MODE != "off" else {})}
 
 
 @dataclass(frozen=True)
@@ -149,6 +159,7 @@ class Book:
     ts: float
     bids: tuple                   # ((price, size), ...) best first
     asks: tuple
+    observed: float = field(default=None, compare=False)   # order 67 P0-A: wall-clock time the book was read
 
     def mid(self):
         return (self.bids[0][0] + self.asks[0][0]) / 2
@@ -164,6 +175,7 @@ class PaperEngine:
     def __init__(self, db, now=time.time):
         self.db, self.now = db, now
         self.risk = Risk(db, now)
+        self.funding_status = {}        # order 67 P0-C: {instrument: state} of the last book_funding (memory only)
 
     # ---------- ledger ----------
     def start(self, exp_id, capital, costs, actor="system:paper"):
@@ -282,6 +294,13 @@ class PaperEngine:
                     if opens and st < min(opens):                     # older than the fetched bars: unpriceable
                         self._funding_gap(exp_id, inst, st)
                         continue
+                    if opens and max(opens) > st:                     # 67 P0-C: later bars exist, this one is missing
+                        self.funding_status[inst] = {"state": "MISSING_BAR", "settle_ts": st,
+                                                     "latest_bar_ts": max(opens)}
+                        if FUNDING_MISSING_MODE == "fail_closed":
+                            self._funding_missing(exp_id, inst, st, max(opens))
+                    else:
+                        self.funding_status[inst] = {"state": "WAITING_FOR_BAR", "settle_ts": st}
                     break                                             # its bar is not out yet: wait, in order
                 rate, px = funding[st], opens[st]
                 try:
@@ -292,6 +311,15 @@ class PaperEngine:
                     continue                                          # already booked
                 out.append({"instrument": inst, "settle_ts": st, "qty": qty, "rate": rate, "amount": -qty * px * rate})
         return out
+
+    def _funding_missing(self, exp_id, inst, st, latest):
+        """Order 67 P0-C (fail_closed only): recorded once per ledger, instrument and settlement."""
+        if not self.db.one("SELECT 1 FROM events WHERE kind=? AND exp_id=? AND payload LIKE ?", FUNDING_MISSING,
+                           exp_id, f'%"instrument":"{inst}"%"settle_ts":{st}%'):
+            self.db.event(FUNDING_MISSING, "agent:paper-1", exp_id, {
+                "instrument": inst, "settle_ts": st, "latest_bar_ts": latest, "state": "MISSING_BAR",
+                "booked": False, "later_settlements": "held back until this one is priced or leaves the bar window",
+                "simulated": True, "rule": "director order 67 P0-C"})
 
     def _funding_gap(self, exp_id, inst, st):
         """A held settlement older than the fetched bars cannot be priced: recorded once, then skipped."""
@@ -423,6 +451,7 @@ class PaperEngine:
         if not ok:
             return {"status": "refused", "reason": why, "order_id": order_id, "fills": [], "simulated": True}
         _, costs = self.config(exp_id)
+        exec_wall = _risk.WALL() if _risk.BOOK_AGE_MODE != "off" else None     # order 67 P0-A (off by default)
         levels = book.asks if side == "buy" else book.bids
         mid, now, rest, fills = book.mid(), int(self.now()), qty, []
         for i, (px, size) in enumerate(levels):
@@ -449,16 +478,17 @@ class PaperEngine:
                                                                       "filled": qty - rest, "simulated": True})
         except sqlite3.IntegrityError:
             return self._existing(order_id)
-        self._exec_log(exp_id, order_id, instrument, side, qty, book, now, fills, reduce_only)       # amendment 26
+        self._exec_log(exp_id, order_id, instrument, side, qty, book, now, fills, reduce_only, exec_wall)  # 26
         self._after(exp_id, book.spread(), costs.expected_spread)
         return {"status": "filled" if rest <= 1e-12 else ("partial" if fills else "unfilled"), "order_id": order_id,
                 "fills": fills, "unfilled": rest, "simulated": True}
 
-    def _exec_log(self, exp_id, order_id, instrument, side, qty, book, now, fills, reduce_only):
+    def _exec_log(self, exp_id, order_id, instrument, side, qty, book, now, fills, reduce_only, exec_wall=None):
         """Amendment 26: one sim_exec row per taker order, after its transaction; a failure never touches the order."""
         try:
             self.db.append("sim_exec", order_id=order_id, exp_id=exp_id, ts=now, instrument=instrument,
-                           payload=exec_record(order_id, exp_id, side, qty, book, now, fills, reduce_only))
+                           payload=exec_record(order_id, exp_id, side, qty, book, now, fills, reduce_only,
+                                               exec_wall))
         except Exception as e:                                   # noqa: BLE001 - measurement only
             if now - _EXEC_ERR.get("at", 0) >= 3600:
                 _EXEC_ERR["at"] = now

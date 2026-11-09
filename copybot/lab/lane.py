@@ -279,16 +279,56 @@ def daily_returns(db, ledger, now):
     return [closes[b] / closes[a] - 1 for a, b in zip(days, days[1:]) if closes[a] > 0]
 
 
+# ---------- director order 67 P0-B: a missing UTC day makes its return INVALID (draft amendment) ----------
+# "legacy" (default, every active book): unchanged. "strict" only after a dated protocol amendment
+# (draft: research/desk/PAPER_ENGINE_REMEDIATION_67.md): a return between two marked days that are not consecutive is
+# not a daily return; the span is recorded as insufficiently observed and excluded, never rescaled; below COVERAGE_MIN
+# of the observable day pairs the day-based rules (11 'edge' and 'promising') are INCONCLUSIVE (z = None).
+DAILY_RETURNS_MODE = "legacy"
+COVERAGE_MIN = 0.8                              # draft value; part of the amendment to be dated
+STRICT_RULE = "director order 67 P0-B (draft amendment; not active)"
+
+
+def daily_observation(db, ledger, now):
+    """Order 67 P0-B: daily closes as daily_returns reads them; only consecutive UTC days give a return. Returns
+    {returns, invalid_spans, day_pairs, valid_pairs, coverage, status: OK / INCONCLUSIVE / NO_DATA}."""
+    today, closes = int(now) // DAY * DAY, {}
+    for x in db.q("SELECT ts, equity FROM sim_equity WHERE exp_id=? ORDER BY id", ledger):
+        if x["ts"] < today:
+            closes[x["ts"] // DAY] = x["equity"]
+    days = sorted(closes)
+    rets, spans = [], []
+    for a, b in zip(days, days[1:]):
+        if b - a != 1:
+            spans.append({"from_day_ts": a * DAY, "to_day_ts": b * DAY,
+                          "missing_days_ts": [(a + k) * DAY for k in range(1, b - a)], "status": "INVALID"})
+        elif closes[a] > 0:
+            rets.append(closes[b] / closes[a] - 1)
+    pairs = days[-1] - days[0] if len(days) > 1 else 0
+    cov = len(rets) / pairs if pairs else None
+    status = "NO_DATA" if not pairs else "OK" if cov >= COVERAGE_MIN else "INCONCLUSIVE"
+    return {"returns": rets, "invalid_spans": spans, "day_pairs": pairs, "valid_pairs": len(rets), "coverage": cov,
+            "status": status, "coverage_min": COVERAGE_MIN, "rule": STRICT_RULE}
+
+
 def stats(db, ledger, now=None, info=None):
     now = now or time.time()
     info = info or started(db).get(ledger) or {}
-    rets, exp = daily_returns(db, ledger, now), info.get("expectation")
+    strict = DAILY_RETURNS_MODE == "strict"
+    obs = daily_observation(db, ledger, now) if strict else None
+    rets, exp = (obs["returns"] if strict else daily_returns(db, ledger, now)), info.get("expectation")
     n = len(rets)
     live = statistics.mean(rets) if n else None
     z = (live - exp["mean"]) / (exp["sd"] / math.sqrt(n)) if (n and exp and exp.get("sd")) else None
+    if strict and obs["status"] != "OK":
+        z = None                                                 # INCONCLUSIVE: no day-based rule decides on it
     last = db.one("SELECT equity FROM sim_equity WHERE exp_id=? ORDER BY id DESC LIMIT 1", ledger)
-    return {"days": n, "mean": live, "z": z, "expectation": exp, "equity": last["equity"] if last else None,
-            "age_days": (now - info["ts"]) / DAY if info.get("ts") else None, "decisional": False}
+    out = {"days": n, "mean": live, "z": z, "expectation": exp, "equity": last["equity"] if last else None,
+           "age_days": (now - info["ts"]) / DAY if info.get("ts") else None, "decisional": False}
+    if strict:
+        out["observation"] = {k: obs[k] for k in ("status", "coverage", "day_pairs", "valid_pairs", "invalid_spans",
+                                                  "rule")}
+    return out
 
 
 def _paused_for(risk, ledger, now):
@@ -1227,7 +1267,7 @@ def run_one(db, ledger, get, now, cache=None, books=None):
     if not rec["ok"]:
         risk.trip_fail_closed("reconciliation", f"{ledger}: {rec['problems']}"[:500])
     return {"status": "ok", "orders": orders, "marked": marked, "reconciled": rec["ok"], "funding": len(funded),
-            "signal": want, **pr.mark_fields(marked, err)}
+            "signal": want, **pr.mark_fields(marked, err), **pr.funding_fields(eng)}
 
 
 # ---------- classification and observed decomposition (amendment 12h; display only) ----------

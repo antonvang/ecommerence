@@ -23,6 +23,7 @@ import urllib.request
 from lab import lifecycle, pipeline, registry
 from lab.engine import catalogue, data
 from lab.paper import Book, CostModel, PaperEngine
+from lab import risk as risk_mod
 from lab.risk import Risk
 
 REST = "https://fapi.binance.com"
@@ -85,13 +86,13 @@ def fetch_book(sym, now, get=_get):
     if sym.startswith(HL_PREFIX):
         lv = hl_info({"type": "l2Book", "coin": sym[len(HL_PREFIX):]})["levels"]
         return Book(ts=now, bids=tuple((float(x["px"]), float(x["sz"])) for x in lv[0][:20]),
-                    asks=tuple((float(x["px"]), float(x["sz"])) for x in lv[1][:20]))
+                    asks=tuple((float(x["px"]), float(x["sz"])) for x in lv[1][:20]), observed=risk_mod.WALL())
     if sym.endswith(SPOT_SUFFIX):
         d = get(f"{SPOT_REST}/api/v3/depth?symbol={_q(sym[:-len(SPOT_SUFFIX)])}&limit=20")
     else:
         d = get(f"/fapi/v1/depth?symbol={_q(sym)}&limit=20")
-    return Book(ts=now, bids=tuple((float(p), float(q)) for p, q in d["bids"]),
-                asks=tuple((float(p), float(q)) for p, q in d["asks"]))
+    return Book(ts=now, bids=tuple((float(p), float(q)) for p, q in d["bids"]),     # ts: the pass clock (unchanged)
+                asks=tuple((float(p), float(q)) for p, q in d["asks"]), observed=risk_mod.WALL())   # order 67 P0-A
 
 
 def hourly(sym, now, get=_get, cache=None):
@@ -250,10 +251,32 @@ def _cached_funding(get, now, cache):
     return data
 
 
+FUNDING_UNAVAILABLE = "paper.funding_unavailable"
+
+
+def funding_fields(eng):
+    """Order 67 P0-C: the funding status field of a pass result, only in FUNDING_MISSING_MODE "fail_closed"."""
+    from lab import paper
+    if paper.FUNDING_MISSING_MODE != "fail_closed":
+        return {}
+    bad = {i: s for i, s in eng.funding_status.items() if s.get("state") != "OK"}
+    return {"funding_status": "ERROR" if any(s["state"] in ("MISSING_BAR", "UNAVAILABLE") for s in bad.values())
+            else "WAITING" if bad else "OK", "funding_detail": bad}
+
+
 def _funding_guarded(db, eng, led, get, now, cache):
     try:
         return len(book_funding(db, eng, led, now, _cached_funding(get, now, cache)))
     except Exception as e:                              # no funding data this pass: the next pass books it
+        from lab import paper
+        if paper.FUNDING_MISSING_MODE == "fail_closed":   # order 67 P0-C: visible, once per ledger and clock hour
+            eng.funding_status["*"] = {"state": "UNAVAILABLE", "error": safe_error(e, 160)}
+            hour = int(now) // HOUR * HOUR
+            if not db.one("SELECT 1 FROM events WHERE kind=? AND exp_id=? AND payload LIKE ?", FUNDING_UNAVAILABLE,
+                          led, f'%"hour":{hour},%'):
+                db.event(FUNDING_UNAVAILABLE, "agent:paper-1", led, {
+                    "hour": hour, "t": int(now), "error_class": mark_error_class(e), "error": safe_error(e),
+                    "booked": False, "simulated": True, "rule": "director order 67 P0-C"})
         return f"funding unavailable: {e!r}"[:120]
 
 
@@ -283,9 +306,10 @@ def close_ledger(db, led, base, get, now, books=None, cache=None):
     if not eng.ledger(led)["positions"] and _stale_flat(db, led):
         eng.mark(led, {})                               # the final mark of a flat ledger: equity = cash, at once
         note_marked(db, led, now)                       # order 66B: ends a recorded mark failure (records only)
-        return {"status": "closing", "orders": orders, "marked": True, "final_mark": True, "funding": funding}
+        return {"status": "closing", "orders": orders, "marked": True, "final_mark": True, "funding": funding,
+                **funding_fields(eng)}
     marked, _ = mark_guarded(db, eng, led, get, now, books)   # order 66B: a failure is recorded (59-D), not swallowed
-    return {"status": "closing", "orders": orders, "marked": marked, "funding": funding}
+    return {"status": "closing", "orders": orders, "marked": marked, "funding": funding, **funding_fields(eng)}
 
 
 def held_experiments(db):
@@ -437,9 +461,9 @@ def mark_only(db, ledger, get, now, books=None, cache=None):
     marked, err = mark_guarded(db, eng, ledger, get, now, books)
     if err is not None:
         return {"status": "paused", "marked": False, "reason": f"no mark prices: {err!r}"[:200], "funding": funding,
-                **mark_fields(False, err)}
+                **mark_fields(False, err), **funding_fields(eng)}
     return {"status": "paused", "marked": marked, "positions": len(eng.ledger(ledger)["positions"]),
-            "funding": funding, **mark_fields(marked, None)}
+            "funding": funding, **mark_fields(marked, None), **funding_fields(eng)}
 
 
 def _guarded(db, ledger, fn):
@@ -614,5 +638,6 @@ def run_one(db, eid, get, now, ledger=None, cm_get=_cm_get, cache=None, cm_cache
     rec = eng.reconcile(L)
     if not rec["ok"]:
         risk.trip_fail_closed("reconciliation", f"{L}: {rec['problems']}"[:500])
-    return {"status": "ok", "orders": orders, "pnl": eng.pnl(L, marks), "reconciled": rec["ok"], "funding": len(funded)}
+    return {"status": "ok", "orders": orders, "pnl": eng.pnl(L, marks), "reconciled": rec["ok"], "funding": len(funded),
+            **funding_fields(eng)}
 
