@@ -98,16 +98,21 @@ def t_sf(t, df):
     return tail if t >= 0 else 1.0 - tail
 
 
+_QUANTILES = {}
+
+
 def t_quantile(p, df):
-    """Kvantil ved bisektion paa den eksakte fordeling (deterministisk)."""
-    lo, hi = -1e4, 1e4
-    for _ in range(200):
-        mid = (lo + hi) / 2.0
-        if t_sf(mid, df) > 1.0 - p:
-            lo = mid
-        else:
-            hi = mid
-    return (lo + hi) / 2.0
+    """Kvantil ved bisektion paa den eksakte fordeling (deterministisk; gemmes pr. (p, df))."""
+    if (p, df) not in _QUANTILES:
+        lo, hi = -1e4, 1e4
+        for _ in range(200):
+            mid = (lo + hi) / 2.0
+            if t_sf(mid, df) > 1.0 - p:
+                lo = mid
+            else:
+                hi = mid
+        _QUANTILES[(p, df)] = (lo + hi) / 2.0
+    return _QUANTILES[(p, df)]
 
 
 def one_sided_test(means, mu0=THRESHOLD_BP):
