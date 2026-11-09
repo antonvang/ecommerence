@@ -1,4 +1,4 @@
-# PAPER DASHBOARD V2 (direktørordre 59-H P2)
+# PAPER DASHBOARD V2 (direktørordre 59-H P2, finpudset i 59-J)
 
 **Status: LOKAL prototype. Produktionsdeploy: NO-GO indtil direktørgennemgang.**
 
@@ -26,6 +26,24 @@ registrerede papirdata fra lab.db og er hele tiden mærket **PAPER / SIMULATION 
   for de viste konti, med årsag. Overskriften angiver "N nyeste af M registrerede", så en afkortning ses.
 - **Filtre** for bot, periode (24 t / 7 d / alt, regnet fra cutoff) og status. De er rent HTML+CSS
   (radioknapper og `:checked`). "Alt" dækker kun de N viste rækker.
+
+## Finpudsning (59-J)
+
+- **Rækkefølge**: kortene står FRESH først, så STALE, så MISSING_MARK. Inden for en gruppe sorteres de efter navn,
+  starttid (lane.started) og ledger-id, så rækkefølgen er stabil. Bot-filterchips følger samme rækkefølge.
+- **Dubletnavne** nummereres "carry_floor #1", "carry_floor #2" osv. efter (starttid, ledger-id). Samme etiket
+  bruges på kortet, filterchippen og feed-rækkerne. Ledger-id'et står stadig på kortet. Unikke navne får intet nummer.
+- **Snapshot-banner** øverst: "Statisk snapshot genereret <UTC>. Kør kommandoen igen for nye tal." med kommandoen
+  `python3 research/tools/paper_dashboard.py --out <fil>` og datacutoff.
+- **"Sådan læses tallene"**: netto = seneste equity-mærke minus startkapital (net_report: seneste timemærke på eller
+  før cutoff). FRESH = mærke højst 2 t gammelt ved cutoff. STALE = ældre, sidst kendte værdi og ikke aktuel.
+  MISSING_MARK = intet mærke. Funding, gebyrer og fyld kan ligge senere end mærket. Papir-P&L uden gearing og uden
+  marginmodel.
+- **Feedet** viser de samme rækker som før, men delt i to sektioner: "Udførte papirhandler" (blå venstrekant) og
+  "Spring over / afvisninger / fejl" (gul kant; fejl rød). Hver sektion angiver "x viste af <total> til cutoff", og
+  overskriften beholder "N nyeste af M". Intet skjules.
+- STALE-kort har en dæmpet netto og aldrig en grøn FRESH-chip. Ingen tal er ændret: alt kommer stadig uændret fra
+  net_report.build, og en test sammenligner tallene og tidsstemplerne med 59-H-renderingen af samme syntetiske DB.
 
 ## Read-only-garantier
 
@@ -60,4 +78,4 @@ verificeret eksekverbar strategi og ikke investeringsrådgivning. Live-handel er
   Ejeren skal da tjekke browserkonsollen (F12) for fejl. Det gælder også nu: åbn F12 én gang og bekræft, at
   konsollen er tom.
 
-Filer: `research/tools/paper_dashboard.py` og `tests/test_research_paper_dashboard.py`.
+Filer: `research/tools/paper_dashboard.py` og `tests/test_research_paper_dashboard.py` (23 tests efter 59-J).

@@ -1,4 +1,5 @@
-"""Director order 59-H P2: PAPER DASHBOARD V2 is read-only, static, honest about STALE/MISSING_MARK and drops no fills."""
+"""Director orders 59-H P2 and 59-J: PAPER DASHBOARD V2 is read-only, static, honest about STALE/MISSING_MARK, drops no
+fills, orders cards FRESH/STALE/MISSING_MARK, numbers duplicate names consistently and splits fills from skips."""
 import hashlib
 import json
 import os
@@ -28,9 +29,12 @@ def make_db(equity=(), fills=(), events=(), ledgers=None):
                                 side TEXT, px REAL, qty REAL, fee REAL, mid REAL);
         CREATE TABLE sim_funding (id INTEGER PRIMARY KEY, exp_id TEXT, ts INTEGER, instrument TEXT, amount REAL);
     """)
-    for led, src in (ledgers if ledgers is not None else sorted({(q[0], "straks") for q in equity})):
+    for spec in (ledgers if ledgers is not None else sorted({(q[0], "straks") for q in equity})):
+        led, src = spec[0], spec[1]
+        name = spec[2] if len(spec) > 2 else led
+        t0 = spec[3] if len(spec) > 3 else CUT - 30 * 86400
         con.execute("INSERT INTO events (ts, kind, exp_id, payload) VALUES (?, 'lane.started', ?, ?)",
-                    (CUT - 30 * 86400, led, json.dumps({"source": src, "name": led})))
+                    (t0, led, json.dumps({"source": src, "name": name})))
         con.execute("INSERT INTO events (ts, kind, exp_id, payload) VALUES (?, 'paper.started', ?, ?)",
                     (CUT - 30 * 86400, led, json.dumps({"capital": 10000})))
     con.executemany("INSERT INTO sim_equity (exp_id, ts, equity, cash, exposure, peak, drawdown) "
@@ -144,8 +148,11 @@ class Dashboard(unittest.TestCase):
         doc = render(self.p, feed_n=2)
         self.assertEqual(len(re.findall(r'<div class="ev ', doc)), 2)
         self.assertIn("2 nyeste af 6 registrerede", doc)
-        order = re.findall(r'<span class="t">([^<]+)</span>', self.doc)
-        self.assertEqual(order, sorted(order, reverse=True))
+        for key in ("fill", "other"):
+            box = re.search(r'<div class="feedbox fb-%s">(.*?)</div>\n?(?=<h3|</section>)' % key, self.doc, re.S)
+            order = re.findall(r'<span class="t">([^<]+)</span>', box.group(1))
+            self.assertTrue(order)
+            self.assertEqual(order, sorted(order, reverse=True))
 
     def test_skip_events_shown_only_for_shown_ledgers(self):
         self.assertIn("straks.skipped: ingen retning", self.doc)
@@ -203,6 +210,147 @@ class Dashboard(unittest.TestCase):
         doc = render(p)
         self.assertNotIn("<script", doc.lower())
         self.assertIn("&lt;script&gt;", doc)
+
+    # --- director order 59-J ---
+    def test_cards_ordered_fresh_stale_missing(self):
+        leds = re.findall(r'<article class="bot b-([^ ]+) s-([A-Z_]+)">', self.doc)
+        self.assertEqual(leds, [("FRESHDN", "FRESH"), ("FRESHUP", "FRESH"), ("OLD", "STALE"),
+                                ("NOMARK", "MISSING_MARK")])
+        chips = re.findall(r'<label class="pill" for="fb-([^"]+)">', self.doc)
+        self.assertEqual(chips, ["all", "FRESHDN", "FRESHUP", "OLD", "NOMARK"])
+
+    def test_duplicate_names_numbered_consistently(self):
+        led = [("Z9", "lane", "carry_floor", CUT - 10 * 86400), ("A1", "lane", "carry_floor", CUT - 20 * 86400),
+               ("M5", "lane", "carry_floor", CUT - 20 * 86400), ("S", "straks", "straks", CUT - 5 * 86400)]
+        eq = [("Z9", CUT - 60, 10001.0), ("A1", CUT - 60, 10002.0), ("M5", CUT - 9000, 9999.0),
+              ("S", CUT - 60, 10000.0)]
+        fl = [("Z9", CUT - 100, "BTCUSDT", "buy", 1.0, 1.0, 0.01), ("A1", CUT - 200, "ETHUSDT", "buy", 1.0, 1.0, 0.01),
+              ("M5", CUT - 300, "SOLUSDT", "buy", 1.0, 1.0, 0.01)]
+        ev = [(CUT - 400, "paper.skipped", "M5", {"coin": "ADAUSDT", "reason": "r"})]
+        doc = render(make_db(eq, fl, ev, led))
+        want = {"A1": "carry_floor #1", "M5": "carry_floor #2", "Z9": "carry_floor #3"}   # by start, then ledger id
+        for lid, lab in want.items():
+            c = card(doc, lid)
+            self.assertIn(f'<div class="bname">{lab}</div><div class="bled">{lid}</div>', c)
+            self.assertIn(f'<label class="pill" for="fb-{lid}">{lab}</label>', doc)
+            rows = re.findall(r'<div class="ev [^"]*\bb-%s\b[^"]*"[^>]*>.*?<span class="who">([^<]*)</span>' % lid, doc)
+            self.assertTrue(rows, lid)
+            self.assertEqual(set(rows), {lab})
+        self.assertIn('<div class="bname">straks</div>', doc)                         # unique name: no number
+        self.assertNotIn("straks #", doc)
+        self.assertNotIn('class="who">carry_floor<', doc)
+        leds = re.findall(r'<article class="bot b-([^ ]+) s-', doc)
+        self.assertEqual(leds, ["A1", "Z9", "S", "M5"])                              # FRESH by name/start, then STALE
+        p2 = make_db(eq, fl, ev, list(reversed(led)))                                # insertion order irrelevant
+        strip = lambda h: re.sub(r"<b>Datakilde:</b> [^ ]+", "", h)  # noqa: E731
+        self.assertEqual(strip(doc), strip(render(p2)))
+
+    def test_snapshot_banner(self):
+        m = re.search(r'<div class="banner" id="snapshot"><b>Statisk snapshot genereret '
+                      r'(\d{4}-\d\d-\d\d \d\d:\d\d:\d\d UTC)\. Kør kommandoen igen for nye tal\.</b>', self.doc)
+        self.assertTrue(m)
+        self.assertEqual(m.group(1), "2026-11-09 00:38:00 UTC")
+        code = re.search(r"<code>(.*?)</code>", self.doc).group(1)
+        self.assertEqual(re.sub(r"<[^>]+>", "", code), "python3 research/tools/paper_dashboard.py --out &lt;fil&gt;")
+        self.assertIn("Datacutoff: <b>2026-11-09 00:00:00 UTC</b>", self.doc)
+        self.assertLess(self.doc.index('id="snapshot"'), self.doc.index('class="tops"'))
+
+    def test_explanation_box(self):
+        box = re.search(r'<section class="howto" id="howto">(.*?)</section>', self.doc, re.S).group(1)
+        self.assertIn("Sådan læses tallene", box)
+        self.assertIn("<b>Netto</b> = seneste equity-mærke minus startkapital", box)
+        self.assertIn("seneste timemærke på eller før cutoff", box)
+        self.assertIn("<b>FRESH</b> = mærket er højst 2 t gammelt ved cutoff", box)
+        self.assertIn("<b>STALE</b> = mærket er ældre; tallet er den sidst kendte værdi og ikke aktuelt", box)
+        self.assertIn("<b>MISSING_MARK</b> = intet mærke før cutoff", box)
+        self.assertIn("Funding, gebyrer og fyld kan ligge senere end mærket", box)
+        self.assertIn("uden gearing og uden marginmodel", box)
+
+    def test_feed_split_keeps_every_row(self):
+        fill_box = re.search(r'<div class="feedbox fb-fill">(.*?)</div>\n?(?=<h3)', self.doc, re.S).group(1)
+        other_box = re.search(r'<div class="feedbox fb-other">(.*?)</div>\n?</section>', self.doc, re.S).group(1)
+        fills = re.findall(r'<div class="(ev [^"]*)" data-kind="([^"]+)"', fill_box)
+        other = re.findall(r'<div class="(ev [^"]*)" data-kind="([^"]+)"', other_box)
+        self.assertEqual(len(fills), 4)
+        self.assertEqual(len(other), 2)
+        self.assertTrue(all(k == "fill" and "fill" in c.split() for c, k in fills))
+        self.assertTrue(all(k != "fill" and "skip" in c.split() and "fill" not in c.split() for c, k in other))
+        self.assertIn("Udførte papirhandler</span><small>4 viste af 4 til cutoff", self.doc)
+        self.assertIn("Spring over / afvisninger / fejl</span><small>2 viste af 2 til cutoff", self.doc)
+        self.assertIn("6 nyeste af 6 registrerede hændelser til cutoff (4 fyld, 2 ", self.doc)
+        self.assertLess(self.doc.index('id="feed-fill"'), self.doc.index('id="feed-other"'))
+        doc = render(self.p, feed_n=3)                                     # a cut feed still states both totals
+        self.assertIn("3 nyeste af 6 registrerede", doc)
+        self.assertIn("viste af 4 til cutoff", doc)
+        self.assertIn("viste af 2 til cutoff", doc)
+        self.assertEqual(len(re.findall(r'<div class="ev ', doc)), 3)
+        err = render(make_db(EQUITY, (), [(CUT - 5, "paper.error", "FRESHUP", {"error": "boom"})], LEDGERS))
+        self.assertRegex(err, r'<div class="ev [^"]*\berr\b[^"]*" data-kind="paper.error">')
+        self.assertIn("Ingen udførte papirhandler blandt de viste.", err)
+
+    def test_twelve_accounts_all_shown(self):
+        led, eq = [], []
+        for i in range(12):
+            lid = f"L{i:02d}"
+            led.append((lid, "lane", "carry_floor" if i < 5 else f"bot{i}", CUT - (40 - i) * 86400))
+            if i % 3 == 0:
+                eq.append((lid, CUT - 600, 10000.0 + i))                 # FRESH
+            elif i % 3 == 1:
+                eq.append((lid, CUT - 30000, 10000.0 - i))               # STALE
+        doc = render(make_db(eq, (), (), led))
+        arts = re.findall(r'<article class="bot b-([^ ]+) s-([A-Z_]+)">', doc)
+        self.assertEqual(len(arts), 12)
+        self.assertEqual({a for a, _ in arts}, {f"L{i:02d}" for i in range(12)})
+        st = [s for _, s in arts]
+        self.assertEqual(st, sorted(st, key=pd.RANK.get))
+        self.assertEqual(st.count("FRESH"), 4)
+        self.assertEqual(st.count("STALE"), 4)
+        self.assertEqual(st.count("MISSING_MARK"), 4)
+        self.assertEqual(len(re.findall(r'<label class="pill" for="fb-L\d\d">', doc)), 12)
+        self.assertEqual(sorted(re.findall(r'carry_floor #(\d)<', doc)), sorted(["1", "2", "3", "4", "5"] * 2))
+        self.assertIn("12 papirkonti", doc)
+        self.assertIn('id="portfolio">Ikke tilgængelig', doc)
+
+    def test_stale_never_styled_as_current(self):
+        old = card(self.doc, "OLD")
+        self.assertNotIn("c-FRESH", old)
+        self.assertNotIn(">FRESH<", old)
+        self.assertNotIn("spark pos", old)
+        self.assertNotIn("spark neg", old)
+        self.assertIn("sidst kendt, ikke aktuel", old)
+        self.assertIn(".bot.s-STALE .bnet{opacity:.55}", self.doc)
+        self.assertNotRegex(self.doc, r'id="portfolio">[+−±]')
+        self.assertNotIn("alle 4 konti FRESH", self.doc)
+        self.assertNotIn("ALLE MÆRKER FRISKE", self.doc)
+        only_stale = render(make_db([("A", CUT - 30000, 10050.0)], ledgers=[("A", "straks")]))
+        self.assertIn('id="portfolio">Ikke tilgængelig', only_stale)
+        self.assertNotIn("c-FRESH", card(only_stale, "A"))
+        self.assertIn("FORÆLDEDE MÆRKER: 1", only_stale)
+
+    def test_numbers_and_timestamps_unchanged_from_59h_render(self):
+        """Golden values taken from the 59-H render of this synthetic DB (before 59-J): the same numbers appear."""
+        tok = re.compile(r"[+−±][\d,]+\.\d\d|\d{4}-\d\d-\d\d \d\d:\d\d:\d\d UTC|\d\d-\d\d \d\d:\d\d(?::\d\d)? UTC|"
+                         r"\d+\.\d t\b|\d+(?:\.\d+)?(?:e[+-]?\d+)? @ \d+(?:\.\d+)?|gebyr −[\d.]+|\d+\.\d\d%")
+
+        def toks(h):
+            return tok.findall(re.sub(r"<[^>]+>", " ", re.sub(r"<svg.*?</svg>", "", h, flags=re.S)))
+        golden = {"FRESHUP": ["+31.85", "1.23%", "11-08 23:50:00 UTC"],
+                  "FRESHDN": ["−106.72", "1.23%", "11-08 23:00:59 UTC"],
+                  "OLD": ["11-08 06:46 UTC", "17.2 t", "−10.00", "1.23%", "11-08 06:46:40 UTC"],
+                  "NOMARK": ["0.00%"]}
+        for led, want in golden.items():
+            self.assertEqual(toks(card(self.doc, led)), want, led)
+        self.assertIn("<span>Fyld</span><b>2</b>", card(self.doc, "FRESHUP"))
+        self.assertIn("<span>Fyld</span><b>1</b>", card(self.doc, "OLD"))
+        self.assertIn("<span>Kapital</span><b>10,000</b>", card(self.doc, "NOMARK"))
+        rows = sorted(tuple(toks(r)) for r in re.findall(r'<div class="ev [^"]*"[^>]*>.*?</div>', self.doc))
+        self.assertEqual(rows, sorted([
+            ("2026-11-08 23:55:00 UTC", "1 @ 101", "gebyr −0.0400"), ("2026-11-08 23:40:00 UTC",),
+            ("2026-11-08 22:03:20 UTC", "1 @ 100", "gebyr −0.0400"), ("2026-11-07 00:00:00 UTC",),
+            ("2026-11-06 00:00:00 UTC", "0.5 @ 2000", "gebyr −0.4000"),
+            ("2026-10-20 00:00:00 UTC", "0.1 @ 2400", "gebyr −0.1000")]))
+        self.assertEqual(re.findall(r'class="big[^"]*"[^>]*>([^<]*)<', self.doc),
+                         ["Ikke tilgængelig", "−74.87", "−10.00"])
 
 
 if __name__ == "__main__":

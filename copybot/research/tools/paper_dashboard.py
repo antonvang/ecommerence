@@ -1,4 +1,5 @@
-"""PAPER DASHBOARD V2: one static, self-contained, read-only HTML page of the paper books (director order 59-H P2).
+"""PAPER DASHBOARD V2: one static, self-contained, read-only HTML page of the paper books (director orders 59-H P2
+and 59-J).
 
     python3 research/tools/paper_dashboard.py [--db PATH] [--cutoff YYYY-MM-DDTHH:MM:SSZ] --out PATH.html [--feed N]
 
@@ -9,10 +10,17 @@ summary come from research.tools.net_report.build(con, now, cutoff); nothing is 
 recorded sim_fills rows and recorded skip/refusal/error events of the shown ledgers, newest first, up to the cutoff.
 No current portfolio value is shown unless every account is FRESH (and at least one account exists).
 
+Layout (59-J): bot cards ordered FRESH, STALE, MISSING_MARK, then by name, start time and ledger id; duplicate names are
+numbered "name #1", "name #2" by (start time, ledger id) and that label is used on the card, the filter chip and the
+feed rows (the ledger id stays on the card). A snapshot banner gives the generation time, the cutoff and the command
+to run again; a "Sådan læses tallene" box explains net and FRESH/STALE/MISSING_MARK. The feed shows the same rows as
+before, split into executed paper fills and skips/refusals/errors.
+
 Read-only: lab.db is opened as file:...?mode=ro with PRAGMA query_only=ON. No network, no JS, no external resources;
 filters are pure CSS (radio inputs + :checked sibling selectors). The page does not refresh itself.
 """
 import argparse
+import collections
 import datetime as dt
 import html
 import json
@@ -33,6 +41,35 @@ KIND_LABEL = {"straks.skipped": "SPRUNGET OVER", "paper.skipped": "SPRUNGET OVER
               "paper.mark_recovered": "MÆRKNING GENOPRETTET"}
 DAY = 86400
 SPARK_POINTS = 48
+RANK = {"FRESH": 0, "STALE": 1, "MISSING_MARK": 2}
+CMD = "python3 research/tools/paper_dashboard.py --out <fil>"
+CMD_HEAD, CMD_ARG = CMD.split(" --out ")[0], "--out <fil>"   # the argument never wraps inside "--out"
+
+
+def start_key(a):
+    return (a["started"] if a["started"] is not None else -1, str(a["ledger"]))
+
+
+def labels(accs):
+    """Display label per ledger: the account name, and for a name shared by several ledgers "name #k", numbered by
+    (start time, ledger id) so the same ledger always gets the same number in every place it is shown."""
+    groups = collections.defaultdict(list)
+    for a in accs:
+        groups[a["name"] or a["ledger"]].append(a)
+    out = {}
+    for nm, grp in groups.items():
+        if len(grp) == 1:
+            out[grp[0]["ledger"]] = nm
+        else:
+            for k, a in enumerate(sorted(grp, key=start_key), 1):
+                out[a["ledger"]] = f"{nm} #{k}"
+    return out
+
+
+def ordered(accs):
+    """FRESH first, then STALE, then MISSING_MARK; within a group by name, start time, ledger id (deterministic)."""
+    return sorted(accs, key=lambda a: (RANK.get(a["mark_status"], len(RANK)), str(a["name"] or a["ledger"]),
+                                       *start_key(a)))
 
 
 def connect_ro(path):
@@ -141,7 +178,15 @@ letter-spacing:.04em;border:2px solid #ffd27a}
 .health{display:inline-block;padding:3px 10px;border-radius:999px;font-weight:700;font-size:12px;margin-left:8px}
 .h-ok{background:rgba(22,199,132,.15);color:var(--pos)}.h-warn{background:rgba(245,166,35,.15);color:var(--amb)}
 .h-bad{background:rgba(255,77,94,.15);color:var(--neg)}
-.static{margin:12px 0 0;color:var(--mut);font-size:12px}
+.banner{margin:14px 0 0;padding:12px 14px;border-radius:12px;border:1px solid var(--blu);
+background:rgba(63,169,245,.10);font-size:14px}.banner b{color:#fff}
+.banner code{display:inline-block;margin:4px 0;padding:2px 8px;border-radius:6px;background:#0b1120;color:var(--blu);
+font:13px ui-monospace,Menlo,Consolas,monospace;overflow-wrap:break-word}
+.banner code span{white-space:nowrap}.banner .bcut{display:block;color:var(--mut);
+font-size:12px}
+.howto{margin:12px 0 0;padding:12px 16px;background:var(--panel);border:1px solid var(--line);border-radius:14px;
+font-size:13px}.howto h3{margin:0 0 6px;font-size:13px;letter-spacing:.06em;text-transform:uppercase}
+.howto ul{margin:0;padding-left:18px}.howto li{margin:3px 0;color:var(--mut)}.howto li b{color:var(--txt)}
 .tops{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin:16px 0}
 .top{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px}
 .top h3{margin:0 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--mut)}
@@ -158,7 +203,9 @@ color:var(--mut);font-size:12px;user-select:none}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
 .bot{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:16px;
 padding:14px;display:flex;flex-direction:column;gap:8px}
-.bot.s-STALE{border-color:rgba(245,166,35,.45)}.bot.s-MISSING_MARK{border-color:rgba(255,77,94,.55)}
+.bot.s-STALE{border-color:rgba(245,166,35,.45);background:var(--panel)}
+.bot.s-MISSING_MARK{border-color:rgba(255,77,94,.55);background:var(--panel)}
+.bot.s-STALE .bnet{opacity:.55}
 .bhead{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
 .avatar{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;font-weight:900;
 background:var(--acc);color:#fff;flex:none}
@@ -176,11 +223,18 @@ background:var(--acc);color:#fff;flex:none}
 .spark.zero polyline,.spark.old polyline{stroke:var(--mut)}
 .spark.none{font-size:11px;color:var(--mut);height:auto}
 .feedbox{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
-.ev{display:grid;grid-template-columns:150px 150px 120px 1fr;gap:8px;padding:8px 12px;
+.ev{display:grid;grid-template-columns:180px 170px 120px 1fr;gap:8px;padding:8px 12px;
 border-top:1px solid var(--line);font-size:13px;align-items:center}
-.ev:first-child{border-top:0}.ev .t{color:var(--mut);font-variant-numeric:tabular-nums;font-size:12px}
+.ev:first-child{border-top:0}
+.ev .t{color:var(--mut);font-variant-numeric:tabular-nums;font-size:12px;white-space:nowrap}
 .ev .who{font-weight:700;word-break:break-word}.ev .sym{font-family:ui-monospace,Menlo,Consolas,monospace}
-.ev.skip{background:rgba(245,166,35,.04)}.ev.err{background:rgba(255,77,94,.06)}
+.ev.fill{border-left:4px solid var(--blu)}
+.ev.skip{background:rgba(245,166,35,.05);border-left:4px solid var(--amb)}
+.ev.err{background:rgba(255,77,94,.07);border-left:4px solid var(--neg)}
+.fh{margin:16px 0 8px;font-size:13px;letter-spacing:.06em;text-transform:uppercase;display:flex;gap:8px;
+align-items:center;flex-wrap:wrap}.fh small{color:var(--mut);font-weight:400;text-transform:none;letter-spacing:0}
+.tag{padding:2px 8px;border-radius:6px;font-size:11px;font-weight:800}.t-fill{background:rgba(63,169,245,.15);
+color:var(--blu)}.t-skip{background:rgba(245,166,35,.15);color:var(--amb)}
 .side{display:inline-block;min-width:44px;text-align:center;padding:1px 6px;border-radius:6px;font-size:11px;
 font-weight:800;margin-right:6px}.buy{background:rgba(63,169,245,.15);color:var(--blu)}
 .sell{background:rgba(123,97,255,.18);color:#b3a4ff}.sk{background:rgba(245,166,35,.15);color:var(--amb)}
@@ -189,16 +243,17 @@ font-weight:800;margin-right:6px}.buy{background:rgba(63,169,245,.15);color:var(
 .empty{padding:16px;color:var(--mut)}
 footer{margin-top:28px;padding-top:16px;border-top:1px solid var(--line);color:var(--mut);font-size:12px}
 footer p{margin:4px 0}footer b{color:var(--txt)}
-@media (max-width:720px){.ev{grid-template-columns:1fr 1fr}.big{font-size:26px}.paper{font-size:15px}}
+@media (max-width:720px){header{position:static}.ev{grid-template-columns:1fr 1fr}.ev>span:last-child{grid-column:1/-1}
+.big{font-size:26px}.paper{font-size:15px}}
 """
 
 
 def page(rep, frows, totals, db_path, feed_n, conspark):
     sm = rep["summary"]
     cutoff, now = sm["cutoff"], rep["generated"]
-    accs = rep["accounts"]
+    accs = ordered(rep["accounts"])
     n_acc = len(accs)
-    names = {a["ledger"]: a["name"] or a["ledger"] for a in accs}
+    names = labels(accs)
     status = {a["ledger"]: a["mark_status"] for a in accs}
     out = []
     w = out.append
@@ -245,8 +300,19 @@ def page(rep, frows, totals, db_path, feed_n, conspark):
     w('<header><div class="logo">COPY<span>BOT</span></div>')
     w('<div class="paper" id="paper-badge">PAPER / SIMULATION — ingen rigtige penge</div>')
     w(f'<div class="cut">Cutoff: <b>{e(utc(cutoff))}</b>{health}</div></header>')
-    w('<p class="static">Statisk side: tallene er frosset ved cutoff og opdaterer ikke sig selv. Kun registrerede '
-      'papirdata fra lab.db.</p>')
+    w(f'<div class="banner" id="snapshot"><b>Statisk snapshot genereret {e(utc(now))}. Kør kommandoen igen for nye '
+      f'tal.</b><br><code>{e(CMD_HEAD)} <span>{e(CMD_ARG)}</span></code>'
+      f'<span class="bcut">Datacutoff: <b>{e(utc(cutoff))}</b> · tallene er frosset '
+      f'ved cutoff og opdaterer ikke sig selv · kun registrerede papirdata fra lab.db</span></div>')
+    th = sm["stale_threshold_s"] // 3600
+    w('<section class="howto" id="howto"><h3>Sådan læses tallene</h3><ul>'
+      '<li><b>Netto</b> = seneste equity-mærke minus startkapital, som defineret i net_report: det seneste timemærke '
+      'på eller før cutoff.</li>'
+      f'<li><b>FRESH</b> = mærket er højst {th} t gammelt ved cutoff. <b>STALE</b> = mærket er ældre; tallet er den '
+      'sidst kendte værdi og ikke aktuelt. <b>MISSING_MARK</b> = intet mærke før cutoff.</li>'
+      '<li>Funding, gebyrer og fyld kan ligge senere end mærket: fyldtal og feed går til cutoff, netto står ved '
+      'mærket.</li>'
+      '<li>Papir-P&amp;L uden gearing og uden marginmodel.</li></ul></section>')
 
     # --- top cards ---
     cur = sm["portfolio_current_total"]
@@ -335,9 +401,10 @@ def page(rep, frows, totals, db_path, feed_n, conspark):
     allr = totals["fills"] + totals["events"]
     w(f'<h2>Aktivitet <small>· {shown} nyeste af {allr} registrerede hændelser til cutoff '
       f'({totals["fills"]} fyld, {totals["events"]} overspring/afvisninger/fejl); maks. {feed_n} vises</small></h2>')
-    w('<section class="feedbox" id="feed">')
+    w('<section id="feed">')
     if not frows:
-        w('<div class="empty">Ingen registrerede papirhændelser til cutoff.</div>')
+        w('<div class="feedbox"><div class="empty">Ingen registrerede papirhændelser til cutoff.</div></div>')
+    rowhtml = {"fill": [], "other": []}
     for r in frows:
         led = r["ledger"]
         st = status.get(led, "MISSING_MARK")
@@ -358,8 +425,20 @@ def page(rep, frows, totals, db_path, feed_n, conspark):
             lab = KIND_LABEL.get(r["kind"], r["kind"])
             what = (f'<span class="side {"er" if bad else "sk"}">{e(lab)}</span>'
                     f'<span class="why">{e(r["kind"])}: {e(r["reason"][:240])}</span>')
-        w(f'<div class="{" ".join(cls)}" data-kind="{e(r["kind"])}"><span class="t">{e(utc(r["ts"]))}</span>'
-          f'<span class="who">{e(who)}</span><span class="sym">{e(r["instrument"])}</span><span>{what}</span></div>')
+        rowhtml["fill" if r["kind"] == "fill" else "other"].append(
+            f'<div class="{" ".join(cls)}" data-kind="{e(r["kind"])}"><span class="t">{e(utc(r["ts"]))}</span>'
+            f'<span class="who">{e(who)}</span><span class="sym">{e(r["instrument"])}</span><span>{what}</span></div>')
+    if frows:
+        for key, tag, title, total, none in (
+                ("fill", "t-fill", "Udførte papirhandler", totals["fills"],
+                 "Ingen udførte papirhandler blandt de viste."),
+                ("other", "t-skip", "Spring over / afvisninger / fejl", totals["events"],
+                 "Ingen overspring, afvisninger eller fejl blandt de viste.")):
+            rs = rowhtml[key]
+            w(f'<h3 class="fh" id="feed-{key}"><span class="tag {tag}">{e(title)}</span><small>{len(rs)} viste af '
+              f'{total} til cutoff</small></h3>')
+            w(f'<div class="feedbox fb-{key}">' + ("\n".join(rs) if rs else f'<div class="empty">{e(none)}</div>')
+              + "</div>")
     w("</section>")
 
     # --- footer ---
@@ -371,7 +450,7 @@ def page(rep, frows, totals, db_path, feed_n, conspark):
     w("<p><b>Ansvarsfraskrivelse:</b> Beskrivende papir-P&amp;L uden gearing og uden marginmodel (ubegrænset "
       "sikkerhedsstillelse for korte perp-ben). Ikke en verificeret eksekverbar strategi. Ikke "
       "investeringsrådgivning. Live-handel: <b>NO-GO</b>. Ingen knapper, ingen ordrer, ingen konti eller wallets.</p>")
-    w("<p>Lokal prototype (direktørordre 59-H P2). Produktionsdeploy: NO-GO indtil direktørgennemgang.</p>")
+    w("<p>Lokal prototype (direktørordre 59-H P2, 59-J). Produktionsdeploy: NO-GO indtil direktørgennemgang.</p>")
     w("</footer></div></body></html>")
     return "\n".join(out) + "\n"
 
