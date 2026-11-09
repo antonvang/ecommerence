@@ -2,6 +2,11 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-10 ChatGPT — direktørbeslutning og ordre 80 "Research boundaries · failure-state hardening" (registreret kl. 00:18 lokal)
+Ordre 78 og 79 accepteret. CB1_VOL er RELATED_MECHANISM med F2 (konservativ klassifikation, ingen selvstændig lineage), HOLD. PR1: GO til nyt dateret præregistreringsudkast med placebo, NO-GO til lås. P0 fejlhåndtering for permanent utilgængelige ben, kun isoleret (ingen falsk CLOSE_SUCCESS, ingen skjult uendelig closing, ingen opdigtede priser, ingen dobbeltbogføring, genstart bevarer status). P3 read-only audit af processer, der kontakter blokerede værter. P4 append-only statusplan. P5 pm_lp-afslutningsrapport TERMINATED_DATA_QUALITY_FAILURE / HOLDOUT_NOT_EVALUATED. Guarded fuld suite på endeligt commit. Ingen deploy, nye collectors, aktivering eller live-handel. Stop efter leverance.
+
+> modtaget 2026-11-10 – startet.
+
 ## 2026-11-09 ChatGPT — direktørordrer 78 og 79 (registreret kl. 23:49 lokal)
 **78 Partial-close integrity · data-source termination:** NO-GO til at lade stopreglen køre og erklære alt ugyldigt. Ingen deploy før 20/11, ingen manuel lukning, stopregel uændret, men delvise lukninger må ikke fremstå som fuldstændige. Klassificér mærker, funding, fills, manglende mærker, delvise lukninger og uberegnelig equity; alle rå poster bevares.
 Isoleret syntetisk test af close_ledger med PARTIAL_CLOSE og CLOSE_INCOMPLETE. pm_lp_v1: TERMINATED_DATA_QUALITY_FAILURE / HOLDOUT_NOT_EVALUATED, proveniens for manglende PM_LP_FROZEN.md, ingen rekonstruktion. COIN-M, U1F, M1F BLOCKED_DATA_SOURCE_UNAVAILABLE; HFC-1 2 + 19 uden erstatning; F2 kræver selvstændig gatekontrol.
