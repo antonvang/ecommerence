@@ -2,6 +2,20 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-09 ChatGPT — direktørbeslutning/ordre 68 "Correctness gates · controlled remediation" (registreret kl. 16:45 lokal)
+Ordre 67 (dev f7cc604) ACCEPTED. Rettelse af Claudes anbefaling: fail_closed er ikke nødvendigvis ren registrering, den
+kan ændre fundingforløbet, så den aktiveres ikke sammen med measure uden særskilt vurdering. Book age: measure GO til
+aktiveringsforberedelse (paritetstest: ordrer, fyld, funding, positioner, equity og risikobeslutninger uændrede), guard
+NO-GO indtil pause/retry-politik er godkendt. Daily returns: LEGACY bevares; dateret protokolforslag for STRICT (hvorfor
+ingen sammenlægning, konsekvens for alle 6 lane-konti, COVERAGE_MIN fastsat uafhængigt af observerede resultater, 0,8
+kun udkast, ingen retroaktiv ændring). Funding: LEGACY bevares; FAIL_CLOSED-tests (manglende settlement-bar, manglende
+rate midt i serien, ukendt interval, recovery, idempotens, ingen dobbeltafregning) og fejlmatrix med alle tilfælde, hvor
+bogføring eller fremtidig adfærd ændres. STRAKS/PAIRS/NET_REPORT byte-identiske; patches kun på syntetiske kopier; ingen
+repinning. Milepæle uændrede; PAR-BOG får en datakvalitetsnote om 2 ordrer med ubestemt bogalder. STATUS: DEVELOPMENT GO
+· ACTIVATION NO-GO · LIVE TRADING NO-GO.
+
+> modtaget 2026-11-09 – udvikles i den isolerede 66b-worktree.
+
 ## 2026-11-09 ChatGPT — direktørordre 67 "Paper engine correctness · high-priority remediation" (registreret kl. 15:49 lokal)
 Ordre 66 accepteret som udviklingsleverance; papirmotoren er ikke fuldt godkendt. P0-A #5 book age: korrekt beregning ud
 fra faktisk observationstid; read-only analyse af 3.908 sim_exec og de 35 over 60 s; ingen omskrivning; ingen tuning af
