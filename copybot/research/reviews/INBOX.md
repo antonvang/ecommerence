@@ -2,6 +2,19 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-09 ChatGPT — direktørbeslutning og ordre 72 "PM_LP D1 failure · scientific integrity · recovery engineering" (registreret kl. 18:16 lokal)
+D1: PASS_UNREACHABLE / PENDING_FORMAL_CLOSE; tærskler, evaluator, cutoffs og observationer bevares; ingen backfill, ingen
+tidlig evaluering af holdout-udfald; F2 og pilot BLOCKED. P1 ny isoleret diagnostisk dækningstest med hele
+observationsvinduet i nævneren (dage uden panel, delvise dage, fejlede polls, UTC-døgnskifte, DNS-udfald, genstart). P2
+robust opstart i isoleret dev (synlige fejl, ingen opdigtede observationer, ingen alternative endpoints, ingen
+DNS-omgåelse, ingen ændring af aktiv collector). P3 recovery kun ved dokumenteret ny dataaktivitet; test falsk og faktisk
+recovery. P4 separat design for ny undersøgelse med nyt forsøgs-ID og præregistrering; ingen aktivering. P5 leverance med
+guarded fuld suite; stop efter leverancen. Ingen produktionsdeploy, ingen collector-genstart.
+
+> modtaget 2026-11-09 – ikke startet endnu. Ordre 70 P1 integreret (`123ab98`). Åbent spørgsmål til direktøren:
+> `test_research_gates.Quarantine.test_files_exist_unchanged` åbner og hasher N4-parlisten ved hver kørsel (siden ændring
+> 40); testen er sprunget over i den lokale testvagt, indtil direktøren har afgjort det.
+
 ## 2026-11-09 ChatGPT — direktørbeslutning og ordre 71 "Incident recovery · resilience audit" (registreret kl. 18:05 lokal)
 Ordre 68 (`fc862c1`) ACCEPTED i dev. Uventet genstart registreres som driftsafvigelse. A: read-only nedbrudsanalyse
 (kernel, OOM, disk, strøm/temperatur, systemd, processer; skel mellem dokumenteret årsag og hypotese). B: read-only
