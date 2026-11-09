@@ -86,3 +86,13 @@ U2 (17 mønter med carry-perp-ben): ADA, APE, AXS, BCH, BNB, BTC, CRV, ETC, ETH,
 
 - Ingen carry-mønt over break-even; BCH −9,9 %, XTZ −8,6 %, VET −4,7 %, TRX −3,1 % p.a. (negativ funding).
 - Ingen nye carry-starter. Beskrivende; afgør intet.
+
+## Kørsel 11-09 (kl. 01:39 lokal; dag 11-08, 24 snapshots)
+
+| Dag | Snapshots | U1 n | U1 ≥ 12,5 % | U1 ≥ 18,8 % | U1 median-APR | U2 ≥ 12,5 % | U2 højeste | Persistens 3 d (U1) |
+|---|---|---|---|---|---|---|---|---|
+| 11-08 | 24 | 896 | 7,9 % | 6,0 % | 0,0 % | 0/18 | 10,6 % (SNX) | endnu ikke |
+
+- Ingen carry-mønt over break-even; VET −33,1 %, BCH −22,4 %, XTZ −11,3 %, ADA −2,8 % p.a. (negativ funding).
+  U1-medianen er faldet til 0,0 %.
+- Ingen nye carry-starter. Beskrivende; afgør intet.

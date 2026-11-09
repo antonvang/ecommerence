@@ -1,0 +1,1008 @@
+{
+ "accounts": [
+  {
+   "active": true,
+   "allowance": 0.4616579284468647,
+   "book": 0.36160995735427337,
+   "capital": 10000.0,
+   "fees": 2.3082898111284544,
+   "fills": 7,
+   "flagged_41b": {
+    "fees": 0.0,
+    "fills": 0
+   },
+   "funding": 2.3763740551763295,
+   "instruments": {
+    "BTCUSDT": {
+     "direction_last": "short",
+     "fees": 0.3845146303600911,
+     "funding": 0.6049217339117582,
+     "open_basis": 78079.8809,
+     "open_qty": -0.004924631363776723,
+     "open_since": 1793581260,
+     "realized_price_pnl": 0.0,
+     "round_trips": 0
+    },
+    "BTCUSDT.SPOT": {
+     "direction_last": "long",
+     "fees": 0.38483844999772865,
+     "funding": 0.0,
+     "open_basis": 78145.636002,
+     "open_qty": 0.004924631363776723,
+     "open_since": 1793581260,
+     "realized_price_pnl": 0.0,
+     "round_trips": 0
+    },
+    "ETCUSDT": {
+     "direction_last": "short",
+     "fees": 0.3844535798140736,
+     "funding": 0.6651831872091476,
+     "open_basis": 7.10994390072385,
+     "open_qty": -54.07266009158428,
+     "open_since": 1793581260,
+     "realized_price_pnl": 0.0,
+     "round_trips": 0
+    },
+    "ETCUSDT.SPOT": {
+     "direction_last": "long",
+     "fees": 0.38507433932005053,
+     "funding": 0.0,
+     "open_basis": 7.121424,
+     "open_qty": 54.07266009158428,
+     "open_since": 1793581260,
+     "realized_price_pnl": 0.0,
+     "round_trips": 0
+    },
+    "XRPUSDT": {
+     "direction_last": "short",
+     "fees": 0.38452363109912574,
+     "funding": 1.1062691340554236,
+     "open_basis": 1.2961407200000001,
+     "open_qty": -296.6681203404563,
+     "open_since": 1793249249,
+     "realized_price_pnl": 0.0,
+     "round_trips": 0
+    },
+    "XRPUSDT.SPOT": {
+     "direction_last": "long",
+     "fees": 0.3848851805373846,
+     "funding": 0.0,
+     "open_basis": 1.2973594199999998,
+     "open_qty": 296.6681203404563,
+     "open_since": 1793249249,
+     "realized_price_pnl": 0.0,
+     "round_trips": 0
+    }
+   },
+   "ledger": "LANE_53058593e8",
+   "marked_at": 1794120031,
+   "max_drawdown": 0.0005158627139998419,
+   "max_exposure": 2388.5669707886914,
+   "name": "carry_floor",
+   "net": -0.8203847792756278,
+   "price_move": -0.06520113752236478,
+   "source": "lane",
+   "started": 1793249249,
+   "value": 9999.179615220724
+  },
+  {
+   "active": true,
+   "allowance": 0.6667413342972472,
+   "book": 0.06718146723626459,
+   "capital": 10000.0,
+   "fees": 3.3337068196944744,
+   "fills": 4,
+   "flagged_41b": {
+    "fees": 0.0,
+    "fills": 0
+   },
+   "funding": 3.231455311202411,
+   "instruments": {
+    "BTCUSDT": {
+     "direction_last": "short",
+     "fees": 0.8330161426310259,
+     "funding": 1.3103756272610672,
+     "open_basis": 78087.77932,
+     "open_qty": -0.010667688976239998,
+     "open_since": 1793581260,
+     "realized_price_pnl": 0.0,
+     "round_trips": 0
+    },
+    "BTCUSDT.SPOT": {
+     "direction_last": "long",
+     "fees": 0.8336909567613747,
+     "funding": 0.0,
+     "open_basis": 78151.037082,
+     "open_qty": 0.010667688976239998,
+     "open_since": 1793581260,
+     "realized_price_pnl": 0.0,
+     "round_trips": 0
+    },
+    "XRPUSDT": {
+     "direction_last": "short",
+     "fees": 0.8331333759539697,
+     "funding": 1.9210796839413435,
+     "open_basis": 1.25104974,
+     "open_qty": -665.9474434277647,
+     "open_since": 1793490136,
+     "realized_price_pnl": 0.0,
+     "round_trips": 0
+    },
+    "XRPUSDT.SPOT": {
+     "direction_last": "long",
+     "fees": 0.8338663443481041,
+     "funding": 0.0,
+     "open_basis": 1.25215038,
+     "open_qty": 665.9474434277647,
+     "open_since": 1793490136,
+     "realized_price_pnl": 0.0,
+     "round_trips": 0
+    }
+   },
+   "ledger": "LANE_c2d8a7505e",
+   "marked_at": 1794120031,
+   "max_drawdown": 0.0008490791051498116,
+   "max_exposure": 3482.221928434824,
+   "name": "carry_floor",
+   "net": -1.1663241812038905,
+   "price_move": -0.3301498711783152,
+   "source": "lane",
+   "started": 1793490136,
+   "value": 9998.833675818796
+  },
+  {
+   "active": true,
+   "allowance": 1.2006300546990079,
+   "book": 1.4089996000426317,
+   "capital": 10000.0,
+   "fees": 6.003151056178506,
+   "fills": 6,
+   "flagged_41b": {
+    "fees": 0.0,
+    "fills": 0
+   },
+   "funding": 4.4297582452283475,
+   "instruments": {
+    "ADAUSDT": {
+     "direction_last": "short",
+     "fees": 0.9995351523178808,
+     "funding": 1.2948411973509935,
+     "open_basis": 0.18866226,
+     "open_qty": -5298.013245033113,
+     "open_since": 1793660990,
+     "realized_price_pnl": 0.0,
+     "round_trips": 0
+    },
+    "ADAUSDT.SPOT": {
+     "direction_last": "long",
+     "fees": 1.0009948609271524,
+     "funding": 0.0,
+     "open_basis": 0.18893778,
+     "open_qty": 5298.013245033113,
+     "open_since": 1793660990,
+     "realized_price_pnl": 0.0,
+     "round_trips": 0
+    },
+    "ETCUSDT": {
+     "direction_last": "short",
+     "fees": 0.9997282526013636,
+     "funding": 1.5641987212055977,
+     "open_basis": 6.9656066,
+     "open_qty": -143.52350197344816,
+     "open_since": 1793660990,
+     "realized_price_pnl": 0.0,
+     "round_trips": 0
+    },
+    "ETCUSDT.SPOT": {
+     "direction_last": "long",
+     "fees": 1.001994402583423,
+     "funding": 0.0,
+     "open_basis": 6.981396,
+     "open_qty": 143.52350197344816,
+     "open_since": 1793660990,
+     "realized_price_pnl": 0.0,
+     "round_trips": 0
+    },
+    "LINKUSDT": {
+     "direction_last": "short",
+     "fees": 0.9997550994745587,
+     "funding": 1.5707183266717564,
+     "open_basis": 11.130773399999999,
+     "open_qty": -89.8190146854089,
+     "open_since": 1793660990,
+     "realized_price_pnl": 0.0,
+     "round_trips": 0
+    },
+    "LINKUSDT.SPOT": {
+     "direction_last": "long",
+     "fees": 1.0011432882741276,
+     "funding": 0.0,
+     "open_basis": 11.1462288,
+     "open_qty": 89.8190146854089,
+     "open_since": 1793660990,
+     "realized_price_pnl": 0.0,
+     "round_trips": 0
+    }
+   },
+   "ledger": "LANE_2df94018bc",
+   "marked_at": 1794120031,
+   "max_drawdown": 0.0017239424510682511,
+   "max_exposure": 6347.494995481154,
+   "name": "carry_filter_weekly",
+   "net": -5.699667679251434,
+   "price_move": -1.5166452135596353,
+   "source": "lane",
+   "started": 1793660990,
+   "value": 9994.300332320749
+  },
+  {
+   "active": true,
+   "allowance": 0.8003058960700543,
+   "book": 0.9817697635028867,
+   "capital": 10000.0,
+   "fees": 4.001529852382541,
+   "fills": 4,
+   "flagged_41b": {
+    "fees": 0.0,
+    "fills": 0
+   },
+   "funding": 2.8053170140046757,
+   "instruments": {
+    "ETCUSDT": {
+     "direction_last": "short",
+     "fees": 0.9997276712725167,
+     "funding": 1.3968815206539826,
+     "open_basis": 6.9096177999999995,
+     "open_qty": -144.68639224480938,
+     "open_since": 1793692940,
+     "realized_price_pnl": 0.0,
+     "round_trips": 0
+    },
+    "ETCUSDT.SPOT": {
+     "direction_last": "long",
+     "fees": 1.0014300803009477,
+     "funding": 0.0,
+     "open_basis": 6.921384,
+     "open_qty": 144.68639224480938,
+     "open_since": 1793692940,
+     "realized_price_pnl": 0.0,
+     "round_trips": 0
+    },
+    "LTCUSDT": {
+     "direction_last": "short",
+     "fees": 0.9997070212963824,
+     "funding": 1.408435493350693,
+     "open_basis": 53.749248,
+     "open_qty": -18.599460615642148,
+     "open_since": 1793692940,
+     "realized_price_pnl": 0.0,
+     "round_trips": 0
+    },
+    "LTCUSDT.SPOT": {
+     "direction_last": "long",
+     "fees": 1.0006650795126941,
+     "funding": 0.0,
+     "open_basis": 53.800757999999995,
+     "open_qty": 18.599460615642148,
+     "open_since": 1793692940,
+     "realized_price_pnl": 0.0,
+     "round_trips": 0
+    }
+   },
+   "ledger": "LANE_ce8964dccc",
+   "marked_at": 1794120031,
+   "max_drawdown": 0.0009241336945979129,
+   "max_exposure": 4258.053656934436,
+   "name": "carry_filter_weekly",
+   "net": -3.0550523263955256,
+   "price_move": -0.07676382844471874,
+   "source": "lane",
+   "started": 1793692940,
+   "value": 9996.944947673604
+  },
+  {
+   "active": true,
+   "allowance": 6.6140329798294335,
+   "book": 2.494561985365267,
+   "capital": 10000.0,
+   "fees": 33.069972575570105,
+   "fills": 63,
+   "flagged_41b": {
+    "fees": 6.0037632609655045,
+    "fills": 11
+   },
+   "funding": -29.0505472382928,
+   "instruments": {
+    "BTCUSDT": {
+     "direction_last": "short",
+     "fees": 3.0025609523659,
+     "funding": 0.30493578672081806,
+     "open_basis": 74530.19098000001,
+     "open_qty": -0.013414688950253639,
+     "open_since": 1794175350,
+     "realized_price_pnl": -3.1629412652795548,
+     "round_trips": 1
+    },
+    "BZUSDT": {
+     "direction_last": "short",
+     "fees": 2.0046537972393113,
+     "funding": -3.985211265057127,
+     "open_basis": null,
+     "open_qty": 0.0,
+     "open_since": null,
+     "realized_price_pnl": -5.157173137569214,
+     "round_trips": 1
+    },
+    "CLUSDT": {
+     "direction_last": "long",
+     "fees": 2.9995893659543773,
+     "funding": -2.15031201791716,
+     "open_basis": 90.348066,
+     "open_qty": 11.071132023249378,
+     "open_since": 1794178981,
+     "realized_price_pnl": 0.15504134065812644,
+     "round_trips": 1
+    },
+    "COPPERUSDT": {
+     "direction_last": "long",
+     "fees": 2.000159071025213,
+     "funding": -1.9299214173228345,
+     "open_basis": null,
+     "open_qty": 0.0,
+     "open_since": null,
+     "realized_price_pnl": -0.40003181420506645,
+     "round_trips": 1
+    },
+    "ETHUSDT": {
+     "direction_last": "short",
+     "fees": 3.007815227582401,
+     "funding": 0.10709419035979116,
+     "open_basis": 2130.813752,
+     "open_qty": -0.4692093119280045,
+     "open_since": 1794175350,
+     "realized_price_pnl": -8.42206300057689,
+     "round_trips": 1
+    },
+    "NATGASUSDT": {
+     "direction_last": "short",
+     "fees": 3.005498920451593,
+     "funding": -19.8860491616474,
+     "open_basis": 3.1173764,
+     "open_qty": -320.666987333654,
+     "open_since": 1794182572,
+     "realized_price_pnl": 5.133582939931592,
+     "round_trips": 1
+    },
+    "QQQUSDT": {
+     "direction_last": "long",
+     "fees": 3.0159188492957085,
+     "funding": 0.6089710530011342,
+     "open_basis": 655.0601999688251,
+     "open_qty": 1.5269623374739463,
+     "open_since": 1794182572,
+     "realized_price_pnl": -16.082024058456213,
+     "round_trips": 1
+    },
+    "SPYUSDT": {
+     "direction_last": "long",
+     "fees": 3.0043760843361564,
+     "funding": 0.5590272724548246,
+     "open_basis": 736.317234,
+     "open_qty": 1.3583911215556297,
+     "open_since": 1794178981,
+     "realized_price_pnl": -4.582910698352189,
+     "round_trips": 1
+    },
+    "USDBRLUSDT": {
+     "direction_last": "short",
+     "fees": 5.01556739404377,
+     "funding": -2.744141210387179,
+     "open_basis": 5.558588060000001,
+     "open_qty": -179.84964569619797,
+     "open_since": 1794175350,
+     "realized_price_pnl": 5.277021611376149,
+     "round_trips": 2
+    },
+    "XAGUSDT": {
+     "direction_last": "short",
+     "fees": 2.0079128605885193,
+     "funding": 0.011359102749638205,
+     "open_basis": null,
+     "open_qty": 0.0,
+     "open_since": null,
+     "realized_price_pnl": -8.505779064158109,
+     "round_trips": 1
+    },
+    "XAUUSDT": {
+     "direction_last": "short",
+     "fees": 2.006144588184084,
+     "funding": 0.05370042875269589,
+     "open_basis": null,
+     "open_qty": 0.0,
+     "open_since": null,
+     "realized_price_pnl": -6.547053912846028,
+     "round_trips": 1
+    },
+    "XPTUSDT": {
+     "direction_last": "long",
+     "fees": 1.9997754645030648,
+     "funding": 0.0,
+     "open_basis": null,
+     "open_qty": 0.0,
+     "open_since": null,
+     "realized_price_pnl": -0.9341779008914932,
+     "round_trips": 1
+    }
+   },
+   "ledger": "LANE_35f39bb233",
+   "marked_at": 1794182448,
+   "max_drawdown": 0.010796277949652176,
+   "max_exposure": 12052.0664969102,
+   "name": "STRAKS-F\u00d8LG",
+   "net": -107.96277949652176,
+   "price_move": -36.73366471746415,
+   "source": "straks",
+   "started": 1793898071,
+   "value": 9892.037220503478
+  },
+  {
+   "active": true,
+   "allowance": 6.614141275727298,
+   "book": 3.1150954050000084,
+   "capital": 10000.0,
+   "fees": 33.07089982414506,
+   "fills": 76,
+   "flagged_41b": {
+    "fees": 6.003595638142873,
+    "fills": 11
+   },
+   "funding": 29.0505472382928,
+   "instruments": {
+    "BTCUSDT": {
+     "direction_last": "long",
+     "fees": 3.0029611894065984,
+     "funding": -0.30493578672081806,
+     "open_basis": 74560.10904,
+     "open_qty": 0.013414688950253639,
+     "open_since": 1794175350,
+     "realized_price_pnl": 2.3591997114984236,
+     "round_trips": 1
+    },
+    "BZUSDT": {
+     "direction_last": "long",
+     "fees": 2.0046519361009154,
+     "funding": 3.985211265057127,
+     "open_basis": null,
+     "open_qty": 0.0,
+     "open_since": null,
+     "realized_price_pnl": 4.148518844026254,
+     "round_trips": 1
+    },
+    "CLUSDT": {
+     "direction_last": "short",
+     "fees": 2.999078920990063,
+     "funding": 2.15031201791716,
+     "open_basis": 90.301936,
+     "open_qty": -11.071132023249378,
+     "open_since": 1794178981,
+     "realized_price_pnl": -1.1767382498195422,
+     "round_trips": 1
+    },
+    "COPPERUSDT": {
+     "direction_last": "short",
+     "fees": 2.000159134653623,
+     "funding": 1.9299214173228345,
+     "open_basis": null,
+     "open_qty": 0.0,
+     "open_since": null,
+     "realized_price_pnl": -0.7181738646305463,
+     "round_trips": 1
+    },
+    "ETHUSDT": {
+     "direction_last": "long",
+     "fees": 3.0082167132878928,
+     "funding": -0.10709419035979116,
+     "open_basis": 2131.67625,
+     "open_qty": 0.4692093119280045,
+     "open_since": 1794175350,
+     "realized_price_pnl": 7.609875135002927,
+     "round_trips": 1
+    },
+    "NATGASUSDT": {
+     "direction_last": "long",
+     "fees": 3.006221931570458,
+     "funding": 19.8860491616474,
+     "open_basis": 3.1196238000000003,
+     "open_qty": 320.666987333654,
+     "open_since": 1794182572,
+     "realized_price_pnl": -6.587074719192334,
+     "round_trips": 1
+    },
+    "QQQUSDT": {
+     "direction_last": "short",
+     "fees": 3.0154526964966815,
+     "funding": -0.6089710530011342,
+     "open_basis": 654.759022,
+     "open_qty": -1.5269623374739463,
+     "open_since": 1794182572,
+     "realized_price_pnl": 15.24489471531861,
+     "round_trips": 1
+    },
+    "SPYUSDT": {
+     "direction_last": "short",
+     "fees": 3.003960833043098,
+     "funding": -0.5590272724548246,
+     "open_basis": 736.0127679999999,
+     "open_qty": -1.3583911215556297,
+     "open_since": 1794178981,
+     "realized_price_pnl": 3.7539985151583597,
+     "round_trips": 1
+    },
+    "USDBRLUSDT": {
+     "direction_last": "long",
+     "fees": 5.016535205199716,
+     "funding": 2.7441412103871796,
+     "open_basis": 5.5620451917512295,
+     "open_qty": 179.84964569619797,
+     "open_since": 1794175350,
+     "realized_price_pnl": -9.497547484122352,
+     "round_trips": 2
+    },
+    "XAGUSDT": {
+     "direction_last": "long",
+     "fees": 2.0079096960926193,
+     "funding": -0.011359102749638205,
+     "open_basis": null,
+     "open_qty": 0.0,
+     "open_since": null,
+     "realized_price_pnl": 7.316700434153385,
+     "round_trips": 1
+    },
+    "XAUUSDT": {
+     "direction_last": "long",
+     "fees": 2.0061421308404768,
+     "funding": -0.05370042875269589,
+     "open_basis": null,
+     "open_qty": 0.0,
+     "open_since": null,
+     "realized_price_pnl": 5.73966412522497,
+     "round_trips": 1
+    },
+    "XPTUSDT": {
+     "direction_last": "short",
+     "fees": 1.9996094364629093,
+     "funding": 0.0,
+     "open_basis": null,
+     "open_qty": 0.0,
+     "open_since": null,
+     "realized_price_pnl": -0.2699927315183622,
+     "round_trips": 1
+    }
+   },
+   "ledger": "LANE_a751c1f595",
+   "marked_at": 1794182448,
+   "max_drawdown": 0.0050657047597394604,
+   "max_exposure": 12052.0664969102,
+   "name": "STRAKS-MOD",
+   "net": 28.164674538473264,
+   "price_move": 41.914263805052826,
+   "source": "straks",
+   "started": 1793898071,
+   "value": 10028.164674538473
+  },
+  {
+   "active": true,
+   "allowance": 2.0004468334520906,
+   "book": 0.003611969410517446,
+   "capital": 10000.0,
+   "fees": 10.00223461540735,
+   "fills": 2,
+   "flagged_41b": {
+    "fees": 0.0,
+    "fills": 0
+   },
+   "funding": 2.9323599063514845,
+   "instruments": {
+    "BTCUSDT": {
+     "direction_last": "short",
+     "fees": 4.9989967170481675,
+     "funding": 2.9323599063514845,
+     "open_basis": 76120.47286,
+     "open_qty": -0.06567217108914013,
+     "open_since": 1793903936,
+     "realized_price_pnl": 0.0,
+     "round_trips": 0
+    },
+    "BTCUSDT.SPOT": {
+     "direction_last": "long",
+     "fees": 5.003237898359181,
+     "funding": 0.0,
+     "open_basis": 76185.053964,
+     "open_qty": 0.06567217108914013,
+     "open_since": 1793903936,
+     "realized_price_pnl": 0.0,
+     "round_trips": 0
+    }
+   },
+   "ledger": "LANE_1c07df98c7",
+   "marked_at": 1794120031,
+   "max_drawdown": 0.0016110655164033232,
+   "max_exposure": 10024.576824947544,
+   "name": "CARRY90-BTC",
+   "net": -10.008613020097982,
+   "price_move": -0.9346795081795092,
+   "source": "carry90",
+   "started": 1793903936,
+   "value": 9989.991386979902
+  },
+  {
+   "active": true,
+   "allowance": 2.000355144377288,
+   "book": 0.022196523580987892,
+   "capital": 10000.0,
+   "fees": 10.001776081470119,
+   "fills": 2,
+   "flagged_41b": {
+    "fees": 0.0,
+    "fills": 0
+   },
+   "funding": 2.6562765720132915,
+   "instruments": {
+    "ETHUSDT": {
+     "direction_last": "short",
+     "fees": 4.998988903957862,
+     "funding": 2.6562765720132915,
+     "open_basis": 2252.14948,
+     "open_qty": -2.2196523580476826,
+     "open_since": 1793903936,
+     "realized_price_pnl": 0.0,
+     "round_trips": 0
+    },
+    "ETHUSDT.SPOT": {
+     "direction_last": "long",
+     "fees": 5.002787177512258,
+     "funding": 0.0,
+     "open_basis": 2253.860682,
+     "open_qty": 2.2196523580476826,
+     "open_since": 1793903936,
+     "realized_price_pnl": 0.0,
+     "round_trips": 0
+    }
+   },
+   "ledger": "LANE_65e2a1f395",
+   "marked_at": 1794120031,
+   "max_drawdown": 0.0018417658871838286,
+   "max_exposure": 10029.410393744132,
+   "name": "CARRY90-ETH",
+   "net": -9.973202654036868,
+   "price_move": -0.6051514766217649,
+   "source": "carry90",
+   "started": 1793903936,
+   "value": 9990.026797345963
+  },
+  {
+   "active": true,
+   "allowance": 1.7107081617686564,
+   "book": 3.238392598587253,
+   "capital": 10000.0,
+   "fees": 8.553541723819974,
+   "fills": 20,
+   "flagged_41b": {
+    "fees": 0.0,
+    "fills": 0
+   },
+   "funding": 1.3810629563615715,
+   "instruments": {
+    "BNBUSDT": {
+     "direction_last": "short",
+     "fees": 0.7141376992753811,
+     "funding": 0.289850416374759,
+     "open_basis": 692.141544,
+     "open_qty": -1.03177985119671,
+     "open_since": 1793909653,
+     "realized_price_pnl": 0.0,
+     "round_trips": 0
+    },
+    "BNBUSDT.SPOT": {
+     "direction_last": "long",
+     "fees": 0.7140518964629555,
+     "funding": 0.0,
+     "open_basis": 692.0583839999999,
+     "open_qty": 1.03177985119671,
+     "open_since": 1793909653,
+     "realized_price_pnl": 0.0,
+     "round_trips": 0
+    },
+    "ETCUSDT": {
+     "direction_last": "short",
+     "fees": 0.7140136221767327,
+     "funding": 0.47261828103544734,
+     "open_basis": 7.019824926430547,
+     "open_qty": -101.71387885877029,
+     "open_since": 1793909653,
+     "realized_price_pnl": 0.0,
+     "round_trips": 0
+    },
+    "ETCUSDT.SPOT": {
+     "direction_last": "long",
+     "fees": 0.7151915780908306,
+     "funding": 0.0,
+     "open_basis": 7.0314060000000005,
+     "open_qty": 101.71387885877029,
+     "open_since": 1793909653,
+     "realized_price_pnl": 0.0,
+     "round_trips": 0
+    },
+    "ETHUSDT": {
+     "direction_last": "short",
+     "fees": 0.7141412708954541,
+     "funding": 0.37973105744855645,
+     "open_basis": 2250.589792,
+     "open_qty": -0.3173129432266855,
+     "open_since": 1793909653,
+     "realized_price_pnl": 0.0,
+     "round_trips": 0
+    },
+    "ETHUSDT.SPOT": {
+     "direction_last": "long",
+     "fees": 0.71458567274945,
+     "funding": 0.0,
+     "open_basis": 2251.990308,
+     "open_qty": 0.3173129432266855,
+     "open_since": 1793909653,
+     "realized_price_pnl": 0.0,
+     "round_trips": 0
+    },
+    "LINKUSDT": {
+     "direction_last": "short",
+     "fees": 0.7141098515109701,
+     "funding": 0.5300204233488932,
+     "open_basis": 10.8158364,
+     "open_qty": -66.0244686680884,
+     "open_since": 1793909653,
+     "realized_price_pnl": 0.0,
+     "round_trips": 0
+    },
+    "LINKUSDT.SPOT": {
+     "direction_last": "long",
+     "fees": 0.7149238539802854,
+     "funding": 0.0,
+     "open_basis": 10.8281652,
+     "open_qty": 66.0244686680884,
+     "open_since": 1793909653,
+     "realized_price_pnl": 0.0,
+     "round_trips": 0
+    },
+    "XTZUSDT": {
+     "direction_last": "short",
+     "fees": 1.417226898430989,
+     "funding": -0.29115722184608445,
+     "open_basis": null,
+     "open_qty": 0.0,
+     "open_since": null,
+     "realized_price_pnl": 10.494721970726268,
+     "round_trips": 1
+    },
+    "XTZUSDT.SPOT": {
+     "direction_last": "long",
+     "fees": 1.4211593802469265,
+     "funding": 0.0,
+     "open_basis": null,
+     "open_qty": 0.0,
+     "open_since": null,
+     "realized_price_pnl": -14.429756169176894,
+     "round_trips": 1
+    }
+   },
+   "ledger": "LANE_9f1dc841b2",
+   "marked_at": 1794120031,
+   "max_drawdown": 0.001742003956924964,
+   "max_exposure": 7145.745202214918,
+   "name": "carry_filter",
+   "net": -13.484794712456278,
+   "price_move": -1.3632151846419662,
+   "source": "lane",
+   "started": 1793909653,
+   "value": 9986.515205287544
+  },
+  {
+   "active": true,
+   "allowance": 1.595289578958698,
+   "book": 3.65002386292063,
+   "capital": 10000.0,
+   "fees": 7.976448772037889,
+   "fills": 14,
+   "flagged_41b": {
+    "fees": 0.0,
+    "fills": 0
+   },
+   "funding": -0.4302345505258237,
+   "instruments": {
+    "BCHUSDT": {
+     "direction_last": "short",
+     "fees": 0.9997819923992723,
+     "funding": -0.6844033756596601,
+     "open_basis": 277.54448,
+     "open_qty": -3.6022405936492494,
+     "open_since": 1793910341,
+     "realized_price_pnl": 0.0,
+     "round_trips": 0
+    },
+    "BCHUSDT.SPOT": {
+     "direction_last": "long",
+     "fees": 1.0009025774031448,
+     "funding": 0.0,
+     "open_basis": 277.85556,
+     "open_qty": 3.6022405936492494,
+     "open_since": 1793910341,
+     "realized_price_pnl": 0.0,
+     "round_trips": 0
+    },
+    "ETCUSDT": {
+     "direction_last": "short",
+     "fees": 0.9997287231767306,
+     "funding": 0.6625146688529264,
+     "open_basis": 7.0115974,
+     "open_qty": -142.58216297141226,
+     "open_since": 1793910341,
+     "realized_price_pnl": 0.0,
+     "round_trips": 0
+    },
+    "ETCUSDT.SPOT": {
+     "direction_last": "long",
+     "fees": 1.0011269694161258,
+     "funding": 0.0,
+     "open_basis": 7.0214039999999995,
+     "open_qty": 142.58216297141226,
+     "open_since": 1793910341,
+     "realized_price_pnl": 0.0,
+     "round_trips": 0
+    },
+    "XTZUSDT": {
+     "direction_last": "short",
+     "fees": 1.9857160479398988,
+     "funding": -0.40834584371908994,
+     "open_basis": null,
+     "open_qty": 0.0,
+     "open_since": null,
+     "realized_price_pnl": 13.09594607264685,
+     "round_trips": 1
+    },
+    "XTZUSDT.SPOT": {
+     "direction_last": "long",
+     "fees": 1.989192461702716,
+     "funding": 0.0,
+     "open_basis": null,
+     "open_qty": 0.0,
+     "open_since": null,
+     "realized_price_pnl": -16.558626401794257,
+     "round_trips": 1
+    }
+   },
+   "ledger": "LANE_ec1b0457b8",
+   "marked_at": 1794120031,
+   "max_drawdown": 0.0016852641100667824,
+   "max_exposure": 6002.912261434196,
+   "name": "carry_filter",
+   "net": -13.394194056934793,
+   "price_move": 0.2578027075082483,
+   "source": "lane",
+   "started": 1793910341,
+   "value": 9986.605805943065
+  },
+  {
+   "active": true,
+   "allowance": 1.9958489100000008,
+   "book": 0.012149999998813832,
+   "capital": 10000.0,
+   "fees": 9.979241675310002,
+   "fills": 2,
+   "flagged_41b": {
+    "fees": 0.0,
+    "fills": 0
+   },
+   "funding": 0.348786201366,
+   "instruments": {
+    "PAXGUSDT.SPOT": {
+     "direction_last": "long",
+     "fees": 4.983432037110001,
+     "funding": 0.0,
+     "open_basis": 4101.590154,
+     "open_qty": 1.215,
+     "open_since": 1793911230,
+     "realized_price_pnl": 0.0,
+     "round_trips": 0
+    },
+    "XAUUSDT": {
+     "direction_last": "short",
+     "fees": 4.995809638200001,
+     "funding": 0.348786201366,
+     "open_basis": 4111.777480000001,
+     "open_qty": -1.215,
+     "open_since": 1793911230,
+     "realized_price_pnl": 0.0,
+     "round_trips": 0
+    }
+   },
+   "ledger": "LANE_bc12a61803",
+   "marked_at": 1794120031,
+   "max_drawdown": 0.0020541662970939797,
+   "max_exposure": 9979.24455,
+   "name": "CARRY90-GULD",
+   "net": -11.152454383944132,
+   "price_move": 0.4859999999986844,
+   "source": "carry90",
+   "started": 1793911230,
+   "value": 9988.847545616056
+  },
+  {
+   "active": true,
+   "allowance": 1.1917197,
+   "book": 0.03178999999979673,
+   "capital": 10000.0,
+   "fees": 5.95860315786,
+   "fills": 6,
+   "flagged_41b": {
+    "fees": 0.0,
+    "fills": 0
+   },
+   "funding": 0.11434321035680003,
+   "instruments": {
+    "BTCUSDT": {
+     "direction_last": "short",
+     "fees": 0.9704378736000001,
+     "funding": 0.05768135906,
+     "open_basis": 74649.0672,
+     "open_qty": -0.013000000000000001,
+     "open_since": 1794178859,
+     "realized_price_pnl": 0.0,
+     "round_trips": 0
+    },
+    "ETHUSDT": {
+     "direction_last": "long",
+     "fees": 0.9981861973199999,
+     "funding": 0.08295067572480001,
+     "open_basis": 2132.8764899999996,
+     "open_qty": 0.468,
+     "open_since": 1794178859,
+     "realized_price_pnl": 0.0,
+     "round_trips": 0
+    },
+    "QQQUSDT": {
+     "direction_last": "long",
+     "fees": 2.00113197894,
+     "funding": -0.773185989753,
+     "open_basis": null,
+     "open_qty": 0.0,
+     "open_since": null,
+     "realized_price_pnl": 4.205073420000039,
+     "round_trips": 1
+    },
+    "SPYUSDT": {
+     "direction_last": "short",
+     "fees": 1.9888471079999999,
+     "funding": 0.7468971653250001,
+     "open_basis": null,
+     "open_qty": 0.0,
+     "open_since": null,
+     "realized_price_pnl": -0.9377693999998997,
+     "round_trips": 1
+    }
+   },
+   "ledger": "LANE_68b8b6feb9",
+   "marked_at": 1794182448,
+   "max_drawdown": 0.0017141998719580984,
+   "max_exposure": 2016.6849000000002,
+   "name": "PAR-BOG",
+   "net": -9.100309647505128,
+   "price_move": -2.0325400000021316,
+   "source": "pairs",
+   "started": 1793911230,
+   "value": 9990.899690352495
+  }
+ ],
+ "generated": 1794184712,
+ "no_trade_benchmark": 0.0,
+ "note": "descriptive; no annualisation; net = latest hourly mark minus capital; price_move = residual; unleveraged theoretical P&L: no margin model, unlimited collateral for short perp legs",
+ "rule": "director order 44 P2 (research/reviews/INBOX.md)"
+}

@@ -121,3 +121,26 @@ Kørt 2026-11-08 00:37:11 UTC efter cutoff (vindue [11-05 00:00, 11-08 00:00) UT
 
 `hfc1_daily.py cohort --day 2026-11-07` fejler med ConnectionRefused mod data-api.binance.vision (lokal DNS-blokering
 siden 11-07). BLOCKED/MISSING; efterdannes ikke.
+
+## Kohorte 11-08 — IKKE DANNET (kl. 01:39 lokal 11-09)
+
+`hfc1_daily.py cohort --day 2026-11-08` fejler med ConnectionRefused (lokal DNS svarer `::` for data-api.binance.vision).
+BLOCKED/MISSING; efterdannes ikke. `outcomes`: 11-04 og 11-05 3 d dækket 0; 14 d "endnu ikke".
+
+## 3 d-udfald kohorte 11-05 (kl. 01:39 lokal 11-09; `hfc1_report3d.py --cohort 2026-11-05`, resultat-sha256 `f9cfd4174d30…`)
+
+Kørt 2026-11-09 00:39 UTC efter cutoff (vindue [11-06 00:00, 11-09 00:00) UTC afsluttet). Kohortefil-sha256
+`b43afaf295c4…`, regelhash `cd1b6fc6…` og værktøjet `e72e9f43…` (committed) kontrolleret før kørsel; readiness-tests OK.
+Census 72/72 snapshots. Beskrivende; ingen test.
+
+- **Talafstemning (som ordre 55):** C0 119 = 116 frafald F1 intet spotpar + 1 frafald F1 multiplikator + 2 bestod
+  F1–F5; C0+ 71 = 70 + 0 + 1 (overlappende delgruppe, ikke et filtertrin). 0 manglende. Ingen DATA_INCONSISTENCY.
+- **Bestod F1–F5: 2** — de samme to som kohorte 11-04: TSTUSDT (ikke C0+, realiseret 6,8 % APR) og XVGUSDT (C0+,
+  38,6 % APR); realiseret APR-median 22,7 %. Bestod F1–F6 (3 d): 0.
+- **N 1.000 pr. ben (allokeret 2.000):** dækningsgrad median 0,18; break-even 123,0 % APR; netto median −8,25 USDT
+  (TST −9,11; XVG −7,38) = −0,4 %; dækket ex post 0 af 2.
+- **N 5.000 pr. ben (allokeret 10.000):** dækningsgrad 0,12; break-even 194,1 % APR; netto median −70,45 USDT
+  (TST −76,87; XVG −64,03) = −0,7 %; dækket 0 af 2.
+- Modelberegning (timevise lastFundingRate-aflæsninger, bogens gennemgang ved kohortedannelsen), ikke observeret
+  cashflow; 8 t-intervalantagelse (fundinginterval UNKNOWN i lab'ets data). Status INCONCLUSIVE; ingen promovering.
+- Driftsafvigelser: kohorterne 11-06, 11-07 og 11-08 mangler (DNS-blokering); census (fapi) er upåvirket.
