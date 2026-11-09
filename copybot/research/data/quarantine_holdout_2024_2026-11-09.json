@@ -1,0 +1,779 @@
+{
+ "count_expected": 192,
+ "count_moved": 192,
+ "errors": [],
+ "id": "holdout-2024-cache-dev-2026-11-09",
+ "method": "os.rename within one filesystem (metadata only); no content read, no hashing, no deletion, no network",
+ "moved_utc": "2026-11-09 06:28:55 UTC",
+ "moves": [
+  {
+   "from": "copybot/data/lab/market/funding/ADAUSDT-fundingRate-2024-01.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/ADAUSDT-fundingRate-2024-01.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/ADAUSDT-fundingRate-2024-02.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/ADAUSDT-fundingRate-2024-02.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/ADAUSDT-fundingRate-2024-03.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/ADAUSDT-fundingRate-2024-03.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/ADAUSDT-fundingRate-2024-04.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/ADAUSDT-fundingRate-2024-04.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/ADAUSDT-fundingRate-2024-05.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/ADAUSDT-fundingRate-2024-05.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/ADAUSDT-fundingRate-2024-06.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/ADAUSDT-fundingRate-2024-06.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/ADAUSDT-fundingRate-2024-07.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/ADAUSDT-fundingRate-2024-07.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/ADAUSDT-fundingRate-2024-08.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/ADAUSDT-fundingRate-2024-08.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/ADAUSDT-fundingRate-2024-09.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/ADAUSDT-fundingRate-2024-09.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/ADAUSDT-fundingRate-2024-10.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/ADAUSDT-fundingRate-2024-10.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/ADAUSDT-fundingRate-2024-11.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/ADAUSDT-fundingRate-2024-11.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/ADAUSDT-fundingRate-2024-12.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/ADAUSDT-fundingRate-2024-12.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/AVAXUSDT-fundingRate-2024-01.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/AVAXUSDT-fundingRate-2024-01.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/AVAXUSDT-fundingRate-2024-02.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/AVAXUSDT-fundingRate-2024-02.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/AVAXUSDT-fundingRate-2024-03.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/AVAXUSDT-fundingRate-2024-03.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/AVAXUSDT-fundingRate-2024-04.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/AVAXUSDT-fundingRate-2024-04.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/AVAXUSDT-fundingRate-2024-05.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/AVAXUSDT-fundingRate-2024-05.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/AVAXUSDT-fundingRate-2024-06.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/AVAXUSDT-fundingRate-2024-06.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/AVAXUSDT-fundingRate-2024-07.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/AVAXUSDT-fundingRate-2024-07.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/AVAXUSDT-fundingRate-2024-08.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/AVAXUSDT-fundingRate-2024-08.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/AVAXUSDT-fundingRate-2024-09.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/AVAXUSDT-fundingRate-2024-09.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/AVAXUSDT-fundingRate-2024-10.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/AVAXUSDT-fundingRate-2024-10.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/AVAXUSDT-fundingRate-2024-11.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/AVAXUSDT-fundingRate-2024-11.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/AVAXUSDT-fundingRate-2024-12.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/AVAXUSDT-fundingRate-2024-12.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/BNBUSDT-fundingRate-2024-01.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/BNBUSDT-fundingRate-2024-01.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/BNBUSDT-fundingRate-2024-02.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/BNBUSDT-fundingRate-2024-02.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/BNBUSDT-fundingRate-2024-03.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/BNBUSDT-fundingRate-2024-03.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/BNBUSDT-fundingRate-2024-04.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/BNBUSDT-fundingRate-2024-04.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/BNBUSDT-fundingRate-2024-05.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/BNBUSDT-fundingRate-2024-05.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/BNBUSDT-fundingRate-2024-06.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/BNBUSDT-fundingRate-2024-06.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/BNBUSDT-fundingRate-2024-07.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/BNBUSDT-fundingRate-2024-07.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/BNBUSDT-fundingRate-2024-08.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/BNBUSDT-fundingRate-2024-08.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/BNBUSDT-fundingRate-2024-09.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/BNBUSDT-fundingRate-2024-09.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/BNBUSDT-fundingRate-2024-10.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/BNBUSDT-fundingRate-2024-10.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/BNBUSDT-fundingRate-2024-11.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/BNBUSDT-fundingRate-2024-11.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/BNBUSDT-fundingRate-2024-12.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/BNBUSDT-fundingRate-2024-12.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/DOGEUSDT-fundingRate-2024-01.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/DOGEUSDT-fundingRate-2024-01.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/DOGEUSDT-fundingRate-2024-02.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/DOGEUSDT-fundingRate-2024-02.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/DOGEUSDT-fundingRate-2024-03.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/DOGEUSDT-fundingRate-2024-03.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/DOGEUSDT-fundingRate-2024-04.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/DOGEUSDT-fundingRate-2024-04.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/DOGEUSDT-fundingRate-2024-05.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/DOGEUSDT-fundingRate-2024-05.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/DOGEUSDT-fundingRate-2024-06.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/DOGEUSDT-fundingRate-2024-06.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/DOGEUSDT-fundingRate-2024-07.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/DOGEUSDT-fundingRate-2024-07.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/DOGEUSDT-fundingRate-2024-08.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/DOGEUSDT-fundingRate-2024-08.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/DOGEUSDT-fundingRate-2024-09.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/DOGEUSDT-fundingRate-2024-09.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/DOGEUSDT-fundingRate-2024-10.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/DOGEUSDT-fundingRate-2024-10.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/DOGEUSDT-fundingRate-2024-11.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/DOGEUSDT-fundingRate-2024-11.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/DOGEUSDT-fundingRate-2024-12.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/DOGEUSDT-fundingRate-2024-12.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/DOTUSDT-fundingRate-2024-01.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/DOTUSDT-fundingRate-2024-01.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/DOTUSDT-fundingRate-2024-02.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/DOTUSDT-fundingRate-2024-02.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/DOTUSDT-fundingRate-2024-03.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/DOTUSDT-fundingRate-2024-03.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/DOTUSDT-fundingRate-2024-04.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/DOTUSDT-fundingRate-2024-04.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/DOTUSDT-fundingRate-2024-05.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/DOTUSDT-fundingRate-2024-05.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/DOTUSDT-fundingRate-2024-06.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/DOTUSDT-fundingRate-2024-06.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/DOTUSDT-fundingRate-2024-07.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/DOTUSDT-fundingRate-2024-07.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/DOTUSDT-fundingRate-2024-08.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/DOTUSDT-fundingRate-2024-08.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/DOTUSDT-fundingRate-2024-09.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/DOTUSDT-fundingRate-2024-09.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/DOTUSDT-fundingRate-2024-10.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/DOTUSDT-fundingRate-2024-10.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/DOTUSDT-fundingRate-2024-11.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/DOTUSDT-fundingRate-2024-11.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/DOTUSDT-fundingRate-2024-12.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/DOTUSDT-fundingRate-2024-12.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/LINKUSDT-fundingRate-2024-01.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/LINKUSDT-fundingRate-2024-01.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/LINKUSDT-fundingRate-2024-02.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/LINKUSDT-fundingRate-2024-02.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/LINKUSDT-fundingRate-2024-03.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/LINKUSDT-fundingRate-2024-03.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/LINKUSDT-fundingRate-2024-04.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/LINKUSDT-fundingRate-2024-04.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/LINKUSDT-fundingRate-2024-05.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/LINKUSDT-fundingRate-2024-05.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/LINKUSDT-fundingRate-2024-06.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/LINKUSDT-fundingRate-2024-06.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/LINKUSDT-fundingRate-2024-07.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/LINKUSDT-fundingRate-2024-07.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/LINKUSDT-fundingRate-2024-08.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/LINKUSDT-fundingRate-2024-08.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/LINKUSDT-fundingRate-2024-09.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/LINKUSDT-fundingRate-2024-09.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/LINKUSDT-fundingRate-2024-10.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/LINKUSDT-fundingRate-2024-10.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/LINKUSDT-fundingRate-2024-11.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/LINKUSDT-fundingRate-2024-11.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/LINKUSDT-fundingRate-2024-12.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/LINKUSDT-fundingRate-2024-12.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/LTCUSDT-fundingRate-2024-01.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/LTCUSDT-fundingRate-2024-01.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/LTCUSDT-fundingRate-2024-02.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/LTCUSDT-fundingRate-2024-02.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/LTCUSDT-fundingRate-2024-03.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/LTCUSDT-fundingRate-2024-03.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/LTCUSDT-fundingRate-2024-04.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/LTCUSDT-fundingRate-2024-04.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/LTCUSDT-fundingRate-2024-05.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/LTCUSDT-fundingRate-2024-05.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/LTCUSDT-fundingRate-2024-06.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/LTCUSDT-fundingRate-2024-06.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/LTCUSDT-fundingRate-2024-07.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/LTCUSDT-fundingRate-2024-07.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/LTCUSDT-fundingRate-2024-08.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/LTCUSDT-fundingRate-2024-08.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/LTCUSDT-fundingRate-2024-09.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/LTCUSDT-fundingRate-2024-09.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/LTCUSDT-fundingRate-2024-10.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/LTCUSDT-fundingRate-2024-10.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/LTCUSDT-fundingRate-2024-11.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/LTCUSDT-fundingRate-2024-11.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/LTCUSDT-fundingRate-2024-12.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/LTCUSDT-fundingRate-2024-12.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/XRPUSDT-fundingRate-2024-01.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/XRPUSDT-fundingRate-2024-01.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/XRPUSDT-fundingRate-2024-02.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/XRPUSDT-fundingRate-2024-02.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/XRPUSDT-fundingRate-2024-03.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/XRPUSDT-fundingRate-2024-03.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/XRPUSDT-fundingRate-2024-04.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/XRPUSDT-fundingRate-2024-04.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/XRPUSDT-fundingRate-2024-05.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/XRPUSDT-fundingRate-2024-05.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/XRPUSDT-fundingRate-2024-06.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/XRPUSDT-fundingRate-2024-06.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/XRPUSDT-fundingRate-2024-07.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/XRPUSDT-fundingRate-2024-07.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/XRPUSDT-fundingRate-2024-08.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/XRPUSDT-fundingRate-2024-08.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/XRPUSDT-fundingRate-2024-09.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/XRPUSDT-fundingRate-2024-09.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/XRPUSDT-fundingRate-2024-10.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/XRPUSDT-fundingRate-2024-10.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/XRPUSDT-fundingRate-2024-11.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/XRPUSDT-fundingRate-2024-11.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/funding/XRPUSDT-fundingRate-2024-12.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/funding/XRPUSDT-fundingRate-2024-12.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/ADAUSDT-1h-2024-01.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/ADAUSDT-1h-2024-01.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/ADAUSDT-1h-2024-02.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/ADAUSDT-1h-2024-02.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/ADAUSDT-1h-2024-03.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/ADAUSDT-1h-2024-03.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/ADAUSDT-1h-2024-04.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/ADAUSDT-1h-2024-04.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/ADAUSDT-1h-2024-05.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/ADAUSDT-1h-2024-05.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/ADAUSDT-1h-2024-06.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/ADAUSDT-1h-2024-06.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/ADAUSDT-1h-2024-07.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/ADAUSDT-1h-2024-07.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/ADAUSDT-1h-2024-08.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/ADAUSDT-1h-2024-08.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/ADAUSDT-1h-2024-09.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/ADAUSDT-1h-2024-09.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/ADAUSDT-1h-2024-10.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/ADAUSDT-1h-2024-10.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/ADAUSDT-1h-2024-11.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/ADAUSDT-1h-2024-11.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/ADAUSDT-1h-2024-12.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/ADAUSDT-1h-2024-12.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/AVAXUSDT-1h-2024-01.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/AVAXUSDT-1h-2024-01.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/AVAXUSDT-1h-2024-02.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/AVAXUSDT-1h-2024-02.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/AVAXUSDT-1h-2024-03.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/AVAXUSDT-1h-2024-03.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/AVAXUSDT-1h-2024-04.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/AVAXUSDT-1h-2024-04.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/AVAXUSDT-1h-2024-05.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/AVAXUSDT-1h-2024-05.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/AVAXUSDT-1h-2024-06.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/AVAXUSDT-1h-2024-06.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/AVAXUSDT-1h-2024-07.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/AVAXUSDT-1h-2024-07.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/AVAXUSDT-1h-2024-08.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/AVAXUSDT-1h-2024-08.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/AVAXUSDT-1h-2024-09.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/AVAXUSDT-1h-2024-09.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/AVAXUSDT-1h-2024-10.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/AVAXUSDT-1h-2024-10.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/AVAXUSDT-1h-2024-11.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/AVAXUSDT-1h-2024-11.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/AVAXUSDT-1h-2024-12.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/AVAXUSDT-1h-2024-12.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/BNBUSDT-1h-2024-01.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/BNBUSDT-1h-2024-01.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/BNBUSDT-1h-2024-02.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/BNBUSDT-1h-2024-02.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/BNBUSDT-1h-2024-03.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/BNBUSDT-1h-2024-03.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/BNBUSDT-1h-2024-04.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/BNBUSDT-1h-2024-04.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/BNBUSDT-1h-2024-05.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/BNBUSDT-1h-2024-05.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/BNBUSDT-1h-2024-06.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/BNBUSDT-1h-2024-06.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/BNBUSDT-1h-2024-07.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/BNBUSDT-1h-2024-07.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/BNBUSDT-1h-2024-08.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/BNBUSDT-1h-2024-08.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/BNBUSDT-1h-2024-09.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/BNBUSDT-1h-2024-09.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/BNBUSDT-1h-2024-10.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/BNBUSDT-1h-2024-10.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/BNBUSDT-1h-2024-11.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/BNBUSDT-1h-2024-11.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/BNBUSDT-1h-2024-12.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/BNBUSDT-1h-2024-12.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/DOGEUSDT-1h-2024-01.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/DOGEUSDT-1h-2024-01.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/DOGEUSDT-1h-2024-02.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/DOGEUSDT-1h-2024-02.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/DOGEUSDT-1h-2024-03.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/DOGEUSDT-1h-2024-03.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/DOGEUSDT-1h-2024-04.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/DOGEUSDT-1h-2024-04.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/DOGEUSDT-1h-2024-05.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/DOGEUSDT-1h-2024-05.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/DOGEUSDT-1h-2024-06.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/DOGEUSDT-1h-2024-06.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/DOGEUSDT-1h-2024-07.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/DOGEUSDT-1h-2024-07.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/DOGEUSDT-1h-2024-08.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/DOGEUSDT-1h-2024-08.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/DOGEUSDT-1h-2024-09.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/DOGEUSDT-1h-2024-09.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/DOGEUSDT-1h-2024-10.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/DOGEUSDT-1h-2024-10.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/DOGEUSDT-1h-2024-11.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/DOGEUSDT-1h-2024-11.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/DOGEUSDT-1h-2024-12.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/DOGEUSDT-1h-2024-12.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/DOTUSDT-1h-2024-01.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/DOTUSDT-1h-2024-01.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/DOTUSDT-1h-2024-02.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/DOTUSDT-1h-2024-02.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/DOTUSDT-1h-2024-03.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/DOTUSDT-1h-2024-03.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/DOTUSDT-1h-2024-04.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/DOTUSDT-1h-2024-04.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/DOTUSDT-1h-2024-05.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/DOTUSDT-1h-2024-05.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/DOTUSDT-1h-2024-06.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/DOTUSDT-1h-2024-06.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/DOTUSDT-1h-2024-07.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/DOTUSDT-1h-2024-07.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/DOTUSDT-1h-2024-08.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/DOTUSDT-1h-2024-08.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/DOTUSDT-1h-2024-09.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/DOTUSDT-1h-2024-09.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/DOTUSDT-1h-2024-10.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/DOTUSDT-1h-2024-10.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/DOTUSDT-1h-2024-11.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/DOTUSDT-1h-2024-11.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/DOTUSDT-1h-2024-12.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/DOTUSDT-1h-2024-12.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/LINKUSDT-1h-2024-01.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/LINKUSDT-1h-2024-01.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/LINKUSDT-1h-2024-02.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/LINKUSDT-1h-2024-02.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/LINKUSDT-1h-2024-03.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/LINKUSDT-1h-2024-03.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/LINKUSDT-1h-2024-04.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/LINKUSDT-1h-2024-04.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/LINKUSDT-1h-2024-05.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/LINKUSDT-1h-2024-05.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/LINKUSDT-1h-2024-06.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/LINKUSDT-1h-2024-06.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/LINKUSDT-1h-2024-07.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/LINKUSDT-1h-2024-07.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/LINKUSDT-1h-2024-08.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/LINKUSDT-1h-2024-08.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/LINKUSDT-1h-2024-09.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/LINKUSDT-1h-2024-09.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/LINKUSDT-1h-2024-10.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/LINKUSDT-1h-2024-10.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/LINKUSDT-1h-2024-11.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/LINKUSDT-1h-2024-11.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/LINKUSDT-1h-2024-12.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/LINKUSDT-1h-2024-12.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/LTCUSDT-1h-2024-01.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/LTCUSDT-1h-2024-01.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/LTCUSDT-1h-2024-02.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/LTCUSDT-1h-2024-02.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/LTCUSDT-1h-2024-03.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/LTCUSDT-1h-2024-03.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/LTCUSDT-1h-2024-04.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/LTCUSDT-1h-2024-04.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/LTCUSDT-1h-2024-05.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/LTCUSDT-1h-2024-05.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/LTCUSDT-1h-2024-06.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/LTCUSDT-1h-2024-06.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/LTCUSDT-1h-2024-07.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/LTCUSDT-1h-2024-07.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/LTCUSDT-1h-2024-08.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/LTCUSDT-1h-2024-08.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/LTCUSDT-1h-2024-09.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/LTCUSDT-1h-2024-09.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/LTCUSDT-1h-2024-10.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/LTCUSDT-1h-2024-10.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/LTCUSDT-1h-2024-11.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/LTCUSDT-1h-2024-11.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/LTCUSDT-1h-2024-12.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/LTCUSDT-1h-2024-12.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/XRPUSDT-1h-2024-01.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/XRPUSDT-1h-2024-01.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/XRPUSDT-1h-2024-02.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/XRPUSDT-1h-2024-02.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/XRPUSDT-1h-2024-03.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/XRPUSDT-1h-2024-03.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/XRPUSDT-1h-2024-04.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/XRPUSDT-1h-2024-04.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/XRPUSDT-1h-2024-05.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/XRPUSDT-1h-2024-05.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/XRPUSDT-1h-2024-06.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/XRPUSDT-1h-2024-06.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/XRPUSDT-1h-2024-07.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/XRPUSDT-1h-2024-07.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/XRPUSDT-1h-2024-08.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/XRPUSDT-1h-2024-08.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/XRPUSDT-1h-2024-09.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/XRPUSDT-1h-2024-09.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/XRPUSDT-1h-2024-10.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/XRPUSDT-1h-2024-10.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/XRPUSDT-1h-2024-11.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/XRPUSDT-1h-2024-11.zip"
+  },
+  {
+   "from": "copybot/data/lab/market/klines/XRPUSDT-1h-2024-12.zip",
+   "to": "quarantine/holdout_2024_cache_2026-11-09/klines/XRPUSDT-1h-2024-12.zip"
+  }
+ ],
+ "quarantine_dir": "quarantine/holdout_2024_cache_2026-11-09"
+}

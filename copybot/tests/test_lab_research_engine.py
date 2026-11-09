@@ -15,6 +15,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from lab import command, diagnose, fleet, jobs, lifecycle, pipeline, registry, scanner, watch  # noqa: E402
 from lab.data import AccessRefused, Gateway  # noqa: E402
 from lab.db import DB, HERE  # noqa: E402
+from tests import offline_market  # noqa: E402
 from tests.lab_fixtures import frozen  # noqa: E402
 from tests.test_lab import S, to_registered  # noqa: E402
 from tests.test_lab_s3 import World, graveyard_fixture  # noqa: E402
@@ -187,6 +188,23 @@ class Diagnostics(Base):
 
 
 class HoldoutGate(Base):
+    """Offline and deterministic (director orders 59-E/59-F P2): _declare_holdout is not mocked, so its file set comes
+    from synthetic stand-in files; a missing fixture fails closed (offline_market.BLOCKED), never downloads, and a
+    protected file (real market cache, 2024 zip, real lab database) cannot be opened (file_guard)."""
+    def setUp(self):
+        super().setUp()
+        from lab.engine import data
+        self.protected = []
+        self.offline = offline_market.patches(self.tmp) + offline_market.file_guard(self.protected) + [
+            mock.patch.object(data, "files_for", offline_market.synthetic_files_for(self.tmp))]
+        for x in self.offline:
+            x.start()
+
+    def tearDown(self):
+        for x in self.offline:
+            x.stop()
+        super().tearDown()
+
     def test_too_few_symbols_fail_the_holdout(self):
         eid = "E_day_of_week_p2"
         self.db.append("experiments", exp_id=eid, version=1, created_ts=0, mechanism_tag="m", fingerprint=eid,
@@ -204,6 +222,10 @@ class HoldoutGate(Base):
             r = pipeline.step_holdout(self.db, {"exp_id": eid}, "t")
         self.assertIn("holdout data quality (min symbols)", r["verdict"])
         self.assertEqual(lifecycle.state(self.db, eid), "REJECTED")
+        paths = [x[0] for x in self.db.q("SELECT path FROM datasets WHERE split='holdout'")]
+        self.assertTrue(paths)                                                  # the declared set: synthetic only
+        self.assertTrue(all(os.path.basename(p).startswith("synthetic-") for p in paths), paths)
+        self.assertEqual(self.protected, [])
 
 
 class GatewayContinuity(unittest.TestCase):

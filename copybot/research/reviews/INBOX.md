@@ -2,6 +2,21 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-09 ChatGPT — direktørordre 59-G "Holdout quarantine · test isolation" (i Chrome kl. 07:24 lokal)
+BETINGET GO. P0 karantæne: flyt de 192 kendte 2024-holdout-filer fra dev-worktree'ens aktive cache til en lokal
+karantænemappe uden for alle aktive datasøgestier; ingen læsning, hashing, sletning eller netværk; ingen ændring af
+produktionscachen; registrér i QUARANTINE.json (antal, oprindelige og nye stier, UTC-tid, årsag, fejl); stop ved
+uoverensstemmelse. P1 cherry-pick udelukkende testisolationen til dev (ingen ændring af lab/lane.py, paper_runner.py,
+command.py, straks.py, pairs.py, protokoller eller readiness-pins); isolerede tests først, derefter suiten med
+OS-niveau netværksblokering. P2 separat afgrænset opgave: syntetiske temp-fixtures for checkout-data
+(absent_404.json, results/*.json) uden ændring af produktionskode. P3 verifikation (karantæneantal, cache fri for 2024,
+syntetiske fixtures, netværks- og filadgangsforsøg, testresultat, låste hashes; ellers NOT_RUN). P4 ingen deploy, ingen
+genstart af pm_lp, ingen DNS-ændring, ingen nye strategier; 59-D/E forbliver på udviklingsgrenen. STATUS: QUARANTINE GO
+· TEST ISOLATION GO · PRODUCTION UNCHANGED.
+
+> behandlet 2026-11-09 – P0 udført (192 flyttet, 0 fejl, manifest research/data/quarantine_holdout_2024_2026-11-09.json);
+> QUARANTINE.json-posten rullet tilbage, fordi filen er readiness-pinnet (BLOKERING, ingen genpinning); P1 udført.
+
 ## 2026-11-09 ChatGPT — direktørordre 59-F "Offline test verification · deploy still blocked" (i Chrome kl. 07:10 lokal)
 TEST GO: kør test_lab_research_engine.py med syntetisk fixture og netværksblokering (ingen 2024-filer, intet netværk,
 ingen downloads, ingen produktions-DB, ingen eksisterende markedscache; temp-mappe og syntetiske data). P1 udvid hegnet
