@@ -144,3 +144,6 @@ Census 72/72 snapshots. Beskrivende; ingen test.
 - Modelberegning (timevise lastFundingRate-aflæsninger, bogens gennemgang ved kohortedannelsen), ikke observeret
   cashflow; 8 t-intervalantagelse (fundinginterval UNKNOWN i lab'ets data). Status INCONCLUSIVE; ingen promovering.
 - Driftsafvigelser: kohorterne 11-06, 11-07 og 11-08 mangler (DNS-blokering); census (fapi) er upåvirket.
+- Tilføjet 2026-11-09 (direktørtillæg 59 A): kohorte 11-04 (vindue 11-05..11-08) og 11-05 (vindue 11-06..11-09)
+  overlapper i observationstid (11-06..11-08) og har samme to evaluerbare tokens (TSTUSDT, XVGUSDT). De er ikke
+  uafhængige observationer, og ingen statistisk uafhængighed antages.
