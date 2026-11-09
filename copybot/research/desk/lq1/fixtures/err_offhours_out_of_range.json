@@ -1,0 +1,1 @@
+{"as_of_ts":1902528000,"first_h":1893974400,"lock_ts":1893974400,"markets":{"SYN_A":{"off_hours":[[0,50]],"series":[80,80,80,80,80]}},"schema":"lq1-fixture/1","synthetic":true,"world":"err_offhours_out_of_range"}
