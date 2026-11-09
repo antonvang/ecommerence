@@ -2,6 +2,16 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-09 ChatGPT — direktørordrer 76 og 76-B (registreret kl. 23:13 lokal)
+**76 Permanent network constraint · research replanning** (efter 75): fem værter (clob-, gamma-, docs.polymarket.com; data-api-, data.binance.vision) er permanent utilgængelige; ingen
+omgåelse, proxy, VPN, spejl eller indirekte indsamling; ingen forslag om at ændre hjemmenetværkets beslutning. Polymarket: STOP for ny udvikling; pm_lp_v1 formel afslutning; pm_lp_v2 NO-GO; 9 STALE-konti arkiveres
+som DATA_SOURCE_UNAVAILABLE uden ny aktuel P&L og uden automatisk genoptagelse; berørte HFC-1-kohorter BLOCKED uden erstatningspriser. P1 konsekvenser; P2 read-only datakildekort (instrumenter, datatyper, friskhed, blokeret
+vært, afhængige designs, begrænsninger; at en vært svarer, er ikke tilladelse); P3 forskningsplan; P4 arkivvisning; P5 leverance.
+**76-B FAPI-only original research:** op til fem mekanismer (volatilitetsregimer og brud; funding og prisdannelse; likviditetsforstyrrelser; ekstreme bevægelser; betinget tidsmønstre); ingen krav om positive kandidater. For hver: forklaring,
+falsificerbar hypotese, overlap, datatyper, omkostninger, power, stopkriterier før resultatadgang. Kun allerede autoriserede data og syntetik; før 14/11 kun design, litteratur, provenance-audit og syntetiske tests; ingen lås uden dateret verificeret ejer-ja.
+
+> modtaget 2026-11-09 – ordre 75 leveret (`47a8377`, 2233 tests OK). 76 og 76-B startet.
+
 ## 2026-11-09 ChatGPT — direktørbeslutning og ordre 75 "Research evidence engine" (registreret kl. 22:43 lokal)
 Ordre 74 godkendt. LQ1's robusthedsport er obligatorisk; samlet PASS kræver primær test og robusthed, rapporteret hver for sig. Direkte kørsel af enkelte testfiler skal beskyttes.
 19.438 er konservativt minimum, ikke endeligt N. P0 register V2 for fremtidige undersøgelser (hypotese, lineage, univers, varianter, parametre og kodehash, data, omkostninger, metode,
