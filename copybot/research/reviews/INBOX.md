@@ -2,6 +2,20 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-09 Ejer + ChatGPT — direktørordrer 59-J "Dashboard V2 final polish" og 59-K "Paper handelschart" (registreret kl. 11:09 lokal)
+59-J (visuelt review bestået; desktop 9/10, mobil 8/10): FRESH-konti først, nummerering af dublerede navne, tydelig
+"statisk snapshot genereret [UTC] — kør kommandoen igen", forklaring af netto (seneste equity-mærke − startkapital),
+visuel adskillelse af udførte handler fra skips uden at skjule noget; ingen nye P&L-beregninger, papirbøger,
+collectors, pins, handelsregler eller beskyttede processer; tests og nye screenshots. Ejeren: "VI SKAL HAVE EN CHART
+TRADER OGSÅ". 59-K GO efter 59-J: read-only kortlægning af eksisterende data; ét instrument ad gangen; korrekte akser;
+KØB grøn / SÆLG rød; entry-linjer hvor dokumenteret; ingen opdigtede punkter, ingen interpolation, ingen sammenblanding
+af fyld- og markedspriser (kun fyldpriser vises diskret og mærkes "Handelspriser"); equity-mærker er ikke
+instrumentkurser; ingen nye datakilder eller collectors; ingen handel fra chartet; statisk inline-SVG.
+
+> behandlet 2026-11-09 – 59-J i gang (hjælperen blev afbrudt af en ugentlig API-grænse og genoptaget efter kl. 11);
+> 59-K P0 kortlagt read-only: markedskurs (observations metric 'mark', fapi premiumIndex) kun for BTCUSDT
+> (11.046 punkter siden 10-25); de øvrige 14 instrumenter har kun fyldpriser (+ funding-afregningspris hver 8. t).
+
 ## 2026-11-09 ChatGPT — direktørbeslutning 59-I "Dashboard godkendt" (i Chrome kl. 08:11 lokal)
 LOCAL USE GO: ejeren må generere og åbne Paper Dashboard V2 lokalt på Linux (statisk HTML; et øjebliksbillede, ikke et
 live-dashboard; ingen webserver, offentlig URL eller netværk). Testisolation (1665 OK) ACCEPTED; karantæneregistrering
