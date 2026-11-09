@@ -1,0 +1,39 @@
+--- a/copybot/research/pm_lp.py
++++ b/copybot/research/pm_lp.py
+@@ -37,6 +37,7 @@
+ Q = 100.0                   # aktier pr. side
+ INV_CAP = 500.0
+ SNAP_EVERY, TRADES_EVERY, REWARDS_EVERY, STATUS_EVERY = 60, 300, 3600, 6 * 3600
++STARTUP_RETRY = 60              # uden belønningsdata prøves der igen hvert minut, i stedet for at processen dør
+ STALE = 180                 # et snapshot gælder højst 180 s
+ SEED_BASE = 20261017
+ DEV_DAYS, VAL_DAYS, HOLD_DAYS, TAIL_END = (0, 6), (7, 13), (14, 27), 41
+@@ -571,8 +572,7 @@
+ 
+     def run(self, d0):
+         """d0: unix-dag for D0. Kvotering/bøger til og med D0+27; status til og med D0+41."""
+-        self.refresh_rewards()
+-        last = {"rewards": time.time(), "trades": 0.0, "status": 0.0, "snap": 0.0}
++        last = {"rewards": 0.0, "trades": 0.0, "status": 0.0, "snap": 0.0}   # første hentning sker i loopet
+         n_snap = 0
+         today = None
+         while True:
+@@ -581,14 +581,14 @@
+             if d > d0 + TAIL_END:
+                 self.log("indsamling færdig")
+                 return
+-            if now - last["rewards"] >= REWARDS_EVERY:
++            if now - last["rewards"] >= (REWARDS_EVERY if self.cfg else STARTUP_RETRY):
+                 try:
+                     self.refresh_rewards()
+-                except Exception:
+-                    pass
++                except Exception as e:
++                    self.log(f"fejl {datetime.now(timezone.utc).isoformat()}: belønningsdata: {e!r}")
+                 last["rewards"] = now
+             try:
+-                if d != today and d <= d0 + HOLD_DAYS[1]:
++                if d != today and self.cfg and d <= d0 + HOLD_DAYS[1]:   # intet panel på tomme belønningsdata
+                     self.refresh_panel(d - d0, d)
+                     today = d
+                 with self.lock:

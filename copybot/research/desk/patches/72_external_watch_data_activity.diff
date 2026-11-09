@@ -1,0 +1,68 @@
+--- a/copybot/lab/ops.py
++++ b/copybot/lab/ops.py
+@@ -8,6 +8,7 @@
+ import json
+ import os
+ import shutil
++import sqlite3
+ import threading
+ import time
+ from datetime import datetime, timezone
+@@ -51,10 +52,36 @@
+     return (now - max(m)) if m else None
+ 
+ 
++EXTERNAL_DATA = {"X01_pm_lp_v1": "data/research/pm_lp/pm_lp.db"}
++
++
++def data_activity_age(path, now=None):
++    """Seconds since the collector stored a successful poll or status row. A fresh file alone proves nothing: a failed
++    start also writes to it. None = no readable database. Short read-only look at the newest rows only."""
++    now = now or time.time()
++    if not os.path.exists(path):
++        return None
++    con = sqlite3.connect(f"file:{path}?mode=ro", uri=True, timeout=1)
++    try:
++        con.execute("PRAGMA query_only=ON")
++        rows = con.execute("SELECT t, ok FROM polls ORDER BY rowid DESC LIMIT 2000").fetchall()
++        status = con.execute("SELECT t FROM status ORDER BY rowid DESC LIMIT 1").fetchone()
++    except sqlite3.Error:
++        return None
++    finally:
++        con.close()
++    good = [t for t, ok in rows if ok] + ([status[0]] if status else [])
++    newest = max(good) if good else min((t for t, _ in rows), default=None)  # all failed: at least this long ago
++    return None if newest is None else now - newest
++
++
+ def external_freshness(now=None):
+     out = {}
+     for exp_id, (label, files) in EXTERNAL_FILES.items():
+         out[exp_id] = {"label": label, "last_write_age_s": file_age(files, now), "basis": "file modification time"}
++        if exp_id in EXTERNAL_DATA:
++            out[exp_id]["last_data_age_s"] = data_activity_age(os.path.join(HERE, EXTERNAL_DATA[exp_id]), now)
++            out[exp_id]["basis"] = "successful data rows"
+     return out
+ 
+ 
+--- a/copybot/lab/fleet.py
++++ b/copybot/lab/fleet.py
+@@ -422,7 +422,7 @@
+     from lab.mission import EXTERNAL_RUNNING_S
+     stale_now = []
+     for eid, x in ops.external_freshness(now).items():
+-        age = x["last_write_age_s"]
++        age = x["last_data_age_s"] if "last_data_age_s" in x else x["last_write_age_s"]   # data activity, when known
+         if age is None:
+             continue
+         last = db.one("SELECT kind FROM events WHERE kind IN ('external.stale','external.recovered') AND exp_id=? "
+@@ -434,7 +434,8 @@
+                 db.event("external.stale", "agent:risk-1", eid, {"label": x["label"], "last_write_age_s": round(age),
+                                                                  "threshold_s": EXTERNAL_RUNNING_S})
+         elif was:
+-            db.event("external.recovered", "agent:risk-1", eid, {"label": x["label"], "last_write_age_s": round(age)})
++            db.event("external.recovered", "agent:risk-1", eid, {"label": x["label"], "last_write_age_s": round(age),
++                                                                 "basis": x.get("basis")})
+     return stale_now
+ 
+ 
