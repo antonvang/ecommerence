@@ -50,6 +50,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 from research.tools import net_report  # noqa: E402
 from research.tools import paper_chart  # noqa: E402
 from research.tools import paper_graveyard  # noqa: E402
+from research.tools import paper_evidence  # noqa: E402
 from research.tools import paper_research  # noqa: E402
 
 DB = net_report.DB
@@ -442,7 +443,7 @@ def bot_card(a, nm, conspark, quality, cutoff):
 
 
 def page(rep, frows, totals, db_path, feed_n, conspark, chart=None, graveyard=None, research=None, quality=None,
-         hinfo=None):
+         hinfo=None, evidence=None):
     sm = rep["summary"]
     cutoff, now = sm["cutoff"], rep["generated"]
     accs = ordered(rep["accounts"])
@@ -471,7 +472,8 @@ def page(rep, frows, totals, db_path, feed_n, conspark, chart=None, graveyard=No
     gy = graveyard() if graveyard else ("", "", "")      # 60-D STRATEGIKIRKEGÅRD: (radios, css, section html)
     radios.append(gy[0])
     rs = research() if research else ("", "")           # 69 FORSKNINGSOVERSIGT: (css, section html)
-    css = [CSS, hc[1], gy[1], rs[0], CSS_V4]
+    ev = evidence() if evidence else ("", "")           # 75 EVIDENS: (css, section html)
+    css = [CSS, hc[1], gy[1], rs[0], CSS_V4, ev[0]]
     on = "{background:var(--acc);color:#fff;border-color:var(--acc)}"
     for b in bot_ids:
         css.append(f"#fb-{b}:checked~.wrap label[for=fb-{b}]{on}")
@@ -525,7 +527,7 @@ def page(rep, frows, totals, db_path, feed_n, conspark, chart=None, graveyard=No
       f'<span class="hs"><i class="d-s"></i>STALE <b>{sm["stale"]}</b></span>'
       f'<span class="hs"><i class="d-m"></i>MISSING_MARK <b>{sm["missing_mark"]}</b></span>{health_chip}</div></header>')
     w('<nav class="toc" aria-label="sektioner"><a href="#overblik">Overblik</a><a href="#datakvalitet">Datakvalitet</a><a href="#arkiv">Arkiv</a>'
-      '<a href="#handelschart">Handelschart</a><a href="#aktivitet">Aktivitet</a><a href="#forskning">Forskning</a>'
+      '<a href="#handelschart">Handelschart</a><a href="#aktivitet">Aktivitet</a><a href="#forskning">Forskning</a><a href="#evidens">Evidens</a>'
       '<a href="#kirkegaard-fold">Kirkegård</a><a href="#kilder">Kilder</a></nav>')
 
     # --- 2. Overblik: only current (FRESH) paper data ---
@@ -678,6 +680,9 @@ def page(rep, frows, totals, db_path, feed_n, conspark, chart=None, graveyard=No
     if rs[1]:
         w(rs[1])
 
+    if ev[1]:
+        w(ev[1])
+
     # --- 7. STRATEGIKIRKEGÅRD (60-D): every registered attempt, collapsed by default ---
     if gy[2]:
         m = re.search(r'<div class="gv-num">([^<]+)<small> forsøg</small>', gy[2])
@@ -720,7 +725,8 @@ def render(con, now, cutoff, db_path=DB, feed_n=200, factory_dir=paper_graveyard
                 lambda names: paper_chart.section(con, rep, int(cutoff), names, SKIP_KINDS),
                 lambda: paper_graveyard.section(factory_dir),
                 lambda: paper_research.section(root, int(cutoff)),
-                mark_quality(con, leds, int(cutoff)), health(con, root))
+                mark_quality(con, leds, int(cutoff)), health(con, root),
+                evidence=lambda: paper_evidence.section(os.path.join(factory_dir, "registry.json")))
 
 
 def write_atomic(path, doc):
