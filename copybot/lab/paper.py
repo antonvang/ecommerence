@@ -13,6 +13,7 @@
 """
 from __future__ import annotations
 
+import collections
 import json
 import sqlite3
 import time
@@ -113,8 +114,17 @@ _EXEC_ERR = {}
 # exactly as before. "fail_closed": a held settlement whose 1h bar is missing while later bars exist is a visible error
 # (one paper.funding_missing event per ledger, instrument and settlement, and a status field in the pass result); the
 # instrument still books nothing after it (no skipped, invented or estimated settlement). Activation needs approval.
+# Order 68 P2: fail_closed also checks the rate series (MISSING_RATE inside it, UNKNOWN_INTERVAL) and then holds that
+# instrument's later settlements back, which CHANGES the booking against legacy (see the error matrix in
+# research/desk/PAPER_ENGINE_GATES_68.md). "report" records the same events and status fields but books exactly as
+# legacy (pure recording).
 FUNDING_MISSING_MODE = "legacy"
+FUNDING_MODES = ("legacy", "report", "fail_closed")
+FUNDING_VISIBLE = ("report", "fail_closed")
 FUNDING_MISSING = "paper.funding_missing"
+FUNDING_INTERVAL_GAPS = 10                # 68 P2: the interval is read from the last 10 gaps of the series
+FUNDING_ERRORS = ("MISSING_BAR", "MISSING_RATE", "UNKNOWN_INTERVAL", "UNAVAILABLE")
+SPOT_SUFFIX = ".SPOT"                     # a spot leg owes no funding (amendment 11 point 4)
 
 
 def _vwap_distance(levels, mid, qty):
@@ -284,7 +294,16 @@ class PaperEngine:
         for inst, (funding, opens) in sorted(data.items()):
             last = self.db.one("SELECT MAX(settle_ts) FROM sim_funding WHERE exp_id=? AND instrument=?", exp_id, inst)[0]
             since = max(t_f, last if last is not None else t_f)
+            limit = None
+            if FUNDING_MISSING_MODE in FUNDING_VISIBLE and not inst.endswith(SPOT_SUFFIX):   # order 68 P2
+                if fills is None:
+                    fills = self._fills(exp_id)
+                limit = self._series_check(exp_id, inst, funding, since, now, fills)
+                if FUNDING_MISSING_MODE != "fail_closed":
+                    limit = None                                      # "report": recorded, booked as legacy
             for st in sorted(t for t in funding if since < t <= now):
+                if limit is not None and st >= limit:
+                    break                                             # 68 P2: held back behind a missing rate
                 if fills is None:
                     fills = self._fills(exp_id)
                 qty = held_before(fills, [(inst, st)])[(inst, st)]
@@ -297,8 +316,8 @@ class PaperEngine:
                     if opens and max(opens) > st:                     # 67 P0-C: later bars exist, this one is missing
                         self.funding_status[inst] = {"state": "MISSING_BAR", "settle_ts": st,
                                                      "latest_bar_ts": max(opens)}
-                        if FUNDING_MISSING_MODE == "fail_closed":
-                            self._funding_missing(exp_id, inst, st, max(opens))
+                        if FUNDING_MISSING_MODE in FUNDING_VISIBLE:
+                            self._funding_missing(exp_id, inst, st, "MISSING_BAR", latest_bar_ts=max(opens))
                     else:
                         self.funding_status[inst] = {"state": "WAITING_FOR_BAR", "settle_ts": st}
                     break                                             # its bar is not out yet: wait, in order
@@ -312,14 +331,47 @@ class PaperEngine:
                 out.append({"instrument": inst, "settle_ts": st, "qty": qty, "rate": rate, "amount": -qty * px * rate})
         return out
 
-    def _funding_missing(self, exp_id, inst, st, latest):
-        """Order 67 P0-C (fail_closed only): recorded once per ledger, instrument and settlement."""
+    def _series_check(self, exp_id, inst, funding, since, now, fills):
+        """Order 68 P2 (fail_closed only): the first settlement time from which this instrument may not book, or None.
+        The interval is the most common gap of the last FUNDING_INTERVAL_GAPS gaps of the series (whole hours, seen at
+        least twice). Unknown interval while the position is held: nothing books (UNKNOWN_INTERVAL). A gap of more than
+        1.5 intervals between two known settlements: the expected settlement inside it is MISSING_RATE if the
+        position was held then, and nothing from it on books. Never estimates or invents a rate."""
+        keys = sorted(funding)
+        gaps = [round((b - a) / HOUR) for a, b in zip(keys, keys[1:])][-FUNDING_INTERVAL_GAPS:]
+        common = collections.Counter(g for g in gaps if g >= 1).most_common(1)
+        interval = common[0][0] * HOUR if common and common[0][1] >= 2 else None
+        if interval is None:
+            pts = [t for t in keys if since < t <= now] + [now + 1]
+            held = held_before(fills, [(inst, t) for t in pts])
+            if any(abs(held[(inst, t)]) > 1e-12 for t in pts):
+                self.funding_status[inst] = {"state": "UNKNOWN_INTERVAL", "settle_ts": since,
+                                             "settlements_known": len(keys)}
+                self._funding_missing(exp_id, inst, since, "UNKNOWN_INTERVAL", settlements_known=len(keys))
+                return since + 1
+            return None
+        for a, b in zip(keys, keys[1:]):
+            if b <= since or b - a <= 1.5 * interval:
+                continue
+            m = a + interval
+            while m <= b - interval / 2:
+                if since < m <= now and abs(held_before(fills, [(inst, m)])[(inst, m)]) > 1e-12:
+                    self.funding_status[inst] = {"state": "MISSING_RATE", "settle_ts": m,
+                                                 "interval_h": interval // HOUR, "next_known_ts": b}
+                    self._funding_missing(exp_id, inst, m, "MISSING_RATE", interval_h=interval // HOUR,
+                                          next_known_ts=b)
+                    return m
+                m += interval
+        return None
+
+    def _funding_missing(self, exp_id, inst, st, state="MISSING_BAR", **detail):
+        """Orders 67 P0-C / 68 P2 (fail_closed only): recorded once per ledger, instrument, settlement and state."""
         if not self.db.one("SELECT 1 FROM events WHERE kind=? AND exp_id=? AND payload LIKE ?", FUNDING_MISSING,
-                           exp_id, f'%"instrument":"{inst}"%"settle_ts":{st}%'):
+                           exp_id, f'%"instrument":"{inst}"%"settle_ts":{st},%"state":"{state}"%'):
             self.db.event(FUNDING_MISSING, "agent:paper-1", exp_id, {
-                "instrument": inst, "settle_ts": st, "latest_bar_ts": latest, "state": "MISSING_BAR",
-                "booked": False, "later_settlements": "held back until this one is priced or leaves the bar window",
-                "simulated": True, "rule": "director order 67 P0-C"})
+                "instrument": inst, "settle_ts": st, "state": state, **detail,
+                "booked": False, "later_settlements": "held back until this one is priced or the cause is gone",
+                "simulated": True, "rule": "director orders 67 P0-C and 68 P2"})
 
     def _funding_gap(self, exp_id, inst, st):
         """A held settlement older than the fetched bars cannot be priced: recorded once, then skipped."""

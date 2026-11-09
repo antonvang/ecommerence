@@ -255,12 +255,13 @@ FUNDING_UNAVAILABLE = "paper.funding_unavailable"
 
 
 def funding_fields(eng):
-    """Order 67 P0-C: the funding status field of a pass result, only in FUNDING_MISSING_MODE "fail_closed"."""
+    """Orders 67 P0-C / 68 P2: the funding status field of a pass result (FUNDING_MISSING_MODE "report" or
+    "fail_closed" only)."""
     from lab import paper
-    if paper.FUNDING_MISSING_MODE != "fail_closed":
+    if paper.FUNDING_MISSING_MODE not in paper.FUNDING_VISIBLE:
         return {}
     bad = {i: s for i, s in eng.funding_status.items() if s.get("state") != "OK"}
-    return {"funding_status": "ERROR" if any(s["state"] in ("MISSING_BAR", "UNAVAILABLE") for s in bad.values())
+    return {"funding_status": "ERROR" if any(s["state"] in paper.FUNDING_ERRORS for s in bad.values())
             else "WAITING" if bad else "OK", "funding_detail": bad}
 
 
@@ -269,7 +270,7 @@ def _funding_guarded(db, eng, led, get, now, cache):
         return len(book_funding(db, eng, led, now, _cached_funding(get, now, cache)))
     except Exception as e:                              # no funding data this pass: the next pass books it
         from lab import paper
-        if paper.FUNDING_MISSING_MODE == "fail_closed":   # order 67 P0-C: visible, once per ledger and clock hour
+        if paper.FUNDING_MISSING_MODE in paper.FUNDING_VISIBLE:   # 67 P0-C: visible, once per ledger and hour
             eng.funding_status["*"] = {"state": "UNAVAILABLE", "error": safe_error(e, 160)}
             hour = int(now) // HOUR * HOUR
             if not db.one("SELECT 1 FROM events WHERE kind=? AND exp_id=? AND payload LIKE ?", FUNDING_UNAVAILABLE,
