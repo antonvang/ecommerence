@@ -7,12 +7,15 @@ downloads.
   (no retries, no sleep, no fallback to another cache);
 - urllib.request.urlopen raises OfflineFixtureMissing, as a second line;
 - synthetic_files_for writes small synthetic stand-in files (no market data) for a test that only needs paths;
+- market_cache(tmp) points data.CACHE (and so families.absent / hypogen.missing) at a temporary directory holding a
+  synthetic absent_404.json, for a test that must not read the checkout's data/lab/market (order 59-H P1);
 - file_guard() patches open/io.open/os.open so a protected path (a real market cache, a real 2024 zip, a lab or research
   database outside the temporary directory) raises ProtectedFileAccess. No host-specific path is named here.
 """
 import builtins
 import fnmatch
 import io
+import json
 import os
 import tempfile
 import urllib.request
@@ -91,6 +94,25 @@ def file_guard(seen=None):
         return real_os_open(path, *a, **k)
     return [mock.patch.object(builtins, "open", guarded_open), mock.patch.object(io, "open", guarded_open),
             mock.patch.object(os, "open", guarded_os_open)]
+
+
+def synthetic_absent():
+    """Synthetic 404 URLs in the format families._mark_absent writes (made-up symbols, no 2024 month, no real data)."""
+    from lab.engine import data
+    return sorted({f"{data.BASE}/klines/SYNTHAUSDT/1h/SYNTHAUSDT-1h-2021-03.zip",
+                   f"{data.BASE}/fundingRate/SYNTHAUSDT/SYNTHAUSDT-fundingRate-2021-03.zip",
+                   f"{data.SPOT_BASE}/klines/SYNTHBUSDT/1h/SYNTHBUSDT-1h-2020-11.zip"})
+
+
+def market_cache(tmp, absent=None):
+    """A patcher for data.CACHE -> tmp/offline-market, which holds a synthetic absent_404.json (`absent`, default
+    synthetic_absent()). Only the cache path changes: data._fetch and urlopen stay as they are (see patches())."""
+    from lab.engine import data
+    cache = os.path.join(tmp, "offline-market")
+    os.makedirs(cache, exist_ok=True)
+    with open(os.path.join(cache, "absent_404.json"), "w", encoding="utf-8") as fh:
+        json.dump(synthetic_absent() if absent is None else sorted(absent), fh)
+    return mock.patch.object(data, "CACHE", cache)
 
 
 def synthetic_files_for(tmp):

@@ -150,10 +150,27 @@ class GateS7(unittest.TestCase):
             sup.db.close()
 
 
+# Order 59-H P1: synthetic stand-ins for the summaries mission.results_view reads (RESULT_ESTIMATES: file -> mean,
+# lower-bound and n keys). Made-up numbers, no research result. carry has no mean, so results_view skips it.
+SYNTHETIC_RESULTS = {"tsmom_v1.json": {"synthetic": True, "summary": {"mean_week": 0.0012, "lb_99_5": -0.0004,
+                                                                      "weeks": 52}},
+                     "carry_v1.json": {"synthetic": True, "summary": {"mean_week": None, "lb_99_4": None,
+                                                                      "weeks": 0}},
+                     "pmcal_v1.json": {"synthetic": True, "summary": {"mean": 0.003, "lb_99_5": 0.0001, "events": 31}}}
+
+
 class Endpoints(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.tmp = tempfile.TemporaryDirectory()
+        res = os.path.join(cls.tmp.name, "data", "research", "results")    # mission.HERE -> the temporary directory
+        os.makedirs(res)
+        for fname, body in SYNTHETIC_RESULTS.items():
+            with open(os.path.join(res, fname), "w", encoding="utf-8") as fh:
+                json.dump(body, fh)
+        cls.here = mock.patch.object(mission, "HERE", cls.tmp.name)
+        cls.here.start()
+        cls.addClassCleanup(cls.here.stop)
         cls.path = os.path.join(cls.tmp.name, "lab.db")
         db = DB(cls.path)
         exp(db, "C1", "DISCOVERED")
@@ -182,7 +199,10 @@ class Endpoints(unittest.TestCase):
         p = self.get("/api/pipeline")
         self.assertEqual({r["exp_id"] for r in p["experiments"]}, {"C1", "R1"})
         self.assertIn("days", self.get("/api/throughput"))
-        self.assertIn("failure_patterns", self.get("/api/results"))
+        r = self.get("/api/results")
+        self.assertIn("failure_patterns", r)
+        self.assertEqual([(e["exp_id"], e["mean"], e["n"]) for e in r["estimates"]],      # the synthetic files only
+                         [("L14_tsmom_v1", 0.0012, 52), ("L16_pmcal_v1", 0.003, 31)])
 
     def test_event_stream_sends_state_and_new_events(self):
         req = urllib.request.urlopen(self.base + "/api/stream", timeout=10)

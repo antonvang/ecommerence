@@ -11,11 +11,21 @@ import urllib.request
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from lab import coverage, web  # noqa: E402
+from lab import coverage, hypogen, web  # noqa: E402
 from lab.db import DB  # noqa: E402
+from tests import offline_market  # noqa: E402
 
 NOW = 1_792_500_000
 PREMIUM = "https://fapi.binance.com/fapi/v1/premiumIndex"
+
+
+def offline_data(test, tmp):
+    """Order 59-H P1: coverage.sources -> hypogen.view -> families.absent reads data.CACHE/absent_404.json and lists
+    hypogen.DIR; both point into the test's temporary directory (a synthetic 404 list, no drafts folder), never at the
+    checkout's data/lab."""
+    for p in (offline_market.market_cache(tmp), mock.patch.object(hypogen, "DIR", os.path.join(tmp, "hypotheses"))):
+        p.start()
+        test.addCleanup(p.stop)
 
 
 def touch(path):
@@ -28,6 +38,7 @@ class Base(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory()
         self.db = DB(os.path.join(self.tmp.name, "lab.db"))
         self.root = os.path.join(self.tmp.name, "market")
+        offline_data(self, self.tmp.name)
         coverage._SCANNED.clear()
 
     def tearDown(self):
@@ -293,6 +304,7 @@ class Api(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             path = os.path.join(tmp, "lab.db")
             DB(path).close()
+            offline_data(self, tmp)
             srv = web.serve(path, 18793)
             threading.Thread(target=srv.serve_forever, daemon=True).start()
             try:
