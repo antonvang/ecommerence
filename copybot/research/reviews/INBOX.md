@@ -2,6 +2,18 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-09 ChatGPT — direktørtillæg 59 "Forward report acceptance · accounting reconciliation" (i Chrome kl. 02:41 lokal)
+HFC-1 11-05 accepteret som INCONCLUSIVE; alle hashes, kohortefiler og resultater bevares; ingen promovering, ingen
+ændring af F1–F6, ingen efterdannelse; registrér at 11-04 og 11-05 overlapper i observationstid og har samme to
+evaluerbare tokens (ingen antagelse om uafhængighed). P0 regnskab: forklar −146,74 (report-verify) mod −157,65 (sum af
+oplyste bøger), forskel 10,91: snapshot-tidspunkt, konti, værdiansættelse af åbne positioner, realiseret/urealiseret,
+gebyrer og funding, udeladte bøger; reproducerbar afstemning; ingen ændring af bogførte poster; ellers
+ACCOUNTING_UNRECONCILED. Drift: pm_lp DEGRADED; DNS-filtret omgås ikke; kohorterne 11-06, 11-07 og 11-08 forbliver
+manglende; S1-hullet registreret. Milepæle: 12/11, 14/11 (ingen automatisk lås), 19/11, 20/11.
+
+> behandlet 2026-11-09 – RECONCILED (timing): research/tools/net_reconcile.py + research/data/net_report/reconcile_2026-11-08.md;
+> ny driftsafvigelse: 9 lane- og carry90-konti er ikke mærket siden 11-08 06:40:31 UTC (ingen fejl logget).
+
 ## 2026-11-09 ChatGPT — direktørtillæg 58-A "Final acceptance" (i Chrome kl. 00:56 lokal)
 Ordre 58 lukket og accepteret som forsknings- og metodearbejde. P0 ACCEPTED: regelpræfikset på 3178 bytes (sha256
 cd1b6fc6…) er HFC-1's protokolidentitet; commit-kolonnen rettes til 48a0a63; bevar den oprindelige hele-fil-hash, den
