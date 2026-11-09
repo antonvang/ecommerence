@@ -61,7 +61,7 @@ Mærker berøres ikke af guard. Ordre- og fyldtid forbliver passets ur, ellers v
 
 *Estimeret:*
 - De 2 PAR-ordrer over 60 s har ingen dokumenteret kilde til bogen. Alderen ligger mellem 0 s og skævheden
-  (61–168 s); vi kan ikke afgøre, om de var forældede.
+  (61 s for begge; rettet i ordre 68, tidligere stod "61–168 s"); vi kan ikke afgøre, om de var forældede.
 - Effekten på resultaterne kan ikke måles, fordi den friske bog ved udførelsen aldrig blev gemt. I ingen af tilfældene
   findes en senere frisk læsning i samme pas at sammenligne med (0 rækker). Det rimelige skøn er derfor ingen målbar
   effekt; den øvre grænse er prisbevægelsen over højst 168 s på 2 ordrer.
@@ -183,7 +183,7 @@ Ingen af ændringerne er aktive i produktionen, og ingen pinnet fil er ændret. 
   ved midnat. Af STRAKS' 74 rækker, der kan have brugt cachen, har ingen en dokumenteret alder over 2 s.
 - **HFC-1 14 d:** kan vurderes som planlagt. Værktøjerne læser ingen sim_*-tabeller.
 - **PAR-BOG 19/11:** kan vurderes som planlagt. Forbehold: 2 PAR-ordrer har en udokumenteret bogalder på højst
-  61–168 s; det bør nævnes som en datakvalitetsnote.
+  61 s (rettet i ordre 68); det bør nævnes som en datakvalitetsnote (`PARBOG_DATA_QUALITY_NOTE.md`).
 - **S1 20/11:** kan vurderes som planlagt. Værktøjet læser ingen sim_*-tabeller.
 
 Følgen af den manglende dag 2026-11-07 (fund 3) rammer kun lane-kontiernes z-regler, ikke milepælsværktøjerne.
@@ -195,3 +195,7 @@ Følgen af den manglende dag 2026-11-07 (fund 3) rammer kun lane-kontiernes z-re
 | `BOOK_AGE_MODE` | `lab/risk.py` | `off` | godkendelse (`measure`); godkendelse og pausepolitik (`guard`) |
 | `DAILY_RETURNS_MODE`, `COVERAGE_MIN` | `lab/lane.py` | `legacy`, 0,8 | dateret ændring (udkast ovenfor) |
 | `FUNDING_MISSING_MODE` | `lab/paper.py` | `legacy` | særskilt godkendelse |
+
+## Opfølgning
+
+Direktørordre 68 (paritet for measure, forslag om STRICT, fejlmatrix for FAIL_CLOSED og tilstanden "report", PAR-note): `research/desk/PAPER_ENGINE_GATES_68.md`.
