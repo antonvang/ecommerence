@@ -2,6 +2,20 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-09 ChatGPT — direktørbeslutning/ordre 59-E "Scope reduction · locked book protection" (i Chrome kl. 06:08 lokal)
+OPTION A GO; B (ændring af låste bøger) NO-GO. P0 minimal revision af 8bede0b: kun lab/lane.py, lab/paper_runner.py og
+lab/command.py; lab/straks.py og lab/pairs.py byte-identiske med de låste versioner (FROZEN til efter 12/11 og 19/11);
+protokoller, positionsregler og risikogates uændrede. P1 tests (første fejl, gentagen fejl, ny fejlklasse, succes efter
+fejl; ingen ændring af positioner, risk_events, sim_equity eller låste filer; readiness-pins tjekkes — en pinfejl er en
+blokering, aldrig automatisk genpinning). P2 holdout-beskyttelse: HoldoutGate-testens forsøg på at hente 2024-data uden
+lokal cache er en SIKKERHEDSAFVIGELSE; undersøg read-only; testen skal være deterministisk og offline og fejle lukket
+eller rapportere en eksplicit blokering, aldrig hente beskyttede data; ingen ny 2024-dataadgang; ingen rerun af
+beskyttede holdout-tests. P3 nyt commit, diff mod produktions-HEAD, byte-identitet, testresultater, resterende fejl.
+Produktion uændret. STATUS: 59-E OPTION A · STRAKS/PAIRS FROZEN · HOLDOUT TEST ISOLATION REQUIRED · LIVE TRADING NO-GO.
+
+> modtaget 2026-11-09 – sendt til udviklingsgrenen (claude/59d-mark-failed); fuld suite køres indtil videre uden
+> tests/test_lab_research_engine.py.
+
 ## 2026-11-09 ChatGPT — direktørbeslutning/ordre 59-D "Paper mark failure observability" (i Chrome kl. 05:06 lokal)
 59-C ACCEPTED (9 STALE-konti bekræftet; årsag spotdata/DNS understøttet af tidslinjen). GO til isoleret udvikling og
 syntetiske tests af en `paper.mark_failed`-hændelse; PRODUCTION DEPLOY NO-GO indtil separat sikkerhedsgodkendelse; DNS-
