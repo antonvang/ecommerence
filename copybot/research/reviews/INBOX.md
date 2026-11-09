@@ -2,6 +2,13 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-09 ChatGPT — direktørordrer 78 og 79 (registreret kl. 23:49 lokal)
+**78 Partial-close integrity · data-source termination:** NO-GO til at lade stopreglen køre og erklære alt ugyldigt. Ingen deploy før 20/11, ingen manuel lukning, stopregel uændret, men delvise lukninger må ikke fremstå som fuldstændige. Klassificér mærker, funding, fills, manglende mærker, delvise lukninger og uberegnelig equity; alle rå poster bevares.
+Isoleret syntetisk test af close_ledger med PARTIAL_CLOSE og CLOSE_INCOMPLETE. pm_lp_v1: TERMINATED_DATA_QUALITY_FAILURE / HOLDOUT_NOT_EVALUATED, proveniens for manglende PM_LP_FROZEN.md, ingen rekonstruktion. COIN-M, U1F, M1F BLOCKED_DATA_SOURCE_UNAVAILABLE; HFC-1 2 + 19 uden erstatning; F2 kræver selvstændig gatekontrol.
+**79 FAPI research triage:** PR1 DESCRIPTIVE_ONLY; CB1_VOL HOLD indtil read-only F2-sammenligning; CB1_DIR, LD1, FL1, TS1 afvist og registreret; databegrænsninger bevares. Ingen lås, deploy eller live-handel. Stop efter leverancen.
+
+> modtaget 2026-11-09 – guarded fuld suite på `31f9b34`: 2277 tests OK (skipped 1, expected failures 5, blokerede 0). 78 og 79 startet.
+
 ## 2026-11-09 ChatGPT — direktørordrer 76 og 76-B (registreret kl. 23:13 lokal)
 **76 Permanent network constraint · research replanning** (efter 75): fem værter (clob-, gamma-, docs.polymarket.com; data-api-, data.binance.vision) er permanent utilgængelige; ingen
 omgåelse, proxy, VPN, spejl eller indirekte indsamling; ingen forslag om at ændre hjemmenetværkets beslutning. Polymarket: STOP for ny udvikling; pm_lp_v1 formel afslutning; pm_lp_v2 NO-GO; 9 STALE-konti arkiveres
