@@ -1,0 +1,26 @@
+# Papirbøger og forward-målinger
+
+Tilbage til [[COPYBOT_MAP]].
+
+- [[CARRY_FROZEN]]
+- [[CARRY_SPEC]]
+- [[data/net_report/addendum59c_example/net_2026-11-09|net_2026-11-09]]
+- [[net_2026-11-05]]
+- [[net_2026-11-06]]
+- [[net_2026-11-07]]
+- [[net_2026-11-08]]
+- [[data/net_report/net_2026-11-09|net_2026-11-09]]
+- [[reconcile_2026-11-08]]
+- [[PAPER_DASHBOARD_V2]]
+- [[CARRY_BASIS_PLAN]]
+- [[CARRY_COST_2026-10-21]]
+- [[CARRY_ECON_DAILY_2026-11-04]]
+- [[CARRY_REALISM_P0P1_2026-11-06]]
+- [[HFC1_HIGH_FUNDING_FEASIBILITY_2026-11-04]]
+- [[M2_FORWARD_LEDGER]]
+- [[MISSION27_1_2026-11-01]]
+- [[MISSION27_2026-11-01]]
+- [[MISSION27_2_2026-11-01]]
+- [[MISSION27_3_2026-11-02]]
+- [[MISSION27_4B_2026-11-03]]
+- [[MISSION27_4_2026-11-02]]

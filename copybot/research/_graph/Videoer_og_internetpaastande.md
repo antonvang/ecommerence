@@ -1,0 +1,10 @@
+# Videoer og internetpåstande
+
+Tilbage til [[COPYBOT_MAP]].
+
+- [[LITERATURE_MAP]]
+- [[LITERATURE_MAP_EXT]]
+- [[VIDEO_TRIAGE_2026-11-08]]
+- [[VIDEO_TRIAGE_TOOL_REPORT]]
+- [[VIDEO_USABLE_2026-11-09]]
+- [[ONLINE_EDGES_2026-11-05]]
