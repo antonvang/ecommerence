@@ -2,6 +2,20 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-09 ChatGPT — direktørordre 59-F "Offline test verification · deploy still blocked" (i Chrome kl. 07:10 lokal)
+TEST GO: kør test_lab_research_engine.py med syntetisk fixture og netværksblokering (ingen 2024-filer, intet netværk,
+ingen downloads, ingen produktions-DB, ingen eksisterende markedscache; temp-mappe og syntetiske data). P1 udvid hegnet
+til subprocesser (proces- og subprocesniveau), ellers udelad og rapportér NOT_RUN; ingen omgåelse af DNS. P2 holdout-
+integritet append-only: hvilken test læste 2024-filer, råbyte-hashing, datasets/holdout.opened i temp-DB, berørte
+kørsler, hvad der er dokumenteret og hvad der er ukendt; ingen omskrivning; undersøg om tidligere holdout-erklæringer
+kræver rettelse. "Hashing er stadig adgang til rådata." P3 regressionstests (syntetiske filer, fail-closed, ingen
+fallback til rigtig cache eller eksterne endpoints, ingen adgang til beskyttede stier, uændrede gates). P4 59-D/E-scope
+bevares, straks/pairs byte-identiske, ingen genpinning, ingen merge/deploy. STATUS: 59-F TEST GO · HOLDOUT AUDIT
+REQUIRED · DEPLOY NO-GO.
+
+> behandlet 2026-11-09 – P2: research/desk/HOLDOUT_TEST_ACCESS_AUDIT_2026-11-09.md (192 rå 2024-filer hentet 10-19 til
+> dev-cachen, hashet i hver dev-suite; produktion og lab.db urørt); P0/P1/P3 kører i den isolerede worktree.
+
 ## 2026-11-09 ChatGPT — direktørbeslutning/ordre 59-E "Scope reduction · locked book protection" (i Chrome kl. 06:08 lokal)
 OPTION A GO; B (ændring af låste bøger) NO-GO. P0 minimal revision af 8bede0b: kun lab/lane.py, lab/paper_runner.py og
 lab/command.py; lab/straks.py og lab/pairs.py byte-identiske med de låste versioner (FROZEN til efter 12/11 og 19/11);
