@@ -258,7 +258,7 @@ class FundingFailClosed(Base):
         led = self.ledger()
         t_f, st = int(NOW - 20 * HOUR), int(NOW // HOUR * HOUR - 16 * HOUR)
         self.fill(led, st - 600, "buy", 1.0, 100.0)
-        funding = {st: 0.0001, st + 8 * HOUR: 0.0001}
+        funding = {st + k * 8 * HOUR: 0.0001 for k in range(-6, 2)}   # an 8-hourly series (68: interval known)
         opens = {t: 100.0 for t in range(st - 4 * HOUR, int(NOW), HOUR) if t != st}       # the bar at st is missing
         return led, t_f, st, {"X": (funding, opens)}
 
@@ -291,7 +291,8 @@ class FundingFailClosed(Base):
         self.fill(led, st - 600, "buy", 1.0, 100.0)
         with mock.patch.object(paper, "FUNDING_MISSING_MODE", "fail_closed"):
             eng = PaperEngine(self.db, lambda: NOW)
-            eng.book_funding(led, {"X": ({st: 0.0001}, {st - HOUR: 100.0})}, int(NOW - 5 * HOUR))
+            series = {st - k * 8 * HOUR: 0.0001 for k in range(6)}       # 8-hourly (68: the interval is known)
+            eng.book_funding(led, {"X": (series, {st - HOUR: 100.0})}, int(NOW - 5 * HOUR))
             self.assertEqual(pr.funding_fields(eng)["funding_status"], "WAITING")
         self.assertEqual(self.db.one("SELECT COUNT(*) FROM events WHERE kind=?", paper.FUNDING_MISSING)[0], 0)
 
