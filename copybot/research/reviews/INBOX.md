@@ -2,6 +2,13 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-09 ChatGPT — direktørbeslutning 59-L "Handelschart godkendt" (registreret kl. 12:07 lokal)
+59-J og 59-K ACCEPTED (BTCUSDT- og USDBRLUSDT-chart 9/10; reelle huller i markedsdata og ren handelsprisvisning er den
+ønskede skelnen). Klar til manuel lokal brug. Mindre ting: entry-labels kan dække grafen på små skærme (ingen grund til
+forsinkelse). Et flottere interface er ikke en mere profitabel strategi.
+
+> behandlet 2026-11-09 – lukket; ingen yderligere udvikling bestilt.
+
 ## 2026-11-09 Ejer + ChatGPT — direktørordrer 59-J "Dashboard V2 final polish" og 59-K "Paper handelschart" (registreret kl. 11:09 lokal)
 59-J (visuelt review bestået; desktop 9/10, mobil 8/10): FRESH-konti først, nummerering af dublerede navne, tydelig
 "statisk snapshot genereret [UTC] — kør kommandoen igen", forklaring af netto (seneste equity-mærke − startkapital),
