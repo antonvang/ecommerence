@@ -1,0 +1,34 @@
+diff -ru a/copybot/lab/pairs.py b/copybot/lab/pairs.py
+--- a/copybot/lab/pairs.py	2026-11-09 15:54:04.220276999 +0100
++++ b/copybot/lab/pairs.py	2026-11-09 15:54:12.108245442 +0100
+@@ -157,10 +157,9 @@
+             r = eng.submit_taker(ledger, f"{ledger}|{'out' if reduce else 'in'}|{tag}|{hour}|{s}", s, side(q), qty_s,
+                                  bk[s], reduce_only=reduce, signal_ref=f"pairs.{why}@{hour}:z={z}")
+             out.append({"pair": tag, "instrument": s, "status": r["status"], "why": why, "z": z})
+-    try:
+-        marked = pr._mark_hourly(db, eng, ledger, get, now, books)
+-    except Exception as e:                                       # noqa: BLE001
+-        marked = f"no mark prices: {e!r}"[:120]
++    marked, err = pr.mark_guarded(db, eng, ledger, get, now, books)   # 59-D pattern (order 67 P1): recorded once
++    if err is not None:
++        marked = f"no mark prices: {err!r}"[:120]          # unchanged return value; the next pass tries again
+     rec = eng.reconcile(ledger)
+     if not rec["ok"]:
+         risk.trip_fail_closed("reconciliation", f"{ledger}: {rec['problems']}"[:500])
+diff -ru a/copybot/lab/straks.py b/copybot/lab/straks.py
+--- a/copybot/lab/straks.py	2026-11-09 15:54:04.220276999 +0100
++++ b/copybot/lab/straks.py	2026-11-09 15:54:12.108245442 +0100
+@@ -148,10 +148,9 @@
+         res = eng.submit_taker(ledger, f"{ledger}|entry|{r['id']}|{inst}", inst, "buy" if s > 0 else "sell",
+                                SIZE_USD / b.mid(), b, signal_ref=f"straks.entry@{r['id']}")
+         orders.append({"instrument": inst, "status": res["status"], "move": r["id"], "side": s})
+-    try:
+-        marked = pr._mark_hourly(db, eng, ledger, get, now, books)
+-    except Exception as e:                                       # noqa: BLE001
+-        marked = f"no mark prices: {e!r}"[:120]
++    marked, err = pr.mark_guarded(db, eng, ledger, get, now, books)   # 59-D pattern (order 67 P1): recorded once
++    if err is not None:
++        marked = f"no mark prices: {err!r}"[:120]          # unchanged return value; the next pass tries again
+     rec = eng.reconcile(ledger)
+     if not rec["ok"]:
+         risk.trip_fail_closed("reconciliation", f"{ledger}: {rec['problems']}"[:500])
