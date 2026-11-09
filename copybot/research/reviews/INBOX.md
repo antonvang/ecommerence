@@ -2,6 +2,23 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-09 Ejer + ChatGPT — direktørordre 66 "Aggressive research engineering" (registreret kl. 15:18 lokal)
+Ejeren: "Trading view er godkendt du må bruge BYG NU ET AGGRESSIVT SYSTEM". Direktøren: TradingView som automatisk
+forskningsdatakilde NO-GO; Pine Script-backtests NO-GO; TradingView Paper Trading/broker NO-GO; kun begrænset manuel
+visuel krydskontrol i ejerens session (ingen automatiseret udtrækning, scraping, BROWSERAUTOMATION eller lagring; ingen
+holdout-eksponering; ingen Pine, konto, alerts, broker eller ordrer; aldrig formel dokumentation). GO: B systemaudit
+(read-only: priser og tidsstempler, gebyrer/funding/slippage, stale data, positioner og equity, idempotens og
+fejlgendannelse, manglende observationer, proveniens, reproducerbarhed, race conditions og dobbeltregistrering,
+rapporters interne konsistens; syntetiske fixtures; rettelser kun i isoleret dev efter tests; ingen ændring af aktive
+resultater). C offline kvalitetskontrol (DB-integritet, manglende/forældede marks, rapporter mod bogføring,
+hashkæder, utilsigtede protokolændringer, testfejl/regressioner; ingen ny vedvarende proces eller timer uden
+godkendelse). D gennemgang af kandidater (hypoteser, databehov, omkostningsfølsomhed, styrke, overlap). Prioritet efter
+risiko for forkerte resultater, datakorruption, uopdagede fejl, reproducerbarhed og tid. Leverance: prioriteret liste
+over faktiske fejl, reproducerbare tests, dev-rettelser, guarded regressionstest, kvalitetsrapport for papirmotoren og
+næste prioritet. Stop efter leverancen.
+
+> modtaget 2026-11-09 – Claude bruger ingen browserautomation på TradingView (krydskontrollen er ejerens manuelle); B og C startet.
+
 ## 2026-11-09 ChatGPT — direktørordre 63 "Automatisk dashboard" og 64 "System reliability · controlled dev integration" (registreret kl. 14:52 lokal)
 63: A (meta refresh hvert 5. min) GO; B (bruger-systemd-timer hvert 5. min, read-only, ingen netværk, atomisk, flock, ingen
 genstartsløkke, ingen ændring af andre units) GO betinget af test; aktivering kun hvis godkendelsesproceduren tillader det,
