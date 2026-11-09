@@ -83,3 +83,14 @@ Ejeren sendte to videoer til og skrev: "The github is called TauricResearch/Trad
   hvor mange af de 6 overlever fremadrettet på papir, efter omkostninger, med låste regler.
 - Brugbart for lab'et: intet nyt; det bekræfter U3 og U6. Lab'et går længere med lås før data, holdout og
   forward-only. Det gør os langsommere, men giver resultater, man kan stole på.
+
+## Tillæg 4 (2026-11-09 11:57 lokal): tre videoer mere
+
+| # | Konto | Påstand | Testbar? | Vurdering |
+|---|---|---|---|---|
+| 11 | @ai.flow_lab (citerer X-opslag fra @Tec_with_Luis) | "Claude made him $7,625 overnight": "timezone arbitrage" der scanner japanske, europæiske, australske og mellemøstlige nyheder, som "US markets have yet to adjust" | Nej (ingen regel, ingen konto, ingen handler) | **Klassisk lead-funnel:** "Comment 'Guide', Like & RT, Follow … (first 1750 people)". Én påstået nat uden dokumentation. Mekanismen (US halter efter udenlandske nyheder) er lab'ets K1/K2/H27-A-familie og ONLINE_EDGES #8: informationen er allerede i prisen på 24/7-perps. Intet at teste |
+| 12 | @buildwithbrock ("BMG Capital") | Værktøj der viser SEC Form 4-insiderhandler (Palantir: Thiel-salg $104,7 mio., 10b5-1-planer) | Ingen handelspåstand | Et datadashboard. 10b5-1-salg er forudplanlagte og bærer ringe information (kendt i litteraturen). Kræver SEC EDGAR (ikke en tilladt vært) og aktier (ingen venue for lab'et). Ikke prioriteret |
+| 13 | @eshrobot | "Pure robot intelligence": MT5-historik med ~20 XAUUSD- og BTCUSD-handler, alle +130–140 | Nej | Kun vindende handler vises (tabsrækker er ude af billedet), ingen kontosaldo og ingen periode. Samme mønster som V05 (guld-"mobilbot"). Intet at teste |
+
+**Konklusion:** ingen af de tre giver en ny testbar regel. Held-tjek (U3) er ikke relevant, fordi ingen statistik er
+vist. Optællingen er nu 13 videoer, 1 karrusel, 1 artikel og 1 repo; 0 er REPLICABLE.
