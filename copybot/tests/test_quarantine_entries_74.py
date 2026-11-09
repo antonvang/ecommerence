@@ -27,6 +27,11 @@ class Probe(unittest.TestCase):
     def test_other_files_open(self):
         with open(os.path.join(ROOT, "research", "data", "QUARANTINE.json"), encoding="utf-8") as f:
             self.assertIn("entries", f.read())
+
+
+if __name__ == "__main__":
+    import direct_guard  # noqa
+    unittest.main()
 '''
 
 
@@ -42,7 +47,7 @@ class Entries(unittest.TestCase):
             json.dump({"entries": [{"id": "s", "path": "research/data/SYNTH.json"}, {"id": "n", "path": None}]}, f)
         with open(os.path.join(data, "SYNTH.json"), "w", encoding="utf-8") as f:
             f.write('{"synthetic": true}')
-        for name in ("__init__.py", "offline_market.py", "test_000_quarantine_guard.py"):
+        for name in ("__init__.py", "offline_market.py", "direct_guard.py", "test_000_quarantine_guard.py"):
             shutil.copy(os.path.join(HERE, "tests", name), tests)
         with open(os.path.join(tests, "test_probe.py"), "w", encoding="utf-8") as f:
             f.write(PROBE)
@@ -63,6 +68,23 @@ class Entries(unittest.TestCase):
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertIn("Ran 3 tests", r.stderr)
 
+    def test_direct_run_of_one_file(self):
+        """python3 tests/test_x.py (order 75 P2)."""
+        env = dict(os.environ, PYTHONDONTWRITEBYTECODE="1")
+        r = subprocess.run([sys.executable, os.path.join("tests", "test_probe.py")], cwd=self.root, env=env,
+                           capture_output=True, text=True, timeout=120)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("Ran 2 tests", r.stderr)
+
+    def test_direct_run_without_the_guard_line_can_fail(self):
+        path = os.path.join(self.root, "tests", "test_probe.py")
+        with open(path, encoding="utf-8") as f:
+            src = f.read()
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(src.replace("    import direct_guard  # noqa\n", ""))
+        r = subprocess.run([sys.executable, path], cwd=self.root, capture_output=True, text=True, timeout=120)
+        self.assertNotEqual(r.returncode, 0)
+
     def test_the_probe_can_fail(self):
         """Control: without the guard the synthetic file really opens, so the two tests above prove something."""
         os.remove(os.path.join(self.root, "tests", "__init__.py"))
@@ -73,10 +95,20 @@ class Entries(unittest.TestCase):
 
 
 class Layout(unittest.TestCase):
+    def test_every_directly_runnable_test_installs_the_guard(self):
+        tests = os.path.join(HERE, "tests")
+        for f in sorted(os.listdir(tests)):
+            if f.startswith("test") and f.endswith(".py"):
+                with open(os.path.join(tests, f), encoding="utf-8") as fh:
+                    src = fh.read()
+                if "unittest.main(" in src:
+                    self.assertLess(src.index("import direct_guard"), src.index("unittest.main("), f)
+
     def test_guard_module_sorts_before_every_other_test(self):
         names = sorted(f for f in os.listdir(os.path.join(HERE, "tests")) if f.startswith("test") and f.endswith(".py"))
         self.assertEqual(names[0], "test_000_quarantine_guard.py")
 
 
 if __name__ == "__main__":
+    import direct_guard  # noqa: E402,F401  (order 75: quarantine guard for direct runs)
     unittest.main()

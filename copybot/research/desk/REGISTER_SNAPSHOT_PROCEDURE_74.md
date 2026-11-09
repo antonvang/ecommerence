@@ -33,3 +33,8 @@ Det afviser et register, hvor totaler og rækker ikke stemmer, hvor rækkefølge
 ## Begrænsninger
 
 Registret kender ikke forsøg uden for fabrikken. Registret angiver selv forsøg, der tæller som 1, fordi antal varianter mangler (`gaps`), så 19.438 kan være for lavt.
+
+## Tillæg 22:43 lokal (direktørordre 75)
+
+Snapshot v1 er accepteret som reproducerbart udgangspunkt. **19.438 er et konservativt minimum og ikke et endeligt N**: forsøg uden kendt variantantal tæller som 1, så det sande
+antal afprøvede varianter kan være højere, mens korrelation samtidig trækker det effektive antal ned. Max-z på 4,02 er derfor ikke en endeligt kalibreret statistisk grænse.

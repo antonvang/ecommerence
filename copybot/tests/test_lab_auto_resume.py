@@ -169,4 +169,5 @@ class LaneAccount(tl.Base):
 
 
 if __name__ == "__main__":
+    import direct_guard  # noqa: E402,F401  (order 75: quarantine guard for direct runs)
     unittest.main()

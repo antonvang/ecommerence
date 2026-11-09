@@ -367,6 +367,14 @@ class Decision(unittest.TestCase):
         self.assertGreater(share(5.0, 2000, 11), 0.004)
         self.assertTrue(0.74 <= share(9.0, 1200, 12) <= 0.86)  # 80 % ved 9 bp, sd 10, n 60
 
+    def test_overall_pass_requires_both_primary_and_robustness(self):
+        """Order 75 P3: the gate is mandatory, and primary and robustness are reported separately."""
+        passing = {"upper95": 9.0, "p": 0.001, "mean": 8.0}
+        self.assertEqual(ev.decide(0.95, 40, 0.1, passing, True), (ev.PASS, "P_BELOW_ALPHA_AND_ROBUST"))
+        self.assertEqual(ev.decide(0.95, 40, 0.1, passing, False), (ev.INCONCLUSIVE, "ROBUSTNESS_GATE_FAILED"))
+        failing = {"upper95": 9.0, "p": 0.2, "mean": 8.0}
+        self.assertEqual(ev.decide(0.95, 40, 0.1, failing, True), (ev.INCONCLUSIVE, "NOT_SIGNIFICANT"))
+
     def test_robustness_gate(self):
         day = 86400
         ev2 = [{"market": "A", "h": day, "s": 9.0}, {"market": "B", "h": day, "s": 9.0}]
@@ -461,4 +469,5 @@ class Boundaries(unittest.TestCase):
 
 
 if __name__ == "__main__":
+    import direct_guard  # noqa: E402,F401  (order 75: quarantine guard for direct runs)
     unittest.main()

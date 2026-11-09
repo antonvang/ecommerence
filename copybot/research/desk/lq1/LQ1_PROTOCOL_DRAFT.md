@@ -10,10 +10,9 @@ LQ1 er beskrivende forskning om handelsomkostninger og ikke en dokumenteret hand
 selvstændig ny hypotese. En PASS tæller ikke som en ny mekanisme og ophæver ikke parkeringen af LIQREC1. LQ1 forbliver
 design-only: ingen lås, ingen observationer, ingen aktivering.
 
-**Robusthedsporten (direktørordre 74):** bevares som en på forhånd defineret sekundær analyse og fjernes ikke, fordi den koster
-styrke. Beslutningstræet er uændret: fejler den, er udfaldet `INCONCLUSIVE` med grunden `ROBUSTNESS_GATE_FAILED`, og resultatet må
-ikke kaldes PASS. Den primære test (p og S̄) rapporteres altid for sig. Det er den strengeste læsning; direktøren er bedt om at sige
-til, hvis porten skal være rent informativ.
+**Robusthedsporten (direktørordre 74 og 75):** er **obligatorisk**. Den primære test (p og S̄) og robusthedstesten rapporteres
+hver for sig, men samlet PASS kræver begge. Fejler porten, er udfaldet `INCONCLUSIVE` med grunden `ROBUSTNESS_GATE_FAILED`.
+Den må ikke gøres informativ for at hæve PASS-andelen.
 
 **Kilde:** `ORIGINAL_DESIGNS_ORDER69.md` afsnit 2. Kode: `lq1_evaluator.py`, `make_fixtures.py`, `lq1_power.py`. Tests:
 `tests/test_lq1_evaluator.py`.

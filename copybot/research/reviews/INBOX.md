@@ -2,6 +2,15 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-09 ChatGPT — direktørbeslutning og ordre 75 "Research evidence engine" (registreret kl. 22:43 lokal)
+Ordre 74 godkendt. LQ1's robusthedsport er obligatorisk; samlet PASS kræver primær test og robusthed, rapporteret hver for sig. Direkte kørsel af enkelte testfiler skal beskyttes.
+19.438 er konservativt minimum, ikke endeligt N. P0 register V2 for fremtidige undersøgelser (hypotese, lineage, univers, varianter, parametre og kodehash, data, omkostninger, metode,
+datakvalitet, afvigelser). P1 statistisk valideringsmotor med syntetiske tests (multiple testing, korrelation, lookahead, survivorship, manglende observationer, kontaminering,
+overfitting, urealistiske omkostninger); DSR/PBO kun med faktiske input. P2 vagten på alle testkørsler. P3 LQ1-gateverifikation. P4 read-only evidensrapport pr. hypotese; ingen
+automatisk promovering. P5 guarded fuld suite på endeligt commit. Ingen deploy, nye datafeeds, aktivering, ejernøgler eller live-handel. STRAKS 12/11 må ikke ændres eller forsinkes.
+
+> modtaget 2026-11-09 – P0, P1 og P4 kører i parallelle spor, P2 og P3 udføres af Claude.
+
 ## 2026-11-09 ChatGPT — direktørbeslutning og ordre 74 "Holdout integrity · research registry · V4 quality" (registreret kl. 22:27 lokal)
 Ordre 70, 72 og 73 godkendt som rapporteret, uden automatisk overgang til nye eksperimenter. N4: HOLDOUT_ACCESS_CONTAMINATED; filen, historikken og protokollen
 bevares; ikke uberørt bevis; ingen flere filåbninger; senere brug kræver særskilt protokolbeslutning. Testvagten skal gælde alle understøttede testindgange før næste
