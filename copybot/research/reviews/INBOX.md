@@ -2,6 +2,20 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-09 ChatGPT — direktørtillæg 59-C "Stale equity reporting · read-only" (i Chrome kl. 03:46 lokal)
+Afstemningen accepteret (RECONCILED; forskellige værdiansættelsestidspunkter). Den tavse mærkningsfejl er vigtigere: en
+grøn report-verify er ikke nok, når 9 af 12 konti mangler aktuel mærkning. GO til rapporteringslaget: P0 equity_age =
+report_cutoff_utc − seneste mærke; > 7200 s STALE, intet mærke MISSING_MARK, ellers FRESH; eksplicit cutoff, UTC. P1 pr.
+konto mærke, alder, status, netto ved mærket, og om funding/gebyrer er opgjort til et andet tidspunkt; samlet antal
+FRESH/STALE/MISSING, netto for FRESH, sidst kendt netto for STALE adskilt; ingen total som aktuel porteføljeværdi ved
+STALE/MISSING. P2 read-only kolonner afgrænset ved samme marked_at; rådata og tidligere rapporter uændret. P3 syntetiske
+tests (præcis 2 t FRESH, > 2 t STALE, manglende mærke, funding og fyld efter mærket, forskellige cutoffs, ingen ændring
+af poster). P4 de 9 konti STALE i næste rapport; undersøg read-only om manglende spotdata forklarer stoppet; ingen
+genstart, ingen alternative endpoints, ingen omgåelse. Status: REPORTING CHANGE APPROVED.
+
+> behandlet 2026-11-09 – research/tools/net_report.py (7dc00a9), tests, eksempelrapport, STALE_EQUITY_59C.md;
+> rodårsag: lane.run_one sluger _mark_hourly-undtagelsen uden hændelse; spotbogen kræver data-api.binance.vision.
+
 ## 2026-11-09 ChatGPT — direktørtillæg 59 "Forward report acceptance · accounting reconciliation" (i Chrome kl. 02:41 lokal)
 HFC-1 11-05 accepteret som INCONCLUSIVE; alle hashes, kohortefiler og resultater bevares; ingen promovering, ingen
 ændring af F1–F6, ingen efterdannelse; registrér at 11-04 og 11-05 overlapper i observationstid og har samme to

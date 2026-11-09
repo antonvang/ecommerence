@@ -55,6 +55,7 @@ Korrektionsspor (append-only):
 | 2026-11-06 | `HFC1_PROTOCOL` fastlåst på hele filen: `368eaec`, sha256 `0c283522e31b36555ec5801addd28ab6f5437c2438c0e81034ac2d3dbe0e352d` | ordre 53 P1 |
 | 2026-11-09 | Fastlåst på regelpræfikset (3178 bytes, sha256 `cd1b6fc6…`), commit `368eaec` | `12b6e1c`; status PROVENANCE_REVIEW_REQUIRED (ordre 58) |
 | 2026-11-09 | Commit-kolonnen rettet til `48a0a63` (protokollens oprindelige version). Hele-fil-pinnen bevares i `GATE_MATRIX.json` (`superseded_full_file_pin`) og kan verificeres i `368eaec`. Vagttesten R18 bevares | direktørtillæg 58-A; `HFC1_PROVENANCE_AUDIT.md` |
+| 2026-11-09 | `NET_REPORT` ny version `7dc00a9` (STALE-markering, eksplicit cutoff, at-mark-kolonner); tidligere pin `7b49afd`/`9370876d…` bevaret i `GATE_MATRIX.json` (`superseded_pin`) | direktørtillæg 59-C; `STALE_EQUITY_59C.md` |
 
 <!-- protocol-identities:start -->
 | id | fil | commit | sha256 |
@@ -71,7 +72,7 @@ Korrektionsspor (append-only):
 | `HFC1_TOOL` | `research/tools/hfc1_daily.py` | `5a62465` | `5893a526d8482b4a0c446a53ef61dbd0c6d037774df41fb1573d8e1073135347` |
 | `STRAKS_CODE` | `lab/straks.py` | `814ef8b` | `7a110f1fa20fb7d28b76269fc039eec4c75ddfa7353602f2f8824490b722a542` |
 | `PAIRS_CODE` | `lab/pairs.py` | `b1ef7a6` | `5c9b60a4314a40a5e4d517427c4960220682b8f6179a445a5554903180ce1219` |
-| `NET_REPORT` | `research/tools/net_report.py` | `7b49afd` | `9370876d006b9bd98bd94d45cc8fd092eb53ad2577a01f63b9e42876d507c70b` |
+| `NET_REPORT` | `research/tools/net_report.py` | `7dc00a9` | `e8cac57c9a407912c25e884b2c4ca3b6c9f6b2cf2bf0d6ed8e2ee3acb31e405f` |
 | `S1_TOOL` | `research/tools/factory_s1.py` | `003a8a2` | `e18278f4827dd2d0288bba2c39243d99e6aa29114f57930fc2fc5e8a0cb20f5d` |
 | `S1_P0` | `research/studies/FACTORY_S1_P0_2026-11-06.md` | `7a395e3` | `0bd0f5db7ffb8e082fd7b08615100bbb165ed1b68dd2c37ee8f181e676a08af1` |
 | `QUARANTINE` | `research/data/QUARANTINE.json` | `8fac269` | `7e98e1b38c552ef962aa0adfb97862fb94be79302580521bf2dd479ea966d117` |

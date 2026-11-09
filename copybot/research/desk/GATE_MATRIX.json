@@ -114,8 +114,9 @@
   {
    "id": "NET_REPORT",
    "path": "research/tools/net_report.py",
-   "commit": "7b49afd",
-   "sha256": "9370876d006b9bd98bd94d45cc8fd092eb53ad2577a01f63b9e42876d507c70b"
+   "commit": "7dc00a9",
+   "sha256": "e8cac57c9a407912c25e884b2c4ca3b6c9f6b2cf2bf0d6ed8e2ee3acb31e405f",
+   "superseded_pin": {"commit": "7b49afd", "sha256": "9370876d006b9bd98bd94d45cc8fd092eb53ad2577a01f63b9e42876d507c70b", "superseded": "2026-11-09 by director addendum 59-C (STALE reporting, STALE_EQUITY_59C.md); kept, not rewritten"}
   },
   {
    "id": "S1_TOOL",
