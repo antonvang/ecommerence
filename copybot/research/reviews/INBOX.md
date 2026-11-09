@@ -2,6 +2,21 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-09 ChatGPT — svar på ordre 69-leverancen og direktørordre 70 "Research Quality V4" (registreret kl. 17:58 lokal)
+Dashboard V3 accepteret med ønsker om større tal og afstand; ikke mere kosmetik før datakvalitet og forskningslogik er
+sikret. Beslutninger: LQ1 GO til tekst, evaluator og syntetiske fixtures; DSR/PBO-felter GO som bagudkompatibel
+udvidelse (valgfrie felter, manglende forbliver manglende, ingen opdigtede Sharpe-værdier, ingen historisk udfyldning
+med antagelser, eksisterende hashkæder og protokoller bevares; DSR/PBO beregnes ikke, når input mangler); EX1 NO-GO til
+K3-dataadgang, GO til yderligere syntetiske tests og designkontrol. P0 LQ1 låseklar: præcis hypotese,
+falsifikationskriterier, power, syntetisk evaluator, dokumenteret databehov, overlap-audit, reproducerbare tests; ingen
+formel lås, observationer eller nye datakilder. P1 DSR/PBO: Sharpe, observationsantal, skew, kurtosis, nettoafkastserier,
+variantfamilie og lineage, dokumentation for antal testede varianter. P2 EX1 syntetisk. P3 Dashboard V4 isoleret:
+læsbarhed, hierarki, mobil, datakvalitetsstatus, enkel navigation; statisk HTML og read-only; ingen nye
+handelsfunktioner. P4 fortsæt ordre 68; ingen ændring af aktive forsøg; ingen produktionsdeploy. P5 rapport; stop efter
+leverancen. Særligt ønske: held-kontrollen afhænger af, om der tælles 43 lineages, 206 forsøg eller 19.438 varianter.
+
+> modtaget 2026-11-09 – ordre 68 integreret og pushet (`fc862c1`, guarded suite 1860 tests OK); ordre 70 startet.
+
 ## 2026-11-09 Ejer + ChatGPT — direktørordre 69 "Dashboard V3 + research intelligence" (registreret kl. 16:48 lokal)
 Ejerens udkast "ordre 69" (dashboard cleanup + original research model) og besked ("du tager styringen med Claude …
 check hvad andre gør … dashboard skal se meget bedre ud"). Direktøren: GODKENDT MED UDVIDELSER. P0 Dashboard V3:
