@@ -60,3 +60,26 @@ Ejeren sendte to videoer til og skrev: "The github is called TauricResearch/Trad
 | 10 | @cotraderia | "6 years of trading rules in Obsidian … Claude built 7 AI agents. Each one checks a rule I used to break. I don't trade anymore. It does." | Nej (reglerne vises ikke) | Et disciplinlag, ikke en fordel. Lab'et har allerede fail-closed-gates, stopregler og factory-registret |
 | – | TikTok-link vm.tiktok.com/ZN8f3LX94 → @dennisbayo.ai, fotoopslag 7665433523653823777 | Kunne ikke læses: siden kræver JS, oEmbed gav HTTP 400, og Chrome-fanen frøs. Der er ikke logget ind og ikke prøvet omveje | – | UNVERIFIED. Ejeren kan sende et skærmbillede |
 | – | LinkedIn: Palak Jain, "I use Claude AI for trading every single day" | Claude som produktivitetsværktøj: scannere (Chartink/Screener.in), regnskabsresuméer, Python-backtest på Nifty (fx køb ved RSI < 35, sælg ved > 60), tjeklister | Kun eksempelregler, **ingen resultater** | Artiklen siger selv, at Claude ikke kan forudsige markedet. Den sælger mentorforløb. Ingen evidens |
+
+## Tillæg 3 (2026-11-09 11:42 lokal): @jessepbuilds "Claude trading algorithm" (8-slides karrusel + "Day 12"-video)
+
+| Påstand | Tal i slides | Vurdering |
+|---|---|---|
+| Agenter: scout, reader, summarizer, "recipe maker", engine og filter | 978 termer, 1.400+ idéer, 21 byggeklodser | Samme arkitektur som lab'et (factory, registre, evaluator). Ingen evidens i sig selv |
+| Engine: 2,1 mio. lys, cirka 306 tests/t, 2.101 tests i dag | – | Backtest på **samme** historik hver dag |
+| Filter: 2.101 → 388 "unseen data" → 189 "survive costs" → 62 "stable when tweaked" → **6 "beat pure luck"** | 0,3 % | Se nedenfor |
+| "Checked again by a second, independent engine. Differences found: 0" | – | Svarer til lab'ets Codex-krydstjek (0 forskelle). Det beviser korrekt regning, ikke en fordel |
+| Video "Day 12": equity-vifte (in- og out-of-sample), "First strategies testing ⏳" | 306 / 57 / 2,56 / 1,55 / 56 % | **Ingen forward-test og ingen rigtige handler endnu** |
+
+**Held-tjek (U3):**
+- Med N = 2.101 forsøg på én dag giver held alene en forventet bedste z på cirka 3,4. Ved α = 0,3 % pr. test forventes
+  cirka 6 falske fund, præcis hans "6 beat pure luck", medmindre "luck"-filtret korrigerer for alle 2.101 (og for
+  tidligere dages forsøg).
+- "Unseen data" er kun usete første gang. Når tusindvis af strategier testes dagligt mod den samme reserverede periode,
+  bliver den brugt op (lab'ets holdout-regel).
+
+**Vurdering:**
+- Et godt bygget forskningsværktøj, men slides'ene viser **ingen profit**, kun backtest-overlevere. Testen ville være:
+  hvor mange af de 6 overlever fremadrettet på papir, efter omkostninger, med låste regler.
+- Brugbart for lab'et: intet nyt; det bekræfter U3 og U6. Lab'et går længere med lås før data, holdout og
+  forward-only. Det gør os langsommere, men giver resultater, man kan stole på.
