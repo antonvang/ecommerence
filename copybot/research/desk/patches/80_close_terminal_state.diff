@@ -1,0 +1,111 @@
+--- a/copybot/lab/paper_runner.py
++++ b/copybot/lab/paper_runner.py
+@@ -281,14 +281,87 @@
+         return f"funding unavailable: {e!r}"[:120]
+ 
+ 
++# ---------- close states (director order 80; research/desk/FAILURE_STATES_80.md) ----------
++# A close that cannot finish is recorded as such: one append-only event per change of state, read back after a restart.
++# Nothing is priced, closed or marked without a real book, and a terminal state never resumes by itself.
++CLOSE_STATE = "paper.close_state"
++CLOSE_SUCCESS = "CLOSE_SUCCESS"
++PARTIAL_RETRYING, PARTIAL_TERMINAL = "PARTIAL_CLOSE_RETRYING", "PARTIAL_CLOSE_TERMINAL"
++INCOMPLETE_RETRYING, INCOMPLETE_TERMINAL = "CLOSE_INCOMPLETE_RETRYING", "CLOSE_INCOMPLETE_TERMINAL"
++TERMINAL_CLOSE_STATES = (PARTIAL_TERMINAL, INCOMPLETE_TERMINAL)
++CLOSE_RETRY_MAX_S = 7 * 86400          # a close that could still finish is retried for at most this long
++PERMANENT_UNAVAILABLE_SUFFIXES = (SPOT_SUFFIX,)   # order 76: the spot book host is permanently unavailable
++CLOSE_RULE = "director order 80 (research/desk/FAILURE_STATES_80.md)"
++
++
++def permanently_unavailable(sym):
++    return sym.endswith(tuple(PERMANENT_UNAVAILABLE_SUFFIXES))
++
++
++def close_state_of(open_legs, reduced, last_fill_ts, last_mark_ts, permanent, expired):
++    """The one place a close state is decided. No I/O. CLOSE_SUCCESS needs no open leg and a mark at or after the last
++    fill; anything else is a failure state, terminal once no open leg can still be closed or the retry time is spent."""
++    if not open_legs:
++        if last_fill_ts is not None and last_mark_ts is not None and last_mark_ts >= last_fill_ts:
++            return CLOSE_SUCCESS
++        return INCOMPLETE_TERMINAL if expired else INCOMPLETE_RETRYING
++    terminal = expired or all(s in permanent for s in open_legs)
++    if reduced:
++        return PARTIAL_TERMINAL if terminal else PARTIAL_RETRYING
++    return INCOMPLETE_TERMINAL if terminal else INCOMPLETE_RETRYING
++
++
++def _close_last(db, led):
++    r = db.one("SELECT payload FROM events WHERE kind=? AND exp_id=? ORDER BY id DESC LIMIT 1", CLOSE_STATE, led)
++    return _payload(r["payload"]) if r else {}
++
++
++def _leg_base(sym):
++    if sym.startswith(HL_PREFIX):
++        return sym[len(HL_PREFIX):] + "USDT"
++    return sym[:-len(SPOT_SUFFIX)] if sym.endswith(SPOT_SUFFIX) else sym
++
++
++def _note_close_state(db, eng, led, now):
++    """The ledger's close state now; one paper.close_state event only when it differs from the last one."""
++    with db.tx():                                      # BEGIN IMMEDIATE: one check and one write
++        last = _close_last(db, led)
++        first = int(last.get("first_ts") or now)
++        pos = eng.ledger(led)["positions"]
++        touched = {r[0] for r in db.q("SELECT DISTINCT f.instrument FROM sim_fills f JOIN sim_orders o ON "
++                                      "o.order_id=f.order_id WHERE f.exp_id=? AND o.reduce_only=1 AND o.order_id LIKE ?",
++                                      led, f"{led}|close|%")}
++        last_fill = db.one("SELECT MAX(ts) FROM sim_fills WHERE exp_id=?", led)[0]
++        last_mark = db.one("SELECT MAX(ts) FROM sim_equity WHERE exp_id=?", led)[0]
++        permanent = {s for s in pos if permanently_unavailable(s)}
++        state = close_state_of(sorted(pos), touched, last_fill, last_mark, permanent,
++                               int(now) - first >= CLOSE_RETRY_MAX_S)
++        flat = sorted(touched - set(pos))
++        bases = {_leg_base(s) for s in flat}
++        p = {"ledger": led, "state": state, "t": int(now), "first_ts": first, "open_legs": sorted(pos),
++             "closed_legs": flat, "unpaired_open_legs": sorted(s for s in pos if _leg_base(s) in bases),
++             "permanent_legs": sorted(permanent), "retry_deadline_ts": first + CLOSE_RETRY_MAX_S,
++             "last_fill_ts": last_fill, "last_mark_ts": last_mark, "simulated": True, "rule": CLOSE_RULE}
++        same = all(last.get(k) == p[k] for k in ("state", "open_legs", "closed_legs", "permanent_legs"))
++        if not same:
++            db.event(CLOSE_STATE, "agent:paper-1", led, p)
++    return last if same else p
++
++
+ def close_ledger(db, led, base, get, now, books=None, cache=None):
+     """Reduce-only close of a ledger that may no longer trade. One close order per symbol per hour, each walking a
+     book read just before it. Funding of the held positions is still booked (amendment 9 section 2), with bars and
+     funding only through the shared hourly cache (amendment 7 section 7). Marked once an hour."""
+     eng, hour = PaperEngine(db, lambda: now), int(now) // HOUR * HOUR
++    last = _close_last(db, led)
++    if last.get("state") in TERMINAL_CLOSE_STATES:      # order 80: no book, no funding, no mark; never resumes by itself
++        return {"status": "closing", "orders": [], "marked": False, "funding": 0, "close_state": last["state"],
++                "terminal": True, "open_legs": last.get("open_legs")}
+     funding = _funding_guarded(db, eng, led, get, now, cache)
+     orders = []
+     for s, q in eng.ledger(led)["positions"].items():
++        if permanently_unavailable(s):                  # order 76: not read, not priced, not closed
++            continue
+         oid = f"{led}|close|{hour}|{s}"
+         if eng._existing(oid):
+             continue                                    # sent this hour; an unfilled rest is retried next hour
+@@ -307,10 +380,17 @@
+     if not eng.ledger(led)["positions"] and _stale_flat(db, led):
+         eng.mark(led, {})                               # the final mark of a flat ledger: equity = cash, at once
+         note_marked(db, led, now)                       # order 66B: ends a recorded mark failure (records only)
++        st = _note_close_state(db, eng, led, now)
+         return {"status": "closing", "orders": orders, "marked": True, "final_mark": True, "funding": funding,
+-                **funding_fields(eng)}
+-    marked, _ = mark_guarded(db, eng, led, get, now, books)   # order 66B: a failure is recorded (59-D), not swallowed
+-    return {"status": "closing", "orders": orders, "marked": marked, "funding": funding, **funding_fields(eng)}
++                "close_state": st["state"], "terminal": st["state"] in TERMINAL_CLOSE_STATES, **funding_fields(eng)}
++    if any(permanently_unavailable(s) for s in eng.ledger(led)["positions"]):
++        marked, unmarkable = False, True                # order 80: no price exists; a failed read would say nothing
++    else:
++        marked, unmarkable = mark_guarded(db, eng, led, get, now, books)[0], False   # order 66B: a failure is recorded
++    st = _note_close_state(db, eng, led, now)
++    return {"status": "closing", "orders": orders, "marked": marked, "unmarkable": unmarkable, "funding": funding,
++            "close_state": st["state"], "terminal": st["state"] in TERMINAL_CLOSE_STATES,
++            "open_legs": st.get("open_legs"), **funding_fields(eng)}
+ 
+ 
+ def held_experiments(db):
