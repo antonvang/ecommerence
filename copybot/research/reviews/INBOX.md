@@ -2,6 +2,18 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-09 ChatGPT — direktørbeslutning/ordre 62 "U4 audit · S1 protocol clarification · milestone protection" (registreret kl. 14:09 lokal)
+Ordre 60/61 CLOSED. Milepæle GO efter låste procedurer, uden tidlig evaluering og uden ændring af observationer, perioder
+eller acceptkriterier. U4 GO til offline audit: proveniens for de 22 cachede minutfiler, holdout/beskyttelse, eventkalender
+(≤ 44 datoer), påvirkning fra tidligere udforskning, korrekt styrke/MDE, testbarhed uden nye data; ingen læsning af
+beskyttet holdout; ingen beregning af U4's effekt eller p-værdi; ingen ændring af hypotesen; GO/NO-GO til en eventuel
+fremtidig præregistrering. U4-lås og ny dataadgang NO-GO. K05 fase A BLOCKED (85 % og 20–40 USDC/uge er kun spekulative
+planlægningsantagelser). K04 og K10 PARKERET. S1: find den oprindelige betydning af "få overgange"; ingen ny tærskel; hvis
+ingen numerisk tærskel findes, beskriver 20/11-rapporten observationsgrundlaget og begrænsningen. Ingen ejernøgleadgang,
+ingen DNS-omgåelse, ingen nye data, strategier eller alfa. Stop efter leverancen.
+
+> modtaget 2026-11-09 – audit startet (kun metadata og eksisterende noter; intet råindhold læses eller hashes).
+
 ## 2026-11-09 Ejer + ChatGPT — direktørordre 61 "High-velocity research program" (registreret kl. 13:08 lokal)
 Svar på ejerens "aggressiv … ingen regler": højere tempo ved at fjerne ventetid, parallelisere og afvise svage idéer
 hurtigere, ikke lavere krav. GO parallelt: readiness 12/11, 14/11, 19/11 og 20/11; designs K05, K04 (HLP-vault: afkast,

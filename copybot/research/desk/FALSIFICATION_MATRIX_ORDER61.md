@@ -39,3 +39,8 @@ Kun design og readiness. Intet er låst, der er ikke hentet data, og ingen alfa 
    kan falde hurtigt efter lås. Den kræver kun D5 og direktørens beslutning. Den er beskrivende, ikke en strategi.
 3. K05 fase A kun, hvis DNS-blokeringen ophører, og D5 findes.
 4. K04 og K10 venter (styrke og alfa).
+
+## Tillæg (direktørbeslutning 62, kl. 14:09 lokal)
+
+K05's "~85 % FALSIFIED" og "20–40 USDC/uge" er **spekulative planlægningsantagelser**, ikke dokumenterede forventede
+resultater. K05 fase A: BLOCKED. K04 og K10: PARKERET. U4: kun offline audit; lås NO-GO.
