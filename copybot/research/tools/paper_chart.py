@@ -19,8 +19,9 @@ sim_equity is never read here: equity is not an instrument price.
 
 Charts: the instruments with the most fills in the FRESH books (ties by name), at most MAX_CHARTS; a CSS-only radio
 selector shows one at a time. Window: from the first fill of the instrument to the cutoff, or the last WINDOW_S if
-longer (the hidden older fills are counted). Each chart is rendered in three SVG sizes (viewBox, width 100%) and CSS
-shows the one that fits the screen, so text stays readable on desktop, tablet and mobile.
+longer (the hidden older fills are counted). V3 (director order 69): each chart is ONE responsive SVG (viewBox,
+width 100%) instead of three sizes; on narrow screens CSS enlarges the axis text, hides every other time label and
+scales the markers about their apex (transform-box: fill-box), so the apex stays at the exact (ts, px).
 """
 import collections
 import datetime as dt
@@ -38,59 +39,64 @@ MARKET_LABEL = "Markedskurs (mark, Binance USD-M premiumIndex)"
 FILL_ONLY = "Handelspriser — ikke en markedskurs"
 FUND_LABEL = "Funding-afregningspris"
 # key: (viewBox width, height, left, right, top, bottom margin, font px, max x ticks, max y ticks, marker half-width)
-VARIANTS = (("d", 1180, 470, 14, 86, 30, 46, 12, 9, 7, 7),
-            ("t", 760, 420, 12, 80, 28, 44, 12, 6, 6, 6),
-            ("m", 380, 330, 8, 64, 26, 42, 11, 4, 5, 5))
+# V3: one responsive size (was three: d 1180, t 760, m 380); the mobile look is CSS only (see CSS @media below).
+VARIANTS = (("d", 900, 470, 12, 118, 30, 58, 12, 10, 8, 6),)
 SKIP_LANE = 22
 TIME_STEPS = (900, 1800, 3600, 7200, 3 * 3600, 6 * 3600, 12 * 3600, 86400, 2 * 86400)
 
 CSS = """
-.hc{margin-top:8px}
 .hc-tabs{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
-.hc-tab{cursor:pointer;padding:6px 12px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);
-color:var(--mut);font:600 13px ui-monospace,Menlo,Consolas,monospace;user-select:none}
-.hc-tab small{font-weight:400;margin-left:6px;opacity:.8}
-.chart{display:none;background:#0d121d;border:1px solid var(--line);border-radius:16px;overflow:hidden}
-.ch-head{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line);
-background:linear-gradient(180deg,#121a2a,#0d121d)}
-.ch-sym{font:800 20px ui-monospace,Menlo,Consolas,monospace;letter-spacing:.02em}
-.ch-paper{background:var(--amb);color:#1a1200;font-weight:900;font-size:11px;padding:3px 8px;border-radius:6px;
+.hc-tab{cursor:pointer;padding:6px 12px;border-radius:8px;border:1px solid var(--line);background:var(--panel);
+color:var(--mut);font:600 13px var(--mono);user-select:none}
+.hc-tab small{font:500 11px var(--sans);margin-left:6px;opacity:.85}
+.chart{display:none;background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.ch-head{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line)}
+.ch-sym{font:700 18px var(--mono);letter-spacing:.01em}
+.ch-paper{background:var(--amb);color:#1a1200;font-weight:800;font-size:10.5px;padding:2px 7px;border-radius:5px;
 letter-spacing:.06em}
-.ch-kind{font-size:12px;font-weight:700;padding:3px 8px;border-radius:6px}
-.ch-kind.k-mkt{background:rgba(63,169,245,.14);color:var(--blu)}
-.ch-kind.k-fill{background:rgba(245,166,35,.14);color:var(--amb)}
-.ch-bots{color:var(--mut);font-size:12px}.ch-bots b{color:var(--txt)}
-.ch-meta{display:flex;flex-wrap:wrap;gap:4px 16px;padding:8px 14px;font-size:12px;color:var(--mut)}
-.ch-meta b{color:var(--txt);font-weight:600}
-.ch-leg{display:flex;flex-wrap:wrap;gap:6px 16px;padding:0 14px 8px;font-size:12px;color:var(--mut);align-items:center}
+.ch-kind{font-size:12px;font-weight:600;padding:2px 8px;border-radius:5px}
+.ch-kind.k-mkt{background:var(--blu-bg);color:var(--blu)}
+.ch-kind.k-fill{background:var(--amb-bg);color:var(--amb)}
+.ch-bots{color:var(--mut);font-size:12px}.ch-bots b{color:var(--txt);font-weight:600}
+.ch-body{display:grid;grid-template-columns:minmax(0,1fr) 300px}
+.ch-plot{padding:6px 2px 4px;background:var(--plot);min-width:0}
+.ch-side{border-left:1px solid var(--line);padding:12px 14px;font-size:12px;color:var(--mut);display:flex;
+flex-direction:column;gap:10px}
+.ch-meta{display:flex;flex-direction:column;gap:4px}.ch-meta b{color:var(--txt);font-weight:600}
+.ch-leg{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center}
 .ch-leg span{display:inline-flex;align-items:center;gap:6px}.ch-leg svg{width:18px;height:12px}
-.ch-plot{padding:0 4px}
+.ch-notes p{margin:0 0 6px}.ch-notes b{color:var(--txt)}
 .cv{display:block;width:100%;height:auto}
-.cv-t,.cv-m{display:none}
-.cv .bg{fill:#0d121d}.cv .grd{stroke:#1c2638;stroke-width:1}.cv .axl{stroke:#2a3650;stroke-width:1}
-.cv .tk{fill:#8a96ad;font-family:ui-monospace,Menlo,Consolas,monospace}.cv .tk.dt{fill:#c3cbdb;font-weight:700}
-.cv .wm{fill:#e6ebf5;opacity:.045;font-weight:900;font-family:ui-monospace,Menlo,Consolas,monospace}
-.cv .wp{fill:#f5a623;opacity:.55;font-weight:900;letter-spacing:.08em}
-.cv .gap{fill:#ffffff;fill-opacity:.045}
-.cv .gapt{fill:#5d6a85;font-style:italic}
-.cv .mkt{fill:none;stroke:#3fa9f5;stroke-width:1.6;stroke-linejoin:round;stroke-linecap:round}
-.cv .mkd{fill:#3fa9f5}
-.cv .last{fill:#3fa9f5}.cv .lastt{fill:#05121f;font-weight:800;font-family:ui-monospace,Menlo,Consolas,monospace}
-.cv .mk.buy{fill:#16c784;stroke:#0d121d;stroke-width:1.5}
-.cv .mk.sell{fill:#ff4d5e;stroke:#0d121d;stroke-width:1.5}
-.cv .mk.fund{fill:#0d121d;stroke:#f5a623;stroke-width:1.8}
-.cv .mk.skip{fill:#8a96ad;stroke:#0d121d;stroke-width:1.2}
-.cv .lane{fill:#111827}.cv .lanet{fill:#6c7891}
-.cv .entry{stroke-width:1.3;stroke-dasharray:6 4}.cv .entry.long{stroke:#16c784}.cv .entry.short{stroke:#ff4d5e}
-.cv .eb{fill:#0d121d;fill-opacity:.88;stroke-width:1}.cv .eb.long{stroke:#16c784}.cv .eb.short{stroke:#ff4d5e}
-.cv .et{fill:#e6ebf5;font-family:ui-monospace,Menlo,Consolas,monospace}
-.cv .cut{stroke:#7b61ff;stroke-width:1;stroke-dasharray:3 3}.cv .cutt{fill:#a796ff}
-.ch-notes{padding:8px 14px 12px;font-size:12px;color:var(--mut);border-top:1px solid var(--line)}
-.ch-notes p{margin:3px 0}.ch-notes b{color:var(--txt)}
-.hc-none{padding:16px;color:var(--mut);background:var(--panel);border:1px solid var(--line);border-radius:14px}
+.cv .bg{fill:var(--plot)}.cv .grd{stroke:#1b2232;stroke-width:1}.cv .axl{stroke:#2b3447;stroke-width:1}
+.cv .tk{fill:#8b95a7;font-family:var(--mono)}.cv .tk.dt{fill:#c9d1de;font-weight:700}
+.cv .wm{fill:#e7ebf2;opacity:.04;font-weight:800;font-family:var(--mono)}
+.cv .wp{fill:#f2b33d;opacity:.5;font-weight:800;letter-spacing:.08em}
+.cv .gap{fill:#ffffff;fill-opacity:.04}
+.cv .gapt{fill:#5f6a7f;font-style:italic}
+.cv .mkt{fill:none;stroke:#4aa3f0;stroke-width:1.5;stroke-linejoin:round;stroke-linecap:round;
+vector-effect:non-scaling-stroke}
+.cv .mkd{fill:#4aa3f0}
+.cv .last{fill:#4aa3f0}.cv .lastt{fill:#06121f;font-weight:800;font-family:var(--mono)}
+.cv .mk.buy{fill:#16c784;stroke:#0e131d;stroke-width:1.5}
+.cv .mk.sell{fill:#ff4d5e;stroke:#0e131d;stroke-width:1.5}
+.cv .mk.fund{fill:#0e131d;stroke:#f2b33d;stroke-width:1.8}
+.cv .mk.skip{fill:#8b95a7;stroke:#0e131d;stroke-width:1.2}
+.cv .lane{fill:#131a27}.cv .lanet{fill:#6f7a8f}
+.cv .entry{stroke-width:1.3;stroke-dasharray:6 4;vector-effect:non-scaling-stroke}.cv .entry.long{stroke:#16c784}
+.cv .entry.short{stroke:#ff4d5e}
+.cv .eb{fill:#0e131d;fill-opacity:.9;stroke-width:1}.cv .eb.long{stroke:#16c784}.cv .eb.short{stroke:#ff4d5e}
+.cv .et{fill:#e7ebf2;font-family:var(--mono)}
+.cv .cut{stroke:#8b7bff;stroke-width:1;stroke-dasharray:3 3;vector-effect:non-scaling-stroke}.cv .cutt{fill:#a99cff}
+.hc-none{padding:16px;color:var(--mut);background:var(--panel);border:1px solid var(--line);border-radius:12px}
 .hc-rest{color:var(--mut);font-size:12px;margin:8px 2px 0}
-@media (max-width:1000px){.cv-d{display:none}.cv-t{display:block}}
-@media (max-width:600px){.cv-t{display:none}.cv-m{display:block}.ch-sym{font-size:17px}}
+@media (max-width:1100px){.ch-body{grid-template-columns:1fr}.ch-side{border-left:0;border-top:1px solid var(--line)}}
+@media (max-width:640px){.cv .tk{font-size:26px}.cv .tk.dt{transform:translateY(9px)}.cv .tk.xo,.cv .gapt,.cv .lastg,.cv .wm{display:none}
+.cv .wp,.cv .cutt{font-size:19px}.cv .lanet{font-size:16px}
+.cv .mk.buy{transform-box:fill-box;transform-origin:50% 0;transform:scale(1.9)}
+.cv .mk.sell{transform-box:fill-box;transform-origin:50% 100%;transform:scale(1.9)}
+.cv .mk.fund,.cv .mk.skip{transform-box:fill-box;transform-origin:50% 50%;transform:scale(1.8)}
+.cv .eg{transform-box:fill-box;transform-origin:0 50%;transform:scale(1.25)}
+.ch-sym{font-size:16px}.ch-side{padding:10px 12px}.ch-plot{padding:4px 0}}
 """
 
 
@@ -308,13 +314,14 @@ def svg(c, names, var):
     span = x1 - x0
     tstep = next((s for s in TIME_STEPS if span / s <= xt), TIME_STEPS[-1])
     t = (x0 // tstep + 1) * tstep
-    last_day = None
+    last_day, k = None, 0
     while t < x1:
         x = X(t)
         o.append(f'<line class="grd" x1="{x:.2f}" x2="{x:.2f}" y1="{pt}" y2="{pb + lane + (6 if lane else 0)}"/>')
         d = dt.datetime.fromtimestamp(t, dt.timezone.utc)
-        o.append(f'<text class="tk" x="{x:.2f}" y="{H - mb + fs + 8}" text-anchor="middle" font-size="{fs}">'
-                 f'{d:%H:%M}</text>')
+        o.append(f'<text class="tk{" xo" if k % 2 else ""}" x="{x:.2f}" y="{H - mb + fs + 8}" text-anchor="middle" '
+                 f'font-size="{fs}">{d:%H:%M}</text>')
+        k += 1
         if d.date() != last_day and (d.hour == 0 or last_day is None):
             o.append(f'<text class="tk dt" x="{x:.2f}" y="{H - mb + 2 * fs + 12}" text-anchor="middle" '
                      f'font-size="{fs}">{d:%m-%d}</text>')
@@ -351,9 +358,9 @@ def svg(c, names, var):
                      + '"/>')
         lt, lv = m["points"][-1]
         yl = Y(lv)
-        o.append(f'<rect class="last" x="{pr + 1}" y="{yl - fs * 0.8:.2f}" width="{mr - 3}" height="{fs * 1.6:.2f}" '
-                 f'rx="3"><title>Seneste mark {e(num(lv))} ({e(utc(lt))})</title></rect>'
-                 f'<text class="lastt" x="{pr + 5}" y="{yl + fs * 0.35:.2f}" font-size="{fs}">{lv:,.{dec}f}</text>')
+        o.append(f'<g class="lastg"><rect class="last" x="{pr + 1}" y="{yl - fs * 0.8:.2f}" width="{mr - 3}" '
+                 f'height="{fs * 1.6:.2f}" rx="3"><title>Seneste mark {e(num(lv))} ({e(utc(lt))})</title></rect>'
+                 f'<text class="lastt" x="{pr + 5}" y="{yl + fs * 0.35:.2f}" font-size="{fs}">{lv:,.{dec}f}</text></g>')
     # entry lines (documented open positions only), labels nudged apart
     labs = []
     for en in c["entries"]:
@@ -363,7 +370,7 @@ def svg(c, names, var):
                  f'{en["dir"].upper()} {abs(en["qty"]):.6g} (net_report open_basis)</title></line>')
         labs.append([y, en])
     labs.sort(key=lambda a: a[0])
-    gap_px = fs * 1.7
+    gap_px = fs * 1.9
     for i in range(1, len(labs)):
         if labs[i][0] - labs[i - 1][0] < gap_px:
             labs[i][0] = labs[i - 1][0] + gap_px
@@ -372,9 +379,9 @@ def svg(c, names, var):
         txt = f'Entry (gns.) {en["px"]:,.{dec + 2}f} · {bot} {en["dir"].upper()}'
         wdt = len(txt) * fs * 0.62 + 10
         ly = min(max(y - fs * 0.9, pt + 2), pb - fs * 1.5)
-        o.append(f'<rect class="eb {en["dir"]}" x="{pl + 4}" y="{ly:.2f}" width="{wdt:.1f}" height="{fs * 1.45:.2f}" '
-                 f'rx="3"/><text class="et" x="{pl + 9}" y="{ly + fs * 1.05:.2f}" font-size="{fs - 1}">'
-                 f'{e(txt)}</text>')
+        o.append(f'<g class="eg"><rect class="eb {en["dir"]}" x="{pl + 4}" y="{ly:.2f}" width="{wdt:.1f}" '
+                 f'height="{fs * 1.45:.2f}" rx="3"/><text class="et" x="{pl + 9}" y="{ly + fs * 1.05:.2f}" '
+                 f'font-size="{fs - 1}">{e(txt)}</text></g>')
     # funding settlement prices: discrete diamonds
     for f in c["funding"]:
         x, y = X(f["ts"]), Y(f["px"])
@@ -427,11 +434,11 @@ def thin(seg, X, on):
 def legend_icon(kind):
     shapes = {"buy": '<path d="M9 1L3 11L15 11Z" fill="#16c784"/>',
               "sell": '<path d="M9 11L3 1L15 1Z" fill="#ff4d5e"/>',
-              "mkt": '<line x1="1" x2="17" y1="6" y2="6" stroke="#3fa9f5" stroke-width="2"/>',
-              "gap": '<rect x="1" y="1" width="16" height="10" fill="#ffffff" fill-opacity=".06" stroke="#3a4763" '
+              "mkt": '<line x1="1" x2="17" y1="6" y2="6" stroke="#4aa3f0" stroke-width="2"/>',
+              "gap": '<rect x="1" y="1" width="16" height="10" fill="#ffffff" fill-opacity=".06" stroke="#3b465c" '
                      'stroke-dasharray="2 2"/>',
-              "fund": '<path d="M9 1L14 6L9 11L4 6Z" fill="#0d121d" stroke="#f5a623" stroke-width="1.8"/>',
-              "skip": '<circle cx="9" cy="6" r="4" fill="#8a96ad"/>',
+              "fund": '<path d="M9 1L14 6L9 11L4 6Z" fill="#0e131d" stroke="#f2b33d" stroke-width="1.8"/>',
+              "skip": '<circle cx="9" cy="6" r="4" fill="#8b95a7"/>',
               "long": '<line x1="1" x2="17" y1="6" y2="6" stroke="#16c784" stroke-width="1.5" stroke-dasharray="4 3"/>',
               "short": '<line x1="1" x2="17" y1="6" y2="6" stroke="#ff4d5e" stroke-width="1.5" '
                        'stroke-dasharray="4 3"/>'}
@@ -453,7 +460,8 @@ def card(c, names):
     o = [f'<article class="chart ch-{ident(sym)}" data-instrument="{e(sym)}">',
          f'<div class="ch-head"><span class="ch-sym">{e(sym)}</span><span class="ch-paper">PAPER / SIMULATION</span>'
          f'{kind}<span class="ch-bots">Bots: {bots}</span></div>',
-         f'<div class="ch-meta"><span>Vindue: <b>{win}</b></span><span>Fyld i vinduet: <b>{len(c["fills"])}</b> '
+         '<div class="ch-body"><div class="ch-plot">' + "".join(svg(c, names, v) for v in VARIANTS) + "</div>",
+         f'<aside class="ch-side"><div class="ch-meta"><span>Vindue: <b>{win}</b></span><span>Fyld i vinduet: <b>{len(c["fills"])}</b> '
          f'({nb} køb / {ns} salg)' + (f'; fordelt på {pts} tidspunkter, fyld på samme tidspunkt ligger oven i hinanden'
                                       if pts < len(c["fills"]) else "") + '</span>']
     if m:
@@ -476,7 +484,6 @@ def card(c, names):
     if c["skips"]:
         leg.append(("skip", "Sprunget over (ingen pris)"))
     o.append('<div class="ch-leg">' + "".join(f"<span>{legend_icon(k)}{e(t)}</span>" for k, t in leg) + "</div>")
-    o.append('<div class="ch-plot">' + "".join(svg(c, names, v) for v in VARIANTS) + "</div>")
     notes = []
     if m:
         notes.append(f'<b>Markedskurs</b>: registrerede mark-observationer (observations, metric=mark) for {e(sym)}. '
@@ -495,7 +502,7 @@ def card(c, names):
         notes.append("Ingen entry-linje for " + ", ".join(e(names.get(x, x)) for x in c["undocumented"])
                      + ": positionen vendte gennem nul uden at være flad, så gennemsnittet er ikke dokumenteret.")
     notes.append("Hold musen over en markør for tid, side, mængde @ pris og gebyr. Kun visning: ingen ordrer.")
-    o.append('<div class="ch-notes">' + "".join(f"<p>{n}</p>" for n in notes) + "</div></article>")
+    o.append('<div class="ch-notes">' + "".join(f"<p>{n}</p>" for n in notes) + "</div></aside></div></article>")
     return "\n".join(o)
 
 

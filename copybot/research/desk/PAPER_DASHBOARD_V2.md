@@ -72,7 +72,8 @@ PAPER / SIMULATION, instrumentnavnet og bots med antal fyld.
   flad, beholder net_report den gamle basis. Så tegnes ingen linje, og grafen siger det.
 - **Equity** (`sim_equity`) læses aldrig af grafmodulet og tegnes aldrig som pris.
 - Hver graf tegnes i tre SVG-størrelser (viewBox, bredde 100 %): desktop over 1000 px, tablet 601–1000 px og mobil
-  op til 600 px. CSS viser den, der passer, så teksten er læsbar overalt.
+  op til 600 px. CSS viser den, der passer, så teksten er læsbar overalt. (V3: erstattet af én responsiv SVG, se
+  nedenfor.)
 - Tests: `tests/test_research_paper_chart.py` (15). De dækker ét instrument pr. SVG, markører på præcis position,
   fill-only-mærkning uden polyline, linjebrud ved et plantet hul, udtynding til registrerede punkter,
   funding-punkter, skip kun med instrument, entry kun for dokumenteret åben position, ingen equity, intet
@@ -126,6 +127,58 @@ forskningsresultater og ændrer aldrig registret.
   registerfiler, deterministisk output, flag ved afvigelse, manglende register, placering efter feedet og det rigtige
   register (antal = `ledger.attempts`, filer uændrede).
 
+## DASHBOARD V3 (direktørordre 69 P0, 2026-11-09)
+
+**Status: LOKAL prototype; produktionsdeploy stadig NO-GO.** Samme værktøj og kommando
+(`research/tools/paper_dashboard.py`, også `--refresh` og `write_atomic`). Ingen ændring af `lab/`, `net_report.py`,
+pins, protokoller, processer eller systemd. NB: timeren `copybot-dashboard.timer` kører fra denne checkout, så den
+næste 5-minutters kørsel skriver V3 til `~/copybot_dashboard.html`.
+
+Rækkefølge på siden:
+
+1. **Header**: COPYBOT, PAPER / SIMULATION-mærket, snapshot-tid og datacutoff i UTC og en sundhedslinje:
+   FRESH x / STALE y / MISSING_MARK z og samlet mærkestatus; **let DB-tjek** (`lab_qc.SCHEMA_TABLES` til stede, på
+   den åbne read-only-forbindelse); fuld integritet og hashkæder køres **ikke** hvert 5. minut (lab.db er ca. 750 MB),
+   så linjen siger "kør lab_qc" og viser den seneste kørsel, der er dokumenteret i `research/desk/LAB_QC.md`; og
+   status for den nyeste `research/data/net_report/reconcile_*.md` (fx RECONCILED). Mangler noget, står det der.
+2. **Overblik — aktuelle papirdata**: kun FRESH-konti som hovedkort. "Aktuel porteføljeværdi: Ikke tilgængelig",
+   så snart én konto er STALE eller MISSING_MARK (net_report's `portfolio_current_total`). "FRESH-konti netto" er
+   mærket "kun FRESH, ikke en porteføljeværdi". Et tredje kort viser datadækning (x / y konti FRESH) uden beløb.
+3. **Arkiv — forældede konti** (`<details>`, lukket som standard): STALE- og MISSING_MARK-konti med equity-forløb
+   (gråt), mærketid, alder, "sidst kendt, ikke aktuel" ved hvert tal og en datakvalitetslinje: antal registrerede
+   `paper.mark_failed` og årsagen. For lane/carry90-konti er årsagen en **statisk note i værktøjet** (`STALE_NOTE`,
+   pr. 2026-11-09: spotbenet kræver data-api.binance.vision, som lokal DNS blokerer siden ca. 2026-11-06 20:45 UTC;
+   kilder MARK_FAILED_59D.md, STALE_EQUITY_59C.md, FALSIFICATION_MATRIX_ORDER61.md §3). Andre STALE-konti får "årsag
+   ikke registreret her; kør lab_qc". STALE-tal er altid grå, aldrig grønne/røde og aldrig i hovedvisningen.
+4. **Handelschart**: som 59-K, men nyt layout (graf + sidepanel med vindue, legende og noter) og **én responsiv SVG
+   pr. graf** i stedet for tre. På smalle skærme (≤ 640 px) gør ren CSS aksetekst større, skjuler hver anden
+   tidsetiket og skalerer markørerne om deres spids (`transform-box: fill-box`), så spidsen stadig sidder på
+   fyldets (ts, px). Ingen JavaScript.
+5. **Aktivitet**: filtrene (bot, periode, status) virker nu kun på feedet; fyld og spring over står i to kolonner
+   på desktop, hver med egen rulleboks.
+6. **Forskningsoversigt** (ny, `research/tools/paper_research.py`): "Ingen valideret profitabel strategi" øverst;
+   kandidattabellen (§1), milepælene (§2) og blokeringerne (§3) læses fra
+   `research/desk/FALSIFICATION_MATRIX_ORDER61.md`, og tillægget (direktørbeslutning 62) vises ordret over
+   kandidaterne. Hvert punkt viser sin kildesti (matrixen og designnoten). Milepæle: 12/11 STRAKS, 14/11 gates,
+   19/11 HFC-1 + PAR-BOG, 20/11 S1, med tid til fra cutoff. Kan tabellerne ikke parses, vises en kurateret kopi
+   mærket med kilde og commit (`0f0bf50 · 2026-11-09 14:09:20 +0100`), aldrig en tom eller opdigtet status.
+7. **Strategikirkegård**: uændret indhold, nye farver, lukket `<details>` som standard (opsummering: antal forsøg).
+8. **Footer**: alle kilder, en read-only-erklæring og ansvarsfraskrivelsen.
+
+**Sidestørrelse** (rigtig lab.db, 2026-11-09 ca. 16:06 UTC): V2 658.410 byte → V3 477.564 byte (−27 %).
+Graf-SVG'erne faldt fra 310 KB til 111 KB. Resten er mest strategikirkegården (ca. 221 KB for alle 206 forsøg,
+foldet sammen men stadig i filen), feedet (61 KB) og CSS (34 KB). Syntetisk testside: ca. 287 KB, under 400 KB-loftet
+i testen.
+
+**Tests**: ny `tests/test_research_paper_dashboard_v3.py` (11): STALE ikke i hovedvisningen men i arkivet; ingen
+STALE-værdi stylet eller mærket som aktuel; porteføljeværdi ukendt ved STALE/MISSING_MARK; sundhedslinjen;
+forskningsoversigt med kilder; milepæle; fallback ved manglende/ødelagt matrix; intet script/URL/fetch/eval/knap/
+formular (kun `#`-ankre); DB byte-identisk og deterministisk; størrelsesloft og én SVG pr. graf; rækkefølge, lukkede
+folder og responsiv CSS. To eksisterende tests er ændret, fordi forventningen bevidst er ændret:
+`test_net_colours` (STALE-netto er nu `bnet old`, grå, ikke `bnet neg`) og `test_stale_never_styled_as_current`
+(tjekker klassen `bnet old` og fravær af `bnet pos|neg` i stedet for V2's CSS-regel `opacity:.55`).
+Desktop- og mobilvisning er kontrolleret med headless Chrome uden netværk (`unshare -rn`), 1440 og 420 px brede.
+
 ## Read-only-garantier
 
 - lab.db åbnes kun som `file:<sti>?mode=ro` med `PRAGMA query_only=ON`. Testen bekræfter, at DB-filen er
@@ -159,4 +212,4 @@ verificeret eksekverbar strategi og ikke investeringsrådgivning. Live-handel er
   Ejeren skal da tjekke browserkonsollen (F12) for fejl. Det gælder også nu: åbn F12 én gang og bekræft, at
   konsollen er tom.
 
-Filer: `research/tools/paper_dashboard.py`, `research/tools/paper_chart.py` (59-K), `research/tools/paper_graveyard.py` (60-D), `tests/test_research_paper_dashboard.py` (23 tests), `tests/test_research_paper_chart.py` (15 tests) og `tests/test_research_paper_graveyard.py` (18 tests).
+Filer: `research/tools/paper_dashboard.py`, `research/tools/paper_chart.py` (59-K), `research/tools/paper_graveyard.py` (60-D), `research/tools/paper_research.py` (69), `tests/test_research_paper_dashboard.py` (23 tests), `tests/test_research_paper_dashboard_v3.py` (11 tests), `tests/test_research_paper_chart.py` (15 tests) og `tests/test_research_paper_graveyard.py` (18 tests).

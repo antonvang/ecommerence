@@ -97,7 +97,7 @@ class Dashboard(unittest.TestCase):
     def test_net_colours(self):
         self.assertIn('bnet pos">+31.85', card(self.doc, "FRESHUP"))
         self.assertIn('bnet neg">−106.72', card(self.doc, "FRESHDN"))
-        self.assertIn('bnet neg">−10.00', card(self.doc, "OLD"))
+        self.assertIn('bnet old">−10.00', card(self.doc, "OLD"))         # order 69: a STALE net is grey
 
     def test_top_cards_no_current_total_when_stale_or_missing(self):
         self.assertIn('id="portfolio">Ikke tilgængelig', self.doc)
@@ -318,7 +318,8 @@ class Dashboard(unittest.TestCase):
         self.assertNotIn("spark pos", old)
         self.assertNotIn("spark neg", old)
         self.assertIn("sidst kendt, ikke aktuel", old)
-        self.assertIn(".bot.s-STALE .bnet{opacity:.55}", self.doc)
+        self.assertIn('class="bnet old"', old)                          # order 69: grey, never green/red
+        self.assertNotRegex(old, r'bnet (pos|neg)')
         self.assertNotRegex(self.doc, r'id="portfolio">[+−±]')
         self.assertNotIn("alle 4 konti FRESH", self.doc)
         self.assertNotIn("ALLE MÆRKER FRISKE", self.doc)

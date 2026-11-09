@@ -1,35 +1,43 @@
-"""PAPER DASHBOARD V2: one static, self-contained, read-only HTML page of the paper books (director orders 59-H P2
-and 59-J).
+"""PAPER DASHBOARD V3: one static, self-contained, read-only HTML page of the paper books (director orders 59-H P2,
+59-J, 59-K, 60-D, 63 and 69 P0 "DASHBOARD V3").
 
     python3 research/tools/paper_dashboard.py [--db PATH] [--cutoff YYYY-MM-DDTHH:MM:SSZ] --out PATH.html [--feed N]
+                                              [--factory DIR] [--refresh SECONDS]
 
-LOCAL prototype only; production deploy is NO-GO until director review (research/desk/PAPER_DASHBOARD_V2.md).
+LOCAL prototype only; production deploy is NO-GO until director review (research/desk/PAPER_DASHBOARD_V2.md, V3 part).
 
 Every number per account (net at the mark, mark time and age, FRESH/STALE/MISSING_MARK, fills, max drawdown) and the
 summary come from research.tools.net_report.build(con, now, cutoff); nothing is recomputed here. The activity feed lists
 recorded sim_fills rows and recorded skip/refusal/error events of the shown ledgers, newest first, up to the cutoff.
 No current portfolio value is shown unless every account is FRESH (and at least one account exists).
 
-Layout (59-J): bot cards ordered FRESH, STALE, MISSING_MARK, then by name, start time and ledger id; duplicate names are
-numbered "name #1", "name #2" by (start time, ledger id) and that label is used on the card, the filter chip and the
-feed rows (the ledger id stays on the card). A snapshot banner gives the generation time, the cutoff and the command
-to run again; a "Sådan læses tallene" box explains net and FRESH/STALE/MISSING_MARK. The feed shows the same rows as
-before, split into executed paper fills and skips/refusals/errors.
-
-HANDELSCHART (59-K, research/tools/paper_chart.py): under the bot grid, one read-only SVG trade chart per instrument
-of the FRESH books (most fills first, at most 6), picked with a CSS-only radio selector; fills, recorded market marks
-(gap-broken), funding settlement prices, instrument-tied skips and net_report's documented entry; never equity.
-
-STRATEGIKIRKEGÅRD (order 60 D, research/tools/paper_graveyard.py): after the activity feed, every attempt of the
-factory register (research/data/factory, read-only) with the register's own totals, statuses and recorded text,
-CSS-only status/lineage filters and a DIAGNOSTIC_ONLY U3 luck bar (video_triage.luck_bar); nothing is activated.
+V3 layout (order 69), top to bottom:
+1. Header: COPYBOT, the PAPER / SIMULATION badge, the snapshot (generation) time and data cutoff in UTC, and a health
+   strip: FRESH / STALE / MISSING_MARK counts, a light DB check (lab_qc.SCHEMA_TABLES present; the full integrity and
+   hash-chain checks are too heavy for a 5-minute refresh, so the strip says "kør lab_qc" and shows the last run
+   documented in research/desk/LAB_QC.md) and the last report reconciliation (research/data/net_report/reconcile_*.md).
+2. Overblik: only current paper data. Hero cards for the FRESH accounts, the FRESH net total labelled as such, and
+   "Aktuel porteføljeværdi: Ikke tilgængelig" whenever any account is STALE or MISSING_MARK.
+3. Arkiv - forældede konti (<details>, collapsed): STALE and MISSING_MARK accounts with their history, sparkline (grey),
+   last mark time, age and data quality (recorded paper.mark_failed events and the static STALE_NOTE); every number is
+   labelled "sidst kendt, ikke aktuel" and is never coloured green/red.
+4. HANDELSCHART (research/tools/paper_chart.py): one responsive SVG per instrument of the FRESH books.
+5. Aktivitet: CSS-only filters, then executed paper fills and skips/refusals/errors in two boxes.
+6. FORSKNINGSOVERSIGT (research/tools/paper_research.py): candidates, milestones and blockers read from
+   research/desk/FALSIFICATION_MATRIX_ORDER61.md, each with its source path; "Ingen valideret profitabel strategi".
+7. STRATEGIKIRKEGÅRD (research/tools/paper_graveyard.py), collapsed by default.
+8. Footer: sources, read-only statement, disclaimer.
+Cards are ordered FRESH, STALE, MISSING_MARK, then by name, start time and ledger id; duplicate names are numbered
+"name #1", "name #2" by (start time, ledger id) on the card, the filter chip and the feed rows.
 
 Read-only: lab.db is opened as file:...?mode=ro with PRAGMA query_only=ON. No network, no JS, no external resources;
-filters are pure CSS (radio inputs + :checked sibling selectors). The page does not refresh itself.
+filters and folding are pure HTML/CSS (radio inputs + :checked sibling selectors, <details>). The page does not
+refresh itself unless --refresh adds a <meta http-equiv="refresh">.
 """
 import argparse
 import collections
 import datetime as dt
+import glob
 import html
 import json
 import os
@@ -42,8 +50,10 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 from research.tools import net_report  # noqa: E402
 from research.tools import paper_chart  # noqa: E402
 from research.tools import paper_graveyard  # noqa: E402
+from research.tools import paper_research  # noqa: E402
 
 DB = net_report.DB
+HERE = paper_research.HERE
 SKIP_KINDS = ("straks.skipped", "paper.skipped", "lane.skipped", "paper.refused", "paper.error",
               "paper.mark_failed", "paper.mark_recovered")
 KIND_LABEL = {"straks.skipped": "SPRUNGET OVER", "paper.skipped": "SPRUNGET OVER", "lane.skipped": "SPRUNGET OVER",
@@ -54,6 +64,17 @@ SPARK_POINTS = 48
 RANK = {"FRESH": 0, "STALE": 1, "MISSING_MARK": 2}
 CMD = "python3 research/tools/paper_dashboard.py --out <fil>"
 CMD_HEAD, CMD_ARG = CMD.split(" --out ")[0], "--out <fil>"   # the argument never wraps inside "--out"
+LAB_QC_DOC = os.path.join("research", "desk", "LAB_QC.md")
+RECONCILE_GLOB = os.path.join("research", "data", "net_report", "reconcile_*.md")
+# Static data-quality note (order 69): why the lane/carry90 books are STALE. Text only; it is shown as the documented
+# cause for STALE accounts whose source has a spot leg, never used to compute or hide anything.
+SPOT_SOURCES = ("lane", "carry90")
+STALE_NOTE = ("Spotbenet i lane- og carry90-kontiene mærkes fra data-api.binance.vision. Den lokale DNS blokerer den "
+              "vært siden ca. 2026-11-06 20:45 UTC (kun en kort åbning 2026-11-08 06:39–06:45 UTC), så equity-mærket "
+              "står stille, mens funding stadig bogføres. Blokeringen omgås ikke.")
+STALE_NOTE_SRC = ("research/desk/MARK_FAILED_59D.md", "research/desk/STALE_EQUITY_59C.md",
+                  "research/desk/FALSIFICATION_MATRIX_ORDER61.md §3")
+STALE_NOTE_AS_OF = "2026-11-09"
 
 
 def start_key(a):
@@ -172,103 +193,236 @@ def spark(con, led, cutoff, capital, cls):
             f'y2="{base:.1f}" class="base"/><polyline points="{xy}"/></svg>')
 
 
+def mark_quality(con, ledgers, cutoff):
+    """Recorded paper.mark_failed events per ledger up to the cutoff: {ledger: (count, last ts)} (data quality)."""
+    leds = sorted(ledgers)
+    if not leds:
+        return {}
+    ph = ",".join("?" * len(leds))
+    return {led: (n, last) for led, n, last in con.execute(
+        f"SELECT exp_id, COUNT(*), MAX(ts) FROM events WHERE kind='paper.mark_failed' AND ts<=? AND exp_id IN ({ph}) "
+        f"GROUP BY exp_id", (cutoff, *leds))}
+
+
+def health(con, root):
+    """Light, read-only health facts for the header strip. Nothing heavy runs here (the dashboard refreshes every
+    5 minutes): the schema-table presence check of lab_qc on the open read-only connection, the last lab_qc run as
+    documented in LAB_QC.md, and the status line of the newest reconcile_*.md. Missing pieces say so."""
+    h = {"schema": None, "qc": None, "rec": None}
+    try:
+        from research.tools import lab_qc
+        want = tuple(lab_qc.SCHEMA_TABLES)
+    except Exception:                                     # lab_qc not importable: skip, the strip says "kør lab_qc"
+        want = ()
+    if want:
+        have = {r[0] for r in con.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+        h["schema"] = (sum(1 for t in want if t in have), len(want))
+    try:
+        with open(os.path.join(root, LAB_QC_DOC), encoding="utf-8") as f:
+            runs = re.findall(r"^## [^\n(]*\((\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ)[^)\n]*\)\s*\n+Samlet \*\*([A-Z]+)\*\*"
+                              r"[^:\n]*:\s*([^\n]+?)\.?\s*$", f.read(), re.M)
+        if runs:
+            h["qc"] = runs[-1]
+    except OSError:
+        pass
+    files = sorted(glob.glob(os.path.join(root, RECONCILE_GLOB)))
+    if files:
+        try:
+            with open(files[-1], encoding="utf-8") as f:
+                m = re.search(r"\*\*Status: ([A-Z_]+)\*\*", f.read())
+            day = re.search(r"reconcile_(\d{4}-\d\d-\d\d)\.md$", files[-1])
+            h["rec"] = (day.group(1) if day else "?", m.group(1) if m else "ukendt",
+                        os.path.relpath(files[-1], root))
+        except OSError:
+            pass
+    return h
+
+
 CSS = """
-:root{--bg:#0a0d14;--panel:#111725;--panel2:#161e30;--line:#24304a;--txt:#e6ebf5;--mut:#8a96ad;--pos:#16c784;
---neg:#ff4d5e;--amb:#f5a623;--acc:#7b61ff;--blu:#3fa9f5}
-*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--txt);
-font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+:root{color-scheme:dark;--bg:#0b0e14;--panel:#121722;--panel2:#181e2b;--plot:#0e131d;--line:#232b3b;--txt:#e7ebf2;
+--mut:#8b95a7;--pos:#16c784;--neg:#ff4d5e;--amb:#f2b33d;--acc:#6d7cff;--blu:#4aa3f0;--pos-bg:rgba(22,199,132,.12);
+--neg-bg:rgba(255,77,94,.12);--amb-bg:rgba(242,179,61,.12);--blu-bg:rgba(74,163,240,.12);
+--sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+--mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--txt);font:14px/1.5 var(--sans);
+-webkit-text-size-adjust:100%}
 .f{position:absolute;opacity:0;pointer-events:none;width:1px;height:1px}
-.wrap{max-width:1280px;margin:0 auto;padding:0 16px 40px}
-header{position:sticky;top:0;z-index:5;background:rgba(10,13,20,.96);border-bottom:1px solid var(--line);
-padding:12px 0;display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
-.logo{font-weight:900;letter-spacing:.18em;font-size:22px}.logo span{color:var(--acc)}
-.paper{background:var(--amb);color:#1a1200;font-weight:900;font-size:18px;padding:8px 16px;border-radius:10px;
-letter-spacing:.04em;border:2px solid #ffd27a}
-.cut{color:var(--mut);font-size:13px}.cut b{color:var(--txt)}
-.health{display:inline-block;padding:3px 10px;border-radius:999px;font-weight:700;font-size:12px;margin-left:8px}
-.h-ok{background:rgba(22,199,132,.15);color:var(--pos)}.h-warn{background:rgba(245,166,35,.15);color:var(--amb)}
-.h-bad{background:rgba(255,77,94,.15);color:var(--neg)}
-.banner{margin:14px 0 0;padding:12px 14px;border-radius:12px;border:1px solid var(--blu);
-background:rgba(63,169,245,.10);font-size:14px}.banner b{color:#fff}
-.banner code{display:inline-block;margin:4px 0;padding:2px 8px;border-radius:6px;background:#0b1120;color:var(--blu);
-font:13px ui-monospace,Menlo,Consolas,monospace;overflow-wrap:break-word}
-.banner code span{white-space:nowrap}.banner .bcut{display:block;color:var(--mut);
-font-size:12px}
-.howto{margin:12px 0 0;padding:12px 16px;background:var(--panel);border:1px solid var(--line);border-radius:14px;
-font-size:13px}.howto h3{margin:0 0 6px;font-size:13px;letter-spacing:.06em;text-transform:uppercase}
-.howto ul{margin:0;padding-left:18px}.howto li{margin:3px 0;color:var(--mut)}.howto li b{color:var(--txt)}
-.tops{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin:16px 0}
-.top{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px}
-.top h3{margin:0 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--mut)}
-.big{font-size:32px;font-weight:800;font-variant-numeric:tabular-nums}.sub{color:var(--mut);font-size:12px}
-.top.na .big{color:var(--amb);font-size:24px}.top.stale .big{opacity:.8}
-.pos{color:var(--pos)}.neg{color:var(--neg)}.zero{color:var(--mut)}
-h2{font-size:16px;margin:24px 0 10px;letter-spacing:.06em;text-transform:uppercase}
-h2 small{color:var(--mut);font-weight:400;text-transform:none;letter-spacing:0}
-.filters{display:flex;flex-direction:column;gap:8px;background:var(--panel);border:1px solid var(--line);
-border-radius:14px;padding:12px}
-.frow{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.frow>b{color:var(--mut);font-size:12px;width:64px}
-.pill{cursor:pointer;padding:4px 10px;border-radius:999px;border:1px solid var(--line);background:var(--panel2);
-color:var(--mut);font-size:12px;user-select:none}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
-.bot{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:16px;
-padding:14px;display:flex;flex-direction:column;gap:8px}
-.bot.s-STALE{border-color:rgba(245,166,35,.45);background:var(--panel)}
-.bot.s-MISSING_MARK{border-color:rgba(255,77,94,.55);background:var(--panel)}
-.bot.s-STALE .bnet{opacity:.55}
+.wrap{max-width:1320px;margin:0 auto;padding:0 20px 40px}
+code{font:12px var(--mono)}
+.hdr{display:grid;grid-template-columns:1fr auto;gap:12px 24px;align-items:center;padding:16px 0 12px;
+border-bottom:1px solid var(--line)}
+.brand{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center}
+.logo{font-weight:800;letter-spacing:.16em;font-size:20px}.logo span{color:var(--acc)}
+.paper{background:var(--amb);color:#1a1200;font-weight:800;font-size:13px;padding:5px 10px;border-radius:6px;
+letter-spacing:.03em}
+.banner{text-align:right;font-size:12px;color:var(--mut);line-height:1.55}
+.banner b{color:var(--txt);font-weight:600}.banner>b:first-child{font-weight:500;color:var(--mut)}
+.banner code{display:inline-block;margin:2px 0;padding:1px 6px;border-radius:4px;background:var(--panel2);
+color:#b9c3d6;overflow-wrap:anywhere}.banner code span{white-space:nowrap}.banner .bcut{display:block}
+.strip{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;font-size:12px}
+.hs{display:inline-flex;gap:6px;align-items:center;padding:3px 9px;border-radius:6px;background:var(--panel);
+border:1px solid var(--line);color:var(--mut);white-space:nowrap}.hs b{color:var(--txt);font-variant-numeric:tabular-nums}
+.hs i{width:7px;height:7px;border-radius:50%;display:inline-block}
+.d-f{background:var(--pos)}.d-s{background:var(--amb)}.d-m{background:var(--neg)}.d-n{background:var(--mut)}
+.hs.hq{white-space:normal}
+.health{display:inline-block;padding:3px 9px;border-radius:6px;font-weight:700;font-size:12px}
+.h-ok{background:var(--pos-bg);color:var(--pos)}.h-warn{background:var(--amb-bg);color:var(--amb)}
+.h-bad{background:var(--neg-bg);color:var(--neg)}
+.toc{position:sticky;top:0;z-index:5;display:flex;gap:2px;overflow-x:auto;white-space:nowrap;padding:6px 0;
+background:rgba(11,14,20,.94);border-bottom:1px solid var(--line);margin:0 0 4px;scrollbar-width:none}
+.toc a{color:var(--mut);text-decoration:none;font-size:13px;padding:5px 10px;border-radius:6px}
+.toc a:hover{color:var(--txt);background:var(--panel)}
+h2{font-size:17px;font-weight:700;margin:32px 0 12px;letter-spacing:.01em;display:flex;flex-wrap:wrap;
+align-items:baseline;gap:4px 10px}
+h2 small{color:var(--mut);font-weight:400;font-size:13px}
+.sub{color:var(--mut);font-size:12px}
+.pos{color:var(--pos)}.neg{color:var(--neg)}.zero,.old{color:var(--mut)}
+.tops{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:0 0 12px}
+.top{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.top h3{margin:0 0 6px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--mut)}
+.big,.kn{font-size:30px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.2;letter-spacing:-.01em}
+.kn small{font-size:15px;color:var(--mut);font-weight:500}
+.top.na{border-color:rgba(242,179,61,.35)}.top.na .big{color:var(--amb);font-size:24px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+.arch-grid{grid-template-columns:repeat(auto-fill,minmax(270px,1fr))}
+.bot{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;
+flex-direction:column;gap:8px;min-width:0}
+.bot.s-FRESH{border-top:2px solid var(--pos)}
 .bhead{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
-.avatar{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;font-weight:900;
-background:var(--acc);color:#fff;flex:none}
-.bname{font-weight:800;font-size:15px;word-break:break-word}.bled{color:var(--mut);font-size:11px}
-.src{font-size:11px;padding:2px 8px;border-radius:6px;background:#1f2940;color:var(--blu);text-transform:uppercase}
-.chip{display:inline-block;padding:3px 8px;border-radius:8px;font-size:11px;font-weight:700}
-.c-FRESH{background:rgba(22,199,132,.15);color:var(--pos)}.c-STALE{background:rgba(245,166,35,.15);color:var(--amb)}
-.c-MISSING_MARK{background:rgba(255,77,94,.15);color:var(--neg)}
-.bnet{font-size:26px;font-weight:800;font-variant-numeric:tabular-nums}
-.stats{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;font-size:12px;color:var(--mut)}
-.stats b{color:var(--txt);font-weight:600}
-.spark{width:100%;height:36px}.spark polyline{fill:none;stroke-width:1.6;vector-effect:non-scaling-stroke}
-.spark .base{stroke:var(--line);stroke-dasharray:3 3;vector-effect:non-scaling-stroke}
+.bname{font-weight:700;font-size:15px;word-break:break-word}.bled{color:var(--mut);font:11px var(--mono)}
+.src{font-size:11px;font-weight:600;padding:2px 7px;border-radius:5px;background:var(--panel2);color:#a9b4c7;
+text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+.chip{display:inline-block;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700}
+.c-FRESH{background:var(--pos-bg);color:var(--pos)}.c-STALE{background:var(--amb-bg);color:var(--amb)}
+.c-MISSING_MARK{background:var(--neg-bg);color:var(--neg)}
+.bmid{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.bnet{font-size:28px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.01em;line-height:1.15}
+.stats{display:grid;grid-template-columns:auto 1fr auto 1fr;gap:3px 10px;font-size:12px;color:var(--mut)}
+.stats b{color:var(--txt);font-weight:600;font-variant-numeric:tabular-nums}
+.mk-at{font-size:12px;color:var(--mut)}.mk-at b{color:var(--txt);font-weight:600;font-variant-numeric:tabular-nums}
+.spark{width:100%;height:56px}.spark polyline{fill:none;stroke-width:1.6;vector-effect:non-scaling-stroke}
+.spark .base{stroke:#2d3648;stroke-dasharray:3 3;vector-effect:non-scaling-stroke}
 .spark.pos polyline{stroke:var(--pos)}.spark.neg polyline{stroke:var(--neg)}
-.spark.zero polyline,.spark.old polyline{stroke:var(--mut)}
+.spark.zero polyline,.spark.old polyline{stroke:#6f7a8f}
 .spark.none{font-size:11px;color:var(--mut);height:auto}
-.feedbox{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
-.ev{display:grid;grid-template-columns:180px 170px 120px 1fr;gap:8px;padding:8px 12px;
-border-top:1px solid var(--line);font-size:13px;align-items:center}
+.howto{margin:12px 0 0;padding:10px 14px;border:1px solid var(--line);border-radius:12px;font-size:12px;
+background:transparent}.howto h3{margin:0 0 4px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+color:var(--mut)}.howto ul{margin:0;padding-left:16px;columns:2 360px;column-gap:28px}
+.howto li{margin:2px 0;color:var(--mut);break-inside:avoid}.howto li b{color:var(--txt)}
+details.fold{margin:28px 0 0;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+details.fold>summary{cursor:pointer;list-style:none;display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline;
+padding:14px 16px}
+details.fold>summary::-webkit-details-marker{display:none}
+details.fold>summary::before{content:"\\25B8";color:var(--mut);font-size:12px;width:12px}
+details.fold[open]>summary::before{content:"\\25BE"}
+details.fold[open]>summary{border-bottom:1px solid var(--line)}
+.sum-t{font-size:17px;font-weight:700}.sum-s{color:var(--mut);font-size:13px}
+.fold-in{padding:14px 16px 16px}
+.fold .gv>h2{display:none}
+.arch .bot{background:var(--panel2);border-style:dashed}
+.arch .bnet{font-size:22px}
+.arch .top{background:var(--panel2);margin:0 0 12px;max-width:520px}
+.why{margin:0 0 14px;padding:10px 14px;border-left:3px solid var(--amb);background:var(--amb-bg);border-radius:6px;
+font-size:13px}.why p{margin:0 0 4px}.why .rs-src{margin-top:4px}
+.dq{font-size:12px;color:var(--mut);border-top:1px solid var(--line);padding-top:6px}.dq b{color:var(--txt)}
+.ah3{margin:18px 0 8px;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
+.filters{display:flex;flex-direction:column;gap:6px;margin:0 0 12px}
+.frow{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.frow>b{color:var(--mut);font-size:12px;
+font-weight:600;width:64px}
+.pill{cursor:pointer;padding:3px 10px;border-radius:999px;border:1px solid var(--line);background:var(--panel);
+color:var(--mut);font-size:12px;user-select:none}
+#feed{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto auto;grid-auto-flow:column;
+gap:8px 16px}
+#feed>.feedbox:only-child{grid-column:1/-1}
+.feedbox{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:auto;max-height:620px}
+.ev{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:2px 10px;padding:8px 12px;
+border-top:1px solid var(--line);font-size:13px;align-items:baseline}
 .ev:first-child{border-top:0}
-.ev .t{color:var(--mut);font-variant-numeric:tabular-nums;font-size:12px;white-space:nowrap}
-.ev .who{font-weight:700;word-break:break-word}.ev .sym{font-family:ui-monospace,Menlo,Consolas,monospace}
-.ev.fill{border-left:4px solid var(--blu)}
-.ev.skip{background:rgba(245,166,35,.05);border-left:4px solid var(--amb)}
-.ev.err{background:rgba(255,77,94,.07);border-left:4px solid var(--neg)}
-.fh{margin:16px 0 8px;font-size:13px;letter-spacing:.06em;text-transform:uppercase;display:flex;gap:8px;
-align-items:center;flex-wrap:wrap}.fh small{color:var(--mut);font-weight:400;text-transform:none;letter-spacing:0}
-.tag{padding:2px 8px;border-radius:6px;font-size:11px;font-weight:800}.t-fill{background:rgba(63,169,245,.15);
-color:var(--blu)}.t-skip{background:rgba(245,166,35,.15);color:var(--amb)}
-.side{display:inline-block;min-width:44px;text-align:center;padding:1px 6px;border-radius:6px;font-size:11px;
-font-weight:800;margin-right:6px}.buy{background:rgba(63,169,245,.15);color:var(--blu)}
-.sell{background:rgba(123,97,255,.18);color:#b3a4ff}.sk{background:rgba(245,166,35,.15);color:var(--amb)}
-.er{background:rgba(255,77,94,.15);color:var(--neg)}
-.fee{color:var(--neg);font-size:12px;margin-left:8px}.why{color:var(--mut)}
+.ev .t{color:var(--mut);font:12px var(--mono);white-space:nowrap}
+.ev .who{font-weight:600;word-break:break-word}.ev .sym{font:12px var(--mono);color:#b9c3d6}
+.ev>span:last-child{grid-column:1/-1}
+.ev.fill{box-shadow:inset 3px 0 0 var(--blu)}
+.ev.skip{box-shadow:inset 3px 0 0 var(--amb)}
+.ev.err{background:rgba(255,77,94,.05);box-shadow:inset 3px 0 0 var(--neg)}
+.fh{margin:0;font-size:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-weight:600}
+.fh small{color:var(--mut);font-weight:400}
+.tag{padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700;letter-spacing:.03em}
+.t-fill{background:var(--blu-bg);color:var(--blu)}.t-skip{background:var(--amb-bg);color:var(--amb)}
+.side{display:inline-block;min-width:44px;text-align:center;padding:1px 6px;border-radius:4px;font-size:11px;
+font-weight:700;margin-right:6px}.buy{background:var(--pos-bg);color:var(--pos)}
+.sell{background:var(--neg-bg);color:#ff8a96}.sk{background:var(--amb-bg);color:var(--amb)}
+.er{background:var(--neg-bg);color:var(--neg)}
+.fee{color:var(--mut);font-size:12px;margin-left:8px}.why-t{color:var(--mut)}
 .empty{padding:16px;color:var(--mut)}
-footer{margin-top:28px;padding-top:16px;border-top:1px solid var(--line);color:var(--mut);font-size:12px}
-footer p{margin:4px 0}footer b{color:var(--txt)}
-@media (max-width:720px){header{position:static}.ev{grid-template-columns:1fr 1fr}.ev>span:last-child{grid-column:1/-1}
-.big{font-size:26px}.paper{font-size:15px}}
+footer{margin-top:36px;padding-top:16px;border-top:1px solid var(--line);color:var(--mut);font-size:12px}
+footer p{margin:4px 0}footer b{color:var(--txt)}footer ul{margin:4px 0 8px;padding-left:16px}
+footer code{color:#b9c3d6}
+@media (max-width:1000px){.tops{grid-template-columns:1fr 1fr}.tops .top:first-child{grid-column:1/-1}
+#feed{grid-template-columns:1fr;grid-auto-flow:row}.hdr{grid-template-columns:1fr}.banner{text-align:left}}
+@media (max-width:600px){.wrap{padding:0 14px 32px}.tops{grid-template-columns:1fr}.big,.kn{font-size:26px}
+.paper{font-size:12px}.logo{font-size:18px}.grid{grid-template-columns:1fr}.stats{grid-template-columns:auto 1fr}
+.feedbox{max-height:520px}h2{font-size:16px}.sum-t{font-size:16px}}
 """
 
 
-def page(rep, frows, totals, db_path, feed_n, conspark, chart=None, graveyard=None):
+def bot_card(a, nm, conspark, quality, cutoff):
+    """One account card. FRESH: coloured net (current). STALE / MISSING_MARK: grey net, labelled last known."""
+    led, st = a["ledger"], a["mark_status"]
+    o = [f'<article class="bot b-{ident(led)} s-{st}">',
+         f'<div class="bhead"><div><div class="bname">{e(nm)}</div><div class="bled">{e(led)}</div></div>'
+         f'<span class="src">{e(a["source"])}</span></div>']
+    if st == "FRESH":
+        age = a.get("mark_age_s")
+        o.append(f'<div class="bmid"><div class="bnet {tone(a["net"])}">{e(money(a["net"]))}</div>'
+                 f'<span class="chip c-FRESH">FRESH</span></div>'
+                 '<div class="sub">netto ved mærket · papir-P&amp;L, ikke valideret</div>')
+        scls = tone(a["net"])
+        agetxt = f"{int(age // 60)} min" if age is not None else "–"
+    elif st == "STALE":
+        age = a["mark_age_s"] / 3600
+        o.append(f'<div><span class="chip c-STALE">Forældet — mærket {e(utc(a["marked_at"], "%m-%d %H:%M"))}, '
+                 f'{age:.1f} t</span></div>')
+        o.append(f'<div class="bnet old">{e(money(a["net"]))}</div><div class="sub">sidst kendt, ikke aktuel</div>')
+        scls, agetxt = "old", None
+    else:
+        o.append('<div><span class="chip c-MISSING_MARK">MISSING_MARK</span></div>')
+        o.append('<div class="bnet zero">–</div><div class="sub">ingen mærkning før cutoff</div>')
+        scls, agetxt = "old", None
+    o.append(conspark(led, a["capital"], scls))
+    o.append(f'<div class="stats"><span>Fyld</span><b>{a["fills"]}</b>'
+             f'<span>Maks. fald</span><b>{a["max_drawdown"]:.2%}</b>'
+             f'<span>Kapital</span><b>{a["capital"]:,.0f}</b>'
+             f'<span>Aktiv</span><b>{"ja" if a["active"] else "nej"}</b></div>'
+             f'<div class="mk-at">Seneste mærke <b>{e(utc(a["marked_at"], "%m-%d %H:%M:%S"))}</b>'
+             + (f' · alder <b>{e(agetxt)}</b>' if agetxt else "") + "</div>")
+    if st != "FRESH":
+        n, last = quality.get(led, (0, None))
+        mf = (f"paper.mark_failed {n}×, senest {e(utc(last, '%m-%d %H:%M'))}" if n else "0× paper.mark_failed")
+        why = ("årsag: spotben/DNS (se noten øverst)" if a["source"] in SPOT_SOURCES and st == "STALE"
+               else "årsag ikke registreret her; kør lab_qc")
+        o.append(f'<div class="dq"><b>Datakvalitet:</b> {st} · {mf} · {e(why)}</div>')
+    o.append("</article>")
+    return "".join(o)
+
+
+def page(rep, frows, totals, db_path, feed_n, conspark, chart=None, graveyard=None, research=None, quality=None,
+         hinfo=None):
     sm = rep["summary"]
     cutoff, now = sm["cutoff"], rep["generated"]
     accs = ordered(rep["accounts"])
     n_acc = len(accs)
     names = labels(accs)
     status = {a["ledger"]: a["mark_status"] for a in accs}
+    fresh = [a for a in accs if a["mark_status"] == "FRESH"]
+    old = [a for a in accs if a["mark_status"] == "STALE"]
+    nomark = [a for a in accs if a["mark_status"] not in ("FRESH", "STALE")]
+    quality = quality or {}
+    hinfo = hinfo or {"schema": None, "qc": None, "rec": None}
+    th = sm["stale_threshold_s"] // 3600
     out = []
     w = out.append
 
-    # --- filter state inputs (pure CSS filters) ---
+    # --- filter state inputs (pure CSS filters; they act on the activity feed) ---
     bot_ids = ["all"] + [ident(a["ledger"]) for a in accs]
     radios = [f'<input class="f" type="radio" name="fb" id="fb-{b}"{" checked" if b == "all" else ""}>'
               for b in bot_ids]
@@ -280,19 +434,20 @@ def page(rep, frows, totals, db_path, feed_n, conspark, chart=None, graveyard=No
     radios.append(hc[0])
     gy = graveyard() if graveyard else ("", "", "")      # 60-D STRATEGIKIRKEGÅRD: (radios, css, section html)
     radios.append(gy[0])
-    css = [CSS, hc[1], gy[1]]
+    rs = research() if research else ("", "")           # 69 FORSKNINGSOVERSIGT: (css, section html)
+    css = [CSS, hc[1], gy[1], rs[0]]
     on = "{background:var(--acc);color:#fff;border-color:var(--acc)}"
     for b in bot_ids:
         css.append(f"#fb-{b}:checked~.wrap label[for=fb-{b}]{on}")
         if b != "all":
-            css.append(f"#fb-{b}:checked~.wrap .ev:not(.b-{b}),#fb-{b}:checked~.wrap .bot:not(.b-{b}){{display:none}}")
+            css.append(f"#fb-{b}:checked~.wrap .ev:not(.b-{b}){{display:none}}")
     for p in ("all", "24", "7"):
         css.append(f"#fp-{p}:checked~.wrap label[for=fp-{p}]{on}")
     css.append("#fp-24:checked~.wrap .ev:not(.in24),#fp-7:checked~.wrap .ev:not(.in7){display:none}")
     for s in ("all", "FRESH", "STALE", "MISSING_MARK"):
         css.append(f"#fs-{s}:checked~.wrap label[for=fs-{s}]{on}")
         if s != "all":
-            css.append(f"#fs-{s}:checked~.wrap .ev:not(.s-{s}),#fs-{s}:checked~.wrap .bot:not(.s-{s}){{display:none}}")
+            css.append(f"#fs-{s}:checked~.wrap .ev:not(.s-{s}){{display:none}}")
 
     w("<!DOCTYPE html>")
     w('<html lang="da"><head><meta charset="utf-8">')
@@ -302,33 +457,47 @@ def page(rep, frows, totals, db_path, feed_n, conspark, chart=None, graveyard=No
     w("\n".join(radios))
     w('<div class="wrap">')
 
-    # --- header ---
+    # --- 1. header: brand, PAPER badge, snapshot + cutoff (UTC), health strip ---
     if n_acc == 0:
-        health = '<span class="health h-bad">INGEN DATA</span>'
+        health_chip = '<span class="health h-bad">INGEN DATA</span>'
     elif sm["missing_mark"]:
-        health = f'<span class="health h-bad">MANGLER MÆRKNING: {sm["missing_mark"]}</span>'
+        health_chip = f'<span class="health h-bad">MANGLER MÆRKNING: {sm["missing_mark"]}</span>'
     elif sm["stale"]:
-        health = f'<span class="health h-warn">FORÆLDEDE MÆRKER: {sm["stale"]}</span>'
+        health_chip = f'<span class="health h-warn">FORÆLDEDE MÆRKER: {sm["stale"]}</span>'
     else:
-        health = '<span class="health h-ok">ALLE MÆRKER FRISKE</span>'
-    w('<header><div class="logo">COPY<span>BOT</span></div>')
-    w('<div class="paper" id="paper-badge">PAPER / SIMULATION — ingen rigtige penge</div>')
-    w(f'<div class="cut">Cutoff: <b>{e(utc(cutoff))}</b>{health}</div></header>')
+        health_chip = '<span class="health h-ok">ALLE MÆRKER FRISKE</span>'
+    w('<header class="hdr"><div class="brand"><div class="logo">COPY<span>BOT</span></div>'
+      '<div class="paper" id="paper-badge">PAPER / SIMULATION — ingen rigtige penge</div></div>')
     w(f'<div class="banner" id="snapshot"><b>Statisk snapshot genereret {e(utc(now))}. Kør kommandoen igen for nye '
       f'tal.</b><br><code>{e(CMD_HEAD)} <span>{e(CMD_ARG)}</span></code>'
       f'<span class="bcut">Datacutoff: <b>{e(utc(cutoff))}</b> · tallene er frosset '
       f'ved cutoff og opdaterer ikke sig selv · kun registrerede papirdata fra lab.db</span></div>')
-    th = sm["stale_threshold_s"] // 3600
-    w('<section class="howto" id="howto"><h3>Sådan læses tallene</h3><ul>'
-      '<li><b>Netto</b> = seneste equity-mærke minus startkapital, som defineret i net_report: det seneste timemærke '
-      'på eller før cutoff.</li>'
-      f'<li><b>FRESH</b> = mærket er højst {th} t gammelt ved cutoff. <b>STALE</b> = mærket er ældre; tallet er den '
-      'sidst kendte værdi og ikke aktuelt. <b>MISSING_MARK</b> = intet mærke før cutoff.</li>'
-      '<li>Funding, gebyrer og fyld kan ligge senere end mærket: fyldtal og feed går til cutoff, netto står ved '
-      'mærket.</li>'
-      '<li>Papir-P&amp;L uden gearing og uden marginmodel.</li></ul></section>')
+    sc = hinfo["schema"]
+    if sc is None:
+        db_txt, db_dot = "DB: let tjek ikke muligt — kør lab_qc", "d-n"
+    else:
+        db_txt = f"DB: skema {sc[0]}/{sc[1]} tabeller (let tjek)"
+        db_dot = "d-f" if sc[0] == sc[1] else "d-m"
+    qc = hinfo["qc"]
+    qc_txt = (f"Fuld integritet + hashkæder: kør lab_qc · senest dokumenteret {qc[0]}: {qc[1]} ({qc[2]}) · "
+              f"{LAB_QC_DOC}" if qc else "Fuld integritet + hashkæder: kør lab_qc (ingen dokumenteret kørsel fundet)")
+    qc_dot = "d-n" if not qc else {"PASS": "d-f", "WARN": "d-s"}.get(qc[1], "d-m")
+    rec = hinfo["rec"]
+    rec_txt = (f"Rapportafstemning {rec[0]}: {rec[1]} · {rec[2]}" if rec else "Rapportafstemning: ingen fundet")
+    rec_dot = "d-n" if not rec else ("d-f" if rec[1] == "RECONCILED" else "d-m")
+    w(f'<div class="strip" id="health"><span class="hs"><i class="d-f"></i>FRESH <b>{sm["fresh"]}</b></span>'
+      f'<span class="hs"><i class="d-s"></i>STALE <b>{sm["stale"]}</b></span>'
+      f'<span class="hs"><i class="d-m"></i>MISSING_MARK <b>{sm["missing_mark"]}</b></span>{health_chip}'
+      f'<span class="hs hq" id="h-db"><i class="{db_dot}"></i>{e(db_txt)}</span>'
+      f'<span class="hs hq" id="h-qc"><i class="{qc_dot}"></i>{e(qc_txt)}</span>'
+      f'<span class="hs hq" id="h-rec"><i class="{rec_dot}"></i>{e(rec_txt)}</span></div></header>')
+    w('<nav class="toc" aria-label="sektioner"><a href="#overblik">Overblik</a><a href="#arkiv">Arkiv</a>'
+      '<a href="#handelschart">Handelschart</a><a href="#aktivitet">Aktivitet</a><a href="#forskning">Forskning</a>'
+      '<a href="#kirkegaard-fold">Kirkegård</a><a href="#kilder">Kilder</a></nav>')
 
-    # --- top cards ---
+    # --- 2. Overblik: only current (FRESH) paper data ---
+    w(f'<section class="ov" id="overblik"><h2>Overblik — aktuelle papirdata <small>kun FRESH-konti (mærke højst '
+      f'{th} t gammelt ved cutoff) · {n_acc} papirkonti i alt; forældede konti ligger i arkivet</small></h2>')
     cur = sm["portfolio_current_total"]
     w('<section class="tops">')
     if cur is not None and n_acc > 0:
@@ -343,82 +512,81 @@ def page(rep, frows, totals, db_path, feed_n, conspark, chart=None, graveyard=No
           f'<div class="sub">{e(why)}; en samlet værdi vises kun når alle konti er FRESH</div></div>')
     if sm["fresh"]:
         nf = sm["net_fresh_total"]
-        w(f'<div class="top"><h3>FRESH-konti netto</h3><div class="big {tone(nf)}">{e(money(nf))}</div>'
-          f'<div class="sub">{sm["fresh"]} af {n_acc} konti; mærke højst '
-          f'{sm["stale_threshold_s"] // 3600} t gammelt ved cutoff</div></div>')
+        w(f'<div class="top"><h3>FRESH-konti netto</h3><div class="big {tone(nf)}" id="fresh-net">{e(money(nf))}</div>'
+          f'<div class="sub">{sm["fresh"]} af {n_acc} konti; mærke højst {th} t gammelt ved cutoff · kun FRESH, '
+          f'ikke en porteføljeværdi</div></div>')
     else:
-        w(f'<div class="top na"><h3>FRESH-konti netto</h3><div class="big">Ikke tilgængelig</div>'
+        w(f'<div class="top na"><h3>FRESH-konti netto</h3><div class="big" id="fresh-net">Ikke tilgængelig</div>'
           f'<div class="sub">0 af {n_acc} konti FRESH</div></div>')
-    if sm["stale"]:
-        ns = sm["net_stale_last_known"]
-        w(f'<div class="top stale"><h3>Sidst kendt netto, STALE-konti</h3><div class="big {tone(ns)}">'
-          f'{e(money(ns))}</div><div class="sub"><b>Ikke aktuel</b>: {sm["stale"]} konti med mærke ældre end '
-          f'{sm["stale_threshold_s"] // 3600} t</div></div>')
-    else:
-        w('<div class="top"><h3>Sidst kendt netto, STALE-konti</h3><div class="big zero">–</div>'
-          '<div class="sub">ingen STALE-konti</div></div>')
+    w(f'<div class="top"><h3>Datadækning</h3><div class="kn">{sm["fresh"]}<small> / {n_acc} konti FRESH</small></div>'
+      f'<div class="sub">{len(old)} STALE og {len(nomark)} MISSING_MARK i arkivet nedenfor; '
+      f'{"ingen" if not (old or nomark) else "ingen af dem"} indgår i tallene her</div></div>')
+    w("</section>")
+    w('<section class="grid">')
+    if not accs:
+        w('<div class="empty">Ingen papirkonti fundet (ingen lane.started-hændelser).</div>')
+    elif not fresh:
+        w('<div class="empty">Ingen FRESH-konti ved cutoff. Sidst kendte tal står i arkivet og er ikke aktuelle.</div>')
+    for a in fresh:
+        w(bot_card(a, names[a["ledger"]], conspark, quality, cutoff))
+    w("</section>")
+    w('<section class="howto" id="howto"><h3>Sådan læses tallene</h3><ul>'
+      '<li><b>Netto</b> = seneste equity-mærke minus startkapital, som defineret i net_report: det seneste timemærke '
+      'på eller før cutoff.</li>'
+      f'<li><b>FRESH</b> = mærket er højst {th} t gammelt ved cutoff. <b>STALE</b> = mærket er ældre; tallet er den '
+      'sidst kendte værdi og ikke aktuelt. <b>MISSING_MARK</b> = intet mærke før cutoff.</li>'
+      '<li>Funding, gebyrer og fyld kan ligge senere end mærket: fyldtal og feed går til cutoff, netto står ved '
+      'mærket.</li>'
+      '<li>Papir-P&amp;L uden gearing og uden marginmodel.</li></ul></section>')
     w("</section>")
 
-    # --- filters ---
-    w('<section class="filters" aria-label="filtre">')
+    # --- 3. Arkiv — forældede konti (collapsed) ---
+    ns = sm["net_stale_last_known"]
+    w('<details class="fold arch" id="arkiv"><summary><span class="sum-t">Arkiv — forældede konti</span>'
+      f'<span class="sum-s">{len(old)} STALE · {len(nomark)} MISSING_MARK · '
+      + (f'sidst kendt netto {e(money(ns))} (sidst kendt, ikke aktuel)' if old else "ingen sidst kendte tal")
+      + '</span></summary><div class="fold-in">')
+    if old or nomark:
+        if any(a["source"] in SPOT_SOURCES for a in old):
+            w(f'<div class="why" id="stale-why"><p><b>Hvorfor forældet (statisk note pr. {STALE_NOTE_AS_OF}):</b> '
+              f'{e(STALE_NOTE)}</p><div class="rs-src">Kilde: ' + " · ".join(e(x) for x in STALE_NOTE_SRC)
+              + "</div></div>")
+        if old:
+            w(f'<div class="top stale"><h3>Sidst kendt netto, STALE-konti</h3><div class="big old">{e(money(ns))}</div>'
+              f'<div class="sub"><b>Ikke aktuel</b>: {sm["stale"]} konti med mærke ældre end {th} t · '
+              f'sidst kendt, ikke aktuel</div></div>')
+            w('<section class="grid arch-grid" aria-label="STALE-konti">'
+              + "".join(bot_card(a, names[a["ledger"]], conspark, quality, cutoff) for a in old) + "</section>")
+        if nomark:
+            w(f'<h3 class="ah3">Uden mærke (MISSING_MARK) · {len(nomark)}</h3>')
+            w('<section class="grid arch-grid" aria-label="MISSING_MARK-konti">'
+              + "".join(bot_card(a, names[a["ledger"]], conspark, quality, cutoff) for a in nomark) + "</section>")
+    else:
+        w('<div class="empty">Ingen forældede konti ved cutoff.</div>')
+    w("</div></details>")
+
+    # --- 4. HANDELSCHART (59-K): read-only trade charts of the FRESH books ---
+    if hc[2]:
+        w(hc[2])
+
+    # --- 5. Aktivitet: filters + feed (fills and skips separated) ---
+    shown = len(frows)
+    allr = totals["fills"] + totals["events"]
+    w('<section class="act" id="aktivitet">')
+    w(f'<h2>Aktivitet <small>· {shown} nyeste af {allr} registrerede hændelser til cutoff '
+      f'({totals["fills"]} fyld, {totals["events"]} overspring/afvisninger/fejl); maks. {feed_n} vises</small></h2>')
+    w('<div class="filters" aria-label="filtre">')
     w('<div class="frow"><b>Bot</b><label class="pill" for="fb-all">Alle</label>'
       + "".join(f'<label class="pill" for="fb-{ident(a["ledger"])}">{e(names[a["ledger"]])}</label>' for a in accs)
       + "</div>")
     w('<div class="frow"><b>Periode</b><label class="pill" for="fp-all">Alt</label>'
       '<label class="pill" for="fp-24">24 t</label><label class="pill" for="fp-7">7 d</label>'
-      '<span class="sub">(relativt til cutoff; gælder aktivitetsfeedet)</span></div>')
+      '<span class="sub">(relativt til cutoff)</span></div>')
     w('<div class="frow"><b>Status</b><label class="pill" for="fs-all">Alle</label>'
       '<label class="pill" for="fs-FRESH">FRESH</label><label class="pill" for="fs-STALE">STALE</label>'
-      '<label class="pill" for="fs-MISSING_MARK">MISSING_MARK</label></div>')
-    w("</section>")
-
-    # --- bot grid ---
-    w(f'<h2>Copy grid <small>· {n_acc} papirkonti · netto = seneste mærke − kapital</small></h2>')
-    w('<section class="grid">')
-    if not accs:
-        w('<div class="empty">Ingen papirkonti fundet (ingen lane.started-hændelser).</div>')
-    for a in accs:
-        led, st = a["ledger"], a["mark_status"]
-        nm = names[led]
-        if st == "FRESH":
-            chip = f'<span class="chip c-FRESH">FRESH</span>'
-            netline = f'<div class="bnet {tone(a["net"])}">{e(money(a["net"]))}</div>'
-            scls = tone(a["net"])
-        elif st == "STALE":
-            age = a["mark_age_s"] / 3600
-            chip = (f'<span class="chip c-STALE">Forældet — mærket {e(utc(a["marked_at"], "%m-%d %H:%M"))}, '
-                    f'{age:.1f} t</span>')
-            netline = (f'<div class="bnet {tone(a["net"])}">{e(money(a["net"]))}</div>'
-                       f'<div class="sub">sidst kendt, ikke aktuel</div>')
-            scls = "old"
-        else:
-            chip = '<span class="chip c-MISSING_MARK">MISSING_MARK</span>'
-            netline = '<div class="bnet zero">–</div><div class="sub">ingen mærkning før cutoff</div>'
-            scls = "old"
-        w(f'<article class="bot b-{ident(led)} s-{st}">')
-        w(f'<div class="bhead"><div style="display:flex;gap:10px"><div class="avatar">{e(nm[:1].upper())}</div>'
-          f'<div><div class="bname">{e(nm)}</div><div class="bled">{e(led)}</div></div></div>'
-          f'<span class="src">{e(a["source"])}</span></div>')
-        w(f"<div>{chip}</div>")
-        w(netline)
-        w(conspark(led, a["capital"], scls))
-        w(f'<div class="stats"><span>Aktiv</span><b>{"ja" if a["active"] else "nej"}</b>'
-          f'<span>Fyld</span><b>{a["fills"]}</b>'
-          f'<span>Maks. fald</span><b>{a["max_drawdown"]:.2%}</b>'
-          f'<span>Kapital</span><b>{a["capital"]:,.0f}</b>'
-          f'<span>Seneste mærke</span><b>{e(utc(a["marked_at"], "%m-%d %H:%M:%S"))}</b></div>')
-        w("</article>")
-    w("</section>")
-
-    # --- HANDELSCHART (59-K): read-only trade charts under the bot overview ---
-    if hc[2]:
-        w(hc[2])
-
-    # --- activity feed ---
-    shown = len(frows)
-    allr = totals["fills"] + totals["events"]
-    w(f'<h2>Aktivitet <small>· {shown} nyeste af {allr} registrerede hændelser til cutoff '
-      f'({totals["fills"]} fyld, {totals["events"]} overspring/afvisninger/fejl); maks. {feed_n} vises</small></h2>')
+      '<label class="pill" for="fs-MISSING_MARK">MISSING_MARK</label>'
+      '<span class="sub">filtrene virker på feedet; "Alt" dækker kun de viste rækker</span></div>')
+    w("</div>")
     w('<section id="feed">')
     if not frows:
         w('<div class="feedbox"><div class="empty">Ingen registrerede papirhændelser til cutoff.</div></div>')
@@ -442,7 +610,7 @@ def page(rep, frows, totals, db_path, feed_n, conspark, chart=None, graveyard=No
             cls.append("err" if bad else "skip")
             lab = KIND_LABEL.get(r["kind"], r["kind"])
             what = (f'<span class="side {"er" if bad else "sk"}">{e(lab)}</span>'
-                    f'<span class="why">{e(r["kind"])}: {e(r["reason"][:240])}</span>')
+                    f'<span class="why-t">{e(r["kind"])}: {e(r["reason"][:240])}</span>')
         rowhtml["fill" if r["kind"] == "fill" else "other"].append(
             f'<div class="{" ".join(cls)}" data-kind="{e(r["kind"])}"><span class="t">{e(utc(r["ts"]))}</span>'
             f'<span class="who">{e(who)}</span><span class="sym">{e(r["instrument"])}</span><span>{what}</span></div>')
@@ -452,38 +620,60 @@ def page(rep, frows, totals, db_path, feed_n, conspark, chart=None, graveyard=No
                  "Ingen udførte papirhandler blandt de viste."),
                 ("other", "t-skip", "Spring over / afvisninger / fejl", totals["events"],
                  "Ingen overspring, afvisninger eller fejl blandt de viste.")):
-            rs = rowhtml[key]
-            w(f'<h3 class="fh" id="feed-{key}"><span class="tag {tag}">{e(title)}</span><small>{len(rs)} viste af '
+            rs_ = rowhtml[key]
+            w(f'<h3 class="fh" id="feed-{key}"><span class="tag {tag}">{e(title)}</span><small>{len(rs_)} viste af '
               f'{total} til cutoff</small></h3>')
-            w(f'<div class="feedbox fb-{key}">' + ("\n".join(rs) if rs else f'<div class="empty">{e(none)}</div>')
+            w(f'<div class="feedbox fb-{key}">' + ("\n".join(rs_) if rs_ else f'<div class="empty">{e(none)}</div>')
               + "</div>")
-    w("</section>")
+    w("</section></section>")
 
-    # --- STRATEGIKIRKEGÅRD (60-D): every registered attempt, read-only, after the activity feed ---
+    # --- 6. FORSKNINGSOVERSIGT (69): research status read from repo files ---
+    if rs[1]:
+        w(rs[1])
+
+    # --- 7. STRATEGIKIRKEGÅRD (60-D): every registered attempt, collapsed by default ---
     if gy[2]:
-        w(gy[2])
+        m = re.search(r'<div class="gv-num">([^<]+)<small> forsøg</small>', gy[2])
+        w('<details class="fold" id="kirkegaard-fold"><summary><span class="sum-t">Strategikirkegård</span>'
+          '<span class="sum-s">alle registrerede forsøg fra fabriksregistret'
+          + (f" · {e(m.group(1))} forsøg" if m else "") + " · kun visning · fold ud</span></summary>"
+          '<div class="fold-in">' + gy[2] + "</div></details>")
 
-    # --- footer ---
+    # --- 8. footer: sources, read-only statement, disclaimer ---
     w("<footer>")
-    w(f'<p><b>Datakilde:</b> {e(db_path)} (mode=ro, PRAGMA query_only=ON). Tal pr. konto og summen fra '
-      f'research/tools/net_report.build; feed fra sim_fills og events (' + ", ".join(SKIP_KINDS) + ').</p>')
-    w(f"<p><b>Genereret:</b> {e(utc(now))} · <b>Cutoff:</b> {e(utc(cutoff))} · STALE-tærskel "
-      f"{sm['stale_threshold_s'] // 3600} t</p>")
+    w('<p id="kilder"><b>Kilder</b> (alle kun læst):</p><ul>'
+      f"<li><b>Datakilde:</b> {e(db_path)} (mode=ro, PRAGMA query_only=ON). Tal pr. konto og summen fra research/tools/net_report.build;"
+      " feed fra sim_fills og events (" + ", ".join(SKIP_KINDS) + ").</li>"
+      "<li>Handelschart: sim_fills, observations (metric=mark), sim_funding.price og net_report open_basis "
+      "(research/tools/paper_chart.py).</li>"
+      f"<li>Sundhed: lab_qc.SCHEMA_TABLES (let skematjek), {e(LAB_QC_DOC)}, {e(RECONCILE_GLOB)}.</li>"
+      f"<li>Forskningsoversigt: {e(paper_research.MATRIX)} (research/tools/paper_research.py).</li>"
+      "<li>Strategikirkegård: research/data/factory (research/tools/paper_graveyard.py).</li>"
+      f"<li>STALE-note: statisk tekst i research/tools/paper_dashboard.py pr. {STALE_NOTE_AS_OF} "
+      "(" + ", ".join(e(x) for x in STALE_NOTE_SRC) + ").</li></ul>")
+    w(f"<p><b>Genereret:</b> {e(utc(now))} · <b>Cutoff:</b> {e(utc(cutoff))} · STALE-tærskel {th} t</p>")
+    w("<p><b>Kun læsning:</b> siden skriver intet, starter intet og har ingen JavaScript, knapper, formularer, "
+      "ordrer, konti eller wallets.</p>")
     w("<p><b>Ansvarsfraskrivelse:</b> Beskrivende papir-P&amp;L uden gearing og uden marginmodel (ubegrænset "
-      "sikkerhedsstillelse for korte perp-ben). Ikke en verificeret eksekverbar strategi. Ikke "
-      "investeringsrådgivning. Live-handel: <b>NO-GO</b>. Ingen knapper, ingen ordrer, ingen konti eller wallets.</p>")
-    w("<p>Lokal prototype (direktørordre 59-H P2, 59-J, 59-K Handelschart, 60-D Strategikirkegård). Produktionsdeploy: NO-GO indtil direktørgennemgang.</p>")
+      "sikkerhedsstillelse for korte perp-ben). Ikke en verificeret eksekverbar strategi. "
+      f"{e(paper_research.NO_VALIDATED)}. Ikke investeringsrådgivning. Live-handel: <b>NO-GO</b>. Ingen knapper, "
+      "ingen ordrer, ingen konti eller wallets.</p>")
+    w("<p>Lokal prototype (direktørordre 59-H P2, 59-J, 59-K Handelschart, 60-D Strategikirkegård, 63, 69 V3). "
+      "Produktionsdeploy: NO-GO indtil direktørgennemgang.</p>")
     w("</footer></div></body></html>")
     return "\n".join(out) + "\n"
 
 
-def render(con, now, cutoff, db_path=DB, feed_n=200, factory_dir=paper_graveyard.FACTORY):
+def render(con, now, cutoff, db_path=DB, feed_n=200, factory_dir=paper_graveyard.FACTORY, root=HERE):
     rep = net_report.build(con, int(now), int(cutoff))
-    frows, totals = feed(con, [a["ledger"] for a in rep["accounts"]], int(cutoff), int(feed_n))
+    leds = [a["ledger"] for a in rep["accounts"]]
+    frows, totals = feed(con, leds, int(cutoff), int(feed_n))
     return page(rep, frows, totals, db_path, feed_n,
                 lambda led, cap, cls: spark(con, led, int(cutoff), cap, cls),
                 lambda names: paper_chart.section(con, rep, int(cutoff), names, SKIP_KINDS),
-                lambda: paper_graveyard.section(factory_dir))
+                lambda: paper_graveyard.section(factory_dir),
+                lambda: paper_research.section(root, int(cutoff)),
+                mark_quality(con, leds, int(cutoff)), health(con, root))
 
 
 def write_atomic(path, doc):
