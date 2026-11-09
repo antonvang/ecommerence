@@ -94,3 +94,24 @@ Ejeren sendte to videoer til og skrev: "The github is called TauricResearch/Trad
 
 **Konklusion:** ingen af de tre giver en ny testbar regel. Held-tjek (U3) er ikke relevant, fordi ingen statistik er
 vist. Optællingen er nu 13 videoer, 1 karrusel, 1 artikel og 1 repo; 0 er REPLICABLE.
+
+## Tillæg 5 (23:57 lokal): @w_notfound1 "Catches HOD/LOD 92 % of days" (10 billeder)
+
+**Påstand:** daglige zoner tegnet ved åbning ud fra et volatilitetsnormaliseret empirisk kvantil og "topographic prominence"; fanger dagens høj eller lav 92 % af dagene i en backtest på 3.041 dage; "works on all markets".
+
+**Testbar regel?** Nej. Antal zoner, bredde, tolerance og definitionen af "fanger" vises ikke: NOT_REPLICABLE_FROM_VIDEO. Ingen indgang, udgang, stop, omkostninger eller afkast. "DMs are open ... or want proof" er en lead-funnel.
+
+**Held-tjek** (`research/desk/video_zones_null.py`, syntetisk, frø 92): tilfældig gang uden nogen information, 3.041 dage, 390 skridt, zoner på fast gitter fra åbningen i ATR-enheder, ingen tilpasning.
+
+| Zoner | Halv bredde (ATR) | Høj eller lav fanget | Begge | Høj |
+|---|---|---|---|---|
+| 4 | 0,10 | 34,3 % | 4,4 % | 18,7 % |
+| 6 | 0,20 | 82,4 % | 35,8 % | 59,0 % |
+| 10 | 0,15 | 92,5 % | 53,5 % | 72,6 % |
+| 10 | 0,20 | 100 % | 99,3 % | 99,6 % |
+
+Antal og bredde er valgt blandt 25 kombinationer for at vise spændet; videoen oplyser dem ikke, og billederne viser cirka 10 zoner pr. dag. Pointen er kun, at 92 % kan nås uden information.
+
+**Videoens egne billeder peger samme vej:** hit-rate-fladen går fra "strict: 12 %" til 100 %, når bredde og tolerance vokser. Tætheden samler sig omkring ±0,4 ATR, og medianafstanden til dagens høj er 0,41 ATR i den rene tilfældige gang. Det er blot typisk dagsudsving.
+
+**Vurdering:** ingen evidens for en fordel. En zone viser først efter dagen, om den var dagens yderpunkt, og en forudsigelse uden retning og handelsregel kan ikke handles. Den rigtige test ville være hit-rate mod en null med samme zonedækning, og dernæst netto-P&L på faste regler. Ingen nyt forsøg, ingen ny vært, intet hentet.
