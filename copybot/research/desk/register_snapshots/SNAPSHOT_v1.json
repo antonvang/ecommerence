@@ -1,0 +1,506 @@
+{
+ "alpha_gross": 0.399375,
+ "counts": {
+  "attempts": 206,
+  "hypotheses": 206,
+  "lineages": 43,
+  "variants": 19438
+ },
+ "dsr": "MISSING_INPUT",
+ "entries_sha256": "7e6975a89df9c02e3156eab5b8891f35186168765be0006432e75ad32a86f36e",
+ "lineage_map": {
+  "anchoring_to_high": {
+   "attempts": 1,
+   "hypotheses": [
+    "E_xs_near_high_p2"
+   ],
+   "variants": 2
+  },
+  "betting_against_beta": {
+   "attempts": 4,
+   "hypotheses": [
+    "E_vol_managed_long_p1",
+    "E_vol_managed_long_p2",
+    "E_xs_betting_against_beta_p2",
+    "E_xs_low_volatility_p2"
+   ],
+   "variants": 8
+  },
+  "btc_dominance_rotation": {
+   "attempts": 1,
+   "hypotheses": [
+    "E_btc_volume_share_p3"
+   ],
+   "variants": 2
+  },
+  "calendar_day_of_week": {
+   "attempts": 3,
+   "hypotheses": [
+    "E_day_of_week_p1",
+    "E_hour_of_day_p1",
+    "E_turn_of_month_p2"
+   ],
+   "variants": 6
+  },
+  "copy_trading": {
+   "attempts": 4,
+   "hypotheses": [
+    "E_smart_vs_crowd_p3",
+    "L01_copy_kol",
+    "L02_self_found_traders",
+    "L11_smart_v2"
+   ],
+   "variants": 5
+  },
+  "coskewness_premium": {
+   "attempts": 2,
+   "hypotheses": [
+    "E_xs_coskewness_p2",
+    "E_xs_downside_beta_p2"
+   ],
+   "variants": 4
+  },
+  "cross_sectional_momentum": {
+   "attempts": 6,
+   "hypotheses": [
+    "E_leverage_cycle_p3",
+    "E_oi_confirmed_return_p3",
+    "E_oi_growth_p3",
+    "E_xs_momentum_p2",
+    "L03_sol_trend_hourly",
+    "L14_tsmom_v1"
+   ],
+   "variants": 10
+  },
+  "cross_venue_perp_gap": {
+   "attempts": 13,
+   "hypotheses": [
+    "CARRY_BASIS_2026-10-21",
+    "E_fcarry__filt_a8",
+    "E_fcarry__filt_w_a8",
+    "E_fcarry__floor_a8",
+    "E_fcarry__hyst_a8",
+    "E_funding_contrarian_p1",
+    "FUNDING_m21h",
+    "L08_funding_carry_leverage",
+    "L12_arb_v1",
+    "L13_carry_v1",
+    "L22_m3_premium_convergence",
+    "PREREG_CA38_1669_2026-11-04",
+    "SPOTPERP_m21i"
+   ],
+   "variants": 26
+  },
+  "explore0": {
+   "attempts": 1,
+   "hypotheses": [
+    "explore0"
+   ],
+   "variants": 19182
+  },
+  "high_volume_return_premium": {
+   "attempts": 2,
+   "hypotheses": [
+    "E_xs_high_volume_p2",
+    "E_xs_illiquidity_p2"
+   ],
+   "variants": 4
+  },
+  "lead_lag_diffusion": {
+   "attempts": 2,
+   "hypotheses": [
+    "DISCOVERY_m21f",
+    "E_btc_lead_lag_p2"
+   ],
+   "variants": 4
+  },
+  "liquidation_cascade_reversal": {
+   "attempts": 3,
+   "hypotheses": [
+    "E_daily_reversal_p1",
+    "L21_m2_liquidation_reversal",
+    "MOVESCREEN_m21c"
+   ],
+   "variants": 5
+  },
+  "lottery_demand_max": {
+   "attempts": 1,
+   "hypotheses": [
+    "E_xs_max_lottery_p2"
+   ],
+   "variants": 2
+  },
+  "m17:H1": {
+   "attempts": 1,
+   "hypotheses": [
+    "H1"
+   ],
+   "variants": 1
+  },
+  "m17:H2": {
+   "attempts": 1,
+   "hypotheses": [
+    "H2"
+   ],
+   "variants": 1
+  },
+  "m17:H3": {
+   "attempts": 1,
+   "hypotheses": [
+    "H3"
+   ],
+   "variants": 1
+  },
+  "m17:H4": {
+   "attempts": 1,
+   "hypotheses": [
+    "H4"
+   ],
+   "variants": 1
+  },
+  "m17:H5": {
+   "attempts": 1,
+   "hypotheses": [
+    "H5"
+   ],
+   "variants": 1
+  },
+  "m17:airdrop": {
+   "attempts": 9,
+   "hypotheses": [
+    "airdrop|ar_1d|m17",
+    "airdrop|ar_7d|m17",
+    "airdrop|far_1d|m17",
+    "airdrop|far_7d|m17",
+    "airdrop|fund_7d|m17",
+    "airdrop|sar_1d|m17",
+    "airdrop|sar_7d|m17",
+    "airdrop|vol_3d|m17",
+    "airdrop|volume_1d|m17"
+   ],
+   "variants": 9
+  },
+  "m17:coinbase_listing": {
+   "attempts": 9,
+   "hypotheses": [
+    "coinbase_listing|ar_1d|m17g",
+    "coinbase_listing|ar_7d|m17g",
+    "coinbase_listing|far_1d|m17g",
+    "coinbase_listing|far_7d|m17g",
+    "coinbase_listing|fund_7d|m17g",
+    "coinbase_listing|sar_1d|m17g",
+    "coinbase_listing|sar_7d|m17g",
+    "coinbase_listing|vol_3d|m17g",
+    "coinbase_listing|volume_1d|m17g"
+   ],
+   "variants": 9
+  },
+  "m17:delisting": {
+   "attempts": 9,
+   "hypotheses": [
+    "delisting|ar_1d|m17",
+    "delisting|ar_7d|m17",
+    "delisting|far_1d|m17",
+    "delisting|far_7d|m17",
+    "delisting|fund_7d|m17",
+    "delisting|sar_1d|m17",
+    "delisting|sar_7d|m17",
+    "delisting|vol_3d|m17",
+    "delisting|volume_1d|m17"
+   ],
+   "variants": 9
+  },
+  "m17:funding_interval": {
+   "attempts": 9,
+   "hypotheses": [
+    "funding_interval|ar_1d|m17",
+    "funding_interval|ar_7d|m17",
+    "funding_interval|far_1d|m17",
+    "funding_interval|far_7d|m17",
+    "funding_interval|fund_7d|m17",
+    "funding_interval|sar_1d|m17",
+    "funding_interval|sar_7d|m17",
+    "funding_interval|vol_3d|m17",
+    "funding_interval|volume_1d|m17"
+   ],
+   "variants": 9
+  },
+  "m17:futures_delisting": {
+   "attempts": 9,
+   "hypotheses": [
+    "futures_delisting|ar_1d|m17",
+    "futures_delisting|ar_7d|m17",
+    "futures_delisting|far_1d|m17",
+    "futures_delisting|far_7d|m17",
+    "futures_delisting|fund_7d|m17",
+    "futures_delisting|sar_1d|m17",
+    "futures_delisting|sar_7d|m17",
+    "futures_delisting|vol_3d|m17",
+    "futures_delisting|volume_1d|m17"
+   ],
+   "variants": 9
+  },
+  "m17:futures_listing": {
+   "attempts": 10,
+   "hypotheses": [
+    "futures_listing|ar_1d|m17",
+    "futures_listing|ar_7d|m17",
+    "futures_listing|far_1d|m17",
+    "futures_listing|far_1d|m17e",
+    "futures_listing|far_7d|m17",
+    "futures_listing|far_7d|m17e",
+    "futures_listing|sar_1d|m17",
+    "futures_listing|sar_7d|m17",
+    "futures_listing|vol_3d|m17",
+    "futures_listing|volume_1d|m17"
+   ],
+   "variants": 11
+  },
+  "m17:innovation_zone": {
+   "attempts": 11,
+   "hypotheses": [
+    "innovation_zone|ar_1d|m17",
+    "innovation_zone|ar_7d|m17",
+    "innovation_zone|far_1d|m17",
+    "innovation_zone|far_7d|m17",
+    "innovation_zone|fund_7d|m17",
+    "innovation_zone|sar_1d|m17",
+    "innovation_zone|sar_1d|m17e",
+    "innovation_zone|sar_7d|m17",
+    "innovation_zone|sar_7d|m17e",
+    "innovation_zone|vol_3d|m17",
+    "innovation_zone|volume_1d|m17"
+   ],
+   "variants": 11
+  },
+  "m17:launchpool": {
+   "attempts": 9,
+   "hypotheses": [
+    "launchpool|ar_1d|m17",
+    "launchpool|ar_7d|m17",
+    "launchpool|far_1d|m17",
+    "launchpool|far_7d|m17",
+    "launchpool|fund_7d|m17",
+    "launchpool|sar_1d|m17",
+    "launchpool|sar_7d|m17",
+    "launchpool|vol_3d|m17",
+    "launchpool|volume_1d|m17"
+   ],
+   "variants": 9
+  },
+  "m17:margin": {
+   "attempts": 18,
+   "hypotheses": [
+    "margin|ar_1d|m17",
+    "margin|ar_1d|m17c",
+    "margin|ar_7d|m17",
+    "margin|ar_7d|m17c",
+    "margin|far_1d|m17",
+    "margin|far_1d|m17c",
+    "margin|far_7d|m17",
+    "margin|far_7d|m17c",
+    "margin|fund_7d|m17",
+    "margin|fund_7d|m17c",
+    "margin|sar_1d|m17",
+    "margin|sar_1d|m17c",
+    "margin|sar_7d|m17",
+    "margin|sar_7d|m17c",
+    "margin|vol_3d|m17",
+    "margin|vol_3d|m17c",
+    "margin|volume_1d|m17",
+    "margin|volume_1d|m17c"
+   ],
+   "variants": 20
+  },
+  "m17:margin_tiers": {
+   "attempts": 9,
+   "hypotheses": [
+    "margin_tiers|ar_1d|m17",
+    "margin_tiers|ar_7d|m17",
+    "margin_tiers|far_1d|m17",
+    "margin_tiers|far_7d|m17",
+    "margin_tiers|fund_7d|m17",
+    "margin_tiers|sar_1d|m17",
+    "margin_tiers|sar_7d|m17",
+    "margin_tiers|vol_3d|m17",
+    "margin_tiers|volume_1d|m17"
+   ],
+   "variants": 9
+  },
+  "m17:network_swap": {
+   "attempts": 9,
+   "hypotheses": [
+    "network_swap|ar_1d|m17",
+    "network_swap|ar_7d|m17",
+    "network_swap|far_1d|m17",
+    "network_swap|far_7d|m17",
+    "network_swap|fund_7d|m17",
+    "network_swap|sar_1d|m17",
+    "network_swap|sar_7d|m17",
+    "network_swap|vol_3d|m17",
+    "network_swap|volume_1d|m17"
+   ],
+   "variants": 9
+  },
+  "m17:spot_listing": {
+   "attempts": 11,
+   "hypotheses": [
+    "spot_listing|ar_1d|m17",
+    "spot_listing|ar_7d|m17",
+    "spot_listing|far_1d|m17",
+    "spot_listing|far_7d|m17",
+    "spot_listing|fund_7d|m17",
+    "spot_listing|sar_1d|m17",
+    "spot_listing|sar_1d|m17e",
+    "spot_listing|sar_7d|m17",
+    "spot_listing|sar_7d|m17e",
+    "spot_listing|vol_3d|m17",
+    "spot_listing|volume_1d|m17"
+   ],
+   "variants": 12
+  },
+  "m17:staking": {
+   "attempts": 10,
+   "hypotheses": [
+    "staking|ar_1d|m17",
+    "staking|ar_7d|m17",
+    "staking|far_1d|m17",
+    "staking|far_7d|m17",
+    "staking|fund_7d|m17",
+    "staking|sar_1d|m17",
+    "staking|sar_7d|m17",
+    "staking|sar_7d|m17e",
+    "staking|vol_3d|m17",
+    "staking|volume_1d|m17"
+   ],
+   "variants": 10
+  },
+  "m17:upbit_listing": {
+   "attempts": 9,
+   "hypotheses": [
+    "upbit_listing|ar_1d|m17h",
+    "upbit_listing|ar_7d|m17h",
+    "upbit_listing|far_1d|m17h",
+    "upbit_listing|far_7d|m17h",
+    "upbit_listing|fund_7d|m17h",
+    "upbit_listing|sar_1d|m17h",
+    "upbit_listing|sar_7d|m17h",
+    "upbit_listing|vol_3d|m17h",
+    "upbit_listing|volume_1d|m17h"
+   ],
+   "variants": 9
+  },
+  "memecoin_launch_selection": {
+   "attempts": 3,
+   "hypotheses": [
+    "L04_buy_graduations",
+    "L05_graduation_sniper",
+    "L10_launch_v1"
+   ],
+   "variants": 3
+  },
+  "negrisk_sum_arbitrage": {
+   "attempts": 1,
+   "hypotheses": [
+    "L18_p2_negrisk_arb"
+   ],
+   "variants": 1
+  },
+  "onchain_value_mvrv": {
+   "attempts": 2,
+   "hypotheses": [
+    "E_mvrv_value_p3",
+    "E_supply_dilution_p3"
+   ],
+   "variants": 4
+  },
+  "orderflow_imbalance": {
+   "attempts": 2,
+   "hypotheses": [
+    "E_taker_pressure_p3",
+    "L20_m1_orderflow"
+   ],
+   "variants": 3
+  },
+  "prediction_market_calibration": {
+   "attempts": 1,
+   "hypotheses": [
+    "L16_pmcal_v1"
+   ],
+   "variants": 1
+  },
+  "real_rate_timing": {
+   "attempts": 1,
+   "hypotheses": [
+    "E_real_rate_filter_p3"
+   ],
+   "variants": 2
+  },
+  "short_horizon_crypto_binary_model": {
+   "attempts": 1,
+   "hypotheses": [
+    "L17_p1_btc15m_model"
+   ],
+   "variants": 1
+  },
+  "stablecoin_liquidity_flow": {
+   "attempts": 1,
+   "hypotheses": [
+    "E_stablecoin_flow_p3"
+   ],
+   "variants": 2
+  },
+  "stop_rule_overlay": {
+   "attempts": 1,
+   "hypotheses": [
+    "L09_stop_when_ahead"
+   ],
+   "variants": 1
+  },
+  "unclassified": {
+   "attempts": 3,
+   "hypotheses": [
+    "NEWINFO_m21j",
+    "R3_m24",
+    "V1_DOM_2026-10-29"
+   ],
+   "variants": 8
+  },
+  "variance_risk_premium_timing": {
+   "attempts": 1,
+   "hypotheses": [
+    "E_vrp_timing_p3"
+   ],
+   "variants": 2
+  }
+ },
+ "n": {
+  "conservative_reference": 19438,
+  "diagnostic_expected_max_z": {
+   "attempts": 2.7752,
+   "lineages": 2.2179,
+   "variants": 4.0202
+  },
+  "n_eff": "MISSING_INPUT"
+ },
+ "pbo": "MISSING_INPUT",
+ "rules": {
+  "attempt": "one ledger entry",
+  "forbidden": [
+   "choosing a lower N because it gives a lower bar",
+   "reconstructing return series without documentation",
+   "using 43 lineages as the only limit"
+  ],
+  "lineage": "the ledger entry field 'lineage', exactly as recorded",
+  "n_eff": "MISSING_INPUT until return series and a validated correlation method exist",
+  "reference_n": "the total variant count is the conservative historical reference, not a documented N_eff",
+  "universe": "every entry of ledger.entries in the register file; nothing is added, merged or left out",
+  "variant": "the integer ledger entry field 'variants'; an entry without trials counts as recorded by the factory",
+  "version": 1
+ },
+ "schema": "copybot.register_snapshot/1",
+ "source": {
+  "path": "research/data/factory/registry.json",
+  "sha256": "4f2e62d51931bdd7fd05cbe8c8f19ad8eddc526c09d682cf1b2b7a78fac0801c"
+ }
+}

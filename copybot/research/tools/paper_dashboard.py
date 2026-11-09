@@ -389,7 +389,9 @@ border:1px solid var(--line);border-radius:12px;padding:14px 16px}
 .dqc.warn{border-color:rgba(242,179,61,.45)}.dqc.bad{border-color:rgba(255,77,94,.5)}
 .hist-mark{margin:44px 0 -28px;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--mut)}
 @media (max-width:1000px){.big,.kn{font-size:34px}}
-@media (max-width:600px){.wrap{padding:0 16px 40px}.big,.kn{font-size:32px}.bnet{font-size:30px}h2{font-size:18px;margin:32px 0 12px}
+@media (max-width:600px){.toc{position:static;display:grid;grid-template-columns:repeat(4,1fr);overflow:visible;white-space:normal;gap:4px}
+.toc a{padding:9px 2px;text-align:center;font-size:12.5px;background:var(--panel);overflow-wrap:anywhere}
+.wrap{padding:0 16px 40px}.big,.kn{font-size:32px}.bnet{font-size:30px}h2{font-size:18px;margin:32px 0 12px}
 .top{padding:16px}.toc a{padding:10px 12px}.howto ul{columns:1}.frow>b{width:100%}.hs{white-space:normal}}
 """
 
@@ -408,7 +410,7 @@ def bot_card(a, nm, conspark, quality, cutoff):
     if st == "FRESH":
         age = a.get("mark_age_s")
         o.append(f'<div class="bmid"><div class="bnet {tone(a["net"])}">{e(money(a["net"]))}</div>'
-                 f'<span class="chip c-FRESH">FRESH</span></div>'
+                 f'<span title="Datamærkets alder, ikke strategiens kvalitet" class="chip c-FRESH">FRESH</span></div>'
                  '<div class="sub">netto ved mærket · papir-P&amp;L, ikke valideret</div>')
         scls = tone(a["net"])
         agetxt = f"{int(age // 60)} min" if age is not None else "–"
@@ -562,12 +564,12 @@ def page(rep, frows, totals, db_path, feed_n, conspark, chart=None, graveyard=No
         w(bot_card(a, names[a["ledger"]], conspark, quality, cutoff))
     w("</section>")
     w('<section class="howto" id="howto"><h3>Sådan læses tallene</h3><ul>'
-      '<li><b>Netto</b> = seneste equity-mærke minus startkapital, som defineret i net_report: det seneste timemærke '
-      'på eller før cutoff.</li>'
-      f'<li><b>FRESH</b> = mærket er højst {th} t gammelt ved cutoff. <b>STALE</b> = mærket er ældre; tallet er den '
-      'sidst kendte værdi og ikke aktuelt. <b>MISSING_MARK</b> = intet mærke før cutoff.</li>'
-      '<li>Funding, gebyrer og fyld kan ligge senere end mærket: fyldtal og feed går til cutoff, netto står ved '
-      'mærket.</li>'
+      '<li><b>Netto</b> = seneste equity-mærke minus startkapital, det seneste timemærke på eller før cutoff.</li>'
+      f'<li><b>FRESH</b> = mærket er højst {th} t gammelt ved cutoff. Det handler kun om dataens alder og '
+      '<b>siger intet om strategiens kvalitet</b>.</li>'
+      '<li><b>STALE</b> = mærket er ældre; tallet er den sidst kendte værdi og ikke aktuelt. '
+      '<b>MISSING_MARK</b> = intet mærke før cutoff.</li>'
+      '<li>Funding, gebyrer og fyld kan ligge senere end mærket.</li>'
       '<li>Papir-P&amp;L uden gearing og uden marginmodel.</li></ul></section>')
     w("</section>")
 

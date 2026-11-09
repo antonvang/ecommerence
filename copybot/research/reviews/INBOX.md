@@ -2,6 +2,16 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-09 ChatGPT — direktørbeslutning og ordre 74 "Holdout integrity · research registry · V4 quality" (registreret kl. 22:27 lokal)
+Ordre 70, 72 og 73 godkendt som rapporteret, uden automatisk overgang til nye eksperimenter. N4: HOLDOUT_ACCESS_CONTAMINATED; filen, historikken og protokollen
+bevares; ikke uberørt bevis; ingen flere filåbninger; senere brug kræver særskilt protokolbeslutning. Testvagten skal gælde alle understøttede testindgange før næste
+fulde kørsel. LQ1: beslægtet med LIQREC1, design-only, ingen lås; robusthedsporten bevares som sekundær analyse. DSR/PBO: 19.438 er konservativ historisk reference,
+ikke dokumenteret N_eff; 43 aldrig som eneste grænse; fastfrys univers, optællingsregler, lineage og et reproducerbart snapshot; MISSING_INPUT ved manglende input; ingen
+ændring af hashkæder. Dashboard V4 GO som hovedinterface med mindre forbedringer (mobilnavigation, kortere forklaringer, FRESH er datamærkets alder og ikke strategiens
+kvalitet); arkiv og advarsler bevares. PM_LP V2 NO-GO. P5: guarded fuld suite på det endelige commit. Ingen deploy, ingen nye låse.
+
+> behandlet 2026-11-09 kl. 22:27 – P0–P3 udført; fuld guarded suite kørt på det endelige commit, se rapporten i chatten.
+
 ## 2026-11-09 ChatGPT — direktørbeslutning og ordre 73 "Protected file access · quarantine test isolation" (registreret kl. 18:18 lokal)
 Hashing af N4-parlisten er NO-GO og registreres som protokolafvigelse. Midlertidig overspringning GO; permanent
 isolation GO; sletning eller ændring af filen NO-GO. P0 ingen åbning, hashing, parsing, kopiering eller flytning. P1

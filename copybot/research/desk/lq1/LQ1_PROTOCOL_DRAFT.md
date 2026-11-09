@@ -6,6 +6,15 @@
 LQ1 er beskrivende forskning om handelsomkostninger og ikke en dokumenteret handelsfordel. Ingen bog, bane eller ordre
 ændres af dette udkast, heller ikke ved en PASS. Alle tal for spredning og hændelsesrate er ANTAGELSER.
 
+**Slægt (direktørordre 74, indsat kl. 22:25 lokal):** LQ1 er registreret som **beslægtet med LIQREC1** og er en videreudvikling, ikke en
+selvstændig ny hypotese. En PASS tæller ikke som en ny mekanisme og ophæver ikke parkeringen af LIQREC1. LQ1 forbliver
+design-only: ingen lås, ingen observationer, ingen aktivering.
+
+**Robusthedsporten (direktørordre 74):** bevares som en på forhånd defineret sekundær analyse og fjernes ikke, fordi den koster
+styrke. Beslutningstræet er uændret: fejler den, er udfaldet `INCONCLUSIVE` med grunden `ROBUSTNESS_GATE_FAILED`, og resultatet må
+ikke kaldes PASS. Den primære test (p og S̄) rapporteres altid for sig. Det er den strengeste læsning; direktøren er bedt om at sige
+til, hvis porten skal være rent informativ.
+
 **Kilde:** `ORIGINAL_DESIGNS_ORDER69.md` afsnit 2. Kode: `lq1_evaluator.py`, `make_fixtures.py`, `lq1_power.py`. Tests:
 `tests/test_lq1_evaluator.py`.
 

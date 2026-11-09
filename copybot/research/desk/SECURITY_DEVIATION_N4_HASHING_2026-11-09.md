@@ -43,3 +43,26 @@ for parsingen.
 en fuld kørsel afgør, om flere tests forsøger. En første målrettet kørsel viste vagten i funktion: den stoppede
 `test_pair_file`, før filen blev åbnet (1 blokeret forsøg), og det er dokumentationen for, at vagten virker på den rigtige
 sti.
+
+## Tillæg 22:25 lokal: status efter direktørordre 74
+
+**Status: `HOLDOUT_ACCESS_CONTAMINATED`.** Det dokumenterer adgangsbruddet og er ikke en påstand om, at nogen bevidst har
+tilpasset en strategi til dataene. Originalfil, historik og protokol bevares uændret. Registeret `QUARANTINE.json` er pinnet og ændres
+ikke; status står her.
+
+**Adgang:** hashing (`test_files_exist_unchanged`) og JSON-parsing (`test_pair_file`).
+
+**Felter testen undersøgte:** `overlap` (lig antal par), `pairs` (nøglerne: to navngivne symboler var ikke med), og `multiplier` for ét
+navngivet par. Den eksakte test står i commit `7012c2b` og gentages ikke her.
+
+**Kendt adgangshistorik:** testene siden 2026-11-02 (`7012c2b` og `8fac269`). Selve listen blev bygget 2026-11-02, se `B_N4_QUARANTINE_AUDIT.md`.
+
+**Ukendt:** antal kørsler i alt, kørsler uden for dev, git's egne læsninger og øvrige åbninger før isolationen.
+
+**Betydning:** N4 må ikke bruges som uberørt, uafhængigt bevis for en ny strategi. Enhver senere brug kræver en særskilt
+protokolbeslutning og tydelig oplysning om kontamineringen. Det gælder også en N4-lås, som tidligst var mulig 14/11. Ingen flere
+filåbninger, heller ikke til hashing.
+
+**Testindgange (ordre 74 P0):** `python3 -m unittest tests.x` og `scripts/suite_parallel.sh` via `tests/__init__.py`; `unittest discover -s tests`
+(`scripts/suite.sh`) via `tests/test_000_quarantine_guard.py`; den beskyttede loader via `protected`. Prøvet på en syntetisk checkout. Direkte kørsel
+af én testfil (`python3 tests/test_x.py`) er ikke en understøttet indgang og er ikke dækket af vagten.
