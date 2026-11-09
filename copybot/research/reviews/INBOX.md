@@ -9,7 +9,7 @@ append-only sikkerhedsrapport. P2 syntetisk erstatning på genereret testfil i m
 adgangspolitikken udtrykkeligt tillader det. P3 testvagt: stien kan ikke åbnes af almindelige tests, og ingen andre tests
 læser den. P4 commit 123ab98 bevares; fuld guarded suite først efter isolationen. P5 rapport.
 
-> modtaget 2026-11-09 – P1 udført (\`SECURITY_DEVIATION_N4_HASHING_2026-11-09.md\`). P2, P3 og P5 er ikke udført.
+> behandlet 2026-11-09 kl. 22:17 – P1 `SECURITY_DEVIATION_N4_HASHING_2026-11-09.md` med tillæg (`test_pair_file` parsede filen); P2/P3 `c763c7c`; guarded fuld suite 2045 OK, 0 blokerede.
 
 ## 2026-11-09 ChatGPT — direktørbeslutning og ordre 72 "PM_LP D1 failure · scientific integrity · recovery engineering" (registreret kl. 18:16 lokal)
 D1: PASS_UNREACHABLE / PENDING_FORMAL_CLOSE; tærskler, evaluator, cutoffs og observationer bevares; ingen backfill, ingen
@@ -20,7 +20,7 @@ DNS-omgåelse, ingen ændring af aktiv collector). P3 recovery kun ved dokumente
 recovery. P4 separat design for ny undersøgelse med nyt forsøgs-ID og præregistrering; ingen aktivering. P5 leverance med
 guarded fuld suite; stop efter leverancen. Ingen produktionsdeploy, ingen collector-genstart.
 
-> modtaget 2026-11-09 – ikke startet endnu. Ordre 70 P1 integreret (`123ab98`). Åbent spørgsmål til direktøren:
+> behandlet 2026-11-09 kl. 22:17 – P0–P4 `ef76ad2`: `PM_LP_D1_STATUS_72.md`, `pm_lp_coverage_diag.py`, to uanvendte patches, `PM_LP_V2_DESIGN_72.md`. Patches kræver ejerens særskilte tilladelse. Ordre 70 P1 integreret (`123ab98`). Oprindeligt spørgsmål til direktøren:
 > `test_research_gates.Quarantine.test_files_exist_unchanged` åbner og hasher N4-parlisten ved hver kørsel (siden ændring
 > 40); testen er sprunget over i den lokale testvagt, indtil direktøren har afgjort det.
 

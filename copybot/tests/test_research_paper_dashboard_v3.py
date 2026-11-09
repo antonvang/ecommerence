@@ -106,8 +106,12 @@ class V3(unittest.TestCase):
         self.assertIn("FRESH <b>2</b>", hdr)
         self.assertIn("STALE <b>1</b>", hdr)
         self.assertIn("MISSING_MARK <b>1</b>", hdr)
-        self.assertRegex(hdr, r"DB: skema \d+/17 tabeller \(let tjek\)")        # synthetic DB: a few tables only
-        self.assertIn("kør lab_qc", hdr)
+        dq = re.search(r'<section class="dqp" id="datakvalitet">.*?</section>', self.doc, re.S).group(0)   # V4: moved here
+        self.assertRegex(dq, r"DB: skema \d+/17 tabeller \(let tjek\)")         # synthetic DB: a few tables only
+        self.assertIn("kør lab_qc", dq)
+        self.assertIn("2 af 4 konti friske", dq)
+        self.assertIn("PASS_UNREACHABLE / PENDING_FORMAL_CLOSE", dq)
+        self.assertIn("research/desk/PM_LP_D1_STATUS_72.md", dq)
         empty = tempfile.mkdtemp()
         try:
             doc = render(self.p, root=empty)
@@ -115,6 +119,13 @@ class V3(unittest.TestCase):
             shutil.rmtree(empty)
         self.assertIn("kør lab_qc (ingen dokumenteret kørsel fundet)", doc)
         self.assertIn("Rapportafstemning: ingen fundet", doc)
+
+    def test_v4_layer_and_order(self):
+        self.assertIn(".dqp .dq-grid", self.doc)
+        self.assertNotIn("<script", self.doc)
+        self.assertLess(self.doc.index('id="overblik"'), self.doc.index('id="datakvalitet"'))
+        self.assertLess(self.doc.index('id="datakvalitet"'), self.doc.index('id="arkiv"'))
+        self.assertIn('href="#datakvalitet"', self.doc)
 
     def test_research_overview_with_sources(self):
         sec = re.search(r'<section class="rs" id="forskning">.*?</section>', self.doc, re.S).group(0)

@@ -1,5 +1,5 @@
 """PAPER DASHBOARD V3: one static, self-contained, read-only HTML page of the paper books (director orders 59-H P2,
-59-J, 59-K, 60-D, 63 and 69 P0 "DASHBOARD V3").
+59-J, 59-K, 60-D, 63, 69 P0 "DASHBOARD V3" and 70 P3 "V4": readability, hierarchy, mobile, data-quality section).
 
     python3 research/tools/paper_dashboard.py [--db PATH] [--cutoff YYYY-MM-DDTHH:MM:SSZ] --out PATH.html [--feed N]
                                               [--factory DIR] [--refresh SECONDS]
@@ -365,6 +365,40 @@ footer code{color:#b9c3d6}
 """
 
 
+# V4 (order 70 P3): a layer on top of the V3 CSS. Readability, spacing and touch targets only.
+CSS_V4 = """
+html,body{font-size:15px}
+.wrap{max-width:1240px;padding:0 24px 56px}
+.hdr{padding:20px 0 14px}
+.banner code{display:none}
+.toc{padding:8px 0;margin:0 0 8px}.toc a{font-size:14px;padding:8px 12px}
+h2{font-size:20px;margin:44px 0 16px}h2 small{font-size:13px}
+.sum-t{font-size:18px}
+.tops{gap:16px;margin:0 0 16px}.top{padding:20px 22px}.top h3{font-size:12px;margin:0 0 10px}
+.big,.kn{font-size:40px;line-height:1.1}.kn small{font-size:16px}.top.na .big{font-size:26px}
+.sub{font-size:13px;margin-top:6px}
+.grid{gap:16px}.bot{padding:18px 20px;gap:10px}.bname{font-size:16px}.bnet{font-size:34px}
+.stats{font-size:13px;gap:4px 12px}.spark{height:64px}
+.pill{padding:6px 12px;font-size:13px}
+.ev{padding:10px 14px;font-size:13.5px}
+.dqp .dq-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.dqc{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;align-items:baseline;align-content:start;background:var(--panel);
+border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.dqc i{width:9px;height:9px;border-radius:50%;display:inline-block}
+.dqc b{font-size:14px}.dqc span{grid-column:2;color:var(--mut);font-size:13px;overflow-wrap:anywhere}
+.dqc.warn{border-color:rgba(242,179,61,.45)}.dqc.bad{border-color:rgba(255,77,94,.5)}
+.hist-mark{margin:44px 0 -28px;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--mut)}
+@media (max-width:1000px){.big,.kn{font-size:34px}}
+@media (max-width:600px){.wrap{padding:0 16px 40px}.big,.kn{font-size:32px}.bnet{font-size:30px}h2{font-size:18px;margin:32px 0 12px}
+.top{padding:16px}.toc a{padding:10px 12px}.howto ul{columns:1}.frow>b{width:100%}.hs{white-space:normal}}
+"""
+
+# Static note like STALE_NOTE; the diagnostic numbers live in the source file.
+PMLP_NOTE_AS_OF = "2026-11-09"
+PMLP_NOTE = ("pm_lp_v1: PASS_UNREACHABLE / PENDING_FORMAL_CLOSE. D1 kan ikke længere nås; ingen påstand om hypotesen.")
+PMLP_NOTE_SRC = "research/desk/PM_LP_D1_STATUS_72.md"
+
+
 def bot_card(a, nm, conspark, quality, cutoff):
     """One account card. FRESH: coloured net (current). STALE / MISSING_MARK: grey net, labelled last known."""
     led, st = a["ledger"], a["mark_status"]
@@ -435,7 +469,7 @@ def page(rep, frows, totals, db_path, feed_n, conspark, chart=None, graveyard=No
     gy = graveyard() if graveyard else ("", "", "")      # 60-D STRATEGIKIRKEGÅRD: (radios, css, section html)
     radios.append(gy[0])
     rs = research() if research else ("", "")           # 69 FORSKNINGSOVERSIGT: (css, section html)
-    css = [CSS, hc[1], gy[1], rs[0]]
+    css = [CSS, hc[1], gy[1], rs[0], CSS_V4]
     on = "{background:var(--acc);color:#fff;border-color:var(--acc)}"
     for b in bot_ids:
         css.append(f"#fb-{b}:checked~.wrap label[for=fb-{b}]{on}")
@@ -487,11 +521,8 @@ def page(rep, frows, totals, db_path, feed_n, conspark, chart=None, graveyard=No
     rec_dot = "d-n" if not rec else ("d-f" if rec[1] == "RECONCILED" else "d-m")
     w(f'<div class="strip" id="health"><span class="hs"><i class="d-f"></i>FRESH <b>{sm["fresh"]}</b></span>'
       f'<span class="hs"><i class="d-s"></i>STALE <b>{sm["stale"]}</b></span>'
-      f'<span class="hs"><i class="d-m"></i>MISSING_MARK <b>{sm["missing_mark"]}</b></span>{health_chip}'
-      f'<span class="hs hq" id="h-db"><i class="{db_dot}"></i>{e(db_txt)}</span>'
-      f'<span class="hs hq" id="h-qc"><i class="{qc_dot}"></i>{e(qc_txt)}</span>'
-      f'<span class="hs hq" id="h-rec"><i class="{rec_dot}"></i>{e(rec_txt)}</span></div></header>')
-    w('<nav class="toc" aria-label="sektioner"><a href="#overblik">Overblik</a><a href="#arkiv">Arkiv</a>'
+      f'<span class="hs"><i class="d-m"></i>MISSING_MARK <b>{sm["missing_mark"]}</b></span>{health_chip}</div></header>')
+    w('<nav class="toc" aria-label="sektioner"><a href="#overblik">Overblik</a><a href="#datakvalitet">Datakvalitet</a><a href="#arkiv">Arkiv</a>'
       '<a href="#handelschart">Handelschart</a><a href="#aktivitet">Aktivitet</a><a href="#forskning">Forskning</a>'
       '<a href="#kirkegaard-fold">Kirkegård</a><a href="#kilder">Kilder</a></nav>')
 
@@ -540,7 +571,21 @@ def page(rep, frows, totals, db_path, feed_n, conspark, chart=None, graveyard=No
       '<li>Papir-P&amp;L uden gearing og uden marginmodel.</li></ul></section>')
     w("</section>")
 
+    # --- 2b. Datakvalitet (V4): one place for everything that says how far the numbers can be trusted ---
+    mark_cls = "bad" if sm["missing_mark"] else ("warn" if sm["stale"] else "")
+    mark_dot = "d-m" if sm["missing_mark"] else ("d-s" if sm["stale"] else "d-f")
+    w('<section class="dqp" id="datakvalitet"><h2>Datakvalitet <small>hvor meget tallene kan bære</small></h2>'
+      '<div class="dq-grid">'
+      f'<div class="dqc {mark_cls}" id="h-marks"><i class="{mark_dot}"></i><b>Mærker</b><span>{sm["fresh"]} af {n_acc} '
+      f'konti friske · {sm["stale"]} forældede · {sm["missing_mark"]} uden mærke</span></div>'
+      f'<div class="dqc" id="h-db"><i class="{db_dot}"></i><b>Database</b><span>{e(db_txt)}</span></div>'
+      f'<div class="dqc" id="h-qc"><i class="{qc_dot}"></i><b>Integritet</b><span>{e(qc_txt)}</span></div>'
+      f'<div class="dqc" id="h-rec"><i class="{rec_dot}"></i><b>Afstemning</b><span>{e(rec_txt)}</span></div>'
+      f'<div class="dqc bad" id="h-pmlp"><i class="d-m"></i><b>pm_lp (statisk note pr. {PMLP_NOTE_AS_OF})</b>'
+      f'<span>{e(PMLP_NOTE)} Kilde: {e(PMLP_NOTE_SRC)}</span></div></div></section>')
+
     # --- 3. Arkiv — forældede konti (collapsed) ---
+    w('<div class="hist-mark" aria-hidden="true">Historik og analyse</div>')
     ns = sm["net_stale_last_known"]
     w('<details class="fold arch" id="arkiv"><summary><span class="sum-t">Arkiv — forældede konti</span>'
       f'<span class="sum-s">{len(old)} STALE · {len(nomark)} MISSING_MARK · '
