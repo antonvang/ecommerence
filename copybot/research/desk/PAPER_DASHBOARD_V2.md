@@ -1,4 +1,4 @@
-# PAPER DASHBOARD V2 (direktørordre 59-H P2, finpudset i 59-J, Handelschart 59-K)
+# PAPER DASHBOARD V2 (direktørordre 59-H P2, finpudset i 59-J, Handelschart 59-K, Strategikirkegård 60-D)
 
 **Status: LOKAL prototype. Produktionsdeploy: NO-GO indtil direktørgennemgang.**
 
@@ -78,6 +78,54 @@ PAPER / SIMULATION, instrumentnavnet og bots med antal fyld.
   funding-punkter, skip kun med instrument, entry kun for dokumenteret åben position, ingen equity, intet
   script/URL/knap/formular, DB byte-identisk og deterministisk output.
 
+## Strategikirkegård (60-D)
+
+Efter aktivitetsfeedet ligger sektionen **STRATEGIKIRKEGÅRD** (`research/tools/paper_graveyard.py`). Den viser alle
+forsøg i fabriksregistret, også dem der fejlede: "Sådan ser en ærlig '99,7 % kills' ud". Labbets regel står i
+introen: lås før data, holdout og kun fremad. Sektionen er kun visning. Den aktiverer intet, regner ingen nye
+forskningsresultater og ændrer aldrig registret.
+
+- **Kilde** (kun læst som bytes): `research/data/factory/registry.json` og `registry.md` samt `offdb_studies.json`,
+  `migration_v1.json` og `legacy_manifest_v1.json`. Mappen kan skiftes med `--factory`.
+- **Topkort**: antal forsøg og varianter, som registret selv angiver (`ledger.attempts`, `ledger.variants`), status
+  fra registrets `by_status` (65 lab-eksperimenter) og brutto-alfa (`ledger.alpha_gross`). Siden tæller kun rækkerne
+  for at kontrollere registrets egne tal: antal poster i `ledger.entries`, unikke id'er, seq, sum af varianter og
+  alfa, sum over lineages, linjen "Attempts N, variants V, gross alpha charged A" og statustabellen i `registry.md`,
+  sha256 i `registry.md` og hash-kæden (`factory.Ledger.verify`). En afvigelse vises med rødt. Den rettes ikke, og
+  det store tal er stadig registrets eget.
+- **Status** er registrets `status`-værdier. Forsøg uden status (amendment-17-screens, off-database-studier og
+  explore0) står som "ingen status i registret" og aldrig som bestået. Findes VALIDATED ikke, siges det.
+- **Tabel 1, "Forsøg i ledgeren"**: én række pr. post i `ledger.entries` i registrets rækkefølge. Antallet er lig
+  `ledger.attempts`. Kolonnerne er seq, id og kilde (varianter, alfa, dato), lineage og mekanisme, status, udfald som
+  registreret, omkostninger, databegrænsninger og kilde (registry.json-linje, spec-fil @commit eller studiefiler).
+- **Tabel 2, "Registreret, men ikke et forsøg i ledgeren"**: lab-records, off-db-studier og amendment-17-nøgler uden
+  ledgerpost samt studier i `offdb_studies.json`, som er kommet til efter registersnapshottet (de markeres og tælles
+  ikke).
+- **Udfald** er registrets egen tekst (`lab_state`, `evidence`, `confidence`, ledger-`note`, antal screens og
+  målinger). Teksten citeres ordret, HTML-escapes og afkortes ved 200 tegn; hele teksten ligger i en tooltip. Lab-
+  records har ingen begrundelsestekst i registret, og det står der. En URL i en tekst ville blive erstattet af
+  "[URL udeladt]".
+- **Omkostninger** vises kun, når de står direkte: en off-db-`evidence` der nævner cost (citeret), eller at specen
+  har et felt med "cost" i navnet (indholdet står ikke i registret). Ellers står der "–".
+- **Databegrænsninger** kommer fra `migration_v1.json` (beslutningskoder som SURVIVORSHIP_UNKNOWN, HASH_AT_ACCESS,
+  LEGACY_RECORD og UNVERIFIED_ORIGIN med fuld tekst i tooltip, approval-status, "spec låst før screening",
+  universstørrelse), registrets `gaps`, `legacy_manifest_v1.json` (legacy-triple) og off-db `counted_elsewhere`.
+- **Filtre** for status og lineage er rent CSS (radio og `:checked`). De virker på begge tabeller og kan kombineres.
+- **U3 held/multiple testing**: mærket **DIAGNOSTIC_ONLY — ingen test, ingen validering**. Stregen er
+  `video_triage.luck_bar(N, 1.0)`, dvs. den forventede største z-værdi blandt N uafhængige nul-forsøg. Funktionen
+  genbruges og er ikke skrevet om. N er registrets antal forsøg. Antagelsen om uafhængighed står der, og at forsøg i
+  samme lineage er korrelerede, og at varianterne ikke er med i N. 1,96 vises til sammenligning. Registret har ingen
+  z- eller Sharpe-værdier pr. forsøg, så siden siger "sammenligningsdata mangler" og sammenligner intet.
+- Med registret 2026-11-06 (sha256 `4f2e62d5…`, matcher registry.md): 206 forsøg (146 amendment 17, 50 lab, 9
+  off-database, 1 explore0), 19.438 varianter, alfa 0,399375. Status: REJECTED 47, PROPOSED 8, CLOSED 4,
+  INCONCLUSIVE 3, EXTERNAL 3, ingen VALIDATED. U3: E[max z] ≈ 2,775 for N = 206. `offdb_studies.json` har ét studie
+  mere end snapshottet (HFC1_OUTCOME_3D_2026-11-04, attempts 0), og siden viser det som bemærkning.
+- Tests: `tests/test_research_paper_graveyard.py` (18). De dækker et syntetisk register med flere statusser og
+  lineages, alle poster vist med antal lig registret, statustal lig registret, ordret og escapet tekst, U3-stregen
+  med DIAGNOSTIC_ONLY og genbrug af `luck_bar`, filtre, intet script/URL/fetch/eval/knap, byte-identiske
+  registerfiler, deterministisk output, flag ved afvigelse, manglende register, placering efter feedet og det rigtige
+  register (antal = `ledger.attempts`, filer uændrede).
+
 ## Read-only-garantier
 
 - lab.db åbnes kun som `file:<sti>?mode=ro` med `PRAGMA query_only=ON`. Testen bekræfter, at DB-filen er
@@ -111,4 +159,4 @@ verificeret eksekverbar strategi og ikke investeringsrådgivning. Live-handel er
   Ejeren skal da tjekke browserkonsollen (F12) for fejl. Det gælder også nu: åbn F12 én gang og bekræft, at
   konsollen er tom.
 
-Filer: `research/tools/paper_dashboard.py`, `research/tools/paper_chart.py` (59-K), `tests/test_research_paper_dashboard.py` (23 tests) og `tests/test_research_paper_chart.py` (15 tests).
+Filer: `research/tools/paper_dashboard.py`, `research/tools/paper_chart.py` (59-K), `research/tools/paper_graveyard.py` (60-D), `tests/test_research_paper_dashboard.py` (23 tests), `tests/test_research_paper_chart.py` (15 tests) og `tests/test_research_paper_graveyard.py` (18 tests).
