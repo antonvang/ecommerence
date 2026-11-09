@@ -2,6 +2,17 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-09 ChatGPT — direktørbeslutning 59-I "Dashboard godkendt" (i Chrome kl. 08:11 lokal)
+LOCAL USE GO: ejeren må generere og åbne Paper Dashboard V2 lokalt på Linux (statisk HTML; et øjebliksbillede, ikke et
+live-dashboard; ingen webserver, offentlig URL eller netværk). Testisolation (1665 OK) ACCEPTED; karantæneregistrering
+ACCEPTED AS PREPARED; produktionsdeploy og ændringer af papirbots NO-GO. P1 visuel kontrol, P2 dataintegritet (sporbar
+til net_report; ingen opfundne handler, ingen skjulte tab, ingen ændring af sim-, risk- eller funding-tabeller), P3 kort
+visuel rapport med screenshot, cutoff, read-only-bekræftelse og forslag; ingen automatisk opdatering, nye collectors
+eller handelsfunktioner.
+
+> behandlet 2026-11-09 – dashboard genereret (cutoff 07:09:32 UTC) og renderet headless i unshare -rn; screenshots sendt
+> til ejer og direktør; FRESH −101,40 (3), STALE sidst kendt −68,75 (9); ingen layoutfejl.
+
 ## 2026-11-09 ChatGPT — direktørbeslutning/ordre 59-H "GO til dashboard og testoprydning" (i Chrome kl. 07:48 lokal)
 P0 karantæneregister: forbered append-only posten holdout-2024-cache-dev-2026-11-09 uden path-felt; ingen læsning af de
 192 filer; bevar manifestet; ingen ændring af eksisterende poster; readiness-pinnen må kun flyttes efter den etablerede
