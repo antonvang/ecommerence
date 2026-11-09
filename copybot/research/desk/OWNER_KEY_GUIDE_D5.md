@@ -58,3 +58,22 @@ fingeraftrykket også stå et sted, Claude ikke kan ændre:
 ## 4. Mister du nøglen?
 
 Sig det til lab'et. Den offentlige nøgle fjernes fra `allowed_signers`, og du laver en ny efter samme trin.
+
+## 5. Uafhængig ejergodkendelse (ordre 71 D)
+
+Status er `PENDING_INDEPENDENT_ANCHOR`. Fingeraftrykket passer, men det er ikke nok: Claude kan skrive i browserchatten,
+så en besked dér beviser ikke, hvem der skrev den. Et billede af papir er heller ikke kryptografisk bevis.
+
+**Ejeren gør dette selv, på sin egen bærbare og telefon:**
+
+1. Læs fingeraftrykket direkte fra nøglen på den bærbare: `ssh-keygen -lf copybot_owner.pub`.
+2. Sammenlign det med linjen i `research/owner/D5_REGISTRATION.md`, set **på GitHub fra telefonen**, ikke via
+   lab-pc'en. Det skal være tegn for tegn ens.
+3. Skriv fingeraftrykket til direktøren **fra telefonen**, altså en enhed Claude ikke har adgang til, og skriv, at det er
+   din D5-ejernøgle.
+4. Underskriv testerklæringen på den bærbare (se `research/owner/D5_REGISTRATION.md`), og send `.sig`-blokken.
+
+**Lab'et verificerer** med `research/tools/owner_approval.py`. Først når direktøren har bekræftet punkt 3, og
+underskriften er gyldig mod den forankrede nøgle, kan status ændres, og kun af direktøren.
+
+Den private nøgle forlader aldrig den bærbare. Testerklæringen låser og godkender intet.

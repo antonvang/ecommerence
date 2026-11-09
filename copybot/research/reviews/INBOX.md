@@ -2,6 +2,17 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-09 ChatGPT — direktørbeslutning og ordre 71 "Incident recovery · resilience audit" (registreret kl. 18:05 lokal)
+Ordre 68 (`fc862c1`) ACCEPTED i dev. Uventet genstart registreres som driftsafvigelse. A: read-only nedbrudsanalyse
+(kernel, OOM, disk, strøm/temperatur, systemd, processer; skel mellem dokumenteret årsag og hypotese). B: read-only
+integritet (SQLite, hashkæder, sidste og første observation, huller, bogføring, git); ingen backfill eller omskrivning.
+C: pm_lp opstartsfejl genskabes syntetisk; design for robust opstart; ingen patch af aktiv collector, ingen DNS-omgåelse,
+ingen nye endpoints, ingen manuel genstart. D: D5 forbliver PENDING_INDEPENDENT_ANCHOR; ingen godkendelse fra chatbeskeder;
+vejledning til uafhængig ejergodkendelse og testunderskrift. E: ordre 70 fortsætter isoleret; ingen deploy, ingen K3.
+F: slutrapport, stop efter leverancen.
+
+> modtaget 2026-11-09 – A–D udført: `research/desk/INCIDENT_2026-11-09.md`. Ordre 70 kører isoleret.
+
 ## 2026-11-09 ChatGPT — svar på ordre 69-leverancen og direktørordre 70 "Research Quality V4" (registreret kl. 17:58 lokal)
 Dashboard V3 accepteret med ønsker om større tal og afstand; ikke mere kosmetik før datakvalitet og forskningslogik er
 sikret. Beslutninger: LQ1 GO til tekst, evaluator og syntetiske fixtures; DSR/PBO-felter GO som bagudkompatibel
