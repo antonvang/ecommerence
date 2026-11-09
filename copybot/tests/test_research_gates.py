@@ -6,7 +6,9 @@ import json
 import os
 import sqlite3
 import sys
+import tempfile
 import unittest
+from unittest import mock
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(HERE, "research", "tools"))
@@ -14,6 +16,11 @@ import gates  # noqa: E402
 
 REGISTER = os.path.join(HERE, "research", "data", "QUARANTINE.json")
 SCANNED = ("lab", "pilot", os.path.join("research", "tools"))
+
+
+def unchanged(path, sha256):
+    with open(path, "rb") as f:
+        return hashlib.sha256(f.read()).hexdigest() == sha256
 
 
 def py_files():
@@ -31,12 +38,36 @@ class Quarantine(unittest.TestCase):
         with open(REGISTER, encoding="utf-8") as f:
             self.reg = json.load(f)
 
-    def test_files_exist_unchanged(self):
+    def test_integrity_logic_on_a_generated_file(self):
+        """Order 73: the pin check is tested on a generated file. A quarantined file is not opened, hashed or stat'ed."""
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "synthetic.json")
+            with open(path, "wb") as f:
+                f.write(b'{"synthetic": true}')
+            pin = hashlib.sha256(b'{"synthetic": true}').hexdigest()
+            self.assertTrue(unchanged(path, pin))
+            with open(path, "ab") as f:
+                f.write(b" ")
+            self.assertFalse(unchanged(path, pin))
+
+    def test_register_pins_every_listed_file_without_opening_it(self):
         files = [e for e in self.reg["entries"] if e.get("path")]
         self.assertTrue(files)
-        for e in files:
-            with open(os.path.join(HERE, e["path"]), "rb") as f:
-                self.assertEqual(hashlib.sha256(f.read()).hexdigest(), e["sha256"], e["id"])
+        with mock.patch("builtins.open", side_effect=AssertionError("opened")), \
+                mock.patch("os.stat", side_effect=AssertionError("stat")):
+            for e in files:
+                self.assertRegex(e["sha256"], "^[0-9a-f]{64}$", e["id"])
+
+    def test_no_test_names_a_quarantined_file(self):
+        """test_research_gate_status only asserts that the tool refuses the path, under a mocked open."""
+        names = [os.path.basename(e["path"]) for e in self.reg["entries"] if e.get("path")]
+        tests = os.path.join(HERE, "tests")
+        for f in sorted(os.listdir(tests)):
+            if f.endswith(".py") and f != "test_research_gate_status.py":
+                with open(os.path.join(tests, f), encoding="utf-8") as fh:
+                    src = fh.read()
+                for n in names:
+                    self.assertNotIn(n, src, f)
 
     def test_every_entry_says_what_is_forbidden(self):
         for e in self.reg["entries"]:

@@ -137,5 +137,55 @@ class OfflineGuard(unittest.TestCase):
             db.close()
 
 
+class QuarantineGuard(unittest.TestCase):
+    """Order 73: synthetic stand-ins for the real open, so a broken guard could still not touch the protected file."""
+
+    def setUp(self):
+        self.assertTrue(offline_market.QUARANTINED)
+        self.path = os.path.join("/some/checkout", offline_market.QUARANTINED[0])
+
+    def test_detected_from_the_string_alone(self):
+        with mock.patch("os.stat", side_effect=AssertionError("stat")), \
+                mock.patch("os.lstat", side_effect=AssertionError("lstat")):
+            self.assertTrue(offline_market.is_quarantined(self.path))
+            self.assertTrue(offline_market.protected(self.path))
+            self.assertTrue(offline_market.is_quarantined(os.fsencode(self.path)))
+            self.assertFalse(offline_market.is_quarantined(3))
+
+    def test_other_paths_pass(self):
+        self.assertFalse(offline_market.is_quarantined("/some/checkout/research/data/QUARANTINE.json"))
+
+    def test_wrappers_refuse_before_the_real_call(self):
+        real_open, real_os_open = mock.Mock(), mock.Mock()
+        guarded_open, guarded_os_open = offline_market.quarantine_wrappers(real_open, real_os_open)
+        with self.assertRaises(offline_market.ProtectedFileAccess):
+            guarded_open(self.path, "rb")
+        with self.assertRaises(offline_market.ProtectedFileAccess):
+            guarded_os_open(self.path, os.O_RDONLY)
+        real_open.assert_not_called()
+        real_os_open.assert_not_called()
+        guarded_open("/elsewhere/file", "rb")
+        real_open.assert_called_once()
+
+    def test_file_guard_refuses_too(self):
+        seen = []
+        with mock.patch.object(builtins, "open", mock.Mock()) as real_open:
+            patchers = offline_market.file_guard(seen)
+            for x in patchers:
+                x.start()
+            try:
+                with self.assertRaises(offline_market.ProtectedFileAccess):
+                    builtins.open(self.path, "rb")
+            finally:
+                for x in reversed(patchers):
+                    x.stop()
+            real_open.assert_not_called()
+        self.assertEqual(seen, [self.path])
+
+    def test_process_guard_is_installed_by_the_tests_package(self):
+        import tests
+        self.assertTrue(tests.offline_market._process_guard)
+
+
 if __name__ == "__main__":
     unittest.main()

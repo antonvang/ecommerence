@@ -38,8 +38,61 @@ def in_temp(path):
     return p == TEMP or p.startswith(TEMP + os.sep)
 
 
+def _quarantined():
+    """Repo-relative paths of the quarantine register (order 73). Only the register is read, never a listed file."""
+    register = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "research", "data",
+                            "QUARANTINE.json")
+    with open(register, encoding="utf-8") as fh:
+        return tuple(e["path"].replace("/", os.sep) for e in json.load(fh)["entries"] if e.get("path"))
+
+
+QUARANTINED = _quarantined()
+
+
+def is_quarantined(path):
+    """True for a path in the quarantine register, in any checkout. String work only: the file is not even stat'ed."""
+    try:
+        p = os.path.abspath(os.fsdecode(path))
+    except TypeError:                            # a file descriptor, not a path
+        return False
+    return any(p.endswith(os.sep + rel) for rel in QUARANTINED)
+
+
+def quarantine_wrappers(real_open, real_os_open):
+    """open and os.open stand-ins that refuse a quarantined path before calling the real function."""
+    def check(path):
+        if not isinstance(path, int) and is_quarantined(path):
+            raise ProtectedFileAccess(f"{BLOCKED}: quarantined file")
+
+    def guarded_open(file, *a, **k):
+        check(file)
+        return real_open(file, *a, **k)
+
+    def guarded_os_open(path, *a, **k):
+        check(path)
+        return real_os_open(path, *a, **k)
+    return guarded_open, guarded_os_open
+
+
+_process_guard = False
+
+
+def install_quarantine_guard():
+    """Process-wide and idempotent; tests/__init__.py calls it, so `python3 -m unittest tests.x` cannot open the file."""
+    global _process_guard
+    if _process_guard:
+        return
+    _process_guard = True
+    guarded_open, guarded_os_open = quarantine_wrappers(builtins.open, os.open)
+    builtins.open = io.open = guarded_open
+    os.open = guarded_os_open
+
+
 def protected(path):
-    """True for a real market cache file, a 2024 zip or a lab/research database outside the temporary directory."""
+    """True for a quarantined file, a real market cache file, a 2024 zip or a lab/research database outside the
+    temporary directory."""
+    if is_quarantined(path):
+        return True
     try:
         p = os.path.realpath(os.fspath(path))
     except TypeError:                            # a file descriptor, not a path

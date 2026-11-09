@@ -153,14 +153,9 @@ class Refusal(unittest.TestCase):
         self.assertFalse(n6.locked(text))
         self.assertFalse(n4.locked(text))
 
-    def test_pair_file(self):
-        with open(os.path.join(os.path.dirname(n4.PROTOCOL), "data", "N4_KIMCHI_PAIRS_2026-11-02.json"),
-                  encoding="utf-8") as f:
-            d = json.load(f)
-        self.assertEqual(d["overlap"], len(d["pairs"]))
-        self.assertNotIn("BTC", d["pairs"])
-        self.assertNotIn("USDT", d["pairs"])
-        self.assertEqual(d["pairs"]["PEPE"]["multiplier"], 1000)
+    def test_the_tool_has_no_pair_file_constant(self):
+        """Order 73: the former content checks of the real list are gone, because no test may read it."""
+        self.assertFalse(hasattr(n4, "PAIRS"))
 
 
 if __name__ == "__main__":

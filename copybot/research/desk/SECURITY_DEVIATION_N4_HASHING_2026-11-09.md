@@ -19,3 +19,27 @@ denne fil.
 
 **Status:** testen springes over i den lokale testvagt (direktøren: GO). Testen i repoet er uændret, så et almindeligt
 `unittest`-kald hasher stadig filen, indtil P2 er udført. Filen er ikke rørt under denne registrering.
+
+## Tillæg 21:54 lokal: endnu en test læste filen, og den parsede indholdet
+
+Under kortlægningen for ordre 73 blev en test mere fundet.
+
+| Felt | Indhold |
+|---|---|
+| Test | `tests/test_research_n6_n4.py`, `Refusal.test_pair_file` |
+| Adgangstype | **`open` + `json.load`: filen blev parset, ikke kun hashet.** Testen sammenlignede felter (antal par, at BTC og USDT ikke var med, multiplikatoren for ét navngivet par) |
+| Kendt siden | oprettet i `7012c2b` (2026-11-02 10:20 lokal). `B_N4_QUARANTINE_AUDIT.md` omtaler den som tilladt efter ændring 40 punkt 2 |
+| Kørsler | alle fulde suites siden 2026-11-02, også 2026-11-09 17:45–17:57 |
+| Overspringningen fra kl. 18:15 | dækkede kun hash-testen, så denne test var stadig aktiv. Der har ikke været en fuld kørsel i tiden mellem overspringningen og ordre 73's isolation |
+| Anvendt til forskning | Ingen dokumentation for det via testen. Testens kildekode nævner dog ét par og dets multiplikator, og den tekst ligger stadig i git-historikken |
+
+Den første afgørelse kunne altså ikke bygge på det fulde billede. Direktørens vurdering af N4's uafhængighed bør tage højde
+for parsingen.
+
+**Git:** git selv kan læse filens bytes, fx ved `checkout`, `cherry-pick` eller når `git status` genberegner en fil med
+ændret tidsstempel. Det er ikke målt og kan ikke udelukkes.
+
+**Isolation (ordre 73 P2/P3):** begge tests er erstattet. Vagten afviser stien ud fra tekststrengen, før noget åbnes, og
+en fuld kørsel afgør, om flere tests forsøger. En første målrettet kørsel viste vagten i funktion: den stoppede
+`test_pair_file`, før filen blev åbnet (1 blokeret forsøg), og det er dokumentationen for, at vagten virker på den rigtige
+sti.
