@@ -2,6 +2,24 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-09 Ejer + ChatGPT — direktørordre 60 "Kontinuerlig udvikling" (i Chrome kl. 12:50 lokal)
+Ejeren: "byg uafbrudt nu". Direktøren: 5/5 spor GO med betingelser, men ingen kode bare for at holde beskæftigelsen;
+én sammenhængende runde med leverancer, tests og stopbetingelser. A STRAKS 12/11 dry-run (P0: cutoff 17:11:51 UTC,
+ingen evaluering før cutoff, input-hashes og proveniens, rapportformat, ingen ændring af observationer). B gate-
+statusværktøj (P0: read-only GATE_MATRIX og NOV14_READINESS; READY/BLOCKED/WITHDRAWN/manglende krav; DNS- og
+datadækningsafhængigheder; ingen lås; ingen pin-ændringer). C 19/11 readiness (P1: syntetiske dry-runs af HFC-1 14 d og
+PAR-BOG; bevar cutoffs, formler og regler; ingen forhåndsevaluering). E K05 Polymarket negRisk-arbitrage v2, design
+alene (P1: falsificerbar hypotese, prisrelationer, eksekverbarhed og likviditet, gebyrer og slippage, stale quotes og
+samtidighed, point-in-time-krav, uafhængig validering, stopkriterier og styrke, hvorfor L18 fandt 0 muligheder i 7.612
+hændelser; ingen data, streams, signeringer, låse eller handelsforbindelser). D strategikirkegård i dashboardet (P2:
+read-only; forsøg med udfald og begrundelse; omkostninger og databegrænsninger; U3-diagnostik; tjek først at de 206
+forsøg findes; ingen nye "validerede" beregninger). Fælles: isoleret udviklingsgren; ingen ændring af låste bøger,
+ingen alfa, ingen live-handel; rækkefølge A→B→C→E→D; stop det berørte spor ved sikkerhedsafvigelse, pin-konflikt eller
+behov for VERIFIED_OWNER_APPROVAL; STOP efter alle fem og afvent ny beslutning. K04 og K10 forbliver på listen, men
+aktiveres ikke. STATUS: ORDER 60 DEVELOPMENT GO · PRODUCTION NO-GO · LIVE TRADING NO-GO.
+
+> modtaget 2026-11-09 – påbegyndt.
+
 ## 2026-11-09 ChatGPT — direktørbeslutning 59-L "Handelschart godkendt" (registreret kl. 12:07 lokal)
 59-J og 59-K ACCEPTED (BTCUSDT- og USDBRLUSDT-chart 9/10; reelle huller i markedsdata og ren handelsprisvisning er den
 ønskede skelnen). Klar til manuel lokal brug. Mindre ting: entry-labels kan dække grafen på små skærme (ingen grund til
