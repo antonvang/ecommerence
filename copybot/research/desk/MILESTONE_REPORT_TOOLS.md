@@ -208,7 +208,7 @@ python3 research/tools/parbog_report.py
 | MRT-11 | Uden 41b på kontoniveau | Kontonetto − de mærkede handlers netto, men kun hvis alle tre var lukket ved seneste mærkning. Ellers UNKNOWN |
 | MRT-12 | Udgangsårsag ulige på de to ben, eller ukendt | Vises som "uens: …" eller "ukendt (…)", aldrig som en af de tre |
 
-## Tests (`tests/test_research_milestone_reports.py`, 34 tests, kun syntetiske databaser, socket patched)
+## Tests (`tests/test_research_milestone_reports.py`, 36 tests, kun syntetiske databaser, socket patched)
 
 - **HFC-1:**
   - vindue og frist (11-08 00:35);

@@ -516,6 +516,53 @@ class NotDueNeverOpensTheDatabase(Base):
         self.assertEqual((c.exception.status, c.exception.code), ("NO_DB", 3))
 
 
+class CrashSafeWrites(Base):
+    """Order 60 A/C (MILESTONE_DRYRUN_60AC.md): straks_report.write_outputs (shared with parbog_report) gets the same
+    crash rule as hfc1_report3d B3: a .json without its .md (crash between the two writes) is completed on a rerun with
+    the same result, never left half; a lone .md or an empty .json is refused (EXISTS) and kept; no .tmp is left."""
+
+    def runs(self):
+        sdb, pdb = sr.synthetic(self.mk("s")), pb.synthetic(self.mk("p"))
+        return (("straks", lambda out: sr.run(sdb, out, sr.CUTOFF + sr.SETTLE_S, True)),
+                ("parbog", lambda out: pb.run(pdb, out, pb.CUTOFF + pb.SETTLE_S, True)))
+
+    def mk(self, name):
+        d = os.path.join(self.tmp, name)
+        os.makedirs(d)
+        return d
+
+    def test_rerun_after_crash_between_json_and_md_completes_the_md(self):
+        for name, run in self.runs():
+            out = os.path.join(self.tmp, "out_" + name)
+            rep, jp = run(out)
+            mp = jp[:-5] + ".md"
+            md_before = read(mp)
+            os.remove(mp)                                                  # crash: .json on disk, .md not
+            rep2, _ = run(out)
+            self.assertEqual(rep2["result_sha256"], rep["result_sha256"], name)
+            self.assertTrue(os.path.exists(mp), name)
+            self.assertEqual(read(mp), md_before, name)
+            self.assertEqual([n for n in os.listdir(out) if n.endswith(".tmp")], [], name)
+
+    def test_lone_md_or_empty_json_is_refused_and_kept(self):
+        for name, run in self.runs():
+            out = os.path.join(self.tmp, "out_" + name)
+            _, jp = run(out)
+            mp = jp[:-5] + ".md"
+            os.remove(jp)                                                  # lone .md: never trusted
+            before = sha(mp)
+            with self.assertRaises(sr.Refused) as c:
+                run(out)
+            self.assertEqual((c.exception.status, c.exception.code), ("EXISTS", 3), name)
+            self.assertEqual(sha(mp), before, name)
+            open(jp, "wb").close()                                         # zero-length .json after a crash
+            with self.assertRaises(sr.Refused) as c:
+                run(out)
+            self.assertEqual((c.exception.status, c.exception.code), ("EXISTS", 3), name)
+            self.assertEqual(os.path.getsize(jp), 0, name)
+            self.assertEqual([n for n in os.listdir(out) if n.endswith(".tmp")], [], name)
+
+
 class Static(unittest.TestCase):
     """The tools stay stdlib-only, network-free, read-only and away from pm_lp (module docstrings excluded)."""
 

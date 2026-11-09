@@ -229,13 +229,23 @@ def write_outputs(out, base, raw, text):
                 same = json.loads(f.read()).get("result_sha256") == json.loads(raw)["result_sha256"]
         except (OSError, ValueError):
             same = False
-        if same:
+        if same and os.path.exists(mp):
+            return                                       # idempotent: the same result is already on disk
+        if same:                                         # a crash after the .json: complete the pair (as hfc1 B3)
+            _atomic(mp, text.encode("utf-8"))
             return
         raise Refused("EXISTS", 3, f"{jp} exists with a different result; not overwritten")
-    with open(jp, "wb") as f:
-        f.write(raw)
-    with open(mp, "w", encoding="utf-8") as f:
-        f.write(text)
+    _atomic(mp, text.encode("utf-8"))                    # .md first: a lone .md is refused (EXISTS), never trusted
+    _atomic(jp, raw)
+
+
+def _atomic(path, data):
+    tmp = path + ".tmp"
+    with open(tmp, "wb") as f:
+        f.write(data)
+        f.flush()
+        os.fsync(f.fileno())
+    os.replace(tmp, path)
 
 
 def check_wording(text):
