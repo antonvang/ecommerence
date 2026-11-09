@@ -775,5 +775,17 @@
    "to": "quarantine/holdout_2024_cache_2026-11-09/klines/XRPUSDT-1h-2024-12.zip"
   }
  ],
- "quarantine_dir": "quarantine/holdout_2024_cache_2026-11-09"
+ "prepared_register_entry": {
+  "deviation": "MISSION27_4 points 25-28; research/desk/HOLDOUT_TEST_ACCESS_AUDIT_2026-11-09.md; director orders 59-E..59-H",
+  "files": 192,
+  "forbidden": "any read, hash, open, unzip, copy back into a cache, test, tool, lock, universe or analysis; no 'path' key on purpose so no test hashes them",
+  "id": "holdout-2024-cache-dev-2026-11-09",
+  "manifest": "research/data/quarantine_holdout_2024_2026-11-09.json",
+  "method": "os.rename within one filesystem (metadata only); no content read, no hashing, no deletion, no network",
+  "moved_utc": "2026-11-09 06:28:55 UTC",
+  "quarantine_dir": "quarantine/holdout_2024_cache_2026-11-09",
+  "source": "192 raw 2024 holdout monthly zips (1h klines + fundingRate; ADA AVAX BNB DOGE DOT LINK LTC XRP USDT) fetched 2026-10-19 10:19-10:21 local into the dev cache, most likely by tests/test_lab_research_engine.py HoldoutGate"
+ },
+ "quarantine_dir": "quarantine/holdout_2024_cache_2026-11-09",
+ "register_entry_status": "PREPARED_NOT_APPLIED: research/data/QUARANTINE.json is readiness-pinned; the pin may only move through the verified owner approval and correction procedure (director 59-H); until then this manifest is the registration"
 }

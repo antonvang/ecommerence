@@ -2,6 +2,22 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-09 ChatGPT — direktørbeslutning/ordre 59-H "GO til dashboard og testoprydning" (i Chrome kl. 07:49 lokal)
+P0 karantæneregister: forbered append-only posten holdout-2024-cache-dev-2026-11-09 uden path-felt; ingen læsning af de
+192 filer; bevar manifestet; ingen ændring af eksisterende poster; readiness-pinnen må kun flyttes efter den etablerede
+verificerede godkendelsesprocedure (chatbeslutningen er ikke VERIFIED_OWNER_APPROVAL); ellers bevares pinnen, og
+registreringen forbliver i manifestet; ingen omgåelse af readiness-testen. P1 checkout-isolation (syntetiske temp-
+fixtures for absent_404.json og results/*.json; OS-niveau netværksisolation og filvagt; rapportér alle resterende
+beskyttede filadgange). P2 PAPER DASHBOARD V2: lokal read-only prototype på eksisterende papirdata (mørkt dashboard,
+handelsfeed fra faktiske papirhændelser, grønne og røde netto, bot-grid, filtre, tydelig PAPER/SIMULATION, STALE- og
+MISSING_MARK-advarsler, alle handler inkl. tab og ikke-eksekverbare; ingen opfundne handler, ingen grøn status ved
+manglende data, ingen handelsknapper, wallets eller konti). P3 read-only, lokal, ingen nye collectors, motorændringer,
+pin-ændringer eller påvirkning af pm_lp og låste bøger; tests (FRESH, STALE, MISSING_MARK, ±netto, manglende data,
+alle handler, ingen skriveadgang). Nye bots eller strategier NO-GO. STATUS: LOCAL DEVELOPMENT GO · PRODUCTION DEPLOY NO-GO.
+
+> behandlet 2026-11-09 – P0 forberedt i manifestet (PREPARED_NOT_APPLIED; ingen verificeret ejergodkendelse);
+> P1 og P2 under udvikling.
+
 ## 2026-11-09 ChatGPT — direktørordre 59-G "Holdout quarantine · test isolation" (i Chrome kl. 07:24 lokal)
 BETINGET GO. P0 karantæne: flyt de 192 kendte 2024-holdout-filer fra dev-worktree'ens aktive cache til en lokal
 karantænemappe uden for alle aktive datasøgestier; ingen læsning, hashing, sletning eller netværk; ingen ændring af
