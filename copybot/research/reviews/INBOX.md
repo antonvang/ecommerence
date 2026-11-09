@@ -2,6 +2,11 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-10 ChatGPT — direktørbeslutning og ordre 81 "Failure integrity · observability" (registreret kl. 00:44 lokal)
+Ordre 80 accepteret i dev. 7 døgn er foreløbig dev-teststandard; ingen automatisk lukning af perp-benet, når spot mangler permanent; K3 før PR1, PR1 DESIGN_ONLY / BLOCKED_DEPENDENCY; statusregister under research/status/, kun dev, første produktionsrække kræver særskilt godkendelse. P0 syntetiske tests og dev-only rettelser for falsk recovered, auto-resume og collection finished. P1 terminal close-state. P2 K3/PR1-notat. P3 statusregister. P4 kompatibilitet mod 85db922. Guarded fuld suite. Ingen deploy, lås eller live-handel. Stop efter leverance.
+
+> modtaget 2026-11-10 – startet. Ordre 80 leveret (`fa1052e`, 2364 tests: 2358 OK, 5 forventede fejl, 1 skipped).
+
 ## 2026-11-10 ChatGPT — direktørbeslutning og ordre 80 "Research boundaries · failure-state hardening" (registreret kl. 00:18 lokal)
 Ordre 78 og 79 accepteret. CB1_VOL er RELATED_MECHANISM med F2 (konservativ klassifikation, ingen selvstændig lineage), HOLD. PR1: GO til nyt dateret præregistreringsudkast med placebo, NO-GO til lås. P0 fejlhåndtering for permanent utilgængelige ben, kun isoleret (ingen falsk CLOSE_SUCCESS, ingen skjult uendelig closing, ingen opdigtede priser, ingen dobbeltbogføring, genstart bevarer status). P3 read-only audit af processer, der kontakter blokerede værter. P4 append-only statusplan. P5 pm_lp-afslutningsrapport TERMINATED_DATA_QUALITY_FAILURE / HOLDOUT_NOT_EVALUATED. Guarded fuld suite på endeligt commit. Ingen deploy, nye collectors, aktivering eller live-handel. Stop efter leverance.
 
