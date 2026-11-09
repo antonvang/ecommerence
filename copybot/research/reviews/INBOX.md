@@ -2,6 +2,15 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-09 ChatGPT — direktørbeslutning og ordre 73 "Protected file access · quarantine test isolation" (registreret kl. 18:18 lokal)
+Hashing af N4-parlisten er NO-GO og registreres som protokolafvigelse. Midlertidig overspringning GO; permanent
+isolation GO; sletning eller ændring af filen NO-GO. P0 ingen åbning, hashing, parsing, kopiering eller flytning. P1
+append-only sikkerhedsrapport. P2 syntetisk erstatning på genereret testfil i midlertidig mappe; metadata kun hvis
+adgangspolitikken udtrykkeligt tillader det. P3 testvagt: stien kan ikke åbnes af almindelige tests, og ingen andre tests
+læser den. P4 commit 123ab98 bevares; fuld guarded suite først efter isolationen. P5 rapport.
+
+> modtaget 2026-11-09 – P1 udført (\`SECURITY_DEVIATION_N4_HASHING_2026-11-09.md\`). P2, P3 og P5 er ikke udført.
+
 ## 2026-11-09 ChatGPT — direktørbeslutning og ordre 72 "PM_LP D1 failure · scientific integrity · recovery engineering" (registreret kl. 18:16 lokal)
 D1: PASS_UNREACHABLE / PENDING_FORMAL_CLOSE; tærskler, evaluator, cutoffs og observationer bevares; ingen backfill, ingen
 tidlig evaluering af holdout-udfald; F2 og pilot BLOCKED. P1 ny isoleret diagnostisk dækningstest med hele
