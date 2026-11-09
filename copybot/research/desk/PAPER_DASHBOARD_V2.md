@@ -1,4 +1,4 @@
-# PAPER DASHBOARD V2 (direktørordre 59-H P2, finpudset i 59-J)
+# PAPER DASHBOARD V2 (direktørordre 59-H P2, finpudset i 59-J, Handelschart 59-K)
 
 **Status: LOKAL prototype. Produktionsdeploy: NO-GO indtil direktørgennemgang.**
 
@@ -45,6 +45,39 @@ registrerede papirdata fra lab.db og er hele tiden mærket **PAPER / SIMULATION 
 - STALE-kort har en dæmpet netto og aldrig en grøn FRESH-chip. Ingen tal er ændret: alt kommer stadig uændret fra
   net_report.build, og en test sammenligner tallene og tidsstemplerne med 59-H-renderingen af samme syntetiske DB.
 
+## Handelschart (59-K)
+
+Under bot-oversigten ligger sektionen **HANDELSCHART** (`research/tools/paper_chart.py`). Den **viser kun**
+registrerede papirhandler: ingen ordreknapper, ingen handel fra grafen, ingen JavaScript. Hver graf har mærket
+PAPER / SIMULATION, instrumentnavnet og bots med antal fyld.
+
+- **Ét instrument pr. graf.** Der laves én graf pr. instrument, som FRESH-bøgerne har handlet. Flest fyld kommer
+  først, og der vises højst 6. Resten står i "Ikke vist". Et rent CSS-valg (radio + `:checked`) viser én graf ad
+  gangen.
+- **Vindue**: fra instrumentets første fyld til cutoff, eller de seneste 7 dage, hvis forløbet er længere. Vinduet
+  angives, og ældre fyld tælles som "ikke vist". Tidsaksen er i UTC, og prisaksen sidder til højre.
+- **KØB** er en grøn ▲, og **SÆLG** er en rød ▼. Spidsen sidder præcis på fyldets (ts, px). Hver markør har en
+  `<title>`-tooltip med tid, bot, side, qty @ px og gebyr.
+- **Markedskurs**: kun hvor `observations` har `metric='mark'` for netop instrumentet (Binance USD-M premiumIndex,
+  detektor k3/1). Af de viste instrumenter gælder det i dag kun BTCUSDT. Linjen brydes, hvor to punkter ligger mere
+  end 3× medianafstanden fra hinanden (62 s → 3,1 min). Den interpoleres aldrig, og hvert hul er skraveret og har en
+  `<title>`. BTC-mærkerne er registreret i bursts på ca. 70 min hver 2. time, så linjen har mange huller. Er der
+  flere punkter end pixels, beholdes min/maks pr. pixelkolonne. Alle beholdte punkter er registrerede punkter.
+- **Uden markedsserie** viser grafen kun markører uden linje og mærket "Handelspriser — ikke en markedskurs".
+- **Funding-afregningspris** (`sim_funding.price` ved `settle_ts`) vises som enkeltpunkter (◇), aldrig som en kurve.
+- **Spring over** vises som grå punkter i et separat bånd under prisområdet. Det sker kun, når payload har et
+  `instrument` lig grafens instrument (fx `straks.skipped`). Et skip har ingen pris og står derfor ikke på prisaksen.
+- **Entry (gns.)** er en stiplet vandret linje, grøn for LONG og rød for SHORT. Den kommer fra net_report's egen
+  `open_qty`/`open_basis` ved cutoff og vises kun for åbne positioner. Er positionen vendt gennem nul uden at være
+  flad, beholder net_report den gamle basis. Så tegnes ingen linje, og grafen siger det.
+- **Equity** (`sim_equity`) læses aldrig af grafmodulet og tegnes aldrig som pris.
+- Hver graf tegnes i tre SVG-størrelser (viewBox, bredde 100 %): desktop over 1000 px, tablet 601–1000 px og mobil
+  op til 600 px. CSS viser den, der passer, så teksten er læsbar overalt.
+- Tests: `tests/test_research_paper_chart.py` (15). De dækker ét instrument pr. SVG, markører på præcis position,
+  fill-only-mærkning uden polyline, linjebrud ved et plantet hul, udtynding til registrerede punkter,
+  funding-punkter, skip kun med instrument, entry kun for dokumenteret åben position, ingen equity, intet
+  script/URL/knap/formular, DB byte-identisk og deterministisk output.
+
 ## Read-only-garantier
 
 - lab.db åbnes kun som `file:<sti>?mode=ro` med `PRAGMA query_only=ON`. Testen bekræfter, at DB-filen er
@@ -78,4 +111,4 @@ verificeret eksekverbar strategi og ikke investeringsrådgivning. Live-handel er
   Ejeren skal da tjekke browserkonsollen (F12) for fejl. Det gælder også nu: åbn F12 én gang og bekræft, at
   konsollen er tom.
 
-Filer: `research/tools/paper_dashboard.py` og `tests/test_research_paper_dashboard.py` (23 tests efter 59-J).
+Filer: `research/tools/paper_dashboard.py`, `research/tools/paper_chart.py` (59-K), `tests/test_research_paper_dashboard.py` (23 tests) og `tests/test_research_paper_chart.py` (15 tests).

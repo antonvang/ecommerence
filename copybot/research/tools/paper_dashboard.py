@@ -16,6 +16,10 @@ feed rows (the ledger id stays on the card). A snapshot banner gives the generat
 to run again; a "Sådan læses tallene" box explains net and FRESH/STALE/MISSING_MARK. The feed shows the same rows as
 before, split into executed paper fills and skips/refusals/errors.
 
+HANDELSCHART (59-K, research/tools/paper_chart.py): under the bot grid, one read-only SVG trade chart per instrument
+of the FRESH books (most fills first, at most 6), picked with a CSS-only radio selector; fills, recorded market marks
+(gap-broken), funding settlement prices, instrument-tied skips and net_report's documented entry; never equity.
+
 Read-only: lab.db is opened as file:...?mode=ro with PRAGMA query_only=ON. No network, no JS, no external resources;
 filters are pure CSS (radio inputs + :checked sibling selectors). The page does not refresh itself.
 """
@@ -32,6 +36,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from research.tools import net_report  # noqa: E402
+from research.tools import paper_chart  # noqa: E402
 
 DB = net_report.DB
 SKIP_KINDS = ("straks.skipped", "paper.skipped", "lane.skipped", "paper.refused", "paper.error",
@@ -248,7 +253,7 @@ footer p{margin:4px 0}footer b{color:var(--txt)}
 """
 
 
-def page(rep, frows, totals, db_path, feed_n, conspark):
+def page(rep, frows, totals, db_path, feed_n, conspark, chart=None):
     sm = rep["summary"]
     cutoff, now = sm["cutoff"], rep["generated"]
     accs = ordered(rep["accounts"])
@@ -266,7 +271,9 @@ def page(rep, frows, totals, db_path, feed_n, conspark):
                for p in ("all", "24", "7")]
     radios += [f'<input class="f" type="radio" name="fs" id="fs-{s}"{" checked" if s == "all" else ""}>'
                for s in ("all", "FRESH", "STALE", "MISSING_MARK")]
-    css = [CSS]
+    hc = chart(names) if chart else ("", "", "")         # 59-K HANDELSCHART: (radios, css, section html)
+    radios.append(hc[0])
+    css = [CSS, hc[1]]
     on = "{background:var(--acc);color:#fff;border-color:var(--acc)}"
     for b in bot_ids:
         css.append(f"#fb-{b}:checked~.wrap label[for=fb-{b}]{on}")
@@ -396,6 +403,10 @@ def page(rep, frows, totals, db_path, feed_n, conspark):
         w("</article>")
     w("</section>")
 
+    # --- HANDELSCHART (59-K): read-only trade charts under the bot overview ---
+    if hc[2]:
+        w(hc[2])
+
     # --- activity feed ---
     shown = len(frows)
     allr = totals["fills"] + totals["events"]
@@ -450,7 +461,7 @@ def page(rep, frows, totals, db_path, feed_n, conspark):
     w("<p><b>Ansvarsfraskrivelse:</b> Beskrivende papir-P&amp;L uden gearing og uden marginmodel (ubegrænset "
       "sikkerhedsstillelse for korte perp-ben). Ikke en verificeret eksekverbar strategi. Ikke "
       "investeringsrådgivning. Live-handel: <b>NO-GO</b>. Ingen knapper, ingen ordrer, ingen konti eller wallets.</p>")
-    w("<p>Lokal prototype (direktørordre 59-H P2, 59-J). Produktionsdeploy: NO-GO indtil direktørgennemgang.</p>")
+    w("<p>Lokal prototype (direktørordre 59-H P2, 59-J, 59-K Handelschart). Produktionsdeploy: NO-GO indtil direktørgennemgang.</p>")
     w("</footer></div></body></html>")
     return "\n".join(out) + "\n"
 
@@ -459,7 +470,8 @@ def render(con, now, cutoff, db_path=DB, feed_n=200):
     rep = net_report.build(con, int(now), int(cutoff))
     frows, totals = feed(con, [a["ledger"] for a in rep["accounts"]], int(cutoff), int(feed_n))
     return page(rep, frows, totals, db_path, feed_n,
-                lambda led, cap, cls: spark(con, led, int(cutoff), cap, cls))
+                lambda led, cap, cls: spark(con, led, int(cutoff), cap, cls),
+                lambda names: paper_chart.section(con, rep, int(cutoff), names, SKIP_KINDS))
 
 
 def main(argv=None, now=None):
