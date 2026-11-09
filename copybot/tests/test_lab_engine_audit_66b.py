@@ -25,6 +25,7 @@ HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, HERE)
 
 from lab import carry90, lane, paper_runner as pr, pipeline, reportcheck, straks  # noqa: E402
+from lab import risk as risk_mod  # noqa: E402
 from lab.db import DB  # noqa: E402
 from lab.paper import Book, CostModel, PaperEngine  # noqa: E402
 from lab.risk import Risk  # noqa: E402
@@ -156,7 +157,9 @@ class Funding(Base):
     def test_confirmed_stop_a_missing_middle_bar_stalls_funding_silently(self):
         """book_funding waits (`break`) for a settlement whose 1h bar is absent although later bars exist: that
         instrument books nothing more until the bar falls out of the fetched window (1000 h Binance, 48 h HL) and
-        no event says so. Real DB: 0 of 559 cross-checked settlements missing, 0 funding_gap events."""
+        no event says so. Real DB: 0 of 559 cross-checked settlements missing, 0 funding_gap events.
+        Order 67 P0-C: in the default ("legacy") mode it stays silent; FUNDING_MISSING_MODE "fail_closed" makes it a
+        visible error (tests/test_lab_engine_remediation_67.py) and still books nothing after it."""
         led = self.ledger()
         t_f, st = int(NOW - 20 * HOUR), int(NOW // HOUR * HOUR - 16 * HOUR)
         self.fill(led, st - 600, "buy", 1.0, 100.0)
@@ -164,8 +167,8 @@ class Funding(Base):
         opens = {t: 100.0 for t in range(st - 4 * HOUR, int(NOW), HOUR) if t != st}     # the bar at st is missing
         PaperEngine(self.db, lambda: NOW).book_funding(led, {"X": (funding, opens)}, t_f)
         booked = {r[0] for r in self.db.q("SELECT settle_ts FROM sim_funding")}
-        gaps = self.db.one("SELECT COUNT(*) FROM events WHERE kind='paper.funding_gap'")[0]
-        self.assertEqual((booked, gaps), ({st + 8 * HOUR}, 1))
+        seen = self.db.one("SELECT COUNT(*) FROM events WHERE kind='paper.funding_missing'")[0]
+        self.assertEqual((booked, seen), (set(), 1))                   # nothing invented, but visible
 
 
 # ---------------------------------------------------------------- 5/8. idempotency and races
@@ -216,11 +219,15 @@ class Idempotency(Base):
         """fetch_book stamps Book.ts with the pass's `now`, so order, fill, book_ts and the 60 s data_max_age_s guard
         all use the pass start: a book read minutes into a pass is recorded as read at its start and its age is
         always 0. Real DB: 3908/3908 sim_exec rows have book_age_s 0; the paper.order event (wall clock) is 1-168 s
-        (p50 8, p99 52) after the recorded order time; 35 orders > 60 s; 1 crossed an hour, no funding effect."""
-        get = carry_market()
-        with mock.patch("time.time", lambda: NOW + 120):               # the read happens 2 minutes into the pass
-            b = pr.fetch_book("BTCUSDT", NOW, get)
-        self.assertEqual(b.ts, NOW + 120)
+        (p50 8, p99 52) after the recorded order time; 35 orders > 60 s; 1 crossed an hour, no funding effect.
+        Order 67 P0-A: the real observation time is now on the book (Book.observed) and BOOK_AGE_MODE "guard" uses it;
+        the default "off" keeps the pass-clock gate, so a book read 120 s before execution still trades."""
+        led = self.ledger()
+        with mock.patch.object(risk_mod, "WALL", lambda: NOW):         # read at the pass start
+            b = pr.fetch_book("BTCUSDT", NOW, carry_market())
+        with mock.patch.object(risk_mod, "WALL", lambda: NOW + 120):   # executed two minutes later
+            r = PaperEngine(self.db, lambda: NOW).submit_taker(led, "o-age", "BTCUSDT", "buy", 1.0, b)
+        self.assertEqual(r["status"], "refused")
 
 
 # ---------------------------------------------------------------- 3/6. stale data, mark failures, gaps
