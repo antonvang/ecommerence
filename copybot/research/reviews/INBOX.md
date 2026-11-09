@@ -2,6 +2,20 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-09 Ejer + ChatGPT — direktørordre 61 "High-velocity research program" (registreret kl. 13:08 lokal)
+Svar på ejerens "aggressiv … ingen regler": højere tempo ved at fjerne ventetid, parallelisere og afvise svage idéer
+hurtigere, ikke lavere krav. GO parallelt: readiness 12/11, 14/11, 19/11 og 20/11; designs K05, K04 (HLP-vault: afkast,
+tail-risk, likviditet, sammenlignelighed med risikofri reference; observeret vs hypotetisk; ingen kapital), K10
+(Monitoring Tag: point-in-time-univers, delisting og survivorship; testbar uden look-ahead?; ingen shorts eller nye
+feeds), U4 (beskrivende 08:30-volatilitet; ingen strategi, ingen alfa, ingen nye historiske forespørgsler); strategi-
+kirkegård. Alle designs præregistreringsklare (hypoteser, stopregler, datakrav), ingen tidlig evaluering, ingen ændring
+af observationstid, stikprøve eller acceptkriterier. Leverance: readiness, fire kandidatdesigns, falsifikationsmatrix
+med GO/NO-GO pr. hypotese, kirkegård, tests og commits, reelle blokeringer, næste prioritet. NO-GO: flere idéer uden
+evidens, nye collectors, streams, nøgler, låse, alfa, deploy og live-handel; ingen omgåelse af DNS, holdout eller
+verificeret ejergodkendelse. STATUS: PARALLEL DEVELOPMENT GO · PAPER RESEARCH ONLY.
+
+> modtaget 2026-11-09 – 12/11, 14/11, 19/11 og K05 allerede leveret under ordre 60; K04, K10, U4 og 20/11 S1 startet parallelt.
+
 ## 2026-11-09 Ejer + ChatGPT — direktørordre 60 "Kontinuerlig udvikling" (i Chrome kl. 12:50 lokal)
 Ejeren: "byg uafbrudt nu". Direktøren: 5/5 spor GO med betingelser, men ingen kode bare for at holde beskæftigelsen;
 én sammenhængende runde med leverancer, tests og stopbetingelser. A STRAKS 12/11 dry-run (P0: cutoff 17:11:51 UTC,
