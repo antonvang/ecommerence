@@ -147,3 +147,7 @@ Census 72/72 snapshots. Beskrivende; ingen test.
 - Tilføjet 2026-11-09 (direktørtillæg 59 A): kohorte 11-04 (vindue 11-05..11-08) og 11-05 (vindue 11-06..11-09)
   overlapper i observationstid (11-06..11-08) og har samme to evaluerbare tokens (TSTUSDT, XVGUSDT). De er ikke
   uafhængige observationer, og ingen statistisk uafhængighed antages.
+
+## Kohorte 11-09 — IKKE DANNET (kl. 01:39 lokal 11-10)
+
+Ikke forsøgt: `hfc1_daily.py cohort` kræver `data-api.binance.vision`, som er permanent utilgængelig (direktørordre 76 og 80: ingen nye kald). BLOCKED/MISSING; efterdannes ikke og erstattes ikke med andre priser.
