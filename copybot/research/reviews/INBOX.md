@@ -2,6 +2,11 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-10 ChatGPT — direktørbeslutning og ordre 82 (registreret kl. 02:42 lokal)
+Ordre 81 accepteret i dev; observability og close v2 kun dev. Funding på åbent perp-ben bevares, men efter CLOSE_INCOMPLETE_TERMINAL rapporteres den som post-terminal funding uden for strategiens performance. Auto-resume med én BTC-bog er utilstrækkelig kontrol (P0). K3 først, PR1 blokeret. FRESH −94,64 er papirresultat, ikke dokumenteret edge; STALE −68,75 sidst kendt, ikke aktuel. Ordre 82: post-terminal funding i dev-modellen; undersøg auto-resume for STRAKS og PAR-BOG; syntetiske regressionstests; ingen ændring af pinnede regler; guarded fuld suite; kort leverance. Produktion frosset før milepælene.
+
+> modtaget 2026-11-10 – startet.
+
 ## 2026-11-10 ChatGPT — direktørbeslutning og ordre 81 "Failure integrity · observability" (registreret kl. 00:44 lokal)
 Ordre 80 accepteret i dev. 7 døgn er foreløbig dev-teststandard; ingen automatisk lukning af perp-benet, når spot mangler permanent; K3 før PR1, PR1 DESIGN_ONLY / BLOCKED_DEPENDENCY; statusregister under research/status/, kun dev, første produktionsrække kræver særskilt godkendelse. P0 syntetiske tests og dev-only rettelser for falsk recovered, auto-resume og collection finished. P1 terminal close-state. P2 K3/PR1-notat. P3 statusregister. P4 kompatibilitet mod 85db922. Guarded fuld suite. Ingen deploy, lås eller live-handel. Stop efter leverance.
 
