@@ -1,0 +1,166 @@
+--- a/copybot/lab/paper_runner.py
++++ b/copybot/lab/paper_runner.py
+@@ -281,14 +281,139 @@
+         return f"funding unavailable: {e!r}"[:120]
+ 
+ 
++# ---------- close states v2 (director order 81; research/desk/OBSERVABILITY_81.md) ----------
++# A close that cannot finish is recorded as such: one append-only event per change of state, read back after a restart.
++# Nothing is priced, closed or marked without a real book, and a terminal state never resumes by itself. TERMINAL does not
++# mean closed: `closed` is true only with CLOSE_SUCCESS. A leg whose partner has no book is not closed either: that needs a
++# separate decision.
++CLOSE_STATE = "paper.close_state"
++CLOSE_SUCCESS = "CLOSE_SUCCESS"
++PARTIAL_RETRYING, PARTIAL_TERMINAL = "PARTIAL_CLOSE_RETRYING", "PARTIAL_CLOSE_TERMINAL"
++INCOMPLETE_RETRYING, INCOMPLETE_TERMINAL = "CLOSE_INCOMPLETE_RETRYING", "CLOSE_INCOMPLETE_TERMINAL"
++TERMINAL_CLOSE_STATES = (PARTIAL_TERMINAL, INCOMPLETE_TERMINAL)
++CLOSE_RETRY_MAX_S = 7 * 86400          # provisional dev test default (order 81); not a stop rule
++PERMANENT_UNAVAILABLE_SUFFIXES = (SPOT_SUFFIX,)   # order 76: the spot book host is permanently unavailable
++CLOSE_RULE = "director orders 81 and 82 (research/desk/OBSERVABILITY_81.md, research/desk/ORDER82.md)"
++POST_TERMINAL_FUNDING = "paper.post_terminal_funding"   # order 82: booked, kept, never strategy performance
++
++
++def permanently_unavailable(sym):
++    return sym.endswith(tuple(PERMANENT_UNAVAILABLE_SUFFIXES))
++
++
++def _leg_base(sym):
++    if sym.startswith(HL_PREFIX):
++        return sym[len(HL_PREFIX):] + "USDT"
++    return sym[:-len(SPOT_SUFFIX)] if sym.endswith(SPOT_SUFFIX) else sym
++
++
++def blocked_legs(positions):
++    """Open legs that are not read or closed: the permanently unavailable ones and the legs paired with them."""
++    bases = {_leg_base(s) for s in positions if permanently_unavailable(s)}
++    return {s for s in positions if _leg_base(s) in bases}
++
++
++def close_state_of(open_legs, reduced, last_fill_ts, last_mark_ts, blocked, expired):
++    """The one place a close state is decided. No I/O. CLOSE_SUCCESS needs no open leg and a mark at or after the last
++    fill; anything else is a failure state, terminal once no open leg can still be closed or the retry time is spent."""
++    if not open_legs:
++        if last_fill_ts is not None and last_mark_ts is not None and last_mark_ts >= last_fill_ts:
++            return CLOSE_SUCCESS
++        return INCOMPLETE_TERMINAL if expired else INCOMPLETE_RETRYING
++    terminal = expired or all(s in blocked for s in open_legs)
++    if reduced:
++        return PARTIAL_TERMINAL if terminal else PARTIAL_RETRYING
++    return INCOMPLETE_TERMINAL if terminal else INCOMPLETE_RETRYING
++
++
++def _close_last(db, led):
++    r = db.one("SELECT payload FROM events WHERE kind=? AND exp_id=? ORDER BY id DESC LIMIT 1", CLOSE_STATE, led)
++    return _payload(r["payload"]) if r else {}
++
++
++def _note_post_terminal_funding(db, led, last, now):
++    """Order 82: settlements booked after the close went terminal, recorded once each (by sim_funding id) and apart
++    from the strategy. Nothing is removed or changed; the funding rows stay as booked."""
++    with db.tx():
++        r = db.one("SELECT payload FROM events WHERE kind=? AND exp_id=? ORDER BY id DESC LIMIT 1", POST_TERMINAL_FUNDING,
++                   led)
++        since = max(int(last.get("funding_id_at_terminal") or 0),
++                    int(_payload(r["payload"]).get("last_funding_id") or 0) if r else 0)
++        rows = db.q("SELECT id, settle_ts, instrument, amount FROM sim_funding WHERE exp_id=? AND id>? ORDER BY id",
++                    led, since)
++        if not rows:
++            return None
++        p = {"ledger": led, "t": int(now), "terminal_ts": last.get("terminal_ts"), "close_state": last.get("state"),
++             "funding_ids": [x["id"] for x in rows], "first_funding_id": rows[0]["id"], "last_funding_id": rows[-1]["id"],
++             "settlements": [[x["instrument"], x["settle_ts"]] for x in rows],
++             "amount": sum(x["amount"] for x in rows), "in_strategy_performance": False, "simulated": True,
++             "rule": CLOSE_RULE}
++        db.event(POST_TERMINAL_FUNDING, "agent:paper-1", led, p)
++    return p
++
++
++def funding_split(db, led):
++    """Order 82: booked funding split where the close went terminal. strategy + post_terminal = every booked row."""
++    last = _close_last(db, led)
++    total = db.one("SELECT COALESCE(SUM(amount), 0), COUNT(*) FROM sim_funding WHERE exp_id=?", led)
++    if last.get("state") not in TERMINAL_CLOSE_STATES:
++        return {"terminal": False, "strategy": total[0], "post_terminal": 0.0, "post_terminal_ids": [], "rows": total[1]}
++    cut = int(last.get("funding_id_at_terminal") or 0)
++    pre = db.one("SELECT COALESCE(SUM(amount), 0) FROM sim_funding WHERE exp_id=? AND id<=?", led, cut)[0]
++    post = db.q("SELECT id, amount FROM sim_funding WHERE exp_id=? AND id>? ORDER BY id", led, cut)
++    return {"terminal": True, "terminal_ts": last.get("terminal_ts"), "cutoff_funding_id": cut, "strategy": pre,
++            "post_terminal": sum(x["amount"] for x in post), "post_terminal_ids": [x["id"] for x in post],
++            "rows": total[1]}
++
++
++def _note_close_state(db, eng, led, now):
++    """The ledger's close state now; one paper.close_state event only when it differs from the last one."""
++    with db.tx():                                      # BEGIN IMMEDIATE: one check and one write
++        last = _close_last(db, led)
++        first = int(last.get("first_ts") or now)
++        pos = eng.ledger(led)["positions"]
++        touched = {r[0] for r in db.q("SELECT DISTINCT f.instrument FROM sim_fills f JOIN sim_orders o ON "
++                                      "o.order_id=f.order_id WHERE f.exp_id=? AND o.reduce_only=1 AND o.order_id LIKE ?",
++                                      led, f"{led}|close|%")}
++        last_fill = db.one("SELECT MAX(ts) FROM sim_fills WHERE exp_id=?", led)[0]
++        last_mark = db.one("SELECT MAX(ts) FROM sim_equity WHERE exp_id=?", led)[0]
++        blocked = blocked_legs(pos)
++        state = close_state_of(sorted(pos), touched, last_fill, last_mark, blocked,
++                               int(now) - first >= CLOSE_RETRY_MAX_S)
++        flat = sorted(touched - set(pos))
++        bases = {_leg_base(s) for s in flat}
++        p = {"ledger": led, "state": state, "closed": state == CLOSE_SUCCESS, "t": int(now), "first_ts": first,
++             "open_legs": sorted(pos), "closed_legs": flat,
++             "unpaired_open_legs": sorted(s for s in pos if _leg_base(s) in bases),
++             "permanent_legs": sorted(s for s in pos if permanently_unavailable(s)), "blocked_legs": sorted(blocked),
++             "requires_decision": state in TERMINAL_CLOSE_STATES, "retry_deadline_ts": first + CLOSE_RETRY_MAX_S,
++             "last_fill_ts": last_fill, "last_mark_ts": last_mark, "simulated": True, "rule": CLOSE_RULE}
++        if state in TERMINAL_CLOSE_STATES:                 # order 82: funding booked after this is post-terminal
++            p["terminal_ts"] = int(now)
++            p["funding_id_at_terminal"] = db.one("SELECT COALESCE(MAX(id), 0) FROM sim_funding WHERE exp_id=?", led)[0]
++        same = all(last.get(k) == p[k] for k in ("state", "open_legs", "closed_legs", "blocked_legs"))
++        if not same:
++            db.event(CLOSE_STATE, "agent:paper-1", led, p)
++    return last if same else p
++
++
+ def close_ledger(db, led, base, get, now, books=None, cache=None):
+     """Reduce-only close of a ledger that may no longer trade. One close order per symbol per hour, each walking a
+     book read just before it. Funding of the held positions is still booked (amendment 9 section 2), with bars and
+     funding only through the shared hourly cache (amendment 7 section 7). Marked once an hour."""
+     eng, hour = PaperEngine(db, lambda: now), int(now) // HOUR * HOUR
+-    funding = _funding_guarded(db, eng, led, get, now, cache)
++    funding = _funding_guarded(db, eng, led, get, now, cache)   # an open perp leg still owes or receives funding
++    last = _close_last(db, led)
++    if last.get("state") in TERMINAL_CLOSE_STATES:      # order 81: no book, order or mark; never resumes by itself
++        post = _note_post_terminal_funding(db, led, last, now)      # order 82: kept apart from the strategy
++        return {"status": "closing", "orders": [], "marked": False, "funding": funding, "close_state": last["state"],
++                "terminal": True, "closed": False, "requires_decision": True, "open_legs": last.get("open_legs"),
++                "post_terminal_funding_rows": len(post["funding_ids"]) if post else 0}
+     orders = []
++    blocked = blocked_legs(eng.ledger(led)["positions"])
+     for s, q in eng.ledger(led)["positions"].items():
++        if s in blocked:                                # order 81: not read and not closed; needs a separate decision
++            continue
+         oid = f"{led}|close|{hour}|{s}"
+         if eng._existing(oid):
+             continue                                    # sent this hour; an unfilled rest is retried next hour
+@@ -307,10 +432,19 @@
+     if not eng.ledger(led)["positions"] and _stale_flat(db, led):
+         eng.mark(led, {})                               # the final mark of a flat ledger: equity = cash, at once
+         note_marked(db, led, now)                       # order 66B: ends a recorded mark failure (records only)
++        st = _note_close_state(db, eng, led, now)
+         return {"status": "closing", "orders": orders, "marked": True, "final_mark": True, "funding": funding,
+-                **funding_fields(eng)}
+-    marked, _ = mark_guarded(db, eng, led, get, now, books)   # order 66B: a failure is recorded (59-D), not swallowed
+-    return {"status": "closing", "orders": orders, "marked": marked, "funding": funding, **funding_fields(eng)}
++                "close_state": st["state"], "terminal": st["state"] in TERMINAL_CLOSE_STATES,
++                "closed": st["state"] == CLOSE_SUCCESS, **funding_fields(eng)}
++    if blocked_legs(eng.ledger(led)["positions"]):
++        marked, unmarkable = False, True                # order 81: no price exists; a failed read would say nothing
++    else:
++        marked, unmarkable = mark_guarded(db, eng, led, get, now, books)[0], False   # order 66B: a failure is recorded
++    st = _note_close_state(db, eng, led, now)
++    return {"status": "closing", "orders": orders, "marked": marked, "unmarkable": unmarkable, "funding": funding,
++            "close_state": st["state"], "terminal": st["state"] in TERMINAL_CLOSE_STATES,
++            "closed": st["state"] == CLOSE_SUCCESS, "requires_decision": st["state"] in TERMINAL_CLOSE_STATES,
++            "open_legs": st.get("open_legs"), **funding_fields(eng)}
+ 
+ 
+ def held_experiments(db):
