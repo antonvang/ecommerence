@@ -151,3 +151,7 @@ Census 72/72 snapshots. Beskrivende; ingen test.
 ## Kohorte 11-09 — IKKE DANNET (kl. 01:39 lokal 11-10)
 
 Ikke forsøgt: `hfc1_daily.py cohort` kræver `data-api.binance.vision`, som er permanent utilgængelig (direktørordre 76 og 80: ingen nye kald). BLOCKED/MISSING; efterdannes ikke og erstattes ikke med andre priser.
+
+## Kohorte 11-10 — IKKE DANNET (kl. 16:58 lokal 11-11)
+
+Ikke forsøgt: spotværten `data-api.binance.vision` er stadig blokeret. BLOCKED/MISSING; efterdannes ikke.

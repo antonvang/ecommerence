@@ -101,3 +101,8 @@ U2 (17 mønter med carry-perp-ben): ADA, APE, AXS, BCH, BNB, BTC, CRV, ETC, ETH,
 
 - U1: andel ≥ 12,5 % er 11,8 %, ≥ 18,8 % er 9,3 %, median 3,9 %. U2: 2 af 27 over 12,5 %.
 - Ingen nye carry-starter. Beskrivende; afgør intet.
+
+## 2026-11-10 (kl. 16:58 lokal 11-11)
+
+- U1: andel ≥ 12,5 % er 9,8 %, ≥ 18,8 % er 7,4 %, median 4,8 %. U2: 2 af 27 over 12,5 %.
+- Ingen nye carry-starter. Beskrivende; afgør intet.
