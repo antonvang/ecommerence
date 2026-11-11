@@ -529,7 +529,9 @@ def page(rep, frows, totals, db_path, feed_n, conspark, chart=None, graveyard=No
       f'<span class="hs"><i class="d-m"></i>MISSING_MARK <b>{sm["missing_mark"]}</b></span>{health_chip}</div></header>')
     w('<nav class="toc" aria-label="sektioner"><a href="#overblik">Overblik</a><a href="#datakvalitet">Datakvalitet</a><a href="#arkiv">Arkiv</a>'
       '<a href="#handelschart">Handelschart</a><a href="#aktivitet">Aktivitet</a><a href="#forskning">Forskning</a><a href="#evidens">Evidens</a>'
-      '<a href="#kirkegaard-fold">Kirkegård</a><a href="#kilder">Kilder</a></nav>')
+      '<a href="#kirkegaard-fold">Kirkegård</a><a href="#kilder">Kilder</a>'
+      '<span class="sub" style="padding:8px 12px">Event farm (syntetisk): åbn copybot_farm.html i samme mappe</span>'
+      '</nav>')
 
     # --- 2. Overblik: only current (FRESH) paper data ---
     w(f'<section class="ov" id="overblik"><h2>Overblik — aktuelle papirdata <small>kun FRESH-konti (mærke højst '
