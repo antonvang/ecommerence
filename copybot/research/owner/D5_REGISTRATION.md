@@ -29,3 +29,10 @@ Ejeren sender indholdet af `stmt.json.sig` (en "BEGIN SSH SIGNATURE"-blok; den e
 verificerer den med `owner_approval.verify`.
 
 **Tilbagekaldelse:** linjen fjernes fra `allowed_signers`.
+
+## Testunderskrift verificeret (2026-11-11 kl. 19:34 lokal)
+
+- Ejeren underskrev `d5_test_statement.json` på sin bærbare og sendte signaturen; den ligger i `research/owner/d5_test_statement.json.sig`.
+- Lab'et verificerede den 2026-11-11 18:34:02 UTC med `research/tools/owner_approval.verify` mod `research/owner/allowed_signers` (sha256 `c6d949e3…`), namespace `copybot-approval`, principal `owner`: **ACCEPTED**, ingen grunde. Afgørelsen står i den hash-kædede `research/owner/approval_log.jsonl` (første række, hash `d6c279776139…`).
+- Erklæringen er kun en test af nøglen. Den låser intet og godkender intet.
+- **Status: PENDING_INDEPENDENT_ANCHOR**, indtil direktøren bekræfter, at ejeren selv har skrevet fingeraftrykket fra sin telefon. Først derefter kan status ændres, og kun af direktøren.
