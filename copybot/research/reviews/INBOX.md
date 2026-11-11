@@ -2,6 +2,11 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-11 ChatGPT — direktørbeslutning og ordre 83 "Reporting integrity" (registreret kl. 16:59 lokal)
+Ordre 82 godkendt (dev). Post-terminal funding bogføres særskilt, uden for performance; patch 82 foretrækkes, men er ikke deployklar; net_report skal kunne adskille funding før aktivering; STRAKS/PAR-probe kun design; manglende data skal kunne give DATA_INCOMPLETE uden automatisk genoptagelse; G12 og ejerens godkendelse fastholdes; produktion frosset før 20/11. Ordre 83: samlet dev-kandidat baseret på 82; net_report-rettelse i isoleret dev-kode; funding præcis én gang efter genstart; kildekomplethed for STRAKS (12) og PAR-BOG (8) uden ændring af pinnede moduler; DATA_INCOMPLETE uden falsk recovery; G12- og ejerbeslutninger; guarded fuld suite; ingen nye strategidesigns lige nu.
+
+> modtaget 2026-11-11 – startet. net_report er pinnet; rettelsen laves som uanvendt patch.
+
 ## 2026-11-10 ChatGPT — direktørbeslutning og ordre 82 (registreret kl. 02:42 lokal)
 Ordre 81 accepteret i dev; observability og close v2 kun dev. Funding på åbent perp-ben bevares, men efter CLOSE_INCOMPLETE_TERMINAL rapporteres den som post-terminal funding uden for strategiens performance. Auto-resume med én BTC-bog er utilstrækkelig kontrol (P0). K3 først, PR1 blokeret. FRESH −94,64 er papirresultat, ikke dokumenteret edge; STALE −68,75 sidst kendt, ikke aktuel. Ordre 82: post-terminal funding i dev-modellen; undersøg auto-resume for STRAKS og PAR-BOG; syntetiske regressionstests; ingen ændring af pinnede regler; guarded fuld suite; kort leverance. Produktion frosset før milepælene.
 
