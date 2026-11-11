@@ -36,3 +36,9 @@ verificerer den med `owner_approval.verify`.
 - Lab'et verificerede den 2026-11-11 18:34:02 UTC med `research/tools/owner_approval.verify` mod `research/owner/allowed_signers` (sha256 `c6d949e3…`), namespace `copybot-approval`, principal `owner`: **ACCEPTED**, ingen grunde. Afgørelsen står i den hash-kædede `research/owner/approval_log.jsonl` (første række, hash `d6c279776139…`).
 - Erklæringen er kun en test af nøglen. Den låser intet og godkender intet.
 - **Status: PENDING_INDEPENDENT_ANCHOR**, indtil direktøren bekræfter, at ejeren selv har skrevet fingeraftrykket fra sin telefon. Først derefter kan status ændres, og kun af direktøren.
+
+## FINGERPRINT_MATCH_CONFIRMED (2026-11-11 kl. 19:41 lokal, direktørbeslutning 95)
+
+- Ejeren sendte selv fingeraftrykket i direktørchatten fra sin telefon ("SHA256:lSdgtWU21pKqM1NLjrt5SytMIsj7N4lQ9R9IYfx4PJ4 copybot (ED25519)", aflæst med `ssh-keygen -lf` på den bærbare). Det matcher `allowed_signers` og nøglen bag den verificerede testsignatur.
+- Direktøren registrerer FINGERPRINT_MATCH_CONFIRMED, men sætter ikke D5 til ANCHORED, fordi kanalens uafhængighed ikke kan verificeres fra chatten.
+- **Status: PENDING_INDEPENDENT_ANCHOR.** G15 BLOCKED. Ingen lås, ingen dataadgang.
