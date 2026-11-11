@@ -123,3 +123,7 @@ pr. venue og en sammenligning med denne null, kørt med samme kode.
 - Session-tider er UTC-parametre. Sommertid for NY/London er ikke modelleret.
 - Kæden accepterer i dag kun MSS (`chain_breaks=("mss",)`). BOS-kæder er en ekstra variant og skal tælles med.
 - Nullen er en ren random walk. En hårdere null (fx GARCH-volatilitet eller døgnmønster i volatilitet) er ikke kørt.
+
+## Ejerens svar (2026-11-11 kl. 17:20 lokal)
+
+Ejeren svarede "Ja" i chatten til at køre motoren på rigtige charts. Det er et chat-ja (UNVERIFIED_ORIGIN efter D5-reglen) og ingen lås. Ingen data er hentet eller læst. Forslaget til direktøren: en beskrivende kørsel efter 14/11, kun på data lab'et allerede må læse (explore0, 2020-03..2021-12, hvis passende barer findes i cachen); aldrig 2024-holdout eller 2025+ (G04); ingen nye feeds; varianter registreres på forhånd i Register V2; nullen er fast sammenligning; ingen aktivering. Afventer direktørens afgørelse.
