@@ -1,0 +1,82 @@
+{
+ "version": "gate_matrix_entry_draft/1",
+ "status": "DRAFT_NOT_APPLIED",
+ "rule": "director order 88 P0 (research/reviews/INBOX.md, decisions 84-89). Proposed additions to research/desk/GATE_MATRIX.json for the event farm study; NOT applied, NOT locked, opens nothing. GATE_MATRIX.json is unchanged and stays fail-closed: until these entries are applied by a director-approved commit, the event farm action is not listed and therefore BLOCKED. A chat yes (owner or director chat) is UNVERIFIED_ORIGIN and sets no flag.",
+ "written_utc": "2026-11-11T16:47:02Z",
+ "companion_texts": [
+  "research/desk/EVENT_FARM_AMENDMENT_DRAFT_88.md",
+  "research/desk/EVENT_FARM_PLAN_88.md",
+  "research/desk/EVENT_FARM_GATES_85.md"
+ ],
+ "study": {
+  "EVENT_FARM": "event farm (research/tools/event_farm.py @ f686c9a), descriptive labelling of ICT/SMC patterns on BTCUSDT/ETHUSDT 1m perp klines in explore0, aggregated to 5m (primary) and 15m; exploration, never evidence"
+ },
+ "gate": {
+  "id": "G30_EVENT_FARM_EXPLORE0",
+  "protects": "the event farm reads only the 44 cached R3 files BTCUSDT/ETHUSDT 1m 2020-03..2021-12, in place and read-only, after a dated pre-data PROTOCOL_V3 amendment, the director's approval and a verified owner approval; files are filtered by name before opening and identity-checked against research/studies/R3_m24_verify.json before parsing",
+  "source": [
+   {"file": "research/desk/EVENT_FARM_AMENDMENT_DRAFT_88.md", "loc": "proposed amendment, points 1-10"},
+   {"file": "research/desk/EVENT_FARM_PLAN_88.md", "loc": "sections 2, 3 and 9"},
+   {"file": "research/PROTOCOL_V3.md", "loc": "amendment 24 point 2 and amendment 24a (scope of the original fetch approval)"},
+   {"file": "research/desk/OWNER_KEY_GUIDE_D5.md", "loc": "section 5 (PENDING_INDEPENDENT_ANCHOR)"}
+  ],
+  "earliest_utc": "2026-11-14T00:00:00Z",
+  "kind": "date+owner",
+  "status_at_as_of": "CLOSED",
+  "opens_by": "date AND director approval of the amendment text AND the amendment committed before any byte is read AND a verified owner approval (D5 signature against the independently anchored key; G15) AND the driver committed with green tests and its sha256 named in the amendment; fail-closed while D5 is PENDING_INDEPENDENT_ANCHOR",
+  "required_flags": [
+   "director_approves_event_farm_amendment",
+   "event_farm_amendment_committed",
+   "owner_key_registered",
+   "owner_signed_event_farm_approval",
+   "event_farm_driver_committed",
+   "loader_tests_green"
+  ],
+  "studies": ["EVENT_FARM"],
+  "actions_at_opening": [
+   "check UTC time (date -u) before anything",
+   "filter by file name before opening: only ^(BTC|ETH)USDT-1m-20(20-(0[3-9]|1[0-2])|21-(0[1-9]|1[0-2]))\\.zip$; any 2024 or 2025+ name stops the run",
+   "write the identity manifest (name, size, sha256) and compare with research/studies/R3_m24_verify.json before parsing; a mismatch is BLOCKED, no refetch, no substitute",
+   "read in place, read-only; no copy, no network, no deploy, no restart; pm_lp untouched",
+   "one run; result committed as EXPLORATORY regardless of outcome"
+  ]
+ },
+ "action": {
+  "id": "event_farm_explore0_run",
+  "description": "one descriptive event farm run on the 44 cached R3 1m files (explore0), 1m native plus 5m and 15m aggregated",
+  "gates": ["G01_HIST_1114", "G30_EVENT_FARM_EXPLORE0", "G15_OWNER_SIGNATURE"],
+  "studies": {
+   "EVENT_FARM": [
+    "director_approves_event_farm_amendment",
+    "event_farm_amendment_committed",
+    "owner_key_registered",
+    "owner_signed_event_farm_approval",
+    "event_farm_driver_committed",
+    "loader_tests_green"
+   ]
+  },
+  "constraints": [
+   "G02_EXPLORE0_ONLY",
+   "G03_HOLDOUT_2024",
+   "G04_RESERVED_2025PLUS",
+   "G07_QUARANTINE",
+   "G11_RESTART_1128",
+   "G12_PMLP",
+   "G27_NO_REAL_MONEY",
+   "G28_NO_ASSISTANT_SIGNATURE"
+  ]
+ },
+ "list_additions": {
+  "G01_HIST_1114.studies": "add EVENT_FARM",
+  "G02_EXPLORE0_ONLY.studies": "add EVENT_FARM",
+  "G03_HOLDOUT_2024.studies": "add EVENT_FARM",
+  "G04_RESERVED_2025PLUS.studies": "add EVENT_FARM",
+  "G15_OWNER_SIGNATURE.studies": "add EVENT_FARM",
+  "studies": "add EVENT_FARM with the description above"
+ },
+ "not_proposed": [
+  "no change to historical_fetch (no network fetch; the files are already cached)",
+  "no alpha charge, no lock, no paper book, no activation",
+  "no BOS chains, no 1h data, no other symbols or months"
+ ]
+}
