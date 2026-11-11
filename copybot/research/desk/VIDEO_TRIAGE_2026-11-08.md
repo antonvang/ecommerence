@@ -115,3 +115,13 @@ Antal og bredde er valgt blandt 25 kombinationer for at vise spændet; videoen o
 **Videoens egne billeder peger samme vej:** hit-rate-fladen går fra "strict: 12 %" til 100 %, når bredde og tolerance vokser. Tætheden samler sig omkring ±0,4 ATR, og medianafstanden til dagens høj er 0,41 ATR i den rene tilfældige gang. Det er blot typisk dagsudsving.
 
 **Vurdering:** ingen evidens for en fordel. En zone viser først efter dagen, om den var dagens yderpunkt, og en forudsigelse uden retning og handelsregel kan ikke handles. Den rigtige test ville være hit-rate mod en null med samme zonedækning, og dernæst netto-P&L på faste regler. Ingen nyt forsøg, ingen ny vært, intet hentet.
+
+## Tillæg 6 (17:03 lokal 11-11): @keyzecom "You can't make a trading bot with Claude" (25 s)
+
+**Hvad den viser:** en "LIT DATA FARM" på 5-minutters charts (MNQ m.fl.): automatisk mærkning af ICT/SMC-begreber (liquidity pools og sweeps, manipulation legs, inducement, MSS/CHoCH, structure breaks, FVG og inversioner, OB-zoner, session opens, rejections), kæder til setups med indgang, mål og stop, en "outcome book" og en daglig "Farm study" med antal pr. type. Oversigten viser 98 dage, 5 instrumenter og 240.067 hændelser.
+
+**Påstand:** kun at et sådant værktøj kan bygges med Claude. Der vises ingen afkast, ingen omkostninger og ingen fremadtest.
+
+**Vurdering:** et forskningsværktøj, ikke en fordel. ICT-begreber er fleksible nok til at blive fundet i ren støj; derfor skal en farm altid have en null på tilfældig gang og registrerede varianter.
+
+**Handling:** ejeren bad om at få det bygget. En deterministisk event farm-motor med syntetiske tests og en null-test på tilfældig gang er under opbygning (`research/desk/EVENT_FARM.md`). Ingen data, intet netværk, ingen aktivering.
