@@ -1,0 +1,82 @@
+--- a/copybot/research/tools/net_report.py
++++ b/copybot/research/tools/net_report.py
+@@ -43,6 +43,31 @@
+     return len(parts) > 2 and parts[1] in ("entry", "exit") and parts[2].isdigit() and int(parts[2]) in FLAG_41B
+ 
+ 
++POST_TERMINAL_STATES = ("PARTIAL_CLOSE_TERMINAL", "CLOSE_INCOMPLETE_TERMINAL")   # candidate 83 (ORDER83.md)
++
++
++def post_terminal(con, led, lim, mark=None):
++    """Candidate 83: funding booked after the account's close went terminal (the paper.close_state cutoff by
++    sim_funding id). Reported apart: never strategy performance, never validated. Every row is in one bucket only."""
++    row = con.execute("SELECT payload FROM events WHERE kind='paper.close_state' AND exp_id=? AND "
++                      "json_extract(payload, '$.t')<=? ORDER BY id DESC LIMIT 1", (led, lim)).fetchone()
++    p = json.loads(row[0]) if row else {}
++    none = {"terminal": False, "amount": 0.0, "rows": 0, "at_mark": 0.0, "by_instrument": {}, "late_settlements": 0,
++            "in_strategy_performance": False, "validated": False}
++    if p.get("state") not in POST_TERMINAL_STATES or p.get("funding_id_at_terminal") is None:
++        return none
++    cut, t = int(p["funding_id_at_terminal"]), p.get("terminal_ts")
++    rows = con.execute("SELECT id, ts, settle_ts, instrument, amount FROM sim_funding WHERE exp_id=? AND id>? AND ts<=? "
++                       "ORDER BY id", (led, cut, lim)).fetchall()
++    by = collections.defaultdict(float)
++    for _, _, _, sym, amount in rows:
++        by[sym] += amount
++    return {**none, "terminal": True, "state": p["state"], "terminal_ts": t, "cutoff_funding_id": cut,
++            "amount": sum(r[4] for r in rows), "rows": len(rows), "ids": [r[0] for r in rows],
++            "at_mark": sum(r[4] for r in rows if mark is not None and r[1] <= mark), "by_instrument": dict(by),
++            "late_settlements": sum(1 for r in rows if t is not None and r[2] < t)}
++
++
+ def account(con, led, info, cutoff=None):
+     ps = con.execute("SELECT payload FROM events WHERE kind='paper.started' AND exp_id=? ORDER BY id LIMIT 1",
+                      (led,)).fetchone()
+@@ -63,13 +88,17 @@
+     m_lim = mark if mark is not None else -1
+     fund_m = con.execute("SELECT COALESCE(SUM(amount), 0) FROM sim_funding WHERE exp_id=? AND ts<=?",
+                          (led, m_lim)).fetchone()[0]
++    pt = post_terminal(con, led, lim, mark)            # candidate 83: out of every strategy column below
++    funding, fund_m = funding - pt["amount"], fund_m - pt["at_mark"]
++    for sym, v in pt["by_instrument"].items():
++        fund_by[sym] = fund_by.get(sym, 0.0) - v
+     at = {"fees": 0.0, "book": 0.0, "allowance": 0.0, "fills": 0, "funding": fund_m}
+     net = (eq[1] - capital) if eq else 0.0
+     out = {"ledger": led, "source": info.get("source") or "lane", "name": info.get("name") or info.get("function"),
+            "started": info.get("t"), "capital": capital, "value": eq[1] if eq else capital,
+            "marked_at": eq[0] if eq else None, "net": net, "funding": funding, "fees": 0.0, "book": 0.0,
+            "allowance": 0.0, "fills": len(fills), "max_exposure": agg[0] or 0.0, "max_drawdown": agg[1] or 0.0,
+-           "instruments": {}, "flagged_41b": {"fills": 0, "fees": 0.0}}
++           "instruments": {}, "flagged_41b": {"fills": 0, "fees": 0.0}, "post_terminal_funding": pt}
+     inst = collections.defaultdict(lambda: {"pos": 0.0, "basis": 0.0, "round_trips": 0, "realized": 0.0, "fees": 0.0,
+                                             "direction": None, "open_since": None})
+     for ts, oid, sym, side, px, q, fee, mid in fills:
+@@ -139,7 +168,10 @@
+                "missing_mark": by["MISSING_MARK"], "net_fresh_total": sum(r["net"] for r in fresh),
+                "net_stale_last_known": sum(r["net"] for r in stale),
+                "portfolio_current_total": (sum(r["net"] for r in rows)
+-                                           if not by["STALE"] and not by["MISSING_MARK"] else None)}
++                                           if not by["STALE"] and not by["MISSING_MARK"] else None),
++               "post_terminal_funding_total": sum(r["post_terminal_funding"]["amount"] for r in rows),
++               "post_terminal_accounts": sum(1 for r in rows if r["post_terminal_funding"]["terminal"]),
++               "post_terminal_note": "funding after a terminal close: not strategy performance, never validated"}
+     return {"generated": int(now), "rule": "director order 44 P2 (research/reviews/INBOX.md); STALE marking addendum 59-C",
+             "no_trade_benchmark": 0.0,
+             "note": "descriptive; no annualisation; net = latest hourly mark at or before the cutoff minus capital; "
+@@ -188,6 +220,16 @@
+         lines.append(f"| {r['name']} ({r['ledger'][-6:]}) | {a['funding']:+.2f} | {-a['fees']:+.2f} | "
+                      f"{-a['book']:+.2f} | {-a['allowance']:+.2f} | {a['price_move']:+.2f} | {a['fills']} | "
+                      f"{b.get('fills', 0)} / {b.get('funding', 0.0):+.2f} |")
++    pts = [r for r in rep["accounts"] if (r.get("post_terminal_funding") or {}).get("terminal")]
++    if pts:
++        lines += ["", "## Post-terminal funding (ikke strategi-performance, aldrig valideret)", "",
++                  "Funding bogført på et åbent ben, efter at kontoens lukning blev terminal. Den er trukket ud af alle "
++                  "funding-kolonner ovenfor og indgår ikke i strategiens resultat.", "",
++                  "| Konto | Tilstand | Terminal (UTC) | Rækker | Funding | Sene afregninger |", "|---|---|---|---|---|---|"]
++        for r in pts:
++            p = r["post_terminal_funding"]
++            lines.append(f"| {r['name']} ({r['ledger'][-6:]}) | {p['state']} | {hm(p.get('terminal_ts'))} | {p['rows']} | "
++                         f"{p['amount']:+.2f} | {p['late_settlements']} |")
+     lines += ["", "## Pr. instrument (kun konti med handler)", ""]
+     for r in rep["accounts"]:
+         if not r["instruments"]:

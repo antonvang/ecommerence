@@ -1,0 +1,209 @@
+--- a/copybot/lab/ops.py
++++ b/copybot/lab/ops.py
+@@ -8,6 +8,7 @@
+ import json
+ import os
+ import shutil
++import sqlite3
+ import threading
+ import time
+ from datetime import datetime, timezone
+@@ -51,10 +52,69 @@
+     return (now - max(m)) if m else None
+ 
+ 
++EXTERNAL_DATA = {"X01_pm_lp_v1": "data/research/pm_lp/pm_lp.db"}
++
++
++def data_activity_age(path, now=None):
++    """Seconds since the collector stored a successful poll or status row. A fresh file alone proves nothing: a failed
++    start also writes to it. None = no readable database. Short read-only look at the newest rows only."""
++    now = now or time.time()
++    if not os.path.exists(path):
++        return None
++    con = sqlite3.connect(f"file:{path}?mode=ro", uri=True, timeout=1)
++    try:
++        con.execute("PRAGMA query_only=ON")
++        rows = con.execute("SELECT t, ok FROM polls ORDER BY rowid DESC LIMIT 2000").fetchall()
++        status = con.execute("SELECT t FROM status ORDER BY rowid DESC LIMIT 1").fetchone()
++    except sqlite3.Error:
++        return None
++    finally:
++        con.close()
++    good = [t for t, ok in rows if ok] + ([status[0]] if status else [])
++    newest = max(good) if good else min((t for t, _ in rows), default=None)  # all failed: at least this long ago
++    return None if newest is None else now - newest
++
++
++# Order 81, on top of the 72 patch: a poll or status row is activity, but recovery needs every source the study depends
++# on. pm_lp's books come from another host than its trade polls, so trade polls alone must not read as healthy.
++EXTERNAL_REQUIRED = {"X01_pm_lp_v1": (
++    ("book snapshots", "SELECT t FROM snaps ORDER BY rowid DESC LIMIT 1"),
++    ("trade polls", "SELECT t FROM polls WHERE ok=1 AND kind='trades' AND rowid > "
++                    "(SELECT COALESCE(MAX(rowid), 0) - 2000 FROM polls) ORDER BY rowid DESC LIMIT 1"))}
++
++
++def required_data_age(path, sources, now=None):
++    """{"age": seconds since the OLDEST required source last delivered a valid row, "sources": {name: age}}. A source
++    with no valid row counts as never (age = now). None if the database cannot be read: that decides nothing."""
++    now = now or time.time()
++    if not os.path.exists(path):
++        return None
++    con = sqlite3.connect(f"file:{path}?mode=ro", uri=True, timeout=1)
++    try:
++        con.execute("PRAGMA query_only=ON")
++        ages = {}
++        for name, sql in sources:
++            row = con.execute(sql).fetchone()
++            ages[name] = now - (row[0] if row and row[0] is not None else 0)
++    except sqlite3.Error:
++        return None
++    finally:
++        con.close()
++    return {"age": max(ages.values()) if ages else None, "sources": ages}
++
++
+ def external_freshness(now=None):
+     out = {}
+     for exp_id, (label, files) in EXTERNAL_FILES.items():
+         out[exp_id] = {"label": label, "last_write_age_s": file_age(files, now), "basis": "file modification time"}
++        if exp_id in EXTERNAL_DATA:
++            out[exp_id]["last_data_age_s"] = data_activity_age(os.path.join(HERE, EXTERNAL_DATA[exp_id]), now)
++            out[exp_id]["basis"] = "successful data rows"
++        if exp_id in EXTERNAL_REQUIRED:
++            req = required_data_age(os.path.join(HERE, EXTERNAL_DATA[exp_id]), EXTERNAL_REQUIRED[exp_id], now)
++            out[exp_id]["required_data_age_s"] = req["age"] if req else None
++            out[exp_id]["required_sources"] = req["sources"] if req else None
++            out[exp_id]["basis"] = "every required data source"
+     return out
+ 
+ 
+--- a/copybot/lab/fleet.py
++++ b/copybot/lab/fleet.py
+@@ -422,7 +422,7 @@
+     from lab.mission import EXTERNAL_RUNNING_S
+     stale_now = []
+     for eid, x in ops.external_freshness(now).items():
+-        age = x["last_write_age_s"]
++        age = next(x[k] for k in ("required_data_age_s", "last_data_age_s", "last_write_age_s") if k in x)   # order 81
+         if age is None:
+             continue
+         last = db.one("SELECT kind FROM events WHERE kind IN ('external.stale','external.recovered') AND exp_id=? "
+@@ -434,7 +434,8 @@
+                 db.event("external.stale", "agent:risk-1", eid, {"label": x["label"], "last_write_age_s": round(age),
+                                                                  "threshold_s": EXTERNAL_RUNNING_S})
+         elif was:
+-            db.event("external.recovered", "agent:risk-1", eid, {"label": x["label"], "last_write_age_s": round(age)})
++            db.event("external.recovered", "agent:risk-1", eid, {"label": x["label"], "last_write_age_s": round(age),
++                                                                 "basis": x.get("basis")})
+     return stale_now
+ 
+ 
+--- a/copybot/lab/mission.py
++++ b/copybot/lab/mission.py
+@@ -117,10 +117,14 @@
+ 
+ def status_category(state, exp_id, ext, rk, wk):
+     if state == "EXTERNAL":
+-        age = (ext.get(exp_id) or {}).get("last_write_age_s")
++        x = ext.get(exp_id) or {}
++        by_data = "required_data_age_s" in x or "last_data_age_s" in x   # order 81: a fresh file alone proves nothing
++        age = x.get("required_data_age_s", x.get("last_data_age_s", x.get("last_write_age_s")))
+         if age is None:
+             return "external — no data file found"
+-        return "running (external process)" if age <= EXTERNAL_RUNNING_S else "external — no recent writes"
++        if age <= EXTERNAL_RUNNING_S:
++            return "running (external process)"
++        return "external — no valid data" if by_data else "external — no recent writes"
+     return {"DISCOVERED": "awaiting registration (human)", "SUPPRESSED": "suppressed by graveyard",
+             "REGISTERED": "scheduled — waiting for screening",
+             "SCREENING": "screening" if wk["active"] else "screening — waiting for a worker",
+--- a/copybot/lab/coverage.py
++++ b/copybot/lab/coverage.py
+@@ -335,7 +335,8 @@
+         if st in lifecycle.FINAL:                  # a later rejection/retirement overrides an earlier screening verdict
+             head = "REJECTED"
+         if head == "RUNNING" and r["exp_id"] in ext:  # an external process claimed running: show it only with a sign of
+-            age = ext[r["exp_id"]]["last_write_age_s"]  # life (research/LINUX_DRIFT.md 2026-10-23)
++            sign = ext[r["exp_id"]]                    # life (research/LINUX_DRIFT.md 2026-10-23); order 81: data rows
++            age = sign.get("required_data_age_s", sign.get("last_data_age_s", sign.get("last_write_age_s")))   # if known
+             if age is None or age > EXTERNAL_ALIVE_S:
+                 head = "UNVERIFIED"
+                 v = (f"no data file of {ext[r['exp_id']]['label']} on this host" if age is None else
+--- a/copybot/lab/risk.py
++++ b/copybot/lab/risk.py
+@@ -252,7 +252,9 @@
+         """Amendment 18: a simulated ledger paused by `data_fetch` probes the same full fetch each pass (a PROBE risk
+         event, value 1 ok / 0 failed) and resumes itself (CLEAR auto_resume) once the current probe works and an unbroken
+         run of working probes since the pause began AUTO_RUN_S ago. Not at the drawdown limit, at most AUTO_MAX per
+-        AUTO_WINDOW_S; every other pause rule stays human-only. probe() raises on any failure. Returns True if resumed."""
++        AUTO_WINDOW_S; every other pause rule stays human-only. probe() raises on any failure. Returns True if resumed.
++        Order 81: `probe` may be [(source name, probe), ...]; the ledger is healthy only if every required source works,
++        and an empty list never is."""
+         if not ledger.startswith(SIMULATED) or not self.paused(ledger):
+             return False
+         p = self._last(ledger, ("PAUSE",))
+@@ -261,11 +263,14 @@
+                 "SELECT COUNT(*) FROM risk_events WHERE exp_id=? AND action='CLEAR' AND rule='auto_resume' AND ts>?",
+                 ledger, int(now - AUTO_WINDOW_S))[0] >= AUTO_MAX:
+             return False
+-        try:
+-            probe()
+-            ok, detail = True, "full fetch and checks passed"
+-        except Exception as e:
+-            ok, detail = False, f"{e!r}"[:300]
++        sources = [(None, probe)] if callable(probe) else list(probe)
++        ok, detail = bool(sources), "full fetch and checks passed" if sources else "no required data source given"
++        for name, fn in sources:
++            try:
++                fn()
++            except Exception as e:
++                ok, detail = False, (f"{e!r}" if name is None else f"{name}: {e!r}")[:300]
++                break
+         with self.db.tx():                             # BEGIN IMMEDIATE: one CLEAR, and only of the pause just read
+             if self._last(ledger, ("PAUSE", "CLEAR"))["id"] != p["id"]:
+                 return False
+--- a/copybot/lab/lane.py
++++ b/copybot/lab/lane.py
+@@ -1154,6 +1154,18 @@
+         raise ValueError(f"{bad}: stale bars")
+ 
+ 
++def _data_probes(info, now, get, cache):
++    """Order 81: every source the account needs. Working perp data says nothing about the spot leg it is hedged with."""
++    from lab import paper_runner as pr
++
++    def spot():
++        for s in info["coins"]:
++            for inst in legs(info, s)[1:]:
++                if pr.fetch_book(inst, now, get).crossed():
++                    raise ValueError(f"{inst}: crossed or empty book")
++    return [("perp", lambda: _data_probe(info, now, get, cache)), ("spot", spot)]
++
++
+ def _log_skip(db, ledger, coin, hour, det, now):
+     """Amendment 31 point 4: one paper.skipped per account, coin and hour (events are append-only: no repeat rows)."""
+     for r in db.q("SELECT payload FROM events WHERE kind='paper.skipped' AND exp_id=? ORDER BY id DESC LIMIT 200",
+@@ -1179,7 +1191,7 @@
+     eng.start(ledger, CAPITAL, COSTS, actor=ACTOR)
+     if risk.fail_closed():
+         return {"status": "fail_closed"}
+-    if risk.paused(ledger) and not risk.auto_resume(ledger, lambda: _data_probe(info, now, get, cache)):
++    if risk.paused(ledger) and not risk.auto_resume(ledger, _data_probes(info, now, get, cache)):
+         return pr.mark_only(db, ledger, get, now, books, cache)
+     hour, price = int(now) // HOUR * HOUR, {}
+     try:
+--- a/copybot/lab/watch.py
++++ b/copybot/lab/watch.py
+@@ -331,7 +331,10 @@
+         return (False, "pm_lp database has no D0")
+     d0, day = int(d0[0]), int(now) // 86400
+     if day > d0 + pm_lp.TAIL_END:
+-        return (True, "collection finished (after resolution tracking)")
++        if (last_status or 0) >= (d0 + pm_lp.TAIL_END + 1) * 86400 - STATUS_STALE_S:   # order 81: data, not the calendar
++            return (True, "collection finished (status polls reached the end of resolution tracking)")
++        return (None, f"collection window is over, but the last status poll is {int(now - (last_status or 0))} s old; "
++                      "not reported as finished")
+     if not procs:
+         return (False, "no collector process running")
+     if day <= d0 + pm_lp.HOLD_DAYS[1]:
