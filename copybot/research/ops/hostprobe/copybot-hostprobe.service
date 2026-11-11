@@ -1,0 +1,15 @@
+[Unit]
+Description=Copybot hostprobe (local host-state log every 10 s; read-only; director orders 89/91)
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 -I /home/anton/copybot-dev/copybot/research/ops/hostprobe/hostprobe.py /home/anton/hostprobe
+Restart=always
+RestartSec=10
+Nice=10
+IOSchedulingClass=idle
+MemoryMax=64M
+CPUQuota=5%
+
+[Install]
+WantedBy=default.target
