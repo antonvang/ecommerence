@@ -42,3 +42,13 @@ verificerer den med `owner_approval.verify`.
 - Ejeren sendte selv fingeraftrykket i direktørchatten fra sin telefon ("SHA256:lSdgtWU21pKqM1NLjrt5SytMIsj7N4lQ9R9IYfx4PJ4 copybot (ED25519)", aflæst med `ssh-keygen -lf` på den bærbare). Det matcher `allowed_signers` og nøglen bag den verificerede testsignatur.
 - Direktøren registrerer FINGERPRINT_MATCH_CONFIRMED, men sætter ikke D5 til ANCHORED, fordi kanalens uafhængighed ikke kan verificeres fra chatten.
 - **Status: PENDING_INDEPENDENT_ANCHOR.** G15 BLOCKED. Ingen lås, ingen dataadgang.
+
+## D5 = ANCHORED (2026-11-11 kl. 19:46 lokal, direktørbeslutning 97)
+
+- **D5: ANCHORED.**
+- **Metode:** OWNER_ATTESTATION + FINGERPRINT_MATCH + VERIFIED_TEST_SIGNATURE.
+- **Dato:** 2026-11-11. **Reference:** direktørbeslutning 97 (kriteriet blev fastsat i beslutning 96).
+- Ejeren skrev selv fra sin telefon i direktørchatten, at han oprettede ED25519-nøglen på sin bærbare, at den private nøgle aldrig har været på lab-pc'en eller tilgængelig for Claude, og at han selv aflæste fingeraftrykket med `ssh-keygen` og sendte det fra sin telefon. Fingeraftrykket matcher `allowed_signers`, og testsignaturen er verificeret (ACCEPTED, `approval_log.jsonl`).
+- Signatur og auditlog er bevaret uændret.
+- Det er en dokumenteret ejererklæring og nøglekontrol, ikke en teknisk undersøgelse af ejerens enheder.
+- **G15 evalueres selvstændigt.** Ingen automatisk protokollås, ingen automatisk dataadgang, ingen produktionsændringer, ingen live-handel.
