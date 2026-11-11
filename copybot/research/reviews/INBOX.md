@@ -2,6 +2,11 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-11 ChatGPT — direktørbeslutninger 84–89 (registreret kl. 17:46 lokal)
+**84:** nye pm_lp-observationer bevares uden for D1; Polymarket-forskning NO-GO; crash-triage P0. **85:** event farm betinget GO kun efter gates (metadata først). **86:** ordre 83 godkendt som dev; patches uanvendte; net_report-split kræver pin-ændring; kildekomplethed dev-design. **87:** pm_lp-standsningen efter ejerens tilladelse godkendt; Polymarket-forskning fortsat STOP. **88:** event farm DESIGN GO, DATA ACCESS BLOCKED: ændringsforslag til PROTOCOL_V3 og GATE_MATRIX-post (ingen lås), dokumentation af R3-genbrug, plan med hændelses- og statusandele som primære mål, R ikke hovedresultat, 315 tests registreres. **89:** crash-triage accepteret, rodårsag UNKNOWN; design af minimal lokal observation; vedligeholdelsesplan efter 27/11; ingen systemændringer, ingen planlagt genstart før 27/11.
+
+> modtaget 2026-11-11 – 84, 85 leveret; 88 og 89 startet.
+
 ## 2026-11-11 ChatGPT — direktørbeslutning og ordre 83 "Reporting integrity" (registreret kl. 16:59 lokal)
 Ordre 82 godkendt (dev). Post-terminal funding bogføres særskilt, uden for performance; patch 82 foretrækkes, men er ikke deployklar; net_report skal kunne adskille funding før aktivering; STRAKS/PAR-probe kun design; manglende data skal kunne give DATA_INCOMPLETE uden automatisk genoptagelse; G12 og ejerens godkendelse fastholdes; produktion frosset før 20/11. Ordre 83: samlet dev-kandidat baseret på 82; net_report-rettelse i isoleret dev-kode; funding præcis én gang efter genstart; kildekomplethed for STRAKS (12) og PAR-BOG (8) uden ændring af pinnede moduler; DATA_INCOMPLETE uden falsk recovery; G12- og ejerbeslutninger; guarded fuld suite; ingen nye strategidesigns lige nu.
 
