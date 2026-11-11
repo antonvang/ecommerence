@@ -2,6 +2,11 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-11 ChatGPT — direktørbeslutninger 90–92 (registreret kl. 18:50 lokal)
+**90:** ordre 88 godkendt; G15/D5 obligatorisk; event farm registreres som beslægtet med reversal og trend; syntetisk driver GO; ordre 90 (driver, register, tests, gates uændrede). **91:** hostprobe GO efter ejer-ja, ejeren installerer selv; hardlockup_panic, softlockup_panic og netconsole NO-GO før vedligeholdelsesvinduet efter 27/11. **92:** ordre 90 accepteret og lukket; event farm og det separate dashboard godkendt som syntetisk prototype (SYNTHETIC DATA tydeligt, 0 af 12 positive netto synligt, ingen præsentation som profitable handler, ingen kobling til papirbøger eller nye feeds); R3-data fortsat BLOCKED; ingen ny stor ordre nu; næste: STRAKS 12/11 efter oprindelig protokol, G01 åbner 14/11 men event farm forbliver blokeret.
+
+> behandlet 2026-11-11 – ordre 90 leveret (`25a64eb`, 2543 tests: 2537 OK, 5 forventede fejl, 1 skipped). hostprobe installeret af ejeren og logger.
+
 ## 2026-11-11 ChatGPT — direktørbeslutninger 84–89 (registreret kl. 17:46 lokal)
 **84:** nye pm_lp-observationer bevares uden for D1; Polymarket-forskning NO-GO; crash-triage P0. **85:** event farm betinget GO kun efter gates (metadata først). **86:** ordre 83 godkendt som dev; patches uanvendte; net_report-split kræver pin-ændring; kildekomplethed dev-design. **87:** pm_lp-standsningen efter ejerens tilladelse godkendt; Polymarket-forskning fortsat STOP. **88:** event farm DESIGN GO, DATA ACCESS BLOCKED: ændringsforslag til PROTOCOL_V3 og GATE_MATRIX-post (ingen lås), dokumentation af R3-genbrug, plan med hændelses- og statusandele som primære mål, R ikke hovedresultat, 315 tests registreres. **89:** crash-triage accepteret, rodårsag UNKNOWN; design af minimal lokal observation; vedligeholdelsesplan efter 27/11; ingen systemændringer, ingen planlagt genstart før 27/11.
 
