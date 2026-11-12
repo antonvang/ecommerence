@@ -52,3 +52,9 @@ verificerer den med `owner_approval.verify`.
 - Signatur og auditlog er bevaret uændret.
 - Det er en dokumenteret ejererklæring og nøglekontrol, ikke en teknisk undersøgelse af ejerens enheder.
 - **G15 evalueres selvstændigt.** Ingen automatisk protokollås, ingen automatisk dataadgang, ingen produktionsændringer, ingen live-handel.
+
+## Erklæring til underskrift: event farm fremadrettet papirbog (2026-11-12 kl. 15:33 lokal)
+
+- Direktørbeslutning 106 godkendte tekst 104 (`research/desk/EVENT_FARM_FORWARD_AMENDMENT_FINAL_104.md`, sha256 `396cf90c…`) som grundlag for ejerens filkontrol og D5-underskrift.
+- Erklæringen `research/owner/ef_forward_104_statement.json` (template `EVENT_FARM_FORWARD_104`, blob = tekstens sha256, udløber efter 6 døgn) venter på ejerens underskrift efter hans egen sha256-kontrol på den bærbare.
+- En underskrift aktiverer intet af sig selv: G15, G31, 5m-strømmen og commit i `PROTOCOL_V3.md` skal stadig bestås.
