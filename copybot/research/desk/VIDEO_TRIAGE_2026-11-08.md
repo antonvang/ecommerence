@@ -125,3 +125,9 @@ Antal og bredde er valgt blandt 25 kombinationer for at vise spændet; videoen o
 **Vurdering:** et forskningsværktøj, ikke en fordel. ICT-begreber er fleksible nok til at blive fundet i ren støj; derfor skal en farm altid have en null på tilfældig gang og registrerede varianter.
 
 **Handling:** ejeren bad om at få det bygget. En deterministisk event farm-motor med syntetiske tests og en null-test på tilfældig gang er under opbygning (`research/desk/EVENT_FARM.md`). Ingen data, intet netværk, ingen aktivering.
+
+## Tillæg 7 (14:38 lokal 11-12): @michael.trades1 trendlinje-breakout med RR 1:3 (19 s)
+
+**Påstand:** en animation: skrå trendlinje over toppe, indgang ved breakout, stop og mål i forholdet 1:3. Ingen resultater, ingen omkostninger.
+
+**Vurdering:** RR 1:3 er ikke en fordel i sig selv. I en symmetrisk tilfældig gang er sandsynligheden for at ramme et mål 3R før et stop 1R ca. 25 %, altså nul før omkostninger og negativt efter. I event farm-nullen ramte rr3-varianterne målet i 10–20 % af handlerne. Breakout på vandrette niveauer er allerede dækket (BOS/MSS og filter F2 med retest). Skrå trendlinjer findes ikke i motoren; de kræver en entydig regel (hvilke toppe, hvor mange, tolerance) og ville være en ny variant med egen underskrift. Kandidat til en senere runde, ikke en ændring af den låste tekst.
