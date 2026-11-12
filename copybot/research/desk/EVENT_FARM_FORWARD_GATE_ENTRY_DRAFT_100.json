@@ -1,0 +1,100 @@
+{
+ "version": "gate_matrix_entry_draft/1",
+ "status": "DRAFT_NOT_APPLIED",
+ "rule": "director order 100 (EVENT FARM FORWARD PAPER STUDY, GO: DESIGN ONLY). Proposed additions to research/desk/GATE_MATRIX.json; NOT applied, NOT locked, activates nothing. GATE_MATRIX.json is unchanged and fail-closed: until these entries are applied by a director-approved commit, the action is not listed and therefore BLOCKED. A chat yes (owner or director chat) is UNVERIFIED_ORIGIN and sets no flag.",
+ "written_utc": "2026-11-12T12:36:17Z",
+ "companion_texts": [
+  "research/desk/EVENT_FARM_FORWARD_AMENDMENT_DRAFT_100.md",
+  "research/desk/EVENT_FARM_DRIVER_90.md",
+  "research/desk/EVENT_FARM.md"
+ ],
+ "study": {
+  "EVENT_FARM": "event farm (research/tools/event_farm.py @ f686c9a); this entry adds the forward paper book EVENT_FARM_FWD (12 registered variants, BTCUSDT/ETHUSDT 5m, simulation only, descriptive, never evidence)"
+ },
+ "gate": {
+  "id": "G31_EVENT_FARM_FORWARD",
+  "protects": "the event farm forward paper book (research/tools/event_farm_forward.py) runs only after a dated PROTOCOL_V3 amendment with the exact text of section 3 of the draft is approved by the director, committed before any forward bar is fetched, and signed by the owner with the independently anchored D5 key over the sha256 of that exact text; the 5m kline stream is approved in stream_registry.json; no backfill, no real money, its own database file only",
+  "source": [
+   {"file": "research/desk/EVENT_FARM_FORWARD_AMENDMENT_DRAFT_100.md", "loc": "sections 3, 5, 8 and 9"},
+   {"file": "research/desk/OWNER_KEY_GUIDE_D5.md", "loc": "section 5 (PENDING_INDEPENDENT_ANCHOR)"},
+   {"file": "research/desk/stream_registry.json", "loc": "hosts.allowed_lab (fapi.binance.com); no 5m kline stream exists"},
+   {"file": "research/desk/GATE_MATRIX.json", "loc": "G19_FWD_KLINE_SOURCE (1h only; does not cover 5m)"}
+  ],
+  "earliest_utc": null,
+  "kind": "director+owner",
+  "status_at_as_of": "CLOSED",
+  "opens_by": "director approval of the amendment text AND the amendment committed before any forward bar is fetched AND owner_key_registered (D5 independently anchored) AND a valid D5 signature by principal 'owner' over the sha256 of the exact committed amendment text AND the 5m kline stream approved in stream_registry.json AND event_farm_forward.py plus the source adapter committed with green loader tests and their sha256 named in the amendment AND the host answering without any DNS bypass; fail-closed while D5 is PENDING_INDEPENDENT_ANCHOR",
+  "signature_requirement": {
+   "key": "D5 owner key (research/tools/owner_approval.py, namespace copybot-approval, principal owner), independently anchored",
+   "signed_payload": "the UTF-8 bytes (LF line endings) of the committed amendment section exactly as it stands in research/PROTOCOL_V3.md, identified by its sha256; the signed statement names the amendment number, that sha256, the action id event_farm_forward_paper and the date",
+   "invalid_if": [
+    "the amendment text changes by one byte after signing (a new signature is required)",
+    "the signature is made, generated or relayed by an assistant (G28)",
+    "the approval arrives only as a chat message (UNVERIFIED_ORIGIN)",
+    "the key is not independently anchored (D5 PENDING_INDEPENDENT_ANCHOR)"
+   ]
+  },
+  "required_flags": [
+   "director_approves_event_farm_forward_amendment",
+   "event_farm_forward_amendment_committed",
+   "owner_key_registered",
+   "owner_signed_event_farm_forward_amendment_sha256",
+   "fwd_5m_kline_stream_approved",
+   "event_farm_forward_code_committed",
+   "event_farm_forward_source_adapter_committed",
+   "loader_tests_green",
+   "host_reachable_without_bypass"
+  ],
+  "studies": ["EVENT_FARM"],
+  "actions_at_opening": [
+   "check UTC time (date -u) before anything",
+   "verify sha256 of event_farm.py (f686c9a), event_farm_forward.py and the adapter against the amendment",
+   "verify the D5 signature over the amendment sha256 with owner_approval.py; a failure keeps the gate CLOSED",
+   "create the separate database event_farm_forward*.db outside lab.db / pm_lp.db; no backfill; warm-up on the first 288 forward bars",
+   "register the 12 Register V2 FUTURE records (event_farm_forward.v2_plan_records) with the approved dates",
+   "first report at day 14, descriptive only"
+  ]
+ },
+ "action": {
+  "id": "event_farm_forward_paper",
+  "description": "forward paper book: frozen event farm on closed 5m bars of BTCUSDT and ETHUSDT, paper trades for the 12 registered variants with entry/stop/target fixed at known_ts, conservative fills and lab paper costs; simulation only",
+  "gates": ["G31_EVENT_FARM_FORWARD", "G15_OWNER_SIGNATURE"],
+  "studies": {
+   "EVENT_FARM": [
+    "director_approves_event_farm_forward_amendment",
+    "event_farm_forward_amendment_committed",
+    "owner_key_registered",
+    "owner_signed_event_farm_forward_amendment_sha256",
+    "fwd_5m_kline_stream_approved",
+    "event_farm_forward_code_committed",
+    "event_farm_forward_source_adapter_committed",
+    "loader_tests_green",
+    "host_reachable_without_bypass"
+   ]
+  },
+  "constraints": [
+   "G03_HOLDOUT_2024",
+   "G04_RESERVED_2025PLUS",
+   "G05_OWN_FORWARD_OBS",
+   "G07_QUARANTINE",
+   "G11_RESTART_1128",
+   "G12_PMLP",
+   "G27_NO_REAL_MONEY",
+   "G28_NO_ASSISTANT_SIGNATURE"
+  ]
+ },
+ "list_additions": {
+  "G15_OWNER_SIGNATURE.studies": "add EVENT_FARM",
+  "G05_OWN_FORWARD_OBS.studies": "add EVENT_FARM",
+  "studies": "extend EVENT_FARM with the forward paper book EVENT_FARM_FWD"
+ },
+ "stop_rules_ref": "research/desk/EVENT_FARM_FORWARD_AMENDMENT_DRAFT_100.md section 8 (IntegrityHalt, lane-off or written order, coverage pause, variant stop at 8000 USDT, end after 90 days)",
+ "resource_budget_ref": "research/desk/EVENT_FARM_FORWARD_AMENDMENT_DRAFT_100.md section 5 (GET /fapi/v1/klines 5m, 2 calls per 5 minutes, weight 0.4 per minute, about 0.3 MB per day)",
+ "not_proposed": [
+  "no activation, no stream start, no collector, no deploy, no restart",
+  "no backfill or historical query; no 1m data; no other symbols or timeframes",
+  "no alpha charge, no lock, no candidate status; reports are never evidence of an edge",
+  "no change to event_farm.py, event_farm_driver.py, lab.db, pm_lp or the lab supervisor",
+  "no DNS bypass of any kind"
+ ]
+}
