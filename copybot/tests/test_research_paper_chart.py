@@ -20,7 +20,7 @@ GEN = CUT + 2280
 GAP = (CUT - 12000, CUT - 8000)
 
 
-def make_db(fills, obs=(), funding=(), events=(), equity=None, ledgers=None):
+def make_db(fills, obs=(), funding=(), events=(), equity=None, ledgers=None, census=()):
     d = tempfile.mkdtemp()
     p = os.path.join(d, "lab.db")
     con = sqlite3.connect(p)
@@ -32,7 +32,7 @@ def make_db(fills, obs=(), funding=(), events=(), equity=None, ledgers=None):
                                 side TEXT, px REAL, qty REAL, fee REAL, mid REAL);
         CREATE TABLE sim_funding (id INTEGER PRIMARY KEY, exp_id TEXT, ts INTEGER, settle_ts INTEGER, instrument TEXT,
                                   qty REAL, rate REAL, price REAL, amount REAL);
-        CREATE TABLE observations (id INTEGER PRIMARY KEY, ts, detector, source, instrument, metric, value);
+        CREATE TABLE observations (id INTEGER PRIMARY KEY, ts, detector, source, instrument, metric, value, payload);
     """)
     for led, src, name in (ledgers or [("A", "straks", "STRAKS-FØLG"), ("B", "pairs", "PAR-BOG"),
                                        ("OLD", "carry90", "CARRY90-BTC")]):
@@ -48,6 +48,9 @@ def make_db(fills, obs=(), funding=(), events=(), equity=None, ledgers=None):
                     "VALUES (?, ?, 'o', ?, ?, ?, ?, ?, NULL)", fills)
     con.executemany("INSERT INTO observations (ts, detector, source, instrument, metric, value) "
                     "VALUES (?, 'k3/1', 'premiumIndex', ?, ?, ?)", obs)
+    con.executemany("INSERT INTO observations (ts, detector, source, instrument, metric, value, payload) "
+                    "VALUES (?, 'census/1', 'census', NULL, 'snapshot', 0, ?)",
+                    [(ts, pl if isinstance(pl, str) else json.dumps(pl)) for ts, pl in census])
     con.executemany("INSERT INTO sim_funding (exp_id, ts, settle_ts, instrument, qty, rate, price, amount) "
                     "VALUES (?, ?, ?, ?, 1, 0.0001, ?, 0.01)", funding)
     con.executemany("INSERT INTO events (ts, kind, exp_id, payload) VALUES (?, ?, ?, ?)",
@@ -152,18 +155,20 @@ class Handelschart(unittest.TestCase):
                 titles = re.findall(r'<path class="mk (?:buy|sell)"[^>]*><title>([^<]+)</title>', s)
                 self.assertEqual(len(titles), nb + ns)
                 self.assertTrue(all(re.search(r"\d{4}-\d\d-\d\d \d\d:\d\d:\d\d UTC · .+ · (KØB|SÆLG) "
-                                              r"[A-Z]+ · [\d.e+-]+ @ [\d,.]+ · gebyr \d+\.\d{4}$", t) for t in titles))
+                                              r"[A-Z]+ · [\d.e+-]+ @ [\d,.]+ · gebyr \d+\.\d{4}"
+                                              r"( · lukker (LONG|SHORT): resultat efter gebyrer [+-][\d,.]+ USD)?$", t)
+                                    for t in titles))
         self.assertIn(".cv .mk.buy{fill:#16c784", self.doc)
         self.assertIn(".cv .mk.sell{fill:#ff4d5e", self.doc)
 
     def test_fill_only_chart_label_and_no_market_line(self):
         xau = article(self.doc, "XAUUSDT")
-        self.assertIn("Handelspriser — ikke en markedskurs", xau)
+        self.assertIn(pc.FILL_ONLY, xau)
         self.assertNotIn('class="mkt"', xau)
         self.assertNotIn("<polyline", xau)
         self.assertNotIn('class="gap"', xau)
         btc = article(self.doc, "BTCUSDT")
-        self.assertNotIn("Handelspriser — ikke en markedskurs", btc)
+        self.assertNotIn(pc.FILL_ONLY, btc)
         self.assertIn("Markedskurs (mark", btc)
 
     def test_market_line_broken_at_gap(self):
@@ -305,8 +310,186 @@ class Handelschart(unittest.TestCase):
         con.close()
         doc = render(p)
         btc = article(doc, "BTCUSDT")
-        self.assertIn("Handelspriser — ikke en markedskurs", btc)
+        self.assertIn(pc.FILL_ONLY, btc)
         self.assertNotIn("mk fund", btc)
+
+
+COLS = ["markPrice", "indexPrice", "lastFundingRate", "lastPrice", "openPrice", "highPrice", "lowPrice",
+        "quoteVolume", "count"]
+CEN_TS = [CUT - 33000 + 3600 * k for k in range(10)]                    # hourly; CUT - 33000 is before the window
+MISSING = CUT - 15000                                                   # one missing hour -> one gap
+
+
+def snap(rows, cols=COLS):
+    return {"columns": cols, "rows": {s: [v] + [None] * (len(cols) - 1) for s, v in rows.items()}}
+
+
+CENSUS = ([(t, snap({"XAUUSDT": 2390.0 + k, "SOLUSDT": 150.0})) for k, t in enumerate(CEN_TS) if t != MISSING]
+          + [(CUT - 5000, "ikke json {"),                                         # malformed payload: skipped
+             (CUT - 3000, snap({"XAUUSDT": 9999.0}, ["indexPrice"] + COLS[1:])),  # wrong column order: skipped
+             (CUT - 2000, snap({"XAUUSDT": None}))])                             # null price: skipped
+
+
+class PriceLineAndLayers(unittest.TestCase):
+    """V4 (2026-11-12): census markPrice line, gaps, layers, positions with the result after fees."""
+
+    def setUp(self):
+        self.p = make_db(FILLS, OBS, FUNDING, EVENTS, census=CENSUS)
+        self.doc = render(self.p)
+        self.sec = section(self.doc)
+
+    def test_census_price_line_from_recorded_snapshots(self):
+        xau = article(self.doc, "XAUUSDT")
+        self.assertIn(pc.CENSUS_LABEL, xau)
+        self.assertNotIn(pc.FILL_ONLY, xau)
+        s = svgs(self.doc, "XAUUSDT")[0]
+        X, Y = scale(s)
+        want = [(t, 2390.0 + k) for k, t in enumerate(CEN_TS) if t != MISSING and t >= CUT - 30900]
+        dots = re.findall(r'<circle class="mkp" cx="([\d.]+)" cy="([\d.]+)" r="[\d.]+"><title>([^<]+)</title>', s)
+        self.assertEqual(len(dots), len(want))                                  # one dot per recorded snapshot
+        for (cx, cy, title), (t, v) in zip(dots, want):
+            self.assertAlmostEqual(float(cx), X(t), delta=0.01)
+            self.assertAlmostEqual(float(cy), Y(v), delta=0.01)
+            self.assertIn("markPrice", title)
+        self.assertNotIn("9,999", s)                                            # wrong column order never read
+        self.assertNotIn("9999", s)
+        self.assertIn("markPrice · census/1 · 1 t · 8 snapshots", s)
+
+    def test_census_line_broken_at_missing_hour_never_interpolated(self):
+        s = svgs(self.doc, "XAUUSDT")[0]
+        X, _ = scale(s)
+        segs = re.findall(r'<polyline class="mkt" data-t0="(\d+)" data-t1="(\d+)" points="([^"]+)"', s)
+        self.assertEqual([(int(a), int(b)) for a, b, _ in segs],
+                         [(CUT - 29400, MISSING - 3600), (MISSING + 3600, CUT - 600)])
+        for _, _, pts in segs:
+            xs = [float(p.split(",")[0]) for p in pts.split()]
+            self.assertFalse(any(a < X(MISSING - 3600 + 1) and b > X(MISSING + 3600 - 1) for a, b in zip(xs, xs[1:])))
+        gaps = re.findall(r'<rect class="gap" x="([\d.]+)"[^>]*><title>([^<]+)</title>', s)
+        self.assertEqual(len(gaps), 1)
+        self.assertAlmostEqual(float(gaps[0][0]), X(MISSING - 3600), delta=0.01)
+        self.assertIn("(2.0 t); linjen er brudt, ikke interpoleret", gaps[0][1])
+        self.assertIn('<g class="hl-gaps">', s)
+
+    def test_census_edge_gap_when_series_stops_before_cutoff(self):
+        early = [(t, snap({"XAUUSDT": 2390.0})) for t in CEN_TS[:3]]           # last snapshot CUT - 25800
+        s = svgs(render(make_db(FILLS, OBS, FUNDING, EVENTS, census=early)), "XAUUSDT")[0]
+        gaps = re.findall(r'<rect class="gap"[^>]*><title>Hul i markedsdata: ([^<]+)</title>', s)
+        self.assertEqual(len(gaps), 1)
+        self.assertTrue(gaps[0].startswith("11-08 16:50:00 UTC – 11-09 00:00:00 UTC"), gaps[0])
+
+    def test_census_preferred_over_k3_and_labelled(self):
+        cen = [(t, snap({"BTCUSDT": 101.0, "XAUUSDT": 2391.0})) for t in range(CUT - 21600, CUT, 3600)]
+        doc = render(make_db(FILLS, OBS, FUNDING, EVENTS, census=cen))
+        btc = article(doc, "BTCUSDT")
+        self.assertIn(pc.CENSUS_LABEL, btc)
+        self.assertNotIn(pc.MARKET_LABEL, btc)
+        self.assertEqual(len(re.findall(r'class="mkp"', btc)), 5)                # CUT - 21600 is before the window
+        self.assertNotIn("11-08 20:40:00 UTC", btc)                             # the k3 gap is not this series'
+
+    def test_kun_handelspriser_without_any_series(self):
+        eth = article(self.doc, "ETHUSDT")
+        self.assertIn(pc.FILL_ONLY, eth)
+        self.assertIn('<span class="ch-kind k-fill">Kun handelspriser', eth)
+        s = svgs(self.doc, "ETHUSDT")[0]
+        self.assertIn("KUN HANDELSPRISER — ingen registreret markedskurs", s)
+        for bad in ("<polyline", 'class="mkp"', 'class="mkt"', 'class="gap"', "hl-line", "hl-gaps"):
+            self.assertNotIn(bad, s)
+        self.assertIn('<i class="p-off" title="kun handelspriser"></i>', self.sec)
+        self.assertIn("ingen serie — kun handelspriser", eth)
+
+    def test_layers_are_css_checkboxes_before_wrap(self):
+        boxes = re.findall(r'<input class="f" type="checkbox" id="hl-([a-z]+)" checked>', self.doc)
+        self.assertEqual(boxes, list(pc.LAYERS))
+        self.assertEqual(boxes, ["line", "trades", "pos", "fund", "gaps", "skip"])
+        wrap = self.doc.index('<div class="wrap">')
+        self.assertTrue(all(self.doc.index(f'id="hl-{n}"') < wrap for n in boxes))
+        for n in boxes:
+            self.assertIn(f"#hl-{n}:not(:checked)~.wrap .hl-{n}{{display:none}}", self.doc)
+            self.assertEqual(self.sec.count(f'<label class="lyr" for="hl-{n}">'), 3)   # one per chart panel
+        self.assertNotIn("<script", self.doc.lower())
+        btc = svgs(self.doc, "BTCUSDT")[0]
+        for n in ("line", "trades", "pos", "fund", "gaps", "skip"):
+            self.assertIn(f'<g class="hl-{n}">', btc)
+        grp = re.search(r'<g class="hl-trades">(.*?)</g>', btc).group(1)
+        self.assertEqual(len(re.findall(r'class="mk (?:buy|sell)"', grp)),
+                         len(re.findall(r'class="mk (?:buy|sell)"', btc)))
+        grp = re.search(r'<g class="hl-fund">(.*?)</g>', btc).group(1)
+        self.assertEqual(len(re.findall(r'class="mk fund"', grp)), 1)
+        grp = re.search(r'<g class="hl-skip">(.*?)</g>', btc).group(1)
+        self.assertEqual(len(re.findall(r'class="mk skip"', grp)), 1)
+
+    def test_positions_and_result_after_fees(self):
+        btc = svgs(self.doc, "BTCUSDT")[0]
+        boxes = re.findall(r'<rect class="pbox (\w+)" data-ledger="(\w+)" data-t0="(\d+)" data-t1="(\d*)"[^>]*>'
+                           r'<title>([^<]+)</title>', btc)
+        self.assertEqual([(c, led, int(t0), t1) for c, led, t0, t1, _ in boxes],
+                         [("open", "A", CUT - 20000, ""), ("win", "B", CUT - 18000, str(CUT - 9000))])
+        self.assertIn("SHORT BTCUSDT · PAR-BOG", boxes[1][4])
+        self.assertIn("pris-P&amp;L +0.25 USD · gebyrer 0.0400 · resultat efter gebyrer +0.21 USD", boxes[1][4])
+        self.assertIn("LONG BTCUSDT · STRAKS-FØLG · ÅBEN siden 11-08 18:26:40", boxes[0][4])
+        self.assertIn("2 @ 101 (gns. indgang)", boxes[0][4])
+        self.assertRegex(btc, r'<path class="mk buy" data-ts="%d"[^>]*><title>[^<]* · lukker SHORT: resultat efter '
+                              r'gebyrer \+0\.21 USD</title>' % (CUT - 9000))
+        bars = re.findall(r'<rect class="pbar (long|short)( open)?" data-t0="(\d+)"', btc)
+        self.assertEqual(sorted(bars), sorted([("short", "", str(CUT - 18000)), ("long", " open", str(CUT - 20000))]))
+        self.assertIn(">PAR-BOG</text>", btc)
+        self.assertIn(">STRAKS-FØLG</text>", btc)
+        xau = svgs(self.doc, "XAUUSDT")[0]
+        self.assertIn("resultat efter gebyrer +0.80 USD", xau)
+        eth = svgs(self.doc, "ETHUSDT")[0]
+        self.assertIn('class="pbox win" data-ledger="A"', eth)
+        self.assertIn("resultat efter gebyrer +9.60 USD", eth)
+        self.assertIn("åbnet ved vending gennem nul", eth)                       # the flipped rest is a new trade
+        self.assertIn("Lukkede handler i vinduet: <b>1</b>, resultat efter gebyrer <b>+9.60 USD</b>",
+                      article(self.doc, "ETHUSDT"))
+
+    def test_mirrored_books_share_one_neutral_box(self):
+        fills = [("A", CUT - 9000, "XRPUSDT", "buy", 1.0, 100.0, 0.01),
+                 ("B", CUT - 9000, "XRPUSDT", "sell", 1.0, 100.0, 0.01),
+                 ("A", CUT - 3000, "XRPUSDT", "sell", 1.1, 100.0, 0.01),
+                 ("B", CUT - 3000, "XRPUSDT", "buy", 1.1, 100.0, 0.01)]
+        s = svgs(render(make_db(fills)), "XRPUSDT")[0]
+        boxes = re.findall(r'<rect class="pbox (\w+)" data-ledger="([^"]+)"[^>]*><title>([^<]+)</title>', s)
+        self.assertEqual([(c, led) for c, led, _ in boxes], [("mixed", "A,B")])
+        self.assertIn("resultat efter gebyrer +9.98 USD", boxes[0][2])
+        self.assertIn("resultat efter gebyrer -10.02 USD", boxes[0][2])
+        self.assertEqual(sorted(re.findall(r'<rect class="pbar (long|short)"', s)), ["long", "short"])
+
+    def test_trades_partial_exits_and_flip(self):
+        f = lambda i, side, px, q, fee: {"id": i, "ledger": "A", "ts": 1000 + i, "side": side, "px": px,  # noqa
+                                         "qty": q, "fee": fee}
+        tr = pc.trades([f(1, "buy", 10.0, 2.0, 0.02), f(2, "sell", 12.0, 1.0, 0.01), f(3, "sell", 8.0, 1.0, 0.01)])
+        self.assertEqual(len(tr), 1)
+        self.assertEqual((tr[0]["dir"], tr[0]["start"], tr[0]["end"], tr[0]["exit_fill"]), ("long", 1001, 1003, 3))
+        self.assertAlmostEqual(tr[0]["price_pnl"], 0.0)
+        self.assertAlmostEqual(tr[0]["net"], -0.04)
+        self.assertAlmostEqual(tr[0]["exit"], 10.0)
+        tr = pc.trades([f(1, "sell", 10.0, 1.0, 0.1), f(2, "buy", 9.0, 3.0, 0.3)])
+        self.assertEqual([(t["dir"], t["end"], t["flip"]) for t in tr], [("short", 1002, False), ("long", None, True)])
+        self.assertAlmostEqual(tr[0]["net"], 1.0 - 0.1 - 0.1)
+        self.assertAlmostEqual(tr[1]["open_qty"], 2.0)
+        self.assertAlmostEqual(tr[1]["basis"], 9.0)
+        self.assertAlmostEqual(tr[1]["fees"], 0.2)
+
+    def test_cutoff_printed_in_every_chart(self):
+        for s in svgs(self.doc):
+            self.assertIn('class="upd"', s)
+            self.assertIn(">Data til 2026-11-09 00:00 UTC</text>", s)
+        self.assertEqual(self.sec.count('<span class="ch-upd">Data til cutoff <b>2026-11-09 00:00:00 UTC</b>'), 3)
+        self.assertIn("seneste prispunkt 11-08 23:50 UTC (10 min før cutoff)", svgs(self.doc, "XAUUSDT")[0])
+
+    def test_census_read_only_and_old_schema(self):
+        with open(self.p, "rb") as f:
+            h0 = hashlib.sha256(f.read()).hexdigest()
+        render(self.p)
+        with open(self.p, "rb") as f:
+            self.assertEqual(hashlib.sha256(f.read()).hexdigest(), h0)
+        p = make_db(FILLS)
+        con = sqlite3.connect(p)
+        con.executescript("DROP TABLE observations; CREATE TABLE observations (id INTEGER PRIMARY KEY, ts, detector, "
+                          "source, instrument, metric, value);")
+        con.close()
+        self.assertIn(pc.FILL_ONLY, article(render(p), "XAUUSDT"))              # no payload column: no census
 
 
 if __name__ == "__main__":

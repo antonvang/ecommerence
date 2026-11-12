@@ -699,7 +699,8 @@ def page(rep, frows, totals, db_path, feed_n, conspark, chart=None, graveyard=No
     w('<p id="kilder"><b>Kilder</b> (alle kun læst):</p><ul>'
       f"<li><b>Datakilde:</b> {e(db_path)} (mode=ro, PRAGMA query_only=ON). Tal pr. konto og summen fra research/tools/net_report.build;"
       " feed fra sim_fills og events (" + ", ".join(SKIP_KINDS) + ").</li>"
-      "<li>Handelschart: sim_fills, observations (metric=mark), sim_funding.price og net_report open_basis "
+      "<li>Handelschart: sim_fills, observations (census/1 snapshot markPrice, ellers metric=mark), "
+      "sim_funding.price og net_report open_basis "
       "(research/tools/paper_chart.py).</li>"
       f"<li>Sundhed: lab_qc.SCHEMA_TABLES (let skematjek), {e(LAB_QC_DOC)}, {e(RECONCILE_GLOB)}.</li>"
       f"<li>Forskningsoversigt: {e(paper_research.MATRIX)} (research/tools/paper_research.py).</li>"
