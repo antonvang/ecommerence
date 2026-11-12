@@ -158,3 +158,10 @@ Bemærk: `research/F2_PLAN.md` handler om familien `dbasis` (COIN-M), ikke F2 HA
 4. Collectoren og detektorerne, der stadig kalder de blokerede værter (G12 gælder).
 5. De aktuelle åbne ben pr. konto. Ikke læst (kræver mængder). En senere read-only rapport kan bruge `sim_orders` med `|close|` i `order_id` og fylde `classify_close`.
 6. Om `MARK_AFTER_LAST_VERIFIED` skal behandles særskilt, hvis mærkning sker, fordi en vært svarer.
+
+## Opfølgning 2026-11-12 (kl. 06:13 lokal, 05:13 UTC): ingen source-stop observeret
+
+- Første mulige source-stop for `LANE_53058593e8` var 04:47 UTC. Lab'et kørte lane-pas efter det tidspunkt (16 `lane.skipped`, 1 `paper.order` siden 04:40 UTC; 14 bøger fik `sim_equity`-rækker), men der er **ingen** hændelser for kontoen siden 04:40 UTC: ingen `paper.closing`, ingen stop, ingen fyld. Seneste hændelse for kontoen: paper.order 2026-11-02 01:01:51 UTC.
+- Ben (kun tællinger): 6 af 6 instrumenter har stadig en åben position (BTC, ETC, XRP; perp og spot).
+- **Klassifikation: NO_STOP_OBSERVED.** Ingen CLOSE_SUCCESS, PARTIAL_CLOSE eller CLOSE_INCOMPLETE. Kontoen er stadig DATA_SOURCE_UNAVAILABLE.
+- Stopreglens udfald er ikke evalueret; ingen beløb er læst. Ingen indgriben. De øvrige fem konti har senere første datoer (11-14 til 11-19).
