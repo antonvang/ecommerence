@@ -155,3 +155,7 @@ Ikke forsøgt: `hfc1_daily.py cohort` kræver `data-api.binance.vision`, som er 
 ## Kohorte 11-10 — IKKE DANNET (kl. 16:58 lokal 11-11)
 
 Ikke forsøgt: spotværten `data-api.binance.vision` er stadig blokeret. BLOCKED/MISSING; efterdannes ikke.
+
+## Kohorte 11-11 — IKKE DANNET (kl. 01:36 lokal 11-12)
+
+Ikke forsøgt: spotværten `data-api.binance.vision` er stadig blokeret. BLOCKED/MISSING; efterdannes ikke.
