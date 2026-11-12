@@ -2,6 +2,9 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-12 Observation — kort spot-åbning og lukninger (registreret kl. 09:11 lokal)
+07:55:18 UTC fik alle ni STALE-konti nye mærker (spotværten svarede kortvarigt; 0.0.0.0 igen 08:10 UTC). LANE_53058593e8 blev retired (source) med CLOSE_SUCCESS: alle seks ben lukket parvist. Parvise lukninger også i LANE_c2d8a7505e, LANE_9f1dc841b2 og LANE_ec1b0457b8; ingen et-benede positioner. Ingen indgriben, intet udfald evalueret. Detaljer i `PARTIAL_CLOSE_78.md`.
+
 ## 2026-11-12 Observation — source-stop for LANE_53058593e8 (registreret kl. 06:13 lokal)
 Ingen stop observeret efter 04:47 UTC: lane-pas kørte, men kontoen har ingen hændelser, ingen fyld, og 6 af 6 ben er åbne. Klassifikation NO_STOP_OBSERVED. Ingen indgriben, intet udfald evalueret. Detaljer i `PARTIAL_CLOSE_78.md` (opfølgning).
 

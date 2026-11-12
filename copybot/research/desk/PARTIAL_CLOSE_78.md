@@ -165,3 +165,10 @@ Bemærk: `research/F2_PLAN.md` handler om familien `dbasis` (COIN-M), ikke F2 HA
 - Ben (kun tællinger): 6 af 6 instrumenter har stadig en åben position (BTC, ETC, XRP; perp og spot).
 - **Klassifikation: NO_STOP_OBSERVED.** Ingen CLOSE_SUCCESS, PARTIAL_CLOSE eller CLOSE_INCOMPLETE. Kontoen er stadig DATA_SOURCE_UNAVAILABLE.
 - Stopreglens udfald er ikke evalueret; ingen beløb er læst. Ingen indgriben. De øvrige fem konti har senere første datoer (11-14 til 11-19).
+
+## Opfølgning 2026-11-12 (kl. 09:11 lokal, 08:11 UTC): kort spot-åbning og hele lukninger
+
+- Kl. 07:55:18 UTC fik alle ni STALE-konti et nyt equity-mærke, og `LANE_c2d8a7505e` igen 08:00:23 UTC. Det kræver spotbøger, så spotværten har svaret kortvarigt (som åbningen 2026-11-08 06:39–06:45 UTC). Kl. 08:10 UTC svarer `data-api.binance.vision` igen 0.0.0.0. Claude har ikke ændret DNS eller kode.
+- `LANE_53058593e8`: `lane.retired` (regel `source`) 07:57:10 UTC efter 6 fyld 07:55:18 UTC; 0 af 6 ben åbne. **CLOSE_SUCCESS** (begge ben på alle tre mønter lukket på samme pas). Den tidligere note "NO_STOP_OBSERVED" gjaldt kun frem til 05:13 UTC.
+- Andre lukninger samme pas, alle parvise (perp og spot for samme mønt): `LANE_c2d8a7505e` BTC og XRP (0 af 4 ben åbne); `LANE_9f1dc841b2` ETH (BNB, ETC, LINK stadig åbne i par); `LANE_ec1b0457b8` BCH (spotbenet i to fyld; ETC stadig åbent i par). Ingen et-benede positioner.
+- Mærkerne kl. 07:55 er ægte observationer, men kontiene er igen uden spotdata, så de bliver STALE igen. Stopreglens udfald og beløb er ikke læst. Ingen indgriben.
