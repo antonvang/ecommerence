@@ -34,14 +34,16 @@
   "F3": "FACTORY F3 dated COIN-M basis, DEFERRED to 2026-11-28",
   "LIQPROXY1": "desk draft, competes for W0",
   "FUNDFRAG1": "desk draft, competes for W0",
-  "OPS": "host operations (reboot, system update)"
+  "OPS": "host operations (reboot, system update)",
+  "EVENT_FARM": "event farm (research/tools/event_farm.py @ f686c9a): forward paper book, 96 tests (12 baseline + 7 filter combos x 12), BTCUSDT/ETHUSDT 5m, PROTOCOL_V3 amendment 46 = text 104; simulation only, descriptive, never evidence"
  },
  "protocol_identities": [
   {
    "id": "PROTOCOL_V3",
    "path": "research/PROTOCOL_V3.md",
-   "commit": "ec91280",
-   "sha256": "0a09b3e954d92c8294e1b15f27b12fbc344187562bc73f393d2dd892b2ce6c80"
+   "commit": "a90d906",
+   "sha256": "6e9c3afeaf7de97fb462de8671d761a964b9b07bf5fb882a3869bd3182c066a9",
+   "superseded_pin": {"commit": "ec91280", "sha256": "0a09b3e954d92c8294e1b15f27b12fbc344187562bc73f393d2dd892b2ce6c80", "superseded": "2026-11-12 by amendment 46 (event farm forward, text 104; owner decision, research/owner/EF_FORWARD_104_SIGNATURE.md); kept, not rewritten"}
   },
   {
    "id": "READINESS_1114",
@@ -151,8 +153,9 @@
   {
    "id": "STREAM_REGISTRY",
    "path": "research/desk/stream_registry.json",
-   "commit": "2e23f52",
-   "sha256": "e4b564f11b5b28bb927ff2bbc003e237d0ce3779d1acab0631eb5893f3ebcc5b"
+   "commit": "01f1b0d",
+   "sha256": "5d2b37347a8b806019368f2f5d6e9168c4894c90ae53fe6deb847e87ac749900",
+   "superseded_pin": {"commit": "2e23f52", "sha256": "e4b564f11b5b28bb927ff2bbc003e237d0ce3779d1acab0631eb5893f3ebcc5b", "superseded": "2026-11-12 by the ef_fwd_5m_klines stream entry (G31); kept, not rewritten"}
   },
   {
    "id": "PROTOCOL_SHORTLIST",
@@ -301,7 +304,8 @@
     "HFC1",
     "STRAKS",
     "PAIRS",
-    "S1"
+    "S1",
+    "EVENT_FARM"
    ],
    "actions_at_opening": []
   },
@@ -347,7 +351,8 @@
     "STRAKS",
     "PAIRS",
     "S1",
-    "C1"
+    "C1",
+    "EVENT_FARM"
    ],
    "actions_at_opening": [
     "read-only, rows >= 2026-10-27, aggregate where possible"
@@ -563,7 +568,8 @@
     "PAIRS",
     "S1",
     "F3",
-    "OPS"
+    "OPS",
+    "EVENT_FARM"
    ],
    "actions_at_opening": []
   },
@@ -660,7 +666,8 @@
     "C1",
     "F3",
     "LIQPROXY1",
-    "FUNDFRAG1"
+    "FUNDFRAG1",
+    "EVENT_FARM"
    ],
    "actions_at_opening": []
   },
@@ -972,7 +979,8 @@
     "STRAKS",
     "PAIRS",
     "S1",
-    "F3"
+    "F3",
+    "EVENT_FARM"
    ],
    "actions_at_opening": []
   },
@@ -1001,7 +1009,8 @@
     "C1",
     "F3",
     "LIQPROXY1",
-    "FUNDFRAG1"
+    "FUNDFRAG1",
+    "EVENT_FARM"
    ],
    "actions_at_opening": []
   },
@@ -1031,6 +1040,50 @@
     "C1"
    ],
    "actions_at_opening": []
+  },
+  {
+   "id": "G31_EVENT_FARM_FORWARD",
+   "protects": "the event farm forward paper book runs only with PROTOCOL_V3 amendment 46 (text 104, sha256 396cf90c0ea0ac58da7318f159f2d97d60075ef92ad3118db94e8b30a892451d) committed before any call, a valid D5 owner signature over that sha256, the 5m kline stream approved in stream_registry.json, the code at the sha256 named in text 104 section 2 and the host answering without any DNS bypass; own database and call log only; no real money",
+   "source": [
+    {
+     "file": "research/PROTOCOL_V3.md",
+     "loc": "Ændring 46 (ef104 markers)"
+    },
+    {
+     "file": "research/owner/EF_FORWARD_104_SIGNATURE.md",
+     "loc": "verification 2026-11-12 21:40:59 UTC"
+    },
+    {
+     "file": "research/desk/EVENT_FARM_FORWARD_GATE_ENTRY_DRAFT_100.json",
+     "loc": "gate (draft 100, applied for text 104)"
+    }
+   ],
+   "earliest_utc": null,
+   "kind": "owner",
+   "status_at_as_of": "CLOSED",
+   "opens_by": "all required_flags, each checked at run time by research/tools/event_farm_run.py (activation object); one failed check keeps the gate CLOSED and no call is made",
+   "required_flags": [
+    "director_approves_event_farm_forward_amendment",
+    "event_farm_forward_amendment_committed",
+    "owner_key_registered",
+    "owner_signed_event_farm_forward_amendment_sha256",
+    "fwd_5m_kline_stream_approved",
+    "event_farm_forward_code_committed",
+    "event_farm_forward_source_adapter_committed",
+    "loader_tests_green",
+    "host_reachable_without_bypass"
+   ],
+   "studies": [
+    "EVENT_FARM"
+   ],
+   "actions_at_opening": [
+    "check UTC time",
+    "verify the sha256 of the code and texts named in text 104 section 2",
+    "verify the D5 signature (owner_approval.signature_ok) and its ACCEPTED audit-log entry",
+    "own database event_farm_forward.db and call log event_farm_source_calls.jsonl under ~/event_farm; no backfill; warm-up 288 bars",
+    "reports at day 14, 28 and 90, descriptive only"
+   ],
+   "applied": "2026-11-12 by the owner's decision in chat (start now; director decision 109 overridden by the owner)"
   }
  ],
  "actions": [
@@ -1459,6 +1512,36 @@
    ],
    "studies": {},
    "constraints": []
+  },
+  {
+   "id": "event_farm_forward_paper",
+   "description": "forward paper book: frozen event farm on closed 5m bars of BTCUSDT and ETHUSDT, 96 registered tests, simulated fills and lab paper costs (28 bps assumption); simulation only",
+   "gates": [
+    "G31_EVENT_FARM_FORWARD",
+    "G15_OWNER_SIGNATURE"
+   ],
+   "studies": {
+    "EVENT_FARM": [
+     "director_approves_event_farm_forward_amendment",
+     "event_farm_forward_amendment_committed",
+     "owner_key_registered",
+     "owner_signed_event_farm_forward_amendment_sha256",
+     "fwd_5m_kline_stream_approved",
+     "event_farm_forward_code_committed",
+     "event_farm_forward_source_adapter_committed",
+     "loader_tests_green",
+     "host_reachable_without_bypass"
+    ]
+   },
+   "constraints": [
+    "G03_HOLDOUT_2024",
+    "G04_RESERVED_2025PLUS",
+    "G05_OWN_FORWARD_OBS",
+    "G07_QUARANTINE",
+    "G12_PMLP",
+    "G27_NO_REAL_MONEY",
+    "G28_NO_ASSISTANT_SIGNATURE"
+   ]
   }
  ],
  "ambiguities_ref": "AMB-01..AMB-29 in research/desk/NOV14_READINESS.md section 11",
