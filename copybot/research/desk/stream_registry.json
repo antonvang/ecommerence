@@ -1045,6 +1045,24 @@
    "est_weekly_bytes": 0,
    "est_weekly_requests": 158088,
    "notes": "C uses census/1 marks; 941 requests/h would duplicate them and kline ranges look like historical queries."
+  },
+  {
+   "id": "ef_fwd_5m_klines",
+   "status": "APPROVED",
+   "source_host": "fapi.binance.com",
+   "fields": [
+    "GET /fapi/v1/klines symbol=BTCUSDT|ETHUSDT interval=5m startTime limit=3|499; fields 0-6 (open time, OHLC, volume, close time)"
+   ],
+   "cadence_s": 300,
+   "storage": "~/event_farm/event_farm_forward.db + ~/event_farm/event_farm_source_calls.jsonl (~0.5 MB/day)",
+   "started": null,
+   "consumers": [
+    "research/tools/event_farm_run.py (ForwardBookV2, PROTOCOL_V3 amendment 46)"
+   ],
+   "gate": "G31_EVENT_FARM_FORWARD",
+   "est_weekly_bytes": 3300000,
+   "est_weekly_requests": 4032,
+   "notes": "Approved 2026-11-12 by the owner's decision with the D5-signed text 104 (sha256 396cf90c...). 2 symbols x 288 slots/day, weight 0.4/min. No backfill, no key, no order or account endpoint (event_farm_source.check_url). started is set by the first call log line."
   }
  ],
  "assessments": [

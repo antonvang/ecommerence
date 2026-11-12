@@ -247,7 +247,8 @@ class Units(unittest.TestCase):
     def test_registry_is_well_formed(self):
         with open(REGISTRY, encoding="utf-8") as fh:
             reg = json.load(fh)
-        allowed = {"EXISTING_ACTIVE", "EXISTING_INACTIVE", "PROPOSED_NEEDS_SEPARATE_APPROVAL", "REJECTED_DUPLICATE"}
+        allowed = {"EXISTING_ACTIVE", "EXISTING_INACTIVE", "PROPOSED_NEEDS_SEPARATE_APPROVAL", "REJECTED_DUPLICATE",
+                   "APPROVED"}
         need = {"id", "status", "source_host", "fields", "cadence_s", "storage", "started", "consumers", "gate",
                 "est_weekly_bytes", "est_weekly_requests", "notes"}
         ids = [s["id"] for s in reg["streams"]]
