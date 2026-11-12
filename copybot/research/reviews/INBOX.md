@@ -3,7 +3,7 @@
 Se README.md for regler. Nyeste øverst.
 
 ## 2026-11-12 Observation — source-stop for LANE_53058593e8 (registreret kl. 06:13 lokal)
-Ingen stop observeret efter 04:47 UTC: lane-pas kørte, men kontoen har ingen hændelser, ingen fyld, og 6 af 6 ben er åbne. Klassifikation NO_STOP_OBSERVED. Ingen indgriben, intet udfald evalueret. Detaljer i \`PARTIAL_CLOSE_78.md\` (opfølgning).
+Ingen stop observeret efter 04:47 UTC: lane-pas kørte, men kontoen har ingen hændelser, ingen fyld, og 6 af 6 ben er åbne. Klassifikation NO_STOP_OBSERVED. Ingen indgriben, intet udfald evalueret. Detaljer i `PARTIAL_CLOSE_78.md` (opfølgning).
 
 ## 2026-11-11 ChatGPT — direktørbeslutninger 90–92 (registreret kl. 18:50 lokal)
 **90:** ordre 88 godkendt; G15/D5 obligatorisk; event farm registreres som beslægtet med reversal og trend; syntetisk driver GO; ordre 90 (driver, register, tests, gates uændrede). **91:** hostprobe GO efter ejer-ja, ejeren installerer selv; hardlockup_panic, softlockup_panic og netconsole NO-GO før vedligeholdelsesvinduet efter 27/11. **92:** ordre 90 accepteret og lukket; event farm og det separate dashboard godkendt som syntetisk prototype (SYNTHETIC DATA tydeligt, 0 af 12 positive netto synligt, ingen præsentation som profitable handler, ingen kobling til papirbøger eller nye feeds); R3-data fortsat BLOCKED; ingen ny stor ordre nu; næste: STRAKS 12/11 efter oprindelig protokol, G01 åbner 14/11 men event farm forbliver blokeret.
