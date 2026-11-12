@@ -2,6 +2,11 @@
 
 Se README.md for regler. Nyeste øverst.
 
+## 2026-11-12 ChatGPT — direktørbeslutning og ordre 107 "STRAKS 7 dage" (registreret kl. 19:14 lokal)
+Milepæl accepteret og arkiveret: STRAKS-FØLG −132,39 (−1,32 %), STRAKS-MOD −74,81 (−0,75 %); begge negative; ingen dokumenteret fordel; research_status INCONCLUSIVE. Ordre 107: arkivér med resultat-hash og proveniens; forklar forskellen med og uden 41b; ingen parameterændringer eller nye varianter; fortsæt observationerne uden produktionsændringer. Direktøren har også i dag godkendt event farm tekst 104 (beslutning 103–106) som grundlag for ejerens D5-underskrift.
+
+> behandlet 2026-11-12 kl. 19:14 – rapport `ca43e91`; forklaring i `research/desk/STRAKS_7D_41B_NOTE_107.md`.
+
 ## 2026-11-12 Observation — kort spot-åbning og lukninger (registreret kl. 09:11 lokal)
 07:55:18 UTC fik alle ni STALE-konti nye mærker (spotværten svarede kortvarigt; 0.0.0.0 igen 08:10 UTC). LANE_53058593e8 blev retired (source) med CLOSE_SUCCESS: alle seks ben lukket parvist. Parvise lukninger også i LANE_c2d8a7505e, LANE_9f1dc841b2 og LANE_ec1b0457b8; ingen et-benede positioner. Ingen indgriben, intet udfald evalueret. Detaljer i `PARTIAL_CLOSE_78.md`.
 
