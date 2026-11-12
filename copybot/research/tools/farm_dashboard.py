@@ -3,12 +3,21 @@ run on SYNTHETIC DATA ONLY (the engine's own random walk and null run, seed 83 b
 
     python3 research/tools/farm_dashboard.py [--out ~/copybot_farm.html] [--seed 83] [--days 60] [--instruments 3]
 
-Our own design in the dark style of research/tools/paper_dashboard.py (same CSS tokens). Four tabs (OVERBLIK, CHART,
-STUDIER, HÆNDELSER) and every toggle work without JavaScript: hidden radio/checkbox inputs plus `:checked ~`
-selectors. No <script>, no external resource, no network, no cache, no database, no market data. `--out` is the only
-file written (atomically: temp file in the same folder, fsync, rename). The output is deterministic for a seed: no
-clock time is printed. Real charts need G01 (14/11), G15/D5 and the director's approval; until then
-`build(source=...)` refuses anything but "synthetic".
+Our own design in the dark style of research/tools/paper_dashboard.py (same CSS tokens). Five tabs (OVERBLIK, CHART,
+STUDIER, HÆNDELSER, PAPIR LIVE) and every toggle work without JavaScript: hidden radio/checkbox inputs plus `:checked ~`
+selectors. No <script>, no external resource, no network, no cache, no market data. `--out` is the only file written
+(atomically: temp file in the same folder, fsync, rename). The output is deterministic for a seed: no clock time is
+printed. Real charts need G01 (14/11), G15/D5 and the director's approval; until then `build(source=...)` refuses
+anything but "synthetic".
+
+PAPIR LIVE (order: forward book view). `--forward-db PATH` names the forward paper book's own SQLite file
+(event_farm_forward_v2.ForwardBookV2, name event_farm_forward*.db, checked with event_farm_forward.check_db_path before
+anything is touched). It is opened READ-ONLY only (`file:...?mode=ro` + `PRAGMA query_only=ON`) and never written; no
+other database is read. Without the option, or when the file does not exist, the tab shows the empty state (not
+activated: director's approval, the owner's D5 signature, G31 and the 5m stream). With a book the tab shows, after
+amendment 104 section 6: status and data quality, open paper positions per test, PRIMARILY frequencies, status shares and
+fill uncertainty, and R gross / net (28 bps and 0/1/5/8 bps) ONLY in a collapsed appendix in register order (no
+ranking), side by side with the filter null seed 83 (event_farm_filters.null_with_filters, computed offline).
 """
 from __future__ import annotations
 
@@ -17,9 +26,12 @@ import collections
 import datetime as dt
 import html
 import math
+import json
 import os
 import re
+import sqlite3
 import sys
+import urllib.parse
 
 HERE = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 if HERE not in sys.path:
@@ -34,6 +46,22 @@ BANNER = ("SYNTETISKE DATA — ingen markedsdata; rigtige charts kræver G01 (14
 SOURCE = "synthetic"
 CHART_DAYS = 4
 EVENT_ROWS_PER_KIND = 15
+
+# PAPIR LIVE (forward paper book, read-only)
+LIVE_BANNER = "PAPIR / SIMULERING — ingen rigtige penge; 2 uger er ingen dokumentation"
+EMPTY_TEXT = "Ikke aktiveret — venter på direktørens godkendelse, ejerens D5-underskrift, G31 og 5m-stream"
+REQUIREMENTS = (
+    ("Direktørens godkendelse", "skriftlig godkendelse; ændringsteksten 104 committet i PROTOCOL_V3.md før noget kald"),
+    ("Ejerens D5-underskrift", "på sha256 af EVENT_FARM_FORWARD_AMENDMENT_FINAL_104.md, verificeret med owner_approval.py"),
+    ("G31", "anvendt i GATE_MATRIX.json med alle flag sat"),
+    ("5m-stream", "5m-strømmen BTCUSDT/ETHUSDT godkendt i stream_registry.json"),
+)
+FORWARD_SCHEMA = "event_farm_forward/2"
+BS_LIVE = 300
+LIVE_CHART_BARS = 144
+OPEN_ROWS_MAX = 150
+NULL_COSTS = (0.0, 1.0, 5.0, 8.0, 28.0)
+FINAL_STATUSES = ("target", "stop", "timeout", "missed", "no_fill")
 
 # layer -> (label, colour, kinds, on by default). Every kind of ef.kinds() has exactly one layer.
 LAYERS = collections.OrderedDict([
@@ -201,6 +229,20 @@ padding:3px 8px;border-radius:5px}
 .efilt{display:flex;flex-wrap:wrap;gap:5px;margin:8px 0}
 .efilt label{cursor:pointer;font:11px var(--mono);padding:3px 8px;border-radius:5px;background:var(--panel);
 border:1px solid var(--line);color:var(--mut)}
+.paper{margin:14px 0 6px;padding:12px 14px;border-radius:10px;background:var(--neg-bg);border:1px solid rgba(255,77,94,.55);
+color:#ff8a96;font-weight:800;font-size:15px}
+.empty{border-left:3px solid var(--amb)}.empty b.big{display:block;font-size:18px;color:var(--amb);margin-bottom:6px}
+.chk{list-style:none;margin:10px 0 0;padding:0}.chk li{padding:7px 0;border-bottom:1px solid var(--line);font-size:13px}
+.chk li i{display:inline-block;width:16px;height:16px;border:1.5px solid var(--mut);border-radius:3px;margin-right:9px;
+vertical-align:-3px}.chk li small{display:block;color:var(--mut);margin-left:25px;font-size:11px}
+.halt{border-left:3px solid var(--neg)}.halt b{color:var(--neg)}
+tr.grp td{background:var(--panel2);color:var(--amb);font-weight:700;font-size:11px;letter-spacing:.06em}
+details.bilag{background:var(--panel);border:1px dashed var(--line);border-radius:12px;padding:10px 16px;margin:16px 0}
+details.bilag summary{cursor:pointer;font-weight:700;color:var(--mut)}
+details.bilag[open] summary{margin-bottom:10px}
+.tile b.sm{font-size:16px;line-height:1.5}.wth th{white-space:normal;vertical-align:bottom}
+.lchart{background:var(--plot);border:1px solid var(--line);border-radius:12px;padding:8px;margin:10px 0;min-width:0}
+.lchart svg{display:block;width:100%;min-width:760px;height:auto}
 .foot{margin-top:28px;padding-top:12px;border-top:1px solid var(--line);font-size:11px;color:var(--mut)}
 @media (max-width:1000px){.tiles{grid-template-columns:repeat(3,minmax(0,1fr))}.voc{grid-template-columns:repeat(2,minmax(0,1fr))}
 .chartgrid{grid-template-columns:1fr}}
@@ -214,7 +256,7 @@ border:1px solid var(--line);color:var(--mut)}
 def dyn_css(chart_n, day_keys, kinds_shown):
     on = "{color:var(--txt);background:var(--panel2);border-color:var(--amb)}"
     css = []
-    for t in ("ov", "ch", "st", "ev"):
+    for t in ("ov", "ch", "st", "ev", "lv"):
         css.append(f"#t-{t}:checked~.wrap .p-{t}{{display:block}}"
                    f"#t-{t}:checked~.wrap label[for=t-{t}]{{color:var(--amb);background:var(--panel)}}")
     for n in range(chart_n):
@@ -628,9 +670,395 @@ def events_tab(s, p, per_kind=EVENT_ROWS_PER_KIND):
     return html_, shown
 
 
+# ---------------------------------------------------------------- PAPIR LIVE (forward paper book, read-only)
+
+def open_ro(path):
+    """The forward book's SQLite file, read-only: URI mode=ro plus PRAGMA query_only=ON (no write can happen)."""
+    uri = "file:" + urllib.parse.quote(os.path.abspath(path)) + "?mode=ro"
+    db = sqlite3.connect(uri, uri=True)
+    db.execute("PRAGMA query_only=ON")
+    return db
+
+
+class _RoBook:
+    """Duck type for event_farm_forward.report / event_farm_forward_v2.report_v2 over a read-only connection (both only
+    run SELECTs on book.db and read cfg, symbols, variants, _identity() and halted())."""
+
+    def __init__(self, db, ident):
+        self.db, self._ident = db, ident
+        self.cfg, self.symbols = ident["config"], tuple(ident["symbols"])
+        self.variants = [(t, None) for t in ident["tests"]]
+
+    def _identity(self):
+        return self._ident
+
+    def halted(self):
+        row = self.db.execute("SELECT v FROM meta WHERE k = 'halted'").fetchone()
+        return None if row is None else row[0]
+
+
+def read_forward(path, null=None):
+    """Everything the PAPIR LIVE tab shows, read from the forward book at `path` without writing.
+    state: 'none' (no path given), 'missing' (no such file), 'error' (not a v2 forward book) or 'ok'.
+    A path that is not event_farm_forward*.db or names a lab / pm_lp / data location raises ValueError untouched."""
+    if not path:
+        return {"state": "none"}
+    from research.tools import event_farm_forward as fw
+    from research.tools import event_farm_forward_v2 as fv
+    from research.tools import event_farm_filters as ff
+    try:
+        norm = fw.check_db_path(os.path.expanduser(path))
+    except fw.SourceRefused as ex:
+        raise ValueError(f"--forward-db afvist: {ex}")
+    if not os.path.isfile(norm):
+        return {"state": "missing", "path": norm}
+    db = open_ro(norm)
+    try:
+        try:
+            meta = dict(db.execute("SELECT k, v FROM meta").fetchall())
+            ident = json.loads(meta["identity"])
+        except (sqlite3.DatabaseError, KeyError, ValueError) as ex:
+            return {"state": "error", "path": norm, "reason": f"ingen læsbar identitet ({type(ex).__name__})"}
+        if ident.get("schema") != FORWARD_SCHEMA:
+            return {"state": "error", "path": norm, "reason": f"skema {ident.get('schema')!r}, forventet {FORWARD_SCHEMA}"}
+        ro = _RoBook(db, ident)
+        rep = fv.report_v2(ro, null_filters=null)
+        cfg = ident["config"]
+        st = db.execute("SELECT COUNT(*), MIN(wall_ts), MAX(wall_ts) FROM steps").fetchone()
+        out = {"state": "ok", "path": norm, "identity": ident, "meta": meta, "report": rep, "halted": ro.halted(),
+               "steps": {"n": st[0], "first_wall": st[1], "last_wall": st[2], "step": int(meta.get("step", 0))},
+               "symbols": {}, "trades": [], "null": null}
+        cols = ["variant", "symbol", "known_ts", "kind", "known_i", "dir", "entry", "stop", "target", "risk", "atr",
+                "entry_mode", "status", "fill_ts", "exit_ts", "exit_px", "gap_affected"]
+        for r in db.execute(f"SELECT {', '.join(cols)} FROM trades ORDER BY symbol, known_ts, variant, kind"):
+            out["trades"].append(dict(zip(cols, r)))
+        for s in ident["symbols"]:
+            bars = [tuple(r) for r in db.execute("SELECT ts, o, h, l, c, v FROM bars WHERE symbol = ? AND seq IS NOT "
+                                                 "NULL ORDER BY seq", (s,))]
+            last = bars[-1][0] if bars else None
+            conf = db.execute("SELECT COUNT(*), COALESCE(SUM(processed), 0) FROM conflicts WHERE symbol = ?",
+                              (s,)).fetchone()
+            conf24 = 0 if last is None else db.execute(
+                "SELECT COUNT(*) FROM conflicts WHERE symbol = ? AND processed = 1 AND ts > ?",
+                (s, last - 86400)).fetchone()[0]
+            w = cfg["coverage_window_bars"]
+            recent = 0 if last is None else sum(1 for b in bars if b[0] > last - w * fw.BS)
+            vw = ff.vwap_series(bars) if bars else []
+            blocked = [b[0] for b, x in zip(bars, vw) if x[1] != "OK"]
+            out["symbols"][s] = {
+                "bars": bars, "last_ts": last, "recent_cov": recent / w if bars else None,
+                "conflicts": conf[0], "conflicts_processed": conf[1], "conflicts_24h": conf24,
+                "f3_blocked_bars": len(blocked), "f3_blocked_days": len({t // 86400 for t in blocked}),
+                "f3_blocked_ts": set(blocked)}
+        _open_state(out)
+        return out
+    finally:
+        db.close()
+
+
+def _open_state(live):
+    """For every pending (open) paper trade: filled yet ('i position') or still waiting, from the frozen engine's
+    setup_outcome on the book's own processed bars (nothing is written; an engine error leaves 'åben')."""
+    try:
+        from research.tools import event_farm_forward as fw
+        ef_ = fw.drv.engine()
+        prm = {vid: ef_.params(**{"bar_seconds": fw.BS, **v}) for vid, v in fw.variants()}
+    except Exception:                                      # noqa: BLE001 - display only
+        ef_ = None
+    for t in live["trades"]:
+        if t["status"] != "pending":
+            continue
+        t["open_state"] = "åben"
+        if ef_ is None:
+            continue
+        bars = live["symbols"][t["symbol"]]["bars"]
+        su = {k: t[k] for k in ("dir", "entry", "stop", "target", "risk", "entry_mode", "atr")}
+        su["known_i"] = t["known_i"]
+        try:
+            o = ef_.setup_outcome(su, bars, prm[t["variant"].split("/", 1)[1]])
+        except Exception:                                  # noqa: BLE001
+            continue
+        if o.get("fill_i") is not None:
+            t["open_state"] = f"i position siden {hm(bars[o['fill_i']][0])}"
+        else:
+            t["open_state"] = "venter på fyld"
+
+
+def pct(n, d):
+    return "–" if not d else f"{100 * n / d:.0f} %"
+
+
+def fr(x, d=3):
+    return "n/a" if x is None else f"{x:+.{d}f}"
+
+
+def live_empty(live):
+    note = ""
+    if live["state"] == "missing":
+        note = f'<p class="sub">Ingen bog-fil fundet på <code>{e(live["path"])}</code>.</p>'
+    items = "".join(f'<li><i></i>{e(a)}<small>{e(b)}</small></li>' for a, b in REQUIREMENTS)
+    return (f'<div class="paper" role="alert">{e(LIVE_BANNER)}</div>'
+            '<h2>Papir live <small>event farm fremadrettet papirbog, 96 tests, 5m BTCUSDT/ETHUSDT</small></h2>'
+            f'<div class="box empty"><b class="big">{e(EMPTY_TEXT)}</b>{note}'
+            '<p class="lead">Bogen (<code>event_farm_forward_v2.ForwardBookV2</code>) er IKKE aktiveret og aktiveres '
+            'ikke herfra. Fanen åbner kun bogens egen fil read-only, når den engang findes.</p>'
+            f'<h3>Krav før aktivering (ændring 104, afsnit 8)</h3><ul class="chk">{items}</ul>'
+            '<p class="prov">Afkrydsningerne er ikke verificeret af siden; den læser ingen gate-, register- eller '
+            'underskriftsfiler.</p></div>')
+
+
+def live_chart_svg(sym, bars, trades, n=LIVE_CHART_BARS):
+    """The last n processed 5m bars of the book with the paper trades' entry, stop and target (CHART tab style)."""
+    W, L, R, T, PH = 1200, 8, 64, 22, 380
+    H = T + PH + 24
+    d0 = max(0, len(bars) - n)
+    win = bars[d0:]
+    bw = (W - L - R) / max(1, len(win))
+    idx = {b[0]: i for i, b in enumerate(bars)}
+    groups = collections.OrderedDict()
+    for t in trades:
+        if t["symbol"] != sym or t["status"].startswith("not_taken"):
+            continue
+        if t["known_i"] < d0 and t["status"] != "pending":
+            continue
+        key = (t["known_i"], t["dir"], t["entry"], t["stop"], t["target"])
+        groups.setdefault(key, []).append(t)
+    lo = min(b[3] for b in win)
+    hi = max(b[2] for b in win)
+    for (_, _, en, sp, tg) in groups:
+        lo, hi = min(lo, en, sp, tg), max(hi, en, sp, tg)
+    pad = (hi - lo) * 0.04 or 1.0
+    lo, hi = lo - pad, hi + pad
+
+    def X(i):
+        return L + (min(max(i, d0), len(bars) - 1) - d0) * bw + bw / 2
+
+    def Y(v):
+        return T + (hi - v) / (hi - lo) * PH
+
+    def f(v):
+        return f"{v:.1f}"
+
+    parts = [f'<svg viewBox="0 0 {W} {H}" role="img" aria-label="{e(sym)} 5m papirbog">',
+             f'<rect x="0" y="0" width="{W}" height="{H}" fill="#0e131d"/>']
+    for q in range(6):
+        v = lo + (hi - lo) * q / 5
+        parts.append(f'<line x1="{L}" y1="{f(Y(v))}" x2="{W - R}" y2="{f(Y(v))}" stroke="#232b3b" stroke-width=".6"/>'
+                     f'<text x="{W - R + 6}" y="{f(Y(v) + 3)}" fill="#8b95a7" font-size="10" '
+                     f'font-family="monospace">{f(v)}</text>')
+    for j in range(d0, len(bars), 24):
+        parts.append(f'<line x1="{f(X(j))}" y1="{T}" x2="{f(X(j))}" y2="{T + PH}" stroke="#1a2130" stroke-width=".6"/>'
+                     f'<text x="{f(X(j))}" y="{H - 6}" fill="#8b95a7" font-size="10" font-family="monospace" '
+                     f'text-anchor="middle">{hm(bars[j][0])}</text>')
+    parts.append(f'<text x="{L}" y="13" fill="#8b95a7" font-size="10" font-family="monospace">{e(sym)} · 5m · '
+                 f'seneste {len(win)} barer · {e(dhm(win[0][0]))} → {e(dhm(win[-1][0]))} UTC · PAPIR</text>')
+    cw = max(1.0, bw * 0.62)
+    for j in range(d0, len(bars)):
+        _, o, h, l, c, _ = bars[j]
+        col = "#16c784" if c >= o else "#ff4d5e"
+        x = X(j)
+        parts.append(f'<line x1="{f(x)}" y1="{f(Y(h))}" x2="{f(x)}" y2="{f(Y(l))}" stroke="{col}" stroke-width=".8"/>'
+                     f'<rect x="{f(x - cw / 2)}" y="{f(Y(max(o, c)))}" width="{f(cw)}" '
+                     f'height="{f(max(.8, abs(Y(o) - Y(c))))}" fill="{col}"/>')
+    labels = collections.OrderedDict()
+    for (ki, d, en, sp, tg), ts_ in groups.items():
+        ex = [t["exit_ts"] for t in ts_ if t["exit_ts"] is not None]
+        end = idx.get(max(ex) - BS_LIVE, len(bars) - 1) if ex else len(bars) - 1
+        x0, x1 = X(ki), X(end) + bw / 2
+        ye, yt, ys = Y(en), Y(tg), Y(sp)
+        stats = collections.Counter(t["status"] for t in ts_)
+        tests = ", ".join(t["variant"] for t in ts_[:12]) + (" …" if len(ts_) > 12 else "")
+        tip_ = (f"{'LONG' if d > 0 else 'SHORT'} · known_ts {dhm(ts_[0]['known_ts'])} UTC · indgang {px(en)} · "
+                f"mål {px(tg)} · stop {px(sp)} · {len(ts_)} tests · "
+                + " ".join(f"{k} {v}" for k, v in sorted(stats.items())) + f" · {tests}")
+        parts.append(
+            f'<g><title>{e(tip_)}</title><rect x="{f(x0)}" y="{f(min(ye, yt))}" width="{f(max(3, x1 - x0))}" '
+            f'height="{f(abs(yt - ye))}" fill="#16c784" fill-opacity=".16" stroke="#16c784" stroke-width=".8"/>'
+            f'<rect x="{f(x0)}" y="{f(min(ye, ys))}" width="{f(max(3, x1 - x0))}" height="{f(abs(ys - ye))}" '
+            f'fill="#ff4d5e" fill-opacity=".16" stroke="#ff4d5e" stroke-width=".8"/>'
+            f'<line x1="{f(x0)}" y1="{f(ye)}" x2="{f(x1)}" y2="{f(ye)}" stroke="#e7ebf2" stroke-width="1"/></g>')
+        lab = labels.setdefault((ki, d), [x0, (yt - 4) if d > 0 else (yt + 11), 0])
+        lab[1] = min(lab[1], yt - 4) if d > 0 else max(lab[1], yt + 11)
+        lab[2] += len(ts_)
+    for (ki, d), (x0, y, n_t) in labels.items():                 # one label per known bar and side: n tests
+        parts.append(f'<text x="{f(x0 + 2)}" y="{f(min(max(y, T + 10), T + PH - 2))}" fill="#16c784" font-size="10" '
+                     f'font-family="monospace" font-weight="700">{"LONG" if d > 0 else "SHORT"} ×{n_t}</text>')
+    parts.append("</svg>")
+    return "".join(parts), len(groups)
+
+
+
+def live_tab(live):
+    """The PAPIR LIVE pane: empty state, an error state, or the book (read with read_forward)."""
+    if live is None or live["state"] in ("none", "missing"):
+        return live_empty(live or {"state": "none"})
+    if live["state"] == "error":
+        return (f'<div class="paper" role="alert">{e(LIVE_BANNER)}</div><div class="box halt"><b>Bog-filen vises '
+                f'ikke:</b> {e(live["reason"])} (<code>{e(live["path"])}</code>).</div>')
+    ident, rep, cfg = live["identity"], live["report"], live["identity"]["config"]
+    tests = ident["tests"]
+    null = live.get("null")
+    out = [f'<div class="paper" role="alert">{e(LIVE_BANNER)}</div>',
+           '<h2>Papir live <small>event farm fremadrettet papirbog · beskrivende, ændring 104 afsnit 6 · '
+           'bog-filen åbnes read-only</small></h2>']
+    if ident.get("mode") != "live":
+        out.append(f'<p class="sub">Tilstand <code>{e(ident.get("mode"))}</code>: bogen er ikke en aktiveret live-bog '
+                   '(test- eller syntetiske barer).</p>')
+    # status
+    trades = live["trades"]
+    taken = [t for t in trades if not t["status"].startswith("not_taken")]
+    n_open = sum(1 for t in taken if t["status"] == "pending")
+    n_closed = sum(1 for t in taken if t["status"] in FINAL_STATUSES)
+    start_ts = live["meta"].get("start_ts")
+    since = dhm(int(live["steps"]["first_wall"])) if live["steps"]["first_wall"] is not None else "–"
+    halted = live["halted"]
+    tiles = [(since, "aktiveret siden", "første skridt (UTC)"),
+             (dhm(int(start_ts)) if start_ts else "–", "første bar", "UTC"),
+             (live["steps"]["step"], "skridt", f'{live["steps"]["n"]} med data'),
+             (len(tests), "tests", "12 baseline + 7 × 12"),
+             (f"{n_open}", "åbne", f"{n_closed} lukkede · {len(trades)} setups"),
+             ("STOP" if halted else "ingen", "IntegrityHalt", "bogen standset" if halted else "kører ikke-standset")]
+    out.append('<div class="tiles">' + "".join(
+        f'<div class="tile"><span>{e(lbl)}</span><b{" class=sm" if len(str(v)) > 8 else ""}>{e(v)}</b><i>{e(sub)}</i>'
+        '</div>' for v, lbl, sub in tiles) + "</div>")
+    if halted:
+        out.append(f'<div class="box halt"><b>IntegrityHalt:</b> {e(halted)}</div>')
+    rows = []
+    base_trades = collections.defaultdict(set)
+    for t in trades:
+        if t["variant"].startswith("base/"):
+            base_trades[t["symbol"]].add((t["known_ts"], t["kind"], t["variant"]))
+    for s, d in rep["data"].items():
+        L_ = live["symbols"][s]
+        f3_setups = sum(1 for (kt, _, _) in base_trades[s] if kt - BS_LIVE in L_["f3_blocked_ts"])
+        g = d["gaps"]
+        pause = L_["recent_cov"] is not None and L_["recent_cov"] < cfg["coverage_min"]
+        rev = (f'{L_["conflicts"]} / {L_["conflicts_processed"]} / {L_["conflicts_24h"]}'
+               + (' <b class="neg">gennemgang</b>' if L_["conflicts_24h"] >= 3 else ""))
+        rej = ", ".join(f"{k} {v}" for k, v in d["rejected"].items()) or "0"
+        rows.append(
+            f'<tr><td class=mono>{e(s)}</td><td class=mono>{e(dhm(L_["last_ts"])) if L_["last_ts"] else "–"}</td>'
+            f'<td class=n>{d["processed"]}</td><td class=n>{pct(d["processed"], d["slots"])}</td>'
+            f'<td class=n>{"–" if L_["recent_cov"] is None else f"{100 * L_["recent_cov"]:.0f} %"}'
+            f'{" <b class=neg>pause</b>" if pause else ""}</td>'
+            f'<td class=n>{g[0]} / {g[1]}</td><td class=n>{d["late"]}</td><td class=n>{rev}</td><td class=mono>{e(rej)}</td>'
+            f'<td class=n>{L_["f3_blocked_bars"]} / {L_["f3_blocked_days"]}</td><td class=n>{f3_setups}</td></tr>')
+    out.append('<div class="box"><h2 style="margin-top:0">Status pr. symbol <small>seneste bar = seneste behandlede '
+               f'5m-bar (UTC); dækning over de seneste {cfg["coverage_window_bars"]} barer under '
+               f'{100 * cfg["coverage_min"]:.0f} % = pause (ingen nye handler)</small></h2><div class="tw"><table class="wth"><thead><tr>'
+               '<th>symbol</th><th>seneste bar</th><th class=n>barer</th><th class=n>dækning i alt</th>'
+               f'<th class=n>dækning {cfg["coverage_window_bars"]}</th><th class=n>huller (antal / barer)</th>'
+               '<th class=n>for sene</th><th class=n>revisioner (i alt / behandlede / 24 t)</th><th>afviste</th>'
+               '<th class=n>F3 blokeret (barer / døgn)</th><th class=n>baseline-setups under F3-blok</th></tr></thead>'
+               f'<tbody>{"".join(rows)}</tbody></table></div>'
+               '<p class="prov">Kald-loggen (<code>event_farm_source_calls*.jsonl</code>) er en separat fil og læses '
+               'ikke her. Revisioner ændrer aldrig noget bogført (første værdi beholdes).</p></div>')
+    # charts
+    for s in ident["symbols"]:
+        bars = live["symbols"][s]["bars"]
+        if not bars:
+            out.append(f'<div class="box mut">{e(s)}: ingen behandlede barer endnu.</div>')
+            continue
+        svg, ng = live_chart_svg(s, bars, trades)
+        out.append(f'<h3>{e(s)} <span class="sub">seneste lys fra bogen; grøn = indgang→mål, rød = indgang→stop, '
+                   f'fra known_ts til udgang (åbne: til seneste bar); {ng} papirsetups i vinduet, ×n = antal tests</span>'
+                   f'</h3><div class="lchart"><div class="plotscroll">{svg}</div></div>')
+    # open positions
+    opened = sorted((t for t in taken if t["status"] == "pending"),
+                    key=lambda t: (tests.index(t["variant"]) if t["variant"] in tests else 999, t["symbol"], t["known_ts"]))
+    per_test = collections.Counter(t["variant"] for t in opened)
+    orows = []
+    for t in opened[:OPEN_ROWS_MAX]:
+        orows.append(f'<tr><td class=mono>{e(t["variant"])}</td><td class=mono>{e(t["symbol"])}</td>'
+                     f'<td>{"long" if t["dir"] > 0 else "short"}</td><td class=mono>{e(dhm(t["known_ts"]))}</td>'
+                     f'<td class=n>{px(t["entry"])}</td><td class=n>{px(t["stop"])}</td><td class=n>{px(t["target"])}</td>'
+                     f'<td>{e(t["entry_mode"])}</td><td>{e(t.get("open_state", "åben"))}</td>'
+                     f'<td>{"hul" if t["gap_affected"] else ""}</td></tr>')
+    more = (f'<p class="sub">+{len(opened) - OPEN_ROWS_MAX} flere åbne papirpositioner ikke vist.</p>'
+            if len(opened) > OPEN_ROWS_MAX else "")
+    out.append(f'<div class="box"><h2 style="margin-top:0">Åbne papirpositioner <small>{len(opened)} i '
+               f'{len(per_test)} af {len(tests)} tests; registerorden; known_ts i UTC; 1.000 USDT notional pr. '
+               'papirhandel</small></h2>'
+               + ('<div class="tw"><table><thead><tr><th>test</th><th>symbol</th><th>side</th><th>known_ts</th>'
+                  '<th class=n>indgang</th><th class=n>stop</th><th class=n>mål</th><th>indgang</th><th>tilstand</th>'
+                  f'<th>hul</th></tr></thead><tbody>{"".join(orows)}</tbody></table></div>{more}'
+                  if opened else '<p class="mut">Ingen åbne papirpositioner.</p>') + "</div>")
+    # primary: frequencies, status shares, fill uncertainty
+    sym_days = sum(d["processed"] for d in rep["data"].values()) / 288 or None
+    prow, cur = [], None
+    for tid in tests:
+        combo = tid.split("/", 1)[0]
+        if combo != cur:
+            cur = combo
+            prow.append(f'<tr class="grp"><td colspan="15">{e("baseline" if combo == "base" else combo)}</td></tr>')
+        v = rep["variants"][tid]
+        stt = v["status"]
+        n_all = sum(stt.values())
+        n_tk = sum(c for k, c in stt.items() if not k.startswith("not_taken"))
+        nt = n_all - n_tk
+        nf = "–" if null is None else f'{null["tests"][tid]["setups_per_instrument_day"]:.2f}'
+        sh = "".join(f'<td class=n>{pct(stt.get(k, 0), n_tk)}</td>' for k in FINAL_STATUSES)
+        prow.append(
+            f'<tr><td class=mono>{e(tid)}</td><td class=n>{n_all}</td>'
+            f'<td class=n>{"–" if not sym_days else f"{n_all / sym_days:.2f}"}</td><td class="n mut">{nf}</td>'
+            f'<td class=n>{n_tk}</td>{sh}<td class=n>{stt.get("pending", 0)}</td><td class=n>{nt}</td>'
+            f'<td class=n>{v["gap_affected"]}</td>'
+            f'<td class=n>{"–" if v["both_hit_share"] is None else f"{100 * v["both_hit_share"]:.0f} %"}</td>'
+            f'<td class=n>{"–" if v["touch_only_share"] is None else f"{100 * v["touch_only_share"]:.0f} %"}</td></tr>')
+    null_txt = ("" if null is None else f' · null: seed {null["seed"]}, {null["instruments"]} instrumenter × '
+                f'{null["days"]} dage (pr. instrument-dag)')
+    out.append('<div class="box"><h2 style="margin-top:0">Primært: frekvenser, statusandele og fill-usikkerhed '
+               f'<small>registerorden, ingen rangordning; andele af taget (ikke not_taken_*){e(null_txt)}</small></h2>'
+               '<div class="tw"><table class="wth"><thead><tr><th>test</th><th class=n>setups</th><th class=n>pr. symbol-dag</th>'
+               '<th class=n>null pr. instr.-dag</th><th class=n>taget</th>'
+               + "".join(f"<th class=n>{k}</th>" for k in FINAL_STATUSES)
+               + '<th class=n>åbne</th><th class=n>ikke taget</th><th class=n>hul</th>'
+               '<th class=n>bar rammer stop og mål</th><th class=n>fyld kun ved berøring</th></tr></thead>'
+               f'<tbody>{"".join(prow)}</tbody></table></div>'
+               '<p class="prov">Fill-usikkerhed: en bar, der rammer både stop og mål, tæller som stop; en limit fyldes ved '
+               'berøring. Handler med hul er ude af den primære opgørelse (se bilaget).</p></div>')
+    # appendix: R only here
+    grid = [f"{c:g}" for c in cfg["null_cost_grid_bps"]]
+    arow, cur = [], None
+    ncols = 6 + len(grid) + (3 + len(grid) if null is not None else 0)
+    for tid in tests:
+        combo = tid.split("/", 1)[0]
+        if combo != cur:
+            cur = combo
+            arow.append(f'<tr class="grp"><td colspan="{ncols}">{e("baseline" if combo == "base" else combo)}</td></tr>')
+        v = rep["variants"][tid]
+        cells = [str(v["trades_clean"]), fr(v["mean_gross_r"]), fr(v["mean_net_r_lab"])]
+        cells += [fr(v["mean_net_r_grid"][c]) for c in grid]
+        cells += [fr(v["worst_case_mean_net_r_lab"]), str(v["gap_affected"])]
+        if null is not None:
+            nv = null["tests"][tid]
+            cells += [str(nv["trades"]), fr(nv["mean_gross_r"]), fr(nv["mean_net_r"].get("28"))]
+            cells += [fr(nv["mean_net_r"].get(c)) for c in grid]
+        arow.append(f'<tr><td class=mono>{e(tid)}</td>' + "".join(f"<td class=n>{c}</td>" for c in cells) + "</tr>")
+    nh = ("" if null is None else '<th class=n>null handler</th><th class=n>null brutto R</th>'
+          '<th class=n>null netto R @28 bps</th>' + "".join(f"<th class=n>null netto R @{c} bps</th>" for c in grid))
+    nnote = ("Null seed 83 er ikke beregnet for denne side." if null is None else
+             f'Null: <code>event_farm_filters.null_with_filters</code> seed {null["seed"]}, {null["instruments"]} '
+             f'instrumenter × {null["days"]} dage, syntetisk; trækkes ikke om.')
+    out.append('<details class="bilag"><summary>Bilag: R brutto og netto pr. test, side om side med null seed 83 '
+               '(sammenfoldet; registerorden, ingen rangordning)</summary>'
+               '<p class="sub">PAPIR / SIMULERING. 28 bps rundtur er en ANTAGELSE (lab-papirmodel); 0/1/5/8 bps '
+               'ERSTATTER de 28 bps (netto R = brutto R − c·10⁻⁴·entry/risk). Værste fald bogfører handler med hul som '
+               'stop. To uger er ingen dokumentation: +0,1 R ved N = 19.849 kræver ca. 2.900 handler pr. test.</p>'
+               '<div class="tw"><table><thead><tr><th>test</th><th class=n>lukket uden hul</th><th class=n>brutto R</th>'
+               '<th class=n>netto R @28 bps</th>' + "".join(f"<th class=n>netto R @{c} bps</th>" for c in grid)
+               + '<th class=n>værste fald netto R</th><th class=n>hul</th>' + nh + '</tr></thead>'
+               f'<tbody>{"".join(arow)}</tbody></table></div><p class="prov">{nnote}</p></details>')
+    eng = ident.get("engine_sha256", "")
+    out.append(f'<p class="prov">bog: <code>{e(live["path"])}</code> (read-only) · skema <code>{e(ident["schema"])}'
+               f'</code> · motor sha256 <code>{e(eng)}</code> · reference N <code>{e(ident.get("reference_n"))}</code></p>')
+    return "\n".join(out)
+
+
 # ---------------------------------------------------------------- page
 
-def render(s):
+def render(s, live=None):
+    """The page; `live` is read_forward(...) output (None = the empty PAPIR LIVE state)."""
     p = ef.params()
     defs = definitions()
     setups_n = sum(len(r["setups"]) for r in s["_results"].values())
@@ -638,7 +1066,7 @@ def render(s):
     ev_html, shown = events_tab(s, p)
     keys = sorted(s["_study"]["days"])
     inputs = [f'<input class="f" type="radio" name="tab" id="t-{t}"{" checked" if t == "ov" else ""}>'
-              for t in ("ov", "ch", "st", "ev")]
+              for t in ("ov", "ch", "st", "ev", "lv")]
     inputs += [f'<input class="f" type="radio" name="cd" id="cd-{n}"{" checked" if n == 0 else ""}>'
                for n in range(len(picks))]
     inputs += [f'<input class="f" type="checkbox" id="ly-{name}"{" checked" if on else ""}>'
@@ -659,13 +1087,14 @@ def render(s):
         "\n".join(inputs),
         '<div class="wrap"><header class="hdr"><div class="brand"><div class="logo">COPYBOT <span>EVENT FARM</span></div>'
         '<nav class="tabs"><label for="t-ov">OVERBLIK</label><label for="t-ch">CHART</label>'
-        '<label for="t-st">STUDIER</label><label for="t-ev">HÆNDELSER</label></nav></div>'
+        '<label for="t-st">STUDIER</label><label for="t-ev">HÆNDELSER</label><label for="t-lv">PAPIR LIVE</label></nav></div>'
         f'<a class="back" href="{BACK}">← papir-dashboard</a></header>',
         f'<div class="syn" role="alert">{e(BANNER)}</div><div class="prov">{prov}</div>',
         f'<section class="pane p-ov">{overview(s, setups_n, defs)}</section>',
         f'<section class="pane p-ch">{chart_tab(s, picks, p)}</section>',
         f'<section class="pane p-st">{studies(s, p)}</section>',
         f'<section class="pane p-ev">{ev_html}</section>',
+        f'<section class="pane p-lv">{live_tab(live)}</section>',
         '<footer class="foot">Beskrivende mærkning, ingen strategi; intet er låst, aktiveret eller ført som alfa. '
         'Statisk side uden JavaScript og uden eksterne ressourcer. '
         f'<a href="{BACK}">Tilbage til papir-dashboardet</a>.</footer></div></body></html>',
@@ -695,15 +1124,21 @@ def main(argv=None):
     ap.add_argument("--days", type=int, default=60)
     ap.add_argument("--instruments", type=int, default=3)
     ap.add_argument("--source", default=SOURCE, help="only 'synthetic' is accepted")
+    ap.add_argument("--forward-db", default=None,
+                    help="the forward paper book event_farm_forward*.db, opened read-only (default: none = empty state)")
     a = ap.parse_args(argv)
     try:
         s = build(a.seed, a.days, a.instruments, a.source)
+        live = read_forward(a.forward_db)
     except ValueError as ex:
         raise SystemExit(str(ex))
-    doc = render(s)
+    if live["state"] == "ok":
+        from research.tools import event_farm_filters as ff
+        live = read_forward(a.forward_db, null=ff.null_with_filters(seed=83, costs=NULL_COSTS))
+    doc = render(s, live)
     out = os.path.expanduser(a.out)
     write_atomic(out, doc)
-    print(f"{out}: {len(doc.encode())} bytes, seed {a.seed}, {s['days']} dage, syntetisk")
+    print(f"{out}: {len(doc.encode())} bytes, seed {a.seed}, {s['days']} dage, syntetisk; papir live: {live['state']}")
     return 0
 
 
