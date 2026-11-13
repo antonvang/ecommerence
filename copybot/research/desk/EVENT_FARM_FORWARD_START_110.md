@@ -14,3 +14,12 @@
 **Drift:** systemd `--user`-enheden `research/ops/event_farm/copybot-event-farm.service` installeres af ejeren (`INSTALL.md`). Indtil da står bogen stille. Når den startes, henter den de manglende barer fra den sidst lagrede bar med `limit=499`, så det er ikke backfill før slottet.
 
 Opvarmning er de første 288 barer (24 t). Rapporter ved dag 14, 28 og 90, beskrivende og mærket PAPIR / SIMULERING.
+
+## Enheden installeret (kl. 09:13 lokal 2026-11-13)
+
+- Ejeren skrev "du kører den" (kl. ca. 09:12 lokal). Claude kopierede `research/ops/event_farm/copybot-event-farm.service`
+  til `~/.config/systemd/user/`, kørte `daemon-reload` og `enable --now`. Kl. 08:13:00 UTC var enheden aktiv, og alle
+  G31-tjek var OK ved start.
+- Første skridt 08:15:22 UTC: 240 nye barer hentet (catch-up fra 22:15 UTC, limit 499, intet før aktiveringsslottet),
+  199 hændelser, 36 setups, alle `not_taken_warmup`. Ingen huller, revisioner, afviste svar eller halt.
+- Stop: `touch ~/event_farm/STOP`. Papir; ingen ordrer, nøgler eller penge.
