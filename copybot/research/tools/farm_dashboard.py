@@ -41,6 +41,7 @@ from research.tools import event_farm as ef  # noqa: E402
 
 DEFAULT_OUT = "~/copybot_farm.html"
 BACK = "file:///home/anton/copybot_dashboard.html"
+FEED = "file:///home/anton/copybot_farm_feed.html"
 BANNER = ("OVERBLIK, CHART, STUDIER og HÆNDELSER viser SYNTETISKE testdata (null-kørsel, seed 83), ikke markedsdata. "
           "Den rigtige papirbog (BTCUSDT/ETHUSDT, ændring 46) står under PAPIR LIVE")
 SOURCE = "synthetic"
@@ -731,7 +732,7 @@ def read_forward(path, null=None):
                "steps": {"n": st[0], "first_wall": st[1], "last_wall": st[2], "step": int(meta.get("step", 0))},
                "symbols": {}, "trades": [], "null": null}
         cols = ["variant", "symbol", "known_ts", "kind", "known_i", "dir", "entry", "stop", "target", "risk", "atr",
-                "entry_mode", "status", "fill_ts", "exit_ts", "exit_px", "gap_affected"]
+                "entry_mode", "status", "fill_ts", "exit_ts", "exit_px", "gap_affected", "chain"]
         for r in db.execute(f"SELECT {', '.join(cols)} FROM trades ORDER BY symbol, known_ts, variant, kind"):
             out["trades"].append(dict(zip(cols, r)))
         for s in ident["symbols"]:
@@ -1083,6 +1084,50 @@ def live_tab(live):
 
 # ---------------------------------------------------------------- page
 
+DEFAULT_CACHE = "~/.cache/copybot_farm"
+CACHE_SOURCES = ("event_farm.py", "event_farm_driver.py", "event_farm_filters.py", "event_farm_forward.py",
+                 "event_farm_forward_v2.py", "farm_dashboard.py")
+
+
+def cache_key(kind, args):
+    """sha256 over the kind, the arguments and the bytes of every source file the cached value depends on: a code
+    change gives a new key, so a stale corpus or null is never shown."""
+    import hashlib
+    h = hashlib.sha256(repr((kind, args)).encode())
+    here = os.path.dirname(os.path.abspath(__file__))
+    for name in CACHE_SOURCES:
+        with open(os.path.join(here, name), "rb") as f:
+            h.update(hashlib.sha256(f.read()).digest())
+    return h.hexdigest()
+
+
+def cached(cache_dir, kind, args, compute):
+    """compute() once per (kind, args, code) and keep it as a pickle in cache_dir (only files this tool wrote).
+    cache_dir None = always compute. A missing or unreadable entry is recomputed and rewritten."""
+    import pickle
+    if not cache_dir:
+        return compute()
+    path = os.path.join(cache_dir, f"{kind}_{cache_key(kind, args)}.pickle")
+    try:
+        with open(path, "rb") as f:
+            return pickle.load(f)
+    except (OSError, EOFError, pickle.UnpicklingError, AttributeError, ValueError):
+        pass
+    val = compute()
+    os.makedirs(cache_dir, exist_ok=True)
+    tmp = f"{path}.{os.getpid()}.tmp"
+    with open(tmp, "wb") as f:
+        pickle.dump(val, f, protocol=pickle.HIGHEST_PROTOCOL)
+    os.replace(tmp, path)
+    for old in os.listdir(cache_dir):                                      # drop entries of older code
+        if old.startswith(f"{kind}_") and old.endswith(".pickle") and os.path.join(cache_dir, old) != path:
+            try:
+                os.remove(os.path.join(cache_dir, old))
+            except OSError:
+                pass
+    return val
+
+
 def render(s, live=None):
     """The page; `live` is read_forward(...) output (None = the empty PAPIR LIVE state)."""
     p = ef.params()
@@ -1091,7 +1136,8 @@ def render(s, live=None):
     picks = chart_picks(s)
     ev_html, shown = events_tab(s, p)
     keys = sorted(s["_study"]["days"])
-    inputs = [f'<input class="f" type="radio" name="tab" id="t-{t}"{" checked" if t == "ov" else ""}>'
+    first = "lv" if (live or {}).get("state") == "ok" else "ov"          # a running paper book opens on PAPIR LIVE
+    inputs = [f'<input class="f" type="radio" name="tab" id="t-{t}"{" checked" if t == first else ""}>'
               for t in ("ov", "ch", "st", "ev", "lv")]
     inputs += [f'<input class="f" type="radio" name="cd" id="cd-{n}"{" checked" if n == 0 else ""}>'
                for n in range(len(picks))]
@@ -1114,7 +1160,8 @@ def render(s, live=None):
         '<div class="wrap"><header class="hdr"><div class="brand"><div class="logo">COPYBOT <span>EVENT FARM</span></div>'
         '<nav class="tabs"><label for="t-ov">OVERBLIK</label><label for="t-ch">CHART</label>'
         '<label for="t-st">STUDIER</label><label for="t-ev">HÆNDELSER</label><label for="t-lv">PAPIR LIVE</label></nav></div>'
-        f'<a class="back" href="{BACK}">← papir-dashboard</a></header>',
+        f'<a class="back" href="{FEED}">papir-feed (mobil) →</a> <a class="back" href="{BACK}">← papir-dashboard</a>'
+        '</header>',
         f'<div class="syn" role="alert">{e(BANNER)}</div><div class="prov">{prov}</div>',
         f'<section class="pane p-ov">{overview(s, setups_n, defs)}</section>',
         f'<section class="pane p-ch">{chart_tab(s, picks, p)}</section>',
@@ -1152,15 +1199,21 @@ def main(argv=None):
     ap.add_argument("--source", default=SOURCE, help="only 'synthetic' is accepted")
     ap.add_argument("--forward-db", default=None,
                     help="the forward paper book event_farm_forward*.db, opened read-only (default: none = empty state)")
+    ap.add_argument("--cache", default=DEFAULT_CACHE,
+                    help=f"directory for the deterministic synthetic corpus and filter null (default {DEFAULT_CACHE}); "
+                         "'' = no cache")
     a = ap.parse_args(argv)
+    cache = os.path.expanduser(a.cache) if a.cache else None
     try:
-        s = build(a.seed, a.days, a.instruments, a.source)
+        s = cached(cache, "corpus", (a.seed, a.days, a.instruments, a.source),
+                   lambda: build(a.seed, a.days, a.instruments, a.source))
         live = read_forward(a.forward_db)
     except ValueError as ex:
         raise SystemExit(str(ex))
     if live["state"] == "ok":
         from research.tools import event_farm_filters as ff
-        live = read_forward(a.forward_db, null=ff.null_with_filters(seed=83, costs=NULL_COSTS))
+        null = cached(cache, "null", (83, NULL_COSTS), lambda: ff.null_with_filters(seed=83, costs=NULL_COSTS))
+        live = read_forward(a.forward_db, null=null)
     doc = render(s, live)
     out = os.path.expanduser(a.out)
     write_atomic(out, doc)

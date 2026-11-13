@@ -101,7 +101,7 @@ class EmptyState(unittest.TestCase):
                     fd.read_forward(p)
                 out = os.path.join(d, "farm.html")
                 with self.assertRaises(SystemExit), redirect_stdout(io.StringIO()):
-                    fd.main(["--out", out, "--days", "2", "--instruments", "1", "--forward-db", p])
+                    fd.main(["--out", out, "--cache", "", "--days", "2", "--instruments", "1", "--forward-db", p])
             self.assertEqual(os.listdir(d), [])
 
 
@@ -137,6 +137,10 @@ class WithBook(unittest.TestCase):
         finally:
             db.close()
         self.assertEqual(sha(self.path), self.sha_before)
+
+    def test_opens_on_papir_live(self):
+        self.assertEqual(len(re.findall(r'name="tab" id="t-lv" checked', self.doc)), 1)
+        self.assertNotIn('id="t-ov" checked', self.doc)
 
     def test_status_and_data_quality(self):
         lv = self.lv
@@ -219,7 +223,7 @@ class WithBook(unittest.TestCase):
             ff.null_with_filters = lambda **k: self.null                  # keep the test fast (seed 83 null cached)
             try:
                 with redirect_stdout(buf):
-                    self.assertEqual(fd.main(["--out", out, "--days", "2", "--instruments", "1",
+                    self.assertEqual(fd.main(["--out", out, "--cache", "", "--days", "2", "--instruments", "1",
                                               "--forward-db", self.path]), 0)
             finally:
                 ff.null_with_filters = real

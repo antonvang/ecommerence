@@ -1,0 +1,10 @@
+[Unit]
+Description=Refresh the event farm dashboard and papir feed every 5 minutes (2.5 min after the book's step)
+
+[Timer]
+OnCalendar=*-*-* *:02/5:30
+AccuracySec=10s
+Persistent=false
+
+[Install]
+WantedBy=timers.target

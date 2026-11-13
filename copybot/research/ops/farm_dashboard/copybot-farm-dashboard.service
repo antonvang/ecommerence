@@ -1,0 +1,13 @@
+[Unit]
+Description=Copybot event farm dashboard + papir feed refresh (read-only on the forward paper book; paper only)
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/anton/copybot-dev/copybot
+ExecStart=/usr/bin/python3 -m research.tools.farm_dashboard --forward-db /home/anton/event_farm/event_farm_forward.db
+ExecStart=/usr/bin/python3 -m research.tools.farm_feed --forward-db /home/anton/event_farm/event_farm_forward.db
+Nice=19
+IOSchedulingClass=idle
+MemoryMax=1G
+CPUQuota=50%
+TimeoutStartSec=300

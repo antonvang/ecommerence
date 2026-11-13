@@ -86,7 +86,7 @@ class FarmDashboard(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             out = os.path.join(d, "farm.html")
             with self.assertRaises(SystemExit), redirect_stdout(io.StringIO()):
-                fd.main(["--out", out, "--days", "2", "--instruments", "1", "--source", "lab.db"])
+                fd.main(["--out", out, "--cache", "", "--days", "2", "--instruments", "1", "--source", "lab.db"])
             self.assertFalse(os.path.exists(out))
         with mock.patch.object(ef, "null_run", wraps=ef.null_run) as nr:
             fd.build(seed=83, days=2, instruments=1)
@@ -109,13 +109,44 @@ class FarmDashboard(unittest.TestCase):
             out = os.path.join(d, "farm.html")
             with mock.patch("builtins.open", spy_open), mock.patch("os.replace", spy_replace), \
                     redirect_stdout(io.StringIO()):
-                self.assertEqual(fd.main(["--out", out, "--days", "2", "--instruments", "1"]), 0)
+                self.assertEqual(fd.main(["--out", out, "--cache", "", "--days", "2", "--instruments", "1"]), 0)
             self.assertEqual(os.listdir(d), ["farm.html"])
             self.assertTrue(written)
             self.assertTrue(all(os.path.dirname(w) == d for w in written), written)
             self.assertEqual(written[-1], out)
             with real_open(out, encoding="utf-8") as f:
                 self.assertIn("COPYBOT", f.read())
+
+
+class Cache(unittest.TestCase):
+    def test_second_call_reads_the_pickle_and_a_code_or_arg_change_misses(self):
+        calls = []
+
+        def compute():
+            calls.append(1)
+            return {"x": len(calls)}
+        with tempfile.TemporaryDirectory() as d:
+            self.assertEqual(fd.cached(d, "corpus", (83, 2), compute), {"x": 1})
+            self.assertEqual(fd.cached(d, "corpus", (83, 2), compute), {"x": 1})
+            self.assertEqual(len(calls), 1)
+            self.assertEqual(fd.cached(d, "corpus", (84, 2), compute), {"x": 2})        # new args: computed again
+            self.assertEqual(len([f for f in os.listdir(d) if f.startswith("corpus_")]), 1)   # old entry dropped
+            self.assertNotEqual(fd.cache_key("corpus", (83, 2)), fd.cache_key("null", (83, 2)))
+            self.assertEqual(fd.cached(None, "corpus", (83, 2), compute), {"x": 3})      # no cache dir: always computed
+
+    def test_a_broken_entry_is_recomputed(self):
+        with tempfile.TemporaryDirectory() as d:
+            fd.cached(d, "null", (1,), lambda: [1])
+            (f,) = os.listdir(d)
+            with open(os.path.join(d, f), "wb") as fh:
+                fh.write(b"not a pickle")
+            self.assertEqual(fd.cached(d, "null", (1,), lambda: [2]), [2])
+
+    def test_a_running_book_opens_on_papir_live(self):
+        s = fd.build(seed=83, days=2, instruments=1)
+        self.assertEqual(len(re.findall(r'name="tab" id="t-ov" checked', fd.render(s))), 1)
+        doc = fd.render(s, {"state": "error", "path": "x", "reason": "y"})
+        self.assertEqual(len(re.findall(r'name="tab" id="t-ov" checked', doc)), 1)
 
 
 if __name__ == "__main__":
