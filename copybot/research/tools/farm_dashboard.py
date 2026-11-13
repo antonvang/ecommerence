@@ -41,8 +41,8 @@ from research.tools import event_farm as ef  # noqa: E402
 
 DEFAULT_OUT = "~/copybot_farm.html"
 BACK = "file:///home/anton/copybot_dashboard.html"
-BANNER = ("SYNTETISKE DATA — ingen markedsdata; rigtige charts kræver G01 (14/11), G15/D5 og direktørens "
-          "godkendelse")
+BANNER = ("OVERBLIK, CHART, STUDIER og HÆNDELSER viser SYNTETISKE testdata (null-kørsel, seed 83), ikke markedsdata. "
+          "Den rigtige papirbog (BTCUSDT/ETHUSDT, ændring 46) står under PAPIR LIVE")
 SOURCE = "synthetic"
 CHART_DAYS = 4
 EVENT_ROWS_PER_KIND = 15
@@ -172,6 +172,8 @@ h3{font-size:13px;margin:16px 0 8px}
 .eyebrow{font-size:11px;font-weight:700;letter-spacing:.12em;color:var(--amb);text-transform:uppercase;margin-top:18px}
 .lead{color:#c3cad6;max-width:820px;margin:4px 0 0}
 .tiles{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin:14px 0}
+.wu{display:grid;grid-template-columns:80px 1fr 90px;gap:10px;align-items:center;margin:6px 0}.wu b{text-align:right;font-family:var(--mono)}
+.wubar{height:12px;background:var(--panel2);border-radius:6px;overflow:hidden}.wubar i{display:block;height:100%;background:var(--amb)}
 .tile{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;min-width:0}
 .tile b{display:block;font-size:24px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.2}
 .tile span{display:block;font-size:10px;font-weight:700;letter-spacing:.1em;color:var(--mut);text-transform:uppercase}
@@ -888,6 +890,29 @@ def live_chart_svg(sym, bars, trades, n=LIVE_CHART_BARS):
 
 
 
+def warmup_box(live, rep, cfg):
+    """Warm-up progress per symbol (processed bars of `warmup_bars`), the earliest UTC time papirhandler can start
+    (first bar + warmup_bars × bar_seconds) and how many setups were skipped as not_taken_warmup. Empty once every
+    symbol is past warm-up."""
+    need = int(cfg.get("warmup_bars") or 0)
+    if need <= 0:
+        return ""
+    done = {s: d["processed"] for s, d in rep["data"].items()}
+    if done and min(done.values()) >= need:
+        return ""
+    start_ts = live["meta"].get("start_ts")
+    eta = dhm(int(start_ts) + need * int(cfg.get("bar_seconds") or BS_LIVE)) if start_ts else "–"
+    skipped = sum(1 for t in live["trades"] if t["status"] == "not_taken_warmup")
+    bars = "".join(
+        f'<div class="wu"><span class=mono>{e(s)}</span><div class="wubar"><i style="width:{min(100, 100 * n // need)}%">'
+        f'</i></div><b>{min(n, need)} / {need}</b></div>' for s, n in done.items())
+    return (f'<div class="box"><h2 style="margin-top:0">Opvarmning <small>de første {need} barer pr. symbol bruges kun '
+            'til at bygge niveauer og struktur; ingen papirhandler før de er gået</small></h2>' + bars +
+            f'<p class="sub">Tidligste papirhandel: barer fra <b>{e(eta)} UTC</b> (hvis ingen huller). '
+            f'Setups sprunget over i opvarmningen: <b>{skipped}</b> (status <code>not_taken_warmup</code>; '
+            'tæller ikke i nogen opgørelse).</p></div>')
+
+
 def live_tab(live):
     """The PAPIR LIVE pane: empty state, an error state, or the book (read with read_forward)."""
     if live is None or live["state"] in ("none", "missing"):
@@ -923,6 +948,7 @@ def live_tab(live):
         '</div>' for v, lbl, sub in tiles) + "</div>")
     if halted:
         out.append(f'<div class="box halt"><b>IntegrityHalt:</b> {e(halted)}</div>')
+    out.append(warmup_box(live, rep, cfg))
     rows = []
     base_trades = collections.defaultdict(set)
     for t in trades:

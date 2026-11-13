@@ -39,8 +39,8 @@ class FarmDashboard(unittest.TestCase):
 
     def test_banner_and_provenance(self):
         doc = page()
-        self.assertIn("SYNTETISKE DATA — ingen markedsdata; rigtige charts kræver G01 (14/11), G15/D5 og "
-                      "direktørens godkendelse", doc)
+        self.assertIn("viser SYNTETISKE testdata (null-kørsel, seed 83), ikke markedsdata. Den rigtige papirbog "
+                      "(BTCUSDT/ETHUSDT, ændring 46) står under PAPIR LIVE", doc)
         self.assertIn(ef.code_sha(), doc)
         self.assertIn("seed <code>83</code>", doc)
         self.assertIn("COPYBOT <span>EVENT FARM</span>", doc)

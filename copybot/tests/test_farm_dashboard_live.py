@@ -233,6 +233,25 @@ class WithBook(unittest.TestCase):
         self.assertEqual(self.live["identity"]["schema"], "event_farm_forward/2")
 
 
+class WarmupBox(unittest.TestCase):
+    def live(self, n1, n2, statuses=("not_taken_warmup", "not_taken_warmup", "pending")):
+        live = {"meta": {"start_ts": 1794521400}, "trades": [{"status": x} for x in statuses]}
+        rep = {"data": {"BTCUSDT": {"processed": n1}, "ETHUSDT": {"processed": n2}}}
+        return live, rep, {"warmup_bars": 288, "bar_seconds": 300}
+
+    def test_progress_eta_and_skipped_count_during_warmup(self):
+        html = fd.warmup_box(*self.live(239, 240))
+        self.assertIn("Opvarmning", html)
+        self.assertIn("<b>239 / 288</b>", html)
+        self.assertIn("<b>240 / 288</b>", html)
+        self.assertIn(fd.dhm(1794521400 + 288 * 300), html)               # 2026-11-13 22:10 UTC
+        self.assertIn("Setups sprunget over i opvarmningen: <b>2</b>", html)
+
+    def test_gone_once_every_symbol_is_past_warmup(self):
+        self.assertEqual(fd.warmup_box(*self.live(288, 300)), "")
+        self.assertIn("Opvarmning", fd.warmup_box(*self.live(288, 287)))
+
+
 if __name__ == "__main__":
     import direct_guard  # noqa: E402,F401  (order 75: quarantine guard for direct runs)
     unittest.main()
