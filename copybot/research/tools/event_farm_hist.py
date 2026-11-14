@@ -200,7 +200,7 @@ SETUP_KEYS = ("anchor", "rr", "entry_mode", "stop_buffer_atr", "min_risk_atr", "
               "chain_breaks", "mss_window")
 
 
-def run(bars_by_sym, over=None, variants=VARIANTS, combos=COMBOS, count_from=EXPLORE_START, fp=None):
+def run(bars_by_sym, over=None, variants=VARIANTS, combos=COMBOS, count_from=EXPLORE_START, fp=None, bs=BS):
     """Per test '<combo>/<variant>': setups, statuses and per-trade gross R, lab net R and net USDT (cost model of
     the paper book). Only setups with known_ts >= count_from count; outcomes use only the given bars."""
     over = dict(over or {})
@@ -216,7 +216,7 @@ def run(bars_by_sym, over=None, variants=VARIANTS, combos=COMBOS, count_from=EXP
         days |= {b[0] // 86400 for b in bars if b[0] >= count_from}
         ctx = ff.context(bars, fp) if any(c != "base" for c in combos) else None
         for v in variants:
-            p = ef.params(**{**over, **variant_over(v), "bar_seconds": BS})
+            p = ef.params(**{**over, **variant_over(v), "bar_seconds": bs})
             dkey = (s, json.dumps({k: p[k] for k in p if k not in SETUP_KEYS}, sort_keys=True, default=str))
             if dkey not in det_cache:
                 det_cache.clear()
@@ -266,15 +266,33 @@ def summarize(res, n_days):
     return out
 
 
-def null_run(over=None, variants=VARIANTS, combos=("base",), days=60, seed=83):
-    """The same configuration on the fixed engine null (driftless random walk, seed 83): what chance gives."""
-    bars = {f"SYN{i}": ef.random_walk_bars(seed + i, days) for i in range(2)}
-    return run(bars, over, variants, combos, count_from=0)
+def null_run(over=None, variants=VARIANTS, combos=("base",), days=60, seed=83, bs=BS):
+    """The same configuration on the fixed engine null (driftless random walk, seed 83): what chance gives. The bar
+    volatility is the engine's 5m null sigma scaled by sqrt(bs / 300) so other timeframes are comparable."""
+    sig = ef.NULL_SIGMA_BAR * math.sqrt(bs / BS)
+    bars = {f"SYN{i}": ef.random_walk_bars(seed + i, days * bs // BS, bar_seconds=bs,
+                                           sigma_bar=sig) for i in range(2)}
+    return run(bars, over, variants, combos, count_from=0, bs=bs)
+
+
+def resample(bars5, bs):
+    """5m bars -> bs-second bars (complete buckets only)."""
+    if bs == BS:
+        return bars5
+    if bs % BS:
+        raise ValueError("timeframe must be a multiple of 5m")
+    need = bs // BS
+    buckets = collections.OrderedDict()
+    for b in bars5:
+        buckets.setdefault(b[0] // bs * bs, []).append(b)
+    return [(t, m[0][1], max(x[2] for x in m), min(x[3] for x in m), m[-1][4], math.fsum(x[5] for x in m))
+            for t, m in buckets.items() if len(m) == need]
 
 
 # ------------------------------------------------------------------------------------------------ logs
-def config_sha(over, variants, combos):
-    return hashlib.sha256(json.dumps({"over": over or {}, "variants": list(variants), "combos": list(combos)},
+def config_sha(over, variants, combos, bs=BS):
+    return hashlib.sha256(json.dumps({"over": over or {}, "variants": list(variants), "combos": list(combos),
+                                      **({"bs": bs} if bs != BS else {})},
                                      sort_keys=True, default=str).encode()).hexdigest()
 
 
@@ -297,11 +315,12 @@ def fmt(x, f="{:+.3f}"):
     return "–" if x is None else f.format(x)
 
 
-def markdown(out, null, part, over, variants, combos, info, trials, note=""):
+def markdown(out, null, part, over, variants, combos, info, trials, note="", bs=BS):
     lab = LABEL_CHECK if part == "check" else LABEL
     L = [f"# Event farm historisk lab: {part.upper()}", "", f"**{lab}**", "",
          f"Konfiguration (ændringer fra motorens standard): `{json.dumps(over or {}, sort_keys=True)}` · "
-         f"config sha `{config_sha(over, variants, combos)[:12]}` · {out['days']} dage · BTCUSDT+ETHUSDT 5m · "
+         f"config sha `{config_sha(over, variants, combos, bs)[:12]}` · {out['days']} dage · BTCUSDT+ETHUSDT "
+         f"{bs // 60}m · "
          f"omkostning som papirbogen (28 bps rundtur).", "",
          f"Data: {info.get('files')} filer, identitet ok (sha256 mod R3_m24_verify), {info.get('rows_discarded')} rækker "
          f"kasseret uden for måned, ufuldstændige 5m-spande {info.get('buckets_dropped')}.", "",
@@ -310,14 +329,14 @@ def markdown(out, null, part, over, variants, combos, info, trials, note=""):
     if note:
         L += [note, ""]
     L += ["| test | setups/dag | handler | mål | stop | timeout | brutto R | netto R | netto USDT | t (dagl.) | "
-          "omk. R (median) | null netto R |", "|" + "---|" * 12]
+          "omk. R (median) | null brutto R | null netto R |", "|" + "---|" * 13]
     for tid, r in out["tests"].items():
         st = r["status"]
         nl = null["tests"].get("base/" + tid.split("/", 1)[1], {}) if null else {}
         L.append(f"| {tid} | {r['per_day']:.2f} | {r['trades']} | {st.get('target', 0)} | {st.get('stop', 0)} | "
                  f"{st.get('timeout', 0)} | {fmt(r['mean_gross_r'])} | {fmt(r['mean_net_r'])} | "
                  f"{r['sum_net_usdt']:+.0f} | {fmt(r['t_daily_net_r'], '{:+.2f}')} | {fmt(r['cost_r_median'], '{:.2f}')} | "
-                 f"{fmt(nl.get('mean_net_r'))} |")
+                 f"{fmt(nl.get('mean_gross_r'))} | {fmt(nl.get('mean_net_r'))} |")
     L += ["", "Brutto R = før omkostninger; netto R = efter 28 bps (papirbogens model); 1.000 USDT pr. handel. "
           "Null = samme regler på en driftløs random walk (seed 83, 2 × 60 dage): det tilfældighed giver. "
           "Beskrivende; ingen rangering er en anbefaling."]
@@ -353,6 +372,7 @@ def main(argv=None):
     ap.add_argument("--log-dir", default=OUT_DIR)
     ap.add_argument("--work", default=WORK)
     ap.add_argument("--note", default="")
+    ap.add_argument("--tf", type=int, default=5, help="timeframe in minutes (multiple of 5); 5m bars are resampled")
     a = ap.parse_args(argv)
     over = parse_set(a.set)
     variants = tuple(v for v in a.variants.split(",") if v)
@@ -362,26 +382,28 @@ def main(argv=None):
     if any(c not in COMBOS for c in combos):
         raise SystemExit(f"unknown combo; known: {COMBOS}")
     part = "check" if a.check else "dev"
-    csha = config_sha(over, variants, combos)
+    bs = a.tf * 60
+    csha = config_sha(over, variants, combos, bs)
     if part == "check":
         if not a.reason:
             raise SystemExit("--check needs --reason")
         append_log(os.path.join(a.log_dir, "check_openings.jsonl"),
                    {"ts": round(time.time(), 1), "config_sha": csha, "over": over, "variants": list(variants),
-                    "combos": list(combos), "reason": a.reason})
+                    "combos": list(combos), "tf_min": a.tf, "reason": a.reason})
     bars, info = load_bars(a.cache, a.verify, a.work or None)
     sel, frm = {}, None
     for s, b in bars.items():
-        sel[s], frm = part_bars(b, part)
+        pb, frm = part_bars(b, part)
+        sel[s] = resample(pb, bs)
     t0 = time.time()
-    out = run(sel, over, variants, combos, count_from=frm)
-    null = None if a.no_null else null_run(over, variants)
+    out = run(sel, over, variants, combos, count_from=frm, bs=bs)
+    null = None if a.no_null else null_run(over, variants, bs=bs)
     if part == "dev":
         append_log(os.path.join(a.log_dir, "dev_trials.jsonl"),
                    {"ts": round(time.time(), 1), "config_sha": csha, "over": over, "variants": list(variants),
-                    "combos": list(combos), "tests": len(out["tests"]),
+                    "combos": list(combos), "tf_min": a.tf, "tests": len(out["tests"]),
                     "result_sha": hashlib.sha256(json.dumps(out, sort_keys=True).encode()).hexdigest()[:16]})
-    md = markdown(out, null, part, over, variants, combos, info, n_trials(a.log_dir), a.note)
+    md = markdown(out, null, part, over, variants, combos, info, n_trials(a.log_dir), a.note, bs)
     if a.out:
         with open(a.out, "w", encoding="utf-8") as f:
             f.write(md)
