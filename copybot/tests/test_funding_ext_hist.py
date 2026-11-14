@@ -106,6 +106,17 @@ class Funding(unittest.TestCase):
         s = fx.summarize([{**x, "sym": "BTCUSDT"}])
         self.assertAlmostEqual(s["net_grid"]["9"], x["gross_bps"] - 9.0)
 
+    def test_pre_settlement_uses_previous_settlement_only(self):
+        base = 1000 * 8 * 3600
+        fund = [(base + k * 8 * 3600, 0.0001) for k in range(100)]
+        fund[80] = (fund[80][0], 0.01)
+        self.assertEqual(fx.signals_pre(fund, 1.0), [(fund[81][0], 1)])
+        t = eh.DEV_END - 100 * 3600
+        bars = [(t + k * 3600, 1.0, 1.0, 1.0, 100.0 + k, 1.0) for k in range(60)]
+        T = t + 30 * 3600
+        x = fx.trades_pre(bars, [(T, 1)], 2, "contra", eh.EXPLORE_START, eh.DEV_END)[0]
+        self.assertAlmostEqual(x["gross_bps"], -((129.0 / 127.0) - 1) * 1e4)      # close at T-2h -> close at T
+
 
 if __name__ == "__main__":
     import direct_guard  # noqa: E402,F401

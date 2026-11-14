@@ -61,11 +61,12 @@ Korrektionsspor (append-only):
 | 2026-11-14 | `PROTOCOL_V3` ny version `3879257` (ændring 47: event farm historisk udviklingslab på explore0); tidligere pin `a90d906`/`6e9c3afe…` bevaret i `GATE_MATRIX.json` (`superseded_pin`) | ejerens chat-ja 2026-11-14 |
 | 2026-11-14 | `PROTOCOL_V3` ny version `5beaef2` (ændring 48: funding-ekstremer, historisk lab); tidligere pin `3879257`/`6b7648e4…` bevaret i `GATE_MATRIX.json` (`superseded_pin`) | ejerens valg i chatten 2026-11-14 |
 | 2026-11-14 | `PROTOCOL_V3` ny version `0fca9be` (ændring 48a: omkostningsgitter og maker-indgang i funding-labbet); tidligere pin `5beaef2`/`8f37430c…` bevaret i `GATE_MATRIX.json` (`superseded_pin`) | ejerens "gør alt det der er bedst" 2026-11-14 |
+| 2026-11-14 | `PROTOCOL_V3` ny version `f9b93ab` (ændring 48b: nedlukning før afregning); tidligere pin `0fca9be`/`1bf2419a…` bevaret i `GATE_MATRIX.json` (`superseded_pin`) | samme |
 
 <!-- protocol-identities:start -->
 | id | fil | commit | sha256 |
 |---|---|---|---|
-| `PROTOCOL_V3` | `research/PROTOCOL_V3.md` | `0fca9be` | `1bf2419a7d0b59ce46258a322891368adf4d65d27ad5240b9c0feccf5815cf00` |
+| `PROTOCOL_V3` | `research/PROTOCOL_V3.md` | `f9b93ab` | `749f8457efa36a5f40fffedf483124b6617474f92d6a312334c29f1d615ac1b6` |
 | `READINESS_1114` | `research/studies/READINESS_2026-11-14.md` | `dba9bda` | `33de9d7bcd485ea36e548e4e2c01b101fc524726ead634fad81736bce6f74f5e` |
 | `MISSION27_3` | `research/studies/MISSION27_3_2026-11-02.md` | `586a34d` | `103fd0afe3e2fd47a1aa289c83b549b625b1046814d68e27873682fecf252fd8` |
 | `N6_TOOL` | `research/tools/n6_funding.py` | `7012c2b` | `e481a43cf1b47488ac4d18a125ad6d9bcfa7e1acfe2e5708982163b1c5989709` |

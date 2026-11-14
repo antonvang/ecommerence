@@ -179,6 +179,52 @@ def trades(bars1h, sigs, hold, direction, t_from, t_to, maker_bps=None, bars5=No
     return out
 
 
+def signals_pre(fund, pct):
+    """Amendment 48b: [(T, side)] for the settlement T whose PREVIOUS settlement (T - 8 h) was extreme against the 30
+    days before it; uses nothing known after T - 8 h."""
+    prev = signals(fund, pct)
+    ts = [t for t, _ in fund]
+    pos = {t: i for i, t in enumerate(ts)}
+    out = []
+    for t, side in prev:
+        i = pos[t]
+        if i + 1 < len(fund) and fund[i + 1][0] == t + 8 * H1:
+            out.append((t + 8 * H1, side))
+    return out
+
+
+def trades_pre(bars1h, sigs, w, direction, t_from, t_to):
+    """Entry at the close W hours before T, exit at the close at T (bar T-1h..T); both inside [t_from, t_to)."""
+    idx = {b[0]: k for k, b in enumerate(bars1h)}
+    out = []
+    for t, side in sigs:
+        k0, k1 = idx.get(t - (w + 1) * H1), idx.get(t - H1)
+        if k0 is None or k1 is None or t - w * H1 < t_from or t > t_to:
+            continue
+        d = -side if direction == "contra" else side
+        g = d * (bars1h[k1][4] / bars1h[k0][4] - 1) * 1e4
+        out.append({"t": t, "dir": d, "gross_bps": g, "net_bps": g - COST_BPS, "taker_bps": g, "filled": True})
+    return out
+
+
+def run_pre(bars1h_by_sym, fund_by_sym, part, pcts=PCTS, windows=(1, 2, 4), dirs=DIRS):
+    t_from, t_to = (eh.EXPLORE_START, eh.DEV_END) if part == "dev" else (eh.DEV_END, eh.EXPLORE_END)
+    res = {}
+    for p in pcts:
+        sig = {s: signals_pre(fund_by_sym[s], p) for s in bars1h_by_sym}
+        for w in windows:
+            for d in dirs:
+                tr = [{**x, "sym": s} for s in sorted(bars1h_by_sym)
+                      for x in trades_pre(bars1h_by_sym[s], sig[s], w, d, t_from, t_to)]
+                res[f"pre/p{p:g}/w{w}/{d}"] = summarize(tr)
+    base = {}
+    for w in windows:                                # reference: long into every settlement
+        tr = [{**x, "sym": s} for s in sorted(bars1h_by_sym)
+              for x in trades_pre(bars1h_by_sym[s], [(t, -1) for t, _ in fund_by_sym[s]], w, "contra", t_from, t_to)]
+        base[f"w{w}"] = summarize(tr)
+    return res, base
+
+
 def _t(xs):
     if len(xs) < 2 or statistics.stdev(xs) == 0:
         return None
@@ -272,6 +318,7 @@ def main(argv=None):
     ap.add_argument("--holds", default=",".join(map(str, HOLDS)))
     ap.add_argument("--dirs", default=",".join(DIRS))
     ap.add_argument("--makers", default="", help="maker offsets in bps, e.g. 0,5,10 (amendment 48a); empty = taker")
+    ap.add_argument("--pre", action="store_true", help="amendment 48b: pre-settlement unwind (holds = windows W)")
     ap.add_argument("--check", action="store_true")
     ap.add_argument("--reason", default="")
     ap.add_argument("--out", default="")
@@ -290,7 +337,10 @@ def main(argv=None):
         raise SystemExit("bad --pcts/--holds/--dirs")
     part = "check" if a.check else "dev"
     makers = tuple(float(x) for x in a.makers.split(",") if x != "") or (None,)
-    cfg = {"pcts": pcts, "holds": holds, "dirs": dirs, **({"makers": makers} if makers != (None,) else {})}
+    cfg = {"pcts": pcts, "holds": holds, "dirs": dirs, **({"makers": makers} if makers != (None,) else {}),
+           **({"pre": True} if a.pre else {})}
+    if a.pre and makers != (None,):
+        raise SystemExit("--pre is taker only")
     csha = hashlib.sha256(json.dumps(cfg, sort_keys=True).encode()).hexdigest()
     if part == "check":
         if not a.reason:
@@ -300,7 +350,10 @@ def main(argv=None):
     bars, info5 = eh.load_bars(a.cache, a.verify, a.work or None)
     fund, dropped = load_funding(a.funding_dir, a.manifest)
     bars1h = {s: eh.resample(b, H1) for s, b in bars.items()}
-    res, base = run(bars1h, fund, part, pcts, holds, dirs, makers, bars)
+    if a.pre:
+        res, base = run_pre(bars1h, fund, part, pcts, holds, dirs)
+    else:
+        res, base = run(bars1h, fund, part, pcts, holds, dirs, makers, bars)
     if part == "dev":
         eh.append_log(os.path.join(a.log_dir, "funding_dev_trials.jsonl"),
                       {"ts": round(time.time(), 1), "config_sha": csha, **cfg, "tests": len(res)})
