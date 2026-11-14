@@ -35,15 +35,16 @@
   "LIQPROXY1": "desk draft, competes for W0",
   "FUNDFRAG1": "desk draft, competes for W0",
   "OPS": "host operations (reboot, system update)",
-  "EVENT_FARM": "event farm (research/tools/event_farm.py @ f686c9a): forward paper book, 96 tests (12 baseline + 7 filter combos x 12), BTCUSDT/ETHUSDT 5m, PROTOCOL_V3 amendment 46 = text 104; simulation only, descriptive, never evidence"
+  "EVENT_FARM": "event farm (research/tools/event_farm.py @ f686c9a): forward paper book, 96 tests (12 baseline + 7 filter combos x 12), BTCUSDT/ETHUSDT 5m, PROTOCOL_V3 amendment 46 = text 104; simulation only, descriptive, never evidence",
+  "EVENT_FARM_HIST": "event farm historical development lab on explore0 (BTC/ETH 1m, 44 cached files 2020-03..2021-12), PROTOCOL_V3 amendment 47 (owner chat yes 2026-11-14); dev 2020-03..2021-06, sealed check 2021-07..2021-12; exploration, never proof"
  },
  "protocol_identities": [
   {
    "id": "PROTOCOL_V3",
    "path": "research/PROTOCOL_V3.md",
-   "commit": "a90d906",
-   "sha256": "6e9c3afeaf7de97fb462de8671d761a964b9b07bf5fb882a3869bd3182c066a9",
-   "superseded_pin": {"commit": "ec91280", "sha256": "0a09b3e954d92c8294e1b15f27b12fbc344187562bc73f393d2dd892b2ce6c80", "superseded": "2026-11-12 by amendment 46 (event farm forward, text 104; owner decision, research/owner/EF_FORWARD_104_SIGNATURE.md); kept, not rewritten"}
+   "commit": "3879257",
+   "sha256": "6b7648e4ce6fd14b601622a6d63b62f70cc7cb518ab85a0b68be3aedf004d2fd",
+   "superseded_pin": {"commit": "a90d906", "sha256": "6e9c3afeaf7de97fb462de8671d761a964b9b07bf5fb882a3869bd3182c066a9", "superseded": "2026-11-14 by amendment 47 (event farm historical lab, owner chat yes); earlier pin ec91280/0a09b3e9... superseded 2026-11-12 by amendment 46 (NOV14_READINESS correction trail); kept, not rewritten"}
   },
   {
    "id": "READINESS_1114",
@@ -1094,6 +1095,11 @@
     "G01_HIST_1114"
    ],
    "studies": {
+    "EVENT_FARM_HIST": [
+     "owner_chat_yes_event_farm_hist_2026_11_14",
+     "event_farm_hist_amendment_47_committed",
+     "event_farm_hist_identity_manifest_ok"
+    ],
     "A_n6": [
      "owner_confirms_lock_A",
      "lock_A_committed"

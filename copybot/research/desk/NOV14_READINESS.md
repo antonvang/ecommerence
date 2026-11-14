@@ -58,11 +58,12 @@ Korrektionsspor (append-only):
 | 2026-11-09 | `NET_REPORT` ny version `7dc00a9` (STALE-markering, eksplicit cutoff, at-mark-kolonner); tidligere pin `7b49afd`/`9370876d…` bevaret i `GATE_MATRIX.json` (`superseded_pin`) | direktørtillæg 59-C; `STALE_EQUITY_59C.md` |
 | 2026-11-12 | `PROTOCOL_V3` ny version `a90d906` (ændring 46: event farm fremadrettet papirbog, tekst 104); tidligere pin `ec91280`/`0a09b3e9…` bevaret i `GATE_MATRIX.json` (`superseded_pin`) | ejerens beslutning og D5-underskrift; `research/owner/EF_FORWARD_104_SIGNATURE.md` |
 | 2026-11-12 | `STREAM_REGISTRY` ny version `01f1b0d` (strømmen `ef_fwd_5m_klines`, gate G31); tidligere pin `2e23f52`/`e4b564f1…` bevaret i `GATE_MATRIX.json` (`superseded_pin`) | samme |
+| 2026-11-14 | `PROTOCOL_V3` ny version `3879257` (ændring 47: event farm historisk udviklingslab på explore0); tidligere pin `a90d906`/`6e9c3afe…` bevaret i `GATE_MATRIX.json` (`superseded_pin`) | ejerens chat-ja 2026-11-14 |
 
 <!-- protocol-identities:start -->
 | id | fil | commit | sha256 |
 |---|---|---|---|
-| `PROTOCOL_V3` | `research/PROTOCOL_V3.md` | `a90d906` | `6e9c3afeaf7de97fb462de8671d761a964b9b07bf5fb882a3869bd3182c066a9` |
+| `PROTOCOL_V3` | `research/PROTOCOL_V3.md` | `3879257` | `6b7648e4ce6fd14b601622a6d63b62f70cc7cb518ab85a0b68be3aedf004d2fd` |
 | `READINESS_1114` | `research/studies/READINESS_2026-11-14.md` | `dba9bda` | `33de9d7bcd485ea36e548e4e2c01b101fc524726ead634fad81736bce6f74f5e` |
 | `MISSION27_3` | `research/studies/MISSION27_3_2026-11-02.md` | `586a34d` | `103fd0afe3e2fd47a1aa289c83b549b625b1046814d68e27873682fecf252fd8` |
 | `N6_TOOL` | `research/tools/n6_funding.py` | `7012c2b` | `e481a43cf1b47488ac4d18a125ad6d9bcfa7e1acfe2e5708982163b1c5989709` |
