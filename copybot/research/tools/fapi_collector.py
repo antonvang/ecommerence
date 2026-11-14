@@ -4,7 +4,7 @@ Streams (research/desk/stream_registry.json):
 - fwd_bn_positioning: every 5 min (slot + 40 s), for 10 fixed USDT perps, public GET on fapi.binance.com:
   /fapi/v1/openInterest, /futures/data/openInterestHist, /futures/data/takerlongshortRatio,
   /futures/data/globalLongShortAccountRatio, /futures/data/topLongShortPositionRatio (period 5m, limit 2);
-- fwd_bn_liquidations: the public websocket wss://fstream.binance.com/ws/!forceOrder@arr.
+- fwd_bn_liquidations: the public websocket wss://fstream.binance.com/market/ws/!forceOrder@arr (amendment 49a).
 
 Rules: every URL is checked against a fixed allowlist before the call (check_url); no key, no order or account
 endpoint; no backfill (rows with a timestamp before the collector's first start are discarded); first value per
@@ -31,7 +31,7 @@ import urllib.request
 HOME = os.path.expanduser("~/fapi_collector")
 REST_HOST = "fapi.binance.com"
 WS_HOST = "fstream.binance.com"
-WS_PATH = "/ws/!forceOrder@arr"
+WS_PATH = "/market/ws/!forceOrder@arr"            # routed path (amendment 49a); /ws/ is retired
 SYMBOLS = ("BTCUSDT", "ETHUSDT", "SOLUSDT", "XRPUSDT", "DOGEUSDT", "BNBUSDT", "ADAUSDT", "LINKUSDT", "AVAXUSDT",
            "LTCUSDT")
 HIST = {"oi_hist": "/futures/data/openInterestHist", "taker": "/futures/data/takerlongshortRatio",
@@ -177,7 +177,12 @@ def ws_frame(payload, opcode=1, mask=True):
 def _recv_exact(sock, n):
     buf = b""
     while len(buf) < n:
-        chunk = sock.recv(n - len(buf))
+        try:
+            chunk = sock.recv(n - len(buf))
+        except socket.timeout:
+            if not buf:
+                raise
+            continue                                            # never drop the rest of a started frame
         if not chunk:
             raise ConnectionError("websocket closed")
         buf += chunk

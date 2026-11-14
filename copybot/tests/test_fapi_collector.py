@@ -21,7 +21,7 @@ class Urls(unittest.TestCase):
     def test_allowlist(self):
         fc.check_url("https://fapi.binance.com/fapi/v1/openInterest?symbol=BTCUSDT")
         fc.check_url("https://fapi.binance.com/futures/data/takerlongshortRatio?symbol=ETHUSDT&period=5m&limit=2")
-        fc.check_url("wss://fstream.binance.com/ws/!forceOrder@arr")
+        fc.check_url("wss://fstream.binance.com/market/ws/!forceOrder@arr")
         for bad in ("https://api.binance.com/fapi/v1/openInterest?symbol=BTCUSDT",
                     "https://fapi.binance.com/fapi/v1/order?symbol=BTCUSDT",
                     "https://fapi.binance.com/fapi/v2/account",
@@ -30,7 +30,8 @@ class Urls(unittest.TestCase):
                     "https://fapi.binance.com/futures/data/openInterestHist?symbol=BTCUSDT&period=5m&limit=2&startTime=1",
                     "https://fapi.binance.com/fapi/v1/openInterest?symbol=BTCUSDT&signature=x",
                     "http://fapi.binance.com/fapi/v1/openInterest?symbol=BTCUSDT",
-                    "wss://fstream.binance.com/ws/btcusdt@aggTrade", "wss://evil.example/ws/!forceOrder@arr"):
+                    "wss://fstream.binance.com/ws/!forceOrder@arr", "wss://fstream.binance.com/market/ws/btcusdt@aggTrade",
+                    "wss://evil.example/market/ws/!forceOrder@arr"):
             with self.assertRaises(fc.UrlRefused, msg=bad):
                 fc.check_url(bad)
 

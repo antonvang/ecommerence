@@ -4700,3 +4700,11 @@ felter er positionering og tvangslukninger, som ikke indsamles i dag (`stream_re
    køre enkeltkald for at verificere endpoints, men installerer ikke enheden.
 5. **Brug:** beskrivende studier af positionering/likvideringer mod efterfølgende afkast, tidligst når 21 dages data
    foreligger, hver med egen ændring, fastfrosne regler og kriterier før måling. Kun papir og forskning.
+
+## Ændring 49a (2026-11-14 kl. 15:33 lokal, før drift): websocket-sti for likvideringer
+
+Teknisk rettelse af ændring 49 punkt 1. Binance har delt USDⓈ-M-websocketten i `/public`, `/market` og `/private`
+og udfaset de gamle stier ("Important WebSocket Change Notice"; ændringslog med ophørsdato 2026-04-23). Verifikations-
+kaldet 2026-11-14 bekræftede: `/ws/!forceOrder@arr` forbinder men sender intet; `/market/ws/!forceOrder@arr` sender
+tvangslukninger. Strømmen `fwd_bn_liquidations` bruger derfor `wss://fstream.binance.com/market/ws/!forceOrder@arr`
+(samme vært, samme offentlige strøm, ingen nøgle). Intet andet ændres.

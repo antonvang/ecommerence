@@ -1089,7 +1089,7 @@
   {
    "id": "fwd_bn_liquidations",
    "status": "APPROVED",
-   "source_host": "fstream.binance.com (new host, websocket /ws/!forceOrder@arr only)",
+   "source_host": "fstream.binance.com (new host, websocket /market/ws/!forceOrder@arr only; routed path per amendment 49a)",
    "fields": [
     "forceOrder events: E (event ms), o.s symbol, o.S side, o.o type, o.f tif, o.q qty, o.p price, o.ap avg price, o.X status, o.l last filled qty, o.z filled qty, o.T trade ms; recv_ts"
    ],
