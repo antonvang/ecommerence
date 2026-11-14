@@ -4676,3 +4676,27 @@ en fastfrysning består KONTROL.
    W timer før T (W ∈ {1, 2, 4}), udgang ved kursen ved T (lukkekursen for 1h-baren T−1 t..T). contra/pro som 48.
    Tærskler som 48 (0,90/0,95/ny 30-dages top/bund). Omkostningsgitter og maker som 48a. 18 taker-tests.
 3. Deling, optælling og KONTROL som ændring 47/48. Kun papir og forskning.
+
+## Ændring 49 (2026-11-14 kl. 15:19 lokal, før kode og kald): fremadrettet indsamler af positionering og likvideringer
+
+Ejeren skrev 2026-11-14 "Ja byg" som svar på forslaget om en fremadrettet indsamler (OI, taker-flow, likvideringer
+fra Binance' offentlige futures-data; ejeren installerer enheden selv). Chat-ja (UNVERIFIED_ORIGIN efter D5).
+Grund: det historiske lab fandt ingen fordel i pris og funding alene (`LAB_HIST_SUMMARY_2026-11-14.md`); de nye
+felter er positionering og tvangslukninger, som ikke indsamles i dag (`stream_registry.json`).
+
+1. **Strømme** (nye poster i `research/desk/stream_registry.json`, status APPROVED ved denne ændring):
+   - `fwd_bn_positioning` (`fapi.binance.com`, allerede tilladt vært, kun offentlige GET uden nøgle) hvert 5. minut
+     (slot + 40 s) for de faste symboler BTC, ETH, SOL, XRP, DOGE, BNB, ADA, LINK, AVAX, LTC (USDT-perps):
+     `/fapi/v1/openInterest`, `/futures/data/openInterestHist`, `/futures/data/takerlongshortRatio`,
+     `/futures/data/globalLongShortAccountRatio` og `/futures/data/topLongShortPositionRatio` (period 5m, limit 2).
+     50 kald pr. 5 min.
+   - `fwd_bn_liquidations` (`fstream.binance.com`, **ny vært**, kun den offentlige strøm `/ws/!forceOrder@arr`
+     via websocket, uden nøgle): hver tvangslukning, Binance sender (højst én pr. symbol pr. sekund).
+2. **Ingen backfill:** kun rækker med tidsstempel ≥ indsamlerens start gemmes (de første rækker fra limit 2 kan ellers
+   ligge minutter før). Intet 2025+-arkiv (G04) og intet 2024 (G03). Første værdi pr. (symbol, felt, tid) beholdes.
+3. **Lager:** `~/fapi_collector/positioning.db` (SQLite, egen fil), kald-log i samme database, statusfil. Ingen
+   ordre-, konto- eller nøgleendpoint; URL'er kontrolleres mod en fast liste før hvert kald. Ingen omgåelse af DNS.
+4. **Drift:** en systemd --user-enhed, som ejeren installerer (`research/ops/fapi_collector/INSTALL.md`). Claude må
+   køre enkeltkald for at verificere endpoints, men installerer ikke enheden.
+5. **Brug:** beskrivende studier af positionering/likvideringer mod efterfølgende afkast, tidligst når 21 dages data
+   foreligger, hver med egen ændring, fastfrosne regler og kriterier før måling. Kun papir og forskning.
