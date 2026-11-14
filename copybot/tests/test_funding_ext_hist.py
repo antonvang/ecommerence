@@ -82,6 +82,30 @@ class Funding(unittest.TestCase):
         self.assertEqual(fx.trades(bars, late, 8, "contra", eh.EXPLORE_START, eh.DEV_END), [])
         self.assertEqual(len(fx.trades(bars, late, 8, "contra", eh.DEV_END - 10 * 3600, eh.EXPLORE_END)), 1)
 
+    def test_maker_fills_only_on_trade_through(self):
+        t0 = eh.DEV_END - 200 * 3600
+        bars1h = [(t0 + k * 3600, 100.0, 100.5, 99.5, 100.0, 1.0) for k in range(100)]
+        bars1h[18] = (bars1h[18][0], 100.0, 101.0, 99.0, 101.0, 1.0)       # exit close for a signal at t0+10h, hold 8
+        bars5 = [(t0 + k * 300, 100.0, 100.02, 99.98, 100.0, 1.0) for k in range(1200)]
+        sig = [(t0 + 10 * 3600, -1)]                                      # low funding, contra = long
+        mk = fx.trades(bars1h, sig, 8, "contra", eh.EXPLORE_START, eh.DEV_END, 5.0, bars5)
+        self.assertEqual(len(mk), 1)
+        self.assertFalse(mk[0]["filled"])                                 # 99.98 never trades through 99.95
+        j = (11 * 3600) // 300 + 3                                        # inside the hour after the reference
+        bars5[j] = (bars5[j][0], 100.0, 100.0, 99.95, 100.0, 1.0)         # touch only: still no fill
+        self.assertFalse(fx.trades(bars1h, sig, 8, "contra", eh.EXPLORE_START, eh.DEV_END, 5.0, bars5)[0]["filled"])
+        bars5[j] = (bars5[j][0], 100.0, 100.0, 99.94, 100.0, 1.0)
+        x = fx.trades(bars1h, sig, 8, "contra", eh.EXPLORE_START, eh.DEV_END, 5.0, bars5)[0]
+        self.assertTrue(x["filled"])
+        self.assertAlmostEqual(x["gross_bps"], (101.0 / 99.95 - 1) * 1e4)
+        self.assertAlmostEqual(x["taker_bps"], (101.0 / 100.0 - 1) * 1e4)
+        late = (12 * 3600) // 300 + 1                                     # after the 60-minute window: ignored
+        bars5[j] = (bars5[j][0], 100.0, 100.02, 99.98, 100.0, 1.0)
+        bars5[late] = (bars5[late][0], 100.0, 100.0, 90.0, 100.0, 1.0)
+        self.assertFalse(fx.trades(bars1h, sig, 8, "contra", eh.EXPLORE_START, eh.DEV_END, 5.0, bars5)[0]["filled"])
+        s = fx.summarize([{**x, "sym": "BTCUSDT"}])
+        self.assertAlmostEqual(s["net_grid"]["9"], x["gross_bps"] - 9.0)
+
 
 if __name__ == "__main__":
     import direct_guard  # noqa: E402,F401

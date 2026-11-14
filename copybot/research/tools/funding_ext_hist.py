@@ -40,6 +40,8 @@ MANIFEST = os.path.join(HERE, "research", "data", "event_farm_hist", "funding_id
 FUNDING_DIR = "/home/anton/ecommerence/copybot/data/lab/market/funding"
 LOG_DIR = eh.OUT_DIR
 COST_BPS = 28.0
+COST_GRID = (28.0, 14.0, 9.0)                      # amendment 48a: lab / perp taker / maker in + taker out
+MAKER_WINDOW_S = 3600
 H1 = 3600
 LOOKBACK_S = 30 * 86400
 MIN_HISTORY = 60                                   # settlements in the lookback before a signal counts
@@ -134,9 +136,13 @@ def signals(fund, pct):
     return out
 
 
-def trades(bars1h, sigs, hold, direction, t_from, t_to):
-    """Non-overlapping trades: entry close of bar T..T+1h, exit close `hold` hours later; both inside [t_from, t_to)."""
+def trades(bars1h, sigs, hold, direction, t_from, t_to, maker_bps=None, bars5=None):
+    """Non-overlapping trades: reference = close of bar T..T+1h, exit close `hold` hours later; both inside
+    [t_from, t_to). Taker: entry at the reference. Maker (amendment 48a): limit maker_bps in our favour from the
+    reference for MAKER_WINDOW_S, filled only if a 5m bar trades through it; unfilled signals are returned with
+    filled False (no position)."""
     idx = {b[0]: k for k, b in enumerate(bars1h)}
+    idx5 = {b[0]: k for k, b in enumerate(bars5)} if bars5 is not None else None
     out, busy_until = [], -1
     for t, side in sigs:
         if t < t_from or t <= busy_until:
@@ -148,9 +154,28 @@ def trades(bars1h, sigs, hold, direction, t_from, t_to):
         if bars1h[k2][0] != t + hold * H1 or bars1h[k2][0] + H1 > t_to:
             continue
         d = -side if direction == "contra" else side
-        gross = d * (bars1h[k2][4] / bars1h[k][4] - 1) * 1e4
-        out.append({"t": t, "dir": d, "gross_bps": gross, "net_bps": gross - COST_BPS})
-        busy_until = bars1h[k2][0]
+        ref, ex = bars1h[k][4], bars1h[k2][4]
+        taker = d * (ex / ref - 1) * 1e4
+        if maker_bps is None:
+            out.append({"t": t, "dir": d, "gross_bps": taker, "net_bps": taker - COST_BPS, "taker_bps": taker,
+                        "filled": True})
+            busy_until = bars1h[k2][0]
+            continue
+        limit = ref * (1 - d * maker_bps / 1e4)
+        j = idx5.get(t + H1)
+        filled = False
+        if j is not None:
+            for b in bars5[j:]:
+                if b[0] >= t + H1 + MAKER_WINDOW_S or b[0] + 300 > bars1h[k2][0] + H1:
+                    break
+                if (d > 0 and b[3] < limit) or (d < 0 and b[2] > limit):
+                    filled = True
+                    break
+        gross = d * (ex / limit - 1) * 1e4
+        out.append({"t": t, "dir": d, "gross_bps": gross if filled else None,
+                    "net_bps": (gross - COST_BPS) if filled else None, "taker_bps": taker, "filled": filled})
+        if filled:
+            busy_until = bars1h[k2][0]
     return out
 
 
@@ -161,6 +186,9 @@ def _t(xs):
 
 
 def summarize(tr):
+    alltaker = [x["taker_bps"] for x in tr]
+    filled_taker = [x["taker_bps"] for x in tr if x["filled"]]
+    tr = [x for x in tr if x["filled"]]
     g = [x["gross_bps"] for x in tr]
     n = [x["net_bps"] for x in tr]
     by = collections.defaultdict(list)
@@ -168,27 +196,33 @@ def summarize(tr):
         d = dt.datetime.fromtimestamp(x["t"], dt.timezone.utc)
         for k in ("long" if x["dir"] > 0 else "short", x["sym"], f"{d.year}H{1 + (d.month > 6)}"):
             by[k].append(x["net_bps"])
-    return {"trades": len(tr), "mean_gross_bps": statistics.fmean(g) if g else None,
+    return {"trades": len(tr), "signals": len(alltaker), "mean_gross_bps": statistics.fmean(g) if g else None,
             "mean_net_bps": statistics.fmean(n) if n else None, "t_net": _t(n),
+            "net_grid": {f"{c:g}": (statistics.fmean([x - c for x in g]) if g else None) for c in COST_GRID},
+            "t_grid": {f"{c:g}": _t([x - c for x in g]) for c in COST_GRID},
+            "taker_all_signals_bps": statistics.fmean(alltaker) if alltaker else None,
+            "taker_filled_bps": statistics.fmean(filled_taker) if filled_taker else None,
             "win_share": (sum(1 for x in n if x > 0) / len(n)) if n else None,
             "by": {k: [len(v), statistics.fmean(v)] for k, v in sorted(by.items())}}
 
 
-def run(bars1h_by_sym, fund_by_sym, part, pcts=PCTS, holds=HOLDS, dirs=DIRS):
+def run(bars1h_by_sym, fund_by_sym, part, pcts=PCTS, holds=HOLDS, dirs=DIRS, makers=(None,), bars5_by_sym=None):
     t_from, t_to = (eh.EXPLORE_START, eh.DEV_END) if part == "dev" else (eh.DEV_END, eh.EXPLORE_END)
     res, base = {}, {}
     sig_cache = {}
     for p in pcts:
         for h in holds:
             for d in dirs:
-                tr = []
-                for s in sorted(bars1h_by_sym):
-                    key = (s, p)
-                    if key not in sig_cache:
-                        sig_cache[key] = signals(fund_by_sym[s], p)
-                    for x in trades(bars1h_by_sym[s], sig_cache[key], h, d, t_from, t_to):
-                        tr.append({**x, "sym": s})
-                res[f"p{p:g}/h{h}/{d}"] = summarize(tr)
+                for mk in makers:
+                    tr = []
+                    for s in sorted(bars1h_by_sym):
+                        key = (s, p)
+                        if key not in sig_cache:
+                            sig_cache[key] = signals(fund_by_sym[s], p)
+                        for x in trades(bars1h_by_sym[s], sig_cache[key], h, d, t_from, t_to, mk,
+                                        bars5_by_sym[s] if bars5_by_sym else None):
+                            tr.append({**x, "sym": s})
+                    res[f"p{p:g}/h{h}/{d}" + ("" if mk is None else f"/maker{mk:g}")] = summarize(tr)
     for h in holds:                                  # reference: long at every settlement (the market's drift)
         tr = []
         for s in sorted(bars1h_by_sym):
@@ -209,19 +243,26 @@ def markdown(res, base, part, info, trials, note=""):
          f"Udviklingskørsler i alt (inkl. denne): {trials[0]} kørsler, {trials[1]} tests.", ""]
     if note:
         L += [note, ""]
-    L += ["| test | handler | brutto bps | netto bps | t (netto) | andel > 0 | long | short | BTC | ETH | "
-          "2020H1 | 2020H2 | 2021H1 | 2021H2 |", "|" + "---|" * 14]
+    L += ["| test | signaler | handler | brutto bps | netto 28 | netto 14 | netto 9 | t@14 | t@9 | taker alle sign. | "
+          "taker fyldte | andel > 0 @28 | long | short | BTC | ETH | 2020H1 | 2020H2 | 2021H1 | 2021H2 |",
+          "|" + "---|" * 20]
     keys = ("long", "short", "BTCUSDT", "ETHUSDT", "2020H1", "2020H2", "2021H1", "2021H2")
     f = eh.fmt
     for tid, r in res.items():
-        L.append(f"| {tid} | {r['trades']} | {f(r['mean_gross_bps'], '{:+.1f}')} | {f(r['mean_net_bps'], '{:+.1f}')} | "
-                 f"{f(r['t_net'], '{:+.2f}')} | {f(r['win_share'], '{:.2f}')} | " +
+        ng, tg = r["net_grid"], r["t_grid"]
+        L.append(f"| {tid} | {r['signals']} | {r['trades']} | {f(r['mean_gross_bps'], '{:+.1f}')} | "
+                 f"{f(ng['28'], '{:+.1f}')} | {f(ng['14'], '{:+.1f}')} | {f(ng['9'], '{:+.1f}')} | "
+                 f"{f(tg['14'], '{:+.2f}')} | {f(tg['9'], '{:+.2f}')} | {f(r['taker_all_signals_bps'], '{:+.1f}')} | "
+                 f"{f(r['taker_filled_bps'], '{:+.1f}')} | {f(r['win_share'], '{:.2f}')} | " +
                  " | ".join(f"{r['by'][k][0]} / {r['by'][k][1]:+.0f}" if k in r["by"] else "–" for k in keys) + " |")
     L += ["", "Reference: long ved hver afregning (markedets drift i perioden, samme hold og omkostning):", "",
           "| hold | handler | brutto bps | netto bps |", "|---|---|---|---|"]
     for h, r in base.items():
         L.append(f"| {h} | {r['trades']} | {f(r['mean_gross_bps'], '{:+.1f}')} | {f(r['mean_net_bps'], '{:+.1f}')} |")
-    L += ["", "Beskrivende; ingen rangering er en anbefaling. Tallene i long/short/symbol/halvår er antal / gns. netto bps."]
+    L += ["", "Netto 28/14/9 = brutto minus 28 (lab), 14 (perp taker) eller 9 bps (maker ind, taker ud; kun meningsfuld for "
+          "maker-tests). Taker alle sign. / taker fyldte = taker-brutto for alle signaler og for dem, maker-ordren fyldte "
+          "(forskellen er den negative udvælgelse). Beskrivende; ingen rangering er en anbefaling. Tallene i "
+          "long/short/symbol/halvår er antal / gns. netto bps ved 28."]
     return "\n".join(L) + "\n"
 
 
@@ -230,6 +271,7 @@ def main(argv=None):
     ap.add_argument("--pcts", default=",".join(f"{p:g}" for p in PCTS))
     ap.add_argument("--holds", default=",".join(map(str, HOLDS)))
     ap.add_argument("--dirs", default=",".join(DIRS))
+    ap.add_argument("--makers", default="", help="maker offsets in bps, e.g. 0,5,10 (amendment 48a); empty = taker")
     ap.add_argument("--check", action="store_true")
     ap.add_argument("--reason", default="")
     ap.add_argument("--out", default="")
@@ -247,7 +289,8 @@ def main(argv=None):
     if any(d not in DIRS for d in dirs) or any(not 0.5 <= p <= 1.0 for p in pcts) or any(h < 1 for h in holds):
         raise SystemExit("bad --pcts/--holds/--dirs")
     part = "check" if a.check else "dev"
-    cfg = {"pcts": pcts, "holds": holds, "dirs": dirs}
+    makers = tuple(float(x) for x in a.makers.split(",") if x != "") or (None,)
+    cfg = {"pcts": pcts, "holds": holds, "dirs": dirs, **({"makers": makers} if makers != (None,) else {})}
     csha = hashlib.sha256(json.dumps(cfg, sort_keys=True).encode()).hexdigest()
     if part == "check":
         if not a.reason:
@@ -257,7 +300,7 @@ def main(argv=None):
     bars, info5 = eh.load_bars(a.cache, a.verify, a.work or None)
     fund, dropped = load_funding(a.funding_dir, a.manifest)
     bars1h = {s: eh.resample(b, H1) for s, b in bars.items()}
-    res, base = run(bars1h, fund, part, pcts, holds, dirs)
+    res, base = run(bars1h, fund, part, pcts, holds, dirs, makers, bars)
     if part == "dev":
         eh.append_log(os.path.join(a.log_dir, "funding_dev_trials.jsonl"),
                       {"ts": round(time.time(), 1), "config_sha": csha, **cfg, "tests": len(res)})
