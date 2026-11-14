@@ -29,6 +29,7 @@ DEFAULT_OUT = "~/copybot_farm_feed.html"
 DASH = "file:///home/anton/copybot_farm.html"
 MAX_CARDS = 60
 CHART_BEFORE, CHART_AFTER = 36, 24          # bars shown around the setup bar
+CHART_AFTER_MAX = 120                       # extended up to this many bars so the last exit of the setup is in view
 STATUS_TXT = {"target": "mål", "stop": "stop", "timeout": "timeout", "missed": "misset", "no_fill": "ikke fyldt",
               "pending": "åben", "not_taken_warmup": "opvarmning"}
 LABEL = "PAPIR / SIMULERING — ingen rigtige penge, ingen evidens for en fordel"
@@ -78,18 +79,25 @@ def setups(live):
         if k not in g:
             g[k] = {"symbol": t["symbol"], "known_ts": t["known_ts"], "kind": t["kind"], "dir": t["dir"],
                     "entry": t["entry"], "stop": t["stop"], "targets": set(), "status": collections.Counter(),
-                    "variants": [], "chain": t.get("chain")}
+                    "variants": [], "chain": t.get("chain"), "exits": []}
         s = g[k]
         s["targets"].add(round(t["target"], 8))
         s["status"][t["status"]] += 1
         s["variants"].append(t["variant"])
+        if t.get("exit_ts") is not None:
+            s["exits"].append((int(t["exit_ts"]), t.get("exit_px"), t["status"]))
     return list(g.values())
 
 
 def mini_chart(bars, s, w=520, h=320):
     """Candles around the setup bar with entry / stop / target lines; the setup bar is marked."""
     k = next((i for i, b in enumerate(bars) if b[0] >= s["known_ts"] - fd.BS_LIVE), len(bars) - 1)
-    lo_i, hi_i = max(0, k - CHART_BEFORE), min(len(bars), k + CHART_AFTER)
+    after = CHART_AFTER
+    last = max((x[0] for x in s.get("exits", [])), default=None)
+    if last is not None:
+        j = next((i for i, b in enumerate(bars) if b[0] >= last - fd.BS_LIVE), len(bars) - 1)
+        after = min(CHART_AFTER_MAX, max(after, j - k + 3))
+    lo_i, hi_i = max(0, k - CHART_BEFORE), min(len(bars), k + after)
     win = bars[lo_i:hi_i]
     if not win:
         return ""
@@ -100,7 +108,7 @@ def mini_chart(bars, s, w=520, h=320):
     hi = max(max(b[2] for b in win), *levels)
     pad = (hi - lo) * 0.06 or 1.0
     lo, hi = lo - pad, hi + pad
-    n = max(len(win), CHART_BEFORE + CHART_AFTER)
+    n = max(len(win), CHART_BEFORE + after)
     cw = (w - 8) / n
 
     def y(p):
@@ -125,6 +133,16 @@ def mini_chart(bars, s, w=520, h=320):
                    f'stroke-dasharray="6 4"/><text x="{w - 4}" y="{y(p) - 3:.1f}" text-anchor="end" font-size="11" '
                    f'fill="{col}" font-family="ui-monospace,monospace" paint-order="stroke" stroke="#0f141d" stroke-width="3">'
                    f'{lbl} {fd.px(p)}</text>')
+    for ts, px, st in sorted(set(s.get("exits", []))):
+        j = next((i for i, b in enumerate(win) if b[0] >= ts - fd.BS_LIVE), None)
+        if j is None or px is None:
+            continue
+        col = "#19d38f" if st == "target" else "#ff5468" if st == "stop" else "#9aa4b2"
+        x, yy = 4 + j * cw + cw / 2, y(px)
+        out.append(f'<circle cx="{x:.1f}" cy="{yy:.1f}" r="5" fill="none" stroke="{col}" stroke-width="2"/>'
+                   f'<text x="{x:.1f}" y="{yy + 17:.1f}" text-anchor="middle" font-size="11" fill="{col}" '
+                   f'font-family="ui-monospace,monospace" paint-order="stroke" stroke="#0f141d" stroke-width="3">'
+                   f'{e(STATUS_TXT.get(st, st))}</text>')
     out.append("</svg>")
     return "".join(out)
 

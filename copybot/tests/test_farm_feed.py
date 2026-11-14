@@ -59,6 +59,25 @@ class Feed(unittest.TestCase):
             if c:
                 self.assertIn(f"#{c}", self.doc)
 
+    def test_mini_chart_extends_to_the_last_exit_and_marks_it(self):
+        bs = fd.BS_LIVE
+        bars = [(1000 * bs + i * bs, 100.0, 101.0, 99.0, 100.5, 1.0) for i in range(200)]
+        k_ts = bars[50][0] + bs                                    # known at the close of bar 50
+        s = {"symbol": "BTCUSDT", "known_ts": k_ts, "dir": 1, "entry": 100.5, "stop": 99.0, "targets": {102.0},
+             "exits": []}
+        plain = ff.mini_chart(bars, s)
+        self.assertEqual(plain.count("<rect"), ff.CHART_BEFORE + ff.CHART_AFTER)
+        self.assertNotIn("<circle", plain)
+        s["exits"] = [(bars[110][0] + bs, 99.0, "stop")]           # exit at the close of bar 110, 60 bars later
+        doc = ff.mini_chart(bars, s)
+        self.assertEqual(doc.count("<circle"), 1)
+        self.assertIn(">stop</text>", doc)
+        self.assertEqual(doc.count("<rect"), ff.CHART_BEFORE + (110 - 50) + 3)
+        s["exits"] = [(bars[199][0] + bs, 99.0, "stop")]           # beyond CHART_AFTER_MAX: capped, marker dropped
+        capped = ff.mini_chart(bars, s)
+        self.assertLessEqual(capped.count("<rect"), ff.CHART_BEFORE + ff.CHART_AFTER_MAX)
+        self.assertNotIn("<circle", capped)
+
     def test_book_file_unchanged(self):
         ff.render(fd.read_forward(self.db))
         self.assertEqual(sha(self.db), self.sha_before)
