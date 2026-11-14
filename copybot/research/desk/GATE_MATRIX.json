@@ -36,6 +36,7 @@
   "FUNDFRAG1": "desk draft, competes for W0",
   "OPS": "host operations (reboot, system update)",
   "EVENT_FARM": "event farm (research/tools/event_farm.py @ f686c9a): forward paper book, 96 tests (12 baseline + 7 filter combos x 12), BTCUSDT/ETHUSDT 5m, PROTOCOL_V3 amendment 46 = text 104; simulation only, descriptive, never evidence",
+  "FWD_POSITIONING": "forward collector of Binance positioning and liquidations, PROTOCOL_V3 amendment 49 (owner chat yes 2026-11-14); data only; studies after 21 days, each under its own amendment",
   "FUNDING_EXT_HIST": "funding extremes historical lab on explore0 (BTC/ETH 8h funding 2020-02..2021-12, price from the 44 amendment-47 files), PROTOCOL_V3 amendment 48 (owner chat choice 2026-11-14); dev 2020-03..2021-06, sealed check 2021-07..2021-12; exploration, never proof",
   "EVENT_FARM_HIST": "event farm historical development lab on explore0 (BTC/ETH 1m, 44 cached files 2020-03..2021-12), PROTOCOL_V3 amendment 47 (owner chat yes 2026-11-14); dev 2020-03..2021-06, sealed check 2021-07..2021-12; exploration, never proof"
  },
@@ -1086,6 +1087,18 @@
     "reports at day 14, 28 and 90, descriptive only"
    ],
    "applied": "2026-11-12 by the owner's decision in chat (start now; director decision 109 overridden by the owner)"
+  },
+  {
+   "id": "G32_FWD_POSITIONING",
+   "protects": "the forward positioning and liquidation collector runs only with PROTOCOL_V3 amendment 49 committed, its two streams APPROVED in stream_registry.json, the URL allowlist in research/tools/fapi_collector.py and the hosts answering without any DNS bypass; public data only, no key, no backfill, own database; no real money",
+   "source": [{"file": "research/PROTOCOL_V3.md", "loc": "Ændring 49"}, {"file": "research/desk/stream_registry.json", "loc": "fwd_bn_positioning, fwd_bn_liquidations"}],
+   "earliest_utc": null,
+   "kind": "owner",
+   "status_at_as_of": "CLOSED",
+   "opens_by": "all required_flags; the owner installs the unit",
+   "required_flags": ["owner_chat_yes_collector_2026_11_14", "fwd_positioning_amendment_49_committed", "fwd_positioning_streams_approved", "fwd_positioning_code_committed", "host_reachable_without_bypass"],
+   "studies": ["FWD_POSITIONING"],
+   "actions_at_opening": ["check UTC time", "own database ~/fapi_collector/positioning.db", "no backfill (rows before start discarded)", "studies only after 21 days of data, each under its own amendment"]
   }
  ],
  "actions": [
@@ -1554,6 +1567,13 @@
     "G27_NO_REAL_MONEY",
     "G28_NO_ASSISTANT_SIGNATURE"
    ]
+  },
+  {
+   "id": "fwd_positioning_collect",
+   "description": "forward collector of Binance public positioning (OI, taker buy/sell, long/short ratios; 10 fixed USDT perps, 5 min) and liquidations (public forceOrder websocket); data only, no trading",
+   "gates": ["G32_FWD_POSITIONING"],
+   "studies": {"FWD_POSITIONING": ["owner_chat_yes_collector_2026_11_14", "fwd_positioning_amendment_49_committed", "fwd_positioning_streams_approved", "fwd_positioning_code_committed", "host_reachable_without_bypass"]},
+   "constraints": ["G03_HOLDOUT_2024", "G04_RESERVED_2025PLUS", "G05_OWN_FORWARD_OBS", "G07_QUARANTINE", "G12_PMLP", "G27_NO_REAL_MONEY"]
   }
  ],
  "ambiguities_ref": "AMB-01..AMB-29 in research/desk/NOV14_READINESS.md section 11",

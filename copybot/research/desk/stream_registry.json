@@ -1063,6 +1063,46 @@
    "est_weekly_bytes": 3300000,
    "est_weekly_requests": 4032,
    "notes": "Approved 2026-11-12 by the owner's decision with the D5-signed text 104 (sha256 396cf90c...). 2 symbols x 288 slots/day, weight 0.4/min. No backfill, no key, no order or account endpoint (event_farm_source.check_url). started is set by the first call log line."
+  },
+  {
+   "id": "fwd_bn_positioning",
+   "status": "APPROVED",
+   "source_host": "fapi.binance.com",
+   "fields": [
+    "GET /fapi/v1/openInterest symbol: openInterest, time",
+    "GET /futures/data/openInterestHist symbol period=5m limit=2: sumOpenInterest, sumOpenInterestValue, timestamp",
+    "GET /futures/data/takerlongshortRatio symbol period=5m limit=2: buySellRatio, buyVol, sellVol, timestamp",
+    "GET /futures/data/globalLongShortAccountRatio symbol period=5m limit=2: longShortRatio, longAccount, shortAccount, timestamp",
+    "GET /futures/data/topLongShortPositionRatio symbol period=5m limit=2: longShortRatio, longAccount, shortAccount, timestamp"
+   ],
+   "cadence_s": 300,
+   "storage": "~/fapi_collector/positioning.db (SQLite; ~1 MB/day)",
+   "started": null,
+   "consumers": [
+    "research/tools/fapi_collector.py (PROTOCOL_V3 amendment 49); later studies each under their own amendment"
+   ],
+   "gate": "G32_FWD_POSITIONING",
+   "est_weekly_bytes": 7000000,
+   "est_weekly_requests": 100800,
+   "notes": "Approved 2026-11-14 by amendment 49 (owner chat 'Ja byg'). Symbols BTC ETH SOL XRP DOGE BNB ADA LINK AVAX LTC USDT perps, 5 endpoints x 10 symbols per 5 min (10 req/min; the futures/data limit is 1000 per 5 min per IP). No backfill: rows before the collector's start are discarded. Not a duplicate: Binance OI, taker volume and long/short ratios are not collected by any existing stream (HL OI is in hl_census)."
+  },
+  {
+   "id": "fwd_bn_liquidations",
+   "status": "APPROVED",
+   "source_host": "fstream.binance.com (new host, websocket /ws/!forceOrder@arr only)",
+   "fields": [
+    "forceOrder events: E (event ms), o.s symbol, o.S side, o.o type, o.f tif, o.q qty, o.p price, o.ap avg price, o.X status, o.l last filled qty, o.z filled qty, o.T trade ms; recv_ts"
+   ],
+   "cadence_s": 0,
+   "storage": "~/fapi_collector/positioning.db (SQLite; ~2-20 MB/day depending on market)",
+   "started": null,
+   "consumers": [
+    "research/tools/fapi_collector.py (PROTOCOL_V3 amendment 49)"
+   ],
+   "gate": "G32_FWD_POSITIONING",
+   "est_weekly_bytes": 70000000,
+   "est_weekly_requests": 20,
+   "notes": "Approved 2026-11-14 by amendment 49. One public websocket, reconnect with backoff (requests = connects). Binance pushes at most one liquidation snapshot per symbol per second, so totals are a lower bound."
   }
  ],
  "assessments": [
