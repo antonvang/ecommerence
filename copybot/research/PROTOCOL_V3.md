@@ -4596,3 +4596,28 @@ separate filer. Kører som systemd `--user`-enhed uden genstart af værten (G11)
 
 Claude underskriver ikke, laver ingen nøgle og aktiverer ikke (G28).
 <!-- ef104:end -->
+
+## Ændring 47 (2026-11-14 kl. 13:54 lokal, før data): event farm historisk udviklingslab på explore0 (ejerens ja)
+
+Ejeren skrev 2026-11-14 kl. ca. 13:50 lokal i chatten "Vi skal ikke vente så mange dage vi udvilker det jo selv" og
+valgte derefter "Historisk lab (anbefalet)" i et spørgsmål med de fire grænser nedenfor. Det er ejerens afgørelse af
+gate 1 (og 1a, 1b, 12) i `research/desk/EVENT_FARM_GATES_85.md`. Den tilsidesætter, at direktøren ikke har afgjort
+dem. Chat-ja (UNVERIFIED_ORIGIN efter D5); ejeren har før tilsidesat direktøren på samme måde (ændring 46).
+
+1. **Data:** kun de 44 cachede filer `BTCUSDT-1m-YYYY-MM.zip` og `ETHUSDT-1m-YYYY-MM.zip` for 2020-03..2021-12
+   (explore0, G02) i `/home/anton/ecommerence/copybot/data/lab/market/klines_1m/`. Navnene tages fra
+   `research/studies/R3_m24_verify.json`; mappen listes ikke. Hver fil sha256-tjekkes mod den fil før åbning; én
+   afvigelse = BLOCKED. Rækker uden for filens måned kasseres og tælles. Ingen hentning, intet netværk, ingen anden
+   kilde. Aldrig 2024 (G03) eller 2025+ (G04); karantænen røres ikke (G07).
+2. **Deling:** UDVIKLING = 2020-03-01..2021-06-30 (åben, må køres så tit som nødvendigt). KONTROL =
+   2021-07-01..2021-12-31 (forseglet): må kun køres på en fastfrosset konfiguration, hver åbning logges med
+   konfiguration og tid i `research/data/event_farm_hist/check_openings.jsonl`, og alle åbninger rapporteres.
+   Udviklingsresultater beregnes kun på barer før 2021-07-01 (handler, der ikke er afsluttet før da, tælles som
+   ufærdige).
+3. **Optælling:** hver konfiguration, der køres på UDVIKLING, logges i `research/data/event_farm_hist/dev_trials.jsonl`
+   og tæller med i N. explore0 er udforskning og aldrig bevis (ændring 10 punkt 6). Omkostninger som papirbogen
+   (ændring 46: 0,10 % taker + 0,04 % ugunstig pr. side, 28 bps rundtur) plus bps-gitter 0/1/5/8.
+4. **Papirbogen** (ændring 46) og dens 8 pinnede filer ændres ikke. En udviklet variant bliver først en kandidat,
+   når den er fastfrosset, har bestået KONTROL og har kørt i sin egen fremadrettede papirbog under en ny ændring.
+
+Kun papir og forskning. Ingen rigtige penge, ordrer eller nøgler. Claude underskriver ikke (G28).
