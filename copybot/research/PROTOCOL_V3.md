@@ -4621,3 +4621,26 @@ dem. Chat-ja (UNVERIFIED_ORIGIN efter D5); ejeren har før tilsidesat direktøre
    når den er fastfrosset, har bestået KONTROL og har kørt i sin egen fremadrettede papirbog under en ny ændring.
 
 Kun papir og forskning. Ingen rigtige penge, ordrer eller nøgler. Claude underskriver ikke (G28).
+
+## Ændring 48 (2026-11-14 kl. 15:08 lokal, før data): funding-ekstremer, historisk udviklingslab på explore0 (ejerens valg)
+
+Ejeren valgte 2026-11-14 i chatten "Funding-ekstremer (anbefalet)" efter at fastfrysning 01 af event farm dumpede
+(`research/studies/EVENT_FARM_HIST_FREEZE_01.md`). Chat-ja (UNVERIFIED_ORIGIN efter D5), som ændring 47.
+
+1. **Hypotese:** når en 8-timers funding-afregning er ekstrem i forhold til de foregående 30 dage (kun data før
+   afregningen), er gearede tradere skævt placeret og betaler for det; prisen går de følgende timer imod dem.
+   Kontrol: samme regel med retningen vendt (med flokken) og en tilfældig indgang på samme tidspunkter.
+2. **Data:** prisen fra de 44 filer under ændring 47 (samme sha256-tjek). Funding: `BTCUSDT-fundingRate-YYYY-MM.zip`
+   og `ETHUSDT-fundingRate-YYYY-MM.zip` for 2020-02..2021-12 i `.../data/lab/market/funding/` (2020-02 kun som
+   30-dages historik før første signal 2020-03). Der findes ingen tidligere registreret hash; før åbning skrives et
+   identitetsmanifest med lokal sha256, mærket POST_HOC_IDENTITY, og committes. Navnene konstrueres; en find med
+   navnefilter viste kun navne til og med 2021 (ingen fil åbnet). Aldrig 2022+ (G02), 2024 (G03), 2025+ (G04).
+3. **Tid:** afregningen ved T (00/08/16 UTC) regnes kendt ved T. Indgang ved lukkekursen for 1h-baren T..T+1h
+   (konservativt én time efter), udgang ved lukkekursen H timer senere. Ingen ny indgang i samme symbol, mens en
+   position er åben. Omkostning 28 bps rundtur (som papirbogen).
+4. **Deling og optælling:** som ændring 47: UDVIKLING 2020-03..2021-06 (logget, tælles), KONTROL 2021-07..2021-12
+   forseglet, kun på én fastfrosset regel med kriterier skrevet før åbning; åbninger logges.
+5. explore0 er tidligere brugt af funding-/carry-studier (banen, fcarry); resultatet er udforskning, aldrig bevis.
+   Den kørende papirbog (ændring 46) røres ikke.
+
+Kun papir og forskning. Ingen rigtige penge, ordrer eller nøgler. Claude underskriver ikke (G28).
