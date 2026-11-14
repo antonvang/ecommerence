@@ -4644,3 +4644,23 @@ Ejeren valgte 2026-11-14 i chatten "Funding-ekstremer (anbefalet)" efter at fast
    Den kørende papirbog (ændring 46) røres ikke.
 
 Kun papir og forskning. Ingen rigtige penge, ordrer eller nøgler. Claude underskriver ikke (G28).
+
+## Ændring 48a (2026-11-14 kl. 15:13 lokal, før kode): omkostningsgitter og maker-indgang i funding-labbet
+
+Ejeren skrev 2026-11-14 "Ja gør alt det der er bedst kør aggressiv og automat". Dataene er USDT-M perps
+(`lab/r3.py` HOST futures/um). Binance oplyser for USDⓈ-M VIP 0 maker 0,02 % og taker 0,05 % (support-FAQ
+360033544231, læst 2026-11-14); lab'ets papirmodel (0,10 % taker + 0,04 %) er spot-niveau og ændres ikke for
+papirbøgerne (ændring 41–46).
+
+1. Funding-labbet (ændring 48) rapporterer netto ved tre omkostninger pr. rundtur: **28 bps** (lab'ets model),
+   **14 bps** (perp taker begge veje: 2 × 5 bps gebyr + 2 × 2 bps spread/slippage) og **9 bps** (maker ind 2 bps uden
+   slippage, taker ud 5 + 2 bps).
+2. **Maker-indgang:** limit til referencekursen (lukkekursen for 1h-baren T..T+1h) forskudt o bps i egen favør
+   (o ∈ {0, 5, 10}), aktiv i 60 minutter. Fyld kun hvis en 5m-bar handler *igennem* limit (low < limit ved køb,
+   high > limit ved salg; berøring er ikke fyld). Ikke fyldt = ingen handel, talt. Udgang taker ved lukkekursen H timer
+   efter referencetidspunktet. Brutto måles fra limitkursen. Den negative udvælgelse (fyldte signaler vs. alle
+   signaler) rapporteres.
+3. En fastfrysning angiver sin omkostning før KONTROL; kriteriet skal holde ved den og rapporteres også ved 28 bps.
+   Alle nye konfigurationer logges og tæller i N (ændring 47 punkt 3).
+
+Kun papir og forskning. Ingen konto, ingen ordrer, ingen nøgler.
