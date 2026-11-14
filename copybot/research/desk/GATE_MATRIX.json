@@ -44,9 +44,9 @@
   {
    "id": "PROTOCOL_V3",
    "path": "research/PROTOCOL_V3.md",
-   "commit": "00c8003",
-   "sha256": "b357a7599156bdb3c7cd9ed9e18be0d78bd51a4b224dc0a03edcef3581e2b729",
-   "superseded_pin": {"commit": "346fa74", "sha256": "9fe3b3034c1d7a8053693dfc9772cb3590bb298b8e8ba0492a59e3ce34501045", "superseded": "2026-11-14 by amendment 49a (websocket routed path); f9b93ab/749f8457... superseded 2026-11-14 by amendment 49; 0fca9be/1bf2419a... superseded 2026-11-14 by amendment 48b (funding lab pre-settlement unwind); 5beaef2/8f37430c... superseded 2026-11-14 by amendment 48a; 3879257/6b7648e4... superseded 2026-11-14 by amendment 48; a90d906/6e9c3afe... superseded 2026-11-14 by amendment 47 (event farm historical lab, owner chat yes); earlier pin ec91280/0a09b3e9... superseded 2026-11-12 by amendment 46 (NOV14_READINESS correction trail); kept, not rewritten"}
+   "commit": "494dc07",
+   "sha256": "9672280e4b3e2c125d35b7df40ba1ad38818bb5d5908cd5f24ce9a0f6956edaf",
+   "superseded_pin": {"commit": "00c8003", "sha256": "b357a7599156bdb3c7cd9ed9e18be0d78bd51a4b224dc0a03edcef3581e2b729", "superseded": "2026-11-14 by amendment 49b (klines in the collector); 346fa74/9fe3b303... superseded earlier: 2026-11-14 by amendment 49a (websocket routed path); f9b93ab/749f8457... superseded 2026-11-14 by amendment 49; 0fca9be/1bf2419a... superseded 2026-11-14 by amendment 48b (funding lab pre-settlement unwind); 5beaef2/8f37430c... superseded 2026-11-14 by amendment 48a; 3879257/6b7648e4... superseded 2026-11-14 by amendment 48; a90d906/6e9c3afe... superseded 2026-11-14 by amendment 47 (event farm historical lab, owner chat yes); earlier pin ec91280/0a09b3e9... superseded 2026-11-12 by amendment 46 (NOV14_READINESS correction trail); kept, not rewritten"}
   },
   {
    "id": "READINESS_1114",
@@ -156,9 +156,9 @@
   {
    "id": "STREAM_REGISTRY",
    "path": "research/desk/stream_registry.json",
-   "commit": "00c8003",
-   "sha256": "a2d8837d2c696074006b71908be14278de633c319abbd23f746f4cc741199bf1",
-   "superseded_pin": {"commit": "5706aaf", "sha256": "1e05644da46ced3e916cda9feb06983f9897ce2e7b8315487cdd66a921c7eb18", "superseded": "2026-11-14 by amendment 49a (liquidation websocket path); 01f1b0d/5d2b3734... superseded 2026-11-14 by the fwd_bn_positioning and fwd_bn_liquidations entries (G32, amendment 49); 2e23f52/e4b564f1... superseded 2026-11-12 by ef_fwd_5m_klines (G31); kept, not rewritten"}
+   "commit": "494dc07",
+   "sha256": "9cf8a97f5aa62c9b3a1860505e9c14944de75b01700b795005ea80885f43caf8",
+   "superseded_pin": {"commit": "00c8003", "sha256": "a2d8837d2c696074006b71908be14278de633c319abbd23f746f4cc741199bf1", "superseded": "2026-11-14 by amendment 49b (klines in the collector); 5706aaf/1e05644d... superseded earlier: 2026-11-14 by amendment 49a (liquidation websocket path); 01f1b0d/5d2b3734... superseded 2026-11-14 by the fwd_bn_positioning and fwd_bn_liquidations entries (G32, amendment 49); 2e23f52/e4b564f1... superseded 2026-11-12 by ef_fwd_5m_klines (G31); kept, not rewritten"}
   },
   {
    "id": "PROTOCOL_SHORTLIST",
