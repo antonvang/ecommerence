@@ -33,3 +33,18 @@ dumpet åbnes den ikke igen for en nabo af den.
 - **Dumpet:** 1h-resultatet i UDVIKLING var tilpasning til perioden. Det skrives ned og bruges ikke.
 
 Kun papir og forskning. Den kørende papirbog (ændring 46) er ikke rørt.
+
+## Resultat af KONTROL (åbnet 2026-11-14 kl. 14:15 lokal, én gang; `check_openings.jsonl` 1 linje)
+
+117 handler i 2021-07..2021-12: brutto −0,118 R, netto −0,215 R (−560 USDT pr. 1.000 notional pr. handel), t −1,57.
+Long −0,16 (66), short −0,29 (51), BTC −0,25 (61), ETH −0,18 (56). Nullens brutto −0,060.
+
+| Kriterium | Krav | Resultat | |
+|---|---|---|---|
+| 1 netto R | > 0 | −0,215 | DUMPET |
+| 2 brutto − null | ≥ +0,10 | −0,058 | DUMPET |
+| 3 long / short | ≥ −0,15 | −0,16 / −0,29 | DUMPET |
+| 4 BTC / ETH | ≥ −0,15 | −0,25 / −0,18 | DUMPET |
+
+**Dom: DUMPET.** 1h-plateauet i UDVIKLING var tilpasning til 2020-03..2021-06 (et stærkt trendmarked). KONTROL åbnes
+ikke igen for en nabo af denne konfiguration (1h/2h ob- og fvg-market, RR 2–5). Ingen kandidat; ingen ny papirbog.
