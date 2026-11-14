@@ -66,11 +66,12 @@ Korrektionsspor (append-only):
 | 2026-11-14 | `STREAM_REGISTRY` ny version `5706aaf` (strømmene `fwd_bn_positioning`, `fwd_bn_liquidations`, gate G32); tidligere pin `01f1b0d`/`5d2b3734…` bevaret i `GATE_MATRIX.json` (`superseded_pin`) | samme |
 | 2026-11-14 | `PROTOCOL_V3` og `STREAM_REGISTRY` ny version `00c8003` (ændring 49a: websocket-sti `/market/ws/`); tidligere pins `346fa74`/`9fe3b303…` og `5706aaf`/`1e05644d…` bevaret | verifikationskald 2026-11-14 |
 | 2026-11-14 | `PROTOCOL_V3` og `STREAM_REGISTRY` ny version `494dc07` (ændring 49b: 5m-klines i indsamleren); tidligere pins `00c8003` bevaret | ejerens "Du kører" / "Ja byg" |
+| 2026-11-14 | `PROTOCOL_V3` ny version `aae177f` (ændring 49c: COIN-M-likvideringer filtreres fra); tidligere pin `494dc07` bevaret | rettelse |
 
 <!-- protocol-identities:start -->
 | id | fil | commit | sha256 |
 |---|---|---|---|
-| `PROTOCOL_V3` | `research/PROTOCOL_V3.md` | `494dc07` | `9672280e4b3e2c125d35b7df40ba1ad38818bb5d5908cd5f24ce9a0f6956edaf` |
+| `PROTOCOL_V3` | `research/PROTOCOL_V3.md` | `aae177f` | `6a9dac021634d2e8cfd4b469a5fe33d21eb9e03d414972e624689d22346c9411` |
 | `READINESS_1114` | `research/studies/READINESS_2026-11-14.md` | `dba9bda` | `33de9d7bcd485ea36e548e4e2c01b101fc524726ead634fad81736bce6f74f5e` |
 | `MISSION27_3` | `research/studies/MISSION27_3_2026-11-02.md` | `586a34d` | `103fd0afe3e2fd47a1aa289c83b549b625b1046814d68e27873682fecf252fd8` |
 | `N6_TOOL` | `research/tools/n6_funding.py` | `7012c2b` | `e481a43cf1b47488ac4d18a125ad6d9bcfa7e1acfe2e5708982163b1c5989709` |

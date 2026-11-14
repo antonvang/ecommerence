@@ -44,9 +44,9 @@
   {
    "id": "PROTOCOL_V3",
    "path": "research/PROTOCOL_V3.md",
-   "commit": "494dc07",
-   "sha256": "9672280e4b3e2c125d35b7df40ba1ad38818bb5d5908cd5f24ce9a0f6956edaf",
-   "superseded_pin": {"commit": "00c8003", "sha256": "b357a7599156bdb3c7cd9ed9e18be0d78bd51a4b224dc0a03edcef3581e2b729", "superseded": "2026-11-14 by amendment 49b (klines in the collector); 346fa74/9fe3b303... superseded earlier: 2026-11-14 by amendment 49a (websocket routed path); f9b93ab/749f8457... superseded 2026-11-14 by amendment 49; 0fca9be/1bf2419a... superseded 2026-11-14 by amendment 48b (funding lab pre-settlement unwind); 5beaef2/8f37430c... superseded 2026-11-14 by amendment 48a; 3879257/6b7648e4... superseded 2026-11-14 by amendment 48; a90d906/6e9c3afe... superseded 2026-11-14 by amendment 47 (event farm historical lab, owner chat yes); earlier pin ec91280/0a09b3e9... superseded 2026-11-12 by amendment 46 (NOV14_READINESS correction trail); kept, not rewritten"}
+   "commit": "aae177f",
+   "sha256": "6a9dac021634d2e8cfd4b469a5fe33d21eb9e03d414972e624689d22346c9411",
+   "superseded_pin": {"commit": "494dc07", "sha256": "9672280e4b3e2c125d35b7df40ba1ad38818bb5d5908cd5f24ce9a0f6956edaf", "superseded": "2026-11-14 by amendment 49c (COIN-M liquidations dropped); 00c8003 superseded by 49b; 2026-11-14 by amendment 49b (klines in the collector); 346fa74/9fe3b303... superseded earlier: 2026-11-14 by amendment 49a (websocket routed path); f9b93ab/749f8457... superseded 2026-11-14 by amendment 49; 0fca9be/1bf2419a... superseded 2026-11-14 by amendment 48b (funding lab pre-settlement unwind); 5beaef2/8f37430c... superseded 2026-11-14 by amendment 48a; 3879257/6b7648e4... superseded 2026-11-14 by amendment 48; a90d906/6e9c3afe... superseded 2026-11-14 by amendment 47 (event farm historical lab, owner chat yes); earlier pin ec91280/0a09b3e9... superseded 2026-11-12 by amendment 46 (NOV14_READINESS correction trail); kept, not rewritten"}
   },
   {
    "id": "READINESS_1114",
