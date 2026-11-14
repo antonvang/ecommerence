@@ -148,7 +148,7 @@ def status_card(live, now):
                         f'<div class="bar"><i style="width:{min(100, 100 * n // need)}%"></i></div>')
         body.append(f'<p class="sub">Første papirhandler fra <b>{e(eta)} UTC</b>. Indtil da bygger motoren niveauer og '
                     'struktur; setups vises men tages ikke.</p>')
-    tiles = [(len(taken), "papirhandler"), (st.get("pending", 0), "åbne"), (st.get("target", 0), "mål ramt"),
+    tiles = [(len(taken) - st.get("missed", 0) - st.get("no_fill", 0), "papirhandler"), (st.get("pending", 0), "åbne"), (st.get("target", 0), "mål ramt"),
              (st.get("stop", 0), "stop ramt")]
     return (f'<section class="card"><div class="top"><span>copybot · event farm</span>{head}</div>'
             f'<h1>PAPIR<span>FEED</span></h1><div class="sub">BTCUSDT · ETHUSDT · 5m · {len(ident["tests"])} tests · '

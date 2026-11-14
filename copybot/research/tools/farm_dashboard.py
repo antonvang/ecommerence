@@ -934,7 +934,8 @@ def live_tab(live):
     trades = live["trades"]
     taken = [t for t in trades if not t["status"].startswith("not_taken")]
     n_open = sum(1 for t in taken if t["status"] == "pending")
-    n_closed = sum(1 for t in taken if t["status"] in FINAL_STATUSES)
+    n_unfilled = sum(1 for t in taken if t["status"] in ("missed", "no_fill"))
+    n_closed = sum(1 for t in taken if t["status"] in FINAL_STATUSES) - n_unfilled
     start_ts = live["meta"].get("start_ts")
     since = dhm(int(live["steps"]["first_wall"])) if live["steps"]["first_wall"] is not None else "–"
     halted = live["halted"]
@@ -942,7 +943,7 @@ def live_tab(live):
              (dhm(int(start_ts)) if start_ts else "–", "første bar", "UTC"),
              (live["steps"]["step"], "skridt", f'{live["steps"]["n"]} med data'),
              (len(tests), "tests", "12 baseline + 7 × 12"),
-             (f"{n_open}", "åbne", f"{n_closed} lukkede · {len(trades)} setups"),
+             (f"{n_open}", "åbne", f"{n_closed} lukkede · {n_unfilled} ikke fyldt · {len(taken)} taget"),
              ("STOP" if halted else "ingen", "IntegrityHalt", "bogen standset" if halted else "kører ikke-standset")]
     out.append('<div class="tiles">' + "".join(
         f'<div class="tile"><span>{e(lbl)}</span><b{" class=sm" if len(str(v)) > 8 else ""}>{e(v)}</b><i>{e(sub)}</i>'
