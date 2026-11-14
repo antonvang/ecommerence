@@ -63,7 +63,7 @@ class Poll(unittest.TestCase):
         return 200, json.dumps(rows).encode()
 
     def test_one_slot_no_backfill_first_value_kept(self):
-        ins, calls, fails = fc.poll_once(self.db, START + 61, self.fake, start=START)
+        ins, calls, fails = fc.poll_once(self.db, START + 301, self.fake, start=START)   # bar START closed
         self.assertEqual((calls, fails), (60, 0))
         self.assertEqual(ins, 10 + 10 + 40)                    # rows before START and the open bar are discarded
         self.assertEqual(self.db.execute("SELECT ts FROM positioning WHERE metric = 'kline'").fetchall()[0], (START,))
