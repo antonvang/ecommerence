@@ -205,7 +205,7 @@ def run(bars_by_sym, over=None, variants=VARIANTS, combos=COMBOS, count_from=EXP
     the paper book). Only setups with known_ts >= count_from count; outcomes use only the given bars."""
     over = dict(over or {})
     res = {f"{c}/{v}": {"setups": 0, "status": collections.Counter(), "gross": [], "net_r": [], "net_usdt": [],
-                        "daily": collections.Counter()}
+                        "daily": collections.Counter(), "by": collections.defaultdict(list)}
            for v in variants for c in combos}
     days = set()
     det_cache = {}
@@ -238,6 +238,10 @@ def run(bars_by_sym, over=None, variants=VARIANTS, combos=COMBOS, count_from=EXP
                         d["net_r"].append(cost["net_r_lab"])
                         d["net_usdt"].append(cost["net_usdt"])
                         d["daily"][st["known_ts"] // 86400] += cost["net_r_lab"]
+                        half = dt.datetime.fromtimestamp(st["known_ts"], dt.timezone.utc)
+                        for key in ("long" if st["dir"] > 0 else "short", s,
+                                    f"{half.year}H{1 + (half.month > 6)}"):
+                            d["by"][key].append(cost["net_r_lab"])
     return summarize(res, len(days))
 
 
@@ -262,6 +266,7 @@ def summarize(res, n_days):
             "sum_net_usdt": math.fsum(d["net_usdt"]),
             "t_daily_net_r": _t(daily),
             "cost_r_median": (statistics.median([g - r for g, r in zip(d["gross"], d["net_r"])]) if n else None),
+            "by": {k: [len(v), statistics.fmean(v)] for k, v in sorted(d["by"].items())},
         }
     return out
 
@@ -315,6 +320,9 @@ def fmt(x, f="{:+.3f}"):
     return "–" if x is None else f.format(x)
 
 
+BY_KEYS = ("long", "short", "BTCUSDT", "ETHUSDT", "2020H1", "2020H2", "2021H1", "2021H2")
+
+
 def markdown(out, null, part, over, variants, combos, info, trials, note="", bs=BS):
     lab = LABEL_CHECK if part == "check" else LABEL
     L = [f"# Event farm historisk lab: {part.upper()}", "", f"**{lab}**", "",
@@ -337,6 +345,12 @@ def markdown(out, null, part, over, variants, combos, info, trials, note="", bs=
                  f"{st.get('timeout', 0)} | {fmt(r['mean_gross_r'])} | {fmt(r['mean_net_r'])} | "
                  f"{r['sum_net_usdt']:+.0f} | {fmt(r['t_daily_net_r'], '{:+.2f}')} | {fmt(r['cost_r_median'], '{:.2f}')} | "
                  f"{fmt(nl.get('mean_gross_r'))} | {fmt(nl.get('mean_net_r'))} |")
+    L += ["", "Opdeling af netto R (antal handler, gns. netto R): retning, symbol og halvår.", "",
+          "| test | " + " | ".join(BY_KEYS) + " |", "|" + "---|" * (len(BY_KEYS) + 1)]
+    for tid, r in out["tests"].items():
+        if r["trades"]:
+            L.append(f"| {tid} | " + " | ".join(
+                (f"{r['by'][k][0]} / {r['by'][k][1]:+.2f}" if k in r["by"] else "–") for k in BY_KEYS) + " |")
     L += ["", "Brutto R = før omkostninger; netto R = efter 28 bps (papirbogens model); 1.000 USDT pr. handel. "
           "Null = samme regler på en driftløs random walk (seed 83, 2 × 60 dage): det tilfældighed giver. "
           "Beskrivende; ingen rangering er en anbefaling."]
@@ -381,6 +395,8 @@ def main(argv=None):
     combos = COMBOS if a.combos == "all" else tuple(c for c in a.combos.split(",") if c)
     if any(c not in COMBOS for c in combos):
         raise SystemExit(f"unknown combo; known: {COMBOS}")
+    if a.tf != 5 and combos != ("base",):
+        raise SystemExit("filters F1-F3 are defined on 5m bars only (1h trend, prior day, VWAP from 5m); use --combos base")
     part = "check" if a.check else "dev"
     bs = a.tf * 60
     csha = config_sha(over, variants, combos, bs)
