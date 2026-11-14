@@ -1,1 +1,2 @@
 {"config_sha": "9176e56e9d6daba9049002e931ed954fa89c86ac19e89d08dfbab96d89be677d", "dirs": ["contra", "pro"], "holds": [4, 8, 24], "pcts": [0.9, 0.95, 1.0], "tests": 18, "ts": 1794665462.1}
+{"config_sha": "ac1a242b4d1fa384be3fd310a5e8792fa01be4b8b1c17ce262e9ff3c23919af8", "dirs": ["contra", "pro"], "holds": [4, 8, 24], "makers": [0.0, 5.0, 10.0], "pcts": [0.9, 0.95, 1.0], "tests": 54, "ts": 1794665700.5}
