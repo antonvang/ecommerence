@@ -62,11 +62,13 @@ Korrektionsspor (append-only):
 | 2026-11-14 | `PROTOCOL_V3` ny version `5beaef2` (ændring 48: funding-ekstremer, historisk lab); tidligere pin `3879257`/`6b7648e4…` bevaret i `GATE_MATRIX.json` (`superseded_pin`) | ejerens valg i chatten 2026-11-14 |
 | 2026-11-14 | `PROTOCOL_V3` ny version `0fca9be` (ændring 48a: omkostningsgitter og maker-indgang i funding-labbet); tidligere pin `5beaef2`/`8f37430c…` bevaret i `GATE_MATRIX.json` (`superseded_pin`) | ejerens "gør alt det der er bedst" 2026-11-14 |
 | 2026-11-14 | `PROTOCOL_V3` ny version `f9b93ab` (ændring 48b: nedlukning før afregning); tidligere pin `0fca9be`/`1bf2419a…` bevaret i `GATE_MATRIX.json` (`superseded_pin`) | samme |
+| 2026-11-14 | `PROTOCOL_V3` ny version `346fa74` (ændring 49: fremadrettet indsamler af positionering og likvideringer); tidligere pin `f9b93ab`/`749f8457…` bevaret | ejerens "Ja byg" 2026-11-14 |
+| 2026-11-14 | `STREAM_REGISTRY` ny version `5706aaf` (strømmene `fwd_bn_positioning`, `fwd_bn_liquidations`, gate G32); tidligere pin `01f1b0d`/`5d2b3734…` bevaret i `GATE_MATRIX.json` (`superseded_pin`) | samme |
 
 <!-- protocol-identities:start -->
 | id | fil | commit | sha256 |
 |---|---|---|---|
-| `PROTOCOL_V3` | `research/PROTOCOL_V3.md` | `f9b93ab` | `749f8457efa36a5f40fffedf483124b6617474f92d6a312334c29f1d615ac1b6` |
+| `PROTOCOL_V3` | `research/PROTOCOL_V3.md` | `346fa74` | `9fe3b3034c1d7a8053693dfc9772cb3590bb298b8e8ba0492a59e3ce34501045` |
 | `READINESS_1114` | `research/studies/READINESS_2026-11-14.md` | `dba9bda` | `33de9d7bcd485ea36e548e4e2c01b101fc524726ead634fad81736bce6f74f5e` |
 | `MISSION27_3` | `research/studies/MISSION27_3_2026-11-02.md` | `586a34d` | `103fd0afe3e2fd47a1aa289c83b549b625b1046814d68e27873682fecf252fd8` |
 | `N6_TOOL` | `research/tools/n6_funding.py` | `7012c2b` | `e481a43cf1b47488ac4d18a125ad6d9bcfa7e1acfe2e5708982163b1c5989709` |
@@ -84,7 +86,7 @@ Korrektionsspor (append-only):
 | `QUARANTINE` | `research/data/QUARANTINE.json` | `8fac269` | `7e98e1b38c552ef962aa0adfb97862fb94be79302580521bf2dd479ea966d117` |
 | `LINUX_DRIFT` | `research/LINUX_DRIFT.md` | `6e25c9c` | `659fc33159085b8a196907c03b423b86f0de341bd67a04a994a80f7c43987d58` |
 | `GATES_TOOL` | `research/tools/gates.py` | `8fac269` | `7f5050805714ccd206e2cae2d32d0c0124ef320bc0e47b6605447d6e40089558` |
-| `STREAM_REGISTRY` | `research/desk/stream_registry.json` | `01f1b0d` | `5d2b37347a8b806019368f2f5d6e9168c4894c90ae53fe6deb847e87ac749900` |
+| `STREAM_REGISTRY` | `research/desk/stream_registry.json` | `5706aaf` | `1e05644da46ced3e916cda9feb06983f9897ce2e7b8315487cdd66a921c7eb18` |
 | `PROTOCOL_SHORTLIST` | `research/desk/PROTOCOL_SHORTLIST.md` | `f624184` | `4012fb71d07fa35d56d870e4bc17b35774cdfda318a7a3b2375bafb33edbe4d8` |
 | `OWNER_APPROVAL_P0` | `research/studies/OWNER_APPROVAL_P0_2026-11-06.md` | `ea91152` | `fd759c4af25f464b9297d3aecec74257b70dda01fe49d8d111d87c7ba4a3f03f` |
 | `FACTORY_MIGRATION_P1` | `research/studies/FACTORY_MIGRATION_P1_2026-11-06.md` | `6b69703` | `2fbb81f014435ebb69e4c6b0e428e7569335477edcb1732456d5e308b1fb08c9` |
