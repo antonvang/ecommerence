@@ -1,0 +1,16 @@
+[Unit]
+Description=copybot forward positioning + liquidation collector (PROTOCOL_V3 amendment 49, gate G32; public data only)
+After=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/anton/copybot-dev/copybot
+ExecStart=/usr/bin/python3 -u -m research.tools.fapi_collector run
+Restart=on-failure
+RestartSec=60
+Nice=10
+CPUQuota=20%
+MemoryMax=300M
+
+[Install]
+WantedBy=default.target
