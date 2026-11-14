@@ -4664,3 +4664,15 @@ papirbøgerne (ændring 41–46).
    Alle nye konfigurationer logges og tæller i N (ændring 47 punkt 3).
 
 Kun papir og forskning. Ingen konto, ingen ordrer, ingen nøgler.
+
+## Ændring 48b (2026-11-14 kl. 15:15 lokal, før kode): funding-labbet — nedlukning før afregning
+
+Samme ejer-ja som 48a. Sidste test i funding-familien på explore0; derefter stopper familien, uanset resultat, medmindre
+en fastfrysning består KONTROL.
+
+1. **Hypotese:** har den forrige afregning (T−8 t) været ekstrem mod de 30 dage før den, lukker den betalende side
+   før næste afregning T, og prisen bevæger sig imod den i timerne lige før T.
+2. **Regel:** signalet bruger kun afregningen T−8 t og historikken før den (kendt ved T−8 t). Indgang ved lukkekursen
+   W timer før T (W ∈ {1, 2, 4}), udgang ved kursen ved T (lukkekursen for 1h-baren T−1 t..T). contra/pro som 48.
+   Tærskler som 48 (0,90/0,95/ny 30-dages top/bund). Omkostningsgitter og maker som 48a. 18 taker-tests.
+3. Deling, optælling og KONTROL som ændring 47/48. Kun papir og forskning.
