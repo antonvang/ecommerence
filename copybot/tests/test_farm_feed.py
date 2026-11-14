@@ -78,6 +78,35 @@ class Feed(unittest.TestCase):
         self.assertLessEqual(capped.count("<rect"), ff.CHART_BEFORE + ff.CHART_AFTER_MAX)
         self.assertNotIn("<circle", capped)
 
+    def test_liquidation_card_from_collector_db_read_only(self):
+        import json
+        from research.tools import fapi_collector as fc
+        p = os.path.join(self.d, "positioning.db")
+        db = fc.open_db(p)
+        now = 1_800_000_000
+        fc.start_ts(db, now - 7200)
+        for k, (sym, side, usd) in enumerate([("BTCUSDT", "SELL", 2_500_000.0), ("ETHUSDT", "BUY", 40_000.0),
+                                               ("SOLUSDT", "SELL", 10_000.0)]):
+            ev = {"e": "forceOrder", "E": (now - 600 * (k + 1)) * 1000,
+                  "o": {"s": sym, "S": side, "o": "LIMIT", "q": "1", "p": str(usd), "ap": str(usd), "X": "FILLED",
+                        "z": "1", "T": 0}}
+            fc.store_liquidation(db, json.dumps(ev), now, now - 7200)
+        db.execute("INSERT INTO calls VALUES (?, 'rest', 'x', 200, 1, 1, NULL)", (now - 120,))
+        db.commit()
+        db.close()
+        before = sha(p)
+        liq = ff.read_liq(p, now)
+        self.assertEqual((liq["n"], liq["symbols"]), (3, 3))
+        self.assertAlmostEqual(liq["last_h"][0], 2_510_000.0)
+        self.assertEqual(liq["top"][0][1], "BTCUSDT")
+        doc = ff.render(self.live, now=now, liq=liq)
+        self.assertIn("LIKVIDE<span>RINGER</span>", doc)
+        self.assertIn("KUN OBSERVATION", doc)
+        self.assertIn("2.5 mio USDT", doc)
+        self.assertNotRegex(doc, r"(?i)<script|\bon\w+\s*=|@import|url\(|https?://")
+        self.assertEqual(sha(p), before)
+        self.assertIsNone(ff.read_liq(os.path.join(self.d, "nope.db"), now))
+
     def test_book_file_unchanged(self):
         ff.render(fd.read_forward(self.db))
         self.assertEqual(sha(self.db), self.sha_before)
@@ -91,7 +120,7 @@ class Feed(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             out = os.path.join(d, "feed.html")
             with redirect_stdout(io.StringIO()):
-                self.assertEqual(ff.main(["--forward-db", self.db, "--out", out]), 0)
+                self.assertEqual(ff.main(["--forward-db", self.db, "--out", out, "--liq-db", ""]), 0)
             self.assertEqual(os.listdir(d), ["feed.html"])
         self.assertEqual(sha(self.db), self.sha_before)
 

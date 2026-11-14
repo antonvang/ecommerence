@@ -15,6 +15,7 @@ from __future__ import annotations
 import argparse
 import collections
 import os
+import sqlite3
 import sys
 import time
 
@@ -26,6 +27,7 @@ from research.tools import farm_dashboard as fd  # noqa: E402
 from research.tools.farm_dashboard import e  # noqa: E402
 
 DEFAULT_OUT = "~/copybot_farm_feed.html"
+LIQ_DB = "~/fapi_collector/positioning.db"
 DASH = "file:///home/anton/copybot_farm.html"
 MAX_CARDS = 60
 CHART_BEFORE, CHART_AFTER = 36, 24          # bars shown around the setup bar
@@ -206,6 +208,67 @@ def setup_card(live, s, i, n):
             f'<div class="out">{"".join(outs)}</div></section>')
 
 
+def read_liq(path, now):
+    """Liquidations of the last 24 h from the collector's database (amendment 49), read-only; None if absent."""
+    path = os.path.expanduser(path)
+    if not os.path.isfile(path):
+        return None
+    db = sqlite3.connect(f"file:{path}?mode=ro", uri=True, timeout=10)
+    try:
+        db.execute("PRAGMA query_only = ON")
+        lo = int(now) - 86400
+        rows = db.execute("SELECT event_ms, symbol, side, filled_qty * avg_price FROM liquidations "
+                          "WHERE event_ms >= ? AND status = 'FILLED'", (lo * 1000,)).fetchall()
+        start = db.execute("SELECT v FROM meta WHERE k = 'start_ts'").fetchone()
+        last_call = db.execute("SELECT MAX(ts) FROM calls").fetchone()[0]
+        ls = db.execute("SELECT data FROM positioning WHERE symbol = 'BTCUSDT' AND metric = 'top_ls' "
+                        "ORDER BY ts DESC LIMIT 1").fetchone()
+    finally:
+        db.close()
+    hours = [[0.0, 0.0] for _ in range(24)]
+    for ms, _, side, usd in rows:
+        h = min(23, max(0, (ms // 1000 - lo) // 3600))
+        hours[h][0 if side == "SELL" else 1] += usd or 0.0
+    last_h = [sum(u or 0 for ms, _, s, u in rows if ms // 1000 >= now - 3600 and s == side) for side in ("SELL", "BUY")]
+    top = sorted(rows, key=lambda r: -(r[3] or 0))[:5]
+    import json as _json
+    return {"n": len(rows), "symbols": len({r[1] for r in rows}), "hours": hours, "last_h": last_h, "top": top,
+            "start": float(start[0]) if start else None, "last_call": last_call,
+            "btc_top_ls": _json.loads(ls[0])["longShortRatio"] if ls else None}
+
+
+def usd(x):
+    return f"{x / 1e6:.1f} mio" if x >= 1e6 else f"{x / 1e3:.0f} t"
+
+
+def liq_card(liq, now):
+    """Observation only: what was force-closed on Binance USDT-M perps (longs red, shorts green), no trading."""
+    hi = max([a + b for a, b in liq["hours"]] + [1.0])
+    w, h, n = 520, 150, 24
+    cw = w / n
+    bars = []
+    for i, (a, b) in enumerate(liq["hours"]):
+        ya, yb = a / hi * (h - 10), b / hi * (h - 10)
+        bars.append(f'<rect x="{i * cw + 1:.1f}" y="{h - ya:.1f}" width="{cw - 2:.1f}" height="{ya:.1f}" fill="#ff5468"/>'
+                    f'<rect x="{i * cw + 1:.1f}" y="{h - ya - yb:.1f}" width="{cw - 2:.1f}" height="{yb:.1f}" '
+                    'fill="#19d38f"/>')
+    svg = f'<svg viewBox="0 0 {w} {h}" role="img" aria-label="likvideringer pr. time, 24 t">{"".join(bars)}</svg>'
+    top = "".join(f'<div class="sub">{e(s)} · {"longs ud" if side == "SELL" else "shorts ud"} · <b>{usd(u or 0)} USDT</b>'
+                  f' · {e(fd.dhm(ms // 1000)[-5:])} UTC</div>' for ms, s, side, u in liq["top"])
+    age = f"{(now - liq['last_call']) / 60:.0f} min siden" if liq["last_call"] else "–"
+    ls = f" · BTC top-trader long/short {e(liq['btc_top_ls'])}" if liq["btc_top_ls"] else ""
+    return (f'<section class="card" style="justify-content:flex-start;padding-top:64px"><div class="top"><span>binance usdt-m · alle perps</span>'
+            f'<span class="badge b-mut">KUN OBSERVATION</span></div>'
+            f'<h1>LIKVIDE<span>RINGER</span></h1><div class="sub">tvangslukninger de seneste 24 t · {liq["n"]} stk. i '
+            f'{liq["symbols"]} symboler · seneste kald {age}{ls}</div>'
+            f'<div class="big"><div class="stat"><span>longs tvunget ud, 1 t</span><b>{usd(liq["last_h"][0])}</b></div>'
+            f'<div class="stat"><span>shorts tvunget ud, 1 t</span><b>{usd(liq["last_h"][1])}</b></div></div>'
+            f'<div class="chart">{svg}</div><div class="sub">rød = longs likvideret · grøn = shorts likvideret · én søjle '
+            f'pr. time</div><div style="margin-top:10px">{top}</div>'
+            '<p class="sub">Indsamles fra 14/11 (ændring 49). Testplan 01 er låst; første måling tidligst 5/12. '
+            'Ingen handel på dette.</p></section>')
+
+
 def end_card():
     return ('<section class="card"><h2>Det er papir.</h2><p class="sub">Alle handler her er simulerede efter regler, der '
             'blev låst før start (PROTOCOL_V3 ændring 46). Ingen konto, ingen nøgler, ingen ordrer. 28 bps omkostning er '
@@ -213,7 +276,7 @@ def end_card():
             f'<p><a href="{DASH}">Fuldt dashboard →</a></p></section>')
 
 
-def render(live, now=None):
+def render(live, now=None, liq=None):
     now = time.time() if now is None else now
     head = ('<!doctype html><html lang="da"><head><meta charset="utf-8">'
             '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
@@ -223,7 +286,8 @@ def render(live, now=None):
         return (head + f'<section class="card"><h1>PAPIR<span>FEED</span></h1><p class="sub">Bogen kan ikke vises: '
                 f'{e(why)}.</p></section>' + end_card() + "</main></body></html>")
     groups = setups(live)[:MAX_CARDS]
-    cards = [status_card(live, now)] + [setup_card(live, s, i + 1, len(groups)) for i, s in enumerate(groups)]
+    cards = [status_card(live, now)] + ([liq_card(liq, now)] if liq else []) + \
+        [setup_card(live, s, i + 1, len(groups)) for i, s in enumerate(groups)]
     if not groups:
         cards.append('<section class="card"><h2>Ingen setups endnu</h2><p class="sub">Motoren har ikke fundet en '
                      'komplet kæde (sweep → MSS → FVG/OB) siden start.</p></section>')
@@ -234,12 +298,15 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--forward-db", default="~/event_farm/event_farm_forward.db")
     ap.add_argument("--out", default=DEFAULT_OUT)
+    ap.add_argument("--liq-db", default=LIQ_DB, help="collector database (amendment 49); '' = no liquidation card")
     a = ap.parse_args(argv)
     try:
         live = fd.read_forward(os.path.expanduser(a.forward_db))
     except ValueError as ex:
         raise SystemExit(str(ex))
-    doc = render(live)
+    now = time.time()
+    liq = read_liq(a.liq_db, now) if a.liq_db else None
+    doc = render(live, now, liq)
     out = os.path.expanduser(a.out)
     fd.write_atomic(out, doc)
     print(f"{out}: {len(doc.encode())} bytes, papir live: {live['state']}")

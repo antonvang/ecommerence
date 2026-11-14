@@ -4715,3 +4715,11 @@ Tilføjelse til ændring 49 (samme ejer-ja "Ja byg" / "Du kører"). Uden pris ka
 `fwd_bn_positioning` får også `GET /fapi/v1/klines symbol=<de 10 symboler> interval=5m limit=2` hvert 5. minut
 (10 kald mere pr. slot, i alt 60). Kun barer, hvis lukketid er passeret, gemmes (en åben bar kasseres); første værdi
 pr. (symbol, åbningstid) beholdes; ingen backfill (barer med åbningstid før start kasseres). Intet andet ændres.
+
+## Ændring 49c (2026-11-14 kl. 15:48 lokal): COIN-M-likvideringer filtreres fra
+
+Rettelse af ændring 49. Strømmen `/market/ws/!forceOrder@arr` på `fstream.binance.com` sender også COIN-M-kontrakter
+(fx `BTCUSD_PERP`, `ETHUSD_270326`), hvis mængde er i kontrakter, ikke i coins. COIN-M-data er spærret til
+2026-11-28 (G09). Fra nu gemmes kun USDⓈ-M-symboler (navn uden `_`, der ender på USDT eller USDC); frasorterede tælles
+i `meta.coinm_dropped`. De 38 COIN-M-rækker, indsamlet 14:22–14:47 UTC før rettelsen, er slettet fra
+`~/fapi_collector/positioning.db` uden at være brugt i nogen analyse (kun vist som tal i feed-kortet under udvikling).

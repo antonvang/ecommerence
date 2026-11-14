@@ -126,6 +126,8 @@ class Ws(unittest.TestCase):
         db = fc.open_db(os.path.join(d, "p.db"))
         stop = threading.Event()
         data = (fc.ws_frame(liq("BTCUSDT", (START + 5) * 1000), mask=False) + bytes([0x89, 2]) + b"hi" +
+                fc.ws_frame(liq("BTCUSD_PERP", (START + 6) * 1000), mask=False) +
+                fc.ws_frame(liq("ETHUSD_270326", (START + 7) * 1000), mask=False) +
                 fc.ws_frame(liq("ETHUSDT", (START - 5) * 1000), mask=False) +
                 fc.ws_frame(json.dumps({"e": "other"}).encode(), mask=False))
         socks = []
@@ -148,6 +150,7 @@ class Ws(unittest.TestCase):
         fc.ws_loop(db, threading.Lock(), START, stop, connect=connect, clock=clock)
         rows = db.execute("SELECT symbol, side, qty, avg_price FROM liquidations").fetchall()
         self.assertEqual(rows, [("BTCUSDT", "SELL", 0.5, 60010.0)])
+        self.assertEqual(db.execute("SELECT v FROM meta WHERE k = 'coinm_dropped'").fetchone(), ('2',))
         pong = socks[0].sent
         self.assertEqual(pong[0], 0x8A)                       # pong frame with the ping payload (masked)
         db.close()

@@ -18,6 +18,7 @@ import argparse
 import base64
 import json
 import os
+import re
 import socket
 import sqlite3
 import ssl
@@ -42,6 +43,7 @@ KLINES = "/fapi/v1/klines"                          # amendment 49b: closed 5m b
 ALLOWED_PATHS = {OI_NOW: {"symbol"}, KLINES: {"symbol", "interval", "limit"},
                  **{p: {"symbol", "period", "limit"} for p in HIST.values()}}
 SLOT, OFFSET = 300, 40
+USDM = re.compile(r"^[^_\s]+(USDT|USDC)$")              # amendment 49c: USDⓈ-M only; COIN-M (XXXUSD_PERP, _YYMMDD) dropped
 UA = "copybot-research/1.0"
 
 
@@ -249,6 +251,8 @@ def store_liquidation(db, msg, recv_ts, start):
     o = e.get("o") or {}
     if e.get("e") != "forceOrder" or o.get("s") is None:
         return 0
+    if not USDM.match(o["s"]):                                  # COIN-M contracts: never stored (G09 until 11-28)
+        return -1
     if int(e["E"]) // 1000 < start:
         return 0
     db.execute("INSERT INTO liquidations VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
@@ -282,7 +286,11 @@ def ws_loop(db, lock, start, stop, connect=ws_connect, clock=time.time, max_age=
                     raise ConnectionError("server closed")
                 elif op == 1:
                     with lock:
-                        n += store_liquidation(db, p.decode("utf-8"), clock(), start)
+                        r = store_liquidation(db, p.decode("utf-8"), clock(), start)
+                        n += max(r, 0)
+                        if r < 0:
+                            db.execute("INSERT OR REPLACE INTO meta VALUES ('coinm_dropped', CAST(COALESCE((SELECT v "
+                                       "FROM meta WHERE k = 'coinm_dropped'), 0) AS INTEGER) + 1)")
                         if clock() - last_commit > 10:
                             db.commit()
                             last_commit = clock()
