@@ -22,6 +22,7 @@ class Urls(unittest.TestCase):
         fc.check_url("https://fapi.binance.com/fapi/v1/openInterest?symbol=BTCUSDT")
         fc.check_url("https://fapi.binance.com/futures/data/takerlongshortRatio?symbol=ETHUSDT&period=5m&limit=2")
         fc.check_url("wss://fstream.binance.com/market/ws/!forceOrder@arr")
+        fc.check_url("https://fapi.binance.com/fapi/v1/klines?symbol=SOLUSDT&interval=5m&limit=2")
         for bad in ("https://api.binance.com/fapi/v1/openInterest?symbol=BTCUSDT",
                     "https://fapi.binance.com/fapi/v1/order?symbol=BTCUSDT",
                     "https://fapi.binance.com/fapi/v2/account",
@@ -30,6 +31,8 @@ class Urls(unittest.TestCase):
                     "https://fapi.binance.com/futures/data/openInterestHist?symbol=BTCUSDT&period=5m&limit=2&startTime=1",
                     "https://fapi.binance.com/fapi/v1/openInterest?symbol=BTCUSDT&signature=x",
                     "http://fapi.binance.com/fapi/v1/openInterest?symbol=BTCUSDT",
+                    "https://fapi.binance.com/fapi/v1/klines?symbol=BTCUSDT&interval=1m&limit=2",
+                    "https://fapi.binance.com/fapi/v1/klines?symbol=BTCUSDT&interval=5m&limit=1500",
                     "wss://fstream.binance.com/ws/!forceOrder@arr", "wss://fstream.binance.com/market/ws/btcusdt@aggTrade",
                     "wss://evil.example/market/ws/!forceOrder@arr"):
             with self.assertRaises(fc.UrlRefused, msg=bad):
@@ -49,6 +52,11 @@ class Poll(unittest.TestCase):
     def fake(self, url):
         fc.check_url(url)
         self.urls.append(url)
+        if "/fapi/v1/klines" in url:
+            k = [[(START - 300) * 1000, "1", "2", "0.5", "1.5", "10", START * 1000 - 1],
+                 [START * 1000, "1.5", "2", "1", "1.8", "11", (START + 300) * 1000 - 1],
+                 [(START + 300) * 1000, "1.8", "2", "1", "1.9", "3", (START + 600) * 1000 - 1]]   # last one open
+            return 200, json.dumps(k).encode()
         if "/fapi/v1/openInterest" in url:
             return 200, json.dumps({"symbol": "X", "openInterest": "123.4", "time": (START + 60) * 1000}).encode()
         rows = [{"timestamp": (START - 300) * 1000, "v": "old"}, {"timestamp": START * 1000, "v": "new"}]
@@ -56,20 +64,21 @@ class Poll(unittest.TestCase):
 
     def test_one_slot_no_backfill_first_value_kept(self):
         ins, calls, fails = fc.poll_once(self.db, START + 61, self.fake, start=START)
-        self.assertEqual((calls, fails), (50, 0))
-        self.assertEqual(ins, 10 + 40)                         # the row before START is discarded
+        self.assertEqual((calls, fails), (60, 0))
+        self.assertEqual(ins, 10 + 10 + 40)                    # rows before START and the open bar are discarded
+        self.assertEqual(self.db.execute("SELECT ts FROM positioning WHERE metric = 'kline'").fetchall()[0], (START,))
         self.assertEqual(self.db.execute("SELECT MIN(ts) FROM positioning").fetchone()[0], START)
         again, _, _ = fc.poll_once(self.db, START + 361, self.fake, start=START)
         self.assertEqual(again, 0)
-        self.assertEqual(self.db.execute("SELECT COUNT(*) FROM calls WHERE status = 200").fetchone()[0], 100)
+        self.assertEqual(self.db.execute("SELECT COUNT(*) FROM calls WHERE status = 200").fetchone()[0], 120)
         self.assertTrue(all(u.startswith("https://fapi.binance.com/") for u in self.urls))
 
     def test_errors_logged_and_unreachable_host_stops_early(self):
         def down(url):
             raise OSError("no route")
         ins, calls, fails = fc.poll_once(self.db, START, down, start=START)
-        self.assertEqual((ins, calls, fails), (0, 5, 5))
-        self.assertEqual(self.db.execute("SELECT COUNT(*) FROM calls WHERE status = -1").fetchone()[0], 5)
+        self.assertEqual((ins, calls, fails), (0, 6, 6))
+        self.assertEqual(self.db.execute("SELECT COUNT(*) FROM calls WHERE status = -1").fetchone()[0], 6)
 
     def test_start_ts_is_the_first_start(self):
         self.assertEqual(fc.start_ts(self.db, 100.0), 100.0)

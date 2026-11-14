@@ -1070,6 +1070,7 @@
    "source_host": "fapi.binance.com",
    "fields": [
     "GET /fapi/v1/openInterest symbol: openInterest, time",
+    "GET /fapi/v1/klines symbol interval=5m limit=2 (amendment 49b): closed bars only, fields 0-6",
     "GET /futures/data/openInterestHist symbol period=5m limit=2: sumOpenInterest, sumOpenInterestValue, timestamp",
     "GET /futures/data/takerlongshortRatio symbol period=5m limit=2: buySellRatio, buyVol, sellVol, timestamp",
     "GET /futures/data/globalLongShortAccountRatio symbol period=5m limit=2: longShortRatio, longAccount, shortAccount, timestamp",
@@ -1083,7 +1084,7 @@
    ],
    "gate": "G32_FWD_POSITIONING",
    "est_weekly_bytes": 7000000,
-   "est_weekly_requests": 100800,
+   "est_weekly_requests": 120960,
    "notes": "Approved 2026-11-14 by amendment 49 (owner chat 'Ja byg'). Symbols BTC ETH SOL XRP DOGE BNB ADA LINK AVAX LTC USDT perps, 5 endpoints x 10 symbols per 5 min (10 req/min; the futures/data limit is 1000 per 5 min per IP). No backfill: rows before the collector's start are discarded. Not a duplicate: Binance OI, taker volume and long/short ratios are not collected by any existing stream (HL OI is in hl_census)."
   },
   {

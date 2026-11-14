@@ -1,7 +1,8 @@
 """Forward collector of Binance public positioning and liquidations (PROTOCOL_V3 amendment 49, gate G32).
 
 Streams (research/desk/stream_registry.json):
-- fwd_bn_positioning: every 5 min (slot + 40 s), for 10 fixed USDT perps, public GET on fapi.binance.com:
+- fwd_bn_positioning: every 5 min (slot + 40 s), for 10 fixed USDT perps, public GET on fapi.binance.com
+  (amendment 49b adds /fapi/v1/klines interval=5m limit=2, closed bars only):
   /fapi/v1/openInterest, /futures/data/openInterestHist, /futures/data/takerlongshortRatio,
   /futures/data/globalLongShortAccountRatio, /futures/data/topLongShortPositionRatio (period 5m, limit 2);
 - fwd_bn_liquidations: the public websocket wss://fstream.binance.com/market/ws/!forceOrder@arr (amendment 49a).
@@ -37,7 +38,9 @@ SYMBOLS = ("BTCUSDT", "ETHUSDT", "SOLUSDT", "XRPUSDT", "DOGEUSDT", "BNBUSDT", "A
 HIST = {"oi_hist": "/futures/data/openInterestHist", "taker": "/futures/data/takerlongshortRatio",
         "global_ls": "/futures/data/globalLongShortAccountRatio", "top_ls": "/futures/data/topLongShortPositionRatio"}
 OI_NOW = "/fapi/v1/openInterest"
-ALLOWED_PATHS = {OI_NOW: {"symbol"}, **{p: {"symbol", "period", "limit"} for p in HIST.values()}}
+KLINES = "/fapi/v1/klines"                          # amendment 49b: closed 5m bars (price for outcomes)
+ALLOWED_PATHS = {OI_NOW: {"symbol"}, KLINES: {"symbol", "interval", "limit"},
+                 **{p: {"symbol", "period", "limit"} for p in HIST.values()}}
 SLOT, OFFSET = 300, 40
 UA = "copybot-research/1.0"
 
@@ -59,7 +62,8 @@ def check_url(url):
         raise UrlRefused(f"query not allowed: {url}")
     if q.get("symbol", [None])[0] not in SYMBOLS:
         raise UrlRefused(f"symbol not allowed: {url}")
-    if "period" in q and q["period"] != ["5m"] or "limit" in q and q["limit"] != ["2"]:
+    if "period" in q and q["period"] != ["5m"] or "interval" in q and q["interval"] != ["5m"] or \
+            "limit" in q and q["limit"] != ["2"]:
         raise UrlRefused(f"period/limit not allowed: {url}")
 
 
@@ -115,7 +119,8 @@ def poll_once(db, now, get=http_get, start=None, lock=None):
     lock = lock or threading.Lock()
     ins = calls = fails = 0
     for s in SYMBOLS:
-        jobs = [("oi_now", f"https://{REST_HOST}{OI_NOW}?symbol={s}")] + \
+        jobs = [("oi_now", f"https://{REST_HOST}{OI_NOW}?symbol={s}"),
+                ("kline", f"https://{REST_HOST}{KLINES}?symbol={s}&interval=5m&limit=2")] + \
                [(m, f"https://{REST_HOST}{p}?symbol={s}&period=5m&limit=2") for m, p in HIST.items()]
         for metric, url in jobs:
             t0 = time.time()
@@ -133,6 +138,13 @@ def poll_once(db, now, get=http_get, start=None, lock=None):
             with lock:
                 if status != 200:
                     fails += 1
+                elif metric == "kline":
+                    for r in rows:
+                        ts, close_ms = int(r[0]) // 1000, int(r[6])
+                        if ts < start or close_ms >= now * 1000:          # no backfill, no open bar
+                            continue
+                        n += db.execute("INSERT OR IGNORE INTO positioning VALUES (?, ?, ?, ?, ?)",
+                                        (s, metric, ts, json.dumps(r[:7]), now)).rowcount
                 elif metric == "oi_now":
                     ts = int(rows["time"]) // 1000
                     if ts >= start:

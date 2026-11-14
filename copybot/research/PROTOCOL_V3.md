@@ -4708,3 +4708,10 @@ og udfaset de gamle stier ("Important WebSocket Change Notice"; ændringslog med
 kaldet 2026-11-14 bekræftede: `/ws/!forceOrder@arr` forbinder men sender intet; `/market/ws/!forceOrder@arr` sender
 tvangslukninger. Strømmen `fwd_bn_liquidations` bruger derfor `wss://fstream.binance.com/market/ws/!forceOrder@arr`
 (samme vært, samme offentlige strøm, ingen nøgle). Intet andet ændres.
+
+## Ændring 49b (2026-11-14 kl. 15:44 lokal, før kode): priser i indsamleren
+
+Tilføjelse til ændring 49 (samme ejer-ja "Ja byg" / "Du kører"). Uden pris kan intet udfald måles. Strømmen
+`fwd_bn_positioning` får også `GET /fapi/v1/klines symbol=<de 10 symboler> interval=5m limit=2` hvert 5. minut
+(10 kald mere pr. slot, i alt 60). Kun barer, hvis lukketid er passeret, gemmes (en åben bar kasseres); første værdi
+pr. (symbol, åbningstid) beholdes; ingen backfill (barer med åbningstid før start kasseres). Intet andet ændres.
