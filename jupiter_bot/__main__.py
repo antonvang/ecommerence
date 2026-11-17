@@ -12,6 +12,12 @@ from pathlib import Path
 from .core import (ASSETS, SOL, USDC, Candle, Quote, QuoteRequest, Rejected, atoms, canonical,
                    positive_integer, strict_json, timestamp)
 from .jupiter import JupiterQuotes
+from .marketdata.candles import INTERVALS, BinanceKlines
+from .marketdata.journal import Journal
+from .marketdata.news import NEWS_FEEDS
+from .marketdata.observe import observe
+from .marketdata.quotes import JupiterQuoteSample
+from .marketdata.snapshot import build_snapshot
 from .paper import PaperBook
 from .runner import step
 
@@ -104,6 +110,29 @@ def main(argv=None):
     status_parser = commands.add_parser("status", help="Read an existing paper account")
     status_parser.add_argument("--db", required=True)
     status_parser.add_argument("--source", choices=["SYNTHETIC", "JUPITER_QUOTE"], default="JUPITER_QUOTE")
+    observe_parser = commands.add_parser("observe", help="ONE fetch of market data into the journal; no loop")
+    kinds = observe_parser.add_subparsers(dest="kind", required=True)
+    candles_parser = kinds.add_parser("candles", help="Binance Spot SOLUSDC klines")
+    candles_parser.add_argument("--journal", required=True)
+    candles_parser.add_argument("--interval", choices=INTERVALS, default="1m")
+    candles_parser.add_argument("--limit", type=int, default=200)
+    news_parser = kinds.add_parser("news", help="One official status/release feed")
+    news_parser.add_argument("--journal", required=True)
+    news_parser.add_argument("--feed", choices=NEWS_FEEDS, required=True)
+    sample_parser = kinds.add_parser("quote", help="One Jupiter quote sample (observation, never a fill)")
+    sample_parser.add_argument("--journal", required=True)
+    sample_parser.add_argument("--input", choices=ASSETS, default="USDC")
+    sample_parser.add_argument("--output", choices=ASSETS, default="SOL")
+    sample_parser.add_argument("--amount", default="25")
+    snapshot_parser = commands.add_parser("snapshot", help="Point-in-time snapshot from the journal (read-only)")
+    snapshot_parser.add_argument("--journal", required=True)
+    snapshot_parser.add_argument("--out", required=True, help="NEW JSON file for paper-step --snapshot")
+    snapshot_parser.add_argument("--as-of", type=float, help="Unix time; default now")
+    snapshot_parser.add_argument("--interval", choices=INTERVALS, default="1m")
+    snapshot_parser.add_argument("--bars", type=int, default=200)
+    snapshot_parser.add_argument("--news", nargs="*", choices=NEWS_FEEDS, default=[])
+    journal_parser = commands.add_parser("journal-status", help="Counts, gaps, outcomes and cooldowns (read-only)")
+    journal_parser.add_argument("--journal", required=True)
     args = parser.parse_args(argv)
     try:
         if args.command == "demo":
@@ -138,6 +167,42 @@ def main(argv=None):
                               as_of, time.time)
             finally:
                 book.close()
+        elif args.command == "observe":
+            destination = allowed_path(args.journal)
+            if args.kind == "candles":
+                adapter = BinanceKlines(interval=args.interval, limit=args.limit)
+            elif args.kind == "news":
+                adapter = NEWS_FEEDS[args.feed]()
+            else:
+                input_asset, output_asset = ASSETS[args.input], ASSETS[args.output]
+                adapter = JupiterQuoteSample(QuoteRequest(input_asset, output_asset,
+                                                          atoms(args.amount, input_asset)))
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            journal = Journal(destination)
+            try:
+                result = observe(journal, adapter)
+            finally:
+                journal.close()
+        elif args.command == "snapshot":
+            destination = allowed_path(args.out)
+            if destination.exists():
+                raise Rejected("Output file already exists; refusing to overwrite")
+            journal = Journal(allowed_path(args.journal), readonly=True)
+            try:
+                result = build_snapshot(journal, time.time() if args.as_of is None else args.as_of,
+                                        interval_s=INTERVALS[args.interval], bars=args.bars,
+                                        news_sources=args.news)
+            finally:
+                journal.close()
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            with destination.open("x", encoding="utf-8") as handle:
+                handle.write(canonical(result) + "\n")
+        elif args.command == "journal-status":
+            journal = Journal(allowed_path(args.journal), readonly=True)
+            try:
+                result = journal.status()
+            finally:
+                journal.close()
         else:
             # Read-only: status never creates tables or accounts in any file.
             book = PaperBook(allowed_path(args.db), source=args.source, readonly=True)

@@ -2,11 +2,10 @@
 from __future__ import annotations
 
 import json
-import sqlite3
 import time
 from dataclasses import asdict, dataclass
-from pathlib import Path
 
+from . import storage
 from .core import Quote, Rejected, SOL, USDC, SOURCES, canonical
 
 
@@ -33,13 +32,6 @@ SCHEMA_VERSION = 1
 STATE_KEYS = ("usdc", "sol", "cost_usdc", "fills")
 
 
-def _rollback(db):
-    # A failed BEGIN (e.g. "database is locked") leaves no transaction; a blind
-    # ROLLBACK would then replace the real error with a misleading one.
-    if db.in_transaction:
-        db.execute("ROLLBACK")
-
-
 SCHEMA = (
     """CREATE TABLE IF NOT EXISTS accounts(
          account TEXT PRIMARY KEY, config TEXT NOT NULL, usdc INTEGER NOT NULL CHECK(usdc >= 0),
@@ -63,57 +55,31 @@ class PaperBook:
             raise Rejected("Invalid paper account provenance")
         self.source, self.account, self.limits = source, account, limits or Limits()
         self.readonly = readonly
-        if readonly:
-            if str(path) == ":memory:" or not Path(path).is_file():
-                raise Rejected("Paper database does not exist")
-            uri = Path(path).resolve().as_uri() + "?mode=ro"
-            self.db = sqlite3.connect(uri, uri=True, timeout=10, isolation_level=None)
-        else:
-            self.db = sqlite3.connect(str(path), timeout=10, isolation_level=None)
-        self.db.row_factory = sqlite3.Row
+        self.db = storage.connect(path, readonly)
         try:
             self._open()
         except Exception:
             self.db.close()
             raise
 
-    def _identity(self):
-        app_id = self.db.execute("PRAGMA application_id").fetchone()[0]
-        has_tables = self.db.execute("SELECT count(*) FROM sqlite_master").fetchone()[0] > 0
-        if app_id != APPLICATION_ID and (has_tables or app_id != 0 or self.readonly):
-            raise Rejected("Not a jupiter_bot paper database; refusing to read or write it")
-        if app_id == APPLICATION_ID and self.db.execute("PRAGMA user_version").fetchone()[0] != SCHEMA_VERSION:
-            raise Rejected("Unsupported paper database schema version")
-        return app_id == APPLICATION_ID
-
     def _open(self):
         if self.readonly:
-            self._identity()
+            storage.is_marked(self.db, APPLICATION_ID, SCHEMA_VERSION, True, "paper")
             row = self.db.execute("SELECT config FROM accounts WHERE account=?", (self.account,)).fetchone()
             if row is None or json.loads(row[0]).get("source") != self.source:
                 raise Rejected("Paper account not found for this source")
             self.config = json.loads(row[0])
             return
-        self.db.execute("PRAGMA foreign_keys=ON")
         config = canonical(dict(asdict(self.limits), source=self.source))
-        try:
-            # Identity check, schema creation and account creation are one
-            # write transaction, so two first-time openers cannot interleave.
-            self.db.execute("BEGIN IMMEDIATE")
-            if not self._identity():
-                self.db.execute("PRAGMA application_id=%d" % APPLICATION_ID)
-                self.db.execute("PRAGMA user_version=%d" % SCHEMA_VERSION)
-            for statement in SCHEMA:
-                self.db.execute(statement)
-            self.db.execute("INSERT OR IGNORE INTO accounts VALUES (?, ?, ?, 0, 0)",
-                            (self.account, config, self.limits.initial_usdc))
-            stored = self.db.execute("SELECT config FROM accounts WHERE account=?", (self.account,)).fetchone()[0]
+
+        def ensure_account(db):
+            db.execute("INSERT OR IGNORE INTO accounts VALUES (?, ?, ?, 0, 0)",
+                       (self.account, config, self.limits.initial_usdc))
+            stored = db.execute("SELECT config FROM accounts WHERE account=?", (self.account,)).fetchone()[0]
             if stored != config:
                 raise Rejected("Existing account has different source or frozen limits; use a new account")
-            self.db.execute("COMMIT")
-        except Exception:
-            _rollback(self.db)
-            raise
+
+        storage.initialise(self.db, APPLICATION_ID, SCHEMA_VERSION, SCHEMA, "paper", ensure_account)
         self.config = json.loads(config)
 
     def close(self):
@@ -194,5 +160,5 @@ class PaperBook:
             self.db.execute("COMMIT")
             return self.state()
         except Exception:
-            _rollback(self.db)
+            storage.rollback(self.db)
             raise
