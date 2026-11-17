@@ -1,6 +1,7 @@
 """Public, quote-only Jupiter transport. No wallet, credentials or POST."""
 from __future__ import annotations
 
+import http.client
 import json
 import threading
 import time
@@ -8,7 +9,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
-from .core import Quote, Rejected, reject_json_constant
+from .core import Quote, Rejected, strict_json
 
 
 ENDPOINT = "https://api.jup.ag/swap/v2/order"
@@ -36,11 +37,14 @@ def public_get(url):
             raw = response.read(MAX_RESPONSE + 1)
             if len(raw) > MAX_RESPONSE:
                 raise Rejected("Quote response too large")
-            return json.loads(raw, parse_constant=reject_json_constant)
+            return strict_json(raw)
+    except Rejected:
+        raise
     except urllib.error.HTTPError as exc:
         retry_after = exc.headers.get("Retry-After", "unknown") if exc.headers else "unknown"
         raise Rejected("Quote HTTP %s; no retry; Retry-After=%s" % (exc.code, retry_after)) from exc
-    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, UnicodeError) as exc:
+    except (OSError, http.client.HTTPException, ValueError) as exc:
+        # URLError, timeouts, resets during read, IncompleteRead, bad JSON/UTF-8.
         raise Rejected("Quote request failed: %s" % type(exc).__name__) from exc
 
 

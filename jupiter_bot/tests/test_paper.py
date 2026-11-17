@@ -4,6 +4,7 @@ import threading
 import unittest
 from pathlib import Path
 
+from jupiter_bot.tests.guard import setUpModule, tearDownModule  # noqa: F401
 from jupiter_bot.__main__ import synthetic_bars
 from jupiter_bot.core import Rejected, SOL
 from jupiter_bot.paper import Limits, PaperBook

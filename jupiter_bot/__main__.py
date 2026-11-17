@@ -3,20 +3,35 @@ from __future__ import annotations
 
 import argparse
 import json
+import sqlite3
 import sys
 import time
 from decimal import Decimal
 from pathlib import Path
 
-from .core import ASSETS, SOL, USDC, Candle, Quote, QuoteRequest, Rejected, atoms, canonical, positive_integer, reject_json_constant
+from .core import (ASSETS, SOL, USDC, Candle, Quote, QuoteRequest, Rejected, atoms, canonical,
+                   positive_integer, strict_json, timestamp)
 from .jupiter import JupiterQuotes
 from .paper import PaperBook
 from .runner import step
 
 
+# The old Copybot lab lives next to this package. Nothing here may write there.
+PROTECTED = (Path(__file__).resolve().parent.parent / "copybot",)
+
+
+def allowed_path(path):
+    """Resolve a user-supplied path and refuse protected locations (even for reads)."""
+    resolved = Path(path).resolve()
+    for protected in PROTECTED:
+        if resolved == protected or protected in resolved.parents:
+            raise Rejected("Refusing to write inside protected directory %s" % protected)
+    return resolved
+
+
 def read_json(path):
     with Path(path).open(encoding="utf-8") as handle:
-        return json.load(handle, parse_constant=reject_json_constant)
+        return strict_json(handle.read())
 
 
 def read_quote(path):
@@ -95,9 +110,13 @@ def main(argv=None):
             result = demo()
         elif args.command == "quote":
             input_asset, output_asset = ASSETS[args.input], ASSETS[args.output]
-            result = JupiterQuotes().quote(QuoteRequest(input_asset, output_asset, atoms(args.amount, input_asset))).as_dict()
-            if args.out:
-                destination = Path(args.out)
+            request = QuoteRequest(input_asset, output_asset, atoms(args.amount, input_asset))
+            # Validate the destination before spending a rate-limited network call.
+            destination = allowed_path(args.out) if args.out else None
+            if destination is not None and destination.exists():
+                raise Rejected("Output file already exists; refusing to overwrite")
+            result = JupiterQuotes().quote(request).as_dict()
+            if destination is not None:
                 destination.parent.mkdir(parents=True, exist_ok=True)
                 with destination.open("x", encoding="utf-8") as handle:
                     handle.write(canonical(result) + "\n")
@@ -106,29 +125,29 @@ def main(argv=None):
             now = time.time()
             if snapshot.get("market") != "SOL/USDC" or snapshot.get("source") != "RECORDED":
                 raise Rejected("Expected recorded SOL/USDC observations")
-            if snapshot["as_of"] > now or quote.source != "JUPITER_QUOTE":
+            as_of = timestamp(snapshot.get("as_of"))
+            if as_of > now or quote.source != "JUPITER_QUOTE":
                 raise Rejected("Future decision or non-observed quote")
             quote.require_fresh(now)
-            destination = Path(args.db)
+            destination = allowed_path(args.db)
             destination.parent.mkdir(parents=True, exist_ok=True)
             book = PaperBook(destination, source="JUPITER_QUOTE")
             try:
                 result = step([Candle.parse(row) for row in snapshot["candles"]],
                               snapshot.get("news", []), book, lambda request: quote,
-                              snapshot["as_of"], time.time)
+                              as_of, time.time)
             finally:
                 book.close()
         else:
-            if not Path(args.db).is_file():
-                raise Rejected("Paper database does not exist")
-            book = PaperBook(args.db, source=args.source)
+            # Read-only: status never creates tables or accounts in any file.
+            book = PaperBook(allowed_path(args.db), source=args.source, readonly=True)
             try:
                 result = book.state()
             finally:
                 book.close()
         print(json.dumps(result, indent=2, allow_nan=False))
         return 0
-    except (Rejected, KeyError, TypeError, OSError, ValueError) as exc:
+    except (Rejected, KeyError, TypeError, OSError, ValueError, sqlite3.Error) as exc:
         print(json.dumps(dict(status="BLOCKED", live_execution=False, reason=str(exc))), file=sys.stderr)
         return 2
 

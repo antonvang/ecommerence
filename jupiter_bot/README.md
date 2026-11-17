@@ -78,6 +78,12 @@ python -m jupiter_bot paper-step --snapshot jupiter_bot/runtime/snapshot.json --
 python -m jupiter_bot status --db jupiter_bot/runtime/paper.db
 ```
 
+En beslutning skal udføres senest 60 sekunder efter `as_of`, ellers BLOCKED.
+Et fill bogføres kun, hvis kontoen stadig er i den tilstand, beslutningen så.
+Papirdatabasen mærkes med et fast SQLite-`application_id`; en anden ikke-tom
+database (fx Copybots `data/paper.db`) bliver aldrig skrevet i, `status` er
+read-only, og stier under `copybot/` afvises.
+
 Alle saldi er fiktive. Standardstørrelser og omkostningsantagelser står i
 [SPEC.md](SPEC.md). Tilbuddets output indeholder allerede swapgebyrer;
 simulatoren tilføjer kun de særskilt angivne pris- og netværksantagelser.
@@ -92,7 +98,8 @@ hurtige prisændringer, RPC-fejl, MEV eller manglende likviditet.
 | `jupiter.py` | Offentlige GET-tilbud, fast endpoint, tidsgrænse og kaldbegrænsning |
 | `paper.py` | Transaktionel SQLite-bogføring, saldi, kostpris og genstart |
 | `runner.py` | Beslutning, prisforespørgsel og automatisk papirfill |
-| `tests/` | Syntetiske tests uden netværk eller gamle labdata |
+| `tests/` | Syntetiske tests; `guard.py` blokerer sockets/DNS i alle testmoduler |
+| `reviews/CLAUDE_REVIEW.md` | Claudes P0-review: fund, rettelser og åbne risici |
 | `SPEC.md` | Dateret kontrakt committet før implementation |
 | `CLAUDE_HANDOFF.md` | Konkrete næste opgaver og acceptkrav til Claude |
 | `VALIDATION.md` | Hvad der faktisk er kørt og verificeret |

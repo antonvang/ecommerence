@@ -5,7 +5,7 @@ import hashlib
 import json
 import math
 from dataclasses import dataclass
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal, Inexact, InvalidOperation, Rounded, localcontext
 from urllib.parse import urlsplit
 
 
@@ -36,6 +36,20 @@ def reject_json_constant(value):
     raise Rejected("Non-finite JSON constant: " + value)
 
 
+def unique_object(pairs):
+    """json object hook: a repeated key is ambiguous evidence, not last-wins."""
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise Rejected("Duplicate JSON key: %s" % key)
+        result[key] = value
+    return result
+
+
+def strict_json(raw):
+    return json.loads(raw, parse_constant=reject_json_constant, object_pairs_hook=unique_object)
+
+
 def decimal_value(value):
     if isinstance(value, bool) or not isinstance(value, (str, int, float, Decimal)):
         raise Rejected("Expected a finite decimal")
@@ -60,10 +74,21 @@ def positive_integer(value):
 
 
 def atoms(amount, asset):
-    number = decimal_value(amount) * 10**asset.decimals
-    if number != number.to_integral_value():
+    # Exact decimal shift. The default 28-digit context would otherwise round
+    # e.g. "1000000000.0000000009999999999" SOL up to a whole atom silently.
+    number = decimal_value(amount)
+    with localcontext() as context:
+        context.prec = 60
+        context.traps[Inexact] = context.traps[Rounded] = True
+        try:
+            scaled = number.scaleb(asset.decimals)
+        except (Inexact, Rounded) as exc:
+            raise Rejected("Amount has too many digits") from exc
+    if scaled != scaled.to_integral_value():
         raise Rejected("Amount has more precision than the asset allows")
-    return positive_integer(int(number))
+    if scaled.adjusted() > 20:
+        raise Rejected("Amount outside positive u64 range")
+    return positive_integer(int(scaled))
 
 
 def timestamp(value):
@@ -129,6 +154,12 @@ class Quote:
             raise Rejected("Unknown or missing router")
         if type(fee) is not int or not 0 <= fee < 10000:
             raise Rejected("Invalid or missing fee")
+        # The paper book treats outAmount as exact-in output net of the quoted
+        # fee. Other modes or a fee in a third token would break that premise.
+        if payload.get("swapMode", "ExactIn") != "ExactIn":
+            raise Rejected("Only ExactIn quotes are accepted")
+        if payload.get("feeMint") not in (None, request.input_asset.mint, request.output_asset.mint):
+            raise Rejected("Fee is charged in an asset outside the swap")
         if "routePlan" in payload and not payload["routePlan"]:
             raise Rejected("Empty route")
         try:
@@ -191,12 +222,17 @@ def analyse(candles, news, as_of):
     if candles and as_of - candles[-1].end > 2 * interval:
         raise Rejected("Candle data is stale")
     for article in news:
-        published = timestamp(article["published_at"])
-        observed = timestamp(article["observed_at"])
+        if not isinstance(article, dict):
+            raise Rejected("News item must be an object")
+        published = timestamp(article.get("published_at"))
+        observed = timestamp(article.get("observed_at"))
         if not published <= observed <= as_of:
             raise Rejected("News was not available at the decision time")
-        parsed = urlsplit(article["url"])
-        if parsed.scheme != "https" or not parsed.hostname or not article.get("title"):
+        title, url = article.get("title"), article.get("url")
+        if not isinstance(title, str) or not title.strip() or not isinstance(url, str):
+            raise Rejected("News needs a title and HTTPS source URL")
+        parsed = urlsplit(url)
+        if parsed.scheme != "https" or not parsed.hostname:
             raise Rejected("News needs a title and HTTPS source URL")
     result = {"action": "WAIT", "as_of": as_of, "bars": len(candles),
               "news_count": len(news), "news_used_for_signal": False,

@@ -7,6 +7,7 @@ from decimal import Decimal
 from pathlib import Path
 from unittest.mock import patch
 
+from jupiter_bot.tests.guard import setUpModule, tearDownModule  # noqa: F401
 from jupiter_bot.__main__ import demo, read_quote, synthetic_bars
 from jupiter_bot.core import ASSETS, SOL, USDC, Asset, Candle, Quote, QuoteRequest, Rejected, analyse, atoms
 from jupiter_bot.jupiter import JupiterQuotes, public_get
