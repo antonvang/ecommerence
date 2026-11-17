@@ -53,13 +53,19 @@ def clean_text(value):
 
 
 def normalise_url(url):
-    parsed = urlsplit(url.strip())
+    if not isinstance(url, str):
+        raise Rejected("News link must be a string")
+    try:
+        parsed = urlsplit(url.strip())
+        port = parsed.port  # raises ValueError for an invalid port
+    except ValueError as exc:
+        raise Rejected("Malformed news link") from exc
     if parsed.scheme != "https" or not parsed.hostname or parsed.username or parsed.password:
         raise Rejected("News link must be a plain HTTPS URL")
     query = urlencode([(k, v) for k, v in parse_qsl(parsed.query, keep_blank_values=True)
                        if not TRACKING.match(k.lower())])
     path = parsed.path.rstrip("/") or "/"
-    netloc = parsed.hostname.lower() + (":%d" % parsed.port if parsed.port else "")
+    netloc = parsed.hostname.lower() + (":%d" % port if port else "")
     return urlunsplit(("https", netloc, path, query, ""))
 
 

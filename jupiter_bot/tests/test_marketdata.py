@@ -389,6 +389,12 @@ class NewsFeeds(Harness):
         finally:
             book.close()
 
+    def test_one_malformed_link_does_not_sink_the_whole_feed(self):
+        broken = RSS_BODY.replace(b"https://status.example.com/incident/3</link>",
+                                  b"https://status.example.com:99999/x</link><pubDate>Tue, 17 Nov 2026 08:00:00 GMT</pubDate>")
+        result = self.run_observe(self.rss, self.response(broken), self.seen)
+        self.assertEqual((result["outcome"], result["new"], result["rejected_items"]), ("OK", 1, 2))
+
     def test_xml_entities_and_doctype_are_refused(self):
         bomb = (b'<?xml version="1.0"?><!DOCTYPE lolz [<!ENTITY lol "lol"><!ENTITY lol2 "&lol;&lol;">]>'
                 b"<rss><channel><item><title>&lol2;</title></item></channel></rss>")

@@ -47,9 +47,9 @@ rettelser: [reviews/CLAUDE_REVIEW.md](reviews/CLAUDE_REVIEW.md). Kilder:
 
 | Kontrol | Resultat |
 |---|---|
-| `python -m unittest discover -s jupiter_bot/tests -v` (3.11, 3.12, 3.13) | 75 tests bestået: 26 oprindelige, 20 P0-regressionstests, 29 markedsdatatests |
+| `python -m unittest discover -s jupiter_bot/tests -v` (3.11, 3.12, 3.13) | 76 tests bestået: 26 oprindelige, 20 P0-regressionstests, 30 markedsdatatests |
 | Reproduktion før rettelse | F1–F5 reproduceret på `b9001e4` med et separat script |
-| Mutationskontrol | 9 P0-rettelser og 14 markedsdataregler fjernet én ad gangen i en kopi; den relevante test fejlede hver gang |
+| Mutationskontrol | 9 P0-rettelser og 15 markedsdataregler fjernet én ad gangen i en kopi; den relevante test fejlede hver gang |
 | Netværksvagt | `tests/guard.py` blokerer sockets/DNS. Den fandt selv fejl F11 |
 | `python -m jupiter_bot demo` | Uændret: 2 syntetiske fills, realiseret −572.407 atomer |
 | 3.9-syntaks | `ast.parse(feature_version=(3, 9))` på alle moduler. 3.9 selv var ikke installeret |
