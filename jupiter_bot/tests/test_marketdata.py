@@ -435,6 +435,55 @@ class QuoteSamples(Harness):
         self.assertNotIn("taker", self.calls[0])
 
 
+class LiveCheck(unittest.TestCase):
+    """The live-check orchestration, run offline against fake responses."""
+
+    def test_one_fetch_per_source_continues_after_failures_and_writes_summary(self):
+        from urllib.parse import parse_qs, urlsplit
+        from jupiter_bot.marketdata import livecheck
+
+        clock, sleeps = [float(T0 + 3605)], []
+
+        def fake_fetch(url, endpoint):
+            clock[0] += 0.2
+            parts = urlsplit(url)
+            if parts.netloc == "data-api.binance.vision":
+                return RawResponse(200, {"date": http_date(clock[0])}, body([kline(i) for i in range(55, 61)]))
+            if parts.netloc == "api.jup.ag":
+                query = {k: v[0] for k, v in parse_qs(parts.query).items()}
+                return RawResponse(200, {}, json.dumps(dict(query, inAmount=query["amount"], outAmount="12345",
+                                                            router="metis", feeBps=5, transaction=None)).encode())
+            if parts.netloc == "status.solana.com":
+                return RawResponse(404, {}, b"not found")
+            if parts.netloc == "status.jup.ag":
+                raise TransportError("Request failed: URLError")
+            return RawResponse(200, {}, ATOM_BODY)
+
+        def fake_sleep(seconds):
+            sleeps.append(seconds)
+            clock[0] += seconds
+
+        with tempfile.TemporaryDirectory() as directory:
+            out = Path(directory) / "live"
+            result = livecheck.run(out, fetch=fake_fetch, clock=lambda: clock[0], sleep=fake_sleep)
+            outcomes = {entry["check"]: entry["outcome"] for entry in result["outcomes"]}
+            self.assertEqual(outcomes, {
+                "candles SOL/USDC 1m": ["OK"], "quote USDC->SOL 25": ["OK"], "quote SOL->USDC 0.1": ["OK"],
+                "news solana_status": ["HTTP_ERROR"], "news jupiter_status": ["TRANSPORT_ERROR"],
+                "news agave_releases": ["OK"]})
+            self.assertEqual(len(sleeps), 1)  # waited for the Jupiter limiter instead of tripping it
+            summary = json.loads((out / "summary.json").read_text())
+            checks = {entry["check"]: entry for entry in summary["checks"]}
+            quote_fetch = checks["quote SOL->USDC 0.1"]["fetches"][0]
+            self.assertEqual(quote_fetch["full_public_payload"]["transaction"], None)
+            self.assertNotIn("taker", quote_fetch["url"])
+            self.assertIn("server_minus_local_s", checks["candles SOL/USDC 1m"]["fetches"][0])
+            self.assertIn("xml", checks["news agave_releases"]["fetches"][0]["structure"])
+            self.assertEqual(len(list((out / "raw").iterdir())), 5)  # transport error has no body
+            with self.assertRaises(Rejected):
+                livecheck.run(out, fetch=fake_fetch)  # never reuses an existing directory
+
+
 class TransportAllowlist(unittest.TestCase):
     ENDPOINT = Endpoint("data-api.binance.vision", "/api/v3/klines", frozenset({"symbol", "interval", "limit"}))
 

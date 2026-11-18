@@ -106,6 +106,11 @@ python -m jupiter_bot journal-status --journal jupiter_bot/runtime/observations.
 python -m jupiter_bot snapshot --journal jupiter_bot/runtime/observations.db --news solana_status --out jupiter_bot/runtime/snapshot.json
 ```
 
+Første gang på en maskine med netværk: `python -m jupiter_bot live-check`.
+Den laver ét kald pr. kilde i en ny mappe under `runtime/` og skriver
+`summary.json` med udfald, headers, urforskydning, struktur og de offentlige
+Jupiter-tilbud. Den fil sendes til review, før parserne stoles på.
+
 Journalen gemmer hver hentning med råsvar og SHA-256, også fejl. Første
 observerede værdi bevares, og revisioner logges separat. Åbne bars gemmes ikke,
 huller udfyldes ikke, og en cooldown efter 429 overlever genstart. `snapshot`

@@ -93,7 +93,8 @@ grænser, wallet eller ordrer. Det er testet med en fjendtlig titel.
    Antons maskine. Det er Antons beslutning.
 2. Brugsvilkår for Binance API, Jupiter, GitHub og statussiderne skal læses.
    Det var ikke muligt i denne session.
-3. Kør én hentning pr. kilde. Kontrollér det rå svar mod parserens antagelser:
+3. Kør `python -m jupiter_bot live-check` (én hentning pr. kilde, ingen løkke)
+   og send `summary.json` til review. Kontrollér det rå svar mod parserens antagelser:
    kline-felter, Statuspage-felter, RSS/Atom-struktur og Jupiters gebyr- og
    udløbsfelter. Først derefter planlægges en kadence. Eksempel: candles hvert
    minut med `limit=5` ≈ 1.440 kald og 2.880 weight pr. døgn, langt under
