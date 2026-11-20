@@ -64,3 +64,42 @@ Behov for adgang (særskilt): enten tillader Anton værterne
 cloud-miljøets netværksindstillinger, eller også køres hentningen på Antons
 egen maskine. Ingen nøgler eller betalte kald er nødvendige. Brugsvilkårene
 skal læses før løbende indsamling.
+
+---
+
+## Opdatering 2026-11-20 — live-formatkontrol udført
+
+**Udført:**
+- `e41f5df`: `live-check` (ét kald pr. kilde, `summary.json`).
+- Anton godkendte et personligt cloud-miljø "ecommerence". Det tillader kun
+  kildernes værter, `developers.jup.ag` og den eksisterende Dukascopy-vært.
+  Ingen nøgler, ingen setup-script.
+- `live-check` blev kørt to gange. Fund og rettelse: Jupiters RSS bruger
+  `-0000` (RFC 5322 = UTC), og alle 4 elementer blev afvist. Nu parses de.
+  Snapshot repræsenterer en historie ved dens første publikation på tværs af
+  opdateringselementer.
+- 7 uændrede live-svar er gemt som fixtures (`tests/fixtures/live_20261120/`,
+  SHA-256 i `meta.json`, `-text` i `.gitattributes`) med 12 tests.
+
+**Verificeret:**
+- 90 tests OK på 3.11, 3.12 og 3.13.
+- Mutationskontrol af de to nye regler.
+- Anden live-kørsel: 5/6 kilder OK, og GitHub gav 403 fra cloud-proxyen.
+
+**Fund:**
+- `outAmount` er målbart netto efter `feeBps` for `metis` i begge retninger,
+  også med `feeMint` = input. Ved RFQ er gebyret ikke specificeret, men rutens
+  output er lig `outAmount`. Det tidligere åbne punkt om dobbelt fradrag er
+  dermed lukket for `metis`.
+- Svarene har intet udløbsfelt, så de faste 15 s bevares.
+- Netværksgebyrfelterne er 0 uden `taker`, så 0,01 USDC er fortsat en antagelse.
+- Binance-weight var allerede 266 efter vores ene kald: cloud-IP'en deles med
+  andre. En løbende indsamler bør køre fra en fast egen maskine eller med lav kadence.
+- GitHub-feeds kan ikke hentes fra en cloud-session, fordi proxyen kun tillader
+  repoets egne stier.
+- Jupiters dokumentation er stadig ikke læst direkte, og brugsvilkårene er ikke læst.
+
+**Næste:** P2-forskningsplanen skrives *før* nye resultatdata: mekanisme,
+univers, frekvens, budget for forsøg, benchmark, omkostninger (nu med målte
+Jupiter-gebyrer) og afvisningskrav. Samtidig skal Anton beslutte, om og hvor
+en løbende indsamling må køre (kadence, maskine). Den er ikke installeret.

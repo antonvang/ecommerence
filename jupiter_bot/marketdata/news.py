@@ -12,7 +12,7 @@ import re
 import unicodedata
 import xml.etree.ElementTree as ElementTree
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from ..core import Rejected, canonical, strict_json
@@ -94,10 +94,16 @@ def iso_time(value):
 
 
 def rfc822_time(value):
+    text = (value or "").strip() if isinstance(value, str) else ""
     try:
-        parsed = email.utils.parsedate_to_datetime((value or "").strip())
+        parsed = email.utils.parsedate_to_datetime(text)
     except (TypeError, ValueError, IndexError) as exc:
         raise Rejected("Unparseable RFC 822 time") from exc
+    if parsed is not None and parsed.tzinfo is None and text.endswith("-0000"):
+        # RFC 5322 3.3: "-0000" is UTC with unknown local zone. Python returns
+        # it naive, exactly like a missing zone, so decide from the text.
+        # (Seen live in status.jup.ag/feed.rss, 2026-11-20.)
+        parsed = parsed.replace(tzinfo=timezone.utc)
     if parsed is None or parsed.tzinfo is None:
         raise Rejected("Timestamp without timezone")
     return parsed.timestamp()

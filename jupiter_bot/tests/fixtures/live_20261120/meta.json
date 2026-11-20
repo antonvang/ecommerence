@@ -1,0 +1,98 @@
+{
+ "captured": "2026-11-20 by two `python -m jupiter_bot live-check` runs from a Claude cloud session",
+ "files": {
+  "binance_klines_SOLUSDC_1m.json": {
+   "body_sha256": "03208d9eba8c6ada0cdc34b8bb2f1ed9dc4390a78e50704d80e5a609a557201a",
+   "headers": {
+    "content-type": "application/json;charset=UTF-8",
+    "date": "Fri, 20 Nov 2026 18:14:18 GMT",
+    "x-mbx-used-weight-1m": "266"
+   },
+   "http_status": 200,
+   "outcome_at_capture": "OK",
+   "received_at": 1795198458.5503018,
+   "requested_at": 1795198457.5353982,
+   "source": "binance_spot_klines",
+   "url": "https://data-api.binance.vision/api/v3/klines?interval=1m&limit=5&symbol=SOLUSDC"
+  },
+  "github_agave_releases_403_cloud_proxy.json": {
+   "body_sha256": "7616419b9bf270d69874e3b82e043e4cb72f84772d301076751aa65fa9132be6",
+   "headers": {
+    "content-type": "application/json; charset=utf-8"
+   },
+   "http_status": 403,
+   "outcome_at_capture": "HTTP_ERROR",
+   "received_at": 1795198461.9867,
+   "requested_at": 1795198461.7199914,
+   "source": "agave_releases",
+   "url": "https://github.com/anza-xyz/agave/releases.atom"
+  },
+  "jupiter_order_SOL_USDC_0.1.json": {
+   "body_sha256": "5b76e34ccabba10e24470ed7514c5a75e14f09c5f9a71f199657d62779498488",
+   "headers": {
+    "content-type": "application/json",
+    "date": "Fri, 20 Nov 2026 18:14:20 GMT"
+   },
+   "http_status": 200,
+   "outcome_at_capture": "OK",
+   "received_at": 1795198461.0154717,
+   "requested_at": 1795198460.7573113,
+   "source": "jupiter_quote",
+   "url": "https://api.jup.ag/swap/v2/order?amount=100000000&inputMint=So11111111111111111111111111111111111111112&outputMint=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+  },
+  "jupiter_order_SOL_USDC_0.1_metis.json": {
+   "body_sha256": "7c2bbfdedd14c50339f61f878535720d3bb2e6dfaf484a12ff9c95e93d357f9e",
+   "headers": {
+    "content-type": "application/json",
+    "date": "Fri, 20 Nov 2026 18:17:29 GMT"
+   },
+   "http_status": 200,
+   "outcome_at_capture": "OK",
+   "received_at": 1795198649.237858,
+   "requested_at": 1795198648.9460208,
+   "source": "jupiter_quote",
+   "url": "https://api.jup.ag/swap/v2/order?amount=100000000&inputMint=So11111111111111111111111111111111111111112&outputMint=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+  },
+  "jupiter_order_USDC_SOL_25.json": {
+   "body_sha256": "83c50f91a32ffea8e73743ce469aa5520bb49cdb190b32082661ccb02744c087",
+   "headers": {
+    "content-type": "application/json",
+    "date": "Fri, 20 Nov 2026 18:14:18 GMT"
+   },
+   "http_status": 200,
+   "outcome_at_capture": "OK",
+   "received_at": 1795198458.9046485,
+   "requested_at": 1795198458.556214,
+   "source": "jupiter_quote",
+   "url": "https://api.jup.ag/swap/v2/order?amount=25000000&inputMint=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&outputMint=So11111111111111111111111111111111111111112"
+  },
+  "jupiter_status_feed.rss": {
+   "body_sha256": "c3afbb88ed7adf1508009d1bb635ff0003a4b5055d1d4f1b0163163cfff66301",
+   "headers": {
+    "content-type": "application/rss+xml; charset=utf-8",
+    "date": "Fri, 20 Nov 2026 18:14:21 GMT"
+   },
+   "http_status": 200,
+   "outcome_at_capture": "OK",
+   "received_at": 1795198461.7151701,
+   "requested_at": 1795198461.25567,
+   "source": "jupiter_status",
+   "url": "https://status.jup.ag/feed.rss"
+  },
+  "solana_status_incidents.json": {
+   "body_sha256": "d0841560dc37ce4b96397baf133daa2d5c8c00ee0f0776e82239712807f8c39f",
+   "headers": {
+    "content-type": "application/json; charset=utf-8",
+    "date": "Fri, 20 Nov 2026 18:14:08 GMT",
+    "etag": "W/\"d0841560dc37ce4b96397baf133daa2d\""
+   },
+   "http_status": 200,
+   "outcome_at_capture": "OK",
+   "received_at": 1795198461.2473247,
+   "requested_at": 1795198461.0194204,
+   "source": "solana_status",
+   "url": "https://status.solana.com/api/v2/incidents.json"
+  }
+ },
+ "note": "Exact public responses, unmodified. No wallet, taker or key was involved. Used only to check parser assumptions; not research data and not evidence of any edge."
+}

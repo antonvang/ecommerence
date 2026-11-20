@@ -95,8 +95,8 @@ hurtige prisændringer, RPC-fejl, MEV eller manglende likviditet.
 
 Hver kommando laver én hentning og stopper. Der er ingen løkke, scheduler eller
 baggrundsproces. Kilder, grænser og verifikationsstatus står i
-[DATA_SOURCES.md](DATA_SOURCES.md). Ingen kilde er endnu hentet live fra dette
-projekt; første rigtige svar skal kontrolleres.
+[DATA_SOURCES.md](DATA_SOURCES.md). Første rigtige svar (2026-11-20) ligger som
+fixtures i `tests/fixtures/live_20261120/`.
 
 ```bash
 python -m jupiter_bot observe candles --journal jupiter_bot/runtime/observations.db

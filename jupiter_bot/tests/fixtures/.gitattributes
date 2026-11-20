@@ -1,0 +1,2 @@
+# Exact captured bytes: never convert line endings (hashes are pinned in meta.json).
+* -text

@@ -364,6 +364,18 @@ class NewsFeeds(Harness):
         self.assertEqual(len(stories), 1)
         self.assertEqual([row["source"] for row in stories[0]], ["rss_test", "rss_mirror", "rss_title"])
 
+    def test_story_is_represented_by_its_first_publication_not_feed_order(self):
+        updates = b"""<?xml version="1.0"?><rss version="2.0"><channel>
+<item><title>Outage</title><link>https://status.example.com/incident/9</link><guid>a-later</guid>
+<pubDate>Tue, 17 Nov 2026 09:30:00 -0000</pubDate></item>
+<item><title>Outage</title><link>https://status.example.com/incident/9</link><guid>z-first</guid>
+<pubDate>Tue, 17 Nov 2026 09:00:00 -0000</pubDate></item></channel></rss>"""
+        self.run_observe(self.rss, self.response(updates), self.seen)
+        self.run_observe(self.adapter_bars(), self.ok([kline(i) for i in range(119, 121)]), self.seen + 5)
+        news = build_snapshot(self.journal, self.seen + 6, news_sources=["rss_test"])["news"]
+        self.assertEqual(len(news), 1)
+        self.assertEqual((news[0]["items"], news[0]["published_at"]), (2, T0 - 3 * 3600))  # 09:00 UTC
+
     def test_article_text_is_data_not_instructions(self):
         hostile = dict(STATUS_BODY, incidents=[dict(
             STATUS_BODY["incidents"][0], id="inc9",

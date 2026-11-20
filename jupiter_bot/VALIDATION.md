@@ -61,3 +61,20 @@ GitHub, og Jupiters dokumentation kunne ikke læses (netværkspolitik, 403).
 Parserne er kun testet på syntetiske fixtures, der efterligner de forventede
 formater. Copybots testsuite er ikke kørt, da intet i `copybot/` er ændret.
 
+### Live-formatkontrol, 2026-11-20
+
+Kørt fra en Claude cloud-session efter oprettelse af et personligt miljø
+"ecommerence". Det tillader kun `data-api.binance.vision`, `api.jup.ag`,
+`status.solana.com`, `status.jup.ag`, `github.com`, `developers.jup.ag` og
+den eksisterende `datafeed.dukascopy.com`.
+
+| Kontrol | Resultat |
+|---|---|
+| `python -m jupiter_bot live-check` (1. kørsel) | Binance OK (4 lukkede, 1 åben droppet); Jupiter OK ×2 (`metis`, `jupiterz`); Solana-status OK (30/30); Jupiter-status **4/4 afvist** (`-0000`); GitHub 403 fra cloud-proxyen |
+| Rettelse | RFC 5322 `-0000` = UTC. En manglende zone afvises stadig. Snapshot vælger historiens første offentliggørelse på tværs af opdateringer |
+| `python -m jupiter_bot live-check` (2. kørsel) | Jupiter-status 4/4 parset; Jupiter SOL→USDC via `metis` gemt som ekstra fixture |
+| `python -m unittest discover -s jupiter_bot/tests` (3.11, 3.12, 3.13) | 90 tests bestået (26 + 20 P0 + 32 markedsdata + 12 mod de rigtige svar i `tests/fixtures/live_20261120/`) |
+| Mutationskontrol af de nye rettelser | `-0000`-reglen og valget af første publikation fejler begge uden rettelsen |
+
+Den lokale journal og råfilerne fra kørslerne ligger under den git-ignorerede
+`runtime/`. Kun de syv fixture-filer plus `meta.json` er committet.

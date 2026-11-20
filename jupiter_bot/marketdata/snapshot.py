@@ -33,15 +33,19 @@ def build_snapshot(journal, as_of, candle_source="binance_spot_klines", instrume
 
     news, excluded = [], {}
     for group in journal.stories_as_of(list(news_sources), as_of, as_of - news_window):
-        first = group[0]
-        if first["published_at"] > first["first_seen_at"]:
-            # Claimed publication after we first saw it: clock or feed error.
+        # Claimed publication after we first saw it: clock or feed error; not usable.
+        valid = [row for row in group if row["published_at"] <= row["first_seen_at"]]
+        if not valid:
             excluded["published_after_first_seen"] = excluded.get("published_after_first_seen", 0) + 1
             continue
+        # A group can hold several updates of one story (status feeds post one item
+        # per update). Represent it by its first sighting and first publication.
+        first = min(valid, key=lambda row: (row["first_seen_at"], row["published_at"], row["source"]))
         news.append(dict(title=first["title"], url=first["url"], published_at=first["published_at"],
                          observed_at=first["first_seen_at"], source=first["source"],
-                         also_seen_in=sorted({row["source"] for row in group[1:]}),
-                         revised=first["revised"], published_is_updated=bool(first["published_is_updated"])))
+                         also_seen_in=sorted({row["source"] for row in group} - {first["source"]}),
+                         items=len(group), revised=any(row["revised"] for row in group),
+                         published_is_updated=bool(first["published_is_updated"])))
 
     snapshot = dict(market=instrument, source="RECORDED", as_of=as_of, candles=candles, news=news,
                     provenance=dict(

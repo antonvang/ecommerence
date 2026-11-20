@@ -1,12 +1,12 @@
 # Datakilder og observationsjournal (P1), 2026-11-17
 
-Status: adapters og journal er implementeret og testet på syntetiske fixtures.
-**Ingen af kilderne er hentet live i denne session.** Miljøets netværkspolitik
-afviste `data-api.binance.vision`, `api.jup.ag`, `status.solana.com`,
-`developers.jup.ag` m.fl. med 403. Formater og grænser nedenfor stammer fra
-søgeresultater eller tidligere kendskab, som markeret. De skal bekræftes mod
-første rigtige svar, før data bruges. Adapterne fejler lukket (`PARSE_ERROR`),
-hvis formen afviger.
+Status: adapters og journal er implementeret og testet. Den 2026-11-20 blev
+`live-check` kørt to gange fra en cloud-session med et særskilt miljø
+("ecommerence"), der kun tillader kildernes værter. Fem af seks kilder svarede,
+og deres rå svar ligger uændret i `tests/fixtures/live_20261120/` med SHA-256 i
+`meta.json`. Én afvigelse fra antagelserne blev fundet og rettet: RSS-tidszonen
+`-0000`. Grænser og vilkår nedenfor stammer stadig fra søgeresultater, som
+markeret. Brugsvilkårene er ikke læst.
 
 Dokumentet er skrevet sammen med koden, ikke før den. Det er committet som
 særskilt commit forud for koden.
@@ -15,11 +15,22 @@ særskilt commit forud for koden.
 
 | Id | Hvad | Endpoint (fast allowlist) | Nøgle | Grænse i adapteren | Dokumenteret grænse | Verifikation |
 |---|---|---|---|---|---|---|
-| `binance_spot_klines` | 1m/5m/15m/1h-candles for Binance Spot `SOLUSDC` | `GET https://data-api.binance.vision/api/v3/klines?symbol&interval&limit` | Nej | ≥ 2 s mellem kald pr. journal; `limit` ≤ 1000; 429 → `Retry-After`, ellers 60 s; 418 → 900 s | Market-data-only-host uden nøgle. Klines vejer 2 ud af 6.000 weight/min pr. IP. 429 ved overskridelse. (søgeresultater fra Binance-docs) | Kun syntetisk. 418 = automatisk IP-ban efter gentagne 429 er tidligere kendskab, ikke genlæst |
-| `jupiter_quote` | Eksekverbart tilbud for én fast størrelse (prøve, aldrig et fill) | `GET https://api.jup.ag/swap/v2/order?inputMint&outputMint&amount` | Nej | ≥ 2,1 s pr. journal | Nøglefri: 0,5 RPS, 30 kald/60 s pr. konto/IP; `/order` deler den generelle pulje (søgeresultat fra Jupiters portal-side) | Codex hentede ét live-svar (`VALIDATION.md`). Ikke gentaget her |
-| `solana_status` | Hændelser på Solanas statusside | `GET https://status.solana.com/api/v2/incidents.json` | Nej | ≥ 60 s; 429 → 300 s | Ukendt | Tredjepartstrackere siger, at siden kører Atlassian Statuspage. Stien er Statuspages standard. **Ikke bekræftet** |
-| `jupiter_status` | Jupiters statusside som RSS | `GET https://status.jup.ag/feed.rss` | Nej | ≥ 60 s | Ukendt | En mirror angiver Better Stack som udbyder, og Better Stack dokumenterer `/feed.rss`. **Slutning, ikke bekræftet** |
-| `agave_releases` | Releases af Agave, Solanas primære validatorklient | `GET https://github.com/anza-xyz/agave/releases.atom` | Nej | ≥ 60 s | GitHubs grænser for anonyme web-feeds er ukendte | Standard GitHub-feed. **Ikke hentet** |
+| `binance_spot_klines` | 1m/5m/15m/1h-candles for Binance Spot `SOLUSDC` | `GET https://data-api.binance.vision/api/v3/klines?symbol&interval&limit` | Nej | ≥ 2 s mellem kald pr. journal; `limit` ≤ 1000; 429 → `Retry-After`, ellers 60 s; 418 → 900 s | Market-data-only-host uden nøgle. Klines vejer 2 ud af 6.000 weight/min pr. IP. 429 ved overskridelse. (søgeresultater fra Binance-docs) | **Live 2026-11-20:** format som antaget (12 felter, `closeTime = open + 60.000 − 1`, decimaler som tekst). Sidste række er den åbne bar og blev droppet. `Date`-header findes. `x-mbx-used-weight-1m` var 266 efter ét kald, så cloud-IP'ens budget deles med andre. 418-reglen er tidligere kendskab |
+| `jupiter_quote` | Eksekverbart tilbud for én fast størrelse (prøve, aldrig et fill) | `GET https://api.jup.ag/swap/v2/order?inputMint&outputMint&amount` | Nej | ≥ 2,1 s pr. journal | Nøglefri: 0,5 RPS, 30 kald/60 s pr. konto/IP; `/order` deler den generelle pulje (søgeresultat fra Jupiters portal-side) | **Live 2026-11-20 (3 svar):** `metis` begge veje og `jupiterz` (RFQ). `outAmount` er netto efter `feeBps` (se nedenfor). Intet udløbsfelt. Netværksgebyrfelter er 0 uden `taker` |
+| `solana_status` | Hændelser på Solanas statusside | `GET https://status.solana.com/api/v2/incidents.json` | Nej | ≥ 60 s; 429 → 300 s | Ukendt | **Live 2026-11-20:** Statuspage v2-format bekræftet. 30 hændelser, alle parset. Seneste hændelse er fra 2024-02-06. `Date` lå 13 s efter vores ur (CDN-cache) |
+| `jupiter_status` | Jupiters statusside som RSS | `GET https://status.jup.ag/feed.rss` | Nej | ≥ 60 s | Ukendt | **Live 2026-11-20:** RSS 2.0 bekræftet. Ét element pr. *opdatering* (samme link, forskellig `guid`). `pubDate` bruger `-0000`, som først blev afvist (rettet) |
+| `agave_releases` | Releases af Agave, Solanas primære validatorklient | `GET https://github.com/anza-xyz/agave/releases.atom` | Nej | ≥ 60 s | GitHubs grænser for anonyme web-feeds er ukendte | **Ikke testet:** cloud-sessionens GitHub-proxy tillader kun de konfigurerede repos og svarede 403 (gemt som fixture). Kan virke fra en anden maskine; ubekræftet |
+
+Jupiter-gebyrer i de rå svar (2026-11-20, `tests/test_live_fixtures.py`):
+- `metis`, USDC→SOL (`feeMint` = output): `outAmount` = rutens output −
+  ⌊output · 2/10.000⌋ (362.829.593 − 72.565 = 362.757.028).
+- `metis`, SOL→USDC (`feeMint` = **input**): hele input går til ruten, og
+  de 2 bps trækkes alligevel fra output (6.922.000 − 1.384 = 6.920.616).
+- `jupiterz` (RFQ, `gasless: true`, `guaranteedPrice: true`): rutens output =
+  `outAmount`. Gebyret er ikke specificeret, men ligger i makerens pris.
+- Papirbogen bruger `outAmount` direkte. Swapgebyret trækkes altså ikke to
+  gange, og det er nu målt for `metis`. De 25 bps og 0,01 USDC er fortsat
+  egne antagelser, da netværksgebyrfelterne er 0 uden `taker`.
 
 Hvorfor disse:
 - **Binance SOLUSDC** er en primær børs med egne, dokumenterede og gratis

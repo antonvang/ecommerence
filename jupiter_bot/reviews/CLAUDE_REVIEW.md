@@ -49,17 +49,18 @@ Testvagter: `tests/guard.py` patcher `socket.connect`, `create_connection` og
 
 ## Ikke verificeret / tilbageværende risici
 
-- **Jupiter-dokumentation kunne ikke læses i denne session.** Miljøets
-  netværkspolitik afviser `developers.jup.ag`, `dev.jup.ag` og `api.jup.ag`
-  (403). Live-smoketesten fra `VALIDATION.md` er derfor ikke gentaget. Kun
-  søgeresultater var tilgængelige. De siger, at platformgebyret er inkluderet i
-  tilbuddet og fratrukket automatisk, og at `feeBps` kan indeholde et
-  gasless-tillæg. At `outAmount` er netto efter **alle** gebyrer er derfor
-  stadig en antagelse, der skal tjekkes mod et gemt live-svar
-  (`feeMint`, `platformFee`, eventuelle udløbsfelter).
-- Udløb: prototypen bruger fast 15 s. Hvis svaret har et eget udløbsfelt
-  (relevant for RFQ-routere som `jupiterz`), skal det tilføjes som en strengere
-  grænse, når feltnavnet er bekræftet. Det er ikke gættet.
+- **Opdatering 2026-11-20 (live-svar):** Tre rigtige `/order`-svar ligger
+  nu som fixtures. For `metis` er `outAmount` målbart netto efter `feeBps` i
+  begge retninger, også når `feeMint` er input-mint. For `jupiterz` (RFQ) er
+  gebyret ikke specificeret, men rutens output er lig `outAmount`. Ingen
+  dobbelt fradrag er dermed bekræftet for `metis` og sandsynligt for RFQ.
+  Jupiters dokumentation er stadig ikke læst direkte.
+- Udløb: ingen af de tre svar har et udløbsfelt (`expireAt` e.l.). RFQ-svaret
+  har `quoteId`, `maker` og `guaranteedPrice: true`, men ingen tid. De faste
+  15 s bevares. RFQ-tilbud kan i praksis udløbe hurtigere; det kan først
+  måles med `/execute`, som er uden for denne opgave.
+- Netværksomkostning: uden `taker` er `signature/prioritization/rentFeeLamports`
+  0, og `gasless` varierer. Papirbogens 0,01 USDC er derfor stadig en antagelse.
 - Rate-grænsen (2,1 s) gælder pr. proces. Søgeresultater angiver nøglefri
   adgang til 0,5 RPS (30 kald/60 s) pr. konto/IP. Flere samtidige CLI-processer
   kan overskride den. Der er ingen fælles limiter på tværs af processer.

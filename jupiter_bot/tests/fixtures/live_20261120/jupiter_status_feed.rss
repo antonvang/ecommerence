@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Status updates | jupiter</title>
+    <description>Incidents and maintenance reported on status page for jupiter</description>
+    <link>https://status.jup.ag/</link>
+    <image>
+      <url>https://d1lppblt9t2x15.cloudfront.net/logos/45a1a1d8f060db3f1412313381b31c66.png</url>
+      <title>Status updates | jupiter</title>
+      <link>https://status.jup.ag/</link>
+    </image>
+    <language>en</language>
+    <atom:link rel="self" type="application/rss+xml" href="https://status.jup.ag/feed"/>
+    <item>
+      <title>Swap Program Events Parsing</title>
+      <link>https://status.jup.ag/incident/725203</link>
+      <pubDate>Tue, 16 Sep 2025 13:09:00 -0000</pubDate>
+      <guid isPermaLink="false">https://status.jup.ag/incident/725203#a167e093315baea47c451e22c87a2b00e4fc6945fcccabbdcacb1f156a8fb5eb</guid>
+      <category>Incident</category>
+      <description>This issue has been fixed, please check. Apologies.
+
+Please reach out to us if you have any questions.</description>
+    </item>
+    <item>
+      <title>Swap Program Events Parsing</title>
+      <link>https://status.jup.ag/incident/725203</link>
+      <pubDate>Tue, 16 Sep 2025 12:19:00 -0000</pubDate>
+      <guid isPermaLink="false">https://status.jup.ag/incident/725203#1ad931bef611d0818d6c0bf147e9a42d5ec3a14a409463f363425bfd69d8dc8e</guid>
+      <category>Incident</category>
+      <description>There has been a bad deployment that affects swap events parsing.
+
+It will affect the swap events you see in the transaction, showing wrong mints or affects your parsing mechanism for other usages.
+
+The transaction should execute as expected, only the swap event parsing has issues.
+
+You can check the source/destination token accounts in the instruction to verify what mints were swapped.
+
+We are working on a fix and will update.</description>
+    </item>
+    <item>
+      <title>Trigger Order temporary downtime due to CloudFlare</title>
+      <link>https://status.jup.ag/incident/601876</link>
+      <pubDate>Thu, 12 Jun 2025 18:46:00 -0000</pubDate>
+      <guid isPermaLink="false">https://status.jup.ag/incident/601876#b94961f5c9b0b8498f21953c3889b4fb969caa7688cf1564bb3419dbf928ddc1</guid>
+      <category>Incident</category>
+      <description>We acknowledged the issue at Jun 12, 2025 - 18:04 UTC
+
+We then figured the root cause and implemented a workaround at Jun 12, 2025 - 18:35 UTC</description>
+    </item>
+    <item>
+      <title>Trigger Order temporary downtime due to CloudFlare</title>
+      <link>https://status.jup.ag/incident/601876</link>
+      <pubDate>Thu, 12 Jun 2025 18:41:00 -0000</pubDate>
+      <guid isPermaLink="false">https://status.jup.ag/incident/601876#ea3d6086aee2c23042ba646e5a08140fdeffdc120d99142faa43196249993ac3</guid>
+      <category>Incident</category>
+      <description>We acknowledged the issue at Jun 12, 2025 - 18:04 UTC
+
+We then figured the root cause and implemented a workaround at Jun 12, 2025 - 18:35 UTC
+
+If you need help please reach out to us in Discord's Developer Support channel at https://discord.gg/jup
+
+--- This is from CloudFlare ---
+Update - We are continuing to investigate this issue.
+Jun 12, 2025 - 18:31 UTC
+
+Update - We are seeing a number of services suffer intermittent failures. We are continuing to investigate this and we will update this list as we assess the impact on a per-service level.
+Jun 12, 2025 - 18:30 UTC
+
+Update - We are continuing to investigate this issue.
+Jun 12, 2025 - 18:20 UTC
+
+Investigating - Cloudflare engineering is investigating an issue causing Access authentication to fail. Cloudflare Zero Trust WARP connectivity is also impacted.
+Jun 12, 2025 - 18:19 UTC</description>
+    </item>
+  </channel>
+</rss>
