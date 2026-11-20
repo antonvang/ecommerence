@@ -117,7 +117,7 @@ cat <<EOF
 
 Installed. The collector runs every minute while you are logged in.
   Logs:     journalctl --user -u jupiter-collect.service -n 20
-  Data:     $PYTHON -m jupiter_bot journal-status --journal "$JOURNAL"
+  Data:     cd "$REPO" && $PYTHON -m jupiter_bot journal-status --journal "$JOURNAL"
   Stop:     $REPO/jupiter_bot/deploy/linux/uninstall-collector.sh   (keeps the data)
   Update:   git -C "$REPO" pull   (the next cycle uses the new code)
 To keep it running when you are logged out (your choice):  loginctl enable-linger "$USER"

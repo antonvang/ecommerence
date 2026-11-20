@@ -49,7 +49,7 @@ er det dit valg: `loginctl enable-linger "$USER"`.
 ```bash
 systemctl --user list-timers jupiter-collect.timer           # næste kørsel
 journalctl --user -u jupiter-collect.service -n 20           # én JSON-linje pr. cyklus
-python3 -m jupiter_bot journal-status --journal ~/.local/share/jupiter-bot/observations.db
+cd ~/jupiter-collector && python3 -m jupiter_bot journal-status --journal ~/.local/share/jupiter-bot/observations.db
 git -C ~/jupiter-collector pull                              # opdatér; næste cyklus bruger ny kode
 ~/jupiter-collector/jupiter_bot/deploy/linux/uninstall-collector.sh   # stop (data bevares)
 ```
