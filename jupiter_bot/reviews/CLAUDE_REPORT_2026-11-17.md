@@ -103,3 +103,24 @@ skal læses før løbende indsamling.
 univers, frekvens, budget for forsøg, benchmark, omkostninger (nu med målte
 Jupiter-gebyrer) og afvisningskrav. Samtidig skal Anton beslutte, om og hvor
 en løbende indsamling må køre (kadence, maskine). Den er ikke installeret.
+
+---
+
+## Opdatering 2026-11-20 (2) — løbende indsamling på Linux
+
+**Udført:** Anton besluttede, at indsamlingen skal køre på hans Linux-pc.
+Den kunne ikke forbindes til cloud-sessionen. Der er derfor tilføjet:
+`collect` (én cyklus over en fast plan, med exitkode 0/1/2),
+`deploy/linux/install-collector.sh`, `uninstall-collector.sh` og README.
+Installeren sætter en systemd-brugertimer op (hvert minut kl. :07).
+`observe` journalfører nu også uventede transportfejl, og én kildes fejl
+stopper ikke de andre.
+
+**Verificeret:** 98 tests OK på 3.11–3.13. Installeren kørt i `--dry-run`
+med én rigtig cyklus (5/6 OK). `systemd-analyze verify` er uden fejl.
+
+**Fund:** Den rigtige `systemctl --user`-installation er ikke kørt (sker hos
+Anton). Diskforbruget er skønnet til ca. 10 MB/døgn. Brugsvilkårene er stadig
+ikke læst.
+
+**Næste:** Uændret: P2-planen låses, før de indsamlede data analyseres.

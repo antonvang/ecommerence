@@ -111,6 +111,10 @@ Den laver ét kald pr. kilde i en ny mappe under `runtime/` og skriver
 `summary.json` med udfald, headers, urforskydning, struktur og de offentlige
 Jupiter-tilbud. Den fil sendes til review, før parserne stoles på.
 
+Løbende indsamling på Linux (systemd-brugertimer, én cyklus i minuttet,
+ingen proces mellem cyklerne): se [deploy/linux/README.md](deploy/linux/README.md).
+`python -m jupiter_bot collect --journal …` er én cyklus over den faste plan.
+
 Journalen gemmer hver hentning med råsvar og SHA-256, også fejl. Første
 observerede værdi bevares, og revisioner logges separat. Åbne bars gemmes ikke,
 huller udfyldes ikke, og en cooldown efter 429 overlever genstart. `snapshot`
@@ -127,6 +131,7 @@ bruge. Et `observe quote` er en observation og bliver aldrig til et fill.
 | `runner.py` | Beslutning, prisforespørgsel og automatisk papirfill |
 | `storage.py` | SQLite-filer med eget `application_id`; fremmede databaser skrives aldrig |
 | `marketdata/` | Transport, adapters (Binance-klines, Jupiter-prøver, status/RSS/Atom), journal og snapshot |
+| `deploy/linux/` | Installér/afinstallér indsamleren som systemd-brugertimer |
 | `DATA_SOURCES.md` | Valgte og fravalgte kilder, grænser, journalkontrakt og verifikationsstatus |
 | `tests/` | Syntetiske tests; `guard.py` blokerer sockets/DNS i alle testmoduler |
 | `reviews/CLAUDE_REVIEW.md` | Claudes P0-review: fund, rettelser og åbne risici |

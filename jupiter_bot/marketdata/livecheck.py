@@ -129,8 +129,8 @@ def run(out_dir, fetch=https_get, clock=time.time, sleep=time.sleep):
             entry = {"check": label, "source": adapter.source}
             try:
                 entry["result"] = observe(journal, adapter, fetch=fetch, clock=clock)
-            except Rejected as exc:
-                entry["error"] = str(exc)
+            except Exception as exc:  # record and continue with the next source
+                entry["error"] = str(exc) if isinstance(exc, Rejected) else "%s: %s" % (type(exc).__name__, exc)
             # observe() writes exactly one fetches row per call, success or not.
             rows = journal.db.execute("SELECT * FROM fetches WHERE id > ? ORDER BY id", (before,)).fetchall()
             entry["fetches"] = [fetch_report(fetch_row, out_dir) for fetch_row in rows]

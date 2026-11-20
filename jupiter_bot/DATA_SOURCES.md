@@ -98,7 +98,14 @@ ENTITY afvises. Historier deduplikeres på tværs af kilder via normaliseret URL
 til retning (`news_used_for_signal: false`). Intet i koden lader en tekst ændre
 grænser, wallet eller ordrer. Det er testet med en fjendtlig titel.
 
-## Før løbende indsamling (ikke en del af denne opgave)
+## Løbende indsamling (besluttet 2026-11-20)
+
+Anton valgte at køre den på sin Linux-pc. Plan, kadence og installation står i
+[deploy/linux/README.md](deploy/linux/README.md): candles og to Jupiter-tilbud
+hvert minut, status/releases hver time, systemd-brugertimer, journal uden for
+repoet. Punkterne nedenfor gælder stadig.
+
+## Før løbende indsamling (oprindelig tjekliste)
 
 1. Hostene skal tillades i miljøets netværk, eller indsamlingen skal køre på
    Antons maskine. Det er Antons beslutning.

@@ -35,8 +35,10 @@ def observe(journal, adapter, fetch=https_get, clock=time.time):
     requested_at = clock()
     try:
         response = fetch(url, adapter.endpoint)
-    except Rejected as exc:
-        journal.record(adapter, url, requested_at, None, None, "TRANSPORT_ERROR", error=str(exc),
+    except Exception as exc:
+        # Journal every failed attempt, also unexpected ones, then re-raise as is.
+        error = str(exc) if isinstance(exc, Rejected) else "%s: %s" % (type(exc).__name__, exc)
+        journal.record(adapter, url, requested_at, None, None, "TRANSPORT_ERROR", error=error,
                        penalty_until=requested_at + adapter.default_cooldown)
         raise
     received_at = clock()

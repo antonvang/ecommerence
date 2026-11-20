@@ -13,7 +13,7 @@ from .core import (ASSETS, SOL, USDC, Candle, Quote, QuoteRequest, Rejected, ato
                    positive_integer, strict_json, timestamp)
 from .jupiter import JupiterQuotes
 from .marketdata.candles import INTERVALS, BinanceKlines
-from .marketdata import livecheck
+from .marketdata import collect, livecheck
 from .marketdata.journal import Journal
 from .marketdata.news import NEWS_FEEDS
 from .marketdata.observe import observe
@@ -134,6 +134,8 @@ def main(argv=None):
     snapshot_parser.add_argument("--news", nargs="*", choices=NEWS_FEEDS, default=[])
     journal_parser = commands.add_parser("journal-status", help="Counts, gaps, outcomes and cooldowns (read-only)")
     journal_parser.add_argument("--journal", required=True)
+    collect_parser = commands.add_parser("collect", help="ONE collection cycle over the fixed schedule (for a timer)")
+    collect_parser.add_argument("--journal", required=True)
     live_parser = commands.add_parser("live-check", help="One fetch per source to check real formats; no loop")
     live_parser.add_argument("--out-dir", help="NEW directory; default jupiter_bot/runtime/live-check-<UTC time>")
     args = parser.parse_args(argv)
@@ -200,6 +202,18 @@ def main(argv=None):
             destination.parent.mkdir(parents=True, exist_ok=True)
             with destination.open("x", encoding="utf-8") as handle:
                 handle.write(canonical(result) + "\n")
+        elif args.command == "collect":
+            destination = allowed_path(args.journal)
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            journal = Journal(destination)
+            try:
+                report = collect.collect(journal)
+            finally:
+                journal.close()
+            # One compact line per cycle: readable in `journalctl --user -u jupiter-collect`.
+            print(json.dumps(dict(cycle_at=round(time.time(), 3), jobs=report), separators=(",", ":"),
+                             allow_nan=False))
+            return collect.exit_code(report)
         elif args.command == "live-check":
             default = Path(__file__).resolve().parent / "runtime" / time.strftime("live-check-%Y%m%dT%H%M%SZ", time.gmtime())
             result = livecheck.run(allowed_path(args.out_dir or default))

@@ -78,3 +78,16 @@ den eksisterende `datafeed.dukascopy.com`.
 
 Den lokale journal og råfilerne fra kørslerne ligger under den git-ignorerede
 `runtime/`. Kun de syv fixture-filer plus `meta.json` er committet.
+
+### Linux-indsamler, 2026-11-20
+
+| Kontrol | Resultat |
+|---|---|
+| `python -m unittest discover -s jupiter_bot/tests` (3.11, 3.12, 3.13) | 98 tests bestået (+8 for `collect` og installeren) |
+| `install-collector.sh --dry-run` i cloud-containeren (data/units i en scratch-mappe) | Tjek OK, tests OK, én rigtig cyklus: 5 OK, GitHub 403 (cloud-proxy), units skrevet |
+| `systemd-analyze verify` (systemd 255) og `calendar '*-*-* *:*:07'` | Ingen fejl; kører hvert minut kl. :07 |
+| Ny cyklus straks efter | Alle jobs `NOT_DUE`, ingen nye kald |
+
+Ikke verificeret: installation med rigtig `systemctl --user` på Antons pc. Det
+kører først, når Anton kører scriptet der. GitHub-feedet fra en hjemmeforbindelse
+er heller ikke prøvet.
