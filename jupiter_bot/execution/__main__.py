@@ -81,7 +81,7 @@ def main(argv=None, engine_factory=Engine, ask=input, interactive=None):
             if mandate is None:
                 print("INVALID: %s" % (error or "no mandate at %s" % paths.mandate))
                 return 1
-            problems = mandate_mod.problems(mandate, now, paths.repo)
+            problems = mandate_mod.problems(mandate, now, paths.repo, price=gates.journal_price(paths, now))
             if mandate_mod.is_public_rpc(mandate.rpc_host):
                 problems.append("rpc_url is a public solana.com endpoint (private_rpc gate fails)")
             print(json.dumps(dict(mandate.public(), strategy=mandate.strategy, params=mandate.params,

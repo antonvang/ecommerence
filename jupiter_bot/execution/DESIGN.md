@@ -1,7 +1,8 @@
 # P3 execution adapter: design
 
-Revision 2, 2026-11-20. This revision fixes the findings F1–F17 from
-`reviews/P3_REVIEW_DRAFT.md`; §12 maps each finding to its change.
+Revision 3, 2026-11-20. Revision 2 fixed F1–F17 from
+`reviews/P3_REVIEW_DRAFT.md`. Revision 3 fixes N1–N6 and the rest of F16 from
+`reviews/P3_REVIEW_2.md`. §12 and §13 map each finding to its change.
 
 ## Kort dansk resumé (til Anton)
 
@@ -33,9 +34,12 @@ Revision 2, 2026-11-20. This revision fixes the findings F1–F17 from
 - Nødstop: `python3 -m jupiter_bot.execution disarm` eller slet
   `~/.config/jupiter-bot/armed.json`. Enhver ændring i `mandate.json` slår også
   LIVE fra.
-- **Vigtigt:** Jupiters instruktionsformat og listen over DEX-programmer er
-  gengivet fra hukommelsen, ikke fra en officiel kilde, du har her. Begge skal
-  bekræftes med en rigtig DRY_RUN, før du armerer (afsnit 9, U-ix og U-dex).
+- **Vigtigt:** Jupiters instruktionsformat er gengivet fra hukommelsen, ikke
+  fra en officiel kilde, du har her. Det gælder også de få tilladte
+  swap-typer og listen over DEX-programmer. Instruktionen læses nu forfra og
+  helt til ende, så ekstra bytes afvises. Alt skal bekræftes med en rigtig
+  DRY_RUN, før du armerer (afsnit 9, U-ix og U-dex). Forvent, at nogle rigtige
+  ordrer bliver afvist. DRY_RUN viser hvorfor.
   Nøglen er en "hot key": sæt kun et beløb ind, du kan tåle at miste.
 
 ---
@@ -103,7 +107,7 @@ The mode is recomputed from files on every call (`gates.evaluate`):
 | `mandate_valid` | Strict parse, unexpired, both mints allowed. Keypair file is regular, not a symlink, yours, 0600/0400, outside the repo; its directory is yours, not a symlink, not group/other-writable. | **never** |
 | `private_rpc` | rpc host is not `solana.com` / `*.solana.com`. | **never** |
 | `dry_run_ok` | ≥ 3 successful DRY_RUNs with the current mandate sha256 in this ledger. | yes |
-| `review_done` | `reviews/P3_REVIEW.md` has exactly one `Commit: <git sha>` line and exactly one `Execution-SHA256: <hash>` line, and the hash equals `execution_code_sha256(repo)` **now**, plus a line `Verdict: APPROVED` (F8). The hash is sha256 over `name NUL sha256(file) LF` for every `jupiter_bot/execution/*.py`, sorted. `python3 -m jupiter_bot.execution code-hash` prints it. | yes |
+| `review_done` | `reviews/P3_REVIEW.md` has exactly one `Commit: <git sha>` line and exactly one `Execution-SHA256: <hash>` line, and the hash equals `execution_code_sha256(repo)` **now**, plus a line `Verdict: APPROVED` (F8). The hash is sha256 over `relative/path NUL sha256(file) LF` for every file of the **execution import closure** (N2), sorted: `jupiter_bot/execution/*.py` plus every `jupiter_bot` module they import, transitively. The closure is found by parsing the imports, including imports inside functions, plus the package `__init__.py` files. Today it covers core, storage, jupiter, research/strategies + lock, and marketdata/journal, snapshot, candles, news, transport. `python3 -m jupiter_bot.execution code-hash` prints the hash. | yes |
 
 `arm` needs an interactive terminal and the phrase `ARM LIVE <wallet[:8]>`, or
 `ARM DRY_RUN …`. Failing overridable gates need `--override GATE` plus the
@@ -141,9 +145,20 @@ Exactly these keys; anything else, or a duplicate key, is rejected:
 - USDC amounts are decimal strings in whole USDC (≤ 6 decimals).
 - `max_trade_sol` is a decimal string in SOL (≤ 9 decimals). It is **new in
   revision 2 (F1)**: the signer cannot know the SOL price, so the mandate
-  itself caps the SOL input of every SELL. Set it to about max_trade_usdc ÷ the
-  current SOL price, plus a margin. A SELL larger than that is never signed
-  (the engine also sizes SELLs ≤ `max_trade_sol`).
+  itself caps the SOL input of every SELL. A SELL larger than that is never
+  signed, and the engine also sizes SELLs ≤ `max_trade_sol`.
+- `max_trade_sol` must be **plausible** (N6, strict). At the latest journal
+  close it may be worth at most 1.5 × `max_trade_usdc`.
+  - Checked in `mandate_valid` (and `check-mandate`) against the latest
+    journal close. If there is no journal price, `mandate_valid` fails
+    (fail closed).
+  - Checked again in every decision against the fresh snapshot price. If SOL
+    rises so far that the cap is worth more than 1.5 × max_trade_usdc, the bot
+    stops trading (no BUY, no SELL) until Anton lowers `max_trade_sol`. That
+    edit disarms, so he must re-arm.
+  - Rationale: the signer's SELL cap is only as good as this number. Tying it
+    to the USDC limit Anton chose bounds a single bad SELL to about
+    1.5 × max_trade_usdc of SOL.
 - JSON numbers for money are rejected.
 - max_trade_usdc ≥ 1 and ≤ max_position_usdc.
 - slippage is an integer from 1 to 300.
@@ -282,12 +297,22 @@ Each of these must hold, or the order is rejected:
      only on a SELL, total ≤ the order amount.
    - Token: only `SyncNative` on the derived wSOL ATA, and `CloseAccount` of
      an own account back to the wallet.
-4. **Jupiter instruction (F3).** Exactly one, of an accepted variant
-   (`route`, `shared_accounts_route`). It is decoded by `jupiter_ix`:
-   `in_amount` == the order; `slippage_bps` ≤ the mandate;
-   `platform_fee_bps` ≤ 50; and `quoted_out·(10000−slippage)/10000` ≥
-   `otherAmountThreshold`. So the floor the program enforces is checked
-   before signing, not assumed.
+4. **Jupiter instruction (F3, N1).** Exactly one, of an accepted variant
+   (`route`, `shared_accounts_route`). `jupiter_ix` decodes it **front to
+   back** as Borsh does: discriminator, then `id u8` (shared variant only),
+   then `Vec<RoutePlanStep>`, then `in_amount`, `quoted_out_amount`,
+   `slippage_bps`, `platform_fee_bps`. Every byte must be consumed, so an
+   appended fake trailer is rejected. Rules:
+   - each step's `Swap` tag must be in the pinned table below, and its field
+     bytes must be valid;
+   - all steps go input 0 → output 1;
+   - the percents are 1..100 each and sum to exactly 100;
+   - at most 8 steps.
+
+   Then: `in_amount` == the order; `slippage_bps` ≤ the mandate;
+   `platform_fee_bps` ≤ 50; `quoted_out·(10000−slippage)/10000` ≥
+   `otherAmountThreshold`. The decoded steps and any rejection reason are
+   recorded in every DRY_RUN.
 5. **Executable accounts (F4).** `getMultipleAccounts` (no data) over every
    resolved key. Each executable account must be on the pinned allowlist
    (top-level programs + Memo + `config.DEX_PROGRAMS`).
@@ -300,6 +325,10 @@ Each of these must hold, or the order is rejected:
      accounts + created ATAs).
    - Every inner (CPI) program must be on the same allowlist. If the RPC does
      not return `innerInstructions`, the order is rejected (fail closed, F4).
+   - The inner instructions reported **under the Jupiter instruction's
+     index** must be non-empty and include the SPL Token program (N4). An
+     empty or incomplete list means the RPC is not reporting the CPIs, so the
+     order is rejected.
    - The wallet is System-owned, has empty data and is not executable, both
      pre and post (F2).
    - Token accounts are initialised, not frozen, owned by the taker, with no
@@ -328,7 +357,9 @@ wallet) and the keypair itself. Its checks:
     ATA**, and their **sum** ≤ the decoded swap input (F1).
   - ATA creates at the derived PDA; SyncNative/CloseAccount only on own
     derived ATAs.
-- **Jupiter instruction.** Exactly one, decoded with the signer's own code:
+- **Jupiter instruction.** Exactly one, decoded **front to back** with the
+  signer's own code and its own copy of the pinned Swap-tag table (N1). The
+  same exact-consumption, direct-step and percent rules apply. Then:
   in_amount == bundle; slippage ≤ mandate; fee ≤ 50 bps; floor ≥ the bundle's
   minimum.
 - **Mandate bounds, not engine bounds (F1).** BUY input ≤ `max_trade_usdc`;
@@ -357,25 +388,64 @@ wallet) and the keypair itself. Its checks:
 | Secret leakage | The key is read only by the signer. The RPC URL is never printed (host only). Environment proxies are ignored. |
 
 UNCONFIRMED items that matter, and how the design copes:
-- **U-ix (new, high importance): the Jupiter v6 route layout and
-  discriminators.** No IDL is available locally, and the facts file says it is
-  not in the docs. `jupiter_ix.py` reproduces the published Anchor IDL from
-  memory: `route(route_plan, in_amount u64, quoted_out_amount u64,
-  slippage_bps u16, platform_fee_bps u8)`, `shared_accounts_route(id u8, …same)`.
+- **U-ix (high importance): the Jupiter v6 route layout, discriminators and
+  `Swap` variant table.** No IDL is available locally, and the facts file says
+  it is not in the docs. `jupiter_ix.py` and `signer.py` reproduce the
+  published Anchor IDL **from memory**:
+  `route(route_plan: Vec<RoutePlanStep>, in_amount u64, quoted_out_amount u64,
+  slippage_bps u16, platform_fee_bps u8)`, `shared_accounts_route(id u8, …same)`,
+  and `RoutePlanStep { swap: Swap, percent u8, input_index u8, output_index u8 }`.
   The discriminators are recomputed from `sha256("global:<name>")[:8]` and
-  match the values known for these two names. The token-ledger and exact-out
-  variants are rejected. `route_v2` / `shared_accounts_route_v2` are also
-  rejected: their argument order could not be confirmed. **Before arming:**
-  run DRY_RUN against a real `/order`, read
-  `detail.jupiter_instruction` (variant, in_amount, quoted_out_amount,
-  slippage_bps, platform_fee_bps, min_out), and check that `in_amount` equals
-  the order and that `min_out` and `slippage_bps` agree with the `/order`
-  response. If the dry run fails with "discriminator …", Jupiter uses a variant
-  we do not accept. Supporting it is a code change and needs a new review.
-- **U-dex (new): `config.DEX_PROGRAMS`** is pinned from memory and has not been
+  match the values known for these two names. The token-ledger, exact-out and
+  v2 variants are rejected.
+
+  **Pinned `Swap` variant tags** (u8 tag + fields). These are from memory and
+  must be confirmed; any other tag is rejected, because then the end of the
+  step is unknown:
+
+  | Tag | Variant | Field bytes | DEX program |
+  |---|---|---|---|
+  | 7 | Raydium | 0 | Raydium AMM v4 |
+  | 17 | Whirlpool | 1 (`a_to_b` bool) | Orca Whirlpool |
+  | 25 | LifinityV2 | 0 | Lifinity v2 |
+  | 26 | RaydiumClmm | 0 | Raydium CLMM |
+  | 28 | Phoenix | 1 (`side` Bid=0/Ask=1) | Phoenix |
+  | 38 | MeteoraDlmm | 0 | Meteora DLMM |
+  | 39 | OpenBookV2 | 1 (`side`) | OpenBook v2 |
+  | 46 | RaydiumCP | 0 | Raydium CPMM |
+
+  **Before arming:** run DRY_RUN against real `/order` transactions. Read
+  `detail.jupiter_instruction` (variant, steps with the decoded tag/name/
+  percent, in_amount, quoted_out_amount, slippage_bps, platform_fee_bps,
+  min_out) and check:
+  - `in_amount` equals the order;
+  - `min_out` and `slippage_bps` agree with the `/order` response
+    (`otherAmountThreshold`, `slippageBps`);
+  - the step names match the response's `routePlan[].swapInfo.label`.
+
+  A rejection names its cause, e.g. "Swap variant tag N … not pinned",
+  "trailing bytes", or "discriminator …". Pinning a new tag or variant is a
+  code change: the N2 hash forces a re-review. If the tag table were wrong,
+  the decode would almost always fail (wrong length → truncated or trailing
+  bytes), not pass silently. A wrong tag→name mapping with the same field size
+  is the residual risk; the label comparison above catches it.
+- **U-dex: `config.DEX_PROGRAMS`** is pinned from memory and has not been
   checked against `/swap/v2/program-id-to-label`. Unknown programs are rejected
   and named in the dry-run error. Extend the list only through a reviewed code
   change; the review gate's hash forces the re-review.
+- **Expected false rejections (N5), left fail-closed on purpose:**
+  - Token-2022 is not allowed as an executable/CPI program. Raydium CLMM and
+    CPMM routes pass the Token-2022 (and Memo) program as accounts even for
+    classic tokens, so they will be rejected.
+  - Meteora pools need a vault program that is not listed.
+  - Any route through an unpinned `Swap` tag is rejected (e.g. newer prop-AMM
+    variants for SolFi or Obric, although those programs are on the CPI list).
+  - The floor's rounding versus `otherAmountThreshold`, and whether the floor
+    applies before or after the platform fee, are unconfirmed. A mismatch
+    rejects.
+  - If too many real SOL/USDC orders are rejected for these reasons, widening
+    (adding Token-2022 to the CPI list, pinning more tags) is a reviewed code
+    change, never a config edit.
 - **U-inner (new): `simulateTransaction` with `innerInstructions: true`.**
   This is a standard Agave RPC option, but your provider must support it. If it
   is missing, every order is rejected (fail closed). Confirm in DRY_RUN.
@@ -436,8 +506,14 @@ UNCONFIRMED items that matter, and how the design copes:
       acceptance.
     - The RPC *host* is shown in status. Some providers put an account id in
       the hostname; if yours does, treat status output as private.
-    - The system CA store is used. `SSL_CERT_FILE` in your environment would
-      still be honoured by OpenSSL; proxies are ignored.
+    - TLS trusts only the system CA bundle at a fixed path
+      (`/etc/ssl/certs/ca-certificates.crt`, or the RHEL path). Without one,
+      no request is made. `SSL_CERT_FILE`, `SSL_CERT_DIR` and proxy variables
+      from the environment are ignored. Residual: whoever can write that
+      root-owned file controls trust.
+14. **The balance proof for EXPIRED** is read at `finalized` commitment, and
+    its context slot must be ≥ the finalized expiry slot (N3). A provider that
+    serves stale finalized state on every node is still trusted.
 
 ## 11. Operator procedure (Anton)
 
@@ -496,3 +572,15 @@ Everything below is done by Anton, by hand. The bot never creates keys.
 | F15 keypair hygiene | fstat after open, directory checks, `/usr/bin/python3`. | `test_keypair_directory_permissions` |
 | F16 notes | Documented in §10.13. Proxies ignored. | — |
 | F17 lock leniency | `lock.verify` rejects empty/partial code hashes and malformed records; malformed lock does not crash status. | `test_malformed_lock_does_not_crash_status`, `test_lock_verify_rejects_empty_or_partial_code_hashes` |
+
+## 13. Round-2 findings and their fixes (revision 3)
+
+| Finding | Change | Tests |
+|---|---|---|
+| N1 args read from the tail | Front-to-back Borsh decode with exact consumption, pinned `Swap` tag table, direct steps, percents = 100; independent copies in `jupiter_ix.py` and `signer.py`; the fake chain also decodes front to back (and ignores a tail, like Anchor). | `test_appended_fake_tail_rejected`, `test_front_to_back_structure` (verify); `test_route_decoded_front_to_back` (signer); `test_dry_run_records_route_steps_and_rejections` |
+| N2 hash scope | The review hash covers the execution import closure (found by parsing imports). | `test_code_hash_covers_imported_modules` (a `core.py` change voids the review) |
+| N3 balance read slot | Balance proof read at `finalized`; context slot must be ≥ the finalized expiry slot. | `test_lagging_balance_node_stays_unknown` |
+| N4 empty inner list | A Token CPI is required under the Jupiter instruction index. | `test_empty_inner_instructions_rejected`, `test_inner_instructions_must_include_token_cpi_under_jupiter` |
+| N5 expected false rejections | Documented in §9; fail closed. | — |
+| N6 `max_trade_sol` plausibility | ≤ 1.5 × max_trade_usdc at the journal price (gate) and at the snapshot price (every decision); no price means not valid. | `test_max_trade_sol_plausibility`, `test_decide_rules` |
+| F16 TLS trust from environment | Fixed system CA bundle path; `SSL_CERT_*` ignored. | `test_tls_trust_ignores_environment` |

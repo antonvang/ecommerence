@@ -7,6 +7,7 @@ copy of the ones it enforces; a test checks that both copies agree.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from decimal import Decimal
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
@@ -61,6 +62,11 @@ SIGNER_MAX_SIGNATURES_PER_DAY = 24
 SIGNER_DAILY_NOTIONAL_FACTOR = 8           # daily signed notional <= factor x max_position_usdc
 
 DRY_RUNS_REQUIRED = 3
+
+# N6: max_trade_sol at the latest journal price may be worth at most this many times
+# max_trade_usdc. The signer's SELL cap is only as good as this number, so it is held
+# to the USDC limit Anton chose. No price available -> the mandate is not usable.
+MAX_TRADE_SOL_VALUE_FACTOR = Decimal("1.5")
 
 
 @dataclass(frozen=True)

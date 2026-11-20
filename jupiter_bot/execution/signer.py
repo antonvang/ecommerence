@@ -58,12 +58,15 @@ MANDATE_KEYS = ("wallet_pubkey", "keypair_path", "rpc_url", "max_trade_usdc", "m
 USDC_TEXT = re.compile(r"^(0|[1-9][0-9]{0,11})(\.[0-9]{1,6})?$")
 SOL_TEXT = re.compile(r"^(0|[1-9][0-9]{0,8})(\.[0-9]{1,9})?$")
 MAX_FEE_BPS = 50
-# Jupiter v6 route variants accepted (Anchor discriminator = sha256("global:<name>")[:8]);
-# trailing args in_amount u64, quoted_out_amount u64, slippage_bps u16, platform_fee_bps u8.
-# Same UNCONFIRMED layout as jupiter_ix.py; must be confirmed in DRY_RUN.
+# Jupiter v6 route variants accepted (Anchor discriminator = sha256("global:<name>")[:8]).
+# Decoded front to back (Borsh): [id u8 if shared] Vec<RoutePlanStep> in_amount u64
+# quoted_out_amount u64 slippage_bps u16 platform_fee_bps u8, every byte consumed.
+# RoutePlanStep = Swap (u8 tag + fields) percent u8 input_index u8 output_index u8.
+# Same UNCONFIRMED layout as jupiter_ix.py (own copy); must be confirmed in DRY_RUN.
 JUPITER_ROUTES = {hashlib.sha256(b"global:" + n).digest()[:8]: n.decode()
                   for n in (b"route", b"shared_accounts_route")}
-JUPITER_MIN_LEN = {"route": 8 + 4 + 19, "shared_accounts_route": 8 + 1 + 4 + 19}
+SWAP_FIELD_BYTES = {7: 0, 17: 1, 25: 0, 26: 0, 28: 1, 38: 0, 39: 1, 46: 0}   # tag -> u8 fields (bool/side)
+MAX_STEPS = 8
 REPO = os.path.realpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
 NO_NACL = ("PyNaCl (nacl.signing) is not importable; the signer refuses to start. "
            "Install the Debian package python3-nacl (the signer runs with python3 -I, so a pip --user "
@@ -303,12 +306,40 @@ def load_keypair(path, uid, repo=REPO):
 # message ------------------------------------------------------------------------------
 
 def decode_jupiter(data):
-    variant = JUPITER_ROUTES.get(bytes(data[:8]))
+    data = bytes(data)
+    variant = JUPITER_ROUTES.get(data[:8])
     if variant is None:
-        raise Refused("Jupiter instruction %s is not an accepted route variant" % bytes(data[:8]).hex())
-    if len(data) < JUPITER_MIN_LEN[variant]:
-        raise Refused("Jupiter instruction too short")
-    in_amount, quoted, slippage, fee = struct.unpack("<QQHB", bytes(data[-19:]))
+        raise Refused("Jupiter instruction %s is not an accepted route variant" % data[:8].hex())
+    pos = 8 + (1 if variant == "shared_accounts_route" else 0)
+
+    def take(n):
+        nonlocal pos
+        if pos + n > len(data):
+            raise Refused("Jupiter instruction truncated")
+        chunk = data[pos:pos + n]
+        pos += n
+        return chunk
+    count = struct.unpack("<I", take(4))[0]
+    if not 1 <= count <= MAX_STEPS:
+        raise Refused("Jupiter route step count out of range")
+    total = 0
+    for _ in range(count):
+        tag = take(1)[0]
+        if tag not in SWAP_FIELD_BYTES:
+            raise Refused("Jupiter route uses an unpinned Swap variant %d" % tag)
+        if any(b not in (0, 1) for b in take(SWAP_FIELD_BYTES[tag])):
+            raise Refused("Jupiter route step field invalid")
+        percent, in_index, out_index = take(3)
+        if (in_index, out_index) != (0, 1) or not 1 <= percent <= 100:
+            raise Refused("Jupiter route step is not a direct input->output step")
+        total += percent
+    if total != 100:
+        raise Refused("Jupiter route percents do not sum to 100")
+    in_amount, quoted, slippage, fee = struct.unpack("<QQHB", take(19))
+    if pos != len(data):
+        raise Refused("Jupiter instruction has trailing bytes")
+    if in_amount <= 0 or quoted <= 0 or slippage > 10_000:
+        raise Refused("Jupiter instruction arguments out of range")
     return {"in_amount": in_amount, "quoted_out": quoted, "slippage_bps": slippage, "fee_bps": fee,
             "min_out": quoted * (10_000 - slippage) // 10_000}
 

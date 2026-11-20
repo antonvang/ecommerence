@@ -108,7 +108,7 @@ def check_instructions(message, metas, wallet, request, taker_accounts):
     keys = [m.key for m in metas]
     static = len(message.static_keys)
     swap_mints = (request.input_mint, request.output_mint)
-    budget, created, swaps = [], {}, []
+    budget, created, swaps = [], {}, []        # swaps: (top-level index, decoded args)
     for ix in message.instructions:
         if ix.program_index >= static:
             raise Rejected("Program %s is loaded from a lookup table" % keys[ix.program_index])
@@ -132,13 +132,13 @@ def check_instructions(message, metas, wallet, request, taker_accounts):
     wsol = associated_token_address(wallet, SOL.mint)
     mine = set(created) | set(taker_accounts)
     transferred = 0
-    for ix in message.instructions:
+    for position, ix in enumerate(message.instructions):
         program = keys[ix.program_index]
         accts = [keys[i] for i in ix.accounts]
         if program == COMPUTE_BUDGET_PROGRAM:
             budget.append(ix)
         elif program == JUPITER_V6_PROGRAM:
-            swaps.append(jupiter_ix.decode(ix.data))
+            swaps.append((position, jupiter_ix.decode(ix.data)))
         elif program == SYSTEM_PROGRAM:
             if len(ix.data) != 12 or struct.unpack_from("<I", ix.data, 0)[0] != SYSTEM_TRANSFER or len(accts) < 2:
                 raise Rejected("Only System transfers (SOL wrapping) are allowed")
@@ -159,7 +159,7 @@ def check_instructions(message, metas, wallet, request, taker_accounts):
         raise Rejected("SOL wrapped exceeds the order amount")
     if len(swaps) != 1:
         raise Rejected("Expected exactly one Jupiter v6 instruction, found %d" % len(swaps))
-    return compute_budget(budget), created, swaps[0]
+    return compute_budget(budget), created, swaps[0][1], swaps[0][0]
 
 
 def check_swap(swap, request, min_out):
@@ -173,14 +173,14 @@ def check_swap(swap, request, min_out):
         raise Rejected("Jupiter instruction floor %d is below otherAmountThreshold %d" % (swap.min_out, min_out))
 
 
-def check_programs(metas, executable_keys, inner_programs):
+def check_programs(metas, executable_keys, inner_programs, jupiter_index):
     for key in executable_keys:
         if key not in INNER_ALLOWED:
             raise Rejected("Executable account %s is not on the program allowlist" % key)
     if inner_programs is None:
         raise Rejected("RPC did not return innerInstructions; cannot check invoked programs (fail closed)")
-    names = []
-    for program in inner_programs:
+    names, under_jupiter = [], []
+    for index, program in inner_programs:
         if isinstance(program, int):
             if not 0 <= program < len(metas):
                 raise Rejected("Inner instruction program index out of range")
@@ -188,6 +188,12 @@ def check_programs(metas, executable_keys, inner_programs):
         if program not in INNER_ALLOWED:
             raise Rejected("Inner instruction invokes %s, not on the program allowlist" % program)
         names.append(program)
+        if index == jupiter_index:
+            under_jupiter.append(program)
+    # N4: a real swap always CPIs, at least one SPL Token transfer; none means the RPC is not reporting them
+    if not under_jupiter or TOKEN_PROGRAM not in under_jupiter:
+        raise Rejected("Simulation reports no Token CPI under the Jupiter instruction; inner instructions "
+                       "look incomplete (fail closed)")
     return tuple(sorted(set(names)))
 
 
@@ -283,7 +289,7 @@ def verify(order, rpc, wallet):
         if token.owner != wallet:
             raise Rejected("RPC returned a token account of another owner")
         taker_accounts[address] = token
-    priority, created, swap = check_instructions(message, metas, wallet, request, taker_accounts)
+    priority, created, swap, jupiter_index = check_instructions(message, metas, wallet, request, taker_accounts)
     check_swap(swap, request, order.min_out)
     executable = _executable(rpc, [m.key for m in metas])
 
@@ -299,7 +305,7 @@ def verify(order, rpc, wallet):
         raise Rejected("Simulation failed: %s" % str(sim["err"])[:200])
     if sim["slot"] < pre_slot:
         raise Rejected("Simulation ran on an older slot than the balance snapshot")
-    inner = check_programs(metas, executable, sim["inner_programs"])
+    inner = check_programs(metas, executable, sim["inner_programs"], jupiter_index)
     sol0, mints0, issues0 = view(wallet, addresses, pre, "pre")
     sol1, mints1, issues1 = view(wallet, addresses, sim["accounts"], "post")
     if issues0 or issues1:

@@ -126,15 +126,15 @@ class Rpc:
         programs = None                       # None = the RPC did not return inner instructions
         if isinstance(inner, list):
             programs = []
-            for group in inner:
+            for group in inner:               # -> (top-level instruction index, program id or key index)
                 items = group.get("instructions") if isinstance(group, dict) else None
-                if not isinstance(items, list):
+                if not isinstance(items, list) or type(group.get("index")) is not int:
                     raise RpcError("simulateTransaction innerInstructions are malformed")
                 for ix in items:
                     if isinstance(ix, dict) and isinstance(ix.get("programId"), str):
-                        programs.append(ix["programId"])
+                        programs.append((group["index"], ix["programId"]))
                     elif isinstance(ix, dict) and type(ix.get("programIdIndex")) is int:
-                        programs.append(ix["programIdIndex"])
+                        programs.append((group["index"], ix["programIdIndex"]))
                     else:
                         raise RpcError("simulateTransaction inner instruction is malformed")
         return {"slot": slot, "err": value.get("err"), "logs": [str(l)[:300] for l in logs[:200]],

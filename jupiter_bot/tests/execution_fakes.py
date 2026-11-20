@@ -16,6 +16,7 @@ import json
 import os
 import struct
 import urllib.parse
+from decimal import Decimal
 from pathlib import Path
 
 from jupiter_bot.core import SOL, USDC
@@ -59,15 +60,32 @@ def disc(name):
     return hashlib.sha256(("global:" + name).encode()).digest()[:8]
 
 
-def route_data(in_amount, quoted_out, slippage_bps, fee_bps=0, variant="route"):
+WHIRLPOOL_STEP = b"\x11\x00\x64\x00\x01"      # Swap::Whirlpool{a_to_b: false}, percent 100, 0 -> 1
+
+
+def route_data(in_amount, quoted_out, slippage_bps, fee_bps=0, variant="route", steps=(WHIRLPOOL_STEP,)):
+    """Borsh: discriminator [id] Vec<RoutePlanStep> in_amount quoted_out slippage fee."""
     head = disc(variant) + (b"\x03" if variant.startswith("shared") else b"")
-    plan = struct.pack("<I", 1) + b"\x11\x00\x64\x00\x01"          # opaque route plan, never decoded
+    plan = struct.pack("<I", len(steps)) + b"".join(steps)
     return head + plan + struct.pack("<QQHB", in_amount, quoted_out, slippage_bps, fee_bps)
 
 
+FAKE_FIELD_BYTES = {7: 0, 17: 1, 26: 0, 38: 0, 46: 0}    # the fake "program" knows a few variants
+
+
 def read_route(data):
-    """The fake chain's own reading of a route instruction (trailing fixed args)."""
-    return struct.unpack("<QQHB", bytes(data[-19:]))
+    """The fake chain's own FRONT-TO-BACK reading, like Anchor: trailing bytes are ignored,
+    which is exactly why the verifier must not read the tail. None = the program would fail."""
+    data = bytes(data)
+    pos = 8 + (1 if data[:8] == disc("shared_accounts_route") else 0)
+    try:
+        count = struct.unpack_from("<I", data, pos)[0]
+        pos += 4
+        for _ in range(count):
+            pos += 1 + FAKE_FIELD_BYTES[data[pos]] + 3
+        return struct.unpack_from("<QQHB", data, pos)
+    except (KeyError, IndexError, struct.error):
+        return None
 
 
 # encoder -------------------------------------------------------------------------
@@ -169,8 +187,8 @@ def tx_effect(raw_tx):
     """What the fake chain executes: route args + fee, read from the transaction itself."""
     message = parse_transaction(raw_tx).message
     keys = message.static_keys
-    limit, price, wraps, route = 200_000, 0, 0, None
-    for ix in message.instructions:
+    limit, price, wraps, route, index = 200_000, 0, 0, None, None
+    for position, ix in enumerate(message.instructions):
         program = keys[ix.program_index] if ix.program_index < len(keys) else None
         if program == COMPUTE_BUDGET_PROGRAM and ix.data[0] == 2:
             limit = struct.unpack_from("<I", ix.data, 1)[0]
@@ -178,9 +196,11 @@ def tx_effect(raw_tx):
             price = struct.unpack_from("<Q", ix.data, 1)[0]
         elif program == SYSTEM_PROGRAM:
             wraps += struct.unpack_from("<Q", ix.data, 4)[0]
-        elif program == JUPITER_V6_PROGRAM and route is None:
-            route = read_route(ix.data)
+        elif program == JUPITER_V6_PROGRAM and index is None:
+            route, index = read_route(ix.data), position
     fee = config.BASE_FEE_LAMPORTS * message.num_required_signatures + -(-price * limit // 1_000_000)
+    if route is None:
+        return None, fee
     in_amount, quoted, _, _ = route
     if wraps:     # SELL: SOL in, USDC out
         return {"lamports": -(in_amount + fee), USDC.mint: quoted}, fee
@@ -203,12 +223,14 @@ class Chain:
         self.sim_delegate = False
         self.sim_wallet = None          # override dict for the wallet's post-state (owner/data/executable)
         self.inner = "default"          # "default" | None (RPC without innerInstructions) | list of program ids
+        self.inner_index = None         # override the top-level index the inner list is reported under
         self.executables = set(config.DEX_PROGRAMS) | {SYSTEM_PROGRAM, TOKEN_PROGRAM, ATA_PROGRAM,
                                                        COMPUTE_BUDGET_PROGRAM, JUPITER_V6_PROGRAM}
         self.landed = {}                # signature -> record
         self.land_status = "finalized"  # or "confirmed"
         self.land_err = None
         self.status_lag = 0             # how many slots the getSignatureStatuses node lags behind
+        self.accounts_lag = 0           # how many slots the getMultipleAccounts node lags behind
         self.history = True             # False: the RPC forgets landed transactions (no history)
         self.calls = []
 
@@ -262,7 +284,8 @@ class Chain:
         if method == "getMultipleAccounts":
             accounts = self.current()
             no_data = "dataSlice" in params[1]
-            return {"context": ctx, "value": [self.account_json(accounts.get(a), no_data) for a in params[0]]}
+            return {"context": {"slot": self.height + 500 - self.accounts_lag},
+                    "value": [self.account_json(accounts.get(a), no_data) for a in params[0]]}
         if method == "getTokenAccountsByOwner":
             if params[1]["programId"] != TOKEN_PROGRAM:
                 return {"context": ctx, "value": getattr(self, "token_2022", [])}
@@ -272,20 +295,28 @@ class Chain:
         if method == "simulateTransaction":
             raw = base64.b64decode(params[0])
             effect = self.sim_effect if self.sim_effect is not None else tx_effect(raw)[0]
+            if effect is None:      # the fake program could not decode the route: it fails
+                return {"context": ctx, "value": {"err": {"InstructionError": [3, "InvalidInstructionData"]},
+                                                  "logs": [], "accounts": [None] * len(params[1]["accounts"]["addresses"])}}
             lamports, tokens = self.apply(effect)
             post = self._accounts(lamports, tokens, self.sim_delegate)
             if self.sim_wallet:
                 post[WALLET].update(self.sim_wallet)
             value = {"err": None, "logs": ["ok"], "unitsConsumed": 100_000,
                      "accounts": [self.account_json(post.get(a)) for a in params[1]["accounts"]["addresses"]]}
+            message = parse_transaction(raw).message
+            jupiter = next(n for n, ix in enumerate(message.instructions)
+                           if ix.program_index < len(message.static_keys)
+                           and message.static_keys[ix.program_index] == JUPITER_V6_PROGRAM)
             if self.inner == "default":
-                keys = parse_transaction(raw).message.static_keys
-                value["innerInstructions"] = [{"index": 4, "instructions": [
-                    {"programIdIndex": keys.index(TOKEN_PROGRAM), "accounts": [], "data": "", "stackHeight": 2},
+                value["innerInstructions"] = [{"index": jupiter, "instructions": [
+                    {"programIdIndex": message.static_keys.index(TOKEN_PROGRAM), "accounts": [], "data": "",
+                     "stackHeight": 2},
                     {"programId": WHIRLPOOL, "accounts": [], "data": "", "stackHeight": 2}]}]
             elif self.inner is not None:
-                value["innerInstructions"] = [{"index": 4, "instructions": [
-                    {"programId": p, "accounts": [], "data": ""} for p in self.inner]}]
+                index = jupiter if self.inner_index is None else self.inner_index
+                value["innerInstructions"] = [{"index": index, "instructions": [
+                    {"programId": p, "accounts": [], "data": ""} for p in self.inner]}] if self.inner else []
             return {"context": ctx, "value": value}
         if method == "getSignatureStatuses":
             record = self.landed.get(params[0][0]) if self.history else None
@@ -305,6 +336,8 @@ class Chain:
         if signature in self.landed:
             return signature
         effect, fee = tx_effect(signed_tx)
+        if effect is None:
+            raise AssertionError("fake chain: a transaction the program cannot decode was landed")
         if self.land_effect is not None:
             effect = self.land_effect
         if self.land_err is not None:
@@ -480,7 +513,7 @@ class Env:
 
     def mandate(self, **changes):
         data = {"wallet_pubkey": WALLET, "keypair_path": str(self.keypair), "rpc_url": RPC_URL,
-                "max_trade_usdc": "25", "max_trade_sol": "0.5", "max_position_usdc": "50",
+                "max_trade_usdc": "25", "max_trade_sol": "0.15", "max_position_usdc": "50",
                 "daily_loss_limit_usdc": "10", "max_slippage_bps": 50, "allowed_mints": [SOL.mint, USDC.mint],
                 "strategy": "tsmom", "params": {"lookback_min": 240, "rebalance_min": 240},
                 "expires_at": NOW + 30 * 86400}
@@ -498,7 +531,7 @@ class Env:
 
     def gate_options(self):
         return dict(verdict_loader=self.verdicts, lock_loader=lambda: {"plan_sha256": "plan"},
-                    lock_verify=lambda record: [])
+                    lock_verify=lambda record: [], price_fn=lambda: Decimal(self.price))
 
     def engine(self, **kwargs):
         options = dict(transport=self.transport, signer=self.signer, clock=self.clock,

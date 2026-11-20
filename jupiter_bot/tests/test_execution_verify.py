@@ -1,4 +1,5 @@
 """The order checks and the pre-sign transaction verifier reject by default."""
+import struct
 import tempfile
 import unittest
 
@@ -46,7 +47,9 @@ class HappyPath(Base):
         self.assertEqual((verified.priority_lamports, verified.network_fee, verified.expected_fee), (300, 5_300, 5_300))
         self.assertEqual(verified.swap, {"variant": "route", "in_amount": 25_000_000,
                                          "quoted_out_amount": 125_000_000, "slippage_bps": 50,
-                                         "platform_fee_bps": 0, "min_out": order.min_out})
+                                         "platform_fee_bps": 0, "min_out": order.min_out,
+                                         "steps": [{"swap": "Whirlpool", "tag": 17, "fields": [0], "percent": 100,
+                                                    "input_index": 0, "output_index": 1}]})
         self.assertEqual(verified.inner_programs, tuple(sorted({F.WHIRLPOOL, TOKEN_PROGRAM})))
         self.assertEqual(verified.pre["sol"], 1_000_000_000)
         self.assertEqual(verified.created_atas, {F.WSOL_ATA: SOL.mint})
@@ -162,9 +165,29 @@ class JupiterInstruction(Base):
         self.assertRejected("route_with_token_ledger", variant="route_with_token_ledger")
         self.assertRejected("route_v2", variant="route_v2")
         self.assertRejected("unknown", raw_route=b"\x00" * 40)
-        self.assertRejected("too short", raw_route=F.disc("route") + b"\x00" * 5)
+        self.assertRejected("steps", raw_route=F.disc("route") + b"\x00" * 5)
         order, verified = self.run_verify(variant="shared_accounts_route")
         self.assertEqual(verified.swap["variant"], "shared_accounts_route")
+
+    def route(self, in_amount=25_000_000, quoted=125_000_000, slippage=50, **kwargs):
+        return F.route_data(in_amount, quoted, slippage, **kwargs)
+
+    def test_appended_fake_tail_rejected(self):                       # N1, review probe
+        real = self.route(quoted=1, slippage=10_000)                     # what the program would read
+        evil = real + struct.pack("<QQHB", 25_000_000, 125_000_000, 50, 0)
+        self.assertRejected("trailing bytes", raw_route=evil)
+
+    def test_front_to_back_structure(self):
+        self.assertRejected("not pinned", raw_route=self.route(steps=(b"\x63\x64\x00\x01",)))   # tag 99
+        self.assertRejected("truncated", raw_route=self.route()[:-3])
+        self.assertRejected("truncated", raw_route=F.disc("route") + struct.pack("<I", 1) + b"\x11")
+        self.assertRejected("invalid", raw_route=self.route(steps=(b"\x11\x07\x64\x00\x01",)))  # bool = 7
+        self.assertRejected("sum to 100", raw_route=self.route(steps=(b"\x11\x00\x32\x00\x01",)))
+        self.assertRejected("direct", raw_route=self.route(steps=(b"\x11\x00\x64\x00\x02",)))
+        split = (b"\x11\x01\x3c\x00\x01", b"\x26\x28\x00\x01")       # Whirlpool 60% + MeteoraDlmm 40%
+        order, verified = self.run_verify(raw_route=self.route(steps=split))
+        self.assertEqual([s["swap"] for s in verified.swap["steps"]], ["Whirlpool", "MeteoraDlmm"])
+        self.assertEqual([s["percent"] for s in verified.swap["steps"]], [60, 40])
 
     def test_exactly_one_route(self):
         self.assertRejected("exactly one Jupiter", jupiter_count=2)
@@ -175,6 +198,17 @@ class Programs(Base):
 
     def test_unknown_static_program(self):
         self.assertRejected("not on the allowlist", static_program=F.EVIL_PROGRAM)
+
+    def test_empty_inner_instructions_rejected(self):                 # N4, review probe P7b
+        self.env.chain.inner = []
+        self.assertRejected("no Token CPI")
+
+    def test_inner_instructions_must_include_token_cpi_under_jupiter(self):
+        self.env.chain.inner = [F.WHIRLPOOL]                             # no Token transfer
+        self.assertRejected("no Token CPI")
+        self.env.chain.inner = [TOKEN_PROGRAM]
+        self.env.chain.inner_index = 0                                   # reported under another instruction
+        self.assertRejected("no Token CPI")
 
     def test_rpc_without_inner_instructions_fails_closed(self):
         self.env.chain.inner = None

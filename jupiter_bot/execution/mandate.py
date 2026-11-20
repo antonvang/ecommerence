@@ -13,6 +13,7 @@ import os
 import re
 import stat
 from dataclasses import dataclass
+from decimal import Decimal
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -203,9 +204,23 @@ def keypair_problems(path, repo=config.REPO, uid=None):
     return problems
 
 
-def problems(mandate, now, repo=config.REPO, uid=None):
-    """Reasons a structurally valid mandate cannot be used right now."""
+def sol_cap_problem(mandate, price):
+    """N6: max_trade_sol must not be worth more than 1.5 x max_trade_usdc at `price` (USDC/SOL)."""
+    if price is None:
+        return "no journal price to check max_trade_sol against max_trade_usdc"
+    value = Decimal(mandate.max_trade_sol) * Decimal(price) / 1000          # USDC atoms
+    if value > config.MAX_TRADE_SOL_VALUE_FACTOR * mandate.max_trade_usdc:
+        return ("max_trade_sol %s SOL is worth %.2f USDC at %s USDC/SOL, more than %s x max_trade_usdc"
+                % (Decimal(mandate.max_trade_sol) / 10**9, value / 10**6, price, config.MAX_TRADE_SOL_VALUE_FACTOR))
+    return None
+
+
+def problems(mandate, now, repo=config.REPO, uid=None, price=None):
+    """Reasons a structurally valid mandate cannot be used right now. `price`: latest USDC/SOL."""
     found = []
+    cap = sol_cap_problem(mandate, price)
+    if cap:
+        found.append(cap)
     if mandate.expires_at <= now:
         found.append("mandate expired")
     found += keypair_problems(mandate.keypair_path, repo, uid)

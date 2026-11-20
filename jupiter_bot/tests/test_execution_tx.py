@@ -150,11 +150,12 @@ class Mandates(unittest.TestCase):
         return M.parse(self.env.paths.mandate.read_bytes())
 
     def test_valid_mandate_in_atoms(self):
-        m = self.parse(max_trade_usdc="12.5", max_trade_sol="0.123456789")
+        m = self.parse(max_trade_usdc="12.5", max_trade_sol="0.093456789")   # 18.69 USDC at 200 <= 1.5 x 12.5
         self.assertEqual((m.max_trade_usdc, m.max_position_usdc, m.daily_loss_limit_usdc), (12_500_000, 50_000_000, 10_000_000))
-        self.assertEqual(m.max_trade_sol, 123_456_789)
+        self.assertEqual(m.max_trade_sol, 93_456_789)
         self.assertEqual(m.rpc_host, F.RPC_HOST)
-        self.assertEqual(M.problems(m, F.NOW, self.env.repo), [])
+        self.assertEqual(M.problems(m, F.NOW, self.env.repo, price=200), [])
+        self.assertIn("no journal price", M.problems(m, F.NOW, self.env.repo)[0])     # fail closed
         public = json.dumps(m.public())
         self.assertNotIn("secret-token", public)
         self.assertNotIn("keys", public)
@@ -196,6 +197,26 @@ class Mandates(unittest.TestCase):
         self.assertTrue(any("symlink" in p for p in M.keypair_problems(link, self.env.repo)))
         self.assertTrue(any("owned" in p for p in M.keypair_problems(self.env.keypair, self.env.repo, uid=12345)))
         self.assertIn("keypair file does not exist", M.keypair_problems("/nonexistent/k.json", self.env.repo))
+
+    def test_max_trade_sol_plausibility(self):                       # N6
+        m = self.parse(max_trade_usdc="25", max_trade_sol="0.1875")      # 37.5 USDC at 200 = 1.5 x 25
+        self.assertIsNone(M.sol_cap_problem(m, 200))
+        m = self.parse(max_trade_usdc="25", max_trade_sol="0.1876")
+        self.assertIn("more than 1.5 x", M.sol_cap_problem(m, 200))
+        m = self.parse(max_trade_sol="1000")
+        self.assertTrue(any("max_trade_sol" in p for p in M.problems(m, F.NOW, self.env.repo, price=200)))
+        self.assertIsNone(M.sol_cap_problem(self.parse(max_trade_sol="0.15"), 200))
+
+    def test_tls_trust_ignores_environment(self):                     # F16
+        from unittest import mock
+        from jupiter_bot.execution import http
+        with mock.patch.dict("os.environ", {"SSL_CERT_FILE": "/nonexistent", "SSL_CERT_DIR": "/nonexistent"}):
+            if any(__import__("os").path.isfile(p) for p in http.SYSTEM_CA_FILES):
+                context = http.tls_context()
+                self.assertGreater(context.cert_store_stats()["x509_ca"], 0)
+                self.assertEqual(context.verify_mode, __import__("ssl").CERT_REQUIRED)
+        with self.assertRaises(Rejected):
+            http.tls_context(candidates=("/nonexistent/ca.crt",))
 
     def test_public_rpc(self):
         for host in ("api.mainnet.solana.com", "api.mainnet-beta.solana.com", "solana.com", "API.Mainnet.Solana.com."):

@@ -236,6 +236,18 @@ class Refusals(Base):
         request, _ = self.request("SELL", 125_000_000, transfers=2)    # 2 x 62.5M = the input: fine
         self.sign(request)
 
+    def test_route_decoded_front_to_back(self):                       # N1 in the signer
+        real = F.route_data(25_000_000, 1, 10_000)
+        evil = real + struct.pack("<QQHB", 25_000_000, 125_000_000, 50, 0)
+        self.refused("trailing", request=self.request(raw_route=evil, min_out=124_375_000)[0])
+        self.refused("unpinned", request=self.request(raw_route=F.route_data(
+            25_000_000, 125_000_000, 50, steps=(b"\x63\x64\x00\x01",)))[0])
+        self.refused("truncated", request=self.request(raw_route=F.route_data(25_000_000, 125_000_000, 50)[:-1])[0])
+        self.refused("sum to 100", request=self.request(raw_route=F.route_data(
+            25_000_000, 125_000_000, 50, steps=(b"\x11\x00\x32\x00\x01",)))[0])
+        split = (b"\x11\x01\x3c\x00\x01", b"\x26\x28\x00\x01")
+        self.sign(self.request(raw_route=F.route_data(25_000_000, 125_000_000, 50, steps=split))[0])
+
     def test_derived_accounts_and_single_route(self):
         self.refused("derived ATA", request=self.request(ata_address=F.key("not-a-pda"))[0])
         self.refused("exactly one Jupiter", request=self.request(jupiter_count=2)[0])
@@ -283,6 +295,8 @@ class Consistency(unittest.TestCase):
         self.assertEqual(S.MAX_FEE_BPS, config.MAX_FEE_BPS)
         from jupiter_bot.execution import jupiter_ix
         self.assertEqual(set(S.JUPITER_ROUTES), set(jupiter_ix.ACCEPTED))
+        self.assertEqual(S.SWAP_FIELD_BYTES, {t: len(f) for t, (_, f) in jupiter_ix.SWAP_VARIANTS.items()})
+        self.assertEqual(S.MAX_STEPS, jupiter_ix.MAX_STEPS)
         for wallet in (WALLET, F.WALLET):
             for mint in (SOL.mint, USDC.mint):
                 self.assertEqual(S.ata(wallet, mint), T.associated_token_address(wallet, mint))

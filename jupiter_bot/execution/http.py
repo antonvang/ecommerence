@@ -7,7 +7,9 @@ from __future__ import annotations
 
 import http.client
 import json
+import os
 import socket
+import ssl
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -17,6 +19,21 @@ from ..jupiter import NoRedirect
 
 MAX_BODY = 4_000_000
 USER_AGENT = "jupiter-bot-execution/0.3"
+
+
+# F16: trust only the system CA bundle at a fixed path. ssl.create_default_context() with no
+# cafile would honour SSL_CERT_FILE / SSL_CERT_DIR from the environment; an explicit cafile does not.
+SYSTEM_CA_FILES = ("/etc/ssl/certs/ca-certificates.crt",      # Debian/Ubuntu
+                   "/etc/pki/tls/certs/ca-bundle.crt")        # Fedora/RHEL
+
+
+def tls_context(candidates=SYSTEM_CA_FILES):
+    for path in candidates:
+        if os.path.isfile(path):
+            context = ssl.create_default_context(cafile=path)
+            context.minimum_version = ssl.TLSVersion.TLSv1_2
+            return context
+    raise Rejected("No system CA bundle found at a fixed path; refusing to use environment-chosen trust")
 
 
 class TransportError(Rejected):
@@ -32,7 +49,8 @@ def urllib_transport(method, url, body, headers, timeout):
     try:
         try:
             # ProxyHandler({}): ignore HTTPS_PROXY & co. from the environment (F16)
-            opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect)
+            opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect,
+                                                 urllib.request.HTTPSHandler(context=tls_context()))
             with opener.open(request, timeout=timeout) as response:
                 return response.status, response.read(MAX_BODY + 1)
         except urllib.error.HTTPError as exc:

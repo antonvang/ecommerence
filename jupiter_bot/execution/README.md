@@ -38,15 +38,20 @@ Filer:
    simuleringen og have transaktionshistorik. Offentlige `*.solana.com`
    afvises.
 3. Skriv `mandate.json`, se eksemplet i `DESIGN.md` §4. Beløb skrives som
-   tekst: USDC i hele USDC (`"25"`) og `max_trade_sol` i SOL (`"0.15"`, cirka
-   max_trade_usdc divideret med SOL-prisen). Kør `check-mandate`, til den
-   skriver `OK`.
+   tekst: USDC i hele USDC (`"25"`) og `max_trade_sol` i SOL (`"0.12"`, cirka
+   max_trade_usdc divideret med SOL-prisen). `max_trade_sol` må højst være
+   1,5 × max_trade_usdc værd ved den seneste pris i journalen. Ellers er
+   mandatet ugyldigt, og botten handler ikke. Stiger SOL meget, skal du sænke
+   værdien og armere igen. Kør `check-mandate`, til den skriver `OK`.
 4. Sæt et lille beløb ind: ca. 0,05 SOL til gebyrer plus højst
    `max_position_usdc` i USDC.
 5. Kør `dry-run-once` mindst 3 gange, og **læs resultatet**. Feltet
    `jupiter_instruction` viser, hvad Jupiters instruktion faktisk siger
-   (beløb, minimumspris, slippage). Det skal passe med ordren. Formatet er ikke
-   bekræftet fra en officiel kilde, så netop dette tjek er vigtigt.
+   (beløb, minimumspris, slippage og swap-trinene). Det skal passe med ordren
+   og med `routePlan` i svaret. Formatet er ikke bekræftet fra en officiel
+   kilde, så netop dette tjek er vigtigt. Forvent afviste ordrer, fx Raydium
+   CLMM/CPMM (Token-2022) eller ukendte swap-typer. Fejlteksten siger hvorfor.
+   At tillade mere er en kodeændring, der kræver nyt review.
 6. Kun til LIVE: `sudo apt install python3-nacl`. Signeren kører med
    `/usr/bin/python3` og starter ikke uden.
 7. Reviewer skriver `reviews/P3_REVIEW.md` med `Commit: …`, linjen fra

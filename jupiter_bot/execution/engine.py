@@ -70,6 +70,9 @@ def usdc_value(lamports, price):
 
 def decide(mandate, target, price, position_sol, cost_basis, lamports, usdc_balance, today_pnl):
     """Pure sizing rule. Returns {"side": None|"BUY"|"SELL", "amount": int, "reason": str}."""
+    cap = mandate_mod.sol_cap_problem(mandate, price)       # N6, at the fresh snapshot price
+    if cap:
+        return {"side": None, "amount": 0, "reason": "mandate implausible at this price: %s" % cap}
     value = usdc_value(position_sol, price)
     if target == LONG:
         if today_pnl <= -mandate.daily_loss_limit_usdc:
@@ -131,7 +134,7 @@ class Engine:
     def __init__(self, paths, transport=urllib_transport, signer=None, clock=time.time,
                  monotonic=time.monotonic, sleep=time.sleep, snapshot_fn=None, target_fn=None,
                  verdict_loader=gates.load_verdicts, lock_loader=None, lock_verify=None, uid=None,
-                 signature_verifier=None):
+                 signature_verifier=None, price_fn=None):
         self.paths, self.transport, self.clock = paths, transport, clock
         self.signature_verifier = signature_verifier or _verify_signature
         self.monotonic, self.sleep = monotonic, sleep
@@ -139,7 +142,7 @@ class Engine:
         self.snapshot_fn = snapshot_fn or default_snapshot(paths)
         self.target_fn = target_fn or default_target
         self.gate_options = dict(verdict_loader=verdict_loader, lock_loader=lock_loader,
-                                 lock_verify=lock_verify, uid=uid)
+                                 lock_verify=lock_verify, uid=uid, price_fn=price_fn)
         self._ledger = None
         self._inflight = set()
 
@@ -248,10 +251,13 @@ class Engine:
         if not pre:
             return "UNKNOWN: no pre-order balance snapshot; resolve by hand"
         try:
-            _, accounts = rpc.multiple_accounts(pre["addresses"])
+            balance_slot, accounts = rpc.multiple_accounts(pre["addresses"], commitment="finalized")
             sol, mints, issues = view(facts.get("wallet", wallet), pre["addresses"], accounts, "now")
         except Rejected as exc:
             return "UNKNOWN: cannot read wallet balances: %s" % exc
+        if balance_slot < fin_slot:      # N3: a lagging node would show the old balances
+            return "UNKNOWN: balance answer (slot %d) is older than the finalized expiry slot %d" % (
+                balance_slot, fin_slot)
         if issues or sol != pre["sol"] or {m: v for m, v in mints.items() if v} != \
                 {m: v for m, v in pre["mints"].items() if v}:
             ledger.event("expiry_blocked", {"order_id": order["order_id"], "reason": "wallet balances changed "
@@ -382,6 +388,8 @@ class Engine:
             decision = self._decision(mandate, ledger, rpc, now)
             record["decision"] = decision
             side, amount = decision["side"], decision["amount"]
+            if decision["reason"].startswith("mandate implausible"):
+                raise Rejected(decision["reason"])
             if side is None:          # nothing to do: probe the path with a small order instead
                 price = Decimal(decision["price"])
                 buy = min(mandate.max_trade_usdc, decision["usdc"])

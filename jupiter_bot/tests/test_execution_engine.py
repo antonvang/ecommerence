@@ -193,6 +193,18 @@ class ExpiryEvidence(Base):
         third = engine.run_once()
         self.assertEqual(third["resolved"][0][1], CONFIRMED)
 
+    def test_lagging_balance_node_stays_unknown(self):                # N3
+        self.env.jupiter.execute_mode = "timeout_lost"
+        engine = self.env.engine()
+        first = engine.run_once()
+        self.env.chain.height += 400
+        self.env.chain.accounts_lag = 100                               # balances from before the expiry slot
+        second = engine.run_once()
+        self.assertIn("balance answer", second["resolved"][0][1])
+        self.assertEqual(self.states(first["order_id"])[-1], UNKNOWN)
+        self.env.chain.accounts_lag = 0
+        self.assertEqual(engine.run_once()["resolved"][0][1], EXPIRED)
+
     def test_lagging_status_node_stays_unknown(self):
         self.env.jupiter.execute_mode = "timeout_lost"
         engine = self.env.engine()
@@ -388,6 +400,10 @@ class Limits(Base):
         self.assertEqual(partial["amount"], 20_000_000)
         with self.assertRaises(Rejected):
             decide(m, "SHORT", price, 0, 0, 0, 0, 0)
+        # N6: at a much higher price max_trade_sol (0.15) is worth > 1.5 x max_trade_usdc: no trading
+        refused = decide(m, FLAT, Decimal(300), 125_000_000, 25_000_000, 10**9, 0, 0)
+        self.assertIsNone(refused["side"])
+        self.assertIn("mandate implausible", refused["reason"])
 
 
 class KillSwitch(Base):
@@ -568,6 +584,15 @@ class DryRun(Base):
         self.assertFalse(failed["ok"])
         self.assertIn("Gasless", failed["detail"]["error"])
         self.assertEqual(engine.ledger().dry_runs_ok(M.read(self.env.paths.mandate)[1]), 1)
+
+    def test_dry_run_records_route_steps_and_rejections(self):
+        self.env.mandate()
+        detail = self.env.engine().dry_run_once()["detail"]
+        self.assertEqual(detail["jupiter_instruction"]["steps"][0]["swap"], "Whirlpool")
+        self.env.jupiter.tx_options = {"raw_route": F.route_data(25_000_000, 125_000_000, 50,
+                                                                 steps=(b"\x63\x64\x00\x01",))}
+        failed = self.env.engine().dry_run_once()["detail"]
+        self.assertIn("Swap variant tag 99", failed["error"])            # Anton sees why a real order fails
 
     def test_dry_run_needs_valid_mandate_and_private_rpc(self):
         with self.assertRaises(Rejected):

@@ -4,6 +4,7 @@ import io
 import json
 import tempfile
 import unittest
+from decimal import Decimal
 from unittest import mock
 
 from jupiter_bot.execution import __main__ as cli
@@ -43,7 +44,7 @@ class P2Gate(unittest.TestCase):
         (self.env.paths.verdicts / ("%s.json" % name)).write_text(json.dumps(record))
 
     def gate(self):
-        return gates.evaluate(self.env.paths, F.NOW, None).gate("p2_holdout_pass")
+        return gates.evaluate(self.env.paths, F.NOW, None, price_fn=lambda: 200).gate("p2_holdout_pass")
 
     def test_pass_only_for_matching_holdout_verdict(self):
         self.assertFalse(self.gate()["ok"])
@@ -67,7 +68,7 @@ class P2Gate(unittest.TestCase):
         self.assertIn("not locked", self.gate()["detail"])
 
     def review_gate(self):
-        return gates.evaluate(self.env.paths, F.NOW, None).gate("review_done")
+        return gates.evaluate(self.env.paths, F.NOW, None, price_fn=lambda: 200).gate("review_done")
 
     def test_review_gate_needs_exact_line(self):
         for verdict, ok in (("Verdict: APPROVED", True), ("  Verdict: APPROVED  ", True),
@@ -89,6 +90,36 @@ class P2Gate(unittest.TestCase):
         self.assertIn("Commit:", self.review_gate()["detail"])
         self.env.paths.review.write_text(text.replace("Execution-SHA256:", "Execution-SHA256: 00\nExecution-SHA256:"))
         self.assertFalse(self.review_gate()["ok"])
+
+    def test_code_hash_covers_imported_modules(self):                 # N2
+        files = {p.relative_to(config.REPO).as_posix() for p in gates.execution_code_files(config.REPO)}
+        for name in ("jupiter_bot/core.py", "jupiter_bot/storage.py", "jupiter_bot/jupiter.py",
+                     "jupiter_bot/research/strategies.py", "jupiter_bot/research/lock.py",
+                     "jupiter_bot/marketdata/journal.py", "jupiter_bot/marketdata/snapshot.py",
+                     "jupiter_bot/execution/signer.py", "jupiter_bot/__init__.py"):
+            self.assertIn(name, files)
+        self.assertFalse(any(n.startswith(("jupiter_bot/tests/", "jupiter_bot/dashboard/")) for n in files))
+        repo = self.env.tmp / "hashrepo"
+        (repo / "jupiter_bot" / "execution").mkdir(parents=True)
+        (repo / "jupiter_bot" / "__init__.py").write_text("")
+        (repo / "jupiter_bot" / "execution" / "__init__.py").write_text("")
+        (repo / "jupiter_bot" / "execution" / "verify.py").write_text(
+            "from ..core import SOL\nfrom . import config\n\ndef f():\n    from ..marketdata.snapshot import x\n")
+        (repo / "jupiter_bot" / "execution" / "config.py").write_text("")
+        (repo / "jupiter_bot" / "marketdata").mkdir()
+        (repo / "jupiter_bot" / "marketdata" / "__init__.py").write_text("")
+        (repo / "jupiter_bot" / "marketdata" / "snapshot.py").write_text("from ..storage import y\n")
+        (repo / "jupiter_bot" / "core.py").write_text("SOL = 'So111'\n")
+        (repo / "jupiter_bot" / "storage.py").write_text("")
+        (repo / "jupiter_bot" / "unrelated.py").write_text("")
+        before = gates.execution_code_sha256(repo)
+        names = {p.relative_to(repo).as_posix() for p in gates.execution_code_files(repo)}
+        self.assertIn("jupiter_bot/storage.py", names)                    # transitive, via a function-level import
+        self.assertNotIn("jupiter_bot/unrelated.py", names)
+        (repo / "jupiter_bot" / "unrelated.py").write_text("changed\n")
+        self.assertEqual(gates.execution_code_sha256(repo), before)
+        (repo / "jupiter_bot" / "core.py").write_text("SOL = 'evil-mint'\n")
+        self.assertNotEqual(gates.execution_code_sha256(repo), before)    # a core.py change voids the review
 
     def test_code_hash_is_order_and_content_sensitive(self):
         h1 = gates.execution_code_sha256(self.env.repo)
@@ -135,6 +166,9 @@ class Cli(unittest.TestCase):
         patcher = mock.patch.object(config, "WALLETS_DIR", self.env.paths.wallets)   # never the real registry
         patcher.start()
         self.addCleanup(patcher.stop)
+        price = mock.patch.object(gates, "journal_price", lambda paths, now: Decimal(200))
+        price.start()
+        self.addCleanup(price.stop)
         self.base = ["--mandate", str(self.env.paths.mandate), "--data-dir", str(self.env.paths.ledger.parent)]
 
     def tearDown(self):

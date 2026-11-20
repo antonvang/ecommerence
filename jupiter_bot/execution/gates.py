@@ -10,10 +10,12 @@ Mode rules (evaluated fresh every time, never cached):
 """
 from __future__ import annotations
 
+import ast
 import hashlib
 import os
 import re
 import time
+from decimal import Decimal
 import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -82,11 +84,59 @@ def gate_p2(paths, mandate, verdict_loader=load_verdicts, lock_loader=None, veri
         mandate.strategy, mandate.params_json)
 
 
+def _module_file(base, parts):
+    target = base.joinpath(*parts) if parts else base
+    for candidate in (target.with_suffix(".py"), target / "__init__.py"):
+        if candidate.is_file():
+            return candidate
+    return None
+
+
+def execution_code_files(repo):
+    """execution/*.py plus every jupiter_bot module they import, transitively (N2), plus the
+    package __init__ files that importing them runs. Found by parsing the imports (ast), so a
+    new dependency is covered automatically."""
+    root = Path(repo) / "jupiter_bot"
+    pending = sorted((root / "execution").glob("*.py"))
+    seen = set()
+    while pending:
+        path = pending.pop()
+        if path in seen or not path.is_file():
+            continue
+        seen.add(path)
+        parent = path.parent
+        while parent != root.parent and (parent / "__init__.py").is_file():
+            pending.append(parent / "__init__.py")
+            parent = parent.parent
+        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        for node in ast.walk(tree):
+            targets = []
+            if isinstance(node, ast.ImportFrom):
+                if node.level:
+                    base = path.parent
+                    for _ in range(node.level - 1):
+                        base = base.parent
+                    parts = node.module.split(".") if node.module else []
+                elif node.module and (node.module == "jupiter_bot" or node.module.startswith("jupiter_bot.")):
+                    base, parts = root, node.module.split(".")[1:]
+                else:
+                    continue
+                targets.append(_module_file(base, parts))
+                targets += [_module_file(base, parts + [alias.name]) for alias in node.names]
+            elif isinstance(node, ast.Import):
+                for alias in node.names:
+                    if alias.name == "jupiter_bot" or alias.name.startswith("jupiter_bot."):
+                        targets.append(_module_file(root, alias.name.split(".")[1:]))
+            pending += [t for t in targets if t is not None and root in t.parents]
+    return sorted(seen)
+
+
 def execution_code_sha256(repo):
-    """sha256 over jupiter_bot/execution/*.py, sorted by name: name NUL sha256(file) LF per file."""
+    """sha256 over `relative/path NUL sha256(file) LF` for every file of execution_code_files."""
     digest = hashlib.sha256()
-    for path in sorted((Path(repo) / "jupiter_bot" / "execution").glob("*.py")):
-        digest.update(path.name.encode() + b"\0" + hashlib.sha256(path.read_bytes()).hexdigest().encode() + b"\n")
+    for path in execution_code_files(repo):
+        name = path.relative_to(Path(repo)).as_posix()
+        digest.update(name.encode() + b"\0" + hashlib.sha256(path.read_bytes()).hexdigest().encode() + b"\n")
     return digest.hexdigest()
 
 
@@ -212,11 +262,27 @@ class State:
         return next(g for g in self.gates if g["name"] == name)
 
 
+def journal_price(paths, now):
+    """Latest observed SOL/USDC close in the journal (read-only), or None."""
+    try:
+        from ..marketdata.journal import Journal
+        journal = Journal(paths.journal, readonly=True)
+        try:
+            rows = journal.bars_as_of("binance_spot_klines", "SOL/USDC", 60, now, 1)
+        finally:
+            journal.close()
+        price = Decimal(str(rows[-1]["close"])) if rows else None
+        return price if price is not None and price.is_finite() and price > 0 else None
+    except Exception:
+        return None
+
+
 def evaluate(paths, now, ledger=None, verdict_loader=load_verdicts, lock_loader=None, lock_verify=None,
-             uid=None):
+             uid=None, price_fn=None):
     """Compute mandate validity, gates and effective mode. Reads files only; no network."""
     mandate, error, sha = mandate_mod.load_once(paths.mandate)      # one read: parse and hash agree (F11)
-    problems = mandate_mod.problems(mandate, now, paths.repo, uid) if mandate else []
+    price = (price_fn or (lambda: journal_price(paths, now)))() if mandate else None
+    problems = mandate_mod.problems(mandate, now, paths.repo, uid, price) if mandate else []
     arm, arm_problem = read_arm(paths.arm)
     state = State(mandate, error, problems, sha, arm, arm_problem)
 
