@@ -672,7 +672,10 @@ def load_forward_paper(paths):
             configs.append({
                 "file": path.name, "strategy": str(run.get("strategy", "")),
                 "params": run.get("params") if isinstance(run.get("params"), dict) else {},
-                "grid_index": run.get("grid_index"), "status": str(run.get("status", "")),
+                "grid_index": run.get("grid_index"),
+                # Before the development window starts there is nothing to replay: waiting, not a failure.
+                "status": "WAITING" if run.get("status") == "REJECTED" and "has not started" in str(run.get("error", ""))
+                          else str(run.get("status", "")),
                 "error": run.get("error"), "updated_at": _float(run.get("updated_at")), "period": period,
                 "return_pct": _float(metrics.get("return_pct")),
                 "hold_sol_return_pct": _float(bench.get("hold_sol_return_pct")),

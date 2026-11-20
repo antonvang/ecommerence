@@ -733,7 +733,15 @@ footer { max-width: 1240px; margin: 0 auto; padding: 0 16px 32px; color: var(--m
 
     var bucketTxt = mk.bucket_s >= 3600 ? (mk.bucket_s / 3600) + " t" : (mk.bucket_s / 60) + " min";
     document.getElementById("price-note").textContent = "pr. " + bucketTxt + " · Binance = sidste close, Jupiter = median i intervallet";
-    var common = { t0: mk.since, t1: mk.now, bucket: mk.bucket_s };
+    // Less data than the window (the collector is new): start the axis at the first point, not in empty space.
+    var firstT = null;
+    ["binance", "buy", "sell"].forEach(function (k) {
+      var p = (mk.series[k] || []).filter(function (q) { return isNum(q[1]); })[0];
+      if (p && (firstT === null || p[0] < firstT)) firstT = p[0];
+    });
+    var t0 = firstT !== null && firstT - mk.bucket_s > mk.since ? firstT - mk.bucket_s : mk.since;
+    if (t0 > mk.since) document.getElementById("price-note").textContent += " · data fra " + timeF.format(new Date(firstT * 1000));
+    var common = { t0: t0, t1: mk.now, bucket: mk.bucket_s };
     lineChart(document.getElementById("price-chart"), Object.assign({
       keys: ["binance", "buy", "sell"], data: mk.series, height: 260, minSpan: 0.5,
       fmt: function (v) { return num(v, 3) + " USDC"; },
@@ -879,9 +887,16 @@ footer { max-width: 1240px; margin: 0 auto; padding: 0 16px 32px; color: var(--m
       ], "Papir efter Jupiter-priser, 120 s forsinkelse og 25 bps ekstra omkostning, siden " + (best.period ? date(best.period.start) : "—") + ". Ikke bevis for fremtidig profit.",
         sparkline(best.series && best.series.strategy), true));
     } else {
-      var why = R && R.state === "locked" ? "Første papirkurve kommer ved næste kørsel af forward-timeren (hver halve time)."
-                                         : "Starter, når du har godkendt og låst P2-planen. Ingen regler er afprøvet på dine data endnu.";
-      hero.appendChild(heroTile("Papirresultat", el("div", { class: "big", text: "—" }), [[why]], null, null, true));
+      var devStart = R && R.lock && R.lock.development ? R.lock.development.start : null, nowS = Date.now() / 1000;
+      if (R && R.state === "locked" && isNum(devStart) && nowS < devStart) {
+        hero.appendChild(heroTile("Papirresultat · starter om", el("div", { class: "big" }, [dur(devStart - nowS)]),
+          [["Papirhandel med de 4 låste strategier begynder ", el("b", { text: when(devStart) }), ". Herefter opdateres tallet hver halve time."]],
+          "Planen er låst. Indtil starttidspunktet er der intet at måle.", null, true));
+      } else {
+        var why = R && R.state === "locked" ? "Første papirkurve kommer ved næste kørsel af forward-timeren (hver halve time)."
+                                           : "Starter, når du har godkendt og låst P2-planen. Ingen regler er afprøvet på dine data endnu.";
+        hero.appendChild(heroTile("Papirresultat", el("div", { class: "big", text: "—" }), [[why]], null, null, true));
+      }
     }
     // 2. Real money
     var mode = X && X.mode ? X.mode : "DISARMED";
@@ -896,7 +911,7 @@ footer { max-width: 1240px; margin: 0 auto; padding: 0 16px 32px; color: var(--m
       var last = B[B.length - 1][1], first = B[0][1], ch = (last / first - 1) * 100;
       var win = M.hours >= 48 ? (M.hours / 24) + " døgn" : M.hours + " timer";
       hero.appendChild(heroTile("SOL/USDC nu", el("div", { class: "big" }, [num(last, 2), el("small", { text: "USDC" })]),
-        [[arrowed(ch, 2, " %"), " seneste " + win]], "Binance 1m-close. Jupiter-rundtur koster ca. " + (isNum((M.summary || {}).round_trip_median_bps) ? num(M.summary.round_trip_median_bps, 1) : "—") + " bps."));
+        [[arrowed(ch, 2, " %"), B[0][0] - M.since > 2 * M.bucket_s ? " siden " + timeF.format(new Date(B[0][0] * 1000)) + " (første data)" : " seneste " + win]], "Binance 1m-close. Jupiter-rundtur koster ca. " + (isNum((M.summary || {}).round_trip_median_bps) ? num(M.summary.round_trip_median_bps, 1) : "—") + " bps."));
     } else {
       hero.appendChild(heroTile("SOL/USDC nu", el("div", { class: "big", text: "—" }), [["Ingen kurs i vinduet"]]));
     }
@@ -916,7 +931,9 @@ footer { max-width: 1240px; margin: 0 auto; padding: 0 16px 32px; color: var(--m
       step(O && O.level === "error" ? "bad" : "done", "Data indsamles",
            (days < 1 ? num(days * 24, 1) + " timer" : num(days, days < 10 ? 1 : 0) + " dage") + " indtil nu · mål 42 dage"),
       step(locked ? "done" : "current", "Plan godkendt og låst", locked ? "låst " + date(R.lock.locked_at) : "venter på din godkendelse"),
-      step(!locked ? "todo" : now >= dev.end ? "done" : "current", "Udvikling", locked ? date(dev.start) + " – " + date(dev.end) : "21. nov. – 19. dec."),
+      step(!locked ? "todo" : now >= dev.end ? "done" : "current", "Udvikling",
+           !locked ? "21. nov. – 19. dec." : now < dev.start ? "starter om " + dur(dev.start - now) + " · til " + date(dev.end)
+                   : date(dev.start) + " – " + date(dev.end) + " · " + Math.round(Math.min(1, (now - dev.start) / (dev.end - dev.start)) * 100) + " %"),
       step(devPass.length ? "done" : devV.length ? "bad" : "todo", "Udviklingsdom",
            devPass.length ? "bestået: " + devPass.map(function (v) { return v.strategy; }).join(", ") : devV.length ? "intet signal fundet" : "efter 19. dec."),
       step(holdV.some(function (v) { return v.verdict === "PASS"; }) ? "done" : holdV.length ? "bad" : locked && now >= hold.start ? "current" : "todo",
@@ -949,7 +966,7 @@ footer { max-width: 1240px; margin: 0 auto; padding: 0 16px 32px; color: var(--m
       var tr = el("tr", { class: i === state.paperSel ? "selected" : "", style: "cursor:pointer", tabindex: "0",
                           "aria-selected": String(i === state.paperSel) }, [
         td(c.strategy, "mono", JSON.stringify(c.params)), td(paramText(c.params), "mono"),
-        td(c.status === "OK" ? statusChip("ok", "OK") : statusChip("error", c.status || "?"), "", c.error || null),
+        td(c.status === "OK" ? statusChip("ok", "OK") : c.status === "WAITING" ? statusChip("unknown", "venter") : statusChip("error", c.status || "?"), "", c.error || null),
         td(isNum(c.return_pct) ? signed(c.return_pct, 2) + " %" : "—", "r"),
         td(isNum(c.hold_sol_return_pct) ? signed(c.hold_sol_return_pct, 2) + " %" : "—", "r"),
         td(isNum(c.max_drawdown_pct) ? num(c.max_drawdown_pct, 2) + " %" : "—", "r"),
@@ -967,8 +984,10 @@ footer { max-width: 1240px; margin: 0 auto; padding: 0 16px 32px; color: var(--m
               { t: "Maks. fald", r: 1 }, { t: "Ture", r: 1 }, { t: "Holder nu" }, { t: "Vil nu" }], rows);
     wrap.appendChild(t); box.appendChild(wrap);
     var c = p.configs[state.paperSel];
+    var R0 = state.data.research, lockDev = R0 && R0.lock && R0.lock.development ? R0.lock.development : null;
+    var startT = c.period ? c.period.start : lockDev ? lockDev.start : null;
     var head = el("div", { class: "card-head", style: "margin-top:14px" }, [el("h3", { text: c.strategy + " · " + paramText(c.params) }),
-      el("span", { class: "sub", text: "afkast i % siden " + (c.period ? date(c.period.start) : "—") + " · opdateret " + when(c.updated_at) })]);
+      el("span", { class: "sub", text: "afkast i % siden " + (isNum(startT) ? when(startT) : "—") + " · opdateret " + when(c.updated_at) })]);
     var lg = el("div", { class: "legend" }), chart = el("div", { class: "chart" });
     box.appendChild(head); box.appendChild(lg); box.appendChild(chart);
     legend(lg, ["strategy", "sol"]);
@@ -977,7 +996,7 @@ footer { max-width: 1240px; margin: 0 auto; padding: 0 16px 32px; color: var(--m
       bucket: (c.series.strategy || []).length > 1 ? (c.series.strategy[c.series.strategy.length - 1][0] - c.series.strategy[0][0]) / (c.series.strategy.length - 1) : 60,
       fmt: function (v) { return signed(v, 2) + " %"; },
       aria: "Linjediagram: papirafkast for " + c.strategy + " og SOL-kursens ændring i procent",
-      empty: c.error || "Ingen papirkurve endnu" });
+      empty: c.status === "WAITING" ? "Papirhandlen starter " + when(startT) + " (om " + dur(startT - Date.now() / 1000) + ")." : (c.error || "Ingen papirkurve endnu") });
     box.appendChild(el("p", { class: "foot-note", text:
       "Papir, ikke rigtige penge. Prissat med de journalførte Jupiter-tilbud. Det er tilladt at se på kurven, men en ændring af regler eller kode efter 19. december gør kontrolperioden ugyldig (P2-plan afsnit 6)." }));
     (p.errors || []).forEach(function (e) { box.appendChild(el("div", { class: "err-box", text: e.file + ": " + e.error })); });
