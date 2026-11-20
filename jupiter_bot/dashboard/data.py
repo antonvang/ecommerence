@@ -592,7 +592,26 @@ def research(paths, now=None):
                      "days": (data_last - data_first) / DAY if data_first is not None else 0.0},
             "progress": {"development": _progress(lock.get("development"), data_first, data_last, now),
                          "holdout": _progress(lock.get("holdout"), data_first, data_last, now)},
-            "evaluations": evals}
+            "evaluations": evals, "verdicts": verdicts(paths)}
+
+
+def verdicts(paths):
+    """Write-once verdict files from research.verdict (development and holdout)."""
+    rows = []
+    try:
+        files = sorted(p for p in (paths.research / "verdicts").iterdir() if p.suffix == ".json" and p.is_file())
+    except OSError:
+        return rows
+    for path in files:
+        try:
+            raw = _read_json(path)
+            rows.append({"file": path.name, "label": str(raw.get("label", "")), "verdict": str(raw.get("verdict", "")),
+                         "strategy": str(raw.get("strategy", "")),
+                         "params": raw.get("params") if isinstance(raw.get("params"), dict) else {},
+                         "created_at": _float(raw.get("created_at"))})
+        except Exception as exc:
+            rows.append({"file": path.name, "error": str(exc)})
+    return rows
 
 
 # Forward paper view (research/forward/*.json, written by research.forward) -------------

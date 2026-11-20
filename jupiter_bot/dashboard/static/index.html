@@ -24,6 +24,7 @@
   --seq-fill: #2a78d6;
   --good: #0ca30c;
   --good-text: #006300;
+  --bad-text: #b3261e;
   --warning: #fab219;
   --serious: #ec835a;
   --critical: #d03b3b;
@@ -51,6 +52,8 @@
     --seq-track: #184f95;
     --seq-fill: #3987e5;
     --good-text: #0ca30c;
+  --bad-text: #f07167;
+    --bad-text: #f07167;
     --critical-wash: rgba(208,59,59,0.16);
     --warning-wash: rgba(250,178,25,0.12);
     --holdout-wash: rgba(144,133,233,0.12);
@@ -133,6 +136,28 @@ h2 { font-size: 16px; margin: 0; font-weight: 600; letter-spacing: -0.01em; }
 h3 { font-size: 13px; margin: 18px 0 8px; font-weight: 600; color: var(--ink-2); }
 .card-head .sub { color: var(--muted); font-size: 13px; }
 .card-head .right { margin-left: auto; }
+
+/* Result hero */
+.hero { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; }
+.hero-tile { background: var(--surface-2); border-radius: 10px; padding: 14px 16px; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.hero-tile.main { grid-column: span 2; }
+@media (max-width: 620px) { .hero-tile.main { grid-column: auto; } }
+.hero-tile .label { font-size: 13px; color: var(--ink-2); font-weight: 500; }
+.hero-tile .big { font-size: 40px; line-height: 1.1; font-weight: 650; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.hero-tile .big small { font-size: 18px; font-weight: 500; color: var(--ink-2); margin-left: 4px; }
+.hero-tile .line { font-size: 13px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.hero-tile .line b { color: var(--ink); font-weight: 600; }
+.hero-tile .foot { font-size: 12px; color: var(--muted); margin-top: auto; padding-top: 4px; }
+.big .arrow { font-size: 0.55em; vertical-align: 0.25em; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.up { color: var(--good-text); } .down { color: var(--bad-text); }
+.spark { display: block; width: 100%; height: 46px; margin-top: 6px; }
+.steps { list-style: none; margin: 16px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px; }
+.steps li { display: flex; gap: 8px; align-items: flex-start; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border, rgba(127,127,127,.18)); font-size: 13px; }
+.steps li.current { border-color: var(--series-1); box-shadow: inset 3px 0 0 var(--series-1); }
+.steps li svg { width: 16px; height: 16px; flex: none; margin-top: 1px; }
+.steps .t { font-weight: 600; } .steps .d { color: var(--muted); font-size: 12px; margin-top: 2px; }
+.ring { display: inline-flex; width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--series-1); box-sizing: border-box; flex: none; margin-top: 1px; }
 
 /* Stat tiles */
 .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
@@ -248,6 +273,11 @@ footer { max-width: 1240px; margin: 0 auto; padding: 0 16px 32px; color: var(--m
 <div class="reasons" id="reasons"><ul id="reason-list"></ul></div>
 
 <main>
+  <section class="card" id="sec-result" aria-labelledby="h-result">
+    <div class="card-head"><h2 id="h-result">Resultat</h2><span class="sub">papirhandel med de låste regler og rigtige penge, når du slår det til</span></div>
+    <div class="hero" id="hero"></div>
+    <ol class="steps" id="steps" aria-label="Vejen til rigtige penge"></ol>
+  </section>
   <section class="card" id="sec-collect" aria-labelledby="h-collect">
     <div class="card-head"><h2 id="h-collect">Indsamling</h2><span class="sub" id="collect-sub"></span></div>
     <div class="tiles" id="collect-tiles"></div>
@@ -804,6 +834,104 @@ footer { max-width: 1240px; margin: 0 auto; padding: 0 16px 32px; color: var(--m
     document.getElementById("research-sub").textContent = E.runs.length ? E.runs.length + " kørsler" : "";
   }
 
+  // ---------- Resultat (hero) ----------
+  function arrowed(v, d, unit) {
+    if (!isNum(v)) return el("span", { text: "—" });
+    var cls = v > 0 ? "up" : v < 0 ? "down" : "";
+    return el("span", { class: cls }, [el("span", { class: "arrow", "aria-hidden": "true", text: v > 0 ? "▲ " : v < 0 ? "▼ " : "" }),
+      el("span", { class: "sr", text: v > 0 ? "op " : v < 0 ? "ned " : "" }), signed(v, d) + (unit || "")]);
+  }
+  function sparkline(points) {
+    var pts = (points || []).filter(function (p) { return isNum(p[1]); });
+    if (pts.length < 2) return null;
+    var W = 300, H = 46, lo = Math.min(0, Math.min.apply(null, pts.map(function (p) { return p[1]; }))),
+        hi = Math.max(0, Math.max.apply(null, pts.map(function (p) { return p[1]; })));
+    if (hi - lo < 0.2) { hi += 0.1; lo -= 0.1; }
+    var t0 = pts[0][0], t1 = pts[pts.length - 1][0] || t0 + 1;
+    function X(t) { return 2 + (t - t0) / (t1 - t0 || 1) * (W - 6); }
+    function Y(v) { return 3 + (hi - v) / (hi - lo) * (H - 6); }
+    var d = pts.map(function (p, i) { return (i ? "L" : "M") + X(p[0]).toFixed(1) + " " + Y(p[1]).toFixed(1); }).join("");
+    var svg = s("svg", { class: "spark", viewBox: "0 0 " + W + " " + H, preserveAspectRatio: "none", "aria-hidden": "true" });
+    svg.appendChild(s("line", { x1: 0, x2: W, y1: Y(0), y2: Y(0), stroke: "var(--axis, #c3c2b7)", "stroke-width": 1, "stroke-dasharray": "3 3", "vector-effect": "non-scaling-stroke" }));
+    svg.appendChild(s("path", { d: d, fill: "none", stroke: "var(--series-1)", "stroke-width": 2, "vector-effect": "non-scaling-stroke", "stroke-linejoin": "round" }));
+    return svg;
+  }
+  function heroTile(label, big, lines, foot, extra, main) {
+    var t = el("div", { class: "hero-tile" + (main ? " main" : "") }, [el("div", { class: "label", text: label }), big]);
+    (lines || []).forEach(function (l) { if (l) t.appendChild(el("div", { class: "line" }, l)); });
+    if (extra) t.appendChild(extra);
+    if (foot) t.appendChild(el("div", { class: "foot", text: foot }));
+    return t;
+  }
+  function renderHero() {
+    var D = state.data, hero = clear(document.getElementById("hero"));
+    var P = D.paper, R = D.research, X = D.execution, M = D.market;
+    // 1. Paper result
+    var ok = P && P.configs ? P.configs.filter(function (c) { return c.status === "OK" && isNum(c.return_pct); }) : [];
+    if (ok.length) {
+      var best = ok.slice().sort(function (a, b) { return b.return_pct - a.return_pct; })[0];
+      var rets = ok.map(function (c) { return c.return_pct; });
+      var big = el("div", { class: "big" }, [arrowed(best.return_pct, 2), el("small", { text: "%" })]);
+      var vsHold = isNum(best.hold_sol_return_pct) ? best.return_pct - best.hold_sol_return_pct : null;
+      hero.appendChild(heroTile("Papirresultat · bedste af " + ok.length + " strategier", big, [
+        ["≈ ", el("b", { text: signed(best.return_pct * 10, 2) + " USDC" }), " pr. 1.000 USDC · ", el("b", { text: best.strategy }), " " + paramText(best.params)],
+        ["Hold SOL ", arrowed(best.hold_sol_return_pct, 2, " %"), " · forskel ", arrowed(vsHold, 2, " pp"), " · alle " + ok.length + ": " + signed(Math.min.apply(null, rets), 2) + " til " + signed(Math.max.apply(null, rets), 2) + " %"]
+      ], "Papir efter Jupiter-priser, 120 s forsinkelse og 25 bps ekstra omkostning, siden " + (best.period ? date(best.period.start) : "—") + ". Ikke bevis for fremtidig profit.",
+        sparkline(best.series && best.series.strategy), true));
+    } else {
+      var why = R && R.state === "locked" ? "Første papirkurve kommer ved næste kørsel af forward-timeren (hver halve time)."
+                                         : "Starter, når du har godkendt og låst P2-planen. Ingen regler er afprøvet på dine data endnu.";
+      hero.appendChild(heroTile("Papirresultat", el("div", { class: "big", text: "—" }), [[why]], null, null, true));
+    }
+    // 2. Real money
+    var mode = X && X.mode ? X.mode : "DISARMED";
+    var live = mode === "LIVE", pnl = X && isNum(X.today_realized_pnl_usdc) ? X.today_realized_pnl_usdc : null;
+    hero.appendChild(heroTile("Rigtige penge", live ? el("div", { class: "big" }, [arrowed(pnl, 2), el("small", { text: "USDC i dag" })])
+                                                   : el("div", { class: "big" }, ["0", el("small", { text: "USDC" })]),
+      [[statusChip(live ? "play" : "lock", mode)]],
+      live ? "Realiseret i dag efter bekræftede on-chain handler." : "Ingen rigtige handler. Du bestemmer, hvornår det slås til."));
+    // 3. SOL now
+    var B = M && M.series ? (M.series.binance || []).filter(function (p) { return isNum(p[1]); }) : [];
+    if (B.length) {
+      var last = B[B.length - 1][1], first = B[0][1], ch = (last / first - 1) * 100;
+      var win = M.hours >= 48 ? (M.hours / 24) + " døgn" : M.hours + " timer";
+      hero.appendChild(heroTile("SOL/USDC nu", el("div", { class: "big" }, [num(last, 2), el("small", { text: "USDC" })]),
+        [[arrowed(ch, 2, " %"), " seneste " + win]], "Binance 1m-close. Jupiter-rundtur koster ca. " + (isNum((M.summary || {}).round_trip_median_bps) ? num(M.summary.round_trip_median_bps, 1) : "—") + " bps."));
+    } else {
+      hero.appendChild(heroTile("SOL/USDC nu", el("div", { class: "big", text: "—" }), [["Ingen kurs i vinduet"]]));
+    }
+    renderSteps();
+  }
+  function step(state_, title, detail) { return { s: state_, t: title, d: detail }; }
+  function renderSteps() {
+    var D = state.data, ol = clear(document.getElementById("steps"));
+    var O = D.overview, R = D.research, X = D.execution;
+    var now = Date.now() / 1000, locked = R && R.state === "locked";
+    var dev = R && R.lock && R.lock.development, hold = R && R.lock && R.lock.holdout;
+    var V = (R && R.verdicts) || [];
+    var devV = V.filter(function (v) { return v.label === "development"; }), holdV = V.filter(function (v) { return v.label === "holdout"; });
+    var devPass = devV.filter(function (v) { return v.verdict === "PASS_DEV"; });
+    var days = R && R.data ? R.data.days : 0;
+    var steps = [
+      step(O && O.level === "error" ? "bad" : "done", "Data indsamles",
+           (days < 1 ? num(days * 24, 1) + " timer" : num(days, days < 10 ? 1 : 0) + " dage") + " indtil nu · mål 42 dage"),
+      step(locked ? "done" : "current", "Plan godkendt og låst", locked ? "låst " + date(R.lock.locked_at) : "venter på din godkendelse"),
+      step(!locked ? "todo" : now >= dev.end ? "done" : "current", "Udvikling", locked ? date(dev.start) + " – " + date(dev.end) : "21. nov. – 19. dec."),
+      step(devPass.length ? "done" : devV.length ? "bad" : "todo", "Udviklingsdom",
+           devPass.length ? "bestået: " + devPass.map(function (v) { return v.strategy; }).join(", ") : devV.length ? "intet signal fundet" : "efter 19. dec."),
+      step(holdV.some(function (v) { return v.verdict === "PASS"; }) ? "done" : holdV.length ? "bad" : locked && now >= hold.start ? "current" : "todo",
+           "Kontrol på usete data", locked ? date(hold.start) + " – " + date(hold.end) : "19. dec. – 2. jan."),
+      step(X && X.mode === "LIVE" ? "done" : "todo", "Rigtige penge", X && X.mode ? X.mode + " · dit valg" : "DISARMED · dit valg")
+    ];
+    var current = false;
+    steps.forEach(function (st) {
+      var mark = st.s === "done" ? icon("ok") : st.s === "bad" ? icon("error") : st.s === "current" && !current ? el("span", { class: "ring" }) : icon("unknown");
+      var li = el("li", { class: st.s === "current" && !current ? "current" : "" }, [mark, el("div", null, [el("div", { class: "t", text: st.t }), el("div", { class: "d", text: st.d })])]);
+      if (st.s === "current") current = true;
+      ol.appendChild(li);
+    });
+  }
+
   // ---------- Papirhandel ----------
   function paramText(p) { return Object.keys(p || {}).map(function (k) { return k.replace(/_min$/, "") + "=" + p[k]; }).join(", "); }
   function renderPaper() {
@@ -919,6 +1047,7 @@ footer { max-width: 1240px; margin: 0 auto; padding: 0 16px 32px; color: var(--m
       else if (k === "paper") renderPaper();
       else if (k === "execution") renderExec();
     });
+    renderHero();
   }
 
   document.getElementById("range").addEventListener("click", function (ev) {
