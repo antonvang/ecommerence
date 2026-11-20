@@ -1,8 +1,9 @@
 # P2-forskningsplan: findes der en målbar fordel på SOL/USDC?
 
-Status: **UDKAST — afventer Antons godkendelse.** Planen låses med
-`python3 -m jupiter_bot.research.lock --approved-by Anton`, som gemmer
-hashes af denne fil, `strategies.py` og `replay.py` sammen med git-commit.
+Status: **GODKENDT af Anton 2026-11-20** (i chatten: "godkend planen og lås den").
+Låst med `python3 -m jupiter_bot.research.lock --approved-by Anton`, som gemmer
+hashes af denne fil, `strategies.py` og `replay.py` sammen med git-commit i
+`~/.local/share/jupiter-bot/research/plan_lock.json`.
 
 Skrevet 2026-11-20, **før** nogen afkast- eller strategiresultater på de
 indsamlede data er set. Kun antal rækker og fejl i journalen er set.
