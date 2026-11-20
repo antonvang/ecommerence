@@ -4,7 +4,6 @@ from __future__ import annotations
 import base64
 import json
 import subprocess
-import sys
 from pathlib import Path
 
 from ..core import Rejected
@@ -12,6 +11,8 @@ from .solana_tx import b58decode
 
 SIGNER_PATH = Path(__file__).resolve().with_name("signer.py")
 MINIMAL_ENV = {"PATH": "/usr/bin:/bin", "LC_ALL": "C.UTF-8"}
+# The system interpreter, not a venv's (F15): PyNaCl must come from python3-nacl.
+SYSTEM_PYTHON = "/usr/bin/python3"
 
 
 class SignerRefused(Rejected):
@@ -20,12 +21,12 @@ class SignerRefused(Rejected):
 
 class SubprocessSigner:
     def __init__(self, paths, python=None, timeout=30, runner=subprocess.run):
-        self.paths, self.python, self.timeout, self.runner = paths, python or sys.executable, timeout, runner
+        self.paths, self.python, self.timeout, self.runner = paths, python or SYSTEM_PYTHON, timeout, runner
 
     def command(self):
         # -I: isolated mode (no PYTHON* env, no user site-packages, no cwd/script dir on sys.path)
         return [self.python, "-I", str(SIGNER_PATH), "--mandate", str(self.paths.mandate),
-                "--arm", str(self.paths.arm), "--state", str(self.paths.signer_state)]
+                "--arm", str(self.paths.arm), "--registry", str(self.paths.wallets)]
 
     def sign(self, message, bundle):
         request = json.dumps({"message_b64": base64.b64encode(message).decode(), "bundle": bundle})

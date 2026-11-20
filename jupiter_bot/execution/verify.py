@@ -3,18 +3,26 @@
 1. Decode the versioned transaction (v0 only); exactly one required signature,
    and it is the mandate wallet (= fee payer = transaction id owner).
 2. Resolve every address lookup table via `getAccountInfo` (owner must be the
-   ALT program, table must be active) and rebuild the full account list.
-3. Every top-level program is static (not from a table) and on the allowlist:
-   System, ComputeBudget, SPL Token, Associated Token Account, Jupiter v6.
-   Instructions of System/Token/ATA/ComputeBudget are decoded and limited to the
-   few shapes a swap needs; Jupiter v6 data is not decoded (no public IDL), its
-   effect is checked by simulation instead.
-4. The blockhash still has headroom before `lastValidBlockHeight`.
-5. `simulateTransaction` (sigVerify false) returns the post-state of the taker's
-   SOL account and all of its token accounts; the deltas must show: spend <=
-   intended input (+ fee cap for SOL), receive >= otherAmountThreshold (- fee cap
-   when receiving SOL), no other balance decreases, no owner/delegate/close
-   authority change on any taker token account.
+   ALT program, table must be active), rebuild the full account list and reject
+   any account that appears twice (F12).
+3. Every top-level program is static and on the allowlist: System, ComputeBudget,
+   SPL Token, Associated Token Account, Jupiter v6. System/Token/ATA/ComputeBudget
+   instructions are decoded and limited to what a swap needs; ATA addresses and
+   the wrap target must equal the locally derived PDA (F12).
+4. Exactly ONE Jupiter v6 instruction, of an accepted route variant, whose
+   decoded arguments match the order: in_amount == request, slippage <= the
+   mandate, platform fee <= cap, and its on-chain floor
+   quoted_out * (10000 - slippage) / 10000 >= otherAmountThreshold (F3).
+5. Every executable account of the transaction and every program invoked during
+   simulation (innerInstructions) is on a pinned allowlist; an RPC that does not
+   return inner instructions -> reject (F4).
+6. The blockhash still has headroom before `lastValidBlockHeight`.
+7. `simulateTransaction` (sigVerify false) returns the post-state of the wallet
+   and all its token accounts. The wallet must stay a System-owned, empty,
+   non-executable account (F2); token accounts stay initialised, unfrozen, owned
+   by the taker, no delegate/close authority. Deltas must show exactly: spend <=
+   input (+ the transaction's own exact fee for SOL), receive >= threshold
+   (- that fee when receiving SOL), nothing else decreases (F6).
 """
 from __future__ import annotations
 
@@ -24,12 +32,13 @@ import struct
 from dataclasses import dataclass
 
 from ..core import SOL, USDC, Rejected
-from . import config
+from . import config, jupiter_ix
 from .solana_tx import (ALT_PROGRAM, ATA_PROGRAM, COMPUTE_BUDGET_PROGRAM, JUPITER_V6_PROGRAM, SYSTEM_PROGRAM,
-                        TOKEN_2022_PROGRAM, TOKEN_PROGRAM, parse_lookup_table, parse_token_account,
-                        parse_transaction, resolve_accounts)
+                        TOKEN_2022_PROGRAM, TOKEN_PROGRAM, associated_token_address, parse_lookup_table,
+                        parse_token_account, parse_transaction, resolve_accounts)
 
 ALLOWED_PROGRAMS = (SYSTEM_PROGRAM, COMPUTE_BUDGET_PROGRAM, TOKEN_PROGRAM, ATA_PROGRAM, JUPITER_V6_PROGRAM)
+INNER_ALLOWED = frozenset(ALLOWED_PROGRAMS) | {config.MEMO_PROGRAM} | frozenset(config.DEX_PROGRAMS)
 TOKEN_SYNC_NATIVE, TOKEN_CLOSE_ACCOUNT = 17, 9
 SYSTEM_TRANSFER = 2
 
@@ -39,15 +48,21 @@ class Verified:
     message_bytes: bytes
     message_sha256: str
     priority_lamports: int
+    network_fee: int          # signatures x base fee + priority
+    expected_fee: int         # network fee + rent of ATAs this tx leaves behind
     block_height: int
     created_atas: dict
-    deltas: dict             # {"sol": int, mint: int, ...}
+    persisting_atas: tuple
+    deltas: dict              # {"sol": int, mint: int, ...}
     sim_slot: int
     lookups: dict
+    swap: dict                # decoded Jupiter arguments (recorded in DRY_RUN)
+    inner_programs: tuple
+    pre: dict                 # wallet view before the order (for the EXPIRED rule)
 
 
 def compute_budget(instructions):
-    """(priority lamports upper bound). Rejects unknown or repeated ComputeBudget instructions."""
+    """Priority fee in lamports. Rejects unknown or repeated ComputeBudget instructions."""
     seen, limit, price = set(), None, 0
     for ix in instructions:
         data = ix.data
@@ -89,11 +104,11 @@ def resolve_lookups(message, rpc):
 
 
 def check_instructions(message, metas, wallet, request, taker_accounts):
-    """Static rules on top-level instructions. `taker_accounts`: address -> TokenAccount (pre-state)."""
+    """Static rules on top-level instructions. Returns (priority, created ATAs, decoded swap)."""
     keys = [m.key for m in metas]
     static = len(message.static_keys)
     swap_mints = (request.input_mint, request.output_mint)
-    budget, created, jupiter = [], {}, 0
+    budget, created, swaps = [], {}, []
     for ix in message.instructions:
         if ix.program_index >= static:
             raise Rejected("Program %s is loaded from a lookup table" % keys[ix.program_index])
@@ -111,9 +126,10 @@ def check_instructions(message, metas, wallet, request, taker_accounts):
                 raise Rejected("Token account created for a mint outside the swap")
             if system != SYSTEM_PROGRAM or token != TOKEN_PROGRAM:
                 raise Rejected("Token account uses an unexpected program")
+            if ata != associated_token_address(wallet, mint):
+                raise Rejected("Created token account is not the wallet's derived ATA")
             created[ata] = mint
-    wsol = {a for a, m in created.items() if m == SOL.mint}
-    wsol |= {a for a, t in taker_accounts.items() if t.mint == SOL.mint}
+    wsol = associated_token_address(wallet, SOL.mint)
     mine = set(created) | set(taker_accounts)
     transferred = 0
     for ix in message.instructions:
@@ -122,18 +138,18 @@ def check_instructions(message, metas, wallet, request, taker_accounts):
         if program == COMPUTE_BUDGET_PROGRAM:
             budget.append(ix)
         elif program == JUPITER_V6_PROGRAM:
-            jupiter += 1
+            swaps.append(jupiter_ix.decode(ix.data))
         elif program == SYSTEM_PROGRAM:
             if len(ix.data) != 12 or struct.unpack_from("<I", ix.data, 0)[0] != SYSTEM_TRANSFER or len(accts) < 2:
                 raise Rejected("Only System transfers (SOL wrapping) are allowed")
             source, target = accts[:2]
             lamports, = struct.unpack_from("<Q", ix.data, 4)
-            if request.input_mint != SOL.mint or source != wallet or target not in wsol:
-                raise Rejected("System transfer is not a wrap into the taker's own wSOL account")
+            if request.input_mint != SOL.mint or source != wallet or target != wsol:
+                raise Rejected("System transfer is not a wrap into the wallet's own wSOL ATA")
             transferred += lamports
         elif program == TOKEN_PROGRAM:
             kind = ix.data[0] if len(ix.data) == 1 else None
-            if kind == TOKEN_SYNC_NATIVE and accts and accts[0] in wsol:
+            if kind == TOKEN_SYNC_NATIVE and accts and accts[0] == wsol:
                 continue
             if kind == TOKEN_CLOSE_ACCOUNT and len(accts) >= 3 and accts[0] in mine \
                     and accts[1] == wallet and accts[2] == wallet:
@@ -141,27 +157,66 @@ def check_instructions(message, metas, wallet, request, taker_accounts):
             raise Rejected("Token instruction other than SyncNative/CloseAccount on own accounts")
     if transferred > request.amount:
         raise Rejected("SOL wrapped exceeds the order amount")
-    if jupiter < 1:
-        raise Rejected("No Jupiter v6 instruction")
-    return compute_budget(budget), created
+    if len(swaps) != 1:
+        raise Rejected("Expected exactly one Jupiter v6 instruction, found %d" % len(swaps))
+    return compute_budget(budget), created, swaps[0]
 
 
-def _view(wallet, addresses, accounts, label):
+def check_swap(swap, request, min_out):
+    if swap.in_amount != request.amount:
+        raise Rejected("Jupiter instruction in_amount %d != order %d" % (swap.in_amount, request.amount))
+    if swap.slippage_bps > request.slippage_bps:
+        raise Rejected("Jupiter instruction slippage %d bps above the mandate" % swap.slippage_bps)
+    if swap.platform_fee_bps > config.MAX_FEE_BPS:
+        raise Rejected("Jupiter instruction platform fee %d bps above the cap" % swap.platform_fee_bps)
+    if swap.min_out < min_out:
+        raise Rejected("Jupiter instruction floor %d is below otherAmountThreshold %d" % (swap.min_out, min_out))
+
+
+def check_programs(metas, executable_keys, inner_programs):
+    for key in executable_keys:
+        if key not in INNER_ALLOWED:
+            raise Rejected("Executable account %s is not on the program allowlist" % key)
+    if inner_programs is None:
+        raise Rejected("RPC did not return innerInstructions; cannot check invoked programs (fail closed)")
+    names = []
+    for program in inner_programs:
+        if isinstance(program, int):
+            if not 0 <= program < len(metas):
+                raise Rejected("Inner instruction program index out of range")
+            program = metas[program].key
+        if program not in INNER_ALLOWED:
+            raise Rejected("Inner instruction invokes %s, not on the program allowlist" % program)
+        names.append(program)
+    return tuple(sorted(set(names)))
+
+
+def check_wallet_account(account, label):
+    if account is None:
+        raise Rejected("%s: wallet account missing" % label)
+    if account["owner"] != SYSTEM_PROGRAM or account["executable"] or account["data"]:
+        raise Rejected("%s: wallet account is not a plain System account (owner/data/executable)" % label)
+
+
+def view(wallet, addresses, accounts, label):
     """(sol value, {mint: amount}, issues). SOL value = lamports of wallet + wSOL token amounts."""
     sol, mints, issues = 0, {}, []
     for address, account in zip(addresses, accounts):
-        if account is None:
-            continue
         if address == wallet:
+            check_wallet_account(account, label)
             sol += account["lamports"]
             continue
-        if account["owner"] != TOKEN_PROGRAM:
+        if account is None:
+            continue
+        if account["owner"] != TOKEN_PROGRAM or account["executable"]:
             issues.append("%s: %s is not an SPL token account" % (label, address))
             continue
         token = parse_token_account(account["data"])
         if token.owner != wallet:
             issues.append("%s: token account %s is not owned by the taker" % (label, address))
             continue
+        if token.state != 1:
+            issues.append("%s: token account %s is frozen" % (label, address))
         if token.delegate is not None or token.close_authority is not None:
             issues.append("%s: token account %s has a delegate or close authority" % (label, address))
         mints[token.mint] = mints.get(token.mint, 0) + token.amount
@@ -170,21 +225,31 @@ def _view(wallet, addresses, accounts, label):
     return sol, mints, issues
 
 
-def check_deltas(request, min_out, deltas):
+def check_deltas(request, min_out, deltas, expected_fee):
+    """Exact rule (F6): only this transaction's own fee may be added on the SOL side."""
     sol, usdc = deltas.get("sol", 0), deltas.get(USDC.mint, 0)
     if request.side == "BUY":
         if usdc < -request.amount:
-            raise Rejected("Simulation spends more USDC than the order amount")
-        if sol < min_out - config.FEE_CAP_LAMPORTS:
-            raise Rejected("Simulation receives less SOL than otherAmountThreshold")
+            raise Rejected("Spends more USDC than the order amount")
+        if sol + expected_fee < min_out:
+            raise Rejected("Receives less SOL than otherAmountThreshold (after the exact fee %d)" % expected_fee)
     else:
-        if sol < -(request.amount + config.FEE_CAP_LAMPORTS):
-            raise Rejected("Simulation spends more SOL than the order amount plus the fee cap")
+        if -sol > request.amount + expected_fee:
+            raise Rejected("Spends more SOL than the order amount plus the exact fee %d" % expected_fee)
         if usdc < min_out:
-            raise Rejected("Simulation receives less USDC than otherAmountThreshold")
+            raise Rejected("Receives less USDC than otherAmountThreshold")
     for mint, delta in deltas.items():
         if mint not in ("sol", USDC.mint, SOL.mint) and delta < 0:
-            raise Rejected("Simulation decreases another taker balance (%s)" % mint)
+            raise Rejected("Decreases another taker balance (%s)" % mint)
+
+
+def _executable(rpc, keys):
+    found = []
+    for start in range(0, len(keys), 100):
+        chunk = keys[start:start + 100]
+        _, accounts = rpc.multiple_accounts(chunk, no_data=True)
+        found += [k for k, a in zip(chunk, accounts) if a is not None and a["executable"]]
+    return found
 
 
 def verify(order, rpc, wallet):
@@ -218,7 +283,9 @@ def verify(order, rpc, wallet):
         if token.owner != wallet:
             raise Rejected("RPC returned a token account of another owner")
         taker_accounts[address] = token
-    priority, created = check_instructions(message, metas, wallet, request, taker_accounts)
+    priority, created, swap = check_instructions(message, metas, wallet, request, taker_accounts)
+    check_swap(swap, request, order.min_out)
+    executable = _executable(rpc, [m.key for m in metas])
 
     height = rpc.block_height("confirmed")
     if height + config.SIGN_HEADROOM_BLOCKS >= order.last_valid_block_height:
@@ -232,13 +299,19 @@ def verify(order, rpc, wallet):
         raise Rejected("Simulation failed: %s" % str(sim["err"])[:200])
     if sim["slot"] < pre_slot:
         raise Rejected("Simulation ran on an older slot than the balance snapshot")
-    sol0, mints0, issues0 = _view(wallet, addresses, pre, "pre")
-    sol1, mints1, issues1 = _view(wallet, addresses, sim["accounts"], "post")
+    inner = check_programs(metas, executable, sim["inner_programs"])
+    sol0, mints0, issues0 = view(wallet, addresses, pre, "pre")
+    sol1, mints1, issues1 = view(wallet, addresses, sim["accounts"], "post")
     if issues0 or issues1:
         raise Rejected("; ".join(issues0 + issues1)[:300])
     deltas = {"sol": sol1 - sol0}
     for mint in set(mints0) | set(mints1):
         deltas[mint] = mints1.get(mint, 0) - mints0.get(mint, 0)
-    check_deltas(request, order.min_out, deltas)
-    return Verified(message.raw, hashlib.sha256(message.raw).hexdigest(), priority, height,
-                    created, deltas, sim["slot"], {k: len(v) for k, v in tables.items()})
+    post = dict(zip(addresses, sim["accounts"]))
+    persisting = tuple(sorted(a for a in created if post.get(a) is not None and pre[addresses.index(a)] is None))
+    network_fee = config.BASE_FEE_LAMPORTS * message.num_required_signatures + priority
+    expected_fee = network_fee + config.ATA_RENT_LAMPORTS * len(persisting)
+    check_deltas(request, order.min_out, deltas, expected_fee)
+    return Verified(message.raw, hashlib.sha256(message.raw).hexdigest(), priority, network_fee, expected_fee,
+                    height, created, persisting, deltas, sim["slot"], {k: len(v) for k, v in tables.items()},
+                    swap.as_dict(), inner, {"sol": sol0, "mints": mints0, "addresses": addresses})

@@ -8,7 +8,7 @@ from unittest import mock
 
 from jupiter_bot.execution import __main__ as cli
 from jupiter_bot.execution import engine as E
-from jupiter_bot.execution import gates
+from jupiter_bot.execution import config, gates
 from jupiter_bot.execution import mandate as M
 from jupiter_bot.research import lock as L
 from jupiter_bot.research.strategies import STRATEGIES
@@ -66,11 +66,51 @@ class P2Gate(unittest.TestCase):
         self.env.paths.plan_lock.unlink()
         self.assertIn("not locked", self.gate()["detail"])
 
+    def review_gate(self):
+        return gates.evaluate(self.env.paths, F.NOW, None).gate("review_done")
+
     def test_review_gate_needs_exact_line(self):
-        for text, ok in (("Verdict: APPROVED\n", True), ("  Verdict: APPROVED  \n", True),
-                         ("Verdict: APPROVED?\n", False), ("verdict: approved\n", False), ("", False)):
-            self.env.paths.review.write_text(text)
-            self.assertEqual(gates.evaluate(self.env.paths, F.NOW, None).gate("review_done")["ok"], ok, text)
+        for verdict, ok in (("Verdict: APPROVED", True), ("  Verdict: APPROVED  ", True),
+                            ("Verdict: APPROVED?", False), ("verdict: approved", False), ("", False)):
+            self.env.review(verdict=verdict)
+            self.assertEqual(self.review_gate()["ok"], ok, verdict)
+
+    def test_review_gate_is_bound_to_the_code(self):                  # F8
+        self.env.review()
+        self.assertTrue(self.review_gate()["ok"])
+        (self.env.repo / "jupiter_bot" / "execution" / "verify.py").write_text("# widened allowlist\n")
+        gate = self.review_gate()
+        self.assertFalse(gate["ok"])
+        self.assertIn("changed since the review", gate["detail"])
+        self.env.review()                                               # re-review of the new code
+        self.assertTrue(self.review_gate()["ok"])
+        text = self.env.paths.review.read_text()
+        self.env.paths.review.write_text(text.replace("Commit: 7c23339\n", ""))
+        self.assertIn("Commit:", self.review_gate()["detail"])
+        self.env.paths.review.write_text(text.replace("Execution-SHA256:", "Execution-SHA256: 00\nExecution-SHA256:"))
+        self.assertFalse(self.review_gate()["ok"])
+
+    def test_code_hash_is_order_and_content_sensitive(self):
+        h1 = gates.execution_code_sha256(self.env.repo)
+        (self.env.repo / "jupiter_bot" / "execution" / "a.py").write_text("")
+        self.assertNotEqual(gates.execution_code_sha256(self.env.repo), h1)
+        self.assertEqual(len(gates.execution_code_sha256(config.REPO)), 64)
+
+    def test_malformed_lock_does_not_crash_status(self):              # F17
+        for content in ("[]", '"x"', '{"plan_sha256": "x"}', "{broken"):
+            self.env.paths.plan_lock.chmod(0o644)
+            self.env.paths.plan_lock.write_text(content)
+            gate = self.gate()
+            self.assertFalse(gate["ok"], content)
+
+    def test_lock_verify_rejects_empty_or_partial_code_hashes(self):  # F17, research/lock.py verify()
+        plan_sha, code_sha = L.hashes(self.env.repo)
+        self.assertEqual(L.verify({"plan_sha256": plan_sha, "code_sha256": code_sha}, self.env.repo), [])
+        self.assertTrue(L.verify({"plan_sha256": plan_sha, "code_sha256": {}}, self.env.repo))
+        partial = dict(list(code_sha.items())[:1])
+        self.assertTrue(any("does not cover" in p for p in L.verify({"plan_sha256": plan_sha,
+                                                                         "code_sha256": partial}, self.env.repo)))
+        self.assertEqual(L.verify([], self.env.repo), ["the lock record is malformed"])
 
 
 class Snapshot(unittest.TestCase):
@@ -92,6 +132,9 @@ class Cli(unittest.TestCase):
     def setUp(self):
         self.dir = tempfile.TemporaryDirectory()
         self.env = F.Env(self.dir.name)
+        patcher = mock.patch.object(config, "WALLETS_DIR", self.env.paths.wallets)   # never the real registry
+        patcher.start()
+        self.addCleanup(patcher.stop)
         self.base = ["--mandate", str(self.env.paths.mandate), "--data-dir", str(self.env.paths.ledger.parent)]
 
     def tearDown(self):

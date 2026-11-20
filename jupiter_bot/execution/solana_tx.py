@@ -7,6 +7,7 @@ https://solana.com/docs/core/transactions/transaction-structure and
 """
 from __future__ import annotations
 
+import hashlib
 import struct
 from dataclasses import dataclass
 
@@ -75,6 +76,52 @@ def is_pubkey(text):
         return True
     except Rejected:
         return False
+
+
+# ed25519 curve membership and program-derived addresses -----------------------------
+# Only a point-validity test (like curve25519-dalek's CompressedEdwardsY::decompress,
+# which Solana's `bytes_are_curve_point` uses). No signing, no secret maths.
+
+_P = 2**255 - 19
+_D = (-121665 * pow(121666, _P - 2, _P)) % _P
+MAX_SEED_LEN, MAX_SEEDS = 32, 16
+
+
+def is_on_curve(raw):
+    raw = bytes(raw)
+    if len(raw) != 32:
+        raise Rejected("A curve point has 32 bytes")
+    y = (int.from_bytes(raw, "little") & ((1 << 255) - 1)) % _P
+    u, v = (y * y - 1) % _P, (_D * y * y + 1) % _P
+    if v == 0:
+        return u == 0
+    x2 = u * pow(v, _P - 2, _P) % _P
+    return x2 == 0 or pow(x2, (_P - 1) // 2, _P) == 1
+
+
+def create_program_address(seeds, program_id):
+    if len(seeds) > MAX_SEEDS or any(len(seed) > MAX_SEED_LEN for seed in seeds):
+        raise Rejected("Invalid PDA seeds")
+    digest = hashlib.sha256(b"".join(bytes(s) for s in seeds) + pubkey_bytes(program_id)
+                            + b"ProgramDerivedAddress").digest()
+    if is_on_curve(digest):
+        raise Rejected("Seeds give an on-curve address")
+    return b58encode(digest)
+
+
+def find_program_address(seeds, program_id):
+    for bump in range(255, -1, -1):
+        try:
+            return create_program_address(list(seeds) + [bytes([bump])], program_id), bump
+        except Rejected:
+            continue
+    raise Rejected("No viable PDA bump")
+
+
+def associated_token_address(wallet, mint, token_program=None):
+    token_program = token_program or TOKEN_PROGRAM
+    return find_program_address([pubkey_bytes(wallet), pubkey_bytes(token_program), pubkey_bytes(mint)],
+                                ATA_PROGRAM)[0]
 
 
 # compact-u16 --------------------------------------------------------------------
@@ -308,6 +355,9 @@ def resolve_accounts(message, tables):
                 target.append(addresses[index])
     metas += [AccountMeta(k, False, True, True) for k in writable]
     metas += [AccountMeta(k, False, False, True) for k in readonly]
+    keys = [m.key for m in metas]
+    if len(set(keys)) != len(keys):
+        raise Rejected("An account is loaded twice (static and/or lookup table)")
     return metas
 
 
@@ -339,5 +389,7 @@ def parse_token_account(data):
 
     delegate = option_key(72)
     state = data[108]
+    if state not in (1, 2):
+        raise Rejected("Token account is not initialised")
     close_authority = option_key(129)
     return TokenAccount(mint, owner, amount, delegate, state, close_authority)

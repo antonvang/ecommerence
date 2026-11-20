@@ -75,9 +75,18 @@ class Rpc:
     def block_height(self, commitment):
         return _int(self.call("getBlockHeight", [{"commitment": commitment}]), "block height")
 
-    def multiple_accounts(self, addresses, commitment="confirmed"):
-        result = self.call("getMultipleAccounts", [list(addresses), {"encoding": "base64",
-                                                                     "commitment": commitment}])
+    def epoch_info(self, commitment="finalized"):
+        """(absolute slot, block height) of one commitment level, from one response."""
+        result = self.call("getEpochInfo", [{"commitment": commitment}])
+        if not isinstance(result, dict):
+            raise RpcError("getEpochInfo result is malformed")
+        return _int(result.get("absoluteSlot"), "absoluteSlot"), _int(result.get("blockHeight"), "blockHeight")
+
+    def multiple_accounts(self, addresses, commitment="confirmed", no_data=False):
+        config = {"encoding": "base64", "commitment": commitment}
+        if no_data:
+            config["dataSlice"] = {"offset": 0, "length": 0}
+        result = self.call("getMultipleAccounts", [list(addresses), config])
         slot, value = self._context(result, "getMultipleAccounts")
         if not isinstance(value, list) or len(value) != len(addresses):
             raise RpcError("getMultipleAccounts returned the wrong number of accounts")
@@ -104,7 +113,7 @@ class Rpc:
     def simulate(self, tx_b64, addresses):
         result = self.call("simulateTransaction", [tx_b64, {
             "encoding": "base64", "sigVerify": False, "replaceRecentBlockhash": False,
-            "commitment": "confirmed",
+            "commitment": "confirmed", "innerInstructions": True,
             "accounts": {"encoding": "base64", "addresses": list(addresses)}}])
         slot, value = self._context(result, "simulateTransaction")
         if not isinstance(value, dict):
@@ -113,23 +122,42 @@ class Rpc:
         if not isinstance(accounts, list) or len(accounts) != len(addresses):
             raise RpcError("simulateTransaction did not return the requested accounts")
         logs = value.get("logs") if isinstance(value.get("logs"), list) else []
+        inner = value.get("innerInstructions")
+        programs = None                       # None = the RPC did not return inner instructions
+        if isinstance(inner, list):
+            programs = []
+            for group in inner:
+                items = group.get("instructions") if isinstance(group, dict) else None
+                if not isinstance(items, list):
+                    raise RpcError("simulateTransaction innerInstructions are malformed")
+                for ix in items:
+                    if isinstance(ix, dict) and isinstance(ix.get("programId"), str):
+                        programs.append(ix["programId"])
+                    elif isinstance(ix, dict) and type(ix.get("programIdIndex")) is int:
+                        programs.append(ix["programIdIndex"])
+                    else:
+                        raise RpcError("simulateTransaction inner instruction is malformed")
         return {"slot": slot, "err": value.get("err"), "logs": [str(l)[:300] for l in logs[:200]],
                 "accounts": [decode_account(a) for a in accounts],
-                "units": value.get("unitsConsumed")}
+                "units": value.get("unitsConsumed"), "inner_programs": programs}
 
     def signature_status(self, signature):
+        return self.signature_status_at(signature)[1]
+
+    def signature_status_at(self, signature):
+        """(context slot of the answer, status | None)."""
         result = self.call("getSignatureStatuses", [[signature], {"searchTransactionHistory": True}])
-        _, value = self._context(result, "getSignatureStatuses")
+        slot, value = self._context(result, "getSignatureStatuses")
         if not isinstance(value, list) or len(value) != 1:
             raise RpcError("getSignatureStatuses returned the wrong number of entries")
         status = value[0]
         if status is None:
-            return None
+            return slot, None
         if not isinstance(status, dict) or status.get("confirmationStatus") not in (
                 "processed", "confirmed", "finalized"):
             raise RpcError("getSignatureStatuses entry is malformed")
-        return {"slot": status.get("slot"), "err": status.get("err"),
-                "confirmation": status["confirmationStatus"]}
+        return slot, {"slot": status.get("slot"), "err": status.get("err"),
+                      "confirmation": status["confirmationStatus"]}
 
     def transaction(self, signature):
         result = self.call("getTransaction", [signature, {"commitment": "finalized", "encoding": "json",

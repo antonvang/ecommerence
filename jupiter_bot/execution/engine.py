@@ -23,13 +23,13 @@ from ..research.strategies import FLAT, LONG, STRATEGIES
 from . import config, gates
 from . import mandate as mandate_mod
 from .http import SafeHTTP, urllib_transport
-from .jupiter_exec import JupiterExec, OrderRequest, make_request
+from .jupiter_exec import ExecuteAnswer, JupiterExec, OrderRequest, make_request
 from .ledger import (CONFIRMED, EXPIRED, FAILED, INTENT, SIGNED, SUBMITTED, UNKNOWN, VERIFIED, Ledger,
                      utc_day)
 from .rpc import Rpc
 from .signer_client import SubprocessSigner
 from .solana_tx import b58encode, parse_token_account, parse_transaction, with_signature
-from .verify import check_deltas, verify
+from .verify import check_deltas, verify, view
 
 
 @contextmanager
@@ -45,6 +45,18 @@ def process_lock(path):
         yield
     finally:
         os.close(fd)
+
+
+@contextmanager
+def wallet_locks(paths):
+    """The data-dir lock AND one lock per wallet, independent of --data-dir (F7)."""
+    mandate, _, _ = mandate_mod.load_once(paths.mandate)
+    with process_lock(paths.lock):
+        if mandate is None:
+            yield
+        else:
+            with process_lock(paths.wallet_lock(mandate.wallet_pubkey)):
+                yield
 
 
 def sol_for_usdc(usdc_atoms, price):
@@ -73,7 +85,7 @@ def decide(mandate, target, price, position_sol, cost_basis, lamports, usdc_bala
         if value < config.MIN_TRADE_USDC_ATOMS:
             return {"side": None, "amount": 0, "reason": "FLAT: no position to sell"}
         amount = position_sol if value <= mandate.max_trade_usdc else sol_for_usdc(mandate.max_trade_usdc, price)
-        amount = min(amount, lamports - config.SOL_RESERVE_LAMPORTS)
+        amount = min(amount, mandate.max_trade_sol, lamports - config.SOL_RESERVE_LAMPORTS)
         if usdc_value(max(amount, 0), price) < config.MIN_TRADE_USDC_ATOMS:
             return {"side": None, "amount": 0, "reason": "FLAT: not enough SOL above the fee reserve"}
         return {"side": "SELL", "amount": amount, "reason": "FLAT target; selling the position"}
@@ -118,8 +130,10 @@ def _text(exc):
 class Engine:
     def __init__(self, paths, transport=urllib_transport, signer=None, clock=time.time,
                  monotonic=time.monotonic, sleep=time.sleep, snapshot_fn=None, target_fn=None,
-                 verdict_loader=gates.load_verdicts, lock_loader=None, lock_verify=None, uid=None):
+                 verdict_loader=gates.load_verdicts, lock_loader=None, lock_verify=None, uid=None,
+                 signature_verifier=None):
         self.paths, self.transport, self.clock = paths, transport, clock
+        self.signature_verifier = signature_verifier or _verify_signature
         self.monotonic, self.sleep = monotonic, sleep
         self.signer = signer or SubprocessSigner(paths)
         self.snapshot_fn = snapshot_fn or default_snapshot(paths)
@@ -209,24 +223,45 @@ class Engine:
         return results
 
     def _check_chain(self, ledger, order, rpc, wallet):
+        """Book a finalized landing; EXPIRED only on positive evidence that it cannot land (F5)."""
         facts = order["facts"]
         signature = facts["signature"]
-        status = rpc.signature_status(signature)
+        fin_slot, fin_height = rpc.epoch_info("finalized")
+        status_slot, status = rpc.signature_status_at(signature)
         if status is not None:
             if status["confirmation"] != "finalized":
                 return None
             tx = rpc.transaction(signature)
-            if tx is None:
-                return None
+            return self._book(ledger, order, tx, wallet) if tx is not None else None
+        if fin_height <= facts["last_valid_block_height"] + config.EXPIRY_MARGIN_BLOCKS:
+            return None                                   # can still land: wait
+        if status_slot < fin_slot:
+            return "UNKNOWN: RPC status answer (slot %d) is older than the finalized expiry slot %d" % (
+                status_slot, fin_slot)
+        tx = rpc.transaction(signature)
+        if tx is not None:                                # status cache lost it but history has it
             return self._book(ledger, order, tx, wallet)
-        height = rpc.block_height("finalized")
-        if height > facts["last_valid_block_height"] + config.EXPIRY_MARGIN_BLOCKS:
-            if rpc.signature_status(signature) is None:      # re-check after the height read
-                ledger.transition(order["order_id"], EXPIRED, {
-                    "finalized_block_height": height, "reason": "not on chain and blockhash expired"},
-                    self.clock())
-                return EXPIRED
-        return None
+        status_slot, status = rpc.signature_status_at(signature)
+        if status is not None or status_slot < fin_slot:
+            return None
+        pre = facts.get("pre")
+        if not pre:
+            return "UNKNOWN: no pre-order balance snapshot; resolve by hand"
+        try:
+            _, accounts = rpc.multiple_accounts(pre["addresses"])
+            sol, mints, issues = view(facts.get("wallet", wallet), pre["addresses"], accounts, "now")
+        except Rejected as exc:
+            return "UNKNOWN: cannot read wallet balances: %s" % exc
+        if issues or sol != pre["sol"] or {m: v for m, v in mints.items() if v} != \
+                {m: v for m, v in pre["mints"].items() if v}:
+            ledger.event("expiry_blocked", {"order_id": order["order_id"], "reason": "wallet balances changed "
+                                            "since VERIFIED; the transaction may have landed"}, self.clock())
+            return "UNKNOWN: wallet balances changed since the order was verified; use an RPC with full " \
+                   "history and run resolve again, or check by hand (force-expire)"
+        ledger.transition(order["order_id"], EXPIRED, {
+            "finalized_block_height": fin_height, "finalized_slot": fin_slot, "status_context_slot": status_slot,
+            "reason": "not on chain, getTransaction null, blockhash expired, balances unchanged"}, self.clock())
+        return EXPIRED
 
     def _book(self, ledger, order, tx, wallet):
         facts, now = order["facts"], self.clock()
@@ -267,8 +302,12 @@ class Engine:
                               "fee_lamports": fee})
             return FAILED
         anomaly = None
+        persisting = facts.get("persisting_atas", [])
+        expected_fee = fee + config.ATA_RENT_LAMPORTS * len(persisting)
         try:
-            check_deltas(request, facts["min_out"], deltas)
+            if fee > facts.get("network_fee", fee):
+                raise Rejected("network fee %d above the verified %d" % (fee, facts["network_fee"]))
+            check_deltas(request, facts["min_out"], deltas, expected_fee)
         except Rejected as exc:
             anomaly = str(exc)
         ledger.book_fill(order["order_id"], now, "SWAP", order["side"], sol_delta, usdc_delta, fee,
@@ -311,7 +350,7 @@ class Engine:
         return decision
 
     def run_once(self):
-        with process_lock(self.paths.lock):
+        with wallet_locks(self.paths):
             ledger = self.ledger()
             summary = {"resolved": self.resolve()}
             state = self.state(ledger)
@@ -325,7 +364,7 @@ class Engine:
             return dict(summary, **self._live_cycle(state, ledger))
 
     def dry_run_once(self):
-        with process_lock(self.paths.lock):
+        with wallet_locks(self.paths):
             ledger = self.ledger()
             state = self.state(ledger)
             if state.mandate is None or state.mandate_problems:
@@ -361,6 +400,8 @@ class Engine:
             record.update(ok=True, side=side, amount=amount, request_id=order.request_id,
                           out_amount=order.out_amount, min_out=order.min_out, fee_bps=order.fee_bps,
                           priority_lamports=verified.priority_lamports, deltas=verified.deltas,
+                          expected_fee=verified.expected_fee, jupiter_instruction=verified.swap,
+                          inner_programs=list(verified.inner_programs),
                           last_valid_block_height=order.last_valid_block_height)
         except Exception as exc:     # a dry run never signs; record and carry on
             record.update(ok=False, error=_text(exc)[:500])
@@ -412,6 +453,9 @@ class Engine:
             "fee_bps": order.fee_bps, "last_valid_block_height": order.last_valid_block_height,
             "unsigned_tx_b64": base64.b64encode(order.transaction).decode(),
             "message_sha256": verified.message_sha256, "priority_lamports": verified.priority_lamports,
+            "network_fee": verified.network_fee, "expected_fee": verified.expected_fee,
+            "persisting_atas": list(verified.persisting_atas), "swap": verified.swap,
+            "inner_programs": list(verified.inner_programs), "pre": verified.pre,
             "simulated_deltas": verified.deltas, "block_height_at_verify": verified.block_height,
             "order_payload": order.payload}, self.clock())
         if not self._still_live(ledger, state.mandate_sha):
@@ -423,7 +467,7 @@ class Engine:
                   "in_amount": request.amount, "min_out": order.min_out}
         try:
             signature = self.signer.sign(verified.message_bytes, bundle)
-            _verify_signature(mandate.wallet_pubkey, verified.message_bytes, signature)
+            self.signature_verifier(mandate.wallet_pubkey, verified.message_bytes, signature)
             tx = parse_transaction(order.transaction)
             signed = with_signature(tx, 0, signature).serialize()
             if parse_transaction(signed).message.raw != verified.message_bytes:
@@ -434,8 +478,13 @@ class Engine:
         ledger.transition(order_id, SIGNED, {"signature": signature58,
                                              "signed_tx_b64": base64.b64encode(signed).decode()}, self.clock())
         if not self._still_live(ledger, state.mandate_sha):
-            return self._fail(ledger, order_id, "disarmed after signing; never sent")
-        answer = jupiter.execute(signed, order.request_id, signature58)
+            # not sent; kept non-terminal anyway so no new order is placed until it provably expired
+            ledger.transition(order_id, UNKNOWN, {"reason": "disarmed after signing; NOT sent"}, self.clock())
+            return UNKNOWN
+        try:
+            answer = jupiter.execute(signed, order.request_id, signature58)
+        except Exception as exc:                          # F13: whatever happened, the outcome is unknown
+            answer = ExecuteAnswer("UNKNOWN", None, "execute error: %s" % type(exc).__name__, None)
         new_state = SUBMITTED if answer.outcome == "ACCEPTED" else UNKNOWN
         ledger.transition(order_id, new_state, {"execute_http": answer.http_status, "execute_detail": answer.detail,
                                                 "execute_payload": answer.payload}, self.clock())
@@ -488,6 +537,7 @@ def arm(paths, mode, overrides, ask, interactive, now, ledger, gate_options=None
             raise Rejected("override phrase did not match; not armed")
     record = {"mode": mode, "mandate_sha256": state.mandate_sha, "wallet_pubkey": m.wallet_pubkey,
               "armed_at": now, "overrides": needed}
+    gates.bind_wallet(paths, m.wallet_pubkey, now)          # refuses if another ledger owns the wallet
     gates.write_arm(paths.arm, record)
     ledger.event("arm", record, now)
     for name in needed:
@@ -504,3 +554,34 @@ def disarm(paths, now, ledger=None):
         except Exception:      # the kill switch must never fail because of the ledger
             pass
     return removed
+
+
+def force_expire(engine, order_id, ask, interactive):
+    """Operator escape hatch for an order the resolver keeps UNKNOWN (e.g. balances changed).
+
+    Still requires chain proof that it can no longer land (finalized height past
+    lastValidBlockHeight + margin and no status). If it DID land, the ledger will
+    miss that fill: check the wallet history yourself first.
+    """
+    if not interactive:
+        raise Rejected("force-expire must be run by a person in an interactive terminal")
+    ledger = engine.ledger()
+    order = ledger.order(order_id)
+    if order is None or order["state"] not in (UNKNOWN, SUBMITTED):
+        raise Rejected("order is not UNKNOWN/SUBMITTED")
+    mandate, error = mandate_mod.load(engine.paths.mandate)
+    if mandate is None:
+        raise Rejected("a readable mandate (rpc_url) is needed: %s" % error)
+    rpc = Rpc(mandate.rpc_url, engine._http(mandate))
+    _, height = rpc.epoch_info("finalized")
+    if height <= order["facts"]["last_valid_block_height"] + config.EXPIRY_MARGIN_BLOCKS:
+        raise Rejected("the transaction can still land; wait")
+    if rpc.signature_status(order["facts"]["signature"]) is not None:
+        raise Rejected("the RPC knows this signature; run resolve instead")
+    phrase = "EXPIRE %s" % order_id[:8]
+    if ask("I checked the wallet history by hand. Type exactly '%s': " % phrase).strip() != phrase:
+        raise Rejected("phrase did not match")
+    ledger.transition(order_id, EXPIRED, {"reason": "force-expired by operator", "finalized_block_height": height},
+                      engine.clock())
+    ledger.event("force_expire", {"order_id": order_id}, engine.clock())
+    return [(order_id, EXPIRED)]

@@ -109,7 +109,7 @@ def check_order(request, payload, received_at, reference_price=None):
         raise Rejected("Order slippageBps does not equal the requested value")
     out_amount = positive_integer(payload.get("outAmount"))
     min_out = positive_integer(payload.get("otherAmountThreshold"))
-    floor = -(-out_amount * (10_000 - request.slippage_bps) // 10_000)   # ceil
+    floor = out_amount * (10_000 - request.slippage_bps) // 10_000   # same rounding as the program
     if not floor <= min_out <= out_amount:
         raise Rejected("otherAmountThreshold violates the slippage limit")
     fee = payload.get("feeBps")
@@ -192,6 +192,8 @@ class JupiterExec:
             return ExecuteAnswer("UNKNOWN", None, "timeout", None)
         except TransportError as exc:
             return ExecuteAnswer("UNKNOWN", None, str(exc), None)
+        except Exception as exc:     # e.g. a refused redirect: the POST may have reached Jupiter (F13)
+            return ExecuteAnswer("UNKNOWN", None, "request error: %s" % type(exc).__name__, None)
         if status == 200 and isinstance(body, dict) and body.get("status") == "Success":
             if body.get("signature") == expected_signature:
                 return ExecuteAnswer("ACCEPTED", status, "Success", body)

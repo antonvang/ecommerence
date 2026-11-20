@@ -10,13 +10,15 @@ Mode rules (evaluated fresh every time, never cached):
 """
 from __future__ import annotations
 
+import hashlib
 import os
+import re
 import time
 import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from ..core import canonical, strict_json
+from ..core import Rejected, canonical, strict_json
 from ..research import lock as plan_lock
 from . import config
 from . import mandate as mandate_mod
@@ -26,6 +28,7 @@ OVERRIDABLE = ("p2_holdout_pass", "dry_run_ok", "review_done")
 NEVER_OVERRIDE = ("mandate_valid", "private_rpc")
 ARM_KEYS = ("mode", "mandate_sha256", "wallet_pubkey", "armed_at", "overrides")
 REVIEW_LINE = "Verdict: APPROVED"
+COMMIT = re.compile(r"^[0-9a-f]{7,40}$")
 
 
 def load_verdicts(directory):
@@ -49,19 +52,27 @@ def gate_p2(paths, mandate, verdict_loader=load_verdicts, lock_loader=None, veri
     verify = verify or (lambda record: plan_lock.verify(record, paths.repo))
     try:
         record = lock_loader()
-    except (OSError, ValueError) as exc:
+    except Exception as exc:          # a malformed lock must never crash status (F17)
         return False, "plan lock unreadable: %s" % type(exc).__name__
     if record is None:
         return False, "P2 plan is not locked"
+    if not isinstance(record, dict):
+        return False, "plan lock is malformed"
     try:
         problems = verify(record)
-    except (OSError, KeyError) as exc:
+    except Exception as exc:
         return False, "plan lock cannot be verified: %s" % type(exc).__name__
     if problems:
         return False, "plan lock broken: %s" % "; ".join(problems)
     if mandate is None:
         return False, "no valid mandate to match a verdict against"
-    for verdict in verdict_loader(paths.verdicts):
+    try:
+        verdicts = list(verdict_loader(paths.verdicts))
+    except Exception as exc:
+        return False, "verdicts unreadable: %s" % type(exc).__name__
+    for verdict in verdicts:
+        if not isinstance(verdict, dict):
+            continue
         if (verdict.get("label") == "holdout" and verdict.get("verdict") == "PASS"
                 and verdict.get("plan_sha256") == record.get("plan_sha256")
                 and verdict.get("strategy") == mandate.strategy and verdict.get("params") == mandate.params):
@@ -71,16 +82,64 @@ def gate_p2(paths, mandate, verdict_loader=load_verdicts, lock_loader=None, veri
         mandate.strategy, mandate.params_json)
 
 
+def execution_code_sha256(repo):
+    """sha256 over jupiter_bot/execution/*.py, sorted by name: name NUL sha256(file) LF per file."""
+    digest = hashlib.sha256()
+    for path in sorted((Path(repo) / "jupiter_bot" / "execution").glob("*.py")):
+        digest.update(path.name.encode() + b"\0" + hashlib.sha256(path.read_bytes()).hexdigest().encode() + b"\n")
+    return digest.hexdigest()
+
+
 def gate_review(paths):
+    """The review must name the commit and the exact execution code it approved (F8)."""
+    name = Path(paths.review).name
     try:
         text = Path(paths.review).read_text(encoding="utf-8")
     except FileNotFoundError:
-        return False, "no %s" % Path(paths.review).name
+        return False, "no %s" % name
     except (OSError, UnicodeDecodeError) as exc:
         return False, "review unreadable: %s" % type(exc).__name__
-    if any(line.strip() == REVIEW_LINE for line in text.splitlines()):
-        return True, "%s says %s" % (Path(paths.review).name, REVIEW_LINE)
-    return False, "%s has no line '%s'" % (Path(paths.review).name, REVIEW_LINE)
+    lines = [line.strip() for line in text.splitlines()]
+    if REVIEW_LINE not in lines:
+        return False, "%s has no line '%s'" % (name, REVIEW_LINE)
+    commits = [l.split(":", 1)[1].strip() for l in lines if l.startswith("Commit:")]
+    if len(commits) != 1 or not COMMIT.match(commits[0]):
+        return False, "%s needs exactly one line 'Commit: <git sha>'" % name
+    hashes = [l.split(":", 1)[1].strip() for l in lines if l.startswith("Execution-SHA256:")]
+    if len(hashes) != 1:
+        return False, "%s needs exactly one line 'Execution-SHA256: <hash>'" % name
+    current = execution_code_sha256(paths.repo)
+    if hashes[0] != current:
+        return False, "execution code changed since the review (now %s...); re-review" % current[:12]
+    return True, "%s: %s for commit %s, code hash matches" % (name, REVIEW_LINE, commits[0][:12])
+
+
+# wallet binding (F7) -------------------------------------------------------------------
+
+def read_binding(paths, wallet):
+    try:
+        record = strict_json(paths.wallet_binding(wallet).read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return None
+    except (OSError, ValueError, UnicodeDecodeError):
+        return {"ledger": None}
+    return record if isinstance(record, dict) else {"ledger": None}
+
+
+def ledger_id(paths):
+    return os.path.realpath(str(paths.ledger))
+
+
+def bind_wallet(paths, wallet, now):
+    """Bind the wallet to this ledger, once. Refuses if it is bound to another ledger."""
+    current = read_binding(paths, wallet)
+    if current is not None:
+        if current.get("ledger") != ledger_id(paths):
+            raise Rejected("wallet %s is bound to another ledger (%s); refusing" % (wallet, current.get("ledger")))
+        return current
+    record = {"wallet_pubkey": wallet, "ledger": ledger_id(paths), "bound_at": now}
+    _write_private(paths.wallet_binding(wallet), record)
+    return record
 
 
 # arm file ---------------------------------------------------------------------------
@@ -107,8 +166,12 @@ def read_arm(path):
 
 
 def write_arm(path, record):
+    _write_private(path, record)
+
+
+def _write_private(path, record):
     path = Path(path)
-    path.parent.mkdir(parents=True, exist_ok=True)
+    path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
     fd, tmp = tempfile.mkstemp(prefix=".armed-", dir=str(path.parent))
     try:
         os.fchmod(fd, 0o600)
@@ -152,8 +215,7 @@ class State:
 def evaluate(paths, now, ledger=None, verdict_loader=load_verdicts, lock_loader=None, lock_verify=None,
              uid=None):
     """Compute mandate validity, gates and effective mode. Reads files only; no network."""
-    mandate, error = mandate_mod.load(paths.mandate)
-    _, sha = mandate_mod.read(paths.mandate) if paths.mandate.exists() else (None, None)
+    mandate, error, sha = mandate_mod.load_once(paths.mandate)      # one read: parse and hash agree (F11)
     problems = mandate_mod.problems(mandate, now, paths.repo, uid) if mandate else []
     arm, arm_problem = read_arm(paths.arm)
     state = State(mandate, error, problems, sha, arm, arm_problem)
@@ -193,6 +255,8 @@ def evaluate(paths, now, ledger=None, verdict_loader=load_verdicts, lock_loader=
         state.mode, state.reason = "DISARMED", "arm file belongs to another mandate version; re-arm"
     elif not rpc_ok:
         state.mode, state.reason = "DISARMED", "public RPC"
+    elif (read_binding(paths, mandate.wallet_pubkey) or {}).get("ledger") != ledger_id(paths):
+        state.mode, state.reason = "DISARMED", "wallet not bound to this ledger (another --data-dir?); re-arm here"
     elif arm["mode"] == "DRY_RUN":
         state.mode, state.reason = "DRY_RUN", "armed for dry runs only"
     else:

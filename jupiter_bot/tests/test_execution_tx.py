@@ -100,6 +100,43 @@ class Messages(unittest.TestCase):
             T.parse_token_account(b"\0" * 170)
 
 
+class DerivedAddresses(unittest.TestCase):
+    """F12: create/find_program_address with a pure-Python ed25519 point-validity check."""
+
+    def test_solana_sdk_create_program_address_vectors(self):
+        # solana-program pubkey.rs `test_create_program_address`
+        program = "BPFLoaderUpgradeab1e11111111111111111111111"
+        seed_key = T.pubkey_bytes("SeedPubey1111111111111111111111111111111111")
+        for seeds, expected in (([b"", bytes([1])], "BwqrghZA2htAcqq8dzP1WDAhTXYTYWj7CHxF5j7TDBAe"),
+                                (["\u2609".encode(), bytes([0])], "13yWmRpaTR4r5nAktwLqMpRNr28tnVUZw26rTvPSSB19"),
+                                ([b"Talking", b"Squirrels"], "2fnQrngrQT4SeLcdToJAD96phoEjNL2man2kfRLCASVk"),
+                                ([seed_key, bytes([1])], "976ymqVnfE32QFe6NfGDctSvVa36LWnvYxhU6G2232YL")):
+            self.assertEqual(T.create_program_address(seeds, program), expected)
+        with self.assertRaises(Rejected):
+            T.create_program_address([b"x" * 33], program)
+
+    def test_curve_check_against_rfc8032_public_keys(self):
+        for hexkey in ("d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a",
+                       "3d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c",
+                       "fc51cd8e6218a1a38da47ed00230f0580816ed13ba3303ac5deb911548908025"):
+            self.assertTrue(T.is_on_curve(bytes.fromhex(hexkey)))
+        self.assertTrue(T.is_on_curve(b"\x01" + b"\0" * 31))           # the identity point (0, 1)
+        address, bump = T.find_program_address([b"Talking", b"Squirrels"], "BPFLoaderUpgradeab1e11111111111111111111111")
+        self.assertFalse(T.is_on_curve(T.pubkey_bytes(address)))
+        self.assertEqual(T.create_program_address([b"Talking", b"Squirrels", bytes([bump])],
+                                                  "BPFLoaderUpgradeab1e11111111111111111111111"), address)
+
+    def test_ata_is_off_curve_and_deterministic(self):
+        ata = T.associated_token_address(F.WALLET, USDC.mint)
+        self.assertFalse(T.is_on_curve(T.pubkey_bytes(ata)))
+        self.assertNotEqual(ata, T.associated_token_address(F.WALLET, SOL.mint))
+        self.assertEqual(ata, F.USDC_ATA)
+
+    def test_uninitialised_token_account_rejected(self):
+        with self.assertRaises(Rejected):
+            T.parse_token_account(F.token_data(USDC.mint, F.WALLET, 1, state=0))
+
+
 class Mandates(unittest.TestCase):
     def setUp(self):
         self.dir = tempfile.TemporaryDirectory()
@@ -113,8 +150,9 @@ class Mandates(unittest.TestCase):
         return M.parse(self.env.paths.mandate.read_bytes())
 
     def test_valid_mandate_in_atoms(self):
-        m = self.parse(max_trade_usdc="12.5")
+        m = self.parse(max_trade_usdc="12.5", max_trade_sol="0.123456789")
         self.assertEqual((m.max_trade_usdc, m.max_position_usdc, m.daily_loss_limit_usdc), (12_500_000, 50_000_000, 10_000_000))
+        self.assertEqual(m.max_trade_sol, 123_456_789)
         self.assertEqual(m.rpc_host, F.RPC_HOST)
         self.assertEqual(M.problems(m, F.NOW, self.env.repo), [])
         public = json.dumps(m.public())
@@ -128,7 +166,9 @@ class Mandates(unittest.TestCase):
                dict(strategy="nope"), dict(params={"lookback_min": 241, "rebalance_min": 240}),
                dict(rpc_url="http://rpc.example.org"), dict(rpc_url="https://user:pw@rpc.example.org"),
                dict(rpc_url="https://api.jup.ag/x"), dict(keypair_path="keys/bot.json"),
-               dict(wallet_pubkey="not-a-key"), dict(expires_at="2027-01-01"), dict(max_trade_usdc="0.5")]
+               dict(wallet_pubkey="not-a-key"), dict(expires_at="2027-01-01"), dict(max_trade_usdc="0.5"),
+               dict(max_trade_sol=0.5), dict(max_trade_sol="0.0000000001"), dict(max_trade_sol="0"),
+               dict(max_trade_sol=F.DROP)]
         for change in bad:
             with self.assertRaises(Rejected, msg=change):
                 self.parse(**change)
@@ -202,6 +242,28 @@ class Ledgers(unittest.TestCase):
             ledger.book_fill(order, 86400.0, "SWAP", side, sol, usdc, 5000, 1, "sig" + side, "200", {}, CONFIRMED, {})
         self.assertEqual(ledger.position(), (50_000_000, 10_000_000))
         self.assertEqual(ledger.realized_on("1970-01-02"), 2_000_000)
+        ledger.close()
+
+    def book(self, ledger, side, sol, usdc, at, fee=5000):
+        order = ledger.create_intent(side, USDC.mint, SOL.mint, 5, "sha", {}, at)
+        for state in (VERIFIED, SIGNED, "SUBMITTED"):
+            ledger.transition(order, state, {}, at)
+        return ledger.book_fill(order, at, "SWAP", side, sol, usdc, fee, 1, "sig%s%s" % (side, at), "200", {},
+                                CONFIRMED, {})
+
+    def test_position_follows_insertion_not_the_clock(self):            # F10, review probe E3
+        ledger = Ledger(self.path)
+        self.book(ledger, "BUY", 100_000_000, -20_000_000, 2000.0)
+        self.book(ledger, "BUY", 100_000_000, -20_000_000, 1000.0)       # clock stepped backwards
+        self.assertEqual(ledger.position(), (200_000_000, 40_000_000))
+        ledger.close()
+
+    def test_full_sell_books_the_fee_beyond_the_position(self):         # F14
+        ledger = Ledger(self.path)
+        self.book(ledger, "BUY", 100_000_000, -20_000_000, 1.0)
+        realized = self.book(ledger, "SELL", -(100_000_000 + 5_000), 21_000_000, 2.0)
+        self.assertEqual(ledger.position(), (0, 0))
+        self.assertEqual(realized, 1_000_000 - 1_000)                    # 5000 lamports at 200 = 1000 atoms
         ledger.close()
 
     def test_foreign_database_refused(self):

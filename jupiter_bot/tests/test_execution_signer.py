@@ -2,6 +2,7 @@
 is used: a fake `nacl.signing` stands in, so only the signer's own logic is tested."""
 import base64
 import hashlib
+import struct
 import importlib.util
 import io
 import json
@@ -11,6 +12,7 @@ import sys
 import tempfile
 import types
 import unittest
+from pathlib import Path
 from unittest import mock
 
 from jupiter_bot.core import SOL, USDC
@@ -56,7 +58,8 @@ class Base(unittest.TestCase):
         os.chmod(self.env.keypair, 0o600)
         self.env.mandate(wallet_pubkey=WALLET)
         self.arm()
-        self.state = self.env.paths.signer_state
+        self.registry = str(self.env.paths.wallets)
+        self.state = Path(S.state_path(self.registry, WALLET))
 
     def tearDown(self):
         self.env.close()
@@ -66,7 +69,10 @@ class Base(unittest.TestCase):
         gates.write_arm(self.env.paths.arm, {"mode": mode, "mandate_sha256": M.read(self.env.paths.mandate)[1],
                                              "wallet_pubkey": wallet, "armed_at": F.NOW, "overrides": []})
 
-    def request(self, side="BUY", amount=25_000_000, min_out=124_000_000, message=None, **tx_options):
+    def request(self, side="BUY", amount=25_000_000, min_out=None, message=None, **tx_options):
+        if min_out is None:     # the floor the fake route instruction encodes (50 bps)
+            quoted = amount * 1000 // F.PRICE if side == "BUY" else amount * F.PRICE // 1000
+            min_out = tx_options.get("quoted_out", quoted) * 9950 // 10000
         if message is None:
             raw, _ = F.build_swap_tx(side, amount, wallet=tx_options.pop("wallet", WALLET), **tx_options)
             message = T.parse_transaction(raw).message.raw
@@ -76,7 +82,7 @@ class Base(unittest.TestCase):
         return {"message_b64": base64.b64encode(message).decode(), "bundle": bundle}, message
 
     def sign(self, request, now=F.NOW, signing=FAKE_NACL, uid=None):
-        return S.handle(request, str(self.env.paths.mandate), str(self.env.paths.arm), str(self.state), now,
+        return S.handle(request, str(self.env.paths.mandate), str(self.env.paths.arm), self.registry, now,
                         signing, os.getuid() if uid is None else uid)
 
     def refused(self, text, request=None, **kwargs):
@@ -96,7 +102,7 @@ class Signing(Base):
         self.assertEqual((state["count"], state["notional_usdc_atoms"]), (1, 25_000_000))
         self.sign(request)                                  # same bytes again: not a new trade
         self.assertEqual(json.loads(self.state.read_text())["count"], 1)
-        sell, _ = self.request("SELL", 125_000_000, 24_000_000)
+        sell, _ = self.request("SELL", 125_000_000)
         self.sign(sell)
         self.assertEqual(json.loads(self.state.read_text())["count"], 2)
 
@@ -104,13 +110,13 @@ class Signing(Base):
         request, _ = self.request()
         out = io.StringIO()
         code = S.main(["--mandate", str(self.env.paths.mandate), "--arm", str(self.env.paths.arm),
-                       "--state", str(self.state)], io.StringIO(json.dumps(request)), out, FAKE_NACL, F.NOW)
-        self.assertEqual(code, 0)
+                       "--registry", self.registry], io.StringIO(json.dumps(request)), out, FAKE_NACL, F.NOW)
+        self.assertEqual(code, 0, out.getvalue())
         self.assertEqual(len(T.b58decode(json.loads(out.getvalue())["signature"])), 64)
         out = io.StringIO()
         bad = dict(request, bundle=dict(request["bundle"], in_amount=30_000_000))
         code = S.main(["--mandate", str(self.env.paths.mandate), "--arm", str(self.env.paths.arm),
-                       "--state", str(self.state)], io.StringIO(json.dumps(bad)), out, FAKE_NACL, F.NOW)
+                       "--registry", self.registry], io.StringIO(json.dumps(bad)), out, FAKE_NACL, F.NOW)
         self.assertEqual(code, 4)
         self.assertNotIn(json.dumps(list(SEED)), out.getvalue())
         self.assertNotIn(str(list(SEED)[0:4])[1:-1], out.getvalue())
@@ -122,14 +128,14 @@ class Refusals(Base):
         out = io.StringIO()
         with mock.patch.dict(sys.modules, {"nacl": None, "nacl.signing": None}):
             self.assertIsNone(S.load_nacl())
-            code = S.main(["--mandate", "m", "--arm", "a", "--state", "s"], io.StringIO("{}"), out)
+            code = S.main(["--mandate", "m", "--arm", "a", "--registry", "r"], io.StringIO("{}"), out)
         self.assertEqual(code, 3)
         self.assertIn("python3-nacl", json.loads(out.getvalue())["error"])
 
     @unittest.skipIf(importlib.util.find_spec("nacl") is not None, "PyNaCl is installed here")
     def test_real_process_refuses_to_start_without_nacl(self):
         done = subprocess.run([sys.executable, "-I", str(SIGNER_PATH), "--mandate", str(self.env.paths.mandate),
-                               "--arm", str(self.env.paths.arm), "--state", str(self.state)],
+                               "--arm", str(self.env.paths.arm), "--registry", self.registry],
                               input=b"{}", capture_output=True, timeout=30, env=dict(MINIMAL_ENV), cwd="/")
         self.assertEqual(done.returncode, 3)
         self.assertIn("refuses to start", json.loads(done.stdout)["error"])
@@ -178,6 +184,14 @@ class Refusals(Base):
     def test_bundle_limits(self):
         request, _ = self.request(amount=26_000_000)
         self.refused("max_trade_usdc", request=request)
+        request, _ = self.request("SELL", 600_000_000)                 # 0.6 SOL > max_trade_sol 0.5
+        self.refused("max_trade_sol", request=request)
+        request, _ = self.request(ix_in_amount=24_000_000)
+        self.refused("in_amount differs", request=request)
+        request, _ = self.request(ix_slippage=10_000)
+        self.refused("slippage", request=request)
+        request, _ = self.request(min_out=124_999_999)                  # the engine claims a tighter floor
+        self.refused("floor below", request=request)
         request, _ = self.request()
         request["bundle"]["side"] = "SELL"
         self.refused("inconsistent", request=request)
@@ -200,6 +214,44 @@ class Refusals(Base):
         self.refused("system transfer", request=request)
         request, _ = self.request(message=message + b"\0")
         self.refused("trailing", request=request)
+
+    def test_sol_outflow_is_bounded(self):                             # review probes S1-S3
+        attacker = F.key("attacker")
+        keys = [WALLET, attacker, T.SYSTEM_PROGRAM, T.JUPITER_V6_PROGRAM]
+
+        def drain(transfers, lamports, in_amount):
+            ixs = [(2, [0, 1], struct.pack("<I", 2) + struct.pack("<Q", lamports)) for _ in range(transfers)]
+            ixs.append((3, [0], F.route_data(in_amount, 25_000_000, 50)))
+            return F.encode_message(1, 0, 2, keys, F.BLOCKHASH, ixs, [])
+        for transfers, lamports, in_amount in ((1, 125_000_000, 125_000_000), (8, 125_000_000, 125_000_000),
+                                               (1, 50 * 10**9, 50 * 10**9)):
+            request, _ = self.request("SELL", in_amount, min_out=1, message=drain(transfers, lamports, in_amount))
+            with self.subTest(transfers=transfers, lamports=lamports):
+                self.refused("", request=request)
+        request, _ = self.request("SELL", 125_000_000, min_out=1, message=drain(1, 125_000_000, 125_000_000))
+        self.refused("own wSOL", request=request)
+        # to the right account, but several transfers summing above the swap input
+        request, _ = self.request("SELL", 125_000_000, transfers=3, transfer_lamports=50_000_000)
+        self.refused("exceeds the swap input", request=request)
+        request, _ = self.request("SELL", 125_000_000, transfers=2)    # 2 x 62.5M = the input: fine
+        self.sign(request)
+
+    def test_derived_accounts_and_single_route(self):
+        self.refused("derived ATA", request=self.request(ata_address=F.key("not-a-pda"))[0])
+        self.refused("exactly one Jupiter", request=self.request(jupiter_count=2)[0])
+        self.refused("not an accepted route", request=self.request(variant="route_with_token_ledger")[0])
+
+    def test_keypair_directory_permissions(self):
+        os.chmod(self.env.keypair.parent, 0o777)
+        try:
+            self.refused("keypair directory")
+        finally:
+            os.chmod(self.env.keypair.parent, 0o700)
+
+    def test_state_file_is_per_wallet_in_the_registry(self):
+        self.sign(self.request()[0])
+        self.assertEqual(self.state.parent, self.env.paths.wallets)
+        self.assertTrue(self.state.name.startswith(WALLET))
 
     def test_daily_caps(self):
         for i in range(S.MAX_SIGNATURES_PER_DAY):
@@ -227,6 +279,13 @@ class Consistency(unittest.TestCase):
         self.assertEqual(S.MANDATE_KEYS, M.KEYS)
         self.assertEqual(S.USDC_TEXT.pattern, M.USDC_TEXT.pattern)
         self.assertEqual(S.REPO, os.path.realpath(str(config.REPO)))
+        self.assertEqual(S.SOL_TEXT.pattern, M.SOL_TEXT.pattern)
+        self.assertEqual(S.MAX_FEE_BPS, config.MAX_FEE_BPS)
+        from jupiter_bot.execution import jupiter_ix
+        self.assertEqual(set(S.JUPITER_ROUTES), set(jupiter_ix.ACCEPTED))
+        for wallet in (WALLET, F.WALLET):
+            for mint in (SOL.mint, USDC.mint):
+                self.assertEqual(S.ata(wallet, mint), T.associated_token_address(wallet, mint))
 
     def test_signer_is_standalone(self):
         source = SIGNER_PATH.read_text()

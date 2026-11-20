@@ -9,7 +9,7 @@ from __future__ import annotations
 import json
 import time
 import uuid
-from decimal import ROUND_FLOOR, Decimal
+from decimal import ROUND_CEILING, ROUND_FLOOR, Decimal
 from pathlib import Path
 
 from .. import storage
@@ -122,7 +122,7 @@ class Ledger:
     def non_terminal(self):
         rows = self.db.execute(
             """SELECT o.*, (SELECT state FROM order_events e WHERE e.order_id=o.order_id ORDER BY id DESC LIMIT 1)
-               AS state FROM orders o ORDER BY created_at""").fetchall()
+               AS state FROM orders o ORDER BY o.rowid""").fetchall()
         return [dict(row) for row in rows if row["state"] not in TERMINAL]
 
     def create_intent(self, side, input_mint, output_mint, in_amount, mandate_sha, decision, at):
@@ -187,8 +187,9 @@ class Ledger:
     # fills and P&L ---------------------------------------------------------------------
 
     def position(self):
+        # insertion order, never wall-clock order (F10)
         row = self.db.execute("SELECT position_sol_after, cost_basis_usdc_after FROM fills "
-                              "ORDER BY at DESC, rowid DESC LIMIT 1").fetchone()
+                              "ORDER BY rowid DESC LIMIT 1").fetchone()
         return (row[0], row[1]) if row else (0, 0)
 
     def realized_on(self, day):
@@ -212,9 +213,13 @@ class Ledger:
                 realized = 0
                 new_position, new_cost = position + max(sol_delta, 0), cost + max(-usdc_delta, 0)
             else:
-                sold = min(max(-sol_delta, 0), position)
+                spent = max(-sol_delta, 0)
+                sold = min(spent, position)
                 removed = cost * sold // position if position else 0
                 realized = usdc_delta - removed
+                # SOL spent beyond the position (fees on a full sell) is a cost too (F14)
+                excess = Decimal(spent - sold) * Decimal(price_usdc_per_sol) / 1000
+                realized -= int(excess.to_integral_value(ROUND_CEILING))
                 new_position, new_cost = position - sold, cost - removed
             self.db.execute("INSERT INTO fills VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                             (order_id, at, utc_day(at), kind, side, sol_delta, usdc_delta, fee_lamports,
@@ -224,7 +229,7 @@ class Ledger:
         return self._write(work)
 
     def fills(self):
-        return [dict(row) for row in self.db.execute("SELECT * FROM fills ORDER BY at, rowid")]
+        return [dict(row) for row in self.db.execute("SELECT * FROM fills ORDER BY rowid")]
 
     # dry runs ---------------------------------------------------------------------------
 

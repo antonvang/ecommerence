@@ -90,10 +90,15 @@ def load(out=DEFAULT_OUT):
 
 def verify(record, repo=REPO):
     """List of mismatches between the lock and the files now (empty = intact)."""
+    if not isinstance(record, dict) or not isinstance(record.get("code_sha256"), dict):
+        return ["the lock record is malformed"]
     plan_sha, code_sha = hashes(repo)
     problems = []
-    if plan_sha != record["plan_sha256"]:
+    if plan_sha != record.get("plan_sha256"):
         problems.append("%s changed since the lock" % PLAN)
+    missing = [name for name in CODE if name not in record["code_sha256"]]
+    if missing:   # an empty or partial code list must not pass as "intact"
+        problems.append("the lock does not cover %s" % ", ".join(missing))
     for name, digest in record["code_sha256"].items():
         if code_sha.get(name) != digest:
             problems.append("%s changed since the lock" % name)

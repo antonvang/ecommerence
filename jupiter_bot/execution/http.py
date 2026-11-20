@@ -31,7 +31,9 @@ def urllib_transport(method, url, body, headers, timeout):
     request = urllib.request.Request(url, data=body, method=method, headers=headers)
     try:
         try:
-            with urllib.request.build_opener(NoRedirect).open(request, timeout=timeout) as response:
+            # ProxyHandler({}): ignore HTTPS_PROXY & co. from the environment (F16)
+            opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect)
+            with opener.open(request, timeout=timeout) as response:
                 return response.status, response.read(MAX_BODY + 1)
         except urllib.error.HTTPError as exc:
             return exc.code, (exc.read(MAX_BODY + 1) if exc.fp is not None else b"")

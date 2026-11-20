@@ -21,11 +21,12 @@ from ..research.strategies import STRATEGIES
 from . import config
 from .solana_tx import is_pubkey
 
-KEYS = ("wallet_pubkey", "keypair_path", "rpc_url", "max_trade_usdc", "max_position_usdc",
+KEYS = ("wallet_pubkey", "keypair_path", "rpc_url", "max_trade_usdc", "max_trade_sol", "max_position_usdc",
         "daily_loss_limit_usdc", "max_slippage_bps", "allowed_mints", "strategy", "params",
         "expires_at")
 MAX_BYTES = 64 * 1024
 USDC_TEXT = re.compile(r"^(0|[1-9][0-9]{0,11})(\.[0-9]{1,6})?$")
+SOL_TEXT = re.compile(r"^(0|[1-9][0-9]{0,8})(\.[0-9]{1,9})?$")
 ALLOWED = (SOL.mint, USDC.mint)
 
 
@@ -35,6 +36,7 @@ class Mandate:
     keypair_path: str
     rpc_url: str
     max_trade_usdc: int          # atoms
+    max_trade_sol: int           # lamports; the signer caps every SELL's input with it
     max_position_usdc: int       # atoms
     daily_loss_limit_usdc: int   # atoms
     max_slippage_bps: int
@@ -110,6 +112,10 @@ def parse(raw_bytes):
     rpc_url = check_rpc_url(raw["rpc_url"])
     trade, position, loss = (_usdc(raw, k) for k in
                              ("max_trade_usdc", "max_position_usdc", "daily_loss_limit_usdc"))
+    sol_text = raw["max_trade_sol"]
+    if not isinstance(sol_text, str) or not SOL_TEXT.match(sol_text):
+        raise Rejected("max_trade_sol must be a decimal string in SOL, e.g. \"0.15\"")
+    trade_sol = atoms(sol_text, SOL)
     if trade > position:
         raise Rejected("max_trade_usdc must not exceed max_position_usdc")
     if trade < config.MIN_TRADE_USDC_ATOMS:
@@ -129,7 +135,7 @@ def parse(raw_bytes):
     expires = raw["expires_at"]
     if isinstance(expires, bool) or not isinstance(expires, (int, float)):
         raise Rejected("expires_at must be Unix seconds")
-    return Mandate(wallet, keypair, rpc_url, trade, position, loss, slippage, tuple(mints),
+    return Mandate(wallet, keypair, rpc_url, trade, trade_sol, position, loss, slippage, tuple(mints),
                    strategy, canonical(params), timestamp(expires),
                    hashlib.sha256(raw_bytes).hexdigest())
 
@@ -143,18 +149,24 @@ def read(path):
     return data, hashlib.sha256(data).hexdigest()
 
 
+def load_once(path):
+    """(Mandate | None, error | None, sha256 | None) from ONE read of the file."""
+    try:
+        data, sha = read(path)
+    except OSError as exc:
+        return None, "mandate.json cannot be read: %s" % type(exc).__name__, None
+    if data is None:
+        return None, None, None
+    try:
+        return parse(data), None, sha
+    except Rejected as exc:
+        return None, str(exc), sha
+
+
 def load(path):
     """(Mandate | None, error text | None). Absent -> (None, None)."""
-    try:
-        data, _ = read(path)
-    except OSError as exc:
-        return None, "mandate.json cannot be read: %s" % type(exc).__name__
-    if data is None:
-        return None, None
-    try:
-        return parse(data), None
-    except Rejected as exc:
-        return None, str(exc)
+    mandate, error, _ = load_once(path)
+    return mandate, error
 
 
 def keypair_problems(path, repo=config.REPO, uid=None):
@@ -176,6 +188,12 @@ def keypair_problems(path, repo=config.REPO, uid=None):
         problems.append("keypair file is not owned by the current user")
     if stat.S_IMODE(info.st_mode) & 0o077:
         problems.append("keypair file permissions are %o; must be 600 (or 400)" % stat.S_IMODE(info.st_mode))
+    try:
+        parent = os.lstat(path.parent)
+        if stat.S_ISLNK(parent.st_mode) or parent.st_uid != uid or stat.S_IMODE(parent.st_mode) & 0o022:
+            problems.append("keypair directory must be owned by you, not a symlink, not group/other-writable")
+    except OSError:
+        problems.append("keypair directory cannot be inspected")
     try:
         resolved, root = Path(os.path.realpath(path)), Path(os.path.realpath(repo))
         if resolved == root or root in resolved.parents:

@@ -1,5 +1,6 @@
 """python3 -m jupiter_bot.execution {status [--json] | check-mandate | dry-run-once | run-once |
-                                    arm [--dry-run] [--override GATE]... | disarm | resolve}
+                                    arm [--dry-run] [--override GATE]... | disarm | resolve |
+                                    force-expire ORDER_ID | code-hash}
 
 Global options (before the command): --mandate PATH --data-dir DIR --journal PATH
 """
@@ -13,7 +14,7 @@ import time
 from ..core import Rejected
 from . import config, gates
 from . import mandate as mandate_mod
-from .engine import Engine, arm, disarm, process_lock
+from .engine import Engine, arm, disarm, force_expire, wallet_locks
 from .ledger import Ledger
 
 
@@ -57,6 +58,9 @@ def main(argv=None, engine_factory=Engine, ask=input, interactive=None):
     arm_p.add_argument("--override", action="append", default=[], metavar="GATE",
                        help="override a failing gate (%s)" % ", ".join(gates.OVERRIDABLE))
     sub.add_parser("disarm")
+    expire_p = sub.add_parser("force-expire", help="operator: mark one UNKNOWN order EXPIRED after checking by hand")
+    expire_p.add_argument("order_id")
+    sub.add_parser("code-hash", help="print the Execution-SHA256 a reviewer must put in P3_REVIEW.md")
     args = parser.parse_args(argv)
     paths = _paths(args)
     now = time.time()
@@ -68,6 +72,9 @@ def main(argv=None, engine_factory=Engine, ask=input, interactive=None):
                 print(json.dumps(status, sort_keys=True, allow_nan=False))
             else:
                 _print_status(status, state)
+            return 0
+        if args.command == "code-hash":
+            print("Execution-SHA256: %s" % gates.execution_code_sha256(paths.repo))
             return 0
         if args.command == "check-mandate":
             mandate, error = mandate_mod.load(paths.mandate)
@@ -99,7 +106,7 @@ def main(argv=None, engine_factory=Engine, ask=input, interactive=None):
             return 0
         if args.command == "arm":
             interactive = sys.stdin.isatty() if interactive is None else interactive
-            with process_lock(paths.lock):
+            with wallet_locks(paths):
                 ledger = Ledger(paths.ledger)
                 try:
                     record = arm(paths, "DRY_RUN" if args.dry_run else "LIVE", args.override, ask,
@@ -113,8 +120,12 @@ def main(argv=None, engine_factory=Engine, ask=input, interactive=None):
         engine = engine_factory(paths)
         try:
             if args.command == "resolve":
-                with process_lock(paths.lock):
+                with wallet_locks(paths):
                     result = engine.resolve()
+            elif args.command == "force-expire":
+                interactive = sys.stdin.isatty() if interactive is None else interactive
+                with wallet_locks(paths):
+                    result = force_expire(engine, args.order_id, ask, interactive)
             elif args.command == "dry-run-once":
                 result = engine.dry_run_once()
             else:

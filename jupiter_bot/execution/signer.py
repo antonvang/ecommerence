@@ -1,6 +1,6 @@
 """Restricted signer process. Standalone on purpose: no jupiter_bot imports.
 
-Started by the engine as `python3 -I <this file> --mandate M --arm A --state S`
+Started by the engine as `python3 -I <this file> --mandate M --arm A --registry DIR`
 with a minimal environment. It reads ONE JSON request on stdin:
 
     {"message_b64": "...", "bundle": {"message_sha256", "order_id", "side",
@@ -16,13 +16,16 @@ Before signing it independently re-checks, with its own code:
     outside the repository; its public key equals the mandate wallet;
   * the message: v0, one required signature, fee payer = wallet, every
     top-level program static and allowlisted, ComputeBudget priority capped,
-    System transfers only from the wallet and only when SOL is the input,
-    Token instructions only SyncNative/CloseAccount-to-wallet, ATA creations
-    paid by and owned by the wallet;
-  * the bundle: sha256 matches the message, mints SOL/USDC and allowed, the
-    trade notional <= max_trade_usdc;
-  * its own per-UTC-day caps (count and notional) kept in its own state file,
-    updated BEFORE the signature is released.
+    System transfers only from the wallet, only on a SELL, only to the wallet's
+    own (locally derived) wSOL ATA, and their SUM <= the swap input; Token
+    instructions only SyncNative/CloseAccount on own derived ATAs back to the
+    wallet; ATA creations paid by and owned by the wallet at the derived PDA;
+  * exactly one Jupiter v6 route instruction, decoded: its in_amount equals the
+    bundle, its slippage <= the mandate, platform fee <= 50 bps, its on-chain
+    floor >= the bundle's minimum; BUY input <= max_trade_usdc, SELL input <=
+    max_trade_sol (both from the mandate the signer read itself);
+  * its own per-UTC-day caps (count and notional) kept in a per-wallet state
+    file in the wallet registry, updated BEFORE the signature is released.
 The keypair bytes never leave this process; errors never contain them.
 """
 import base64
@@ -49,10 +52,18 @@ PRIORITY_CAP_LAMPORTS = 500_000
 DEFAULT_CU_LIMIT = 1_400_000
 MAX_SIGNATURES_PER_DAY = 24
 DAILY_NOTIONAL_FACTOR = 8
-MANDATE_KEYS = ("wallet_pubkey", "keypair_path", "rpc_url", "max_trade_usdc", "max_position_usdc",
+MANDATE_KEYS = ("wallet_pubkey", "keypair_path", "rpc_url", "max_trade_usdc", "max_trade_sol", "max_position_usdc",
                 "daily_loss_limit_usdc", "max_slippage_bps", "allowed_mints", "strategy", "params",
                 "expires_at")
 USDC_TEXT = re.compile(r"^(0|[1-9][0-9]{0,11})(\.[0-9]{1,6})?$")
+SOL_TEXT = re.compile(r"^(0|[1-9][0-9]{0,8})(\.[0-9]{1,9})?$")
+MAX_FEE_BPS = 50
+# Jupiter v6 route variants accepted (Anchor discriminator = sha256("global:<name>")[:8]);
+# trailing args in_amount u64, quoted_out_amount u64, slippage_bps u16, platform_fee_bps u8.
+# Same UNCONFIRMED layout as jupiter_ix.py; must be confirmed in DRY_RUN.
+JUPITER_ROUTES = {hashlib.sha256(b"global:" + n).digest()[:8]: n.decode()
+                  for n in (b"route", b"shared_accounts_route")}
+JUPITER_MIN_LEN = {"route": 8 + 4 + 19, "shared_accounts_route": 8 + 1 + 4 + 19}
 REPO = os.path.realpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
 NO_NACL = ("PyNaCl (nacl.signing) is not importable; the signer refuses to start. "
            "Install the Debian package python3-nacl (the signer runs with python3 -I, so a pip --user "
@@ -172,6 +183,13 @@ def strict_json(text):
     return json.loads(text, object_pairs_hook=unique_object, parse_constant=bad_constant)
 
 
+def amount_atoms(text, pattern, decimals, what):
+    if not isinstance(text, str) or not pattern.match(text):
+        raise Refused("mandate %s is not a decimal string" % what)
+    whole, _, frac = text.partition(".")
+    return int(whole) * 10**decimals + int((frac + "0" * decimals)[:decimals])
+
+
 def load_mandate(path, now):
     with open(path, "rb") as handle:
         raw = handle.read(65537)
@@ -185,7 +203,14 @@ def load_mandate(path, now):
     mints = mandate["allowed_mints"]
     if not isinstance(mints, list) or any(m not in (SOL_MINT, USDC_MINT) for m in mints):
         raise Refused("mandate allowed_mints invalid")
+    slippage = mandate["max_slippage_bps"]
+    if type(slippage) is not int or not 1 <= slippage <= 300:
+        raise Refused("mandate max_slippage_bps invalid")
     limits = {k: usdc_atoms(mandate[k]) for k in ("max_trade_usdc", "max_position_usdc")}
+    limits["max_trade_sol"] = amount_atoms(mandate["max_trade_sol"], SOL_TEXT, 9, "max_trade_sol")
+    limits["max_slippage_bps"] = slippage
+    if limits["max_trade_sol"] <= 0:
+        raise Refused("mandate max_trade_sol must be positive")
     return mandate, hashlib.sha256(raw).hexdigest(), limits
 
 
@@ -201,9 +226,40 @@ def check_arm(path, mandate_sha, wallet):
         raise Refused("arm file does not match the current mandate")
 
 
+# program-derived addresses (own copy; validity test only, no signing maths) ---------
+
+_P = 2**255 - 19
+_D = (-121665 * pow(121666, _P - 2, _P)) % _P
+
+
+def is_on_curve(raw):
+    y = (int.from_bytes(raw, "little") & ((1 << 255) - 1)) % _P
+    u, v = (y * y - 1) % _P, (_D * y * y + 1) % _P
+    if v == 0:
+        return u == 0
+    x2 = u * pow(v, _P - 2, _P) % _P
+    return x2 == 0 or pow(x2, (_P - 1) // 2, _P) == 1
+
+
+def find_program_address(seeds, program_id):
+    for bump in range(255, -1, -1):
+        digest = hashlib.sha256(b"".join(seeds) + bytes([bump]) + b58decode32(program_id)
+                                + b"ProgramDerivedAddress").digest()
+        if not is_on_curve(digest):
+            return b58encode(digest)
+    raise Refused("no PDA")
+
+
+def ata(wallet, mint):
+    return find_program_address([b58decode32(wallet), b58decode32(TOKEN_PROGRAM), b58decode32(mint)], ATA_PROGRAM)
+
+
+# keypair ----------------------------------------------------------------------------
+
 def keypair_file_problems(path, uid, repo=REPO):
     try:
         info = os.lstat(path)
+        parent = os.lstat(os.path.dirname(os.path.abspath(path)))
     except OSError:
         return "keypair file missing or not inspectable"
     if stat.S_ISLNK(info.st_mode) or not stat.S_ISREG(info.st_mode):
@@ -212,6 +268,8 @@ def keypair_file_problems(path, uid, repo=REPO):
         return "keypair file is not owned by this user"
     if stat.S_IMODE(info.st_mode) & 0o077:
         return "keypair file permissions must be 600"
+    if stat.S_ISLNK(parent.st_mode) or parent.st_uid != uid or stat.S_IMODE(parent.st_mode) & 0o022:
+        return "keypair directory must be yours, not a symlink, not group/other-writable"
     real = os.path.realpath(path)
     if real == repo or real.startswith(repo.rstrip(os.sep) + os.sep):
         return "keypair file is inside the repository"
@@ -222,9 +280,13 @@ def load_keypair(path, uid, repo=REPO):
     problem = keypair_file_problems(path, uid, repo)
     if problem:
         raise Refused(problem)
-    flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
-    fd = os.open(path, flags)
+    checked = os.lstat(path)
+    fd = os.open(path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
     with os.fdopen(fd, "rb") as handle:
+        opened = os.fstat(handle.fileno())      # the file we opened is the file we checked (F15)
+        if (opened.st_dev, opened.st_ino) != (checked.st_dev, checked.st_ino) or opened.st_uid != uid \
+                or not stat.S_ISREG(opened.st_mode) or stat.S_IMODE(opened.st_mode) & 0o077:
+            raise Refused("keypair file changed while it was opened")
         raw = handle.read(4097)
     try:
         values = json.loads(raw.decode("ascii"))
@@ -238,14 +300,30 @@ def load_keypair(path, uid, repo=REPO):
     return key
 
 
+# message ------------------------------------------------------------------------------
+
+def decode_jupiter(data):
+    variant = JUPITER_ROUTES.get(bytes(data[:8]))
+    if variant is None:
+        raise Refused("Jupiter instruction %s is not an accepted route variant" % bytes(data[:8]).hex())
+    if len(data) < JUPITER_MIN_LEN[variant]:
+        raise Refused("Jupiter instruction too short")
+    in_amount, quoted, slippage, fee = struct.unpack("<QQHB", bytes(data[-19:]))
+    return {"in_amount": in_amount, "quoted_out": quoted, "slippage_bps": slippage, "fee_bps": fee,
+            "min_out": quoted * (10_000 - slippage) // 10_000}
+
+
 def check_message(msg, wallet, bundle):
+    """Static rules. Returns the decoded Jupiter arguments (the signer's own view of the trade)."""
     header, keys, instructions, loaded = parse_message(msg)
     if header[0] != 1 or header[1] != 0:
         raise Refused("message needs exactly one writable signer")
     if not keys or keys[0] != wallet:
         raise Refused("fee payer is not the mandate wallet")
     total = len(keys) + loaded
-    priority_limit, price, seen, jupiter = None, 0, set(), 0
+    wsol = ata(wallet, SOL_MINT)
+    own_atas = {ata(wallet, bundle["input_mint"]), ata(wallet, bundle["output_mint"])}
+    priority_limit, price, seen, swaps, outflow = None, 0, set(), [], 0
     for program_index, accounts, data in instructions:
         if program_index >= len(keys):
             raise Refused("program not in static keys")
@@ -270,13 +348,17 @@ def check_message(msg, wallet, bundle):
                 raise Refused("system instruction other than transfer")
             if bundle["input_mint"] != SOL_MINT or static[0] != wallet:
                 raise Refused("system transfer not allowed here")
-            if struct.unpack_from("<Q", data, 4)[0] > bundle["in_amount"]:
-                raise Refused("system transfer larger than the order")
+            if static[1] != wsol:
+                raise Refused("system transfer destination is not the wallet's own wSOL account")
+            outflow += struct.unpack_from("<Q", data, 4)[0]
         elif program == TOKEN_PROGRAM:
             if len(data) != 1 or data[0] not in (9, 17):
                 raise Refused("token instruction not allowed")
-            if data[0] == 9 and (len(static) < 3 or static[1] != wallet or static[2] != wallet):
-                raise Refused("close account must return to the wallet")
+            if data[0] == 17 and (not static or static[0] != wsol):
+                raise Refused("sync native on a foreign account")
+            if data[0] == 9 and (len(static) < 3 or static[0] not in own_atas
+                                 or static[1] != wallet or static[2] != wallet):
+                raise Refused("close account must be an own ATA and return to the wallet")
         elif program == ATA_PROGRAM:
             if data not in (b"", b"\x00", b"\x01") or len(static) < 6:
                 raise Refused("bad associated token account instruction")
@@ -284,16 +366,40 @@ def check_message(msg, wallet, bundle):
                 raise Refused("token account not paid by / owned by the wallet")
             if static[3] is not None and static[3] not in (bundle["input_mint"], bundle["output_mint"]):
                 raise Refused("token account for a foreign mint")
+            if static[1] not in own_atas or (static[3] is not None and static[1] != ata(wallet, static[3])):
+                raise Refused("created token account is not the wallet's derived ATA")
         elif program == JUPITER_V6_PROGRAM:
-            jupiter += 1
+            swaps.append(decode_jupiter(data))
     limit = DEFAULT_CU_LIMIT if priority_limit is None else priority_limit
     if -(-price * limit // 1_000_000) > PRIORITY_CAP_LAMPORTS:
         raise Refused("priority fee above cap")
-    if jupiter < 1:
-        raise Refused("no Jupiter instruction")
+    if len(swaps) != 1:
+        raise Refused("need exactly one Jupiter route instruction")
+    swap = swaps[0]
+    if outflow > swap["in_amount"]:          # the SUM of all transfers, not per instruction (F1)
+        raise Refused("SOL transferred exceeds the swap input")
+    return swap
 
 
-def check_bundle(bundle, msg, mandate, limits):
+def check_bundle(bundle, msg, mandate, limits, swap):
+    """Bounds come from the mandate and the decoded instruction, not from the engine (F1/F3)."""
+    side = bundle["side"]
+    if swap["in_amount"] != bundle["in_amount"]:
+        raise Refused("instruction in_amount differs from the bundle")
+    if swap["slippage_bps"] > limits["max_slippage_bps"] or swap["fee_bps"] > MAX_FEE_BPS:
+        raise Refused("instruction slippage or fee above the mandate")
+    if swap["min_out"] < bundle["min_out"]:
+        raise Refused("instruction floor below the order's minimum")
+    if side == "BUY":
+        if swap["in_amount"] > limits["max_trade_usdc"]:
+            raise Refused("BUY input above max_trade_usdc")
+        return swap["in_amount"]
+    if swap["in_amount"] > limits["max_trade_sol"]:
+        raise Refused("SELL input above max_trade_sol")
+    return min(swap["min_out"], limits["max_trade_usdc"])
+
+
+def check_bundle_shape(bundle, msg, mandate):
     if not isinstance(bundle, dict):
         raise Refused("bundle missing")
     if bundle.get("message_sha256") != hashlib.sha256(msg).hexdigest():
@@ -307,10 +413,6 @@ def check_bundle(bundle, msg, mandate, limits):
     for key in ("in_amount", "min_out"):
         if type(bundle.get(key)) is not int or bundle[key] <= 0:
             raise Refused("bundle %s invalid" % key)
-    notional = bundle["in_amount"] if side == "BUY" else bundle["min_out"]
-    if notional > limits["max_trade_usdc"]:
-        raise Refused("trade notional above max_trade_usdc")
-    return notional
 
 
 def update_state(path, msg_sha, notional, limits, now):
@@ -336,7 +438,7 @@ def update_state(path, msg_sha, notional, limits, now):
              "notional_usdc_atoms": state["notional_usdc_atoms"] + notional,
              "messages": state["messages"] + [msg_sha]}
     directory = os.path.dirname(os.path.abspath(path))
-    os.makedirs(directory, exist_ok=True)
+    os.makedirs(directory, mode=0o700, exist_ok=True)
     fd, tmp = tempfile.mkstemp(prefix=".signer-", dir=directory)
     with os.fdopen(fd, "w") as handle:
         json.dump(state, handle)
@@ -344,6 +446,11 @@ def update_state(path, msg_sha, notional, limits, now):
         os.fsync(handle.fileno())
     os.replace(tmp, path)
     return state
+
+
+def state_path(registry, wallet):
+    """The daily-cap file is per WALLET, in the wallet registry, not caller-chosen (F7)."""
+    return os.path.join(registry, "%s.signer-state.json" % wallet)
 
 
 def load_nacl():
@@ -354,7 +461,7 @@ def load_nacl():
         return None
 
 
-def handle(request, mandate_path, arm_path, state_path, now, signing, uid, repo=REPO):
+def handle(request, mandate_path, arm_path, registry, now, signing, uid, repo=REPO):
     """All checks, then the signature. Returns the signature bytes or raises Refused."""
     if signing is None:
         raise Refused(NO_NACL)
@@ -368,15 +475,17 @@ def handle(request, mandate_path, arm_path, state_path, now, signing, uid, repo=
     wallet = mandate["wallet_pubkey"]
     check_arm(arm_path, mandate_sha, wallet)
     bundle = request.get("bundle")
-    notional = check_bundle(bundle, msg, mandate, limits)
-    check_message(msg, wallet, bundle)
+    check_bundle_shape(bundle, msg, mandate)
+    swap = check_message(msg, wallet, bundle)
+    notional = check_bundle(bundle, msg, mandate, limits, swap)
     key = load_keypair(mandate["keypair_path"], uid, repo)
     try:
+        # PyNaCl needs an immutable bytes seed; that copy cannot be wiped (residual, DESIGN §10)
         signing_key = signing.SigningKey(bytes(key[:32]))
         derived = bytes(signing_key.verify_key)
         if derived != bytes(key[32:]) or derived != b58decode32(wallet):
             raise Refused("keypair does not belong to the mandate wallet")
-        update_state(state_path, hashlib.sha256(msg).hexdigest(), notional, limits, now)
+        update_state(state_path(registry, wallet), hashlib.sha256(msg).hexdigest(), notional, limits, now)
         signature = bytes(signing_key.sign(msg).signature)
     finally:
         for i in range(len(key)):
@@ -391,8 +500,8 @@ def main(argv=None, stdin=None, stdout=None, signing=None, now=None, uid=None):
     stdin = stdin or sys.stdin
     stdout = stdout or sys.stdout
     args = dict(zip(argv[::2], argv[1::2]))
-    if set(args) != {"--mandate", "--arm", "--state"} or len(argv) != 6:
-        stdout.write(json.dumps({"error": "usage: signer.py --mandate M --arm A --state S"}))
+    if set(args) != {"--mandate", "--arm", "--registry"} or len(argv) != 6:
+        stdout.write(json.dumps({"error": "usage: signer.py --mandate M --arm A --registry DIR"}))
         return 2
     signing = load_nacl() if signing is None else signing
     if signing is None:
@@ -400,7 +509,7 @@ def main(argv=None, stdin=None, stdout=None, signing=None, now=None, uid=None):
         return 3
     try:
         request = strict_json(stdin.read(200_000))
-        signature = handle(request, args["--mandate"], args["--arm"], args["--state"],
+        signature = handle(request, args["--mandate"], args["--arm"], args["--registry"],
                            time.time() if now is None else now, signing,
                            os.getuid() if uid is None else uid)
     except Refused as exc:

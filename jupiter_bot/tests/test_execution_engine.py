@@ -71,7 +71,8 @@ class HappyPath(Base):
         fills = engine.ledger().fills()
         self.assertEqual(fills[1]["side"], "SELL")
         self.assertEqual(engine.ledger().position(), (0, 0))
-        expected = 124_994_700 * 190 // 1000 - 25_000_000
+        # the network fee of the full sell (5_300 lamports beyond the position) is a cost too (F14)
+        expected = 124_994_700 * 190 // 1000 - 25_000_000 - (-(-5_300 * 190 // 1000))
         self.assertEqual(fills[1]["realized_pnl_usdc"], expected)
         self.assertAlmostEqual(engine.status()[0]["today_realized_pnl_usdc"], expected / 1e6)
 
@@ -142,6 +143,17 @@ class UnknownOutcomes(Base):
         self.assertLess(fill["realized_pnl_usdc"], 0)
         self.assertEqual(engine.ledger().position(), (0, 0))
 
+    def test_fee_above_verified_is_an_anomaly(self):
+        self.env.chain.land_effect = None
+        original = F.tx_effect
+        F.tx_effect = lambda raw: (lambda e, f: (e, f + 1))(*original(raw))          # chain charges 1 more
+        try:
+            result = self.env.engine().run_once()
+        finally:
+            F.tx_effect = original
+        self.assertEqual(result["state"], CONFIRMED)
+        self.assertFalse(self.env.paths.arm.exists())
+
     def test_anomalous_fill_is_booked_and_disarms(self):
         self.env.chain.land_effect = {"lamports": 1_000_000, USDC.mint: -25_000_000}   # far below threshold
         engine = self.env.engine()
@@ -150,6 +162,116 @@ class UnknownOutcomes(Base):
         self.assertFalse(self.env.paths.arm.exists())
         self.assertEqual(engine.ledger().events("anomaly_disarmed")[0]["data"]["order_id"], result["order_id"])
         self.assertEqual(engine.status()[0]["mode"], "DISARMED")
+
+
+class ExpiryEvidence(Base):
+    """F5: EXPIRED only on positive evidence; a lagging or history-less RPC keeps the order UNKNOWN."""
+
+    def setUp(self):
+        super().setUp()
+        self.env.mandate()
+        self.env.review()
+        self.env.dry_runs()
+        self.env.arm()
+
+    def test_history_less_rpc_after_landing_stays_unknown(self):        # review probe E1
+        self.env.jupiter.execute_mode = "timeout_landed"
+        self.env.chain.land_status = "confirmed"
+        engine = self.env.engine()
+        first = engine.run_once()
+        self.assertEqual(first["state"], UNKNOWN)
+        self.env.chain.history = False                                  # the provider forgot it
+        self.env.chain.height += 400
+        self.env.jupiter.execute_mode = "ok"
+        second = engine.run_once()
+        self.assertEqual(second["action"], "WAIT")
+        self.assertIn("balances changed", second["resolved"][0][1])
+        self.assertEqual(self.states(first["order_id"])[-1], UNKNOWN)
+        self.assertEqual(len(self.env.jupiter.orders), 1)               # no second BUY
+        self.assertEqual(engine.ledger().events("expiry_blocked")[0]["data"]["order_id"], first["order_id"])
+        self.env.chain.history, self.env.chain.land_status = True, "finalized"   # a better RPC
+        third = engine.run_once()
+        self.assertEqual(third["resolved"][0][1], CONFIRMED)
+
+    def test_lagging_status_node_stays_unknown(self):
+        self.env.jupiter.execute_mode = "timeout_lost"
+        engine = self.env.engine()
+        first = engine.run_once()
+        self.env.chain.height += 400
+        self.env.chain.status_lag = 100                                 # answer older than the finalized slot
+        second = engine.run_once()
+        self.assertIn("older than the finalized", second["resolved"][0][1])
+        self.assertEqual(self.states(first["order_id"])[-1], UNKNOWN)
+        self.env.chain.status_lag = 0
+        third = engine.run_once()
+        self.assertEqual(third["resolved"][0][1], EXPIRED)
+        expired = engine.ledger().order(first["order_id"])["events"][-1]["data"]
+        self.assertGreaterEqual(expired["status_context_slot"], expired["finalized_slot"])
+
+    def test_found_via_history_only_is_booked(self):
+        self.env.jupiter.execute_mode = "timeout_landed"
+        self.env.chain.land_status = "confirmed"
+        engine = self.env.engine()
+        first = engine.run_once()
+        self.env.chain.height += 400
+        self.env.chain.land_status = "finalized"
+        status = self.env.chain.rpc
+        self.env.chain.rpc = lambda m, p: ({"context": {"slot": 10**6}, "value": [None]}
+                                           if m == "getSignatureStatuses" else status(m, p))
+        engine.run_once()
+        self.assertEqual(self.states(first["order_id"])[-1], CONFIRMED)
+
+    def test_force_expire_needs_phrase_and_chain_proof(self):
+        from jupiter_bot.execution.engine import force_expire
+        self.env.jupiter.execute_mode = "timeout_lost"
+        engine = self.env.engine()
+        order_id = engine.run_once()["order_id"]
+        with self.assertRaises(Rejected):
+            force_expire(engine, order_id, lambda p: "EXPIRE %s" % order_id[:8], True)     # can still land
+        self.env.chain.height += 400
+        with self.assertRaises(Rejected):
+            force_expire(engine, order_id, lambda p: "EXPIRE %s" % order_id[:8], False)    # no terminal
+        with self.assertRaises(Rejected):
+            force_expire(engine, order_id, lambda p: "yes", True)
+        self.assertEqual(force_expire(engine, order_id, lambda p: "EXPIRE %s" % order_id[:8], True),
+                         [(order_id, EXPIRED)])
+
+
+class WalletWide(Base):
+    """F7: one wallet = one ledger and one lock, whatever --data-dir says."""
+
+    def test_second_data_dir_cannot_trade_the_same_wallet(self):        # review probe E2
+        self.env.ready_live()
+        self.env.jupiter.execute_mode = "timeout_lost"
+        a = self.env.engine()
+        self.assertEqual(a.run_once()["state"], UNKNOWN)
+        other = config.Paths.defaults(mandate=self.env.paths.mandate, data_dir=self.env.tmp / "data2",
+                                      journal=self.env.paths.journal, repo=self.env.repo,
+                                      wallets=self.env.paths.wallets)
+        b = self.env.engine()
+        b.paths = other
+        for _ in range(3):
+            b.dry_run_once()
+        status, state = b.status()
+        self.assertEqual(status["mode"], "DISARMED")
+        self.assertIn("not bound to this ledger", state.reason)
+        self.env.jupiter.execute_mode = "ok"
+        self.assertEqual(b.run_once()["action"], "NONE")
+        with self.assertRaises(Rejected):                               # and it cannot re-arm itself there
+            from jupiter_bot.execution.engine import arm as arm_fn
+            from jupiter_bot.execution.ledger import Ledger
+            ledger = Ledger(other.ledger)
+            try:
+                arm_fn(other, "LIVE", [], lambda p: "ARM LIVE %s" % F.WALLET[:8], True, F.NOW, ledger,
+                       self.env.gate_options(), out=lambda *x: None)
+            finally:
+                ledger.close()
+
+    def test_wallet_lock_is_shared_across_data_dirs(self):
+        self.env.mandate()
+        with process_lock(self.env.paths.wallet_lock(F.WALLET)):
+            with self.assertRaises(Rejected):
+                self.env.engine().dry_run_once()
 
 
 class Restart(Base):
@@ -189,10 +311,47 @@ class Restart(Base):
         self.assertEqual(self.states(row["order_id"]), [INTENT, FAILED])
         self.assertEqual(result["state"], CONFIRMED)
 
+    def test_execute_redirect_is_unknown_not_a_crash(self):                # review probe E4
+        def redirect(body):
+            self.env.jupiter.executes.append(body)
+            raise Rejected("Redirect rejected; no alternate endpoint is allowed")
+        self.env.jupiter.execute = redirect
+        result = self.env.engine().run_once()
+        self.assertEqual(result["state"], UNKNOWN)
+
     def test_second_process_is_locked_out(self):
         with process_lock(self.env.paths.lock):
             with self.assertRaises(Rejected):
                 self.env.engine().run_once()
+
+
+class SignatureCheck(unittest.TestCase):
+    """The engine's own PyNaCl check, with and without nacl importable (F9)."""
+
+    def test_default_verifier(self):
+        import types
+        from unittest import mock
+        from jupiter_bot.execution.engine import _verify_signature
+
+        class BadSignatureError(Exception):
+            pass
+
+        class VerifyKey:
+            def __init__(self, raw):
+                self.raw = raw
+
+            def verify(self, message, signature):
+                if signature != b"good" * 16:
+                    raise BadSignatureError()
+        signing = types.SimpleNamespace(VerifyKey=VerifyKey)
+        exceptions = types.SimpleNamespace(BadSignatureError=BadSignatureError)
+        nacl = types.SimpleNamespace(signing=signing, exceptions=exceptions)
+        with mock.patch.dict(sys.modules, {"nacl": nacl, "nacl.signing": signing, "nacl.exceptions": exceptions}):
+            _verify_signature(F.WALLET, b"m", b"good" * 16)
+            with self.assertRaises(Rejected):
+                _verify_signature(F.WALLET, b"m", b"bad!" * 16)
+        with mock.patch.dict(sys.modules, {"nacl": None, "nacl.signing": None, "nacl.exceptions": None}):
+            self.assertIsNone(_verify_signature(F.WALLET, b"m", b"anything"))
 
 
 class Limits(Base):
@@ -261,9 +420,15 @@ class KillSwitch(Base):
             gates.remove_arm(self.env.paths.arm)
             return signature
         self.env.signer.sign = sign_then_disarm
-        result = self.env.engine().run_once()
-        self.assertEqual(self.states(result["order_id"]), [INTENT, VERIFIED, SIGNED, FAILED])
+        engine = self.env.engine()
+        result = engine.run_once()
+        # not sent, but kept open until it provably expired: no new order meanwhile (F13 follow-up)
+        self.assertEqual(self.states(result["order_id"]), [INTENT, VERIFIED, SIGNED, UNKNOWN])
         self.assertEqual(self.env.jupiter.executes, [])
+        self.env.chain.height += 400
+        engine.run_once()
+        self.assertEqual(self.states(result["order_id"])[-1], EXPIRED)
+        self.assertEqual(len(self.env.jupiter.orders), 1)                # still disarmed: nothing new
 
     def test_mandate_change_disarms(self):
         self.env.ready_live()
@@ -380,6 +545,17 @@ class DryRun(Base):
         self.assertEqual(self.env.signer.calls, [])
         self.assertEqual(self.env.jupiter.executes, [])
         self.assertEqual(self.env.jupiter.orders[0]["taker"], F.WALLET)
+
+    def test_dry_run_records_decoded_instruction_for_review(self):
+        self.env.mandate()
+        detail = self.env.engine().dry_run_once()["detail"]
+        self.assertEqual(detail["jupiter_instruction"]["variant"], "route")
+        self.assertEqual(detail["jupiter_instruction"]["in_amount"], detail["amount"])
+        self.assertEqual(detail["expected_fee"], 5_300)
+        self.assertIn(F.WHIRLPOOL, detail["inner_programs"])
+        self.env.jupiter.tx_options = {"variant": "route_v2"}
+        failed = self.env.engine().dry_run_once()["detail"]
+        self.assertIn(F.disc("route_v2").hex(), failed["error"])        # Anton sees which variant Jupiter used
 
     def test_dry_run_probe_when_no_trade_needed_and_failure_recorded(self):
         self.env.mandate()

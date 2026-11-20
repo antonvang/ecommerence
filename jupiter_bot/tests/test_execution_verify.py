@@ -3,9 +3,9 @@ import tempfile
 import unittest
 
 from jupiter_bot.core import SOL, USDC, Rejected
-from jupiter_bot.execution import config
 from jupiter_bot.execution import mandate as M
 from jupiter_bot.execution.jupiter_exec import make_request
+from jupiter_bot.execution.solana_tx import TOKEN_PROGRAM
 from jupiter_bot.execution.verify import verify
 from jupiter_bot.tests import execution_fakes as F
 from jupiter_bot.tests.guard import setUpModule, tearDownModule  # noqa: F401
@@ -42,8 +42,13 @@ class HappyPath(Base):
     def test_buy_and_sell_verify(self):
         order, verified = self.run_verify("BUY")
         self.assertEqual(verified.deltas[USDC.mint], -25_000_000)
-        self.assertGreaterEqual(verified.deltas["sol"], order.min_out - config.FEE_CAP_LAMPORTS)
-        self.assertEqual(verified.priority_lamports, 300)
+        self.assertEqual(verified.deltas["sol"], order.out_amount - 5_300)       # computed from the tx itself
+        self.assertEqual((verified.priority_lamports, verified.network_fee, verified.expected_fee), (300, 5_300, 5_300))
+        self.assertEqual(verified.swap, {"variant": "route", "in_amount": 25_000_000,
+                                         "quoted_out_amount": 125_000_000, "slippage_bps": 50,
+                                         "platform_fee_bps": 0, "min_out": order.min_out})
+        self.assertEqual(verified.inner_programs, tuple(sorted({F.WHIRLPOOL, TOKEN_PROGRAM})))
+        self.assertEqual(verified.pre["sol"], 1_000_000_000)
         self.assertEqual(verified.created_atas, {F.WSOL_ATA: SOL.mint})
         self.assertEqual(verified.lookups, {F.ALT: 3})
         order, verified = self.run_verify("SELL")
@@ -91,23 +96,123 @@ class TransactionRejections(Base):
 class SimulationRejections(Base):
     def test_output_below_threshold(self):
         self.env.chain.sim_effect = {"lamports": 100_000_000, USDC.mint: -25_000_000}
-        self.assertRejected("receives less SOL")
+        self.assertRejected("Receives less SOL")
 
     def test_sell_output_below_threshold(self):
         self.env.chain.sim_effect = {"lamports": -125_005_300, USDC.mint: 20_000_000}
-        self.assertRejected("receives less USDC", side="SELL")
+        self.assertRejected("Receives less USDC", side="SELL")
 
     def test_spends_more_than_intended(self):
         self.env.chain.sim_effect = {"lamports": 124_000_000, USDC.mint: -26_000_000}
-        self.assertRejected("spends more USDC")
+        self.assertRejected("Spends more USDC")
 
     def test_sol_drain_on_sell(self):
         self.env.chain.sim_effect = {"lamports": -(125_000_000 + 10**9 // 2), USDC.mint: 25_000_000}
-        self.assertRejected("spends more SOL", side="SELL")
+        self.assertRejected("Spends more SOL", side="SELL")
 
     def test_delegate_set_during_swap(self):
         self.env.chain.sim_delegate = True
         self.assertRejected("delegate")
+
+
+class ExactFee(Base):
+    """F6: no fixed tolerance; only this transaction's own fee may be added on the SOL side."""
+
+    def test_small_buy_cannot_hide_a_bad_fill_in_a_fee_cap(self):          # review probe P2
+        self.env.chain.sim_effect = {"lamports": 400_000, USDC.mint: -1_000_000}
+        self.assertRejected("Receives less SOL", amount=1_000_000)
+
+    def test_sell_cannot_leak_extra_sol(self):                               # review probe P3
+        self.env.chain.sim_effect = {"lamports": -(125_000_000 + 4_500_000), USDC.mint: 25_000_000}
+        self.assertRejected("Spends more SOL", side="SELL")
+        self.env.chain.sim_effect = {"lamports": -(125_000_000 + 5_301), USDC.mint: 25_000_000}
+        self.assertRejected("Spends more SOL", side="SELL")                 # one lamport over the exact fee
+        self.env.chain.sim_effect = {"lamports": -(125_000_000 + 5_300), USDC.mint: 25_000_000}
+        self.run_verify(side="SELL")                                         # exactly the fee: fine
+
+
+class WalletAccount(Base):
+    """F2: the wallet must stay a plain System account in the simulated post-state."""
+
+    def test_owner_change_rejected(self):                                    # review probe P1
+        self.env.chain.sim_wallet = {"owner": F.EVIL_PROGRAM}
+        self.assertRejected("plain System account")
+
+    def test_data_or_executable_rejected(self):
+        self.env.chain.sim_wallet = {"data": b"\x01" * 64}
+        self.assertRejected("plain System account")
+        self.env.chain.sim_wallet = {"executable": True}
+        self.assertRejected("plain System account")
+
+
+class JupiterInstruction(Base):
+    """F3: the route instruction's own arguments are decoded and checked before signing."""
+
+    def test_in_amount_must_match(self):
+        self.assertRejected("in_amount", ix_in_amount=24_000_000)
+
+    def test_slippage_and_fee(self):
+        self.assertRejected("slippage", ix_slippage=10_000)                  # a loose floor = sandwich bait
+        self.assertRejected("platform fee", ix_fee=200)
+
+    def test_floor_below_threshold(self):
+        self.assertRejected("floor", quoted_out=100_000_000)
+
+    def test_variants(self):
+        self.assertRejected("route_with_token_ledger", variant="route_with_token_ledger")
+        self.assertRejected("route_v2", variant="route_v2")
+        self.assertRejected("unknown", raw_route=b"\x00" * 40)
+        self.assertRejected("too short", raw_route=F.disc("route") + b"\x00" * 5)
+        order, verified = self.run_verify(variant="shared_accounts_route")
+        self.assertEqual(verified.swap["variant"], "shared_accounts_route")
+
+    def test_exactly_one_route(self):
+        self.assertRejected("exactly one Jupiter", jupiter_count=2)
+
+
+class Programs(Base):
+    """F4 and the static allowlist."""
+
+    def test_unknown_static_program(self):
+        self.assertRejected("not on the allowlist", static_program=F.EVIL_PROGRAM)
+
+    def test_rpc_without_inner_instructions_fails_closed(self):
+        self.env.chain.inner = None
+        self.assertRejected("innerInstructions")
+
+    def test_inner_program_not_allowlisted(self):
+        self.env.chain.inner = [F.WHIRLPOOL, F.EVIL_PROGRAM]
+        self.assertRejected("Inner instruction invokes %s" % F.EVIL_PROGRAM)
+
+    def test_executable_account_in_lookup_table(self):
+        original = F.build_swap_tx
+
+        def with_program_in_table(*args, **kwargs):
+            raw, table = original(*args, **kwargs)
+            return raw, table[:2] + [F.EVIL_PROGRAM]
+        self.env.chain.executables.add(F.EVIL_PROGRAM)
+        F.build_swap_tx = with_program_in_table
+        try:
+            self.assertRejected("Executable account %s" % F.EVIL_PROGRAM)
+        finally:
+            F.build_swap_tx = original
+
+    def test_token_2022_accounts_rejected(self):
+        self.env.chain.token_2022 = [{"pubkey": F.key("t22"), "account": None}]
+        self.assertRejected("Token-2022")
+
+
+class Structure(Base):
+    """F12: duplicate accounts and derived addresses are checked locally."""
+
+    def test_account_loaded_twice(self):                                     # review probe P5
+        self.assertRejected("loaded twice", alt_duplicate=True)
+
+    def test_ata_at_non_derived_address(self):                               # review probe P6
+        self.assertRejected("derived ATA", ata_address=F.key("attacker-chosen"))
+
+    def test_wrap_to_non_derived_account(self):
+        self.assertRejected("own wSOL ATA", side="SELL", transfer_to=F.key("attacker-chosen"))
 
 
 class DrainOfAnotherToken(Base):
@@ -116,7 +221,7 @@ class DrainOfAnotherToken(Base):
 
     def test_other_balance_decrease(self):
         self.env.chain.sim_effect = {"lamports": 124_990_000, USDC.mint: -25_000_000, F.OTHER_MINT: -1}
-        self.assertRejected("decreases another taker balance")
+        self.assertRejected("Decreases another taker balance")
 
 
 class OrderRejections(Base):
