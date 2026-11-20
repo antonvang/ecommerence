@@ -91,3 +91,19 @@ Den lokale journal og råfilerne fra kørslerne ligger under den git-ignorerede
 Ikke verificeret: installation med rigtig `systemctl --user` på Antons pc. Det
 kører først, når Anton kører scriptet der. GitHub-feedet fra en hjemmeforbindelse
 er heller ikke prøvet.
+
+### Binance-vært skiftet, 2026-11-20 (`6263d56`, Anton/Linux-session)
+
+På Antons Linux-pc svarer den lokale DNS (192.168.1.3) `0.0.0.0` for
+`data-api.binance.vision`. Derfor fejlede `candles_1m` i hver cyklus
+(`TRANSPORT_ERROR`, `ConnectionRefused`). Anton ville ikke ændre DNS, så
+collectoren henter nu fra `api.binance.com`, samme `/api/v3/klines`. Allowlisten
+tillader stadig kun nøglefri GET på `/api/v3/klines` med `symbol/interval/limit`.
+`source`-id'et er uændret, og `fetches.url` viser værten for hvert svar.
+
+Verificeret: Linux-sessionen kørte én cyklus med `candles_1m` OK. Gennemgået i
+cloud-sessionen: diffen og 98 tests OK på 3.11–3.13. Live-fixtures og de
+tidligere cloud-kørsler stammer fra `data-api.binance.vision` og er bevaret
+som historik. Cloud-miljøet "ecommerence" tillader endnu ikke
+`api.binance.com`, så et cloud-`live-check` vil fejle på candles, indtil
+værten tilføjes.

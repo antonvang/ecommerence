@@ -57,6 +57,17 @@ git -C ~/jupiter-collector pull                              # opdatér; næste 
 Exitkode pr. cyklus: 0 = alt OK, 1 = nogle kilder fejlede (vist som "failed"
 i systemd indtil næste OK-cyklus), 2 = alle fejlede.
 
+## Fejlsøgning
+
+- Et job med `FAILED` og `URLError(ConnectionRefusedError)` skyldes typisk en
+  DNS-blocker (Pi-hole/AdGuard), der svarer `0.0.0.0`. Tjek med
+  `dig +short <vært> @<din DNS>`. Sådan blev `data-api.binance.vision` fundet
+  blokeret 2026-11-20. Collectoren bruger derfor `api.binance.com` (commit
+  `6263d56`, samme `/api/v3/klines`).
+- Status pr. job ses i den seneste linje i
+  `journalctl --user -u jupiter-collect.service`. Hvert forsøg, også fejl,
+  står i journalen (`journal-status`, feltet `outcomes`).
+
 ## Grænser
 
 - Det er indsamling, ikke forskning. Data må først bruges efter en låst

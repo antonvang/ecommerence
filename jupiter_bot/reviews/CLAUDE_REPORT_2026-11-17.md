@@ -124,3 +124,16 @@ Anton). Diskforbruget er skønnet til ca. 10 MB/døgn. Brugsvilkårene er stadig
 ikke læst.
 
 **Næste:** Uændret: P2-planen låses, før de indsamlede data analyseres.
+
+---
+
+## Opdatering 2026-11-20 (3) — indsamleren kører på Antons Linux-pc
+
+- Installeret med `install-collector.sh`; timeren er aktiv.
+- `candles_1m` fejlede i hver cyklus, fordi Antons lokale DNS blokerer
+  `data-api.binance.vision`. En Claude-session på pc'en fandt årsagen. Anton
+  committede skiftet til `api.binance.com` (`6263d56`), og candles hentes nu.
+  Cloud-sessionen har gennemgået diffen; 98 tests OK.
+- Åbent: Copybot bruger samme blokerede vært. Det er **ikke** ændret, fordi
+  overdragelsen forbyder ændringer i Copybot-driften. Anton skal selv beslutte
+  det (allowliste i DNS eller kodeændring).
