@@ -42,7 +42,25 @@ sidst skriver det `~/.config/systemd/user/jupiter-collect.{service,timer}` og
 starter timeren. `--dry-run` gør det samme undtagen `systemctl`.
 
 Timeren kører, mens du er logget ind. Skal den også køre, når du er logget ud,
-er det dit valg: `loginctl enable-linger "$USER"`.
+er det dit valg: `loginctl enable-linger "$USER"`. (På Antons pc er linger
+slået til: `loginctl show-user "$USER" -p Linger` → `yes`.)
+
+## Alarm og backup
+
+```bash
+~/jupiter-collector/jupiter_bot/deploy/linux/install-ops.sh
+```
+
+To brugertimere, der kun læser journalen:
+
+- `jupiter-health` hvert 15. minut: hvis en kilde ikke har haft et OK-kald i
+  15 min (Binance, Jupiter) eller 3 t (statussider, releases), kommer en
+  skrivebordsnotifikation og en fejllinje i journald. Den gentages ved ændring,
+  ellers højst hver 6. time, og der kommer én besked, når alt er OK igen.
+- `jupiter-backup` dagligt kl. 03:30 (indhentes, hvis pc'en var slukket):
+  konsistent SQLite-kopi i `~/.local/share/jupiter-bot/backups/`, tjekket med
+  `quick_check`. De nyeste 7 beholdes. Kopien ligger på samme disk, så den
+  beskytter mod korruption og sletning, ikke mod diskfejl.
 
 ## Daglig brug
 
