@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-# Install two systemd *user* timers next to the collector (install-collector.sh first):
+# Install three systemd *user* timers next to the collector (install-collector.sh first):
 #   jupiter-health  every 15 min: desktop alert + journald error if a source is stale
 #   jupiter-backup  daily 03:30:  consistent copy of the journal, newest 7 kept
-# Both only read the journal. Backups land in $JUPITER_DATA_DIR/backups, which is
+#   jupiter-forward every 30 min: forward paper view of the locked P2 strategies (no-op until locked)
+# All three only read the journal. Backups land in $JUPITER_DATA_DIR/backups, which is
 # on the same disk: it protects against corruption and deletion, not disk loss.
 set -euo pipefail
 
@@ -40,6 +41,32 @@ Nice=10
 NoNewPrivileges=yes
 EOF
 done
+cat > "$UNIT_DIR/jupiter-forward.service" <<EOF
+# Installed by jupiter_bot/deploy/linux/install-ops.sh. Reads the journal only.
+[Unit]
+Description=jupiter_bot forward paper view (locked P2 strategies; no orders)
+Documentation=file://$REPO/jupiter_bot/research/P2_PLAN.md
+
+[Service]
+Type=oneshot
+WorkingDirectory=$REPO
+ExecStart="$PYTHON" -m jupiter_bot.research.forward --journal "$JOURNAL"
+TimeoutStartSec=900
+Nice=15
+NoNewPrivileges=yes
+EOF
+cat > "$UNIT_DIR/jupiter-forward.timer" <<'EOF'
+# Installed by jupiter_bot/deploy/linux/install-ops.sh.
+[Unit]
+Description=Recompute the forward paper view every 30 min (does nothing until the plan is locked)
+
+[Timer]
+OnCalendar=*:04/30:40
+Persistent=false
+
+[Install]
+WantedBy=timers.target
+EOF
 cat > "$UNIT_DIR/jupiter-health.timer" <<'EOF'
 # Installed by jupiter_bot/deploy/linux/install-ops.sh.
 [Unit]
@@ -66,5 +93,5 @@ WantedBy=timers.target
 EOF
 
 systemctl --user daemon-reload
-systemctl --user enable --now jupiter-health.timer jupiter-backup.timer
+systemctl --user enable --now jupiter-health.timer jupiter-backup.timer jupiter-forward.timer
 systemctl --user list-timers 'jupiter-*' --no-pager || true

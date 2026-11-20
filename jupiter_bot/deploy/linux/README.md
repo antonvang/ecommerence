@@ -62,14 +62,39 @@ To brugertimere, der kun læser journalen:
   `quick_check`. De nyeste 7 beholdes. Kopien ligger på samme disk, så den
   beskytter mod korruption og sletning, ikke mod diskfejl.
 
+## Dashboard
+
+```bash
+~/jupiter-collector/jupiter_bot/deploy/linux/install-dashboard.sh
+```
+
+Én brugertjeneste, `jupiter-dashboard`, der kører hele tiden og genstarter ved
+fejl. Åbn <http://127.0.0.1:8787/> i browseren. Den lytter kun på 127.0.0.1, så
+andre maskiner på netværket kan ikke se den. Siden opdaterer sig selv hvert 30.
+sekund og virker uden internet (ingen eksterne skrifttyper eller scripts).
+
+Dashboardet læser kun. Journalen åbnes skrivebeskyttet ved hvert kald. Det
+læser også backups, `health-state.json`, `research/` og
+`~/.config/jupiter-bot/mandate.json`. Fra mandatet vises kun den offentlige
+nøgle og grænserne. Andre felter vises aldrig. Alt andet end GET afvises med 405.
+
+Sektioner: status (samme regler som alarmen), indsamling pr. kilde, marked
+(Binance-close med Jupiters købs- og salgspris og afstanden i bps), forskning
+(planens tilstand og evalueringskørsler), papirhandel og rigtig handel. Det,
+der ikke er bygget endnu, vises som "kommer" eller "ikke bygget".
+
+Uden systemd: `cd ~/jupiter-collector && python3 -m jupiter_bot.dashboard --journal ~/.local/share/jupiter-bot/observations.db`.
+Anden port: `JUPITER_DASHBOARD_PORT=8790` foran installationsscriptet.
+
 ## Daglig brug
 
 ```bash
 systemctl --user list-timers jupiter-collect.timer           # næste kørsel
+systemctl --user status jupiter-dashboard.service            # dashboardet kører?
 journalctl --user -u jupiter-collect.service -n 20           # én JSON-linje pr. cyklus
 cd ~/jupiter-collector && python3 -m jupiter_bot journal-status --journal ~/.local/share/jupiter-bot/observations.db
 git -C ~/jupiter-collector pull                              # opdatér; næste cyklus bruger ny kode
-~/jupiter-collector/jupiter_bot/deploy/linux/uninstall-collector.sh   # stop (data bevares)
+~/jupiter-collector/jupiter_bot/deploy/linux/uninstall-collector.sh   # stop alt, også dashboard (data bevares)
 ```
 
 Exitkode pr. cyklus: 0 = alt OK, 1 = nogle kilder fejlede (vist som "failed"

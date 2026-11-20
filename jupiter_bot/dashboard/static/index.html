@@ -1,0 +1,952 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>jupiter_bot overvågning</title>
+<style>
+:root {
+  color-scheme: light;
+  --page: #f9f9f7;
+  --surface: #fcfcfb;
+  --surface-2: #f3f2ee;
+  --ink: #0b0b0b;
+  --ink-2: #52514e;
+  --muted: #898781;
+  --grid: #e1e0d9;
+  --axis: #c3c2b7;
+  --border: rgba(11,11,11,0.10);
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --seq-track: #cde2fb;
+  --seq-fill: #2a78d6;
+  --good: #0ca30c;
+  --good-text: #006300;
+  --warning: #fab219;
+  --serious: #ec835a;
+  --critical: #d03b3b;
+  --critical-wash: rgba(208,59,59,0.08);
+  --warning-wash: rgba(250,178,25,0.14);
+  --holdout-wash: rgba(98,80,214,0.08);
+  --holdout: #6250d6;
+  --shadow: 0 1px 2px rgba(11,11,11,0.04);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --page: #0d0d0d;
+    --surface: #1a1a19;
+    --surface-2: #222220;
+    --ink: #f0efec;
+    --ink-2: #c3c2b7;
+    --muted: #898781;
+    --grid: #2c2c2a;
+    --axis: #383835;
+    --border: rgba(255,255,255,0.10);
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --series-3: #199e70;
+    --seq-track: #184f95;
+    --seq-fill: #3987e5;
+    --good-text: #0ca30c;
+    --critical-wash: rgba(208,59,59,0.16);
+    --warning-wash: rgba(250,178,25,0.12);
+    --holdout-wash: rgba(144,133,233,0.12);
+    --holdout: #9085e9;
+    --shadow: none;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d;
+  --surface: #1a1a19;
+  --surface-2: #222220;
+  --ink: #f0efec;
+  --ink-2: #c3c2b7;
+  --muted: #898781;
+  --grid: #2c2c2a;
+  --axis: #383835;
+  --border: rgba(255,255,255,0.10);
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --seq-track: #184f95;
+  --seq-fill: #3987e5;
+  --good-text: #0ca30c;
+  --critical-wash: rgba(208,59,59,0.16);
+  --warning-wash: rgba(250,178,25,0.12);
+  --holdout-wash: rgba(144,133,233,0.12);
+  --holdout: #9085e9;
+  --shadow: none;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--page); color: var(--ink);
+  font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; }
+.num { font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); }
+.ink2 { color: var(--ink-2); }
+
+/* Top bar */
+.topbar {
+  position: sticky; top: 0; z-index: 10;
+  background: var(--surface); border-bottom: 1px solid var(--border);
+}
+.topbar-inner {
+  max-width: 1240px; margin: 0 auto; padding: 10px 16px;
+  display: flex; align-items: center; gap: 12px 20px; flex-wrap: wrap;
+}
+.brand { font-weight: 600; letter-spacing: -0.01em; white-space: nowrap; }
+.brand span { color: var(--muted); font-weight: 400; }
+.pill {
+  display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px 3px 7px;
+  border-radius: 999px; font-weight: 600; font-size: 13px; border: 1px solid var(--border);
+  background: var(--surface-2); white-space: nowrap;
+}
+.pill svg { width: 16px; height: 16px; flex: none; }
+.meta { margin-left: auto; display: flex; gap: 6px 18px; flex-wrap: wrap; color: var(--ink-2); font-size: 13px; }
+.meta b { color: var(--ink); font-weight: 600; }
+button.ghost {
+  font: inherit; font-size: 13px; color: var(--ink-2); background: transparent;
+  border: 1px solid var(--border); border-radius: 6px; padding: 2px 10px; cursor: pointer;
+}
+button.ghost:hover { background: var(--surface-2); color: var(--ink); }
+.reasons { max-width: 1240px; margin: 0 auto; padding: 12px 16px 0; display: none; }
+.reasons.show { display: block; }
+.reasons ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px; }
+.reasons li { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; color: var(--ink-2); }
+.reasons li svg { width: 14px; height: 14px; flex: none; margin-top: 2px; }
+
+main { max-width: 1240px; margin: 0 auto; padding: 16px 16px 48px; display: flex; flex-direction: column; gap: 16px; }
+section.card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+  padding: 16px 18px 18px; box-shadow: var(--shadow); transition: opacity .2s; min-width: 0;
+}
+section.card.loading { opacity: .6; }
+.card-head { display: flex; align-items: baseline; gap: 8px 16px; flex-wrap: wrap; margin-bottom: 12px; }
+h2 { font-size: 16px; margin: 0; font-weight: 600; letter-spacing: -0.01em; }
+h3 { font-size: 13px; margin: 18px 0 8px; font-weight: 600; color: var(--ink-2); }
+.card-head .sub { color: var(--muted); font-size: 13px; }
+.card-head .right { margin-left: auto; }
+
+/* Stat tiles */
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+.tile { background: var(--surface-2); border-radius: 8px; padding: 10px 12px; min-width: 0; }
+.tile .label { font-size: 12px; color: var(--ink-2); display: flex; align-items: center; gap: 6px; }
+.tile .value { font-size: 22px; font-weight: 600; letter-spacing: -0.01em; margin-top: 2px; overflow-wrap: anywhere; }
+.tile .value small { white-space: nowrap; }
+.tile .value small { font-size: 13px; font-weight: 500; color: var(--ink-2); margin-left: 3px; }
+.tile .foot { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.key { display: inline-block; width: 12px; height: 2px; border-radius: 1px; flex: none; }
+
+/* Tables */
+.table-wrap { overflow-x: auto; margin: 0 -2px; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+table.wide { min-width: 760px; }
+table.wide td:first-child { min-width: 180px; }
+th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--grid); vertical-align: top; }
+th { font-weight: 500; color: var(--muted); font-size: 12px; white-space: nowrap; }
+td.r, th.r { text-align: right; font-variant-numeric: tabular-nums; }
+td.err { color: var(--ink-2); max-width: 340px; overflow-wrap: anywhere; }
+tr:last-child td { border-bottom: 0; }
+tr.holdout td { background: var(--holdout-wash); }
+tr.holdout td:first-child { box-shadow: inset 3px 0 0 var(--holdout); }
+.tag { display: inline-block; font-size: 11px; font-weight: 600; letter-spacing: .03em; padding: 1px 6px; border-radius: 4px;
+       border: 1px solid var(--border); color: var(--ink-2); background: var(--surface); white-space: nowrap; }
+.tag.holdout { border-color: var(--holdout); color: var(--ink); }
+
+.status { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.status svg { width: 14px; height: 14px; flex: none; }
+
+/* Segmented control */
+.seg { display: inline-flex; border: 1px solid var(--border); border-radius: 7px; padding: 2px; background: var(--surface-2); }
+.seg button { font: inherit; font-size: 13px; border: 0; background: transparent; color: var(--ink-2);
+              padding: 3px 12px; border-radius: 5px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); font-weight: 600; box-shadow: 0 0 0 1px var(--border); }
+.seg button:focus-visible, button.ghost:focus-visible, .chart svg:focus-visible, summary:focus-visible { outline: 2px solid var(--series-1); outline-offset: 2px; }
+
+/* Charts */
+.chart-block { margin-top: 16px; }
+.chart-title { display: flex; align-items: baseline; gap: 6px 14px; flex-wrap: wrap; margin-bottom: 6px; }
+.chart-title strong { font-size: 13px; font-weight: 600; }
+.chart-title .note { font-size: 12px; color: var(--muted); }
+.legend { display: flex; gap: 4px 14px; flex-wrap: wrap; font-size: 12px; color: var(--ink-2); margin-left: auto; }
+tr.selected td { background: var(--surface-2, rgba(127,127,127,.10)); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.chart { position: relative; width: 100%; }
+.chart svg { display: block; width: 100%; overflow: visible; }
+.chart .empty { height: 160px; display: flex; align-items: center; justify-content: center; color: var(--muted);
+                border: 1px dashed var(--grid); border-radius: 8px; font-size: 13px; }
+.tooltip {
+  position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; padding: 8px 10px; font-size: 12px; box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+  min-width: 150px; display: none; z-index: 5;
+}
+.tooltip .t { color: var(--muted); margin-bottom: 4px; }
+.tooltip .row { display: flex; align-items: center; gap: 8px; }
+.tooltip .row b { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--ink); }
+.tooltip .row span { color: var(--ink-2); }
+details.tableview { margin-top: 6px; }
+details.tableview summary { cursor: pointer; font-size: 12px; color: var(--ink-2); width: max-content; }
+details.tableview .table-wrap { max-height: 320px; overflow: auto; margin-top: 6px; border: 1px solid var(--grid); border-radius: 6px; }
+details.tableview th { position: sticky; top: 0; background: var(--surface); }
+
+/* Meters */
+.meter-row { display: grid; grid-template-columns: 110px 1fr auto; gap: 6px 14px; align-items: center; margin: 8px 0; }
+.meter { height: 8px; border-radius: 999px; background: var(--seq-track); overflow: hidden; position: relative; }
+.meter > i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 999px; background: var(--seq-fill); }
+.meter-row .fig { font-size: 13px; color: var(--ink-2); white-space: nowrap; }
+@media (max-width: 560px) {
+  .meter-row { grid-template-columns: 1fr auto; }
+  .meter-row .meter { grid-column: 1 / -1; grid-row: 2; }
+}
+
+dl.kv { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 0; font-size: 13px; }
+dl.kv dt { color: var(--muted); }
+dl.kv dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 28px; }
+@media (max-width: 820px) { .two { grid-template-columns: 1fr; } }
+
+.placeholder { border: 1px dashed var(--grid); border-radius: 8px; padding: 18px; color: var(--ink-2); font-size: 13px; }
+.placeholder b { color: var(--ink); }
+
+.mode { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 4px; }
+.badge-mode {
+  font-size: 26px; font-weight: 700; letter-spacing: .04em; padding: 8px 18px; border-radius: 10px;
+  border: 2px solid var(--axis); color: var(--ink); background: var(--surface-2); display: inline-flex; align-items: center; gap: 10px;
+}
+.badge-mode svg { width: 22px; height: 22px; }
+.badge-mode.dry { border-color: var(--warning); background: var(--warning-wash); }
+.badge-mode.live { border-color: var(--critical); background: var(--critical-wash); }
+.gates { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
+.gates li { display: grid; grid-template-columns: 18px 1fr; gap: 8px; align-items: start; }
+.gates li svg { width: 16px; height: 16px; margin-top: 1px; }
+.gates .d { color: var(--muted); font-size: 12px; }
+.err-box { margin-top: 10px; padding: 8px 10px; border-radius: 6px; background: var(--critical-wash); font-size: 13px; }
+.foot-note { font-size: 12px; color: var(--muted); margin-top: 10px; }
+footer { max-width: 1240px; margin: 0 auto; padding: 0 16px 32px; color: var(--muted); font-size: 12px; }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">jupiter_bot <span>· overvågning (kun læsning)</span></div>
+    <div id="status-pill" class="pill" role="status" aria-live="polite">Henter …</div>
+    <div class="meta">
+      <span>Seneste cyklus: <b id="last-cycle">—</b></span>
+      <span>Opdateret for <b id="updated-ago">—</b> siden</span>
+      <button class="ghost" id="refresh" type="button">Opdatér</button>
+    </div>
+  </div>
+</header>
+<div class="reasons" id="reasons"><ul id="reason-list"></ul></div>
+
+<main>
+  <section class="card" id="sec-collect" aria-labelledby="h-collect">
+    <div class="card-head"><h2 id="h-collect">Indsamling</h2><span class="sub" id="collect-sub"></span></div>
+    <div class="tiles" id="collect-tiles"></div>
+    <h3>Kilder, seneste 24 timer</h3>
+    <div class="table-wrap"><table id="sources-table"></table></div>
+  </section>
+
+  <section class="card" id="sec-market" aria-labelledby="h-market">
+    <div class="card-head">
+      <h2 id="h-market">Marked</h2><span class="sub">SOL/USDC · Binance 1m-close og Jupiters eksekverbare priser</span>
+      <div class="right seg" role="group" aria-label="Tidsvindue" id="range">
+        <button type="button" data-hours="6" aria-pressed="false">6 t</button>
+        <button type="button" data-hours="24" aria-pressed="true">24 t</button>
+        <button type="button" data-hours="168" aria-pressed="false">7 d</button>
+      </div>
+    </div>
+    <div class="tiles" id="market-tiles"></div>
+    <div class="chart-block">
+      <div class="chart-title">
+        <strong>Pris, USDC pr. SOL</strong><span class="note" id="price-note"></span>
+        <div class="legend" id="price-legend"></div>
+      </div>
+      <div class="chart" id="price-chart"></div>
+      <details class="tableview" id="price-table"><summary>Vis som tabel</summary><div class="table-wrap"></div></details>
+    </div>
+    <div class="chart-block">
+      <div class="chart-title">
+        <strong>Jupiter mod Binance, bps</strong><span class="note">positiv = dårligere end Binance-close (køb: betaler mere, salg: får mindre)</span>
+        <div class="legend" id="gap-legend"></div>
+      </div>
+      <div class="chart" id="gap-chart"></div>
+      <details class="tableview" id="gap-table"><summary>Vis som tabel</summary><div class="table-wrap"></div></details>
+    </div>
+    <div class="foot-note" id="market-foot"></div>
+  </section>
+
+  <section class="card" id="sec-research" aria-labelledby="h-research">
+    <div class="card-head"><h2 id="h-research">Forskning (P2)</h2><span class="sub" id="research-sub"></span></div>
+    <div class="two">
+      <div><h3 style="margin-top:0">Plan</h3><div id="plan"></div></div>
+      <div><h3 style="margin-top:0">Data mod plan-vinduer</h3><div id="progress"></div></div>
+    </div>
+    <h3>Evalueringskørsler</h3>
+    <div id="evaluations"></div>
+  </section>
+
+  <section class="card" id="sec-paper" aria-labelledby="h-paper">
+    <div class="card-head"><h2 id="h-paper">Papirhandel</h2><span class="sub">fremadrettet papirbog efter låst plan</span></div>
+    <div id="paper"></div>
+  </section>
+
+  <section class="card" id="sec-exec" aria-labelledby="h-exec">
+    <div class="card-head"><h2 id="h-exec">Rigtig handel (P3)</h2><span class="sub" id="exec-sub"></span></div>
+    <div id="exec"></div>
+  </section>
+</main>
+<footer>Lokal side på 127.0.0.1. Læser kun: journal (read-only), backups, health-state, research/, mandate.json. Opdaterer hvert 30. sekund.</footer>
+
+<script>
+"use strict";
+(function () {
+  var REFRESH_MS = 30000;
+  var state = { hours: 24, data: {}, fetchedAt: null, serverOffset: 0, loading: false };
+  try { var saved = Number(localStorage.getItem("jd-hours")); if ([6, 24, 168].indexOf(saved) >= 0) state.hours = saved; } catch (e) {}
+
+  // ---------- formatting (da-DK) ----------
+  var nfCache = {};
+  function nf(min, max) {
+    var k = min + ":" + max;
+    if (!nfCache[k]) nfCache[k] = new Intl.NumberFormat("da-DK", { minimumFractionDigits: min, maximumFractionDigits: max });
+    return nfCache[k];
+  }
+  function isNum(v) { return typeof v === "number" && isFinite(v); }
+  function num(v, d, dmin) { return isNum(v) ? nf(dmin === undefined ? d : dmin, d).format(v) : "—"; }
+  function signed(v, d) { return isNum(v) ? (v > 0 ? "+" : v < 0 ? "−" : "") + nf(d, d).format(Math.abs(v)) : "—"; }
+  function pct(v, d) { return isNum(v) ? nf(d, d).format(v) + " %" : "—"; }
+  function bytes(b) {
+    if (!isNum(b)) return "—";
+    var u = ["B", "kB", "MB", "GB", "TB"], i = 0;
+    while (b >= 1000 && i < u.length - 1) { b /= 1000; i++; }
+    return nf(0, i === 0 ? 0 : 1).format(b) + " " + u[i];
+  }
+  function dur(s) {
+    if (!isNum(s)) return "—";
+    s = Math.max(0, s);
+    if (s < 90) return Math.round(s) + " s";
+    if (s < 3600) return Math.round(s / 60) + " min";
+    if (s < 86400) { var h = Math.floor(s / 3600), m = Math.round((s % 3600) / 60); return h + " t" + (m ? " " + m + " min" : ""); }
+    var d = s / 86400; return nf(0, d < 10 ? 1 : 0).format(d) + " d";
+  }
+  var dtf = new Intl.DateTimeFormat("da-DK", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+  var dtfFull = new Intl.DateTimeFormat("da-DK", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  var dateF = new Intl.DateTimeFormat("da-DK", { year: "numeric", month: "short", day: "numeric" });
+  var timeF = new Intl.DateTimeFormat("da-DK", { hour: "2-digit", minute: "2-digit" });
+  var timeSecF = new Intl.DateTimeFormat("da-DK", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  var dayF = new Intl.DateTimeFormat("da-DK", { weekday: "short", day: "numeric", month: "numeric" });
+  function when(t) { return isNum(t) ? dtf.format(new Date(t * 1000)) : "—"; }
+  function whenFull(t) { return isNum(t) ? dtfFull.format(new Date(t * 1000)) : "—"; }
+  var shortDateF = new Intl.DateTimeFormat("da-DK", { day: "numeric", month: "short" });
+  function shortDate(t) { return isNum(t) ? shortDateF.format(new Date(t * 1000)) : "—"; }
+  function date(t) { return isNum(t) ? dateF.format(new Date(t * 1000)) : "—"; }
+  function serverNow() { return Date.now() / 1000 + state.serverOffset; }
+
+  // ---------- DOM helpers (all data goes in via textContent) ----------
+  function el(tag, attrs, kids) {
+    var n = document.createElement(tag);
+    if (attrs) for (var k in attrs) {
+      if (k === "class") n.className = attrs[k];
+      else if (k === "text") n.textContent = attrs[k];
+      else if (k === "style") n.setAttribute("style", attrs[k]);
+      else if (attrs[k] !== undefined && attrs[k] !== null) n.setAttribute(k, attrs[k]);
+    }
+    (kids || []).forEach(function (c) {
+      if (c === null || c === undefined) return;
+      n.appendChild(typeof c === "string" ? document.createTextNode(c) : c);
+    });
+    return n;
+  }
+  function clear(n) { while (n.firstChild) n.removeChild(n.firstChild); return n; }
+  var SVGNS = "http://www.w3.org/2000/svg";
+  function s(tag, attrs) {
+    var n = document.createElementNS(SVGNS, tag);
+    for (var k in attrs) n.setAttribute(k, attrs[k]);
+    return n;
+  }
+
+  // Constant icon markup (no data inside).
+  var ICON = {
+    ok: '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="var(--good)"/><path d="M4.8 8.2l2.1 2.1 4.3-4.5" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    warning: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5l7 12.6H1z" fill="var(--warning)" stroke="var(--warning)" stroke-width="1.2" stroke-linejoin="round"/><path d="M8 6v3.6" stroke="#0b0b0b" stroke-width="1.7" stroke-linecap="round"/><circle cx="8" cy="11.8" r="1" fill="#0b0b0b"/></svg>',
+    error: '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="var(--critical)"/><path d="M5.5 5.5l5 5M10.5 5.5l-5 5" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/></svg>',
+    unknown: '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.3" fill="none" stroke="var(--muted)" stroke-width="1.4"/><path d="M5 8h6" stroke="var(--muted)" stroke-width="1.6" stroke-linecap="round"/></svg>',
+    lock: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 10.5V7.5a4 4 0 018 0v3" fill="none" stroke="currentColor" stroke-width="2"/></svg>',
+    play: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M10 8.5l5.5 3.5-5.5 3.5z" fill="currentColor"/></svg>'
+  };
+  function icon(name) { var w = document.createElement("span"); w.style.display = "inline-flex"; w.innerHTML = ICON[name]; return w.firstChild; }
+  function statusChip(kind, text) { return el("span", { class: "status" }, [icon(kind), text]); }
+
+  function tile(label, value, unit, foot, keyColor) {
+    var lab = el("div", { class: "label" }, [keyColor ? el("span", { class: "key", style: "background:" + keyColor }) : null, label]);
+    var val = el("div", { class: "value" }, [value]);
+    if (unit) val.appendChild(el("small", { text: unit }));
+    return el("div", { class: "tile" }, [lab, val, foot ? el("div", { class: "foot", text: foot }) : null]);
+  }
+  function table(target, head, rows) {
+    clear(target);
+    var thead = el("thead", null, [el("tr", null, head.map(function (h) {
+      return el("th", { class: h.r ? "r" : "", text: h.t });
+    }))]);
+    var tbody = el("tbody", null, rows);
+    target.appendChild(thead); target.appendChild(tbody);
+  }
+  function td(content, cls, title) {
+    var c = el("td", { class: cls || "", title: title || null });
+    if (content instanceof Node) c.appendChild(content); else c.textContent = content;
+    return c;
+  }
+
+  // ---------- fetch ----------
+  function getJSON(url) {
+    return fetch(url, { cache: "no-store", headers: { "Accept": "application/json" } }).then(function (r) {
+      return r.json().then(function (body) {
+        if (!r.ok) throw new Error(body && body.error ? body.error : "HTTP " + r.status);
+        return body;
+      });
+    });
+  }
+  function setLoading(on, ids) {
+    ids.forEach(function (id) { document.getElementById(id).classList.toggle("loading", on); });
+  }
+  function load(only) {
+    var all = { overview: "/api/overview", market: "/api/market?hours=" + state.hours, research: "/api/research",
+                paper: "/api/paper", execution: "/api/execution" };
+    var secs = { overview: "sec-collect", market: "sec-market", research: "sec-research", paper: "sec-paper", execution: "sec-exec" };
+    var keys = only ? [only] : Object.keys(all);
+    setLoading(true, keys.map(function (k) { return secs[k]; }));
+    return Promise.all(keys.map(function (k) {
+      return getJSON(all[k]).then(function (d) { state.data[k] = d; state.errors && delete state.errors[k]; },
+                                  function (e) { state.errors = state.errors || {}; state.errors[k] = String(e.message || e); });
+    })).then(function () {
+      var ov = state.data.overview;
+      if (ov && isNum(ov.now)) state.serverOffset = ov.now - Date.now() / 1000;
+      state.fetchedAt = Date.now();
+      render(keys);
+      setLoading(false, keys.map(function (k) { return secs[k]; }));
+    });
+  }
+
+  // ---------- status bar ----------
+  var LEVEL = { ok: ["ok", "Alt OK"], warning: ["warning", "Advarsel"], error: ["error", "Fejl"] };
+  function renderStatus() {
+    var ov = state.data.overview, pill = document.getElementById("status-pill");
+    clear(pill);
+    var list = clear(document.getElementById("reason-list"));
+    var level = ov ? ov.status.level : "error";
+    if (state.errors && state.errors.overview) level = "error";
+    var L = LEVEL[level] || LEVEL.error;
+    pill.appendChild(icon(L[0])); pill.appendChild(document.createTextNode(L[1]));
+    var items = [];
+    if (state.errors && state.errors.overview) items.push(["error", "Dashboardet kan ikke hente status: " + state.errors.overview]);
+    if (ov) {
+      ov.status.problems.forEach(function (p) { items.push(["error", p]); });
+      ov.status.warnings.forEach(function (p) { items.push(["warning", p]); });
+    }
+    items.forEach(function (it) { list.appendChild(el("li", null, [icon(it[0]), it[1]])); });
+    document.getElementById("reasons").classList.toggle("show", items.length > 0);
+    tick();
+  }
+  function tick() {
+    var ov = state.data.overview;
+    var lc = document.getElementById("last-cycle");
+    if (ov && isNum(ov.last_cycle_at)) {
+      lc.textContent = timeSecF.format(new Date(ov.last_cycle_at * 1000)) + " (for " + dur(serverNow() - ov.last_cycle_at) + " siden)";
+    } else lc.textContent = "—";
+    document.getElementById("updated-ago").textContent = state.fetchedAt ? dur((Date.now() - state.fetchedAt) / 1000) : "—";
+  }
+
+  // ---------- Indsamling ----------
+  function renderCollect() {
+    var ov = state.data.overview, tiles = clear(document.getElementById("collect-tiles"));
+    var tbl = document.getElementById("sources-table");
+    tbl.className = "wide";
+    if (!ov) { tiles.appendChild(el("div", { class: "placeholder", text: "Ingen data: " + ((state.errors || {}).overview || "henter …") })); return; }
+    document.getElementById("collect-sub").textContent = ov.journal.path;
+    var c = ov.candles, b = ov.backups;
+    var collected = ov.first_fetch_at ? serverNow() - ov.first_fetch_at : null;
+    tiles.appendChild(tile("Indsamlet indtil nu", collected === null ? "—" : dur(collected), null,
+      ov.first_fetch_at ? "siden " + when(ov.first_fetch_at) : "ingen kald endnu"));
+    tiles.appendChild(tile("Binance-bars i alt", c ? num(c.bars, 0) : "—", null,
+      c ? num(c.bars_24h, 0) + " de seneste 24 t" : "ingen candles"));
+    tiles.appendChild(tile("Candle-huller, 24 t", c ? num(c.gaps_24h, 0) : "—", null,
+      c ? num(c.missing_bars_24h, 0) + " manglende bars (i alt " + num(c.missing_bars_total, 0) + ")" : ""));
+    tiles.appendChild(tile("Journal", ov.journal.exists ? bytes(ov.journal.bytes) : "mangler", null,
+      ov.journal.exists ? "inkl. WAL" : ov.journal.path));
+    tiles.appendChild(tile("Nyeste backup", b.newest ? shortDate(b.newest.modified_at) : "ingen", null,
+      b.newest ? timeF.format(new Date(b.newest.modified_at * 1000)) + " · " + bytes(b.newest.bytes) + " · " + b.count + " kopi" + (b.count === 1 ? "" : "er") + " (" + bytes(b.total_bytes) + ")" : "kør install-ops.sh"));
+    var hs = ov.health_state;
+    tiles.appendChild(tile("Alarm-timer", hs.exists ? (hs.stale && hs.stale.length ? "STALE" : "kørte") : "ikke kørt", null,
+      hs.exists ? "for " + dur(hs.age_s) + " siden" + (hs.stale && hs.stale.length ? ": " + hs.stale.join(", ") : "") : "ingen health-state.json"));
+
+    var rows = ov.sources.map(function (r) {
+      var chip;
+      if (r.stale) chip = statusChip("error", r.last_ok_at ? "Forsinket" : "Aldrig OK");
+      else if (r.errors_1h) chip = statusChip("warning", "Fejl seneste time");
+      else chip = statusChip("ok", "OK");
+      var err = r.last_error ? (when(r.last_error.at) + " · " + r.last_error.outcome + (r.last_error.error ? ": " + r.last_error.error : "")) : "";
+      return el("tr", null, [
+        td(r.label), td(chip),
+        td(r.last_ok_at ? "for " + dur(r.last_ok_age_s) + " siden" : "aldrig", "r", whenFull(r.last_ok_at)),
+        td(num(r.ok_24h, 0), "r"), td(num(r.errors_24h, 0), "r"),
+        td(r.error_rate_24h === null ? "—" : pct(r.error_rate_24h * 100, 1), "r"),
+        td(r.max_age_s ? dur(r.max_age_s) : "—", "r"),
+        td(err || "—", "err")
+      ]);
+    });
+    table(tbl, [{ t: "Kilde" }, { t: "Status" }, { t: "Seneste OK", r: 1 }, { t: "OK", r: 1 }, { t: "Fejl", r: 1 },
+                { t: "Fejlrate", r: 1 }, { t: "Alarm efter", r: 1 }, { t: "Seneste fejl" }], rows);
+  }
+
+  // ---------- charts ----------
+  var SERIES = {
+    binance: { label: "Binance 1m-close", color: "var(--series-1)" },
+    buy: { label: "Jupiter køb (25 USDC)", color: "var(--series-2)" },
+    sell: { label: "Jupiter salg (0,35 SOL)", color: "var(--series-3)" },
+    gap_buy: { label: "Køb", color: "var(--series-2)" },
+    gap_sell: { label: "Salg", color: "var(--series-3)" },
+    strategy: { label: "Strategi (papir, efter omkostninger)", color: "var(--series-1)" },
+    sol: { label: "SOL-kurs (Binance, uden omkostninger)", color: "var(--series-2)" }
+  };
+  function legend(target, keys) {
+    clear(target);
+    keys.forEach(function (k) {
+      target.appendChild(el("span", null, [el("span", { class: "key", style: "background:" + SERIES[k].color }), SERIES[k].label]));
+    });
+  }
+  function niceStep(span, count) {
+    var raw = span / Math.max(1, count), pow = Math.pow(10, Math.floor(Math.log10(raw))), f = raw / pow;
+    return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * pow;
+  }
+  function decimalsFor(step) { return Math.max(0, Math.min(6, -Math.floor(Math.log10(step) + 1e-9))); }
+  var TIME_STEPS = [600, 900, 1800, 3600, 7200, 10800, 21600, 43200, 86400];
+  function timeTicks(t0, t1, count) {
+    var span = t1 - t0, step = TIME_STEPS[TIME_STEPS.length - 1];
+    for (var i = 0; i < TIME_STEPS.length; i++) if (span / TIME_STEPS[i] <= count) { step = TIME_STEPS[i]; break; }
+    // align to local time
+    var offset = -new Date(t0 * 1000).getTimezoneOffset() * 60;
+    var first = Math.ceil((t0 + offset) / step) * step - offset, out = [];
+    for (var t = first; t <= t1; t += step) out.push(t);
+    return { ticks: out, step: step };
+  }
+
+  function lineChart(container, opts) {
+    clear(container);
+    var all = [];
+    opts.keys.forEach(function (k) { (opts.data[k] || []).forEach(function (p) { all.push(p[1]); }); });
+    if (!all.length) { container.appendChild(el("div", { class: "empty", text: opts.empty })); return; }
+    var W = Math.max(280, container.clientWidth), H = opts.height;
+    var narrow = W < 520;
+    var m = { l: 52, r: 14, t: 10, b: 26 };
+    var pw = W - m.l - m.r, ph = H - m.t - m.b;
+    var lo = Math.min.apply(null, all), hi = Math.max.apply(null, all);
+    if (opts.zero) { lo = Math.min(lo, 0); hi = Math.max(hi, 0); }
+    if (hi - lo < opts.minSpan) { var mid = (hi + lo) / 2; lo = mid - opts.minSpan / 2; hi = mid + opts.minSpan / 2; }
+    var step = niceStep(hi - lo, ph < 150 ? 3 : 5);
+    lo = Math.floor(lo / step) * step; hi = Math.ceil(hi / step) * step;
+    if (hi === lo) hi = lo + step;
+    var yd = decimalsFor(step);
+    var t0 = opts.t0, t1 = opts.t1;
+    function X(t) { return m.l + (t - t0) / (t1 - t0) * pw; }
+    function Y(v) { return m.t + (hi - v) / (hi - lo) * ph; }
+
+    var svg = s("svg", { viewBox: "0 0 " + W + " " + H, height: H, role: "img", tabindex: "0",
+                         "aria-label": opts.aria });
+    var g = s("g", {});
+    for (var v = lo; v <= hi + step / 2; v += step) {
+      var y = Math.round(Y(v)) + 0.5;
+      var isZero = opts.zero && Math.abs(v) < step / 1000;
+      g.appendChild(s("line", { x1: m.l, x2: W - m.r, y1: y, y2: y, stroke: isZero ? "var(--axis)" : "var(--grid)", "stroke-width": 1 }));
+      var lab = s("text", { x: m.l - 8, y: y + 4, "text-anchor": "end", fill: "var(--muted)", "font-size": 11, class: "num" });
+      lab.textContent = (opts.zero && v > 0 ? "+" : "") + nf(yd, yd).format(v).replace("-", "−");
+      g.appendChild(lab);
+    }
+    var tt = timeTicks(t0, t1, narrow ? 4 : 7);
+    tt.ticks.forEach(function (t) {
+      var x = Math.round(X(t)) + 0.5;
+      g.appendChild(s("line", { x1: x, x2: x, y1: H - m.b, y2: H - m.b + 4, stroke: "var(--axis)" }));
+      var lab = s("text", { x: x, y: H - 8, "text-anchor": "middle", fill: "var(--muted)", "font-size": 11, class: "num" });
+      var d = new Date(t * 1000);
+      lab.textContent = tt.step >= 86400 || (d.getHours() === 0 && d.getMinutes() === 0 && tt.step >= 3600) ? dayF.format(d) : timeF.format(d);
+      g.appendChild(lab);
+    });
+    g.appendChild(s("line", { x1: m.l, x2: W - m.r, y1: H - m.b + 0.5, y2: H - m.b + 0.5, stroke: "var(--axis)" }));
+    svg.appendChild(g);
+
+    var gapLimit = opts.bucket * 2.5;
+    // Drawn last-to-first so the first key (the reference) lies on top.
+    opts.keys.slice().reverse().forEach(function (k) {
+      var pts = opts.data[k] || [];
+      if (!pts.length) return;
+      var d = "", prev = null;
+      pts.forEach(function (p) {
+        var x = X(p[0]).toFixed(1), y = Y(p[1]).toFixed(1);
+        d += (prev === null || p[0] - prev > gapLimit ? "M" : "L") + x + " " + y;
+        if (prev === null || p[0] - prev > gapLimit) d += "h0";
+        prev = p[0];
+      });
+      svg.appendChild(s("path", { d: d, fill: "none", stroke: SERIES[k].color, "stroke-width": 2,
+                                  "stroke-linejoin": "round", "stroke-linecap": "round" }));
+    });
+    opts.keys.forEach(function (k) {
+      var pts = opts.data[k] || [];
+      if (!pts.length) return;
+      var last = pts[pts.length - 1];
+      svg.appendChild(s("circle", { cx: X(last[0]), cy: Y(last[1]), r: 4, fill: SERIES[k].color, stroke: "var(--surface)", "stroke-width": 2 }));
+    });
+
+    // hover layer
+    var cross = s("line", { y1: m.t, y2: H - m.b, stroke: "var(--ink-2)", "stroke-width": 1, visibility: "hidden" });
+    svg.appendChild(cross);
+    var dots = opts.keys.map(function (k) {
+      var c = s("circle", { r: 4, fill: SERIES[k].color, stroke: "var(--surface)", "stroke-width": 2, visibility: "hidden" });
+      svg.appendChild(c); return c;
+    });
+    var hit = s("rect", { x: m.l, y: m.t, width: pw, height: ph, fill: "transparent" });
+    svg.appendChild(hit);
+    container.appendChild(svg);
+    var tip = el("div", { class: "tooltip" });
+    container.appendChild(tip);
+
+    var times = [];
+    opts.keys.forEach(function (k) { (opts.data[k] || []).forEach(function (p) { times.push(p[0]); }); });
+    times = Array.from(new Set(times)).sort(function (a, b) { return a - b; });
+    function nearest(arr, t, get) {
+      var lo2 = 0, hi2 = arr.length - 1;
+      while (lo2 < hi2) { var mid2 = (lo2 + hi2) >> 1; if (get(arr[mid2]) < t) lo2 = mid2 + 1; else hi2 = mid2; }
+      if (lo2 > 0 && Math.abs(get(arr[lo2 - 1]) - t) <= Math.abs(get(arr[lo2]) - t)) lo2--;
+      return lo2;
+    }
+    var current = -1;
+    function show(i) {
+      if (i < 0 || i >= times.length) return;
+      current = i;
+      var t = times[i], x = X(t);
+      cross.setAttribute("x1", x); cross.setAttribute("x2", x); cross.setAttribute("visibility", "visible");
+      clear(tip);
+      tip.appendChild(el("div", { class: "t", text: dtfFull.format(new Date(t * 1000)) }));
+      opts.keys.forEach(function (k, j) {
+        var pts = opts.data[k] || [], val = null;
+        if (pts.length) { var n = nearest(pts, t, function (p) { return p[0]; }); if (Math.abs(pts[n][0] - t) < opts.bucket * 0.75) val = pts[n][1]; }
+        if (val === null) { dots[j].setAttribute("visibility", "hidden"); }
+        else { dots[j].setAttribute("cx", x); dots[j].setAttribute("cy", Y(val)); dots[j].setAttribute("visibility", "visible"); }
+        tip.appendChild(el("div", { class: "row" }, [el("span", { class: "key", style: "background:" + SERIES[k].color }),
+          el("b", { text: val === null ? "—" : opts.fmt(val) }), el("span", { text: SERIES[k].label })]));
+      });
+      tip.style.display = "block";
+      var tw = tip.offsetWidth, left = x + 14;
+      if (left + tw > W) left = x - tw - 14;
+      tip.style.left = Math.max(0, left) + "px"; tip.style.top = (m.t + 4) + "px";
+    }
+    function hide() { current = -1; cross.setAttribute("visibility", "hidden"); dots.forEach(function (d) { d.setAttribute("visibility", "hidden"); }); tip.style.display = "none"; }
+    svg.addEventListener("pointermove", function (ev) {
+      var r = svg.getBoundingClientRect(), x = (ev.clientX - r.left) * (W / r.width);
+      if (x < m.l || x > W - m.r) { hide(); return; }
+      show(nearest(times, t0 + (x - m.l) / pw * (t1 - t0), function (t) { return t; }));
+    });
+    svg.addEventListener("pointerleave", hide);
+    svg.addEventListener("blur", hide);
+    svg.addEventListener("keydown", function (ev) {
+      if (ev.key === "ArrowLeft" || ev.key === "ArrowRight") {
+        ev.preventDefault();
+        show(current < 0 ? times.length - 1 : Math.max(0, Math.min(times.length - 1, current + (ev.key === "ArrowLeft" ? -1 : 1))));
+      } else if (ev.key === "Escape") hide();
+    });
+  }
+
+  function tableView(details, keys, data, fmt) {
+    function build() {
+      var wrap = clear(details.querySelector(".table-wrap"));
+      var byT = {};
+      keys.forEach(function (k) { (data[k] || []).forEach(function (p) { (byT[p[0]] = byT[p[0]] || {})[k] = p[1]; }); });
+      var ts = Object.keys(byT).map(Number).sort(function (a, b) { return b - a; });
+      var t = el("table");
+      table(t, [{ t: "Tid (intervallets slut)" }].concat(keys.map(function (k) { return { t: SERIES[k].label, r: 1 }; })),
+        ts.map(function (tm) {
+          return el("tr", null, [td(whenFull(tm))].concat(keys.map(function (k) { return td(byT[tm][k] === undefined ? "—" : fmt(byT[tm][k]), "r"); })));
+        }));
+      wrap.appendChild(t);
+    }
+    details.ontoggle = function () { if (details.open) build(); };
+    if (details.open) build();
+  }
+
+  // ---------- Marked ----------
+  function renderMarket() {
+    var mk = state.data.market, tiles = clear(document.getElementById("market-tiles"));
+    document.querySelectorAll("#range button").forEach(function (b) {
+      b.setAttribute("aria-pressed", String(Number(b.dataset.hours) === state.hours));
+    });
+    legend(document.getElementById("price-legend"), ["binance", "buy", "sell"]);
+    legend(document.getElementById("gap-legend"), ["gap_buy", "gap_sell"]);
+    if (!mk) { tiles.appendChild(el("div", { class: "placeholder", text: "Ingen markedsdata: " + ((state.errors || {}).market || "henter …") })); return; }
+    var L = mk.latest || {}, S = mk.summary || {};
+    tiles.appendChild(tile("Binance close", L.binance ? num(L.binance.close, 2) : "—", "USDC",
+      L.binance ? "bar slut " + timeF.format(new Date(L.binance.at * 1000)) + (isNum(S.binance_min) ? " · spænd " + num(S.binance_min, 2) + "–" + num(S.binance_max, 2) : "") : "ingen bars i vinduet",
+      "var(--series-1)"));
+    tiles.appendChild(tile("Jupiter køb", L.buy ? num(L.buy.price, 3) : "—", "USDC",
+      L.buy ? "gap " + signed(L.buy.gap_bps, 1) + " bps · " + timeSecF.format(new Date(L.buy.at * 1000)) : "ingen quotes", "var(--series-2)"));
+    tiles.appendChild(tile("Jupiter salg", L.sell ? num(L.sell.price, 3) : "—", "USDC",
+      L.sell ? "gap " + signed(L.sell.gap_bps, 1) + " bps · " + timeSecF.format(new Date(L.sell.at * 1000)) : "ingen quotes", "var(--series-3)"));
+    tiles.appendChild(tile("Median gap køb", signed(S.gap_buy_median_bps, 1), "bps", "over vinduet, " + num(mk.counts.quotes_buy, 0) + " quotes"));
+    tiles.appendChild(tile("Median gap salg", signed(S.gap_sell_median_bps, 1), "bps", "over vinduet, " + num(mk.counts.quotes_sell, 0) + " quotes"));
+    tiles.appendChild(tile("Rundtur (median)", signed(S.round_trip_median_bps, 1), "bps", "køb-gap + salg-gap mod Binance"));
+
+    var bucketTxt = mk.bucket_s >= 3600 ? (mk.bucket_s / 3600) + " t" : (mk.bucket_s / 60) + " min";
+    document.getElementById("price-note").textContent = "pr. " + bucketTxt + " · Binance = sidste close, Jupiter = median i intervallet";
+    var common = { t0: mk.since, t1: mk.now, bucket: mk.bucket_s };
+    lineChart(document.getElementById("price-chart"), Object.assign({
+      keys: ["binance", "buy", "sell"], data: mk.series, height: 260, minSpan: 0.5,
+      fmt: function (v) { return num(v, 3) + " USDC"; },
+      aria: "Linjediagram: SOL/USDC pris fra Binance og Jupiter købs- og salgspris, seneste " + (mk.hours >= 48 ? mk.hours / 24 + " døgn" : mk.hours + " timer"),
+      empty: mk.error || "Ingen priser i vinduet endnu"
+    }, common));
+    lineChart(document.getElementById("gap-chart"), Object.assign({
+      keys: ["gap_buy", "gap_sell"], data: mk.series, height: 180, minSpan: 10, zero: true,
+      fmt: function (v) { return signed(v, 1) + " bps"; },
+      aria: "Linjediagram: afstand mellem Jupiters eksekverbare pris og Binance-close i basispunkter, køb og salg",
+      empty: mk.error || "Ingen quotes med en Binance-bar at sammenligne med endnu"
+    }, common));
+    tableView(document.getElementById("price-table"), ["binance", "buy", "sell"], mk.series, function (v) { return num(v, 3); });
+    tableView(document.getElementById("gap-table"), ["gap_buy", "gap_sell"], mk.series, function (v) { return signed(v, 2); });
+    var c = mk.counts;
+    document.getElementById("market-foot").textContent =
+      "Priser beregnet fra heltals-atomer (USDC 6, SOL 9 decimaler). Hver quote sammenlignes med den seneste lukkede Binance-bar højst 2 min før. " +
+      num(c.bars, 0) + " bars, " + num(c.quotes_buy, 0) + " køb- og " + num(c.quotes_sell, 0) + " salgsquotes i vinduet" +
+      (c.unmatched ? ", " + c.unmatched + " uden bar at sammenligne med" : "") +
+      (c.other_sizes ? ", " + c.other_sizes + " quotes af anden størrelse udeladt" : "") + ".";
+  }
+
+  // ---------- Forskning ----------
+  function short(h) { return typeof h === "string" && h.length > 16 ? h.slice(0, 12) + "…" : (h || "—"); }
+  function hashDD(h) { var dd = el("dd", { class: "mono", title: h || "" }, [short(h)]); return dd; }
+  function renderResearch() {
+    var r = state.data.research, plan = clear(document.getElementById("plan")), prog = clear(document.getElementById("progress"));
+    var ev = clear(document.getElementById("evaluations"));
+    if (!r) { plan.appendChild(el("div", { class: "placeholder", text: "Ingen data: " + ((state.errors || {}).research || "henter …") })); return; }
+    var lock = r.lock;
+    var badge = { locked: ["ok", "Låst"], draft: ["unknown", "Udkast (ikke låst)"], missing: ["unknown", "Ingen plan endnu"], invalid: ["error", "plan_lock.json er ugyldig"] }[r.state];
+    plan.appendChild(el("p", { style: "margin:0 0 10px" }, [statusChip(badge[0], badge[1])]));
+    if (r.state === "locked") {
+      var dl = el("dl", { class: "kv" }, [
+        el("dt", { text: "Låst" }), el("dd", { text: whenFull(lock.locked_at) }),
+        el("dt", { text: "Godkendt af" }), el("dd", { text: lock.approved_by || "—" }),
+        el("dt", { text: "Git-commit" }), hashDD(lock.git_commit),
+        el("dt", { text: "Plan SHA-256" }), hashDD(lock.plan_sha256)
+      ]);
+      Object.keys(lock.code_sha256 || {}).sort().forEach(function (f) {
+        dl.appendChild(el("dt", { class: "mono", text: f.split("/").pop() }));
+        dl.appendChild(hashDD(lock.code_sha256[f]));
+      });
+      plan.appendChild(dl);
+    } else if (r.state === "invalid") {
+      plan.appendChild(el("div", { class: "err-box", text: lock.error }));
+    } else {
+      plan.appendChild(el("p", { class: "ink2", style: "margin:0;font-size:13px", text: r.plan_md_exists
+        ? "P2_PLAN.md findes, men er ikke låst. Data må først bruges til forskning, når Anton har godkendt og låst planen (python3 -m jupiter_bot.research.lock)."
+        : "Ingen P2-plan skrevet endnu." }));
+    }
+    var dataDays = r.data.days || 0;
+    if (r.progress.development || r.progress.holdout) {
+      [["development", "Udvikling"], ["holdout", "Holdout"]].forEach(function (w) {
+        var p = r.progress[w[0]];
+        if (!p) { prog.appendChild(el("div", { class: "meter-row" }, [el("span", { text: w[1] }), el("div", { class: "meter" }), el("span", { class: "fig", text: "ikke angivet" })])); return; }
+        var bar = el("div", { class: "meter", role: "progressbar", "aria-valuemin": 0, "aria-valuemax": 100,
+                              "aria-valuenow": Math.round(p.covered_share * 100), "aria-label": w[1] + " data dækket" },
+                     [el("i", { style: "width:" + Math.max(0, Math.min(100, p.covered_share * 100)).toFixed(1) + "%" })]);
+        prog.appendChild(el("div", { class: "meter-row" }, [el("span", { text: w[1] }), bar,
+          el("span", { class: "fig num", text: num(p.covered_days, 1) + " af " + num(p.days, 1) + " d · " + p.state })]));
+        prog.appendChild(el("div", { class: "foot-note", style: "margin:0 0 6px", text: date(p.start) + " – " + date(p.end) }));
+      });
+    } else {
+      prog.appendChild(el("div", { class: "placeholder" }, [el("b", { text: "Plan ikke låst. " }),
+        "Udviklings- og holdout-vinduerne fastlægges i plan_lock.json. Indsamlet indtil nu: " + num(dataDays, dataDays < 10 ? 2 : 1) + " dage Binance-candles."]));
+    }
+
+    var E = r.evaluations;
+    if (!E.runs.length) {
+      ev.appendChild(el("div", { class: "placeholder", text: E.exists ? "Ingen evalueringer i research/evaluations/ endnu." : "Ingen evalueringer endnu (research/evaluations/ findes ikke)." }));
+    } else {
+      var rows = E.runs.map(function (x) {
+        var tr = el("tr", { class: x.label === "holdout" ? "holdout" : "" }, [
+          td(el("span", { class: "tag" + (x.label === "holdout" ? " holdout" : ""), text: x.label === "holdout" ? "HOLDOUT" : x.label === "development" ? "udvikling" : (x.label || "?") })),
+          td(when(x.created_at), "", x.run_id),
+          td(x.strategy || "—", "", JSON.stringify(x.params || {})),
+          td(isNum(x.delay_s) ? num(x.delay_s, 0) + " s" : "—", "r"),
+          td(isNum(x.extra_cost_bps) ? num(x.extra_cost_bps, 1) + " bps" : "—", "r"),
+          td(isNum(x.return_pct) ? signed(x.return_pct, 2) + " %" : "—", "r"),
+          td(isNum(x.hold_sol_return_pct) ? signed(x.hold_sol_return_pct, 2) + " %" : "—", "r"),
+          td(isNum(x.excess_vs_hold_pct) ? signed(x.excess_vs_hold_pct, 2) + " pp" : "—", "r"),
+          td(isNum(x.random_share_beating) ? pct(x.random_share_beating * (x.random_share_beating <= 1 ? 100 : 1), 0) : "—", "r",
+             isNum(x.random_runs) ? x.random_runs + " tilfældige kørsler" : null),
+          td(isNum(x.trades) ? num(x.trades, 0) + (x.missing ? " (" + x.missing + " mangler)" : "") : "—", "r"),
+          td(x.verdict === null || x.verdict === undefined ? "ingen (afventer beslutningsregel)" : String(x.verdict))
+        ]);
+        if (x.matches_lock === false) tr.lastChild.appendChild(el("div", { class: "foot-note", style: "margin:2px 0 0" }, [statusChip("warning", "plan-hash afviger fra låsen")]));
+        return tr;
+      });
+      var wrap = el("div", { class: "table-wrap" }), t = el("table", { class: "wide" });
+      table(t, [{ t: "Kørsel" }, { t: "Oprettet" }, { t: "Strategi" }, { t: "Forsinkelse", r: 1 }, { t: "Ekstra omk.", r: 1 },
+                { t: "Afkast", r: 1 }, { t: "Hold SOL", r: 1 }, { t: "Mod hold", r: 1 }, { t: "Tilfældige slår den", r: 1 },
+                { t: "Handler", r: 1 }, { t: "Dom" }], rows);
+      wrap.appendChild(t); ev.appendChild(wrap);
+    }
+    E.errors.forEach(function (e) { ev.appendChild(el("div", { class: "err-box", text: e.file + ": " + e.error })); });
+    document.getElementById("research-sub").textContent = E.runs.length ? E.runs.length + " kørsler" : "";
+  }
+
+  // ---------- Papirhandel ----------
+  function paramText(p) { return Object.keys(p || {}).map(function (k) { return k.replace(/_min$/, "") + "=" + p[k]; }).join(", "); }
+  function renderPaper() {
+    var p = state.data.paper, box = clear(document.getElementById("paper"));
+    if (!p) { box.appendChild(el("div", { class: "placeholder", text: "Ingen data: " + ((state.errors || {}).paper || "henter …") })); return; }
+    if (!p.exists || !p.configs.length) {
+      box.appendChild(el("div", { class: "placeholder" }, [el("b", { text: "Kommer, når planen er låst. " }),
+        "Den fremadrettede papirvisning (research/forward/) genberegnes hver halve time fra udviklingsperiodens start, med de låste regler, 120 s forsinkelse og 25 bps ekstra omkostning."]));
+      (p.errors || []).forEach(function (e) { box.appendChild(el("div", { class: "err-box", text: e.file + ": " + e.error })); });
+      return;
+    }
+    if (state.paperSel === undefined || state.paperSel >= p.configs.length) state.paperSel = 0;
+    var rows = p.configs.map(function (c, i) {
+      var target = c.now_target || "—";
+      var tr = el("tr", { class: i === state.paperSel ? "selected" : "", style: "cursor:pointer", tabindex: "0",
+                          "aria-selected": String(i === state.paperSel) }, [
+        td(c.strategy, "mono", JSON.stringify(c.params)), td(paramText(c.params), "mono"),
+        td(c.status === "OK" ? statusChip("ok", "OK") : statusChip("error", c.status || "?"), "", c.error || null),
+        td(isNum(c.return_pct) ? signed(c.return_pct, 2) + " %" : "—", "r"),
+        td(isNum(c.hold_sol_return_pct) ? signed(c.hold_sol_return_pct, 2) + " %" : "—", "r"),
+        td(isNum(c.max_drawdown_pct) ? num(c.max_drawdown_pct, 2) + " %" : "—", "r"),
+        td(isNum(c.round_trips) ? num(c.round_trips, 0) : "—", "r"),
+        td(c.open_position ? "SOL" : "USDC"),
+        td(target.indexOf("WAIT") === 0 ? "vent" : target === "LONG" ? "LONG (SOL)" : target === "FLAT" ? "FLAT (USDC)" : target, "", target)
+      ]);
+      function pick() { state.paperSel = i; renderPaper(); }
+      tr.addEventListener("click", pick);
+      tr.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(); } });
+      return tr;
+    });
+    var wrap = el("div", { class: "table-wrap" }), t = el("table", { class: "wide" });
+    table(t, [{ t: "Strategi" }, { t: "Parametre" }, { t: "Status" }, { t: "Afkast", r: 1 }, { t: "Hold SOL", r: 1 },
+              { t: "Maks. fald", r: 1 }, { t: "Ture", r: 1 }, { t: "Holder nu" }, { t: "Vil nu" }], rows);
+    wrap.appendChild(t); box.appendChild(wrap);
+    var c = p.configs[state.paperSel];
+    var head = el("div", { class: "card-head", style: "margin-top:14px" }, [el("h3", { text: c.strategy + " · " + paramText(c.params) }),
+      el("span", { class: "sub", text: "afkast i % siden " + (c.period ? date(c.period.start) : "—") + " · opdateret " + when(c.updated_at) })]);
+    var lg = el("div", { class: "legend" }), chart = el("div", { class: "chart" });
+    box.appendChild(head); box.appendChild(lg); box.appendChild(chart);
+    legend(lg, ["strategy", "sol"]);
+    lineChart(chart, { keys: ["strategy", "sol"], data: c.series, height: 220, minSpan: 1, zero: true,
+      t0: c.period ? c.period.start : 0, t1: c.period ? c.period.end : 1,
+      bucket: (c.series.strategy || []).length > 1 ? (c.series.strategy[c.series.strategy.length - 1][0] - c.series.strategy[0][0]) / (c.series.strategy.length - 1) : 60,
+      fmt: function (v) { return signed(v, 2) + " %"; },
+      aria: "Linjediagram: papirafkast for " + c.strategy + " og SOL-kursens ændring i procent",
+      empty: c.error || "Ingen papirkurve endnu" });
+    box.appendChild(el("p", { class: "foot-note", text:
+      "Papir, ikke rigtige penge. Prissat med de journalførte Jupiter-tilbud. Det er tilladt at se på kurven, men en ændring af regler eller kode efter 19. december gør kontrolperioden ugyldig (P2-plan afsnit 6)." }));
+    (p.errors || []).forEach(function (e) { box.appendChild(el("div", { class: "err-box", text: e.file + ": " + e.error })); });
+  }
+
+  // ---------- Rigtig handel ----------
+  var GATE_NAMES = { p2_plan_locked: "P2-plan låst", p2_holdout_pass: "P2 holdout bestået", mandate_present: "Mandat findes",
+                     mandate_not_expired: "Mandat ikke udløbet", execution_built: "Eksekvering bygget" };
+  function usdc(v) { return isNum(v) ? num(v, 2) + " USDC" : "—"; }
+  function renderExec() {
+    var x = state.data.execution, box = clear(document.getElementById("exec"));
+    if (!x) { box.appendChild(el("div", { class: "placeholder", text: "Ingen data: " + ((state.errors || {}).execution || "henter …") })); return; }
+    var cls = x.mode === "LIVE" ? "live" : x.mode === "DRY_RUN" ? "dry" : "";
+    var b = el("div", { class: "badge-mode " + cls, role: "status" }, [icon(x.mode === "DISARMED" ? "lock" : "play"), x.mode]);
+    var desc = !x.built ? "Ikke bygget / ikke aktiveret. Der findes ingen eksekveringskode, og intet kan handle."
+      : x.mode === "LIVE" ? "LIVE: rigtige ordrer kan sendes inden for mandatet."
+      : x.mode === "DRY_RUN" ? "DRY_RUN: ordrer bygges og logges, men sendes ikke."
+      : x.mode === "DISARMED" ? "Afvæbnet: ingen ordrer." : "Ukendt tilstand fra execution status.";
+    box.appendChild(el("div", { class: "mode" }, [b, el("div", { class: "ink2", style: "max-width:520px" }, [desc])]));
+    document.getElementById("exec-sub").textContent = x.armed ? "bevæbnet" : "ikke bevæbnet";
+    if (x.status_error) box.appendChild(el("div", { class: "err-box", text: "execution status fejlede: " + x.status_error }));
+
+    var left = el("div"), right = el("div");
+    left.appendChild(el("h3", { text: "Mandat" }));
+    var md = x.mandate;
+    if (!md) left.appendChild(el("div", { class: "placeholder", text: "Intet mandat. Anton skriver ~/.config/jupiter-bot/mandate.json i hånden, når P3 er godkendt." }));
+    else if (md.error) left.appendChild(el("div", { class: "err-box", text: md.error }));
+    else {
+      var mints = (md.allowed_mints || []).map(function (mm) { return mm.symbol || short(mm.mint); }).join(", ");
+      left.appendChild(el("dl", { class: "kv" }, [
+        el("dt", { text: "Wallet (offentlig)" }), el("dd", { class: "mono", title: md.wallet_pubkey || "" }, [md.wallet_pubkey ? md.wallet_pubkey.slice(0, 6) + "…" + md.wallet_pubkey.slice(-6) : "—"]),
+        el("dt", { text: "Maks. position" }), el("dd", { class: "num", text: usdc(md.max_position_usdc) }),
+        el("dt", { text: "Maks. pr. handel" }), el("dd", { class: "num", text: usdc(md.max_trade_usdc) }),
+        el("dt", { text: "Dagligt tabsloft" }), el("dd", { class: "num", text: usdc(md.daily_loss_limit_usdc) }),
+        el("dt", { text: "Tilladte mints" }), el("dd", { text: mints || "—" }),
+        el("dt", { text: "Udløber" }), el("dd", { text: whenFull(md.expires_at) })
+      ]));
+      (md.warnings || []).forEach(function (w) { left.appendChild(el("div", { class: "err-box", text: w })); });
+      if (md.hidden_fields) left.appendChild(el("div", { class: "foot-note", text: md.hidden_fields + " ukendt(e) felt(er) i mandatet vises ikke." }));
+    }
+    right.appendChild(el("h3", { text: x.built ? "Gates" : "Gates (læst fra filer; intet er vurderet)" }));
+    var ul = el("ul", { class: "gates" });
+    (x.gates || []).forEach(function (g) {
+      // Before execution exists nothing is wrong, only not done yet: neutral icons.
+      var ic = g.ok === true ? "ok" : (g.ok === false && x.built) ? "error" : "unknown";
+      ul.appendChild(el("li", null, [icon(ic), el("div", null, [el("div", { text: (GATE_NAMES[g.name] || g.name) + (g.ok === true ? " · ja" : g.ok === false ? " · nej" : " · afventer") }),
+        g.detail ? el("div", { class: "d", text: g.detail }) : null])]));
+    });
+    right.appendChild(ul);
+    box.appendChild(el("div", { class: "two" }, [left, right]));
+
+    box.appendChild(el("h3", { text: "Ordrer" }));
+    var tiles = el("div", { class: "tiles" }), o = x.orders;
+    [["total", "I alt"], ["pending", "Afventer"], ["confirmed", "Bekræftet"], ["failed", "Fejlet"], ["unknown", "Ukendt"]].forEach(function (k) {
+      tiles.appendChild(tile(k[1], o && isNum(o[k[0]]) ? num(o[k[0]], 0) : "—", null, null));
+    });
+    tiles.appendChild(tile("Realiseret i dag", x.today_realized_pnl_usdc === null ? "—" : signed(x.today_realized_pnl_usdc, 2), x.today_realized_pnl_usdc === null ? null : "USDC", null));
+    box.appendChild(tiles);
+    if (!o) box.appendChild(el("div", { class: "foot-note", text: "Ingen ordrebog (execution.db" + (x.ledger_exists ? " findes, men execution status er ikke tilgængelig" : " findes ikke") + ")." }));
+  }
+
+  function render(keys) {
+    keys.forEach(function (k) {
+      if (k === "overview") { renderStatus(); renderCollect(); }
+      else if (k === "market") renderMarket();
+      else if (k === "research") renderResearch();
+      else if (k === "paper") renderPaper();
+      else if (k === "execution") renderExec();
+    });
+  }
+
+  document.getElementById("range").addEventListener("click", function (ev) {
+    var b = ev.target.closest("button[data-hours]");
+    if (!b) return;
+    state.hours = Number(b.dataset.hours);
+    try { localStorage.setItem("jd-hours", String(state.hours)); } catch (e) {}
+    document.querySelectorAll("#range button").forEach(function (x) { x.setAttribute("aria-pressed", String(x === b)); });
+    load("market");
+  });
+  document.getElementById("refresh").addEventListener("click", function () { load(); });
+  var resizeTimer = null, lastWidth = 0;
+  if (window.ResizeObserver) {
+    new ResizeObserver(function (entries) {
+      var w = entries[0].contentRect.width;
+      if (Math.abs(w - lastWidth) < 2) return;
+      lastWidth = w;
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(function () { if (state.data.market) renderMarket(); }, 120);
+    }).observe(document.getElementById("price-chart"));
+  }
+  setInterval(tick, 1000);
+  setInterval(function () { if (!document.hidden) load(); }, REFRESH_MS);
+  document.addEventListener("visibilitychange", function () {
+    if (!document.hidden && state.fetchedAt && Date.now() - state.fetchedAt > REFRESH_MS) load();
+  });
+  load();
+})();
+</script>
+</body>
+</html>
