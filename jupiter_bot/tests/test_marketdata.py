@@ -459,7 +459,7 @@ class LiveCheck(unittest.TestCase):
         def fake_fetch(url, endpoint):
             clock[0] += 0.2
             parts = urlsplit(url)
-            if parts.netloc == "data-api.binance.vision":
+            if parts.netloc == "api.binance.com":
                 return RawResponse(200, {"date": http_date(clock[0])}, body([kline(i) for i in range(55, 61)]))
             if parts.netloc == "api.jup.ag":
                 query = {k: v[0] for k, v in parse_qs(parts.query).items()}
@@ -497,16 +497,16 @@ class LiveCheck(unittest.TestCase):
 
 
 class TransportAllowlist(unittest.TestCase):
-    ENDPOINT = Endpoint("data-api.binance.vision", "/api/v3/klines", frozenset({"symbol", "interval", "limit"}))
+    ENDPOINT = Endpoint("api.binance.com", "/api/v3/klines", frozenset({"symbol", "interval", "limit"}))
 
     def test_only_the_adapter_endpoint_and_params_are_allowed(self):
-        good = "https://data-api.binance.vision/api/v3/klines?interval=1m&limit=1&symbol=SOLUSDC"
+        good = "https://api.binance.com/api/v3/klines?interval=1m&limit=1&symbol=SOLUSDC"
         check_url(good, self.ENDPOINT)
-        for url in ("http://data-api.binance.vision/api/v3/klines?symbol=SOLUSDC",
-                    "https://api.binance.com/api/v3/klines?symbol=SOLUSDC",
-                    "https://data-api.binance.vision/api/v3/order?symbol=SOLUSDC",
+        for url in ("http://api.binance.com/api/v3/klines?symbol=SOLUSDC",
+                    "https://data-api.binance.vision/api/v3/klines?symbol=SOLUSDC",
+                    "https://api.binance.com/api/v3/order?symbol=SOLUSDC",
                     good + "&timestamp=1", good + "&symbol=BTCUSDC",
-                    "https://user:pw@data-api.binance.vision/api/v3/klines",
+                    "https://user:pw@api.binance.com/api/v3/klines",
                     good + "#frag"):
             with self.subTest(url=url), self.assertRaises(Rejected):
                 check_url(url, self.ENDPOINT)
@@ -520,7 +520,7 @@ class TransportAllowlist(unittest.TestCase):
                 raise error
 
         with patch("urllib.request.build_opener", return_value=Opener()):
-            response = https_get("https://data-api.binance.vision/api/v3/klines?symbol=SOLUSDC", self.ENDPOINT)
+            response = https_get("https://api.binance.com/api/v3/klines?symbol=SOLUSDC", self.ENDPOINT)
         self.assertEqual((response.status, response.body), (400, b'{"code":-1121}'))
 
     def test_connection_failure_is_a_transport_error(self):
@@ -530,7 +530,7 @@ class TransportAllowlist(unittest.TestCase):
 
         with patch("urllib.request.build_opener", return_value=Opener()):
             with self.assertRaises(TransportError):
-                https_get("https://data-api.binance.vision/api/v3/klines?symbol=SOLUSDC", self.ENDPOINT)
+                https_get("https://api.binance.com/api/v3/klines?symbol=SOLUSDC", self.ENDPOINT)
 
 
 if __name__ == "__main__":

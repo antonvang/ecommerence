@@ -34,7 +34,7 @@ class Source:
             if isinstance(response, Exception):
                 raise response
             return response
-        if parts.netloc == "data-api.binance.vision":
+        if parts.netloc == "api.binance.com":
             index = int((self.clock[0] - T0) // 60)
             return RawResponse(200, {"date": http_date(self.clock[0])},
                                body([kline(i) for i in range(index - 9, index + 1)]))
@@ -91,15 +91,15 @@ class Cycle(unittest.TestCase):
         self.assertEqual(self.statuses(self.cycle())["agave_releases"], "OK")
 
     def test_cooldown_skips_without_request_or_journal_spam(self):
-        self.source.override["data-api.binance.vision"] = RawResponse(429, {"retry-after": "300"}, b"{}")
+        self.source.override["api.binance.com"] = RawResponse(429, {"retry-after": "300"}, b"{}")
         self.assertEqual(self.statuses(self.cycle())["candles_1m"], "FAILED")
-        del self.source.override["data-api.binance.vision"]
+        del self.source.override["api.binance.com"]
         calls_before = len(self.source.calls)
         rows_before = self.journal.db.execute("SELECT count(*) FROM fetches").fetchone()[0]
         self.clock[0] += 60
         report = self.cycle()
         self.assertEqual(self.statuses(report)["candles_1m"], "COOLING_DOWN")
-        self.assertNotIn("data-api.binance.vision", self.source.calls[calls_before:])
+        self.assertNotIn("api.binance.com", self.source.calls[calls_before:])
         rows_after = self.journal.db.execute("SELECT count(*) FROM fetches WHERE source='binance_spot_klines'")
         self.assertEqual(rows_after.fetchone()[0], 1)
         self.assertGreater(self.journal.db.execute("SELECT count(*) FROM fetches").fetchone()[0], rows_before)
@@ -120,7 +120,7 @@ class Cycle(unittest.TestCase):
         self.assertIn("RuntimeError", errors[0])
 
     def test_exit_code_when_everything_fails(self):
-        for host in ("data-api.binance.vision", "api.jup.ag", "status.solana.com", "status.jup.ag", "github.com"):
+        for host in ("api.binance.com", "api.jup.ag", "status.solana.com", "status.jup.ag", "github.com"):
             self.source.override[host] = TransportError("offline")
         report = self.cycle()
         self.assertEqual(collect.exit_code(report), 2)

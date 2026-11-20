@@ -96,7 +96,7 @@ class BinanceKlines:
 
     kind = "candles"
     source = "binance_spot_klines"
-    endpoint = Endpoint("data-api.binance.vision", "/api/v3/klines",
+    endpoint = Endpoint("api.binance.com", "/api/v3/klines",
                         frozenset({"symbol", "interval", "limit"}))
     min_interval = 2.0          # far below the documented weight budget
     default_cooldown = 60.0     # when 429 arrives without Retry-After
